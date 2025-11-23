@@ -7,17 +7,18 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "watch": "tsc --watch",
-    "dev": "concurrently \"npm run watch\" \"cd docs && npm run start\"",
+    "dev": "concurrently \"npm run watch\" \"cd docs && npm run dev\"",
     "build": "tsc",
     "publish": "npm run build && npm publish --access public"
   },
   "keywords": [],
   "author": "prnth",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "devDependencies": {
     "@types/react": "^19.2.6",
     "@types/react-dom": "^19.2.3",
+    "concurrently": "^9.2.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "typescript": "^5.9.3"

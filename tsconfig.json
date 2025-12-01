@@ -1,6 +1,7 @@
 {
     "compilerOptions": {
       "target": "ES6",                           
+      "lib": ["ES2017", "DOM"],                  
       "module": "ESNext",                        
       "jsx": "react-jsx",                        
       "declaration": true,                       
@@ -9,7 +10,7 @@
       "strict": true,                           
       "esModuleInterop": true,                  
       "skipLibCheck": true,                     
-      "moduleResolution": "node",               
+      "moduleResolution": "bundler",               
       "allowSyntheticDefaultImports": true      
     },
     "include": ["src"],                          

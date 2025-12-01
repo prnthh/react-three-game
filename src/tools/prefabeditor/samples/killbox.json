@@ -1,0 +1,373 @@
+{
+  "id": "prefab-1",
+  "name": "Test Prefab",
+  "root": {
+    "id": "root",
+    "enabled": true,
+    "visible": true,
+    "components": {
+      "transform": {
+        "type": "Transform",
+        "properties": {
+          "position": [
+            0,
+            -1,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      }
+    },
+    "children": [
+      {
+        "id": "ground",
+        "enabled": true,
+        "visible": true,
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                0,
+                0
+              ],
+              "rotation": [
+                -1.57,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "plane",
+              "args": [
+                50,
+                50
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "white",
+              "texture": "/textures/GreyboxTextures/greybox_light_grid.png",
+              "repeat": true,
+              "repeatCount": [25, 25]      
+            }
+          },
+          "physics": {
+            "type": "Physics",
+            "properties": {
+              "type": "fixed"
+            }
+          }
+        },
+        "children": [
+          {
+            "id": "46f3422a-9ad5-487c-8f8e-f9a7c6929a78",
+            "enabled": true,
+            "visible": true,
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    24.90294234722706,
+                    24.96126426850116
+                  ],
+                  "rotation": [
+                    -1.57,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "plane",
+                  "args": [
+                    50,
+                    50
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "color": "white",
+                  "texture": "/textures/GreyboxTextures/greybox_light_grid.png",
+                  "repeat": true,
+                  "repeatCount": [25, 25]
+                }
+              },
+              "physics": {
+                "type": "Physics",
+                "properties": {
+                  "type": "fixed"
+                }
+              }
+            }
+          },
+          {
+            "id": "cffa8e96-2345-4a85-8a33-d20ce8f667da",
+            "enabled": true,
+            "visible": true,
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    -25.015996156169606,
+                    24.921512471795428
+                  ],
+                  "rotation": [
+                    -1.57,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "plane",
+                  "args": [
+                    50,
+                    50
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "color": "white",
+                  "texture": "/textures/GreyboxTextures/greybox_light_grid.png",
+                  
+                  "repeat": true,
+                  "repeatCount": [25, 25]     
+                }
+              },
+              "physics": {
+                "type": "Physics",
+                "properties": {
+                  "type": "fixed"
+                }
+              }
+            }
+          },
+          {
+            "id": "6c9bf7b0-af78-4c6b-8152-d5f379bd4fc9",
+            "enabled": true,
+            "visible": true,
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    24.8367498349268,
+                    -0.08948986452652152,
+                    24.941362120855366
+                  ],
+                  "rotation": [
+                    -1.5700000000000274,
+                    -1.5655793333280263,
+                    1.0640496943741005e-14
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "plane",
+                  "args": [
+                    50,
+                    50
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "color": "white",
+                  "texture": "/textures/GreyboxTextures/greybox_light_grid.png",
+                  
+                  "repeat": true,
+                  "repeatCount": [25, 25]        
+                }
+              },
+              "physics": {
+                "type": "Physics",
+                "properties": {
+                  "type": "fixed"
+                }
+              }
+            }
+          },
+          {
+            "id": "9fab88ce-2210-4ba6-9d0f-17aa8c698c23",
+            "enabled": true,
+            "visible": true,
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -24.06308159929621,
+                    0.16562247017969867,
+                    24.94156527368613
+                  ],
+                  "rotation": [
+                    -1.5700000000000274,
+                    -1.5655793333280263,
+                    1.0640496943741005e-14
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "plane",
+                  "args": [
+                    50,
+                    50
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "color": "white",
+                  "texture": "/textures/GreyboxTextures/greybox_light_grid.png",
+                  
+                  "repeat": true,
+                  "repeatCount": [25, 25]      
+                }
+              },
+              "physics": {
+                "type": "Physics",
+                "properties": {
+                  "type": "fixed"
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "model-node2",
+        "enabled": true,
+        "visible": true,
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -2,
+                0,
+                2
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "model": {
+            "type": "Model",
+            "properties": {
+              "filename": "models/environment/servers.glb",
+              "instanced": true
+            }
+          },
+          "physics": {
+            "type": "Physics",
+            "properties": {
+              "type": "dynamic"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "light",
+        "enabled": true,
+        "visible": true,
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                8.871986382193196,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "spotLight": {
+            "type": "SpotLight",
+            "properties": {
+              "color": "#ffffff",
+              "intensity": 100
+            }
+          }
+        }
+      }
+    ]
+  }
+}

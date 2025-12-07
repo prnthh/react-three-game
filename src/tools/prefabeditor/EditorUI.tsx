@@ -4,13 +4,14 @@ import EditorTree from './EditorTree';
 import { getAllComponents } from './components/ComponentRegistry';
 
 
-function EditorUI({ prefabData, setPrefabData, selectedId, setSelectedId, transformMode, setTransformMode }: {
+function EditorUI({ prefabData, setPrefabData, selectedId, setSelectedId, transformMode, setTransformMode, basePath }: {
     prefabData?: Prefab;
     setPrefabData?: Dispatch<SetStateAction<Prefab>>;
     selectedId: string | null;
     setSelectedId: Dispatch<SetStateAction<string | null>>;
     transformMode: "translate" | "rotate" | "scale";
     setTransformMode: (m: "translate" | "rotate" | "scale") => void;
+    basePath?: string;
 }) {
     const [isInspectorCollapsed, setIsInspectorCollapsed] = useState(false);
 
@@ -54,6 +55,7 @@ function EditorUI({ prefabData, setPrefabData, selectedId, setSelectedId, transf
                     deleteNode={deleteNode}
                     transformMode={transformMode}
                     setTransformMode={setTransformMode}
+                    basePath={basePath}
                 />
             )}
         </div>
@@ -68,12 +70,13 @@ function EditorUI({ prefabData, setPrefabData, selectedId, setSelectedId, transf
     </>;
 }
 
-function NodeInspector({ node, updateNode, deleteNode, transformMode, setTransformMode }: {
+function NodeInspector({ node, updateNode, deleteNode, transformMode, setTransformMode, basePath }: {
     node: GameObjectType;
     updateNode: (updater: (n: GameObjectType) => GameObjectType) => void;
     deleteNode: () => void;
     transformMode: "translate" | "rotate" | "scale";
     setTransformMode: (m: "translate" | "rotate" | "scale") => void;
+    basePath?: string;
 }) {
     const ALL_COMPONENTS = getAllComponents();
     const allComponentKeys = Object.keys(ALL_COMPONENTS);
@@ -182,6 +185,7 @@ function NodeInspector({ node, updateNode, deleteNode, transformMode, setTransfo
                                     }
                                 }
                             }))}
+                            basePath={basePath}
                         />
                     ) : null}
                 </div>

@@ -74,24 +74,25 @@ function useInView() {
     return { ref, isInView };
 }
 
-export default function AssetViewerPage() {
+export default function AssetViewerPage({ basePath = "" }: { basePath?: string } = {}) {
     const [textures, setTextures] = useState<string[]>([]);
     const [models, setModels] = useState<string[]>([]);
     const [sounds, setSounds] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        const base = basePath ? `${basePath}/` : '';
         Promise.all([
-            fetch('/textures/manifest.json').then(r => r.json()),
-            fetch('/models/manifest.json').then(r => r.json()),
-            fetch('/sound/manifest.json').then(r => r.json()).catch(() => [])
+            fetch(`/${base}textures/manifest.json`).then(r => r.json()),
+            fetch(`/${base}models/manifest.json`).then(r => r.json()),
+            fetch(`/${base}sound/manifest.json`).then(r => r.json()).catch(() => [])
         ]).then(([textureData, modelData, soundData]) => {
             setTextures(textureData);
             setModels(modelData);
             setSounds(soundData);
             setLoading(false);
         });
-    }, []);
+    }, [basePath]);
 
     if (loading) {
         return <div className="p-4 text-gray-300">Loading manifests...</div>;
@@ -103,15 +104,15 @@ export default function AssetViewerPage() {
                 <h1 className="text-lg mb-2 font-bold">Asset Viewer</h1>
 
                 <h2 className="text-sm mt-4 mb-1 font-semibold">Textures ({textures.length})</h2>
-                <TextureListViewer files={textures} onSelect={(file) => console.log('Selected texture:', file)} />
+                <TextureListViewer files={textures} basePath={basePath} onSelect={(file) => console.log('Selected texture:', file)} />
 
                 <h2 className="text-sm mt-4 mb-1 font-semibold">Models ({models.length})</h2>
-                <ModelListViewer files={models} onSelect={(file) => console.log('Selected model:', file)} />
+                <ModelListViewer files={models} basePath={basePath} onSelect={(file) => console.log('Selected model:', file)} />
 
                 {sounds.length > 0 && (
                     <>
                         <h2 className="text-sm mt-4 mb-1 font-semibold">Sounds ({sounds.length})</h2>
-                        <SoundListViewer files={sounds} onSelect={(file) => console.log('Selected sound:', file)} />
+                        <SoundListViewer files={sounds} basePath={basePath} onSelect={(file) => console.log('Selected sound:', file)} />
                     </>
                 )}
             </div>
@@ -187,9 +188,10 @@ interface TextureListViewerProps {
     files: string[];
     selected?: string;
     onSelect: (file: string) => void;
+    basePath?: string;
 }
 
-export function TextureListViewer({ files, selected, onSelect }: TextureListViewerProps) {
+export function TextureListViewer({ files, selected, onSelect, basePath = "" }: TextureListViewerProps) {
     return (
         <>
             <AssetListViewer
@@ -197,7 +199,7 @@ export function TextureListViewer({ files, selected, onSelect }: TextureListView
                 selected={selected}
                 onSelect={onSelect}
                 renderCard={(file, onSelectHandler) => (
-                    <TextureCard file={file} onSelect={onSelectHandler} />
+                    <TextureCard file={file} basePath={basePath} onSelect={onSelectHandler} />
                 )}
             />
             <SharedCanvas />
@@ -205,10 +207,11 @@ export function TextureListViewer({ files, selected, onSelect }: TextureListView
     );
 }
 
-function TextureCard({ file, onSelect }: { file: string; onSelect: (file: string) => void }) {
+function TextureCard({ file, onSelect, basePath = "" }: { file: string; onSelect: (file: string) => void; basePath?: string }) {
     const [error, setError] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
     const { ref, isInView } = useInView();
+    const fullPath = basePath ? `/${basePath}${file}` : file;
 
     if (error) {
         return (
@@ -237,7 +240,7 @@ function TextureCard({ file, onSelect }: { file: string; onSelect: (file: string
                         <Suspense fallback={null}>
                             <ambientLight intensity={0.8} />
                             <pointLight position={[5, 5, 5]} intensity={0.5} />
-                            <TextureSphere url={file} onError={() => setError(true)} />
+                            <TextureSphere url={fullPath} onError={() => setError(true)} />
                             <OrbitControls
                                 enableZoom={false}
                                 enablePan={false}
@@ -272,9 +275,10 @@ interface ModelListViewerProps {
     files: string[];
     selected?: string;
     onSelect: (file: string) => void;
+    basePath?: string;
 }
 
-export function ModelListViewer({ files, selected, onSelect }: ModelListViewerProps) {
+export function ModelListViewer({ files, selected, onSelect, basePath = "" }: ModelListViewerProps) {
     return (
         <>
             <AssetListViewer
@@ -282,7 +286,7 @@ export function ModelListViewer({ files, selected, onSelect }: ModelListViewerPr
                 selected={selected}
                 onSelect={onSelect}
                 renderCard={(file, onSelectHandler) => (
-                    <ModelCard file={file} onSelect={onSelectHandler} />
+                    <ModelCard file={file} basePath={basePath} onSelect={onSelectHandler} />
                 )}
             />
             <SharedCanvas />
@@ -290,9 +294,10 @@ export function ModelListViewer({ files, selected, onSelect }: ModelListViewerPr
     );
 }
 
-function ModelCard({ file, onSelect }: { file: string; onSelect: (file: string) => void }) {
+function ModelCard({ file, onSelect, basePath = "" }: { file: string; onSelect: (file: string) => void; basePath?: string }) {
     const [error, setError] = useState(false);
     const { ref, isInView } = useInView();
+    const fullPath = basePath ? `/${basePath}${file}` : file;
 
     if (error) {
         return (
@@ -318,7 +323,7 @@ function ModelCard({ file, onSelect }: { file: string; onSelect: (file: string) 
                         <PerspectiveCamera makeDefault position={[0, 1, 3]} fov={50} />
                         <Suspense fallback={null}>
                             <Stage intensity={0.5} environment="city">
-                                <ModelPreview url={file} onError={() => setError(true)} />
+                                <ModelPreview url={fullPath} onError={() => setError(true)} />
                             </Stage>
                             <OrbitControls enableZoom={false} />
                         </Suspense>
@@ -352,23 +357,25 @@ interface SoundListViewerProps {
     files: string[];
     selected?: string;
     onSelect: (file: string) => void;
+    basePath?: string;
 }
 
-export function SoundListViewer({ files, selected, onSelect }: SoundListViewerProps) {
+export function SoundListViewer({ files, selected, onSelect, basePath = "" }: SoundListViewerProps) {
     return (
         <AssetListViewer
             files={files}
             selected={selected}
             onSelect={onSelect}
             renderCard={(file, onSelectHandler) => (
-                <SoundCard file={file} onSelect={onSelectHandler} />
+                <SoundCard file={file} basePath={basePath} onSelect={onSelectHandler} />
             )}
         />
     );
 }
 
-function SoundCard({ file, onSelect }: { file: string; onSelect: (file: string) => void }) {
+function SoundCard({ file, onSelect, basePath = "" }: { file: string; onSelect: (file: string) => void; basePath?: string }) {
     const fileName = file.split('/').pop() || '';
+    const fullPath = basePath ? `/${basePath}${file}` : file;
     return (
         <div
             onClick={() => onSelect(file)}

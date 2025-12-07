@@ -6,12 +6,11 @@ import { Group, } from "three";
 import { Prefab, } from "./types";
 import PrefabRoot from "./PrefabRoot";
 import { Physics } from "@react-three/rapier";
-// import testPrefab from "./samples/test.json";
 import EditorUI from "./EditorUI";
 
-const PrefabEditor = ({ children }: { children?: React.ReactNode }) => {
+const PrefabEditor = ({ basePath, initialPrefab, children }: { basePath?: string, initialPrefab?: Prefab, children?: React.ReactNode }) => {
     const [editMode, setEditMode] = useState(true);
-    const [loadedPrefab, setLoadedPrefab] = useState<Prefab>({
+    const [loadedPrefab, setLoadedPrefab] = useState<Prefab>(initialPrefab ?? {
         "id": "prefab-default",
         "name": "New Prefab",
         "root": {
@@ -50,6 +49,7 @@ const PrefabEditor = ({ children }: { children?: React.ReactNode }) => {
                     onSelect={setSelectedId}
                     transformMode={transformMode}
                     setTransformMode={setTransformMode}
+                    basePath={basePath}
                 />
                 {children}
             </Physics>
@@ -86,6 +86,7 @@ const PrefabEditor = ({ children }: { children?: React.ReactNode }) => {
             setSelectedId={setSelectedId}
             transformMode={transformMode}
             setTransformMode={setTransformMode}
+            basePath={basePath}
         />}
     </>
 }

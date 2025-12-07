@@ -35,7 +35,8 @@ export const PrefabRoot = forwardRef<Group, {
     onSelect?: (id: string | null) => void;
     transformMode?: "translate" | "rotate" | "scale";
     setTransformMode?: (mode: "translate" | "rotate" | "scale") => void;
-}>(({ editMode, data, onPrefabChange, selectedId, onSelect, transformMode, setTransformMode }, ref) => {
+    basePath?: string;
+}>(({ editMode, data, onPrefabChange, selectedId, onSelect, transformMode, setTransformMode, basePath = "" }, ref) => {
     const [loadedModels, setLoadedModels] = useState<Record<string, Object3D>>({});
     const [loadedTextures, setLoadedTextures] = useState<Record<string, Texture>>({});
     // const [prefabRoot, setPrefabRoot] = useState<Prefab>(data); // Removed local state
@@ -132,7 +133,7 @@ export const PrefabRoot = forwardRef<Group, {
             for (const filename of modelsToLoad) {
                 if (!loadedModels[filename] && !loadingRefs.current.has(filename)) {
                     loadingRefs.current.add(filename);
-                    const result = await loadModel(filename, "");
+                    const result = await loadModel(filename, basePath);
                     if (result.success && result.model) {
                         setLoadedModels(prev => ({ ...prev, [filename]: result.model }));
                     }
@@ -143,7 +144,8 @@ export const PrefabRoot = forwardRef<Group, {
             for (const filename of texturesToLoad) {
                 if (!loadedTextures[filename] && !loadingRefs.current.has(filename)) {
                     loadingRefs.current.add(filename);
-                    textureLoader.load(filename, (texture) => {
+                    const texturePath = basePath ? `${basePath}/${filename}` : filename;
+                    textureLoader.load(texturePath, (texture) => {
                         texture.colorSpace = SRGBColorSpace;
                         setLoadedTextures(prev => ({ ...prev, [filename]: texture }));
                     });

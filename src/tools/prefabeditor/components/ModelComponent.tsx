@@ -2,15 +2,16 @@ import { ModelListViewer } from '../../assetviewer/page';
 import { useEffect, useState } from 'react';
 import { Component } from './ComponentRegistry';
 
-function ModelComponentEditor({ component, onUpdate }: { component: any; onUpdate: (newComp: any) => void }) {
+function ModelComponentEditor({ component, onUpdate, basePath = "" }: { component: any; onUpdate: (newComp: any) => void; basePath?: string }) {
     const [modelFiles, setModelFiles] = useState<string[]>([]);
 
     useEffect(() => {
-        fetch('/models/manifest.json')
+        const base = basePath ? `${basePath}/` : '';
+        fetch(`/${base}models/manifest.json`)
             .then(r => r.json())
             .then(data => setModelFiles(Array.isArray(data) ? data : data.files || []))
             .catch(console.error);
-    }, []);
+    }, [basePath]);
 
     const handleModelSelect = (file: string) => {
         // Remove leading slash for prefab compatibility
@@ -26,6 +27,7 @@ function ModelComponentEditor({ component, onUpdate }: { component: any; onUpdat
                     files={modelFiles}
                     selected={component.properties.filename ? `/${component.properties.filename}` : undefined}
                     onSelect={handleModelSelect}
+                    basePath={basePath}
                 />
             </div>
         </div>

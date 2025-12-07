@@ -2,15 +2,16 @@ import { TextureListViewer } from '../../assetviewer/page';
 import { useEffect, useState } from 'react';
 import { Component } from './ComponentRegistry';
 
-function MaterialComponentEditor({ component, onUpdate }: { component: any; onUpdate: (newComp: any) => void }) {
+function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { component: any; onUpdate: (newComp: any) => void; basePath?: string }) {
     const [textureFiles, setTextureFiles] = useState<string[]>([]);
 
     useEffect(() => {
-        fetch('/textures/manifest.json')
+        const base = basePath ? `${basePath}/` : '';
+        fetch(`/${base}textures/manifest.json`)
             .then(r => r.json())
             .then(data => setTextureFiles(Array.isArray(data) ? data : data.files || []))
             .catch(console.error);
-    }, []);
+    }, [basePath]);
 
     return (
         <div className="flex flex-col">
@@ -48,6 +49,7 @@ function MaterialComponentEditor({ component, onUpdate }: { component: any; onUp
                         files={textureFiles}
                         selected={component.properties.texture || undefined}
                         onSelect={(file) => onUpdate({ 'texture': file })}
+                        basePath={basePath}
                     />
                 </div>
             </div>

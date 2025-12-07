@@ -2,7 +2,7 @@ import { FC } from "react";
 
 export interface Component {
     name: string;
-    Editor: FC<{ component: any; onUpdate: (newComp: any) => void }>;
+    Editor: FC<{ component: any; onUpdate: (newComp: any) => void; basePath?: string }>;
     defaultProperties: any;
     // Allow View to accept extra props for special cases (like material)
     View?: FC<any>;

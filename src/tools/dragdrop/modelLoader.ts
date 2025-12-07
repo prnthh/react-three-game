@@ -23,9 +23,8 @@ export async function loadModel(
     onProgress?: ProgressCallback
 ): Promise<ModelLoadResult> {
     try {
-        // Construct full path - always prepend resourcePath if provided (even if empty string)
-        // This allows loading from root with resourcePath=""
-        const fullPath = `${resourcePath}/${filename}`;
+        // Construct full path - handle empty resourcePath to avoid double slashes
+        const fullPath = resourcePath ? `${resourcePath}/${filename}` : filename;
 
         if (filename.endsWith('.glb') || filename.endsWith('.gltf')) {
             return new Promise((resolve) => {

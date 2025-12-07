@@ -93,7 +93,7 @@ export const PrefabRoot = forwardRef<Group, {
         const newRoot = updatePrefabNode(data.root, selectedId, (node) => ({
             ...node,
             components: {
-                ...node.components,
+                ...node?.components,
                 transform: {
                     type: "Transform",
                     properties: {
@@ -185,7 +185,7 @@ export const PrefabRoot = forwardRef<Group, {
 });
 
 interface GameObjectRendererProps {
-    gameObject: GameObjectType;
+    gameObject?: GameObjectType | null;
     selectedId?: string | null;
     onSelect?: (id: string) => void;
     registerRef: (id: string, obj: Object3D | null) => void;
@@ -206,6 +206,9 @@ function GameObjectRenderer({
     editMode,
     parentMatrix = new Matrix4(),
 }: GameObjectRendererProps) {
+
+    // Early return if gameObject is null or undefined
+    if (!gameObject) return null;
 
     // Build a small context object to avoid long param lists
     const ctx = { gameObject, selectedId, onSelect, registerRef, loadedModels, loadedTextures, editMode };
@@ -402,8 +405,8 @@ function wrapPhysicsIfNeeded(gameObject: GameObjectType, content: React.ReactNod
 
 export default PrefabRoot;
 
-function getNodeTransformProps(node: GameObjectType) {
-    const t = node.components?.transform?.properties;
+function getNodeTransformProps(node?: GameObjectType | null) {
+    const t = node?.components?.transform?.properties;
     return {
         position: t?.position ?? [0, 0, 0],
         rotation: t?.rotation ?? [0, 0, 0],

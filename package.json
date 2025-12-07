@@ -1,6 +1,6 @@
 {
   "name": "react-three-game",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "Batteries included React Three Fiber game engine",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -9,7 +9,7 @@
     "watch": "tsc --watch",
     "dev": "concurrently \"npm run watch\" \"cd docs && npm run dev\"",
     "build": "tsc",
-    "publish": "npm run build && npm publish --access public"
+    "release": "npm run build && npm publish --access public"
   },
   "keywords": [],
   "author": "prnth",

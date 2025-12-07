@@ -147,6 +147,8 @@ export default function EditorTree({ prefabData, setPrefabData, selectedId, setS
     };
 
     const renderNode = (node: GameObject, depth: number = 0) => {
+        if (!node) return null;
+
         const isSelected = node.id === selectedId;
         const isCollapsed = collapsedIds.has(node.id);
         const hasChildren = node.children && node.children.length > 0;

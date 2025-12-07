@@ -12,10 +12,24 @@ import EditorUI from "./EditorUI";
 const PrefabEditor = ({ children }: { children?: React.ReactNode }) => {
     const [editMode, setEditMode] = useState(true);
     const [loadedPrefab, setLoadedPrefab] = useState<Prefab>({
-        "id": "root",
-        "name": "Root",
-        "type": "Group",
-    } as unknown as Prefab);
+        "id": "prefab-default",
+        "name": "New Prefab",
+        "root": {
+            "id": "root",
+            "enabled": true,
+            "visible": true,
+            "components": {
+                "transform": {
+                    "type": "Transform",
+                    "properties": {
+                        "position": [0, 0, 0],
+                        "rotation": [0, 0, 0],
+                        "scale": [1, 1, 1]
+                    }
+                }
+            }
+        }
+    });
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [transformMode, setTransformMode] = useState<"translate" | "rotate" | "scale">("translate");
     const prefabRef = useRef<Group>(null);

@@ -37,9 +37,9 @@ function EditorUI({ prefabData, setPrefabData, selectedId, setSelectedId, transf
 
     const selectedNode = selectedId && prefabData ? findNode(prefabData.root, selectedId) : null;
 
-    if (!selectedNode) return null;
+    // if (!selectedNode) return null;
     return <>
-        <div className='absolute top-2 right-2 z-20 bg-black/70 backdrop-blur-sm text-white border border-cyan-500/30 ' >
+        <div style={{ position: 'absolute', top: "0.5rem", right: "0.5rem", zIndex: 20, backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", color: "white", border: "1px solid rgba(0,255,255,0.3)" }} >
             <div
                 className="px-1.5 py-1 font-mono text-[10px] bg-cyan-500/10 border-b border-cyan-500/30 sticky top-0 uppercase tracking-wider text-cyan-400/80 cursor-pointer hover:bg-cyan-500/20 flex items-center justify-between"
                 onClick={() => setIsInspectorCollapsed(!isInspectorCollapsed)}
@@ -47,7 +47,7 @@ function EditorUI({ prefabData, setPrefabData, selectedId, setSelectedId, transf
                 <span>Inspector</span>
                 <span className="text-[8px]">{isInspectorCollapsed ? '◀' : '▶'}</span>
             </div>
-            {!isInspectorCollapsed && (
+            {!isInspectorCollapsed && selectedNode && (
                 <NodeInspector
                     node={selectedNode}
                     updateNode={updateNode}
@@ -57,7 +57,7 @@ function EditorUI({ prefabData, setPrefabData, selectedId, setSelectedId, transf
                 />
             )}
         </div>
-        <div className='absolute top-12 left-2 z-20'>
+        <div style={{ position: 'absolute', top: "0.5rem", left: "0.5rem", zIndex: 20 }} >
             <EditorTree
                 prefabData={prefabData}
                 setPrefabData={setPrefabData}

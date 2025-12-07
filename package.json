@@ -1,6 +1,6 @@
 {
   "name": "react-three-game",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Batteries included React Three Fiber game engine",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -19,7 +19,7 @@
     "@react-three/fiber": "^9.0.0",
     "react": "^18.0.0 || ^19.0.0",
     "react-dom": "^18.0.0 || ^19.0.0",
-    "three": "^0.160.0"
+    "three": "^0.181.0"
   },
   "devDependencies": {
     "@react-three/drei": "^10.7.7",

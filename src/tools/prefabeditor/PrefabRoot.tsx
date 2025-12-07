@@ -117,7 +117,8 @@ export const PrefabRoot = forwardRef<Group, {
             const modelsToLoad = new Set<string>();
             const texturesToLoad = new Set<string>();
 
-            const traverse = (node: GameObjectType) => {
+            const traverse = (node?: GameObjectType | null) => {
+                if (!node) return;
                 if (node.components?.model?.properties?.filename) {
                     modelsToLoad.add(node.components.model.properties.filename);
                 }

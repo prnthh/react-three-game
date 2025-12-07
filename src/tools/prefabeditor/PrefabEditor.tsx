@@ -20,28 +20,28 @@ const PrefabEditor = ({ children }: { children?: React.ReactNode }) => {
     const [transformMode, setTransformMode] = useState<"translate" | "rotate" | "scale">("translate");
     const prefabRef = useRef<Group>(null);
 
-    return <><GameCanvas>
-        <Physics paused={editMode}>
-            <ambientLight intensity={1.5} />
-            <gridHelper args={[10, 10]} position={[0, -1, 0]} />
-            <PrefabRoot
-                data={loadedPrefab}
-                ref={prefabRef}
+    return <>
+        <GameCanvas>
+            <Physics paused={editMode}>
+                <ambientLight intensity={1.5} />
+                <gridHelper args={[10, 10]} position={[0, -1, 0]} />
+                <PrefabRoot
+                    data={loadedPrefab}
+                    ref={prefabRef}
 
-                // props for edit mode
-                editMode={editMode}
-                onPrefabChange={setLoadedPrefab}
-                selectedId={selectedId}
-                onSelect={setSelectedId}
-                transformMode={transformMode}
-                setTransformMode={setTransformMode}
-            />
-            {children}
-        </Physics>
+                    // props for edit mode
+                    editMode={editMode}
+                    onPrefabChange={setLoadedPrefab}
+                    selectedId={selectedId}
+                    onSelect={setSelectedId}
+                    transformMode={transformMode}
+                    setTransformMode={setTransformMode}
+                />
+                {children}
+            </Physics>
+        </GameCanvas>
 
-    </GameCanvas>
-
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-black/70 backdrop-blur-sm border border-cyan-500/30 px-2 py-1 flex items-center gap-1">
+        <div style={{ position: "absolute", top: "0.5rem", left: "50%", transform: "translateX(-50%)" }} className="bg-black/70 backdrop-blur-sm border border-cyan-500/30 px-2 py-1 flex items-center gap-1">
             <button
                 className="px-1 py-0.5 text-[10px] font-mono text-cyan-300 hover:bg-cyan-500/20 border border-cyan-500/30"
                 onClick={() => setEditMode(!editMode)}

@@ -1,18 +1,18 @@
 {
-    "compilerOptions": {
-      "target": "ES6",                           
-      "lib": ["ES2017", "DOM"],                  
-      "module": "ESNext",                        
-      "jsx": "react-jsx",                        
-      "declaration": true,                       
-      "declarationDir": "dist",                  
-      "outDir": "dist",                          
-      "strict": true,                           
-      "esModuleInterop": true,                  
-      "skipLibCheck": true,                     
-      "moduleResolution": "bundler",               
-      "allowSyntheticDefaultImports": true      
-    },
-    "include": ["src"],                          
-    "exclude": ["node_modules", "dist"]          
-  }  
+  "compilerOptions": {
+    "target": "ES6",                           
+    "lib": ["ES2017", "DOM"],                  
+    "module": "ESNext",                        
+    "jsx": "react-jsx",                        
+    "declaration": true,                       
+    "declarationDir": "dist",                  
+    "outDir": "dist",                          
+    "strict": true,                           
+    "esModuleInterop": true,                  
+    "skipLibCheck": true,                     
+    "moduleResolution": "bundler",               
+    "allowSyntheticDefaultImports": true      
+  },
+  "include": ["src"],                          
+  "exclude": ["node_modules", "dist"]          
+}  

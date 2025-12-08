@@ -3,3 +3,4 @@ src/
 *.log
 .babelrc
 docs/
+tsconfig.json

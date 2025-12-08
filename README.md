@@ -10,6 +10,8 @@ npm i react-three-game @react-three/fiber three
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19-blue.svg)](https://react.dev/)
 
+![Prefab Editor](assets/editor.gif)
+
 ## Core Principle
 
 Scenes are JSON prefabs. Components are registered modules. Hierarchy is declarative.

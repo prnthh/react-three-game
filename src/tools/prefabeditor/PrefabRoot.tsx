@@ -253,9 +253,6 @@ function GameObjectRenderer({
     // --- 3. Core content decided by component registry ---
     const core = renderCoreNode(gameObject, ctx, parentMatrix);
 
-    // --- 4. Wrap with physics if needed ---
-    const physicsWrapped = wrapPhysicsIfNeeded(gameObject, core, ctx);
-
     // --- 5. Render children (always relative transforms) ---
     const children = (gameObject.children ?? []).map((child) => (
         <GameObjectRenderer
@@ -271,6 +268,16 @@ function GameObjectRenderer({
         />
     ));
 
+    // --- 4. Wrap with physics if needed ---
+    // Combine core and children so they both get wrapped by physics (if present)
+    const content = (
+        <>
+            {core}
+            {children}
+        </>
+    );
+    const physicsWrapped = wrapPhysicsIfNeeded(gameObject, content, ctx);
+
     // --- 6. Final group wrapper ---
     return (
         <group
@@ -283,7 +290,6 @@ function GameObjectRenderer({
             onPointerUp={handlePointerUp}
         >
             {physicsWrapped}
-            {children}
         </group>
     );
 }

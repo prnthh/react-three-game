@@ -1,14 +1,14 @@
 "use client";
 
 import GameCanvas from "../../shared/GameCanvas";
-import { useState, useRef, } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Group, } from "three";
 import { Prefab, } from "./types";
 import PrefabRoot from "./PrefabRoot";
 import { Physics } from "@react-three/rapier";
 import EditorUI from "./EditorUI";
 
-const PrefabEditor = ({ basePath, initialPrefab, children }: { basePath?: string, initialPrefab?: Prefab, children?: React.ReactNode }) => {
+const PrefabEditor = ({ basePath, initialPrefab, onPrefabChange, children }: { basePath?: string, initialPrefab?: Prefab, onPrefabChange?: (prefab: Prefab) => void, children?: React.ReactNode }) => {
     const [editMode, setEditMode] = useState(true);
     const [loadedPrefab, setLoadedPrefab] = useState<Prefab>(initialPrefab ?? {
         "id": "prefab-default",
@@ -33,6 +33,20 @@ const PrefabEditor = ({ basePath, initialPrefab, children }: { basePath?: string
     const [transformMode, setTransformMode] = useState<"translate" | "rotate" | "scale">("translate");
     const prefabRef = useRef<Group>(null);
 
+    // Sync internal state with external initialPrefab prop
+    useEffect(() => {
+        if (initialPrefab) {
+            setLoadedPrefab(initialPrefab);
+        }
+    }, [initialPrefab]);
+
+    // Wrapper to update prefab and notify parent
+    const updatePrefab = (newPrefab: Prefab | ((prev: Prefab) => Prefab)) => {
+        setLoadedPrefab(newPrefab);
+        const resolved = typeof newPrefab === 'function' ? newPrefab(loadedPrefab) : newPrefab;
+        onPrefabChange?.(resolved);
+    };
+
     return <>
         <GameCanvas>
             <Physics paused={editMode}>
@@ -44,7 +58,7 @@ const PrefabEditor = ({ basePath, initialPrefab, children }: { basePath?: string
 
                     // props for edit mode
                     editMode={editMode}
-                    onPrefabChange={setLoadedPrefab}
+                    onPrefabChange={updatePrefab}
                     selectedId={selectedId}
                     onSelect={setSelectedId}
                     transformMode={transformMode}
@@ -81,7 +95,7 @@ const PrefabEditor = ({ basePath, initialPrefab, children }: { basePath?: string
         </div>
         {editMode && <EditorUI
             prefabData={loadedPrefab}
-            setPrefabData={setLoadedPrefab}
+            setPrefabData={updatePrefab}
             selectedId={selectedId}
             setSelectedId={setSelectedId}
             transformMode={transformMode}

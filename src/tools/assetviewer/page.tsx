@@ -3,7 +3,6 @@
 import { Canvas, useLoader } from "@react-three/fiber";
 import { OrbitControls, useGLTF, useFBX, Stage, View, PerspectiveCamera } from "@react-three/drei";
 import { Suspense, useEffect, useState, useRef } from "react";
-import * as React from "react";
 import { TextureLoader } from "three";
 
 // view models and textures in manifest, onselect callback
@@ -72,53 +71,6 @@ function useInView() {
     }, []);
 
     return { ref, isInView };
-}
-
-export default function AssetViewerPage({ basePath = "" }: { basePath?: string } = {}) {
-    const [textures, setTextures] = useState<string[]>([]);
-    const [models, setModels] = useState<string[]>([]);
-    const [sounds, setSounds] = useState<string[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const base = basePath ? `${basePath}/` : '';
-        Promise.all([
-            fetch(`/${base}textures/manifest.json`).then(r => r.json()),
-            fetch(`/${base}models/manifest.json`).then(r => r.json()),
-            fetch(`/${base}sound/manifest.json`).then(r => r.json()).catch(() => [])
-        ]).then(([textureData, modelData, soundData]) => {
-            setTextures(textureData);
-            setModels(modelData);
-            setSounds(soundData);
-            setLoading(false);
-        });
-    }, [basePath]);
-
-    if (loading) {
-        return <div className="p-4 text-gray-300">Loading manifests...</div>;
-    }
-
-    return (
-        <>
-            <div className="p-2 text-gray-300 overflow-y-auto h-screen text-sm">
-                <h1 className="text-lg mb-2 font-bold">Asset Viewer</h1>
-
-                <h2 className="text-sm mt-4 mb-1 font-semibold">Textures ({textures.length})</h2>
-                <TextureListViewer files={textures} basePath={basePath} onSelect={(file) => console.log('Selected texture:', file)} />
-
-                <h2 className="text-sm mt-4 mb-1 font-semibold">Models ({models.length})</h2>
-                <ModelListViewer files={models} basePath={basePath} onSelect={(file) => console.log('Selected model:', file)} />
-
-                {sounds.length > 0 && (
-                    <>
-                        <h2 className="text-sm mt-4 mb-1 font-semibold">Sounds ({sounds.length})</h2>
-                        <SoundListViewer files={sounds} basePath={basePath} onSelect={(file) => console.log('Selected sound:', file)} />
-                    </>
-                )}
-            </div>
-            <SharedCanvas />
-        </>
-    );
 }
 
 interface AssetListViewerProps {

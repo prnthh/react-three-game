@@ -19,12 +19,11 @@ const fbxLoader = new FBXLoader();
 
 export async function loadModel(
     filename: string,
-    resourcePath: string = "",
     onProgress?: ProgressCallback
 ): Promise<ModelLoadResult> {
     try {
-        // Construct full path - handle empty resourcePath to avoid double slashes
-        const fullPath = resourcePath ? `${resourcePath}/${filename}` : filename;
+        // Use filename directly (should already include leading /)
+        const fullPath = filename;
 
         if (filename.endsWith('.glb') || filename.endsWith('.gltf')) {
             return new Promise((resolve) => {

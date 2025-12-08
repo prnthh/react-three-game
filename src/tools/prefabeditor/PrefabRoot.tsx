@@ -133,7 +133,9 @@ export const PrefabRoot = forwardRef<Group, {
             for (const filename of modelsToLoad) {
                 if (!loadedModels[filename] && !loadingRefs.current.has(filename)) {
                     loadingRefs.current.add(filename);
-                    const result = await loadModel(filename, basePath);
+                    // Load model directly from public root, prepend "/" if not present
+                    const modelPath = filename.startsWith('/') ? filename : `/${filename}`;
+                    const result = await loadModel(modelPath);
                     if (result.success && result.model) {
                         setLoadedModels(prev => ({ ...prev, [filename]: result.model }));
                     }
@@ -144,7 +146,8 @@ export const PrefabRoot = forwardRef<Group, {
             for (const filename of texturesToLoad) {
                 if (!loadedTextures[filename] && !loadingRefs.current.has(filename)) {
                     loadingRefs.current.add(filename);
-                    const texturePath = basePath ? `${basePath}/${filename}` : filename;
+                    // Load texture directly from public root, prepend "/" if not present
+                    const texturePath = filename.startsWith('/') ? filename : `/${filename}`;
                     textureLoader.load(texturePath, (texture) => {
                         texture.colorSpace = SRGBColorSpace;
                         setLoadedTextures(prev => ({ ...prev, [filename]: texture }));

@@ -40,7 +40,7 @@ Add the library path to your CSS entry point using the `@source` directive:
 
 ```css
 @import "tailwindcss";
-@source "../node_modules/react-three-game/src";
+@source "../../node_modules/react-three-game/dist/**/*.{js,ts,jsx,tsx}";
 ```
 
 ### Tailwind v3
@@ -51,7 +51,7 @@ Add the library path to your `tailwind.config.js`:
 module.exports = {
   content: [
     // ...
-    "./node_modules/react-three-game/src/**/*.{js,ts,jsx,tsx}",
+    "./node_modules/react-three-game/dist/**/*.{js,ts,jsx,tsx}",
   ],
   // ...
 }

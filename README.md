@@ -30,6 +30,33 @@ Scenes are JSON prefabs. Components are registered modules. Hierarchy is declara
 }} />
 ```
 
+## Tailwind CSS Support
+
+This library uses Tailwind CSS for styling its editor components. To ensure styles are correctly applied in your application, you need to configure Tailwind to scan the library's source files.
+
+### Tailwind v4
+
+Add the library path to your CSS entry point using the `@source` directive:
+
+```css
+@import "tailwindcss";
+@source "../node_modules/react-three-game/src";
+```
+
+### Tailwind v3
+
+Add the library path to your `tailwind.config.js`:
+
+```js
+module.exports = {
+  content: [
+    // ...
+    "./node_modules/react-three-game/src/**/*.{js,ts,jsx,tsx}",
+  ],
+  // ...
+}
+```
+
 ## Quick Start
 
 ```bash

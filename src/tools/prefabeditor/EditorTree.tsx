@@ -206,11 +206,11 @@ export default function EditorTree({ prefabData, setPrefabData, selectedId, setS
                     className="fixed bg-black/90 backdrop-blur-sm border border-cyan-500/40 z-50 min-w-[100px]"
                     style={{ top: contextMenu.y, left: contextMenu.x }}
                     onClick={(e) => e.stopPropagation()}
+                    onPointerLeave={closeContextMenu}
                 >
                     <button
                         className="w-full text-left px-2 py-1 hover:bg-cyan-500/20 text-[10px] text-cyan-300 font-mono border-b border-cyan-500/20"
                         onClick={() => handleAddChild(contextMenu.nodeId)}
-                        onPointerLeave={closeContextMenu}
                     >
                         Add Child
                     </button>

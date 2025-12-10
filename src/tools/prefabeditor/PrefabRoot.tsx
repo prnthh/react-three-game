@@ -340,10 +340,11 @@ function renderCoreNode(gameObject: GameObjectType, ctx: any, parentMatrix: Matr
     };
     const allComponentViews = gameObject.components
         ? Object.entries(gameObject.components)
-            .filter(([key]) => key !== 'geometry' && key !== 'material' && key !== 'model')
+            .filter(([key]) => key !== 'geometry' && key !== 'material' && key !== 'model' && key !== 'transform' && key !== 'physics')
             .map(([key, comp]) => {
-                const def = getComponent(key);
-                if (!def || !def.View || !comp) return null;
+                if (!comp || !comp.type) return null;
+                const def = getComponent(comp.type);
+                if (!def || !def.View) return null;
                 return <def.View key={key} properties={comp.properties} {...contextProps} />;
             })
         : null;

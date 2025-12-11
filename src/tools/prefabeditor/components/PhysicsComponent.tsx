@@ -16,17 +16,11 @@ function PhysicsComponentEditor({ component, onUpdate }: { component: any; onUpd
 
 
 import { RigidBody } from "@react-three/rapier";
-import { Object3D } from "three";
-import { useRef } from "react";
 
-function PhysicsComponentView({ properties, children, registerRef, transform, editMode }: any) {
+function PhysicsComponentView({ properties, children, editMode }: any) {
     if (editMode) return children;
     return (
         <RigidBody
-            ref={el => registerRef && registerRef(properties.id, el as unknown as Object3D)}
-            position={transform?.position}
-            rotation={transform?.rotation}
-            scale={transform?.scale}
             type={properties.type}
             colliders="cuboid"
         >

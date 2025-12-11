@@ -103,9 +103,6 @@ export const PrefabRoot = forwardRef<Group, {
                         scale: [ls.x, ls.y, ls.z] as [number, number, number],
                     },
                 },
-                geometry: node.components?.geometry,
-                material: node.components?.material,
-                model: node.components?.model,
             },
         }));
 
@@ -272,14 +269,7 @@ function GameObjectRenderer({
     ));
 
     // --- 4. Wrap with physics if needed ---
-    // Combine core and children so they both get wrapped by physics (if present)
-    const content = (
-        <>
-            {core}
-            {children}
-        </>
-    );
-    const physicsWrapped = wrapPhysicsIfNeeded(gameObject, content, ctx);
+    const physicsWrapped = wrapPhysicsIfNeeded(gameObject, core, ctx);
 
     // --- 6. Final group wrapper ---
     return (
@@ -293,6 +283,7 @@ function GameObjectRenderer({
             onPointerUp={handlePointerUp}
         >
             {physicsWrapped}
+            {children}
         </group>
     );
 }
@@ -404,7 +395,6 @@ function wrapPhysicsIfNeeded(gameObject: GameObjectType, content: React.ReactNod
     return (
         <physicsDef.View
             properties={{ ...physics.properties, id: gameObject.id }}
-            registerRef={ctx.registerRef}
             editMode={ctx.editMode}
         >
             {content}

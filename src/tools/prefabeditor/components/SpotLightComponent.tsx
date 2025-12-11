@@ -108,8 +108,6 @@ function SpotLightView({ properties }: { properties: any }) {
                 penumbra={penumbra}
                 distance={distance}
                 castShadow={castShadow}
-                target-position={[0, 0, 0]}
-                position={[0, 0, 0]}
             />
         </>
     );

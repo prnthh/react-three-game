@@ -59,15 +59,6 @@ export const PrefabRoot = forwardRef<Group, {
         }
     }, [selectedId]);
 
-
-    // const [transformMode, setTransformMode] = useState<"translate" | "rotate" | "scale">("translate"); // Removed local state
-
-    const updateNode = (updater: (node: GameObjectType) => GameObjectType) => {
-        if (!selectedId || !onPrefabChange) return;
-        const newRoot = updatePrefabNode(data.root, selectedId, updater);
-        onPrefabChange({ ...data, root: newRoot });
-    };
-
     const onTransformChange = () => {
         if (!selectedId || !onPrefabChange) return;
         const obj = objectRefs.current[selectedId];
@@ -167,7 +158,7 @@ export const PrefabRoot = forwardRef<Group, {
                 loadedModels={loadedModels}
                 loadedTextures={loadedTextures}
                 editMode={editMode}
-                parentMatrix={new Matrix4()}   // 👈 identity = world root
+                parentMatrix={new Matrix4()}
             />
         </GameInstanceProvider>
 

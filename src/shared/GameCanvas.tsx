@@ -16,10 +16,10 @@ extend({
 
 export default function GameCanvas({ loader = false, children, ...props }: { loader?: boolean, children: React.ReactNode, props?: WebGPURendererParameters }) {
     const [frameloop, setFrameloop] = useState<"never" | "always">("never");
-    const [loading, setLoading] = useState(true);
 
     return <>
         <Canvas
+            style={{ touchAction: 'none' }}
             shadows={{ type: PCFShadowMap, }}
             frameloop={frameloop}
             gl={async ({ canvas }) => {

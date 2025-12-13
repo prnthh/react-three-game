@@ -30,32 +30,13 @@ Scenes are JSON prefabs. Components are registered modules. Hierarchy is declara
   }} />
 ```
 
-## Tailwind CSS Support
+## Styling
 
-This library uses Tailwind CSS for styling its editor components. To ensure styles are correctly applied in your application, you need to configure Tailwind to scan the library's source files.
+The prefab editor UI ships with **inline styles** (no Tailwind / CSS framework required). That means you can install and render it without any additional build-time CSS configuration.
 
-### Tailwind v4
-
-Add the library path to your CSS entry point using the `@source` directive:
-
-```css
-@import "tailwindcss";
-@source "../../node_modules/react-three-game/dist/**/*.{js,ts,jsx,tsx}";
-```
-
-### Tailwind v3
-
-Add the library path to your `tailwind.config.js`:
-
-```js
-module.exports = {
-  content: [
-    // ...
-    "./node_modules/react-three-game/dist/**/*.{js,ts,jsx,tsx}",
-  ],
-  // ...
-}
-```
+If you want to fully restyle the editor, you can:
+- Wrap `PrefabEditor` in your own layout and override positioning.
+- Fork/compose the editor UI components (they’re plain React components).
 
 ## Quick Start
 

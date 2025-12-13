@@ -67,26 +67,88 @@ const PrefabEditor = ({ basePath, initialPrefab, onPrefabChange, children }: { b
             </Physics>
         </GameCanvas>
 
-        <div style={{ position: "absolute", top: "0.5rem", left: "50%", transform: "translateX(-50%)" }} className="bg-black/70 backdrop-blur-sm border border-cyan-500/30 px-2 py-1 flex items-center gap-1">
+        <div
+            style={{
+                position: "absolute",
+                top: 8,
+                left: "50%",
+                transform: "translateX(-50%)",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "2px 4px",
+                background: "rgba(0,0,0,0.55)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                borderRadius: 4,
+                color: "rgba(255,255,255,0.9)",
+                fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+                fontSize: 11,
+                lineHeight: 1,
+                WebkitUserSelect: "none",
+                userSelect: "none",
+            }}
+        >
             <button
-                className="px-1 py-0.5 text-[10px] font-mono text-cyan-300 hover:bg-cyan-500/20 border border-cyan-500/30"
+                style={{
+                    padding: "2px 6px",
+                    font: "inherit",
+                    background: "transparent",
+                    color: "inherit",
+                    border: "1px solid rgba(255,255,255,0.18)",
+                    borderRadius: 3,
+                    cursor: "pointer",
+                }}
                 onClick={() => setEditMode(!editMode)}
+                onPointerEnter={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.08)";
+                }}
+                onPointerLeave={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+                }}
             >
                 {editMode ? "▶" : "⏸"}
             </button>
-            <span className="text-cyan-500/30 text-[10px]">|</span>
+            <span style={{ opacity: 0.35 }}>|</span>
             <button
-                className="px-1 py-0.5 text-[10px] font-mono text-cyan-300 hover:bg-cyan-500/20 border border-cyan-500/30"
+                style={{
+                    padding: "2px 6px",
+                    font: "inherit",
+                    background: "transparent",
+                    color: "inherit",
+                    border: "1px solid rgba(255,255,255,0.18)",
+                    borderRadius: 3,
+                    cursor: "pointer",
+                }}
                 onClick={async () => {
                     const prefab = await loadJson();
                     if (prefab) setLoadedPrefab(prefab);
+                }}
+                onPointerEnter={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.08)";
+                }}
+                onPointerLeave={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.background = "transparent";
                 }}
             >
                 📥
             </button>
             <button
-                className="px-1 py-0.5 text-[10px] font-mono text-cyan-300 hover:bg-cyan-500/20 border border-cyan-500/30"
+                style={{
+                    padding: "2px 6px",
+                    font: "inherit",
+                    background: "transparent",
+                    color: "inherit",
+                    border: "1px solid rgba(255,255,255,0.18)",
+                    borderRadius: 3,
+                    cursor: "pointer",
+                }}
                 onClick={() => saveJson(loadedPrefab, "prefab")}
+                onPointerEnter={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.08)";
+                }}
+                onPointerLeave={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+                }}
             >
                 💾
             </button>

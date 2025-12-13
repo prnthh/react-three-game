@@ -122,8 +122,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "green",
-              "wireframe": true
+              "color": "green"
             }
           },
           "physics": {
@@ -173,8 +172,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "color": "yellow",
-                  "wireframe": true
+                  "color": "yellow"
                 }
               }
             }
@@ -220,8 +218,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "blue",
-              "wireframe": false
+              "color": "blue"
             }
           },
           "physics": {

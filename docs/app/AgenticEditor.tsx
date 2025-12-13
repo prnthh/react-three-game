@@ -130,6 +130,7 @@ export default function AgenticEditor({
     prefab,
     onPrefabChange,
 }: AgenticEditorProps) {
+    const [isExpanded, setIsExpanded] = useState<boolean>(false);
     const [openAiKey, setOpenAiKey] = useState<string>("");
     const [prompt, setPrompt] = useState<string>("");
     const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -247,15 +248,15 @@ export default function AgenticEditor({
             const beforeIds = new Set(
                 Array.isArray((prefab as any)?.root?.children)
                     ? (prefab as any).root.children
-                          .map((c: any) => (typeof c?.id === "string" ? c.id : null))
-                          .filter(Boolean)
+                        .map((c: any) => (typeof c?.id === "string" ? c.id : null))
+                        .filter(Boolean)
                     : []
             );
             const addedChildIds = Array.isArray((nextPrefab as any)?.root?.children)
                 ? (nextPrefab as any).root.children
-                      .map((c: any) => (typeof c?.id === "string" ? c.id : null))
-                      .filter((id: any) => typeof id === "string" && !beforeIds.has(id))
-                      .slice(0, 8)
+                    .map((c: any) => (typeof c?.id === "string" ? c.id : null))
+                    .filter((id: any) => typeof id === "string" && !beforeIds.has(id))
+                    .slice(0, 8)
                 : [];
             setPreviewMeta({ beforeChildren, afterChildren, addedChildIds });
 
@@ -322,141 +323,161 @@ export default function AgenticEditor({
 
     return (
         <>
-            <div className="pointer-events-auto w-[360px] rounded-lg border border-gray-200 bg-white/90 p-3 text-sm text-black shadow backdrop-blur dark:border-gray-800 dark:bg-black/70 dark:text-white">
-                <div className="mb-2 font-medium">AI Prefab Generator</div>
-
-                <label className="mb-1 block text-xs text-gray-600 dark:text-gray-300">
-                    OpenAI API key
-                </label>
-                <input
-                    className="mb-2 w-full rounded border border-gray-300 bg-white px-2 py-1 text-black outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-black dark:text-white"
-                    type="password"
-                    value={openAiKey}
-                    onChange={(e) => setOpenAiKey(e.target.value)}
-                    placeholder="sk-..."
-                    autoComplete="off"
-                />
-
-                <div className="mb-2 flex items-center justify-between gap-2 text-xs text-gray-600 dark:text-gray-300">
-                    <span>Apply mode</span>
-                    <div className="flex items-center gap-2">
-                        <label className="flex items-center gap-1">
-                            <input
-                                type="radio"
-                                name="applyMode"
-                                checked={applyMode === "merge"}
-                                onChange={() => setApplyMode("merge")}
-                            />
-                            <span>Merge patch</span>
-                        </label>
-                        <label className="flex items-center gap-1">
-                            <input
-                                type="radio"
-                                name="applyMode"
-                                checked={applyMode === "replace"}
-                                onChange={() => setApplyMode("replace")}
-                            />
-                            <span>Replace</span>
-                        </label>
+            {!isExpanded ? (
+                <button
+                    className="pointer-events-auto rounded-lg border border-gray-200 bg-white/90 px-4 py-2 text-sm font-medium text-black shadow backdrop-blur hover:bg-white dark:border-gray-800 dark:bg-black/70 dark:text-white dark:hover:bg-black/80"
+                    onClick={() => setIsExpanded(true)}
+                    type="button"
+                >
+                    🤖
+                </button>
+            ) : (
+                <div className="pointer-events-auto w-[360px] rounded-lg border border-gray-200 bg-white/90 p-3 text-sm text-black shadow backdrop-blur dark:border-gray-800 dark:bg-black/70 dark:text-white">
+                    <div className="mb-2 flex items-center justify-between">
+                        <div className="font-medium">AI Prefab Generator</div>
+                        <button
+                            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                            onClick={() => setIsExpanded(false)}
+                            type="button"
+                            title="Collapse"
+                        >
+                            ✕
+                        </button>
                     </div>
-                </div>
 
-                <label className="mb-1 block text-xs text-gray-600 dark:text-gray-300">
-                    Prompt
-                </label>
-                <textarea
-                    className="mb-2 w-full resize-none rounded border border-gray-300 bg-white px-2 py-1 text-black outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-black dark:text-white"
-                    rows={3}
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    placeholder="e.g. A small room with a checker floor and a red spotlight"
-                />
+                    <label className="mb-1 block text-xs text-gray-600 dark:text-gray-300">
+                        OpenAI API key
+                    </label>
+                    <input
+                        className="mb-2 w-full rounded border border-gray-300 bg-white px-2 py-1 text-black outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-black dark:text-white"
+                        type="password"
+                        value={openAiKey}
+                        onChange={(e) => setOpenAiKey(e.target.value)}
+                        placeholder="sk-..."
+                        autoComplete="off"
+                    />
 
-                <div className="flex items-center justify-between gap-2">
-                    <button
-                        className="rounded bg-blue-600 px-3 py-1.5 text-white disabled:opacity-50"
-                        onClick={generatePrefabFromPrompt}
-                        disabled={isGenerating}
-                        type="button"
-                    >
-                        {isGenerating ? "Generating…" : "Generate"}
-                    </button>
-
-                    <button
-                        className="rounded bg-emerald-600 px-3 py-1.5 text-white disabled:opacity-50"
-                        onClick={applyPreview}
-                        disabled={isGenerating || !aiPatchPreview?.nextPrefab}
-                        type="button"
-                        title={
-                            aiPatchPreview?.nextPrefab
-                                ? "Apply the previewed patch"
-                                : "Generate a preview first"
-                        }
-                    >
-                        Apply
-                    </button>
-
-                    <button
-                        className="rounded border border-gray-300 px-3 py-1.5 text-black disabled:opacity-50 dark:border-gray-700 dark:text-white"
-                        onClick={() => {
-                            setAiError(null);
-                            setPrompt("");
-                            setAiRaw("");
-                            setAiPatchPreview(null);
-                        }}
-                        disabled={isGenerating}
-                        type="button"
-                    >
-                        Clear
-                    </button>
-                </div>
-
-                {aiPatchPreview ? (
-                    <div className="mt-2 rounded border border-gray-200 bg-gray-50 px-2 py-2 text-xs text-gray-800 dark:border-gray-800 dark:bg-black/30 dark:text-gray-200">
-                        <div className="mb-1 font-medium">Preview ready</div>
-                        <div className="space-y-1">
-                            <div>
-                                Patch keys: <span className="font-mono">{Object.keys(aiPatchPreview.patch ?? {}).join(", ") || "(none)"}</span>
-                            </div>
-                            <div>
-                                Root children:{" "}
-                                <span className="font-mono">
-                                    {previewMeta?.beforeChildren ?? "?"} → {previewMeta?.afterChildren ?? "?"}
-                                </span>
-                            </div>
-                            {previewMeta?.addedChildIds?.length ? (
-                                <div>
-                                    Added ids:{" "}
-                                    <span className="font-mono">{previewMeta.addedChildIds.join(", ")}</span>
-                                </div>
-                            ) : null}
+                    <div className="mb-2 flex items-center justify-between gap-2 text-xs text-gray-600 dark:text-gray-300">
+                        <span>Apply mode</span>
+                        <div className="flex items-center gap-2">
+                            <label className="flex items-center gap-1">
+                                <input
+                                    type="radio"
+                                    name="applyMode"
+                                    checked={applyMode === "merge"}
+                                    onChange={() => setApplyMode("merge")}
+                                />
+                                <span>Merge patch</span>
+                            </label>
+                            <label className="flex items-center gap-1">
+                                <input
+                                    type="radio"
+                                    name="applyMode"
+                                    checked={applyMode === "replace"}
+                                    onChange={() => setApplyMode("replace")}
+                                />
+                                <span>Replace</span>
+                            </label>
                         </div>
+                    </div>
+
+                    <label className="mb-1 block text-xs text-gray-600 dark:text-gray-300">
+                        Prompt
+                    </label>
+                    <textarea
+                        className="mb-2 w-full resize-none rounded border border-gray-300 bg-white px-2 py-1 text-black outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-black dark:text-white"
+                        rows={3}
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        placeholder="e.g. A small room with a checker floor and a red spotlight"
+                    />
+
+                    <div className="flex items-center justify-between gap-2">
+                        <button
+                            className="rounded bg-blue-600 px-3 py-1.5 text-white disabled:opacity-50"
+                            onClick={generatePrefabFromPrompt}
+                            disabled={isGenerating}
+                            type="button"
+                        >
+                            {isGenerating ? "Generating…" : "Generate"}
+                        </button>
+
+                        <button
+                            className="rounded bg-emerald-600 px-3 py-1.5 text-white disabled:opacity-50"
+                            onClick={applyPreview}
+                            disabled={isGenerating || !aiPatchPreview?.nextPrefab}
+                            type="button"
+                            title={
+                                aiPatchPreview?.nextPrefab
+                                    ? "Apply the previewed patch"
+                                    : "Generate a preview first"
+                            }
+                        >
+                            Apply
+                        </button>
+
+                        <button
+                            className="rounded border border-gray-300 px-3 py-1.5 text-black disabled:opacity-50 dark:border-gray-700 dark:text-white"
+                            onClick={() => {
+                                setAiError(null);
+                                setPrompt("");
+                                setAiRaw("");
+                                setAiPatchPreview(null);
+                            }}
+                            disabled={isGenerating}
+                            type="button"
+                        >
+                            Clear
+                        </button>
+                    </div>
+
+                    {aiPatchPreview ? (
+                        <div className="mt-2 rounded border border-gray-200 bg-gray-50 px-2 py-2 text-xs text-gray-800 dark:border-gray-800 dark:bg-black/30 dark:text-gray-200">
+                            <div className="mb-1 font-medium">Preview ready</div>
+                            <div className="space-y-1">
+                                <div>
+                                    Patch keys: <span className="font-mono">{Object.keys(aiPatchPreview.patch ?? {}).join(", ") || "(none)"}</span>
+                                </div>
+                                <div>
+                                    Root children:{" "}
+                                    <span className="font-mono">
+                                        {previewMeta?.beforeChildren ?? "?"} → {previewMeta?.afterChildren ?? "?"}
+                                    </span>
+                                </div>
+                                {previewMeta?.addedChildIds?.length ? (
+                                    <div>
+                                        Added ids:{" "}
+                                        <span className="font-mono">{previewMeta.addedChildIds.join(", ")}</span>
+                                    </div>
+                                ) : null}
+                            </div>
+                            <details className="mt-2">
+                                <summary className="cursor-pointer select-none">Show patch JSON</summary>
+                                <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded bg-white p-2 font-mono text-[11px] text-black dark:bg-black dark:text-white">
+                                    {JSON.stringify(aiPatchPreview.patch, null, 2)}
+                                </pre>
+                            </details>
+                        </div>
+                    ) : null}
+
+                    {aiRaw ? (
                         <details className="mt-2">
-                            <summary className="cursor-pointer select-none">Show patch JSON</summary>
-                            <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded bg-white p-2 font-mono text-[11px] text-black dark:bg-black dark:text-white">
-                                {JSON.stringify(aiPatchPreview.patch, null, 2)}
+                            <summary className="cursor-pointer select-none text-xs text-gray-600 dark:text-gray-300">
+                                Show raw model output
+                            </summary>
+                            <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded border border-gray-200 bg-white p-2 font-mono text-[11px] text-black dark:border-gray-800 dark:bg-black dark:text-white">
+                                {aiRaw}
                             </pre>
                         </details>
-                    </div>
-                ) : null}
+                    ) : null}
 
-                {aiRaw ? (
-                    <details className="mt-2">
-                        <summary className="cursor-pointer select-none text-xs text-gray-600 dark:text-gray-300">
-                            Show raw model output
-                        </summary>
-                        <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded border border-gray-200 bg-white p-2 font-mono text-[11px] text-black dark:border-gray-800 dark:bg-black dark:text-white">
-                            {aiRaw}
-                        </pre>
-                    </details>
-                ) : null}
-
-                {aiError ? (
-                    <div className="mt-2 rounded border border-red-300 bg-red-50 px-2 py-1 text-xs text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200">
-                        {aiError}
-                    </div>
-                ) : null}
-            </div>
+                    {aiError ? (
+                        <div className="mt-2 rounded border border-red-300 bg-red-50 px-2 py-1 text-xs text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200">
+                            {aiError}
+                        </div>
+                    ) : null}
+                </div>
+            )}
         </>
     );
 }

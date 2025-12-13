@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+const OPENAI_KEY_STORAGE_KEY = "react-three-game.openaiApiKey";
 
 type AgenticEditorProps = {
     /** Current prefab JSON (owned by the page). */
@@ -17,6 +19,28 @@ export default function AgenticEditor({
     const [prompt, setPrompt] = useState<string>("");
     const [isGenerating, setIsGenerating] = useState<boolean>(false);
     const [aiError, setAiError] = useState<string | null>(null);
+
+    // Persist the key between sessions (client-only).
+    useEffect(() => {
+        try {
+            const saved = window.localStorage.getItem(OPENAI_KEY_STORAGE_KEY);
+            if (saved) setOpenAiKey(saved);
+        } catch {
+            // Ignore storage access errors (private mode / blocked storage).
+        }
+    }, []);
+
+    useEffect(() => {
+        try {
+            if (!openAiKey) {
+                window.localStorage.removeItem(OPENAI_KEY_STORAGE_KEY);
+            } else {
+                window.localStorage.setItem(OPENAI_KEY_STORAGE_KEY, openAiKey);
+            }
+        } catch {
+            // Ignore storage access errors.
+        }
+    }, [openAiKey]);
 
     async function generatePrefabFromPrompt() {
         setAiError(null);

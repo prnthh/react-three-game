@@ -13,8 +13,8 @@ export interface Prefab {
 
 export interface GameObject {
     id: string;
-    enabled: boolean;
-    visible: boolean;
+    disabled?: boolean;
+    hidden?: boolean;
     ref?: any;
     children?: GameObject[];
     components?: {

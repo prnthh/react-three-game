@@ -15,8 +15,6 @@ const PrefabEditor = ({ basePath, initialPrefab, onPrefabChange, children }: { b
         "name": "New Prefab",
         "root": {
             "id": "root",
-            "enabled": true,
-            "visible": true,
             "components": {
                 "transform": {
                     "type": "Transform",

@@ -64,41 +64,44 @@ npm install react-three-game @react-three/fiber @react-three/rapier three
 ```
 
 ```jsx
+import { Physics } from '@react-three/rapier';
 import { GameCanvas, PrefabRoot } from 'react-three-game';
 
 export default function App() {
   return (
     <GameCanvas>
-      <ambientLight intensity={0.5} />
-      <PrefabRoot data={{
-        id: "scene",
-        root: {
-          id: "root",
-          components: {
-            transform: { type: "Transform", properties: { position: [0, 0, 0] } }
-          },
-          children: [
-            {
-              id: "floor",
-              components: {
-                transform: { type: "Transform", properties: { position: [0, -1, 0] } },
-                geometry: { type: "Geometry", properties: { geometryType: "box", args: [10, 0.5, 10] } },
-                material: { type: "Material", properties: { color: "#2d5f2e" } },
-                physics: { type: "Physics", properties: { type: "fixed" } }
+      <Physics>
+        <ambientLight intensity={0.8} />
+        <PrefabRoot
+          data={{
+              id: "scene",
+              name: "scene",
+              root: {
+                  id: "root",
+                  children: [
+                      {
+                          id: "ground",
+                          components: {
+                              transform: { type: "Transform", properties: { position: [0, 0, 0], rotation: [-1.57, 0, 0] } },
+                              geometry: { type: "Geometry", properties: { geometryType: "plane", args: [50, 50] } },
+                              material: { type: "Material", properties: { color: "green" } },
+                              physics: { type: "Physics", properties: { type: "fixed" } }
+                          }
+                      },
+                      {
+                          id: "player",
+                          components: {
+                              transform: { type: "Transform", properties: { position: [0, 2, 0] } },
+                              geometry: { type: "Geometry", properties: { geometryType: "sphere" } },
+                              material: { type: "Material", properties: { color: "#ff6b6b" } },
+                              physics: { type: "Physics", properties: { type: "dynamic" } }
+                          }
+                      }
+                  ]
               }
-            },
-            {
-              id: "player",
-              components: {
-                transform: { type: "Transform", properties: { position: [0, 2, 0] } },
-                geometry: { type: "Geometry", properties: { geometryType: "sphere" } },
-                material: { type: "Material", properties: { color: "#ff6b6b" } },
-                physics: { type: "Physics", properties: { type: "dynamic" } }
-              }
-            }
-          ]
-        }
-      }} />
+          }}
+      />
+      </Physics>
     </GameCanvas>
   );
 }
@@ -109,8 +112,8 @@ export default function App() {
 ```typescript
 interface GameObject {
   id: string;
-  enabled?: boolean;
-  visible?: boolean;
+  disabled?: boolean;
+  hidden?: boolean;
   components: {
     transform?: TransformComponent;
     geometry?: GeometryComponent;

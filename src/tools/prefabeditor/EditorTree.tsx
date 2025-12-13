@@ -39,8 +39,6 @@ export default function EditorTree({ prefabData, setPrefabData, selectedId, setS
     const handleAddChild = (parentId: string) => {
         const newNode: GameObject = {
             id: crypto.randomUUID(),
-            enabled: true,
-            visible: true,
             components: {
                 transform: {
                     type: "Transform",

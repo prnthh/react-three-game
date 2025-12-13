@@ -233,7 +233,7 @@ function GameObjectRenderer({
         clickValid.current = false;
     };
 
-    if (!gameObject.enabled || !gameObject.visible) return null;
+    if (gameObject.disabled === true || gameObject.hidden === true) return null;
 
     // --- 2. If instanced, short-circuit to a tiny clean branch ---
     const isInstanced = !!gameObject.components?.model?.properties?.instanced;

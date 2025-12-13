@@ -1,6 +1,6 @@
 {
   "name": "react-three-game",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "description": "Batteries included React Three Fiber game engine",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -15,8 +15,11 @@
   "author": "prnth",
   "license": "VPL",
   "type": "module",
+  "workspaces": ["docs"],
   "peerDependencies": {
     "@react-three/fiber": "^9.0.0",
+    "@react-three/drei": "^10.0.0",
+    "@react-three/rapier": "^2.0.0",
     "react": "^18.0.0 || ^19.0.0",
     "react-dom": "^18.0.0 || ^19.0.0",
     "three": "^0.181.0"

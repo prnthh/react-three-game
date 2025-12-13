@@ -10,5 +10,8 @@ export {
   SharedCanvas,
 } from './tools/assetviewer/page';
 
+// Helpers
+export * from './helpers';
+
 // Types
 export type { Prefab, GameObject } from './tools/prefabeditor/types';

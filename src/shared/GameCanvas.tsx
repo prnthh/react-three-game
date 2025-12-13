@@ -1,3 +1,5 @@
+"use client";
+
 import { Canvas, extend } from "@react-three/fiber";
 import { WebGPURenderer, MeshBasicNodeMaterial, MeshStandardNodeMaterial, SpriteNodeMaterial, PCFShadowMap } from "three/webgpu";
 import { Suspense, useState } from "react";
@@ -42,7 +44,8 @@ export default function GameCanvas({ loader = false, children, ...props }: { loa
             <Suspense>
                 {children}
             </Suspense>
+
+            {loader ? <Loader /> : null}
         </Canvas>
-        {loader ? <Loader /> : null}
     </>;
 }

@@ -1,8 +1,8 @@
-import { ThreeElements } from "@react-three/fiber"
+// import { ThreeElements } from "@react-three/fiber"
 
 export interface Prefab {
-    id: string;
-    name: string;
+    id?: string;
+    name?: string;
     description?: string;
     author?: string;
     version?: string;

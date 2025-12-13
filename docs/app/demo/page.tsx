@@ -9,54 +9,17 @@ export default function Home() {
             <GameCanvas>
                 <Physics>
                     <ambientLight intensity={0.8} />
-                    <PrefabRoot
-                        data={{
-                            id: "scene",
-                            name: "scene",
-                            root: {
-                                id: "root",
-                                components: {
-                                    transform: { type: "Transform", properties: { position: [0, 0, 0] } }
-                                },
-                                children: [
-                                    {
-                                        id: "ground",
-                                        components: {
-                                            transform: {
-                                                type: "Transform",
-                                                properties: {
-                                                    position: [0, 0, 0],
-                                                    rotation: [-1.57, 0, 0],
-                                                    scale: [1, 1, 1]
-                                                }
-                                            },
-                                            geometry: {
-                                                type: "Geometry",
-                                                properties: {
-                                                    geometryType: "plane",
-                                                    args: [50, 50]
-                                                }
-                                            },
-                                            material: {
-                                                type: "Material",
-                                                properties: {
-                                                    color: "white",
-                                                    texture: "/textures/GreyboxTextures/greybox_light_grid.png",
-                                                    repeat: true,
-                                                    repeatCount: [25, 25]
-                                                }
-                                            },
-                                            physics: {
-                                                type: "Physics",
-                                                properties: {
-                                                    type: "fixed"
-                                                }
-                                            }
-                                        }
-                                    }
-                                ]
+                    <PrefabRoot data={{
+                        root: {
+                            id: "cube",
+                            components: {
+                                transform: { type: "Transform", properties: { position: [0, 1, 0] } },
+                                geometry: { type: "Geometry", properties: { geometryType: "box" } },
+                                material: { type: "Material", properties: { color: "green" } },
+                                physics: { type: "Physics", properties: { type: "dynamic" } }
                             }
-                        }} />
+                        }
+                    }} />
                 </Physics>
             </GameCanvas>
         </main>

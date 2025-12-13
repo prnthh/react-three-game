@@ -17,17 +17,17 @@ npm i react-three-game @react-three/fiber three
 Scenes are JSON prefabs. Components are registered modules. Hierarchy is declarative.
 
 ```jsx
-<PrefabRoot data={{
-  root: {
-    id: "cube",
-    components: {
-      transform: { type: "Transform", properties: { position: [0, 1, 0] } },
-      geometry: { type: "Geometry", properties: { geometryType: "box" } },
-      material: { type: "Material", properties: { color: "green" } },
-      physics: { type: "Physics", properties: { type: "dynamic" } }
-    }
-  }
-}} />
+  <PrefabRoot data={{
+      root: {
+          id: "cube",
+          components: {
+              transform: { type: "Transform", properties: { position: [0, 1, 0] } },
+              geometry: { type: "Geometry", properties: { geometryType: "box" } },
+              material: { type: "Material", properties: { color: "green" } },
+              physics: { type: "Physics", properties: { type: "dynamic" } }
+          }
+      }
+  }} />
 ```
 
 ## Tailwind CSS Support

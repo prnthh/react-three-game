@@ -30,14 +30,6 @@ Scenes are JSON prefabs. Components are registered modules. Hierarchy is declara
   }} />
 ```
 
-## Styling
-
-The prefab editor UI ships with **inline styles** (no Tailwind / CSS framework required). That means you can install and render it without any additional build-time CSS configuration.
-
-If you want to fully restyle the editor, you can:
-- Wrap `PrefabEditor` in your own layout and override positioning.
-- Fork/compose the editor UI components (they’re plain React components).
-
 ## Quick Start
 
 ```bash
@@ -108,27 +100,99 @@ interface GameObject {
 
 ## Custom Components
 
-```tsx
+Extend the engine by registering your own components. Components have two parts:
+- **Editor**: UI for inspector panel (edit mode)
+- **View**: Three.js runtime renderer (play mode)
+
+### Component Interface
+
+```typescript
 import { Component } from 'react-three-game';
 
-const LaserComponent: Component = {
-  name: 'Laser',
+interface Component {
+  name: string;
+  Editor: FC<{ component: any; onUpdate: (newComp: any) => void }>;
+  View?: FC<{ properties: any; children?: React.ReactNode }>;
+  defaultProperties: any;
+}
+```
+
+### Example: Rotator Component
+
+```tsx
+import { Component, registerComponent } from 'react-three-game';
+import { useFrame } from '@react-three/fiber';
+import { useRef } from 'react';
+
+const RotatorComponent: Component = {
+  name: 'Rotator',
+  
   Editor: ({ component, onUpdate }) => (
-    <input 
-      value={component.properties.damage} 
-      onChange={e => onUpdate({ damage: +e.target.value })}
-    />
+    <div>
+      <label>Speed</label>
+      <input 
+        type="number"
+        value={component.properties.speed ?? 1.0}
+        onChange={e => onUpdate({ ...component.properties, speed: parseFloat(e.target.value) })}
+      />
+      <label>Axis</label>
+      <select 
+        value={component.properties.axis ?? 'y'}
+        onChange={e => onUpdate({ ...component.properties, axis: e.target.value })}
+      >
+        <option value="x">X</option>
+        <option value="y">Y</option>
+        <option value="z">Z</option>
+      </select>
+    </div>
   ),
-  View: ({ properties }) => (
-    <pointLight color="red" intensity={properties.damage} />
-  ),
-  defaultProperties: { damage: 10 }
+  
+  View: ({ properties, children }) => {
+    const ref = useRef();
+    const speed = properties.speed ?? 1.0;
+    const axis = properties.axis ?? 'y';
+    
+    useFrame((state, delta) => {
+      if (ref.current) {
+        ref.current.rotation[axis] += delta * speed;
+      }
+    });
+    
+    return <group ref={ref}>{children}</group>;
+  },
+  
+  defaultProperties: { speed: 1.0, axis: 'y' }
 };
 
-// Register
-import { registerComponent } from 'react-three-game';
-registerComponent(LaserComponent);
+// Register before using PrefabEditor
+registerComponent(RotatorComponent);
 ```
+
+### Usage in Prefab JSON
+
+```json
+{
+  "id": "spinning-cube",
+  "components": {
+    "transform": { "type": "Transform", "properties": { "position": [0, 1, 0] } },
+    "geometry": { "type": "Geometry", "properties": { "geometryType": "box" } },
+    "material": { "type": "Material", "properties": { "color": "#ff6b6b" } },
+    "rotator": { "type": "Rotator", "properties": { "speed": 2.0, "axis": "y" } }
+  }
+}
+```
+
+### Wrapper vs Leaf Components
+
+**Wrapper components** (accept `children`) wrap the rendered content:
+- Use for behaviors that need to manipulate the scene graph (animations, controllers)
+- Example: Rotator wraps mesh to apply rotation
+
+**Leaf components** (no `children`) render as siblings:
+- Use for standalone effects (lights, particles, audio sources)
+- Example: SpotLight renders a `<spotLight>` element
+
+The engine automatically detects component type by checking if `View` accepts `children` prop.
 
 ## Built-in Components
 
@@ -158,41 +222,13 @@ Transform gizmos (T/R/S keys), drag-to-reorder tree, import/export JSON, edit/pl
 ### Transform Hierarchy
 - Local transforms stored in JSON (relative to parent)
 - World transforms computed at runtime via matrix multiplication
-- `computeParentWorldMatrix(root, targetId)` traverses tree for parent's world matrix
 - TransformControls extract world matrix → compute parent inverse → derive new local transform
 
 ### GPU Instancing
-Enable with `model.properties.instanced = true`:
-```json
-{
-  "components": {
-    "model": { 
-      "type": "Model", 
-      "properties": { 
-        "filename": "tree.glb",
-        "instanced": true
-      }
-    }
-  }
-}
-```
-Uses drei's `<Merged>` + `<InstancedRigidBodies>` for physics. World-space transforms, terminal nodes.
+Enable with `model.properties.instanced = true` for optimized repeated geometry. Uses drei's `<Merged>` + `<InstancedRigidBodies>`.
 
 ### Model Loading
-- Supports GLB/GLTF (Draco compression) and FBX
-- Singleton loaders in `modelLoader.ts`
-- Draco decoder from `https://www.gstatic.com/draco/v1/decoders/`
-- Auto-loads when `model.properties.filename` detected
-
-### WebGPU Renderer
-```tsx
-<Canvas gl={async ({ canvas }) => {
-  const renderer = new WebGPURenderer({ canvas, shadowMap: true });
-  await renderer.init(); // Required
-  return renderer;
-}}>
-```
-Use `MeshStandardNodeMaterial` not `MeshStandardMaterial`.
+Supports GLB/GLTF (with Draco compression) and FBX. Models auto-load when `model.properties.filename` is detected.
 
 ## Patterns
 
@@ -200,15 +236,6 @@ Use `MeshStandardNodeMaterial` not `MeshStandardMaterial`.
 ```jsx
 import levelData from './prefabs/arena.json';
 <PrefabRoot data={levelData} />
-```
-
-### Mix with React Components
-```jsx
-<Physics>
-  <PrefabRoot data={environment} />
-  <Player />
-  <AIEnemies />
-</Physics>
 ```
 
 ### Update Prefab Nodes
@@ -219,58 +246,6 @@ function updatePrefabNode(root: GameObject, id: string, update: (node: GameObjec
     return { ...root, children: root.children.map(child => updatePrefabNode(child, id, update)) };
   }
   return root;
-}
-```
-
-## AI Agent Reference
-
-### Prefab JSON Schema
-```typescript
-{
-  "id": "unique-id",
-  "root": {
-    "id": "root-id",
-    "components": {
-      "transform": {
-        "type": "Transform",
-        "properties": {
-          "position": [x, y, z],      // world units
-          "rotation": [x, y, z],      // radians
-          "scale": [x, y, z]          // multipliers
-        }
-      },
-      "geometry": {
-        "type": "Geometry",
-        "properties": {
-          "geometryType": "box" | "sphere" | "plane" | "cylinder" | "cone" | "torus",
-          "args": [/* geometry-specific */]
-        }
-      },
-      "material": {
-        "type": "Material",
-        "properties": {
-          "color": "#rrggbb",
-          "texture": "/path/to/texture.jpg",
-          "metalness": 0.0-1.0,
-          "roughness": 0.0-1.0
-        }
-      },
-      "physics": {
-        "type": "Physics",
-        "properties": {
-          "type": "dynamic" | "fixed"
-        }
-      },
-      "model": {
-        "type": "Model",
-        "properties": {
-          "filename": "/models/asset.glb",
-          "instanced": true
-        }
-      }
-    },
-    "children": [/* recursive GameObjects */]
-  }
 }
 ```
 

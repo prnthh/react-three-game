@@ -67,92 +67,12 @@ const PrefabEditor = ({ basePath, initialPrefab, onPrefabChange, children }: { b
             </Physics>
         </GameCanvas>
 
-        <div
-            style={{
-                position: "absolute",
-                top: 8,
-                left: "50%",
-                transform: "translateX(-50%)",
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                padding: "2px 4px",
-                background: "rgba(0,0,0,0.55)",
-                border: "1px solid rgba(255,255,255,0.12)",
-                borderRadius: 4,
-                color: "rgba(255,255,255,0.9)",
-                fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-                fontSize: 11,
-                lineHeight: 1,
-                WebkitUserSelect: "none",
-                userSelect: "none",
-            }}
-        >
-            <button
-                style={{
-                    padding: "2px 6px",
-                    font: "inherit",
-                    background: "transparent",
-                    color: "inherit",
-                    border: "1px solid rgba(255,255,255,0.18)",
-                    borderRadius: 3,
-                    cursor: "pointer",
-                }}
-                onClick={() => setEditMode(!editMode)}
-                onPointerEnter={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.08)";
-                }}
-                onPointerLeave={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-                }}
-            >
-                {editMode ? "▶" : "⏸"}
-            </button>
-            <span style={{ opacity: 0.35 }}>|</span>
-            <button
-                style={{
-                    padding: "2px 6px",
-                    font: "inherit",
-                    background: "transparent",
-                    color: "inherit",
-                    border: "1px solid rgba(255,255,255,0.18)",
-                    borderRadius: 3,
-                    cursor: "pointer",
-                }}
-                onClick={async () => {
-                    const prefab = await loadJson();
-                    if (prefab) setLoadedPrefab(prefab);
-                }}
-                onPointerEnter={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.08)";
-                }}
-                onPointerLeave={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-                }}
-            >
-                📥
-            </button>
-            <button
-                style={{
-                    padding: "2px 6px",
-                    font: "inherit",
-                    background: "transparent",
-                    color: "inherit",
-                    border: "1px solid rgba(255,255,255,0.18)",
-                    borderRadius: 3,
-                    cursor: "pointer",
-                }}
-                onClick={() => saveJson(loadedPrefab, "prefab")}
-                onPointerEnter={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.08)";
-                }}
-                onPointerLeave={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-                }}
-            >
-                💾
-            </button>
-        </div>
+        <SaveDataPanel
+            currentData={loadedPrefab}
+            onDataChange={updatePrefab}
+            editMode={editMode}
+            onEditModeChange={setEditMode}
+        />
         {editMode && <EditorUI
             prefabData={loadedPrefab}
             setPrefabData={updatePrefab}
@@ -164,6 +84,202 @@ const PrefabEditor = ({ basePath, initialPrefab, onPrefabChange, children }: { b
         />}
     </>
 }
+
+const SaveDataPanel = ({
+    currentData,
+    onDataChange,
+    editMode,
+    onEditModeChange
+}: {
+    currentData: Prefab;
+    onDataChange: (data: Prefab) => void;
+    editMode: boolean;
+    onEditModeChange: (mode: boolean) => void;
+}) => {
+    const [history, setHistory] = useState<Prefab[]>([currentData]);
+    const [historyIndex, setHistoryIndex] = useState(0);
+    const throttleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const lastSavedDataRef = useRef<string>(JSON.stringify(currentData));
+
+    // Define undo/redo handlers
+    const handleUndo = () => {
+        if (historyIndex > 0) {
+            const newIndex = historyIndex - 1;
+            setHistoryIndex(newIndex);
+            lastSavedDataRef.current = JSON.stringify(history[newIndex]);
+            onDataChange(history[newIndex]);
+        }
+    };
+
+    const handleRedo = () => {
+        if (historyIndex < history.length - 1) {
+            const newIndex = historyIndex + 1;
+            setHistoryIndex(newIndex);
+            lastSavedDataRef.current = JSON.stringify(history[newIndex]);
+            onDataChange(history[newIndex]);
+        }
+    };
+
+    // Keyboard shortcuts for undo/redo
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Undo: Ctrl+Z (Cmd+Z on Mac)
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+                e.preventDefault();
+                handleUndo();
+            }
+            // Redo: Ctrl+Shift+Z or Ctrl+Y (Cmd+Shift+Z or Cmd+Y on Mac)
+            else if ((e.ctrlKey || e.metaKey) && (e.shiftKey && e.key === 'z' || e.key === 'y')) {
+                e.preventDefault();
+                handleRedo();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [historyIndex, history]);
+
+    // Throttled history update when currentData changes
+    useEffect(() => {
+        const currentDataStr = JSON.stringify(currentData);
+
+        // Skip if data hasn't actually changed
+        if (currentDataStr === lastSavedDataRef.current) {
+            return;
+        }
+
+        // Clear existing throttle timeout
+        if (throttleTimeoutRef.current) {
+            clearTimeout(throttleTimeoutRef.current);
+        }
+
+        // Set new throttled update
+        throttleTimeoutRef.current = setTimeout(() => {
+            lastSavedDataRef.current = currentDataStr;
+
+            setHistory(prev => {
+                // Slice history at current index (discard future states)
+                const newHistory = prev.slice(0, historyIndex + 1);
+                // Add new state
+                newHistory.push(currentData);
+                // Limit history size to 50 states
+                if (newHistory.length > 50) {
+                    newHistory.shift();
+                    return newHistory;
+                }
+                return newHistory;
+            });
+
+            setHistoryIndex(prev => {
+                const newHistory = history.slice(0, prev + 1);
+                newHistory.push(currentData);
+                return Math.min(newHistory.length - 1, 49);
+            });
+        }, 500); // 500ms throttle
+
+        return () => {
+            if (throttleTimeoutRef.current) {
+                clearTimeout(throttleTimeoutRef.current);
+            }
+        };
+    }, [currentData, historyIndex, history]);
+
+    const handleLoad = async () => {
+        const prefab = await loadJson();
+        if (prefab) {
+            onDataChange(prefab);
+            // Reset history when loading new file
+            setHistory([prefab]);
+            setHistoryIndex(0);
+            lastSavedDataRef.current = JSON.stringify(prefab);
+        }
+    };
+
+    const canUndo = historyIndex > 0;
+    const canRedo = historyIndex < history.length - 1;
+
+    return <div style={{
+        position: "absolute",
+        top: 8,
+        left: "50%",
+        transform: "translateX(-50%)",
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        padding: "2px 4px",
+        background: "rgba(0,0,0,0.55)",
+        border: "1px solid rgba(255,255,255,0.12)",
+        borderRadius: 4,
+        color: "rgba(255,255,255,0.9)",
+        fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+        fontSize: 11,
+        lineHeight: 1,
+        WebkitUserSelect: "none",
+        userSelect: "none",
+    }}>
+        <PanelButton onClick={() => onEditModeChange(!editMode)}>
+            {editMode ? "▶" : "⏸"}
+        </PanelButton>
+
+        <span style={{ opacity: 0.35 }}>|</span>
+
+        <PanelButton onClick={handleUndo} disabled={!canUndo} title="Undo (Ctrl+Z)">
+            ↶
+        </PanelButton>
+
+        <PanelButton onClick={handleRedo} disabled={!canRedo} title="Redo (Ctrl+Shift+Z)">
+            ↷
+        </PanelButton>
+
+        <span style={{ opacity: 0.35 }}>|</span>
+
+        <PanelButton onClick={handleLoad} title="Load JSON">
+            📥
+        </PanelButton>
+
+        <PanelButton onClick={() => saveJson(currentData, "prefab")} title="Save JSON">
+            💾
+        </PanelButton>
+    </div>;
+};
+
+const PanelButton = ({
+    onClick,
+    disabled,
+    title,
+    children
+}: {
+    onClick: () => void;
+    disabled?: boolean;
+    title?: string;
+    children: React.ReactNode;
+}) => {
+    return <button
+        style={{
+            padding: "2px 6px",
+            font: "inherit",
+            background: "transparent",
+            color: disabled ? "rgba(255,255,255,0.3)" : "inherit",
+            border: "1px solid rgba(255,255,255,0.18)",
+            borderRadius: 3,
+            cursor: disabled ? "not-allowed" : "pointer",
+            opacity: disabled ? 0.5 : 1,
+        }}
+        onClick={onClick}
+        disabled={disabled}
+        title={title}
+        onPointerEnter={(e) => {
+            if (!disabled) {
+                (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.08)";
+            }
+        }}
+        onPointerLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+        }}
+    >
+        {children}
+    </button>;
+};
 
 const saveJson = (data: any, filename: string) => {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));

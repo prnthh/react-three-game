@@ -1,0 +1,180 @@
+{
+  "id": "rotator-demo",
+  "name": "Rotator Component Demo",
+  "root": {
+    "id": "root",
+    "enabled": true,
+    "visible": true,
+    "components": {
+      "transform": {
+        "type": "Transform",
+        "properties": {
+          "position": [0, 0, 0],
+          "rotation": [0, 0, 0],
+          "scale": [1, 1, 1]
+        }
+      }
+    },
+    "children": [
+      {
+        "id": "ground",
+        "enabled": true,
+        "visible": true,
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [0, -2, 0],
+              "rotation": [-1.57, 0, 0],
+              "scale": [1, 1, 1]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "plane",
+              "args": [20, 20]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#333333"
+            }
+          }
+        }
+      },
+      {
+        "id": "rotating-cube-1",
+        "enabled": true,
+        "visible": true,
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [-3, 0, 0],
+              "rotation": [0, 0, 0],
+              "scale": [1, 1, 1]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [1, 1, 1]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#ff6b6b"
+            }
+          },
+          "rotator": {
+            "type": "Rotator",
+            "properties": {
+              "speed": 1.0,
+              "axis": "y"
+            }
+          }
+        }
+      },
+      {
+        "id": "rotating-cube-2",
+        "enabled": true,
+        "visible": true,
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [0, 0, 0],
+              "rotation": [0, 0, 0],
+              "scale": [1, 1, 1]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [1, 1, 1]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#4ecdc4"
+            }
+          },
+          "rotator": {
+            "type": "Rotator",
+            "properties": {
+              "speed": 2.0,
+              "axis": "x"
+            }
+          }
+        }
+      },
+      {
+        "id": "rotating-cube-3",
+        "enabled": true,
+        "visible": true,
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [3, 0, 0],
+              "rotation": [0, 0, 0],
+              "scale": [1, 1, 1]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [1, 1, 1]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#ffe66d"
+            }
+          },
+          "rotator": {
+            "type": "Rotator",
+            "properties": {
+              "speed": 0.5,
+              "axis": "z"
+            }
+          }
+        }
+      },
+      {
+        "id": "light",
+        "enabled": true,
+        "visible": true,
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [5, 5, 5],
+              "rotation": [0, 0, 0],
+              "scale": [1, 1, 1]
+            }
+          },
+          "spotlight": {
+            "type": "SpotLight",
+            "properties": {
+              "color": "#ffffff",
+              "intensity": 100,
+              "angle": 0.5,
+              "penumbra": 0.5,
+              "distance": 50,
+              "castShadow": true
+            }
+          }
+        }
+      }
+    ]
+  }
+}

@@ -10,6 +10,10 @@ export {
   SharedCanvas,
 } from './tools/assetviewer/page';
 
+// Component Registry
+export { registerComponent } from './tools/prefabeditor/components/ComponentRegistry';
+export type { Component } from './tools/prefabeditor/components/ComponentRegistry';
+
 // Helpers
 export * from './helpers';
 

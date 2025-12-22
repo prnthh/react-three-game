@@ -311,7 +311,7 @@ function renderCoreNode(gameObject: GameObjectType, ctx: any, parentMatrix: Matr
 
     const isModelAvailable = !!(modelComp && modelComp.properties && modelComp.properties.filename && ctx.loadedModels[modelComp.properties.filename]);
 
-    // Generic component views (exclude geometry/material/model)
+    // Generic component views (exclude geometry/material/model/transform/physics)
     const contextProps = {
         loadedModels: ctx.loadedModels,
         loadedTextures: ctx.loadedTextures,
@@ -320,21 +320,37 @@ function renderCoreNode(gameObject: GameObjectType, ctx: any, parentMatrix: Matr
         parentMatrix,
         registerRef: ctx.registerRef,
     };
-    const allComponentViews = gameObject.components
-        ? Object.entries(gameObject.components)
+
+    // Separate wrapper components (that accept children) from leaf components
+    const wrapperComponents: Array<{ key: string; View: any; properties: any }> = [];
+    const leafComponents: React.ReactNode[] = [];
+
+    if (gameObject.components) {
+        Object.entries(gameObject.components)
             .filter(([key]) => key !== 'geometry' && key !== 'material' && key !== 'model' && key !== 'transform' && key !== 'physics')
-            .map(([key, comp]) => {
-                if (!comp || !comp.type) return null;
+            .forEach(([key, comp]) => {
+                if (!comp || !comp.type) return;
                 const def = getComponent(comp.type);
-                if (!def || !def.View) return null;
-                return <def.View key={key} properties={comp.properties} {...contextProps} />;
-            })
-        : null;
+                if (!def || !def.View) return;
+
+                // Check if the component View accepts children by checking function signature
+                // Components that wrap content should accept children prop
+                const viewString = def.View.toString();
+                if (viewString.includes('children')) {
+                    wrapperComponents.push({ key, View: def.View, properties: comp.properties });
+                } else {
+                    leafComponents.push(<def.View key={key} properties={comp.properties} {...contextProps} />);
+                }
+            });
+    }
+
+    // Build the core content (model or mesh)
+    let coreContent: React.ReactNode;
 
     // If we have a model (non-instanced) render it as a primitive with material override
     if (isModelAvailable) {
         const modelObj = ctx.loadedModels[modelComp.properties.filename].clone();
-        return (
+        coreContent = (
             <primitive object={modelObj}>
                 {material && materialDef && materialDef.View && (
                     <materialDef.View
@@ -347,14 +363,12 @@ function renderCoreNode(gameObject: GameObjectType, ctx: any, parentMatrix: Matr
                         registerRef={ctx.registerRef}
                     />
                 )}
-                {allComponentViews}
+                {leafComponents}
             </primitive>
         );
-    }
-
-    // Otherwise, if geometry present, render a mesh
-    if (geometry && geometryDef && geometryDef.View) {
-        return (
+    } else if (geometry && geometryDef && geometryDef.View) {
+        // Otherwise, if geometry present, render a mesh
+        coreContent = (
             <mesh>
                 <geometryDef.View key="geometry" properties={geometry.properties} {...contextProps} />
                 {material && materialDef && materialDef.View && (
@@ -368,13 +382,18 @@ function renderCoreNode(gameObject: GameObjectType, ctx: any, parentMatrix: Matr
                         registerRef={ctx.registerRef}
                     />
                 )}
-                {allComponentViews}
+                {leafComponents}
             </mesh>
         );
+    } else {
+        // No geometry or model, just render leaf components
+        coreContent = <>{leafComponents}</>;
     }
 
-    // Default: render other component views (no geometry/model)
-    return <>{allComponentViews}</>;
+    // Wrap core content with wrapper components (in order)
+    return wrapperComponents.reduce((content, { key, View, properties }) => {
+        return <View key={key} properties={properties} {...contextProps}>{content}</View>;
+    }, coreContent);
 }
 
 // Helper: wrap core content with physics component when necessary

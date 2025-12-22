@@ -256,33 +256,6 @@ function NodeInspector({ node, updateNode, deleteNode, transformMode, setTransfo
             </button>
         </div>
 
-        <div style={s.section}>
-            <label style={s.label}>Mode</label>
-            <div style={{ display: 'flex', gap: 6 }}>
-                {["translate", "rotate", "scale"].map(mode => (
-                    <button
-                        key={mode}
-                        onClick={() => setTransformMode(mode as any)}
-                        style={{
-                            ...s.button,
-                            flex: 1,
-                            ...(transformMode === mode ? s.buttonActive : null),
-                        }}
-                        onPointerEnter={(e) => {
-                            if (transformMode !== mode) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.08)';
-                        }}
-                        onPointerLeave={(e) => {
-                            if (transformMode !== mode) (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                        }}
-                    >
-                        {mode[0].toUpperCase()}
-                    </button>
-                ))}
-            </div>
-        </div>
-
-        {/* Components (legacy renderer removed) */}
-
         {node.components && Object.entries(node.components).map(([key, comp]: [string, any]) => {
             if (!comp) return null;
             const componentDef = ALL_COMPONENTS[comp.type];
@@ -322,6 +295,8 @@ function NodeInspector({ node, updateNode, deleteNode, transformMode, setTransfo
                                 }
                             }))}
                             basePath={basePath}
+                            transformMode={transformMode}
+                            setTransformMode={setTransformMode}
                         />
                     ) : null}
                 </div>

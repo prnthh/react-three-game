@@ -2,7 +2,13 @@ import { FC } from "react";
 
 export interface Component {
     name: string;
-    Editor: FC<{ component: any; onUpdate: (newComp: any) => void; basePath?: string }>;
+    Editor: FC<{ 
+        component: any; 
+        onUpdate: (newComp: any) => void; 
+        basePath?: string;
+        transformMode?: "translate" | "rotate" | "scale";
+        setTransformMode?: (m: "translate" | "rotate" | "scale") => void;
+    }>;
     defaultProperties: any;
     // Allow View to accept extra props for special cases (like material)
     View?: FC<any>;

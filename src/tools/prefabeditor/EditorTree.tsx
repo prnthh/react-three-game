@@ -74,6 +74,17 @@ export default function EditorTree({ prefabData, setPrefabData, selectedId, setS
             overflow: "hidden",
             textOverflow: "ellipsis",
         },
+        dragHandle: {
+            width: 14,
+            height: 14,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginRight: 4,
+            opacity: 0.4,
+            cursor: "grab",
+            fontSize: 10,
+        },
         contextMenu: {
             position: "fixed",
             zIndex: 50,
@@ -179,40 +190,38 @@ export default function EditorTree({ prefabData, setPrefabData, selectedId, setS
 
     // Drag and Drop
     const handleDragStart = (e: React.DragEvent, id: string) => {
-        e.stopPropagation();
         if (id === prefabData.root.id) {
-            e.preventDefault(); // Cannot drag root
+            e.preventDefault();
             return;
         }
-        setDraggedId(id);
         e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", id);
+        setDraggedId(id);
+    };
+
+    const handleDragEnd = () => {
+        setDraggedId(null);
     };
 
     const handleDragOver = (e: React.DragEvent, targetId: string) => {
-        e.preventDefault();
-        e.stopPropagation();
         if (!draggedId || draggedId === targetId) return;
-
-        // Check for cycles: target cannot be a descendant of dragged node
         const draggedNode = findNode(prefabData.root, draggedId);
         if (draggedNode && findNode(draggedNode, targetId)) return;
 
+        e.preventDefault();
         e.dataTransfer.dropEffect = "move";
     };
 
     const handleDrop = (e: React.DragEvent, targetId: string) => {
-        e.preventDefault();
-        e.stopPropagation();
         if (!draggedId || draggedId === targetId) return;
+
+        e.preventDefault();
 
         setPrefabData(prev => {
             const newRoot = JSON.parse(JSON.stringify(prev.root));
+            const draggedNode = findNode(newRoot, draggedId);
+            if (draggedNode && findNode(draggedNode, targetId)) return prev;
 
-            // Check cycle again on the fresh tree
-            const draggedNodeRef = findNode(newRoot, draggedId);
-            if (draggedNodeRef && findNode(draggedNodeRef, targetId)) return prev;
-
-            // Remove from old parent
             const parent = findParent(newRoot, draggedId);
             if (!parent) return prev;
 
@@ -221,7 +230,6 @@ export default function EditorTree({ prefabData, setPrefabData, selectedId, setS
 
             parent.children = parent.children!.filter(c => c.id !== draggedId);
 
-            // Add to new parent
             const target = findNode(newRoot, targetId);
             if (target) {
                 target.children = target.children || [];
@@ -247,11 +255,13 @@ export default function EditorTree({ prefabData, setPrefabData, selectedId, setS
                         ...styles.row,
                         ...(isSelected ? styles.rowSelected : null),
                         paddingLeft: `${depth * 10 + 6}px`,
+                        cursor: node.id !== prefabData.root.id ? "grab" : "pointer",
                     }}
+                    draggable={node.id !== prefabData.root.id}
                     onClick={(e) => { e.stopPropagation(); setSelectedId(node.id); }}
                     onContextMenu={(e) => handleContextMenu(e, node.id)}
-                    draggable={node.id !== prefabData.root.id}
                     onDragStart={(e) => handleDragStart(e, node.id)}
+                    onDragEnd={handleDragEnd}
                     onDragOver={(e) => handleDragOver(e, node.id)}
                     onDrop={(e) => handleDrop(e, node.id)}
                     onPointerEnter={(e) => {
@@ -276,6 +286,19 @@ export default function EditorTree({ prefabData, setPrefabData, selectedId, setS
                     >
                         {isCollapsed ? '▶' : '▼'}
                     </span>
+                    {node.id !== prefabData.root.id && (
+                        <span
+                            style={styles.dragHandle}
+                            onPointerEnter={(e) => {
+                                (e.currentTarget as HTMLSpanElement).style.opacity = "0.9";
+                            }}
+                            onPointerLeave={(e) => {
+                                (e.currentTarget as HTMLSpanElement).style.opacity = "0.4";
+                            }}
+                        >
+                            ⋮⋮
+                        </span>
+                    )}
                     <span style={styles.idText}>
                         {node.id}
                     </span>

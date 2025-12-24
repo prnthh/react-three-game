@@ -40,9 +40,11 @@ const PrefabEditor = ({ basePath, initialPrefab, onPrefabChange, children }: { b
 
     // Wrapper to update prefab and notify parent
     const updatePrefab = (newPrefab: Prefab | ((prev: Prefab) => Prefab)) => {
-        setLoadedPrefab(newPrefab);
-        const resolved = typeof newPrefab === 'function' ? newPrefab(loadedPrefab) : newPrefab;
-        onPrefabChange?.(resolved);
+        setLoadedPrefab(prevPrefab => {
+            const resolved = typeof newPrefab === 'function' ? newPrefab(prevPrefab) : newPrefab;
+            onPrefabChange?.(resolved);
+            return resolved;
+        });
     };
 
     return <>
@@ -96,40 +98,43 @@ const SaveDataPanel = ({
     editMode: boolean;
     onEditModeChange: (mode: boolean) => void;
 }) => {
-    const [history, setHistory] = useState<Prefab[]>([currentData]);
-    const [historyIndex, setHistoryIndex] = useState(0);
+    const [historyState, setHistoryState] = useState({
+        states: [currentData],
+        index: 0,
+    });
     const throttleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const lastSavedDataRef = useRef<string>(JSON.stringify(currentData));
 
-    // Define undo/redo handlers
     const handleUndo = () => {
-        if (historyIndex > 0) {
-            const newIndex = historyIndex - 1;
-            setHistoryIndex(newIndex);
-            lastSavedDataRef.current = JSON.stringify(history[newIndex]);
-            onDataChange(history[newIndex]);
-        }
+        setHistoryState(prev => {
+            if (prev.index > 0) {
+                const newIndex = prev.index - 1;
+                lastSavedDataRef.current = JSON.stringify(prev.states[newIndex]);
+                onDataChange(prev.states[newIndex]);
+                return { ...prev, index: newIndex };
+            }
+            return prev;
+        });
     };
 
     const handleRedo = () => {
-        if (historyIndex < history.length - 1) {
-            const newIndex = historyIndex + 1;
-            setHistoryIndex(newIndex);
-            lastSavedDataRef.current = JSON.stringify(history[newIndex]);
-            onDataChange(history[newIndex]);
-        }
+        setHistoryState(prev => {
+            if (prev.index < prev.states.length - 1) {
+                const newIndex = prev.index + 1;
+                lastSavedDataRef.current = JSON.stringify(prev.states[newIndex]);
+                onDataChange(prev.states[newIndex]);
+                return { ...prev, index: newIndex };
+            }
+            return prev;
+        });
     };
 
-    // Keyboard shortcuts for undo/redo
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            // Undo: Ctrl+Z (Cmd+Z on Mac)
             if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
                 e.preventDefault();
                 handleUndo();
-            }
-            // Redo: Ctrl+Shift+Z or Ctrl+Y (Cmd+Shift+Z or Cmd+Y on Mac)
-            else if ((e.ctrlKey || e.metaKey) && (e.shiftKey && e.key === 'z' || e.key === 'y')) {
+            } else if ((e.ctrlKey || e.metaKey) && (e.shiftKey && e.key === 'z' || e.key === 'y')) {
                 e.preventDefault();
                 handleRedo();
             }
@@ -137,66 +142,51 @@ const SaveDataPanel = ({
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [historyIndex, history]);
+    }, []);
 
-    // Throttled history update when currentData changes
     useEffect(() => {
         const currentDataStr = JSON.stringify(currentData);
-
-        // Skip if data hasn't actually changed
         if (currentDataStr === lastSavedDataRef.current) {
             return;
         }
 
-        // Clear existing throttle timeout
         if (throttleTimeoutRef.current) {
             clearTimeout(throttleTimeoutRef.current);
         }
 
-        // Set new throttled update
         throttleTimeoutRef.current = setTimeout(() => {
             lastSavedDataRef.current = currentDataStr;
-
-            setHistory(prev => {
-                // Slice history at current index (discard future states)
-                const newHistory = prev.slice(0, historyIndex + 1);
-                // Add new state
-                newHistory.push(currentData);
-                // Limit history size to 50 states
-                if (newHistory.length > 50) {
-                    newHistory.shift();
-                    return newHistory;
+            setHistoryState(prev => {
+                const newStates = prev.states.slice(0, prev.index + 1);
+                newStates.push(currentData);
+                if (newStates.length > 50) {
+                    newStates.shift();
                 }
-                return newHistory;
+                return {
+                    states: newStates,
+                    index: newStates.length - 1,
+                };
             });
-
-            setHistoryIndex(prev => {
-                const newHistory = history.slice(0, prev + 1);
-                newHistory.push(currentData);
-                return Math.min(newHistory.length - 1, 49);
-            });
-        }, 500); // 500ms throttle
+        }, 500);
 
         return () => {
             if (throttleTimeoutRef.current) {
                 clearTimeout(throttleTimeoutRef.current);
             }
         };
-    }, [currentData, historyIndex, history]);
+    }, [currentData]);
 
     const handleLoad = async () => {
         const prefab = await loadJson();
         if (prefab) {
             onDataChange(prefab);
-            // Reset history when loading new file
-            setHistory([prefab]);
-            setHistoryIndex(0);
+            setHistoryState({ states: [prefab], index: 0 });
             lastSavedDataRef.current = JSON.stringify(prefab);
         }
     };
 
-    const canUndo = historyIndex > 0;
-    const canRedo = historyIndex < history.length - 1;
+    const canUndo = historyState.index > 0;
+    const canRedo = historyState.index < historyState.states.length - 1;
 
     return <div style={{
         position: "absolute",

@@ -1,7 +1,7 @@
 "use client";
 
 import { MapControls, TransformControls } from "@react-three/drei";
-import { useState, useRef, useEffect, forwardRef, useMemo, useCallback } from "react";
+import { useState, useRef, useEffect, forwardRef, useMemo, useCallback, memo } from "react";
 import { Vector3, Euler, Quaternion, ClampToEdgeWrapping, DoubleSide, Group, Object3D, RepeatWrapping, SRGBColorSpace, Texture, TextureLoader, Matrix4 } from "three";
 import { Prefab, GameObject as GameObjectType } from "./types";
 import { getComponent } from "./components/ComponentRegistry";
@@ -190,7 +190,7 @@ interface GameObjectRendererProps {
 }
 
 
-function GameObjectRenderer({
+const GameObjectRenderer = memo(function GameObjectRenderer({
     gameObject,
     selectedId,
     onSelect,
@@ -277,7 +277,7 @@ function GameObjectRenderer({
             {children}
         </group>
     );
-}
+});
 
 // Helper: render an instanced GameInstance (terminal node)
 function renderInstancedNode(gameObject: GameObjectType, worldMatrix: Matrix4, ctx: any) {

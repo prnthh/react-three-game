@@ -1,31 +1,18 @@
 "use client";
 
 import { MapControls, TransformControls } from "@react-three/drei";
-import { useState, useRef, useEffect, forwardRef, useMemo, useCallback } from "react";
-import { Vector3, Euler, Quaternion, ClampToEdgeWrapping, DoubleSide, Group, Object3D, RepeatWrapping, SRGBColorSpace, Texture, TextureLoader, Matrix4 } from "three";
+import { useState, useRef, useEffect, forwardRef, useCallback } from "react";
+import { Vector3, Euler, Quaternion, Group, Object3D, SRGBColorSpace, Texture, TextureLoader, Matrix4 } from "three";
 import { Prefab, GameObject as GameObjectType } from "./types";
-import { getComponent } from "./components/ComponentRegistry";
+import { getComponent, registerComponent } from "./components/ComponentRegistry";
 import { ThreeEvent } from "@react-three/fiber";
 import { loadModel } from "../dragdrop/modelLoader";
 import { GameInstance, GameInstanceProvider } from "./InstanceProvider";
-
-// register all components
-import { registerComponent } from './components/ComponentRegistry';
+import { updateNode } from "./utils";
 import components from './components/';
-components.forEach(registerComponent);
 
-function updatePrefabNode(root: GameObjectType, id: string, update: (node: GameObjectType) => GameObjectType): GameObjectType {
-    if (root.id === id) {
-        return update(root);
-    }
-    if (root.children) {
-        return {
-            ...root,
-            children: root.children.map(child => updatePrefabNode(child, id, update))
-        };
-    }
-    return root;
-}
+// Register all components
+components.forEach(registerComponent);
 
 export const PrefabRoot = forwardRef<Group, {
     editMode?: boolean;
@@ -34,29 +21,21 @@ export const PrefabRoot = forwardRef<Group, {
     selectedId?: string | null;
     onSelect?: (id: string | null) => void;
     transformMode?: "translate" | "rotate" | "scale";
-    setTransformMode?: (mode: "translate" | "rotate" | "scale") => void;
     basePath?: string;
-}>(({ editMode, data, onPrefabChange, selectedId, onSelect, transformMode, setTransformMode, basePath = "" }, ref) => {
+}>(({ editMode, data, onPrefabChange, selectedId, onSelect, transformMode, basePath = "" }, ref) => {
     const [loadedModels, setLoadedModels] = useState<Record<string, Object3D>>({});
     const [loadedTextures, setLoadedTextures] = useState<Record<string, Texture>>({});
-    // const [prefabRoot, setPrefabRoot] = useState<Prefab>(data); // Removed local state
     const loadingRefs = useRef<Set<string>>(new Set());
     const objectRefs = useRef<Record<string, Object3D | null>>({});
     const [selectedObject, setSelectedObject] = useState<Object3D | null>(null);
 
     const registerRef = useCallback((id: string, obj: Object3D | null) => {
         objectRefs.current[id] = obj;
-        if (id === selectedId) {
-            setSelectedObject(obj);
-        }
+        if (id === selectedId) setSelectedObject(obj);
     }, [selectedId]);
 
     useEffect(() => {
-        if (selectedId) {
-            setSelectedObject(objectRefs.current[selectedId] || null);
-        } else {
-            setSelectedObject(null);
-        }
+        setSelectedObject(selectedId ? objectRefs.current[selectedId] || null : null);
     }, [selectedId]);
 
     const onTransformChange = () => {
@@ -82,10 +61,10 @@ export const PrefabRoot = forwardRef<Group, {
         const le = new Euler().setFromQuaternion(lq);
 
         // 4. Write back LOCAL transform into the prefab node
-        const newRoot = updatePrefabNode(data.root, selectedId, (node) => ({
+        const newRoot = updateNode(data.root, selectedId, (node) => ({
             ...node,
             components: {
-                ...node?.components,
+                ...node.components,
                 transform: {
                     type: "Transform",
                     properties: {

@@ -193,37 +193,54 @@ function DirectionalLightView({ properties, editMode }: { properties: any; editM
     const { scene } = useThree();
     const directionalLightRef = useRef<DirectionalLight>(null);
     const targetRef = useRef<Object3D>(new Object3D());
-    const lastUpdate = useRef(0);
     const cameraHelperRef = useRef<CameraHelper | null>(null);
-    const lastPositionRef = useRef<Vector3>(new Vector3());
 
-    // Add target to scene
+    // Add target to scene once
     useEffect(() => {
-        if (targetRef.current) {
-            scene.add(targetRef.current);
-            return () => {
-                scene.remove(targetRef.current);
-            };
-        }
+        const target = targetRef.current;
+        scene.add(target);
+        return () => {
+            scene.remove(target);
+        };
     }, [scene]);
 
-    // Update target position when light position or offset changes
+    // Set up light target reference once
     useEffect(() => {
-        if (directionalLightRef.current && targetRef.current) {
-            const lightWorldPos = new Vector3();
-            directionalLightRef.current.getWorldPosition(lightWorldPos);
-            targetRef.current.position.set(
-                lightWorldPos.x + targetOffset[0],
-                lightWorldPos.y + targetOffset[1],
-                lightWorldPos.z + targetOffset[2]
-            );
+        if (directionalLightRef.current) {
             directionalLightRef.current.target = targetRef.current;
+        }
+    }, []);
+
+    // Update target position and mark shadow for update when light moves or offset changes
+    useFrame(() => {
+        if (!directionalLightRef.current) return;
+
+        const lightWorldPos = new Vector3();
+        directionalLightRef.current.getWorldPosition(lightWorldPos);
+
+        const newTargetPos = new Vector3(
+            lightWorldPos.x + targetOffset[0],
+            lightWorldPos.y + targetOffset[1],
+            lightWorldPos.z + targetOffset[2]
+        );
+
+        // Only update if position actually changed
+        if (!targetRef.current.position.equals(newTargetPos)) {
+            targetRef.current.position.copy(newTargetPos);
+            if (directionalLightRef.current.shadow) {
+                directionalLightRef.current.shadow.needsUpdate = true;
+            }
+        }
+
+        // Update camera helper in edit mode
+        if (editMode && cameraHelperRef.current) {
+            cameraHelperRef.current.update();
         }
     });
 
+    // Create/destroy camera helper for edit mode
     useEffect(() => {
-        // Create camera helper for edit mode and add to scene
-        if (editMode && directionalLightRef.current && directionalLightRef.current.shadow.camera) {
+        if (editMode && directionalLightRef.current?.shadow.camera) {
             const helper = new CameraHelper(directionalLightRef.current.shadow.camera);
             cameraHelperRef.current = helper;
             scene.add(helper);
@@ -232,43 +249,11 @@ function DirectionalLightView({ properties, editMode }: { properties: any; editM
                 if (cameraHelperRef.current) {
                     scene.remove(cameraHelperRef.current);
                     cameraHelperRef.current.dispose();
+                    cameraHelperRef.current = null;
                 }
             };
         }
     }, [editMode, scene]);
-
-    useFrame(({ clock }) => {
-        if (!directionalLightRef.current || !directionalLightRef.current.shadow) return;
-
-        // Disable auto-update for shadows
-        if (directionalLightRef.current.shadow.autoUpdate) {
-            directionalLightRef.current.shadow.autoUpdate = false;
-            directionalLightRef.current.shadow.needsUpdate = true;
-        }
-
-        // Check if position has changed
-        const currentPosition = new Vector3();
-        directionalLightRef.current.getWorldPosition(currentPosition);
-
-        const positionChanged = !currentPosition.equals(lastPositionRef.current);
-
-        if (positionChanged) {
-            lastPositionRef.current.copy(currentPosition);
-            directionalLightRef.current.shadow.needsUpdate = true;
-            lastUpdate.current = clock.elapsedTime; // Reset timer on position change
-        }
-
-        // Update shadow map infrequently (every 5 seconds) if position hasn't changed
-        if (!editMode && !positionChanged && clock.elapsedTime - lastUpdate.current > 5) {
-            lastUpdate.current = clock.elapsedTime;
-            directionalLightRef.current.shadow.needsUpdate = true;
-        }
-
-        // Update camera helper in edit mode
-        if (editMode && cameraHelperRef.current) {
-            cameraHelperRef.current.update();
-        }
-    });
 
     return (
         <>

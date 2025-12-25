@@ -14,8 +14,12 @@ export {
 export { registerComponent } from './tools/prefabeditor/components/ComponentRegistry';
 export type { Component } from './tools/prefabeditor/components/ComponentRegistry';
 
+// Editor Styles & Utils
+export * as editorStyles from './tools/prefabeditor/styles';
+export * from './tools/prefabeditor/utils';
+
 // Helpers
 export * from './helpers';
 
 // Types
-export type { Prefab, GameObject } from './tools/prefabeditor/types';
+export type { Prefab, GameObject, ComponentData } from './tools/prefabeditor/types';

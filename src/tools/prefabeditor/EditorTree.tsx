@@ -1,119 +1,19 @@
 import { Dispatch, SetStateAction, useState, MouseEvent } from 'react';
 import { Prefab, GameObject } from "./types";
 import { getComponent } from './components/ComponentRegistry';
+import { base, tree, menu } from './styles';
+import { findNode, findParent, deleteNode, cloneNode } from './utils';
 
-interface EditorTreeProps {
+export default function EditorTree({ prefabData, setPrefabData, selectedId, setSelectedId }: {
     prefabData?: Prefab;
     setPrefabData?: Dispatch<SetStateAction<Prefab>>;
     selectedId: string | null;
     setSelectedId: Dispatch<SetStateAction<string | null>>;
-}
-
-export default function EditorTree({ prefabData, setPrefabData, selectedId, setSelectedId }: EditorTreeProps) {
+}) {
     const [contextMenu, setContextMenu] = useState<{ x: number, y: number, nodeId: string } | null>(null);
     const [draggedId, setDraggedId] = useState<string | null>(null);
     const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
-    const [isTreeCollapsed, setIsTreeCollapsed] = useState(false);
-
-    const styles: Record<string, React.CSSProperties> = {
-        panel: {
-            background: "rgba(0,0,0,0.55)",
-            color: "rgba(255,255,255,0.9)",
-            border: "1px solid rgba(255,255,255,0.12)",
-            borderRadius: 6,
-            overflow: "hidden",
-            maxHeight: "85vh",
-            display: "flex",
-            flexDirection: "column",
-            backdropFilter: "blur(6px)",
-            WebkitBackdropFilter: "blur(6px)",
-            fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-            fontSize: 11,
-            lineHeight: 1.2,
-            userSelect: "none",
-            WebkitUserSelect: "none",
-        },
-        panelHeader: {
-            padding: "4px 6px",
-            borderBottom: "1px solid rgba(255,255,255,0.10)",
-            display: "flex",
-            gap: 8,
-            alignItems: "center",
-            justifyContent: "space-between",
-            cursor: "pointer",
-            background: "rgba(255,255,255,0.05)",
-            textTransform: "uppercase",
-            letterSpacing: "0.08em",
-            fontSize: 10,
-            color: "rgba(255,255,255,0.7)",
-        },
-        scroll: {
-            overflowY: "auto",
-        },
-        row: {
-            display: "flex",
-            alignItems: "center",
-            padding: "2px 6px",
-            borderBottom: "1px solid rgba(255,255,255,0.07)",
-            cursor: "pointer",
-            whiteSpace: "nowrap",
-        },
-        rowSelected: {
-            background: "rgba(255,255,255,0.10)",
-        },
-        chevron: {
-            width: 12,
-            textAlign: "center",
-            opacity: 0.55,
-            fontSize: 10,
-            marginRight: 4,
-            cursor: "pointer",
-        },
-        idText: {
-            fontSize: 11,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-        },
-        dragHandle: {
-            width: 14,
-            height: 14,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            marginRight: 4,
-            opacity: 0.4,
-            cursor: "grab",
-            fontSize: 10,
-        },
-        contextMenu: {
-            position: "fixed",
-            zIndex: 50,
-            minWidth: 120,
-            background: "rgba(0,0,0,0.82)",
-            border: "1px solid rgba(255,255,255,0.16)",
-            borderRadius: 6,
-            overflow: "hidden",
-            boxShadow: "0 12px 32px rgba(0,0,0,0.45)",
-            backdropFilter: "blur(6px)",
-            WebkitBackdropFilter: "blur(6px)",
-        },
-        menuItem: {
-            width: "100%",
-            textAlign: "left",
-            padding: "6px 8px",
-            background: "transparent",
-            border: "none",
-            color: "rgba(255,255,255,0.9)",
-            font: "inherit",
-            cursor: "pointer",
-        },
-        menuItemDanger: {
-            color: "rgba(255,120,120,0.95)",
-        },
-        menuDivider: {
-            borderTop: "1px solid rgba(255,255,255,0.10)",
-        }
-    };
+    const [collapsed, setCollapsed] = useState(false);
 
     if (!prefabData || !setPrefabData) return null;
 
@@ -123,14 +23,11 @@ export default function EditorTree({ prefabData, setPrefabData, selectedId, setS
         setContextMenu({ x: e.clientX, y: e.clientY, nodeId });
     };
 
-    const closeContextMenu = () => setContextMenu(null);
-
     const toggleCollapse = (e: MouseEvent, id: string) => {
         e.stopPropagation();
         setCollapsedIds(prev => {
             const next = new Set(prev);
-            if (next.has(id)) next.delete(id);
-            else next.add(id);
+            next.has(id) ? next.delete(id) : next.add(id);
             return next;
         });
     };
@@ -148,7 +45,7 @@ export default function EditorTree({ prefabData, setPrefabData, selectedId, setS
         };
 
         setPrefabData(prev => {
-            const newRoot = JSON.parse(JSON.stringify(prev.root)); // Deep clone for safety
+            const newRoot = JSON.parse(JSON.stringify(prev.root));
             const parent = findNode(newRoot, parentId);
             if (parent) {
                 parent.children = parent.children || [];
@@ -156,11 +53,11 @@ export default function EditorTree({ prefabData, setPrefabData, selectedId, setS
             }
             return { ...prev, root: newRoot };
         });
-        closeContextMenu();
+        setContextMenu(null);
     };
 
     const handleDuplicate = (nodeId: string) => {
-        if (nodeId === prefabData.root.id) return; // Cannot duplicate root
+        if (nodeId === prefabData.root.id) return;
 
         setPrefabData(prev => {
             const newRoot = JSON.parse(JSON.stringify(prev.root));
@@ -174,18 +71,15 @@ export default function EditorTree({ prefabData, setPrefabData, selectedId, setS
             }
             return { ...prev, root: newRoot };
         });
-        closeContextMenu();
+        setContextMenu(null);
     };
 
     const handleDelete = (nodeId: string) => {
-        if (nodeId === prefabData.root.id) return; // Cannot delete root
+        if (nodeId === prefabData.root.id) return;
 
-        setPrefabData(prev => {
-            const newRoot = deleteNodeFromTree(JSON.parse(JSON.stringify(prev.root)), nodeId);
-            return { ...prev, root: newRoot! };
-        });
+        setPrefabData(prev => ({ ...prev, root: deleteNode(prev.root, nodeId)! }));
         if (selectedId === nodeId) setSelectedId(null);
-        closeContextMenu();
+        setContextMenu(null);
     };
 
     // Drag and Drop
@@ -195,26 +89,18 @@ export default function EditorTree({ prefabData, setPrefabData, selectedId, setS
             return;
         }
         e.dataTransfer.effectAllowed = "move";
-        e.dataTransfer.setData("text/plain", id);
         setDraggedId(id);
-    };
-
-    const handleDragEnd = () => {
-        setDraggedId(null);
     };
 
     const handleDragOver = (e: React.DragEvent, targetId: string) => {
         if (!draggedId || draggedId === targetId) return;
         const draggedNode = findNode(prefabData.root, draggedId);
         if (draggedNode && findNode(draggedNode, targetId)) return;
-
         e.preventDefault();
-        e.dataTransfer.dropEffect = "move";
     };
 
     const handleDrop = (e: React.DragEvent, targetId: string) => {
         if (!draggedId || draggedId === targetId) return;
-
         e.preventDefault();
 
         setPrefabData(prev => {
@@ -241,152 +127,75 @@ export default function EditorTree({ prefabData, setPrefabData, selectedId, setS
         setDraggedId(null);
     };
 
-    const renderNode = (node: GameObject, depth: number = 0) => {
+    const renderNode = (node: GameObject, depth = 0): React.ReactNode => {
         if (!node) return null;
 
         const isSelected = node.id === selectedId;
         const isCollapsed = collapsedIds.has(node.id);
         const hasChildren = node.children && node.children.length > 0;
+        const isRoot = node.id === prefabData.root.id;
 
         return (
             <div key={node.id}>
                 <div
                     style={{
-                        ...styles.row,
-                        ...(isSelected ? styles.rowSelected : null),
-                        paddingLeft: `${depth * 10 + 6}px`,
-                        cursor: node.id !== prefabData.root.id ? "grab" : "pointer",
+                        ...tree.row,
+                        ...(isSelected ? tree.selected : {}),
+                        paddingLeft: `${depth * 12 + 6}px`,
                     }}
-                    draggable={node.id !== prefabData.root.id}
+                    draggable={!isRoot}
                     onClick={(e) => { e.stopPropagation(); setSelectedId(node.id); }}
                     onContextMenu={(e) => handleContextMenu(e, node.id)}
                     onDragStart={(e) => handleDragStart(e, node.id)}
-                    onDragEnd={handleDragEnd}
+                    onDragEnd={() => setDraggedId(null)}
                     onDragOver={(e) => handleDragOver(e, node.id)}
                     onDrop={(e) => handleDrop(e, node.id)}
-                    onPointerEnter={(e) => {
-                        if (!isSelected) (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.06)";
-                    }}
-                    onPointerLeave={(e) => {
-                        if (!isSelected) (e.currentTarget as HTMLDivElement).style.background = "transparent";
-                    }}
                 >
                     <span
                         style={{
-                            ...styles.chevron,
-                            visibility: hasChildren ? 'visible' : 'hidden',
+                            width: 12,
+                            opacity: 0.6,
+                            marginRight: 4,
+                            cursor: 'pointer',
+                            visibility: hasChildren ? 'visible' : 'hidden'
                         }}
                         onClick={(e) => hasChildren && toggleCollapse(e, node.id)}
-                        onPointerEnter={(e) => {
-                            (e.currentTarget as HTMLSpanElement).style.opacity = "0.9";
-                        }}
-                        onPointerLeave={(e) => {
-                            (e.currentTarget as HTMLSpanElement).style.opacity = "0.55";
-                        }}
                     >
                         {isCollapsed ? '▶' : '▼'}
                     </span>
-                    {node.id !== prefabData.root.id && (
-                        <span
-                            style={styles.dragHandle}
-                            onPointerEnter={(e) => {
-                                (e.currentTarget as HTMLSpanElement).style.opacity = "0.9";
-                            }}
-                            onPointerLeave={(e) => {
-                                (e.currentTarget as HTMLSpanElement).style.opacity = "0.4";
-                            }}
-                        >
-                            ⋮⋮
-                        </span>
-                    )}
-                    <span style={styles.idText}>
-                        {node.id}
-                    </span>
+                    {!isRoot && <span style={{ marginRight: 4, opacity: 0.4 }}>⋮⋮</span>}
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{node.id}</span>
                 </div>
-                {!isCollapsed && node.children && (
-                    <div>
-                        {node.children.map(child => renderNode(child, depth + 1))}
-                    </div>
-                )}
+                {!isCollapsed && node.children && node.children.map(child => renderNode(child, depth + 1))}
             </div>
         );
     };
 
     return (
         <>
-            <div
-                style={{
-                    ...styles.panel,
-                    width: isTreeCollapsed ? 'auto' : '14rem',
-                }}
-                onClick={closeContextMenu}
-            >
-                <div
-                    style={styles.panelHeader}
-                    onClick={(e) => { e.stopPropagation(); setIsTreeCollapsed(!isTreeCollapsed); }}
-                    onPointerEnter={(e) => {
-                        (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.08)";
-                    }}
-                    onPointerLeave={(e) => {
-                        (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.05)";
-                    }}
-                >
-                    <span>Prefab Graph</span>
-                    <span style={{ fontSize: 10, opacity: 0.8 }}>{isTreeCollapsed ? '▶' : '◀'}</span>
+            <div style={{ ...tree.panel, width: collapsed ? 'auto' : 224 }} onClick={() => setContextMenu(null)}>
+                <div style={base.header} onClick={() => setCollapsed(!collapsed)}>
+                    <span>Scene</span>
+                    <span>{collapsed ? '▶' : '◀'}</span>
                 </div>
-                {!isTreeCollapsed && (
-                    <div style={{ ...styles.scroll, padding: 2 }}>
-                        {renderNode(prefabData.root)}
-                    </div>
-                )}
+                {!collapsed && <div style={tree.scroll}>{renderNode(prefabData.root)}</div>}
             </div>
 
             {contextMenu && (
                 <div
-                    style={{
-                        ...styles.contextMenu,
-                        top: contextMenu.y,
-                        left: contextMenu.x,
-                    }}
+                    style={{ ...menu.container, top: contextMenu.y, left: contextMenu.x }}
                     onClick={(e) => e.stopPropagation()}
-                    onPointerLeave={closeContextMenu}
+                    onPointerLeave={() => setContextMenu(null)}
                 >
-                    <button
-                        style={{ ...styles.menuItem, ...styles.menuDivider }}
-                        onClick={() => handleAddChild(contextMenu.nodeId)}
-                        onPointerEnter={(e) => {
-                            (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.08)";
-                        }}
-                        onPointerLeave={(e) => {
-                            (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-                        }}
-                    >
+                    <button style={menu.item} onClick={() => handleAddChild(contextMenu.nodeId)}>
                         Add Child
                     </button>
                     {contextMenu.nodeId !== prefabData.root.id && (
                         <>
-                            <button
-                                style={{ ...styles.menuItem, ...styles.menuDivider }}
-                                onClick={() => handleDuplicate(contextMenu.nodeId)}
-                                onPointerEnter={(e) => {
-                                    (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.08)";
-                                }}
-                                onPointerLeave={(e) => {
-                                    (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-                                }}
-                            >
+                            <button style={menu.item} onClick={() => handleDuplicate(contextMenu.nodeId)}>
                                 Duplicate
                             </button>
-                            <button
-                                style={{ ...styles.menuItem, ...styles.menuItemDanger }}
-                                onClick={() => handleDelete(contextMenu.nodeId)}
-                                onPointerEnter={(e) => {
-                                    (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.08)";
-                                }}
-                                onPointerLeave={(e) => {
-                                    (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-                                }}
-                            >
+                            <button style={{ ...menu.item, ...menu.danger }} onClick={() => handleDelete(contextMenu.nodeId)}>
                                 Delete
                             </button>
                         </>
@@ -395,45 +204,4 @@ export default function EditorTree({ prefabData, setPrefabData, selectedId, setS
             )}
         </>
     );
-}
-
-// --- Helpers ---
-
-function findNode(root: GameObject, id: string): GameObject | null {
-    if (root.id === id) return root;
-    if (root.children) {
-        for (const child of root.children) {
-            const found = findNode(child, id);
-            if (found) return found;
-        }
-    }
-    return null;
-}
-
-function findParent(root: GameObject, id: string): GameObject | null {
-    if (!root.children) return null;
-    for (const child of root.children) {
-        if (child.id === id) return root;
-        const found = findParent(child, id);
-        if (found) return found;
-    }
-    return null;
-}
-
-function deleteNodeFromTree(root: GameObject, id: string): GameObject | null {
-    if (root.id === id) return null;
-    if (root.children) {
-        root.children = root.children
-            .map(child => deleteNodeFromTree(child, id))
-            .filter((child): child is GameObject => child !== null);
-    }
-    return root;
-}
-
-function cloneNode(node: GameObject): GameObject {
-    const newNode = { ...node, id: crypto.randomUUID() };
-    if (newNode.children) {
-        newNode.children = newNode.children.map(child => cloneNode(child));
-    }
-    return newNode;
 }

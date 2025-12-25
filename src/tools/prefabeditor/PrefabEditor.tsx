@@ -2,34 +2,29 @@
 
 import GameCanvas from "../../shared/GameCanvas";
 import { useState, useRef, useEffect } from "react";
-import { Group, } from "three";
-import { Prefab, } from "./types";
+import { Prefab } from "./types";
 import PrefabRoot from "./PrefabRoot";
 import { Physics } from "@react-three/rapier";
 import EditorUI from "./EditorUI";
+import { base, toolbar } from "./styles";
 
 const PrefabEditor = ({ basePath, initialPrefab, onPrefabChange, children }: { basePath?: string, initialPrefab?: Prefab, onPrefabChange?: (prefab: Prefab) => void, children?: React.ReactNode }) => {
     const [editMode, setEditMode] = useState(true);
     const [loadedPrefab, setLoadedPrefab] = useState<Prefab>(initialPrefab ?? {
-        "id": "prefab-default",
-        "name": "New Prefab",
-        "root": {
-            "id": "root",
-            "components": {
-                "transform": {
-                    "type": "Transform",
-                    "properties": {
-                        "position": [0, 0, 0],
-                        "rotation": [0, 0, 0],
-                        "scale": [1, 1, 1]
-                    }
+        id: "prefab-default",
+        name: "New Prefab",
+        root: {
+            id: "root",
+            components: {
+                transform: {
+                    type: "Transform",
+                    properties: { position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1] }
                 }
             }
         }
     });
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [transformMode, setTransformMode] = useState<"translate" | "rotate" | "scale">("translate");
-    const prefabRef = useRef<Group>(null);
 
     // Sync internal state with external initialPrefab prop
     useEffect(() => {
@@ -52,15 +47,11 @@ const PrefabEditor = ({ basePath, initialPrefab, onPrefabChange, children }: { b
                 <gridHelper args={[10, 10]} position={[0, -1, 0]} />
                 <PrefabRoot
                     data={loadedPrefab}
-                    ref={prefabRef}
-
-                    // props for edit mode
                     editMode={editMode}
                     onPrefabChange={updatePrefab}
                     selectedId={selectedId}
                     onSelect={setSelectedId}
                     transformMode={transformMode}
-                    setTransformMode={setTransformMode}
                     basePath={basePath}
                 />
                 {children}
@@ -98,187 +89,85 @@ const SaveDataPanel = ({
 }) => {
     const [history, setHistory] = useState<Prefab[]>([currentData]);
     const [historyIndex, setHistoryIndex] = useState(0);
-    const throttleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const lastSavedDataRef = useRef<string>(JSON.stringify(currentData));
+    const throttleRef = useRef<NodeJS.Timeout | null>(null);
+    const lastDataRef = useRef<string>(JSON.stringify(currentData));
 
-    // Define undo/redo handlers
-    const handleUndo = () => {
+    const undo = () => {
         if (historyIndex > 0) {
             const newIndex = historyIndex - 1;
             setHistoryIndex(newIndex);
-            lastSavedDataRef.current = JSON.stringify(history[newIndex]);
+            lastDataRef.current = JSON.stringify(history[newIndex]);
             onDataChange(history[newIndex]);
         }
     };
 
-    const handleRedo = () => {
+    const redo = () => {
         if (historyIndex < history.length - 1) {
             const newIndex = historyIndex + 1;
             setHistoryIndex(newIndex);
-            lastSavedDataRef.current = JSON.stringify(history[newIndex]);
+            lastDataRef.current = JSON.stringify(history[newIndex]);
             onDataChange(history[newIndex]);
         }
     };
 
-    // Keyboard shortcuts for undo/redo
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            // Undo: Ctrl+Z (Cmd+Z on Mac)
             if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
                 e.preventDefault();
-                handleUndo();
-            }
-            // Redo: Ctrl+Shift+Z or Ctrl+Y (Cmd+Shift+Z or Cmd+Y on Mac)
-            else if ((e.ctrlKey || e.metaKey) && (e.shiftKey && e.key === 'z' || e.key === 'y')) {
+                undo();
+            } else if ((e.ctrlKey || e.metaKey) && (e.shiftKey && e.key === 'z' || e.key === 'y')) {
                 e.preventDefault();
-                handleRedo();
+                redo();
             }
         };
-
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [historyIndex, history]);
 
-    // Throttled history update when currentData changes
     useEffect(() => {
-        const currentDataStr = JSON.stringify(currentData);
+        const currentStr = JSON.stringify(currentData);
+        if (currentStr === lastDataRef.current) return;
 
-        // Skip if data hasn't actually changed
-        if (currentDataStr === lastSavedDataRef.current) {
-            return;
-        }
+        if (throttleRef.current) clearTimeout(throttleRef.current);
 
-        // Clear existing throttle timeout
-        if (throttleTimeoutRef.current) {
-            clearTimeout(throttleTimeoutRef.current);
-        }
-
-        // Set new throttled update
-        throttleTimeoutRef.current = setTimeout(() => {
-            lastSavedDataRef.current = currentDataStr;
-
+        throttleRef.current = setTimeout(() => {
+            lastDataRef.current = currentStr;
             setHistory(prev => {
-                // Slice history at current index (discard future states)
-                const newHistory = prev.slice(0, historyIndex + 1);
-                // Add new state
-                newHistory.push(currentData);
-                // Limit history size to 50 states
-                if (newHistory.length > 50) {
-                    newHistory.shift();
-                    return newHistory;
-                }
-                return newHistory;
+                const newHistory = [...prev.slice(0, historyIndex + 1), currentData];
+                return newHistory.length > 50 ? newHistory.slice(1) : newHistory;
             });
-
-            setHistoryIndex(prev => {
-                const newHistory = history.slice(0, prev + 1);
-                newHistory.push(currentData);
-                return Math.min(newHistory.length - 1, 49);
-            });
-        }, 500); // 500ms throttle
+            setHistoryIndex(prev => Math.min(prev + 1, 49));
+        }, 500);
 
         return () => {
-            if (throttleTimeoutRef.current) {
-                clearTimeout(throttleTimeoutRef.current);
-            }
+            if (throttleRef.current) clearTimeout(throttleRef.current);
         };
-    }, [currentData, historyIndex, history]);
+    }, [currentData]);
 
     const handleLoad = async () => {
         const prefab = await loadJson();
         if (prefab) {
             onDataChange(prefab);
-            // Reset history when loading new file
             setHistory([prefab]);
             setHistoryIndex(0);
-            lastSavedDataRef.current = JSON.stringify(prefab);
+            lastDataRef.current = JSON.stringify(prefab);
         }
     };
 
     const canUndo = historyIndex > 0;
     const canRedo = historyIndex < history.length - 1;
 
-    return <div style={{
-        position: "absolute",
-        top: 8,
-        left: "50%",
-        transform: "translateX(-50%)",
-        display: "flex",
-        alignItems: "center",
-        gap: 6,
-        padding: "2px 4px",
-        background: "rgba(0,0,0,0.55)",
-        border: "1px solid rgba(255,255,255,0.12)",
-        borderRadius: 4,
-        color: "rgba(255,255,255,0.9)",
-        fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-        fontSize: 11,
-        lineHeight: 1,
-        WebkitUserSelect: "none",
-        userSelect: "none",
-    }}>
-        <PanelButton onClick={() => onEditModeChange(!editMode)}>
+    return <div style={toolbar.panel}>
+        <button style={base.btn} onClick={() => onEditModeChange(!editMode)}>
             {editMode ? "▶" : "⏸"}
-        </PanelButton>
-
-        <span style={{ opacity: 0.35 }}>|</span>
-
-        <PanelButton onClick={handleUndo} disabled={!canUndo} title="Undo (Ctrl+Z)">
-            ↶
-        </PanelButton>
-
-        <PanelButton onClick={handleRedo} disabled={!canRedo} title="Redo (Ctrl+Shift+Z)">
-            ↷
-        </PanelButton>
-
-        <span style={{ opacity: 0.35 }}>|</span>
-
-        <PanelButton onClick={handleLoad} title="Load JSON">
-            📥
-        </PanelButton>
-
-        <PanelButton onClick={() => saveJson(currentData, "prefab")} title="Save JSON">
-            💾
-        </PanelButton>
+        </button>
+        <div style={toolbar.divider} />
+        <button style={{ ...base.btn, ...(canUndo ? {} : toolbar.disabled) }} onClick={undo} disabled={!canUndo}>↶</button>
+        <button style={{ ...base.btn, ...(canRedo ? {} : toolbar.disabled) }} onClick={redo} disabled={!canRedo}>↷</button>
+        <div style={toolbar.divider} />
+        <button style={base.btn} onClick={handleLoad}>📥</button>
+        <button style={base.btn} onClick={() => saveJson(currentData, "prefab")}>💾</button>
     </div>;
-};
-
-const PanelButton = ({
-    onClick,
-    disabled,
-    title,
-    children
-}: {
-    onClick: () => void;
-    disabled?: boolean;
-    title?: string;
-    children: React.ReactNode;
-}) => {
-    return <button
-        style={{
-            padding: "2px 6px",
-            font: "inherit",
-            background: "transparent",
-            color: disabled ? "rgba(255,255,255,0.3)" : "inherit",
-            border: "1px solid rgba(255,255,255,0.18)",
-            borderRadius: 3,
-            cursor: disabled ? "not-allowed" : "pointer",
-            opacity: disabled ? 0.5 : 1,
-        }}
-        onClick={onClick}
-        disabled={disabled}
-        title={title}
-        onPointerEnter={(e) => {
-            if (!disabled) {
-                (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.08)";
-            }
-        }}
-        onPointerLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-        }}
-    >
-        {children}
-    </button>;
 };
 
 const saveJson = (data: any, filename: string) => {

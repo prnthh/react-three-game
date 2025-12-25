@@ -2,7 +2,8 @@ import { Dispatch, SetStateAction, useState, useEffect } from 'react';
 import { Prefab, GameObject as GameObjectType } from "./types";
 import EditorTree from './EditorTree';
 import { getAllComponents } from './components/ComponentRegistry';
-
+import { base, inspector } from './styles';
+import { findNode, updateNode, deleteNode } from './utils';
 
 function EditorUI({ prefabData, setPrefabData, selectedId, setSelectedId, transformMode, setTransformMode, basePath }: {
     prefabData?: Prefab;
@@ -13,100 +14,42 @@ function EditorUI({ prefabData, setPrefabData, selectedId, setSelectedId, transf
     setTransformMode: (m: "translate" | "rotate" | "scale") => void;
     basePath?: string;
 }) {
-    const [isInspectorCollapsed, setIsInspectorCollapsed] = useState(false);
+    const [collapsed, setCollapsed] = useState(false);
 
-    const ui: Record<string, React.CSSProperties> = {
-        panel: {
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            zIndex: 20,
-            width: 260,
-            background: 'rgba(0,0,0,0.55)',
-            color: 'rgba(255,255,255,0.9)',
-            border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: 6,
-            overflow: 'hidden',
-            backdropFilter: 'blur(6px)',
-            WebkitBackdropFilter: 'blur(6px)',
-            fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-            fontSize: 11,
-            lineHeight: 1.2,
-        },
-        header: {
-            padding: '4px 6px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            cursor: 'pointer',
-            background: 'rgba(255,255,255,0.05)',
-            borderBottom: '1px solid rgba(255,255,255,0.10)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            fontSize: 10,
-            color: 'rgba(255,255,255,0.7)',
-            userSelect: 'none',
-            WebkitUserSelect: 'none',
-        },
-        left: {
-            position: 'absolute',
-            top: 8,
-            left: 8,
-            zIndex: 20,
-        },
-    };
-
-    const updateNode = (updater: (n: GameObjectType) => GameObjectType) => {
+    const updateNodeHandler = (updater: (n: GameObjectType) => GameObjectType) => {
         if (!prefabData || !setPrefabData || !selectedId) return;
         setPrefabData(prev => ({
             ...prev,
-            root: updatePrefabNode(prev.root, selectedId, updater)
+            root: updateNode(prev.root, selectedId, updater)
         }));
     };
 
-    const deleteNode = () => {
-        if (!prefabData || !setPrefabData || !selectedId) return;
-        if (selectedId === prefabData.root.id) {
-            alert("Cannot delete root node");
-            return;
-        }
-        setPrefabData(prev => {
-            const newRoot = deletePrefabNode(prev.root, selectedId);
-            return { ...prev, root: newRoot! };
-        });
+    const deleteNodeHandler = () => {
+        if (!prefabData || !setPrefabData || !selectedId || selectedId === prefabData.root.id) return;
+        setPrefabData(prev => ({ ...prev, root: deleteNode(prev.root, selectedId)! }));
         setSelectedId(null);
     };
 
     const selectedNode = selectedId && prefabData ? findNode(prefabData.root, selectedId) : null;
 
-    // if (!selectedNode) return null;
     return <>
-        <div style={ui.panel}>
-            <div
-                style={ui.header}
-                onClick={() => setIsInspectorCollapsed(!isInspectorCollapsed)}
-                onPointerEnter={(e) => {
-                    (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.08)';
-                }}
-                onPointerLeave={(e) => {
-                    (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.05)';
-                }}
-            >
+        <div style={inspector.panel}>
+            <div style={base.header} onClick={() => setCollapsed(!collapsed)}>
                 <span>Inspector</span>
-                <span style={{ fontSize: 10, opacity: 0.8 }}>{isInspectorCollapsed ? '◀' : '▶'}</span>
+                <span>{collapsed ? '◀' : '▼'}</span>
             </div>
-            {!isInspectorCollapsed && selectedNode && (
+            {!collapsed && selectedNode && (
                 <NodeInspector
                     node={selectedNode}
-                    updateNode={updateNode}
-                    deleteNode={deleteNode}
+                    updateNode={updateNodeHandler}
+                    deleteNode={deleteNodeHandler}
                     transformMode={transformMode}
                     setTransformMode={setTransformMode}
                     basePath={basePath}
                 />
             )}
         </div>
-        <div style={ui.left}>
+        <div style={{ position: 'absolute', top: 8, left: 8, zIndex: 20 }}>
             <EditorTree
                 prefabData={prefabData}
                 setPrefabData={setPrefabData}
@@ -117,6 +60,7 @@ function EditorUI({ prefabData, setPrefabData, selectedId, setSelectedId, transf
     </>;
 }
 
+
 function NodeInspector({ node, updateNode, deleteNode, transformMode, setTransformMode, basePath }: {
     node: GameObjectType;
     updateNode: (updater: (n: GameObjectType) => GameObjectType) => void;
@@ -126,270 +70,109 @@ function NodeInspector({ node, updateNode, deleteNode, transformMode, setTransfo
     basePath?: string;
 }) {
     const ALL_COMPONENTS = getAllComponents();
-    const allComponentKeys = Object.keys(ALL_COMPONENTS);
-    const [addComponentType, setAddComponentType] = useState(allComponentKeys[0]);
+    const allKeys = Object.keys(ALL_COMPONENTS);
+    const available = allKeys.filter(k => !node.components?.[k.toLowerCase()]);
+    const [addType, setAddType] = useState(available[0] || "");
 
-    const s: Record<string, React.CSSProperties> = {
-        root: {
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 6,
-            padding: 6,
-            maxHeight: '80vh',
-            overflowY: 'auto',
-        },
-        section: {
-            paddingBottom: 6,
-            borderBottom: '1px solid rgba(255,255,255,0.10)',
-        },
-        label: {
-            display: 'block',
-            fontSize: 10,
-            opacity: 0.7,
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            marginBottom: 4,
-        },
-        input: {
-            width: '100%',
-            background: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.14)',
-            borderRadius: 4,
-            padding: '4px 6px',
-            color: 'rgba(255,255,255,0.92)',
-            font: 'inherit',
-            outline: 'none',
-        },
-        row: {
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 8,
-        },
-        button: {
-            padding: '2px 6px',
-            background: 'transparent',
-            color: 'rgba(255,255,255,0.9)',
-            border: '1px solid rgba(255,255,255,0.14)',
-            borderRadius: 4,
-            cursor: 'pointer',
-            font: 'inherit',
-        },
-        buttonActive: {
-            background: 'rgba(255,255,255,0.10)',
-        },
-        smallDanger: {
-            background: 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-            color: 'rgba(255,120,120,0.95)',
-            font: 'inherit',
-            padding: '2px 4px',
-        },
-        componentHeader: {
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '4px 0',
-            borderBottom: '1px solid rgba(255,255,255,0.08)',
-            marginBottom: 4,
-        },
-        componentTitle: {
-            fontSize: 10,
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            opacity: 0.8,
-        },
-        select: {
-            flex: 1,
-            background: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.14)',
-            borderRadius: 4,
-            padding: '4px 6px',
-            color: 'rgba(255,255,255,0.92)',
-            font: 'inherit',
-            outline: 'none',
-        },
-        addButton: {
-            width: 28,
-            padding: '4px 0',
-            background: 'rgba(255,255,255,0.08)',
-            color: 'rgba(255,255,255,0.92)',
-            border: '1px solid rgba(255,255,255,0.14)',
-            borderRadius: 4,
-            cursor: 'pointer',
-            font: 'inherit',
-        },
-        disabled: {
-            opacity: 0.35,
-            cursor: 'not-allowed',
-        },
-    };
-
-    const componentKeys = Object.keys(node.components || {}).join(',');
     useEffect(() => {
-        // Components stored on nodes use lowercase keys (e.g. 'geometry'),
-        // while the registry keys are the component names (e.g. 'Geometry').
-        const available = allComponentKeys.filter(k => !node.components?.[k.toLowerCase()]);
-        if (!available.includes(addComponentType)) {
-            setAddComponentType(available[0] || "");
-        }
-    }, [componentKeys, addComponentType, node.components, allComponentKeys]);
+        const newAvailable = allKeys.filter(k => !node.components?.[k.toLowerCase()]);
+        if (!newAvailable.includes(addType)) setAddType(newAvailable[0] || "");
+    }, [Object.keys(node.components || {}).join(',')]);
 
-    return <div style={s.root}>
-        <div style={s.section}>
+    return <div style={inspector.content}>
+        {/* Node ID */}
+        <div style={base.section}>
+            <div style={base.label}>Node ID</div>
             <input
-                style={s.input}
+                style={base.input}
                 value={node.id}
                 onChange={e => updateNode(n => ({ ...n, id: e.target.value }))}
             />
         </div>
 
-        <div style={{ ...s.row, ...s.section, paddingBottom: 6 }}>
-            <label style={{ ...s.label, marginBottom: 0 }}>Components</label>
-            <button
-                onClick={deleteNode}
-                style={s.smallDanger}
-                title="Delete node"
-            >
-                ✕
-            </button>
-        </div>
+        {/* Components */}
+        <div style={base.section}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <div style={base.label}>Components</div>
+                <button style={{ ...base.btn, ...base.btnDanger }} onClick={deleteNode}>Delete Node</button>
+            </div>
 
-        {node.components && Object.entries(node.components).map(([key, comp]: [string, any]) => {
-            if (!comp) return null;
-            const componentDef = ALL_COMPONENTS[comp.type];
-            if (!componentDef) return <div key={key} style={{ padding: '4px 0', color: 'rgba(255,120,120,0.95)', fontSize: 11 }}>
-                Unknown component type: {comp.type}
-                <textarea defaultValue={JSON.stringify(comp)} />
-            </div>;
+            {node.components && Object.entries(node.components).map(([key, comp]: [string, any]) => {
+                if (!comp) return null;
+                const def = ALL_COMPONENTS[comp.type];
+                if (!def) return <div key={key} style={{ color: '#ff8888', fontSize: 11 }}>
+                    Unknown: {comp.type}
+                </div>;
 
-            const EditorComp = componentDef.Editor;
-            return (
-                <div key={key} style={{ padding: '0 2px' }}>
-                    <div style={s.componentHeader}>
-                        <span style={s.componentTitle}>{key}</span>
-                        <button
-                            onClick={() => updateNode(n => {
-                                const components = { ...n.components };
-                                delete components[key as keyof typeof components];
-                                return { ...n, components };
-                            })}
-                            style={s.smallDanger}
-                            title="Remove component"
-                        >
-                            ✕
-                        </button>
-                    </div>
-                    {EditorComp ? (
-                        <EditorComp
-                            component={comp}
-                            onUpdate={(newProps: any) => updateNode(n => ({
-                                ...n,
-                                components: {
-                                    ...n.components,
-                                    [key]: {
-                                        ...comp,
-                                        properties: { ...comp.properties, ...newProps }
+                return (
+                    <div key={key} style={{ marginBottom: 8 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                            <div style={{ fontSize: 11, fontWeight: 500 }}>{key}</div>
+                            <button
+                                style={{ ...base.btn, padding: '2px 6px' }}
+                                onClick={() => updateNode(n => {
+                                    const { [key]: _, ...rest } = n.components || {};
+                                    return { ...n, components: rest };
+                                })}
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        {def.Editor && (
+                            <def.Editor
+                                component={comp}
+                                onUpdate={(newProps: any) => updateNode(n => ({
+                                    ...n,
+                                    components: {
+                                        ...n.components,
+                                        [key]: { ...comp, properties: { ...comp.properties, ...newProps } }
                                     }
-                                }
-                            }))}
-                            basePath={basePath}
-                            transformMode={transformMode}
-                            setTransformMode={setTransformMode}
-                        />
-                    ) : null}
-                </div>
-            );
-        })}
+                                }))}
+                                basePath={basePath}
+                                transformMode={transformMode}
+                                setTransformMode={setTransformMode}
+                            />
+                        )}
+                    </div>
+                );
+            })}
+        </div>
 
         {/* Add Component */}
-        <div style={{ ...s.section, borderBottom: 'none', paddingBottom: 0 }}>
-            <label style={s.label}>Add Component</label>
-            <div style={{ display: 'flex', gap: 6 }}>
-                <select
-                    style={s.select}
-                    value={addComponentType}
-                    onChange={e => setAddComponentType(e.target.value)}
-                >
-                    {allComponentKeys.filter(k => !node.components?.[k.toLowerCase()]).map(k => (
-                        <option key={k} value={k}>{k}</option>
-                    ))}
-                </select>
-                <button
-                    style={{
-                        ...s.addButton,
-                        ...(!addComponentType ? s.disabled : null),
-                    }}
-                    disabled={!addComponentType}
-                    onClick={() => {
-                        if (!addComponentType) return;
-                        const def = ALL_COMPONENTS[addComponentType];
-                        if (def && !node.components?.[addComponentType.toLowerCase()]) {
-                            const key = addComponentType.toLowerCase();
-                            updateNode(n => ({
-                                ...n,
-                                components: {
-                                    ...n.components,
-                                    [key]: { type: def.name, properties: def.defaultProperties }
-                                }
-                            }));
-                        }
-                    }}
-                    onPointerEnter={(e) => {
-                        if (!addComponentType) return;
-                        (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.12)';
-                    }}
-                    onPointerLeave={(e) => {
-                        if (!addComponentType) return;
-                        (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.08)';
-                    }}
-                >
-                    +
-                </button>
+        {available.length > 0 && (
+            <div>
+                <div style={base.label}>Add Component</div>
+                <div style={base.row}>
+                    <select
+                        style={{ ...base.input, flex: 1 }}
+                        value={addType}
+                        onChange={e => setAddType(e.target.value)}
+                    >
+                        {available.map(k => <option key={k} value={k}>{k}</option>)}
+                    </select>
+                    <button
+                        style={base.btn}
+                        disabled={!addType}
+                        onClick={() => {
+                            if (!addType) return;
+                            const def = ALL_COMPONENTS[addType];
+                            if (def) {
+                                updateNode(n => ({
+                                    ...n,
+                                    components: {
+                                        ...n.components,
+                                        [addType.toLowerCase()]: { type: def.name, properties: def.defaultProperties }
+                                    }
+                                }));
+                            }
+                        }}
+                    >
+                        +
+                    </button>
+                </div>
             </div>
-        </div>
-
-
+        )}
     </div>
-}
-
-function findNode(root: GameObjectType, id: string): GameObjectType | null {
-    if (root.id === id) return root;
-    if (root.children) {
-        for (const child of root.children) {
-            const found = findNode(child, id);
-            if (found) return found;
-        }
-    }
-    return null;
-}
-
-function updatePrefabNode(root: GameObjectType, id: string, update: (node: GameObjectType) => GameObjectType): GameObjectType {
-    if (root.id === id) {
-        return update(root);
-    }
-    if (root.children) {
-        return {
-            ...root,
-            children: root.children.map(child => updatePrefabNode(child, id, update))
-        };
-    }
-    return root;
-}
-
-function deletePrefabNode(root: GameObjectType, id: string): GameObjectType | null {
-    if (root.id === id) return null;
-
-    if (root.children) {
-        return {
-            ...root,
-            children: root.children
-                .map(child => deletePrefabNode(child, id))
-                .filter((child): child is GameObjectType => child !== null)
-        };
-    }
-    return root;
 }
 
 export default EditorUI;

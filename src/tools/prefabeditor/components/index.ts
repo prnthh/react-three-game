@@ -3,6 +3,7 @@ import TransformComponent from './TransformComponent';
 import MaterialComponent from './MaterialComponent';
 import PhysicsComponent from './PhysicsComponent';
 import SpotLightComponent from './SpotLightComponent';
+import DirectionalLightComponent from './DirectionalLightComponent';
 import ModelComponent from './ModelComponent';
 
 export default [
@@ -11,6 +12,7 @@ export default [
     MaterialComponent,
     PhysicsComponent,
     SpotLightComponent,
+    DirectionalLightComponent,
     ModelComponent
 ];
 

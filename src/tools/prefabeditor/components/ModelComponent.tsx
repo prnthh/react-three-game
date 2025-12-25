@@ -47,12 +47,22 @@ function ModelComponentEditor({ component, onUpdate, basePath = "" }: { componen
 // View for Model component
 function ModelComponentView({ properties, loadedModels, children }: { properties: any, loadedModels?: Record<string, any>, children?: React.ReactNode }) {
     // Instanced models are handled elsewhere (GameInstance), so only render non-instanced here
-    if (!properties.filename || properties.instanced) return children || null;
+    if (!properties.filename || properties.instanced) return <>{children}</>;
+
     if (loadedModels && loadedModels[properties.filename]) {
-        return <>{<primitive object={loadedModels[properties.filename].clone()} />}{children}</>;
+        const clonedModel = loadedModels[properties.filename].clone();
+        // Enable shadows on all meshes in the model
+        clonedModel.traverse((obj: any) => {
+            if (obj.isMesh) {
+                obj.castShadow = true;
+                obj.receiveShadow = true;
+            }
+        });
+        return <primitive object={clonedModel}>{children}</primitive>;
     }
-    // Optionally, render a placeholder if model is not loaded
-    return children || null;
+
+    // Model not loaded yet - render children only
+    return <>{children}</>;
 }
 
 const ModelComponent: Component = {

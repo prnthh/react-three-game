@@ -3,8 +3,6 @@
   "name": "Test Prefab",
   "root": {
     "id": "root",
-    "enabled": true,
-    "visible": true,
     "components": {
       "transform": {
         "type": "Transform",
@@ -30,8 +28,6 @@
     "children": [
       {
         "id": "ground",
-        "enabled": true,
-        "visible": true,
         "components": {
           "transform": {
             "type": "Transform",
@@ -84,17 +80,15 @@
         }
       },
       {
-        "id": "child-1",
-        "enabled": true,
-        "visible": true,
+        "id": "10b48504-201b-4007-8125-f6af8ea23510",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
-                1.6045177943347237,
-                0.9514993629788828,
-                1
+                0,
+                0,
+                0
               ],
               "rotation": [
                 0,
@@ -102,49 +96,24 @@
                 0
               ],
               "scale": [
-                0.8,
-                0.8,
-                0.8
+                1,
+                1,
+                1
               ]
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "sphere",
-              "args": [
-                0.5,
-                32,
-                32
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "color": "green"
-            }
-          },
-          "physics": {
-            "type": "Physics",
-            "properties": {
-              "type": "dynamic"
             }
           }
         },
         "children": [
           {
-            "id": "grandchild-1",
-            "enabled": true,
-            "visible": true,
+            "id": "f94c029b-7e51-4284-abee-adfad6fd4f05",
             "components": {
               "transform": {
                 "type": "Transform",
                 "properties": {
                   "position": [
+                    -5.702120615601614,
                     0,
-                    1,
-                    1.0159531449753807
+                    -1.1486441709198616
                   ],
                   "rotation": [
                     0,
@@ -152,27 +121,99 @@
                     0
                   ],
                   "scale": [
-                    0.5,
-                    0.5,
-                    0.5
-                  ]
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "geometryType": "box",
-                  "args": [
                     1,
                     1,
                     1
                   ]
                 }
               },
-              "material": {
-                "type": "Material",
+              "model": {
+                "type": "Model",
                 "properties": {
-                  "color": "yellow"
+                  "filename": "models/environment/tree.glb",
+                  "instanced": true
+                }
+              },
+              "physics": {
+                "type": "Physics",
+                "properties": {
+                  "type": "fixed"
+                }
+              }
+            }
+          },
+          {
+            "id": "79a42c33-49e7-479b-87d3-f1e6cded9a27",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -5.702120615601614,
+                    0,
+                    -9.160028569290597
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "model": {
+                "type": "Model",
+                "properties": {
+                  "filename": "models/environment/tree.glb",
+                  "instanced": true
+                }
+              },
+              "physics": {
+                "type": "Physics",
+                "properties": {
+                  "type": "fixed"
+                }
+              }
+            }
+          },
+          {
+            "id": "de604440-d827-4f3d-9a42-b6b2e7a63697",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -5.702120615601614,
+                    0,
+                    3.730107744554505
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "model": {
+                "type": "Model",
+                "properties": {
+                  "filename": "models/environment/tree.glb",
+                  "instanced": true
+                }
+              },
+              "physics": {
+                "type": "Physics",
+                "properties": {
+                  "type": "fixed"
                 }
               }
             }
@@ -180,17 +221,15 @@
         ]
       },
       {
-        "id": "child-2",
-        "enabled": true,
-        "visible": true,
+        "id": "5833764d-6f9d-44a2-8345-9b5f40e8ecbf",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
-                -2,
-                1.1869698993456688,
-                1
+                11.469851773554673,
+                0,
+                0
               ],
               "rotation": [
                 0,
@@ -202,85 +241,136 @@
                 1,
                 1
               ]
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "sphere",
-              "args": [
-                0.5,
-                16,
-                16
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "color": "blue"
-            }
-          },
-          "physics": {
-            "type": "Physics",
-            "properties": {
-              "type": "dynamic"
             }
           }
-        }
-      },
-      {
-        "id": "model-node",
-        "enabled": true,
-        "visible": true,
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                6.4273997005405725,
-                0,
-                -1.0663693086918302
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
+        },
+        "children": [
+          {
+            "id": "d83731d6-47d7-4f6a-8521-986a54bcbd75",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -5.702120615601614,
+                    0,
+                    -1.1486441709198616
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "model": {
+                "type": "Model",
+                "properties": {
+                  "filename": "models/environment/tree.glb",
+                  "instanced": true
+                }
+              },
+              "physics": {
+                "type": "Physics",
+                "properties": {
+                  "type": "fixed"
+                }
+              }
             }
           },
-          "model": {
-            "type": "Model",
-            "properties": {
-              "filename": "models/environment/tree.glb",
-              "instanced": true
+          {
+            "id": "11a976f3-d0fe-4210-9331-9f27bc667bb2",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -5.702120615601614,
+                    0,
+                    -9.160028569290597
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "model": {
+                "type": "Model",
+                "properties": {
+                  "filename": "models/environment/tree.glb",
+                  "instanced": true
+                }
+              },
+              "physics": {
+                "type": "Physics",
+                "properties": {
+                  "type": "fixed"
+                }
+              }
             }
           },
-          "physics": {
-            "type": "Physics",
-            "properties": {
-              "type": "dynamic"
+          {
+            "id": "c955019d-3198-4415-9f4c-967fa2de51df",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -5.702120615601614,
+                    0,
+                    3.730107744554505
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "model": {
+                "type": "Model",
+                "properties": {
+                  "filename": "models/environment/tree.glb",
+                  "instanced": true
+                }
+              },
+              "physics": {
+                "type": "Physics",
+                "properties": {
+                  "type": "fixed"
+                }
+              }
             }
           }
-        }
+        ]
       },
       {
-        "id": "model-node2",
-        "enabled": true,
-        "visible": true,
+        "id": "ca2a33e8-597a-4b26-ab9b-2c4395a949d3",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
-                0.04991786834952361,
                 0,
-                -7.429298199508224
+                19.042678170876172,
+                0
               ],
               "rotation": [
                 0,
@@ -294,101 +384,14 @@
               ]
             }
           },
-          "model": {
-            "type": "Model",
+          "directionallight": {
+            "type": "DirectionalLight",
             "properties": {
-              "filename": "models/environment/servers.glb",
-              "instanced": true
-            }
-          },
-          "physics": {
-            "type": "Physics",
-            "properties": {
-              "type": "dynamic"
-            }
-          }
-        }
-      },
-      {
-        "id": "model-node3",
-        "enabled": true,
-        "visible": true,
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -6.46980736360889,
-                0,
-                -1.2086754127209618
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
+              "targetOffset": [
+                2,
+                -5,
+                2
               ]
-            }
-          },
-          "model": {
-            "type": "Model",
-            "properties": {
-              "filename": "models/environment/tree.glb"
-            }
-          },
-          "physics": {
-            "type": "Physics",
-            "properties": {
-              "type": "dynamic"
-            }
-          }
-        }
-      },
-      {
-        "id": "textured-node",
-        "enabled": true,
-        "visible": true,
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -0.005909573722648442,
-                0.6890529968836383,
-                -0.2338050959420621
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "color": "red",
-              "wireframe": true
             }
           }
         }

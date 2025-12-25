@@ -69,7 +69,10 @@
               "color": "white",
               "texture": "/textures/GreyboxTextures/greybox_light_grid.png",
               "repeat": true,
-              "repeatCount": [25, 25]      
+              "repeatCount": [
+                25,
+                25
+              ]
             }
           },
           "physics": {
@@ -121,7 +124,10 @@
                   "color": "white",
                   "texture": "/textures/GreyboxTextures/greybox_light_grid.png",
                   "repeat": true,
-                  "repeatCount": [25, 25]
+                  "repeatCount": [
+                    25,
+                    25
+                  ]
                 }
               },
               "physics": {
@@ -172,9 +178,11 @@
                 "properties": {
                   "color": "white",
                   "texture": "/textures/GreyboxTextures/greybox_light_grid.png",
-                  
                   "repeat": true,
-                  "repeatCount": [25, 25]     
+                  "repeatCount": [
+                    25,
+                    25
+                  ]
                 }
               },
               "physics": {
@@ -201,7 +209,7 @@
                   "rotation": [
                     -1.5700000000000274,
                     -1.5655793333280263,
-                    1.0640496943741005e-14
+                    1.0640496943741004e-14
                   ],
                   "scale": [
                     1,
@@ -225,9 +233,11 @@
                 "properties": {
                   "color": "white",
                   "texture": "/textures/GreyboxTextures/greybox_light_grid.png",
-                  
                   "repeat": true,
-                  "repeatCount": [25, 25]        
+                  "repeatCount": [
+                    25,
+                    25
+                  ]
                 }
               },
               "physics": {
@@ -254,7 +264,7 @@
                   "rotation": [
                     -1.5700000000000274,
                     -1.5655793333280263,
-                    1.0640496943741005e-14
+                    1.0640496943741004e-14
                   ],
                   "scale": [
                     1,
@@ -278,9 +288,11 @@
                 "properties": {
                   "color": "white",
                   "texture": "/textures/GreyboxTextures/greybox_light_grid.png",
-                  
                   "repeat": true,
-                  "repeatCount": [25, 25]      
+                  "repeatCount": [
+                    25,
+                    25
+                  ]
                 }
               },
               "physics": {
@@ -302,9 +314,9 @@
             "type": "Transform",
             "properties": {
               "position": [
-                -2,
-                0,
-                2
+                -0.002398446146583577,
+                0.22432376058196546,
+                -3.5750580772655187
               ],
               "rotation": [
                 0,
@@ -322,7 +334,7 @@
             "type": "Model",
             "properties": {
               "filename": "models/environment/servers.glb",
-              "instanced": true
+              "instanced": false
             }
           },
           "physics": {

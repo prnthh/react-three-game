@@ -203,11 +203,12 @@ function GameObjectRenderer({
 
     // Early return if gameObject is null or undefined
     if (!gameObject) return null;
+    if (gameObject.disabled === true || gameObject.hidden === true) return null;
 
-    // Build a small context object to avoid long param lists
+    // Build context object for passing to helper functions
     const ctx = { gameObject, selectedId, onSelect, registerRef, loadedModels, loadedTextures, editMode };
 
-    // --- 1. Transform (local + world) ---
+    // --- 1. Compute transforms (local + world) ---
     const transformProps = getNodeTransformProps(gameObject);
     const localMatrix = new Matrix4().compose(
         new Vector3(...transformProps.position),
@@ -216,7 +217,7 @@ function GameObjectRenderer({
     );
     const worldMatrix = parentMatrix.clone().multiply(localMatrix);
 
-    // preserve click/drag detection from previous implementation
+    // --- 2. Handle selection interaction (edit mode only) ---
     const clickValid = useRef(false);
     const handlePointerDown = (e: ThreeEvent<PointerEvent>) => {
         e.stopPropagation();
@@ -233,18 +234,19 @@ function GameObjectRenderer({
         clickValid.current = false;
     };
 
-    if (gameObject.disabled === true || gameObject.hidden === true) return null;
-
-    // --- 2. If instanced, short-circuit to a tiny clean branch ---
+    // --- 3. If instanced model, short-circuit to GameInstance (terminal node) ---
     const isInstanced = !!gameObject.components?.model?.properties?.instanced;
     if (isInstanced) {
         return renderInstancedNode(gameObject, worldMatrix, ctx);
     }
 
-    // --- 3. Core content decided by component registry ---
+    // --- 4. Render core content using component system ---
     const core = renderCoreNode(gameObject, ctx, parentMatrix);
 
-    // --- 5. Render children (always relative transforms) ---
+    // --- 5. Wrap with physics if needed (except in edit mode) ---
+    const physicsWrapped = wrapPhysicsIfNeeded(gameObject, core, ctx);
+
+    // --- 6. Render children recursively (always relative transforms) ---
     const children = (gameObject.children ?? []).map((child) => (
         <GameObjectRenderer
             key={child.id}
@@ -259,10 +261,7 @@ function GameObjectRenderer({
         />
     ));
 
-    // --- 4. Wrap with physics if needed ---
-    const physicsWrapped = wrapPhysicsIfNeeded(gameObject, core, ctx);
-
-    // --- 6. Final group wrapper ---
+    // --- 7. Final group wrapper with local transform ---
     return (
         <group
             ref={(el) => registerRef(gameObject.id, el)}
@@ -300,18 +299,17 @@ function renderInstancedNode(gameObject: GameObjectType, worldMatrix: Matrix4, c
     );
 }
 
-// Helper: render main model/geometry content for a non-instanced node
+// Helper: render main content for a non-instanced node using the component system
 function renderCoreNode(gameObject: GameObjectType, ctx: any, parentMatrix: Matrix4 | undefined) {
     const geometry = gameObject.components?.geometry;
     const material = gameObject.components?.material;
-    const modelComp = gameObject.components?.model;
+    const model = gameObject.components?.model;
 
     const geometryDef = geometry ? getComponent('Geometry') : undefined;
     const materialDef = material ? getComponent('Material') : undefined;
+    const modelDef = model ? getComponent('Model') : undefined;
 
-    const isModelAvailable = !!(modelComp && modelComp.properties && modelComp.properties.filename && ctx.loadedModels[modelComp.properties.filename]);
-
-    // Generic component views (exclude geometry/material/model/transform/physics)
+    // Context props for all component Views
     const contextProps = {
         loadedModels: ctx.loadedModels,
         loadedTextures: ctx.loadedTextures,
@@ -321,20 +319,19 @@ function renderCoreNode(gameObject: GameObjectType, ctx: any, parentMatrix: Matr
         registerRef: ctx.registerRef,
     };
 
-    // Separate wrapper components (that accept children) from leaf components
+    // Collect wrapper and leaf components (excluding transform/physics which are handled separately)
     const wrapperComponents: Array<{ key: string; View: any; properties: any }> = [];
     const leafComponents: React.ReactNode[] = [];
 
     if (gameObject.components) {
         Object.entries(gameObject.components)
-            .filter(([key]) => key !== 'geometry' && key !== 'material' && key !== 'model' && key !== 'transform' && key !== 'physics')
+            .filter(([key]) => !['geometry', 'material', 'model', 'transform', 'physics'].includes(key))
             .forEach(([key, comp]) => {
                 if (!comp || !comp.type) return;
                 const def = getComponent(comp.type);
                 if (!def || !def.View) return;
 
-                // Check if the component View accepts children by checking function signature
-                // Components that wrap content should accept children prop
+                // Components that accept children are wrappers, others are leaves
                 const viewString = def.View.toString();
                 if (viewString.includes('children')) {
                     wrapperComponents.push({ key, View: def.View, properties: comp.properties });
@@ -344,49 +341,41 @@ function renderCoreNode(gameObject: GameObjectType, ctx: any, parentMatrix: Matr
             });
     }
 
-    // Build the core content (model or mesh)
+    // Build core content based on what components exist
     let coreContent: React.ReactNode;
 
-    // If we have a model (non-instanced) render it as a primitive with material override
-    if (isModelAvailable) {
-        const modelObj = ctx.loadedModels[modelComp.properties.filename].clone();
+    // Priority: Model > Geometry + Material > Empty
+    if (model && modelDef && modelDef.View) {
+        // Model component wraps its children (including material override)
         coreContent = (
-            <primitive object={modelObj}>
+            <modelDef.View properties={model.properties} {...contextProps}>
                 {material && materialDef && materialDef.View && (
                     <materialDef.View
                         key="material"
                         properties={material.properties}
-                        loadedTextures={ctx.loadedTextures}
-                        isSelected={ctx.selectedId === gameObject.id}
-                        editMode={ctx.editMode}
-                        parentMatrix={parentMatrix}
-                        registerRef={ctx.registerRef}
+                        {...contextProps}
                     />
                 )}
                 {leafComponents}
-            </primitive>
+            </modelDef.View>
         );
     } else if (geometry && geometryDef && geometryDef.View) {
-        // Otherwise, if geometry present, render a mesh
+        // Geometry + Material = mesh
         coreContent = (
-            <mesh>
-                <geometryDef.View key="geometry" properties={geometry.properties} {...contextProps} />
+            <mesh castShadow receiveShadow>
+                <geometryDef.View properties={geometry.properties} {...contextProps} />
                 {material && materialDef && materialDef.View && (
                     <materialDef.View
                         key="material"
                         properties={material.properties}
-                        loadedTextures={ctx.loadedTextures}
-                        isSelected={ctx.selectedId === gameObject.id}
-                        editMode={ctx.editMode}
-                        parentMatrix={parentMatrix}
-                        registerRef={ctx.registerRef}
+                        {...contextProps}
                     />
                 )}
                 {leafComponents}
             </mesh>
         );
     } else {
-        // No geometry or model, just render leaf components
+        // No visual component - just render leaves
         coreContent = <>{leafComponents}</>;
     }
 

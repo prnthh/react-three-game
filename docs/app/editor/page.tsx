@@ -18,7 +18,7 @@ export default function Home() {
             setSelectedPrefab(mod.default);
           });
         }}>
-          {['test', 'killbox'].map((prefabName) => (
+          {['test', 'floor', 'killbox'].map((prefabName) => (
             <option key={prefabName} value={prefabName}>{prefabName} prefab</option>
           ))}
         </select>

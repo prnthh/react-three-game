@@ -1,9 +1,7 @@
-
 import { Component } from "./ComponentRegistry";
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 
 function SpotLightComponentEditor({ component, onUpdate }: { component: any; onUpdate: (newComp: any) => void }) {
-    // Provide default values to prevent NaN
     const props = {
         color: component.properties.color ?? '#ffffff',
         intensity: component.properties.intensity ?? 1.0,
@@ -88,10 +86,7 @@ function SpotLightComponentEditor({ component, onUpdate }: { component: any; onU
     </div>;
 }
 
-
-// The view component for SpotLight
-function SpotLightView({ properties }: { properties: any }) {
-    // Provide defaults in case properties are missing
+function SpotLightView({ properties, editMode }: { properties: any; editMode?: boolean }) {
     const color = properties.color ?? '#ffffff';
     const intensity = properties.intensity ?? 1.0;
     const angle = properties.angle ?? Math.PI / 6;
@@ -99,16 +94,41 @@ function SpotLightView({ properties }: { properties: any }) {
     const distance = properties.distance ?? 100;
     const castShadow = properties.castShadow ?? true;
 
+    const spotLightRef = useRef<any>(null);
+    const targetRef = useRef<any>(null);
+
+    useEffect(() => {
+        if (spotLightRef.current && targetRef.current) {
+            spotLightRef.current.target = targetRef.current;
+        }
+    }, []);
+
     return (
         <>
             <spotLight
+                ref={spotLightRef}
                 color={color}
                 intensity={intensity}
                 angle={angle}
                 penumbra={penumbra}
                 distance={distance}
                 castShadow={castShadow}
+                shadow-bias={-0.0001}
+                shadow-normalBias={0.02}
             />
+            <object3D ref={targetRef} position={[0, -5, 0]} />
+            {editMode && (
+                <>
+                    <mesh>
+                        <sphereGeometry args={[0.2, 8, 6]} />
+                        <meshBasicMaterial color={color} wireframe />
+                    </mesh>
+                    <mesh position={[0, -5, 0]}>
+                        <sphereGeometry args={[0.15, 8, 6]} />
+                        <meshBasicMaterial color={color} wireframe opacity={0.5} transparent />
+                    </mesh>
+                </>
+            )}
         </>
     );
 }

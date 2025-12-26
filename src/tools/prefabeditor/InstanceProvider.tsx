@@ -1,191 +1,170 @@
 import React, { createContext, useContext, useMemo, useRef, useState, useEffect, useCallback } from "react";
 import { Merged } from '@react-three/drei';
-import { InstancedRigidBodies } from "@react-three/rapier";
-import { Mesh, Matrix4, Object3D, Group } from "three";
+import { InstancedRigidBodies, RigidBodyProps } from "@react-three/rapier";
+import { useFrame } from "@react-three/fiber";
+import { Mesh, Matrix4, Object3D, Euler, Quaternion, Vector3, InstancedMesh } from "three";
 
 // --- Types ---
 export type InstanceData = {
     id: string;
+    meshPath: string;
     position: [number, number, number];
     rotation: [number, number, number];
     scale: [number, number, number];
-    meshPath: string;
-    physics?: { type: 'dynamic' | 'fixed' };
+    physics?: { type: RigidBodyProps['type'] };
 };
 
-// Helper functions for comparison
-function arrayEquals(a: number[], b: number[]): boolean {
-    if (a === b) return true;
-    if (a.length !== b.length) return false;
-    for (let i = 0; i < a.length; i++) {
-        if (a[i] !== b[i]) return false;
-    }
-    return true;
-}
+type GroupedInstances = Record<string, {
+    physicsType: string;
+    instances: InstanceData[];
+}>;
 
-function instanceEquals(a: InstanceData, b: InstanceData): boolean {
-    return a.id === b.id &&
-        a.meshPath === b.meshPath &&
-        arrayEquals(a.position, b.position) &&
-        arrayEquals(a.rotation, b.rotation) &&
-        arrayEquals(a.scale, b.scale) &&
-        a.physics?.type === b.physics?.type;
-}
-
-// --- Context ---
 type GameInstanceContextType = {
     addInstance: (instance: InstanceData) => void;
     removeInstance: (id: string) => void;
-    instances: InstanceData[];
-    meshes: Record<string, Mesh>;
-    instancesMap?: Record<string, React.ComponentType<any>>;
-    modelParts?: Record<string, number>;
 };
+
+// --- Helpers ---
+const arraysEqual = (a: number[], b: number[]) =>
+    a.length === b.length && a.every((v, i) => v === b[i]);
+
+const instancesEqual = (a: InstanceData, b: InstanceData) =>
+    a.id === b.id &&
+    a.meshPath === b.meshPath &&
+    a.physics?.type === b.physics?.type &&
+    arraysEqual(a.position, b.position) &&
+    arraysEqual(a.rotation, b.rotation) &&
+    arraysEqual(a.scale, b.scale);
+
+// Reusable objects for matrix computation (avoid allocations in hot paths)
+const _matrix = new Matrix4();
+const _position = new Vector3();
+const _quaternion = new Quaternion();
+const _euler = new Euler();
+const _scale = new Vector3();
+
+function composeMatrix(
+    position: [number, number, number],
+    rotation: [number, number, number],
+    scale: [number, number, number],
+    target: Matrix4 = _matrix
+): Matrix4 {
+    _position.set(...position);
+    _quaternion.setFromEuler(_euler.set(...rotation));
+    _scale.set(...scale);
+    return target.compose(_position, _quaternion, _scale);
+}
+
+// --- Context ---
 const GameInstanceContext = createContext<GameInstanceContextType | null>(null);
 
+// --- Provider ---
 export function GameInstanceProvider({
     children,
     models,
     onSelect,
     registerRef
 }: {
-    children: React.ReactNode,
-    models: { [filename: string]: Object3D },
-    onSelect?: (id: string | null) => void,
-    registerRef?: (id: string, obj: Object3D | null) => void,
+    children: React.ReactNode;
+    models: Record<string, Object3D>;
+    onSelect?: (id: string | null) => void;
+    registerRef?: (id: string, obj: Object3D | null) => void;
 }) {
     const [instances, setInstances] = useState<InstanceData[]>([]);
 
     const addInstance = useCallback((instance: InstanceData) => {
         setInstances(prev => {
             const idx = prev.findIndex(i => i.id === instance.id);
-            if (idx !== -1) {
-                // Update existing if changed
-                if (instanceEquals(prev[idx], instance)) {
-                    return prev;
-                }
-                const copy = [...prev];
-                copy[idx] = instance;
-                return copy;
-            }
-            // Add new
-            return [...prev, instance];
+            if (idx === -1) return [...prev, instance];
+            if (instancesEqual(prev[idx], instance)) return prev;
+            const updated = [...prev];
+            updated[idx] = instance;
+            return updated;
         });
     }, []);
 
     const removeInstance = useCallback((id: string) => {
-        setInstances(prev => {
-            if (!prev.find(i => i.id === id)) return prev;
-            return prev.filter(i => i.id !== id);
-        });
+        setInstances(prev => prev.filter(i => i.id !== id));
     }, []);
 
-    // Flatten all model meshes once (models → flat mesh parts)
-    // Note: Geometry is cloned with baked transforms for instancing
-    const { flatMeshes, modelParts } = useMemo(() => {
-        const flatMeshes: Record<string, Mesh> = {};
-        const modelParts: Record<string, number> = {};
+    // Extract mesh parts from models with baked local transforms
+    const { meshParts, partCounts } = useMemo(() => {
+        const meshParts: Record<string, Mesh> = {};
+        const partCounts: Record<string, number> = {};
 
         Object.entries(models).forEach(([modelKey, model]) => {
             model.updateWorldMatrix(false, true);
             const rootInverse = new Matrix4().copy(model.matrixWorld).invert();
-
             let partIndex = 0;
-            model.traverse((obj: any) => {
-                if (obj.isMesh) {
-                    // Clone geometry and bake relative transform
-                    const geom = obj.geometry.clone();
-                    geom.applyMatrix4(obj.matrixWorld.clone().premultiply(rootInverse));
 
-                    const partKey = `${modelKey}__${partIndex}`;
-                    flatMeshes[partKey] = new Mesh(geom, obj.material);
+            model.traverse((child: Object3D) => {
+                if ((child as Mesh).isMesh) {
+                    const mesh = child as Mesh;
+                    const geometry = mesh.geometry.clone();
+                    geometry.applyMatrix4(mesh.matrixWorld.clone().premultiply(rootInverse));
+                    meshParts[`${modelKey}__${partIndex}`] = new Mesh(geometry, mesh.material);
                     partIndex++;
                 }
             });
-            modelParts[modelKey] = partIndex;
+            partCounts[modelKey] = partIndex;
         });
 
-        return { flatMeshes, modelParts };
+        return { meshParts, partCounts };
     }, [models]);
 
-    // Cleanup geometries when models change
-    useEffect(() => {
-        return () => {
-            Object.values(flatMeshes).forEach(mesh => mesh.geometry.dispose());
-        };
-    }, [flatMeshes]);
+    // Cleanup cloned geometries
+    useEffect(() => () => {
+        Object.values(meshParts).forEach(mesh => mesh.geometry.dispose());
+    }, [meshParts]);
 
-    // Group instances by meshPath + physics type for batch rendering
-    const grouped = useMemo(() => {
-        const groups: Record<string, { physicsType: string, instances: InstanceData[] }> = {};
-        for (const inst of instances) {
-            const type = inst.physics?.type || 'none';
-            const key = `${inst.meshPath}__${type}`;
-            if (!groups[key]) groups[key] = { physicsType: type, instances: [] };
+    // Group instances by model + physics type
+    const grouped = useMemo<GroupedInstances>(() => {
+        const groups: GroupedInstances = {};
+        instances.forEach(inst => {
+            const physicsType = inst.physics?.type ?? 'none';
+            const key = `${inst.meshPath}__${physicsType}`;
+            groups[key] ??= { physicsType, instances: [] };
             groups[key].instances.push(inst);
-        }
+        });
         return groups;
     }, [instances]);
 
+    const contextValue = useMemo(() => ({ addInstance, removeInstance }), [addInstance, removeInstance]);
+
     return (
-        <GameInstanceContext.Provider
-            value={{
-                addInstance,
-                removeInstance,
-                instances,
-                meshes: flatMeshes,
-                modelParts
-            }}
-        >
-            {/* Render normal prefab hierarchy (non-instanced objects) */}
+        <GameInstanceContext.Provider value={contextValue}>
             {children}
 
-            {/* Render physics-enabled instanced groups using InstancedRigidBodies */}
             {Object.entries(grouped).map(([key, group]) => {
-                if (group.physicsType === 'none') return null;
                 const modelKey = group.instances[0].meshPath;
-                const partCount = modelParts[modelKey] || 0;
+                const partCount = partCounts[modelKey] ?? 0;
                 if (partCount === 0) return null;
 
-                return (
-                    <InstancedRigidGroup
-                        key={key}
-                        group={group}
-                        modelKey={modelKey}
-                        partCount={partCount}
-                        flatMeshes={flatMeshes}
-                    />
-                );
-            })}
-
-            {/* Render non-physics instanced visuals using Merged (one per model type) */}
-            {Object.entries(grouped).map(([key, group]) => {
-                if (group.physicsType !== 'none') return null;
-
-                const modelKey = group.instances[0].meshPath;
-                const partCount = modelParts[modelKey] || 0;
-                if (partCount === 0) return null;
-
-                // Create mesh subset for this specific model
-                const meshesForModel: Record<string, Mesh> = {};
-                for (let i = 0; i < partCount; i++) {
-                    const partKey = `${modelKey}__${i}`;
-                    meshesForModel[partKey] = flatMeshes[partKey];
+                if (group.physicsType !== 'none') {
+                    return (
+                        <PhysicsInstances
+                            key={key}
+                            instances={group.instances}
+                            physicsType={group.physicsType as RigidBodyProps['type']}
+                            modelKey={modelKey}
+                            partCount={partCount}
+                            meshParts={meshParts}
+                        />
+                    );
                 }
 
+                const modelMeshes = Object.fromEntries(
+                    Array.from({ length: partCount }, (_, i) => [`${modelKey}__${i}`, meshParts[`${modelKey}__${i}`]])
+                );
+
                 return (
-                    <Merged
-                        key={key}
-                        meshes={meshesForModel}
-                        castShadow
-                        receiveShadow
-                    >
-                        {(instancesMap: any) => (
-                            <NonPhysicsInstancedGroup
+                    <Merged key={key} meshes={modelMeshes} castShadow receiveShadow>
+                        {(Components: Record<string, React.ComponentType>) => (
+                            <StaticInstances
+                                instances={group.instances}
                                 modelKey={modelKey}
-                                group={group}
                                 partCount={partCount}
-                                instancesMap={instancesMap}
+                                Components={Components}
                                 onSelect={onSelect}
                                 registerRef={registerRef}
                             />
@@ -197,145 +176,137 @@ export function GameInstanceProvider({
     );
 }
 
-// Render physics-enabled instances using InstancedRigidBodies
-function InstancedRigidGroup({
-    group,
+// --- Physics Instances ---
+function PhysicsInstances({
+    instances,
+    physicsType,
     modelKey,
     partCount,
-    flatMeshes
+    meshParts
 }: {
-    group: { physicsType: string, instances: InstanceData[] },
-    modelKey: string,
-    partCount: number,
-    flatMeshes: Record<string, Mesh>
+    instances: InstanceData[];
+    physicsType: RigidBodyProps['type'];
+    modelKey: string;
+    partCount: number;
+    meshParts: Record<string, Mesh>;
 }) {
-    const instances = useMemo(
-        () => group.instances.map(inst => ({
-            key: inst.id,
-            position: inst.position,
-            rotation: inst.rotation,
-            scale: inst.scale,
-        })),
-        [group.instances]
+    const meshRefs = useRef<(InstancedMesh | null)[]>([]);
+
+    const rigidBodyInstances = useMemo(() =>
+        instances.map(({ id, position, rotation, scale }) => ({ key: id, position, rotation, scale })),
+        [instances]
     );
 
-    const colliders = group.physicsType === 'fixed' ? 'trimesh' : 'hull';
+    // Sync visual matrices each frame (physics updates position/rotation, we need to apply scale)
+    useFrame(() => {
+        meshRefs.current.forEach(mesh => {
+            if (!mesh) return;
+            instances.forEach((inst, i) => {
+                mesh.setMatrixAt(i, composeMatrix(inst.position, inst.rotation, inst.scale));
+            });
+            mesh.instanceMatrix.needsUpdate = true;
+        });
+    });
 
     return (
         <InstancedRigidBodies
-            instances={instances}
-            colliders={colliders}
-            type={group.physicsType as 'dynamic' | 'fixed'}
+            instances={rigidBodyInstances}
+            type={physicsType}
+            colliders={physicsType === 'fixed' ? 'trimesh' : 'hull'}
         >
-            {Array.from({ length: partCount }).map((_, i) => {
-                const mesh = flatMeshes[`${modelKey}__${i}`];
-                if (!mesh) return null;
-                return (
+            {Array.from({ length: partCount }, (_, i) => {
+                const mesh = meshParts[`${modelKey}__${i}`];
+                return mesh ? (
                     <instancedMesh
                         key={i}
-                        args={[mesh.geometry, mesh.material, group.instances.length]}
+                        ref={el => { meshRefs.current[i] = el; }}
+                        args={[mesh.geometry, mesh.material, instances.length]}
+                        frustumCulled={false}
                         castShadow
                         receiveShadow
-                        frustumCulled={false} // Required: culling first instance hides all
                     />
-                );
+                ) : null;
             })}
         </InstancedRigidBodies>
     );
 }
 
-// Render non-physics instances using Merged's per-instance groups
-function NonPhysicsInstancedGroup({
+// --- Static Instances (non-physics) ---
+function StaticInstances({
+    instances,
     modelKey,
-    group,
     partCount,
-    instancesMap,
+    Components,
     onSelect,
     registerRef
 }: {
+    instances: InstanceData[];
     modelKey: string;
-    group: { physicsType: string, instances: InstanceData[] };
     partCount: number;
-    instancesMap: Record<string, React.ComponentType<any>>;
+    Components: Record<string, React.ComponentType>;
     onSelect?: (id: string | null) => void;
     registerRef?: (id: string, obj: Object3D | null) => void;
 }) {
-    // Pre-compute which Instance components exist for this model
-    const InstanceComponents = useMemo(() =>
-        Array.from({ length: partCount }, (_, i) => instancesMap[`${modelKey}__${i}`]).filter(Boolean),
-        [instancesMap, modelKey, partCount]
+    const Parts = useMemo(() =>
+        Array.from({ length: partCount }, (_, i) => Components[`${modelKey}__${i}`]).filter(Boolean),
+        [Components, modelKey, partCount]
     );
 
     return (
         <>
-            {group.instances.map(inst => (
-                <InstanceGroupItem
-                    key={inst.id}
-                    instance={inst}
-                    InstanceComponents={InstanceComponents}
-                    onSelect={onSelect}
-                    registerRef={registerRef}
-                />
+            {instances.map(inst => (
+                <InstanceItem key={inst.id} instance={inst} Parts={Parts} onSelect={onSelect} registerRef={registerRef} />
             ))}
         </>
     );
 }
 
-// Individual instance item with its own click state
-function InstanceGroupItem({
+// --- Single Instance ---
+function InstanceItem({
     instance,
-    InstanceComponents,
+    Parts,
     onSelect,
     registerRef
 }: {
     instance: InstanceData;
-    InstanceComponents: React.ComponentType<any>[];
+    Parts: React.ComponentType[];
     onSelect?: (id: string | null) => void;
     registerRef?: (id: string, obj: Object3D | null) => void;
 }) {
-    const clickValid = useRef(false);
+    const moved = useRef(false);
 
     return (
         <group
-            ref={(el) => registerRef?.(instance.id, el)}
+            ref={el => registerRef?.(instance.id, el)}
             position={instance.position}
             rotation={instance.rotation}
             scale={instance.scale}
-            onPointerDown={(e) => { e.stopPropagation(); clickValid.current = true; }}
-            onPointerMove={() => { clickValid.current = false; }}
-            onPointerUp={(e) => {
-                if (clickValid.current) {
-                    e.stopPropagation();
-                    onSelect?.(instance.id);
-                }
-                clickValid.current = false;
-            }}
+            onPointerDown={e => { e.stopPropagation(); moved.current = false; }}
+            onPointerMove={() => { moved.current = true; }}
+            onPointerUp={e => { e.stopPropagation(); if (!moved.current) onSelect?.(instance.id); }}
         >
-            {InstanceComponents.map((Instance, i) => <Instance key={i} />)}
+            {Parts.map((Part, i) => <Part key={i} />)}
         </group>
     );
 }
 
-
-// GameInstance component: registers an instance for batch rendering (renders nothing itself)
-export const GameInstance = React.forwardRef<Group, {
-    id: string;
-    modelUrl: string;
-    position: [number, number, number];
-    rotation: [number, number, number];
-    scale: [number, number, number];
-    physics?: { type: 'dynamic' | 'fixed' };
-}>(({
+// --- GameInstance (declarative registration) ---
+export function GameInstance({
     id,
     modelUrl,
     position,
     rotation,
     scale,
-    physics = undefined,
-}, ref) => {
+    physics
+}: {
+    id: string;
+    modelUrl: string;
+    position: [number, number, number];
+    rotation: [number, number, number];
+    scale: [number, number, number];
+    physics?: { type: RigidBodyProps['type'] };
+}) {
     const ctx = useContext(GameInstanceContext);
-    const addInstance = ctx?.addInstance;
-    const removeInstance = ctx?.removeInstance;
 
     const instance = useMemo<InstanceData>(() => ({
         id,
@@ -347,13 +318,10 @@ export const GameInstance = React.forwardRef<Group, {
     }), [id, modelUrl, position, rotation, scale, physics]);
 
     useEffect(() => {
-        if (!addInstance || !removeInstance) return;
-        addInstance(instance);
-        return () => {
-            removeInstance(instance.id);
-        };
-    }, [addInstance, removeInstance, instance]);
+        if (!ctx) return;
+        ctx.addInstance(instance);
+        return () => ctx.removeInstance(id);
+    }, [ctx, instance, id]);
 
-    // No visual rendering - provider handles all instanced visuals
     return null;
-});
+}

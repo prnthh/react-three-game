@@ -1,8 +1,8 @@
 "use client";
 
-import { MapControls, TransformControls } from "@react-three/drei";
+import { MapControls, TransformControls, useHelper } from "@react-three/drei";
 import { useState, useRef, useEffect, forwardRef, useCallback } from "react";
-import { Vector3, Euler, Quaternion, Group, Object3D, SRGBColorSpace, Texture, TextureLoader, Matrix4 } from "three";
+import { Vector3, Euler, Quaternion, Group, Object3D, SRGBColorSpace, Texture, TextureLoader, Matrix4, BoxHelper } from "three";
 import { Prefab, GameObject as GameObjectType } from "./types";
 import { getComponent, registerComponent } from "./components/ComponentRegistry";
 import { ThreeEvent } from "@react-three/fiber";
@@ -128,7 +128,13 @@ export const PrefabRoot = forwardRef<Group, {
 
 
     return <group ref={ref}>
-        <GameInstanceProvider models={loadedModels} onSelect={editMode ? onSelect : undefined} registerRef={registerRef}>
+        <GameInstanceProvider
+            models={loadedModels}
+            onSelect={editMode ? onSelect : undefined}
+            registerRef={registerRef}
+            selectedId={selectedId}
+            editMode={editMode}
+        >
             <GameObjectRenderer
                 gameObject={data.root}
                 selectedId={selectedId}
@@ -237,10 +243,20 @@ function GameObjectRenderer({
         />
     ));
 
-    // --- 6. Inner content group with full transform ---
+    // --- 6. Inner content group with full transform and selection helper ---
+    const groupRef = useRef<Group>(null!);
+    const isSelected = selectedId === gameObject.id;
+
+    // Show BoxHelper when selected in edit mode
+    useHelper(editMode && isSelected ? groupRef : null, BoxHelper, 'cyan');
+
+    useEffect(() => {
+        registerRef(gameObject.id, groupRef.current);
+    }, [gameObject.id, registerRef]);
+
     const innerGroup = (
         <group
-            ref={(el) => registerRef(gameObject.id, el)}
+            ref={groupRef}
             position={transformProps.position}
             rotation={transformProps.rotation}
             scale={transformProps.scale}
@@ -304,7 +320,6 @@ function renderCoreNode(gameObject: GameObjectType, ctx: any, parentMatrix: Matr
     const contextProps = {
         loadedModels: ctx.loadedModels,
         loadedTextures: ctx.loadedTextures,
-        isSelected: ctx.selectedId === gameObject.id,
         editMode: ctx.editMode,
         parentMatrix,
         registerRef: ctx.registerRef,

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useMemo, useRef, useState, useEffect, useCallback } from "react";
-import { Merged } from '@react-three/drei';
+import { Merged, useHelper } from '@react-three/drei';
 import { InstancedRigidBodies } from "@react-three/rapier";
-import { Mesh, Matrix4, Object3D, Group, Vector3, Quaternion, Euler, InstancedMesh } from "three";
+import { Mesh, Matrix4, Object3D, Group, Vector3, Quaternion, Euler, InstancedMesh, BoxHelper } from "three";
 
 // --- Types ---
 export type InstanceData = {
@@ -46,12 +46,16 @@ export function GameInstanceProvider({
     children,
     models,
     onSelect,
-    registerRef
+    registerRef,
+    selectedId,
+    editMode
 }: {
     children: React.ReactNode,
     models: { [filename: string]: Object3D },
     onSelect?: (id: string | null) => void,
     registerRef?: (id: string, obj: Object3D | null) => void,
+    selectedId?: string | null,
+    editMode?: boolean
 }) {
     const [instances, setInstances] = useState<InstanceData[]>([]);
 
@@ -187,6 +191,8 @@ export function GameInstanceProvider({
                                 instancesMap={instancesMap}
                                 onSelect={onSelect}
                                 registerRef={registerRef}
+                                selectedId={selectedId}
+                                editMode={editMode}
                             />
                         )}
                     </Merged>
@@ -269,14 +275,16 @@ function InstancedRigidGroup({
     );
 }
 
-// Render non-physics instances using Merged's per-instance groups
+// Render non-physics instances using Merged (instancing without rigid bodies)
 function NonPhysicsInstancedGroup({
     modelKey,
     group,
     partCount,
     instancesMap,
     onSelect,
-    registerRef
+    registerRef,
+    selectedId,
+    editMode
 }: {
     modelKey: string;
     group: { physicsType: string, instances: InstanceData[] };
@@ -284,6 +292,8 @@ function NonPhysicsInstancedGroup({
     instancesMap: Record<string, React.ComponentType<any>>;
     onSelect?: (id: string | null) => void;
     registerRef?: (id: string, obj: Object3D | null) => void;
+    selectedId?: string | null;
+    editMode?: boolean;
 }) {
     // Pre-compute which Instance components exist for this model
     const InstanceComponents = useMemo(() =>
@@ -300,6 +310,8 @@ function NonPhysicsInstancedGroup({
                     InstanceComponents={InstanceComponents}
                     onSelect={onSelect}
                     registerRef={registerRef}
+                    selectedId={selectedId}
+                    editMode={editMode}
                 />
             ))}
         </>
@@ -311,18 +323,31 @@ function InstanceGroupItem({
     instance,
     InstanceComponents,
     onSelect,
-    registerRef
+    registerRef,
+    selectedId,
+    editMode
 }: {
     instance: InstanceData;
     InstanceComponents: React.ComponentType<any>[];
     onSelect?: (id: string | null) => void;
     registerRef?: (id: string, obj: Object3D | null) => void;
+    selectedId?: string | null;
+    editMode?: boolean;
 }) {
     const clickValid = useRef(false);
+    const groupRef = useRef<Group>(null!);
+    const isSelected = selectedId === instance.id;
+
+    // Use BoxHelper when object is selected in edit mode
+    useHelper(editMode && isSelected ? groupRef : null, BoxHelper, 'cyan');
+
+    useEffect(() => {
+        registerRef?.(instance.id, groupRef.current);
+    }, [instance.id, registerRef]);
 
     return (
         <group
-            ref={(el) => registerRef?.(instance.id, el)}
+            ref={groupRef}
             position={instance.position}
             rotation={instance.rotation}
             scale={instance.scale}

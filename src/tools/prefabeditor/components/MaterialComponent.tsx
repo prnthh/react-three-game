@@ -102,7 +102,7 @@ import { useMemo } from 'react';
 import { DoubleSide, RepeatWrapping, ClampToEdgeWrapping, SRGBColorSpace, Texture } from 'three';
 
 // View for Material component
-function MaterialComponentView({ properties, loadedTextures, isSelected }: { properties: any, loadedTextures?: Record<string, Texture>, isSelected?: boolean }) {
+function MaterialComponentView({ properties, loadedTextures }: { properties: any, loadedTextures?: Record<string, Texture> }) {
     const textureName = properties?.texture;
     const repeat = properties?.repeat;
     const repeatCount = properties?.repeatCount;
@@ -128,12 +128,11 @@ function MaterialComponentView({ properties, loadedTextures, isSelected }: { pro
     }
 
     const { color, wireframe = false } = properties;
-    const displayColor = isSelected ? "cyan" : color;
 
     return (
         <meshStandardMaterial
             key={finalTexture?.uuid ?? 'no-texture'}
-            color={displayColor}
+            color={color}
             wireframe={wireframe}
             map={finalTexture}
             transparent={!!finalTexture}

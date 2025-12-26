@@ -1,9 +1,10 @@
 "use client";
 
 import { Canvas, useLoader } from "@react-three/fiber";
-import { OrbitControls, useGLTF, useFBX, Stage, View, PerspectiveCamera } from "@react-three/drei";
+import { OrbitControls, Stage, View, PerspectiveCamera } from "@react-three/drei";
 import { Suspense, useEffect, useState, useRef } from "react";
 import { TextureLoader } from "three";
+import { loadModel } from "../dragdrop/modelLoader";
 
 // view models and textures in manifest, onselect callback
 
@@ -290,19 +291,28 @@ function ModelCard({ file, onSelect, basePath = "" }: { file: string; onSelect: 
 }
 
 function ModelPreview({ url, onError }: { url: string; onError?: () => void }) {
-    const isFbx = url.toLowerCase().endsWith('.fbx');
-    if (isFbx) return <FBXModel url={url} onError={onError} />;
-    return <GLTFModel url={url} onError={onError} />;
-}
+    const [model, setModel] = useState<any>(null);
+    const onErrorRef = useRef(onError);
+    onErrorRef.current = onError;
 
-function GLTFModel({ url, onError }: { url: string; onError?: () => void }) {
-    const { scene } = useGLTF(url);
-    return <primitive object={scene} />;
-}
+    useEffect(() => {
+        let cancelled = false;
+        setModel(null);
 
-function FBXModel({ url, onError }: { url: string; onError?: () => void }) {
-    const fbx = useFBX(url);
-    return <primitive object={fbx} scale={0.01} />;
+        loadModel(url).then((result) => {
+            if (cancelled) return;
+            if (result.success && result.model) {
+                setModel(result.model);
+            } else {
+                onErrorRef.current?.();
+            }
+        });
+
+        return () => { cancelled = true; };
+    }, [url]);
+
+    if (!model) return null;
+    return <primitive object={model} />;
 }
 
 interface SoundListViewerProps {

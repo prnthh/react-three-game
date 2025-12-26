@@ -130,14 +130,16 @@ function MaterialComponentView({ properties, loadedTextures, isSelected }: { pro
     const { color, wireframe = false } = properties;
     const displayColor = isSelected ? "cyan" : color;
 
-    return <meshStandardMaterial
-        key={finalTexture?.uuid ?? 'no-texture'}
-        color={displayColor}
-        wireframe={wireframe}
-        map={finalTexture}
-        transparent={!!finalTexture}
-        side={DoubleSide}
-    />;
+    return (
+        <meshStandardMaterial
+            key={finalTexture?.uuid ?? 'no-texture'}
+            color={displayColor}
+            wireframe={wireframe}
+            map={finalTexture}
+            transparent={!!finalTexture}
+            side={DoubleSide}
+        />
+    );
 }
 
 const MaterialComponent: Component = {

@@ -1,5 +1,5 @@
 import { ModelListViewer } from '../../assetviewer/page';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Component } from './ComponentRegistry';
 
 function ModelComponentEditor({ component, onUpdate, basePath = "" }: { component: any; onUpdate: (newComp: any) => void; basePath?: string }) {
@@ -49,20 +49,24 @@ function ModelComponentView({ properties, loadedModels, children }: { properties
     // Instanced models are handled elsewhere (GameInstance), so only render non-instanced here
     if (!properties.filename || properties.instanced) return <>{children}</>;
 
-    if (loadedModels && loadedModels[properties.filename]) {
-        const clonedModel = loadedModels[properties.filename].clone();
-        // Enable shadows on all meshes in the model
-        clonedModel.traverse((obj: any) => {
+    const sourceModel = loadedModels?.[properties.filename];
+
+    // Clone model once and set up shadows - memoized to avoid cloning on every render
+    const clonedModel = useMemo(() => {
+        if (!sourceModel) return null;
+        const clone = sourceModel.clone();
+        clone.traverse((obj: any) => {
             if (obj.isMesh) {
                 obj.castShadow = true;
                 obj.receiveShadow = true;
             }
         });
-        return <primitive object={clonedModel}>{children}</primitive>;
-    }
+        return clone;
+    }, [sourceModel]);
 
-    // Model not loaded yet - render children only
-    return <>{children}</>;
+    if (!clonedModel) return <>{children}</>;
+
+    return <primitive object={clonedModel}>{children}</primitive>;
 }
 
 const ModelComponent: Component = {

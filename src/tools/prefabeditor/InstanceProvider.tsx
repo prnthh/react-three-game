@@ -81,22 +81,21 @@ export function GameInstanceProvider({
     }, []);
 
     // Flatten all model meshes once (models → flat mesh parts)
+    // Note: Geometry is cloned with baked transforms for instancing
     const { flatMeshes, modelParts } = useMemo(() => {
         const flatMeshes: Record<string, Mesh> = {};
         const modelParts: Record<string, number> = {};
 
         Object.entries(models).forEach(([modelKey, model]) => {
-            const root = model;
-            root.updateWorldMatrix(false, true);
-            const rootInverse = new Matrix4().copy(root.matrixWorld).invert();
+            model.updateWorldMatrix(false, true);
+            const rootInverse = new Matrix4().copy(model.matrixWorld).invert();
 
             let partIndex = 0;
-
-            root.traverse((obj: any) => {
+            model.traverse((obj: any) => {
                 if (obj.isMesh) {
+                    // Clone geometry and bake relative transform
                     const geom = obj.geometry.clone();
-                    const relativeTransform = obj.matrixWorld.clone().premultiply(rootInverse);
-                    geom.applyMatrix4(relativeTransform);
+                    geom.applyMatrix4(obj.matrixWorld.clone().premultiply(rootInverse));
 
                     const partKey = `${modelKey}__${partIndex}`;
                     flatMeshes[partKey] = new Mesh(geom, obj.material);
@@ -108,6 +107,13 @@ export function GameInstanceProvider({
 
         return { flatMeshes, modelParts };
     }, [models]);
+
+    // Cleanup geometries when models change
+    useEffect(() => {
+        return () => {
+            Object.values(flatMeshes).forEach(mesh => mesh.geometry.dispose());
+        };
+    }, [flatMeshes]);
 
     // Group instances by meshPath + physics type for batch rendering
     const grouped = useMemo(() => {
@@ -213,21 +219,24 @@ function InstancedRigidGroup({
         [group.instances]
     );
 
+    const colliders = group.physicsType === 'fixed' ? 'trimesh' : 'hull';
+
     return (
         <InstancedRigidBodies
             instances={instances}
-            colliders={group.physicsType === 'fixed' ? 'trimesh' : 'hull'}
+            colliders={colliders}
             type={group.physicsType as 'dynamic' | 'fixed'}
         >
             {Array.from({ length: partCount }).map((_, i) => {
                 const mesh = flatMeshes[`${modelKey}__${i}`];
+                if (!mesh) return null;
                 return (
                     <instancedMesh
                         key={i}
                         args={[mesh.geometry, mesh.material, group.instances.length]}
                         castShadow
                         receiveShadow
-                        frustumCulled={false}
+                        frustumCulled={false} // Required: culling first instance hides all
                     />
                 );
             })}
@@ -251,46 +260,59 @@ function NonPhysicsInstancedGroup({
     onSelect?: (id: string | null) => void;
     registerRef?: (id: string, obj: Object3D | null) => void;
 }) {
-    const clickValid = useRef(false);
-
-    const handlePointerDown = (e: any) => {
-        e.stopPropagation();
-        clickValid.current = true;
-    };
-
-    const handlePointerMove = () => {
-        if (clickValid.current) clickValid.current = false;
-    };
-
-    const handlePointerUp = (e: any, id: string) => {
-        if (clickValid.current) {
-            e.stopPropagation();
-            onSelect?.(id);
-        }
-        clickValid.current = false;
-    };
+    // Pre-compute which Instance components exist for this model
+    const InstanceComponents = useMemo(() =>
+        Array.from({ length: partCount }, (_, i) => instancesMap[`${modelKey}__${i}`]).filter(Boolean),
+        [instancesMap, modelKey, partCount]
+    );
 
     return (
         <>
             {group.instances.map(inst => (
-                <group
+                <InstanceGroupItem
                     key={inst.id}
-                    ref={(el) => { registerRef?.(inst.id, el as unknown as Object3D | null); }}
-                    position={inst.position}
-                    rotation={inst.rotation}
-                    scale={inst.scale}
-                    onPointerDown={handlePointerDown}
-                    onPointerMove={handlePointerMove}
-                    onPointerUp={(e) => handlePointerUp(e, inst.id)}
-                >
-                    {Array.from({ length: partCount }).map((_, i) => {
-                        const Instance = instancesMap[`${modelKey}__${i}`];
-                        if (!Instance) return null;
-                        return <Instance key={i} />;
-                    })}
-                </group>
+                    instance={inst}
+                    InstanceComponents={InstanceComponents}
+                    onSelect={onSelect}
+                    registerRef={registerRef}
+                />
             ))}
         </>
+    );
+}
+
+// Individual instance item with its own click state
+function InstanceGroupItem({
+    instance,
+    InstanceComponents,
+    onSelect,
+    registerRef
+}: {
+    instance: InstanceData;
+    InstanceComponents: React.ComponentType<any>[];
+    onSelect?: (id: string | null) => void;
+    registerRef?: (id: string, obj: Object3D | null) => void;
+}) {
+    const clickValid = useRef(false);
+
+    return (
+        <group
+            ref={(el) => registerRef?.(instance.id, el)}
+            position={instance.position}
+            rotation={instance.rotation}
+            scale={instance.scale}
+            onPointerDown={(e) => { e.stopPropagation(); clickValid.current = true; }}
+            onPointerMove={() => { clickValid.current = false; }}
+            onPointerUp={(e) => {
+                if (clickValid.current) {
+                    e.stopPropagation();
+                    onSelect?.(instance.id);
+                }
+                clickValid.current = false;
+            }}
+        >
+            {InstanceComponents.map((Instance, i) => <Instance key={i} />)}
+        </group>
     );
 }
 

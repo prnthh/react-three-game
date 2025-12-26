@@ -222,10 +222,7 @@ function GameObjectRenderer({
     // --- 4. Render core content using component system ---
     const core = renderCoreNode(gameObject, ctx, parentMatrix);
 
-    // --- 5. Wrap with physics if needed (except in edit mode) ---
-    const physicsWrapped = wrapPhysicsIfNeeded(gameObject, core, ctx);
-
-    // --- 6. Render children recursively (always relative transforms) ---
+    // --- 5. Render children recursively (always relative transforms) ---
     const children = (gameObject.children ?? []).map((child) => (
         <GameObjectRenderer
             key={child.id}
@@ -240,8 +237,8 @@ function GameObjectRenderer({
         />
     ));
 
-    // --- 7. Final group wrapper with local transform ---
-    return (
+    // --- 6. Inner content group with full transform ---
+    const innerGroup = (
         <group
             ref={(el) => registerRef(gameObject.id, el)}
             position={transformProps.position}
@@ -251,10 +248,25 @@ function GameObjectRenderer({
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
         >
-            {physicsWrapped}
+            {core}
             {children}
         </group>
     );
+
+    // --- 7. Wrap with physics if needed (RigidBody as outer parent, no transform) ---
+    const physics = gameObject.components?.physics;
+    if (physics && !editMode) {
+        const physicsDef = getComponent('Physics');
+        if (physicsDef?.View) {
+            return (
+                <physicsDef.View properties={physics.properties}>
+                    {innerGroup}
+                </physicsDef.View>
+            );
+        }
+    }
+
+    return innerGroup;
 }
 
 // Helper: render an instanced GameInstance (terminal node)
@@ -362,22 +374,6 @@ function renderCoreNode(gameObject: GameObjectType, ctx: any, parentMatrix: Matr
     return wrapperComponents.reduce((content, { key, View, properties }) => {
         return <View key={key} properties={properties} {...contextProps}>{content}</View>;
     }, coreContent);
-}
-
-// Helper: wrap core content with physics component when necessary
-function wrapPhysicsIfNeeded(gameObject: GameObjectType, content: React.ReactNode, ctx: any) {
-    const physics = gameObject.components?.physics;
-    if (!physics) return content;
-    const physicsDef = getComponent('Physics');
-    if (!physicsDef || !physicsDef.View) return content;
-    return (
-        <physicsDef.View
-            properties={{ ...physics.properties, id: gameObject.id }}
-            editMode={ctx.editMode}
-        >
-            {content}
-        </physicsDef.View>
-    );
 }
 
 

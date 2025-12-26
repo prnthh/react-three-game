@@ -1,7 +1,7 @@
 import { Component } from "./ComponentRegistry";
 import { useRef, useEffect } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
-import { CameraHelper, DirectionalLight, Object3D, Vector3 } from "three";
+import { useFrame } from "@react-three/fiber";
+import { DirectionalLight, Object3D, Vector3 } from "three";
 
 function DirectionalLightComponentEditor({ component, onUpdate }: { component: any; onUpdate: (newComp: any) => void }) {
     const props = {
@@ -190,70 +190,30 @@ function DirectionalLightView({ properties, editMode }: { properties: any; editM
     const shadowCameraRight = properties.shadowCameraRight ?? 30;
     const targetOffset = properties.targetOffset ?? [0, -5, 0];
 
-    const { scene } = useThree();
     const directionalLightRef = useRef<DirectionalLight>(null);
-    const targetRef = useRef<Object3D>(new Object3D());
-    const cameraHelperRef = useRef<CameraHelper | null>(null);
+    const targetRef = useRef<Object3D>(null);
 
-    // Add target to scene once
+    // Set up light target reference when both refs are ready
     useEffect(() => {
-        const target = targetRef.current;
-        scene.add(target);
-        return () => {
-            scene.remove(target);
-        };
-    }, [scene]);
-
-    // Set up light target reference once
-    useEffect(() => {
-        if (directionalLightRef.current) {
+        if (directionalLightRef.current && targetRef.current) {
             directionalLightRef.current.target = targetRef.current;
         }
     }, []);
 
-    // Update target position and mark shadow for update when light moves or offset changes
+    // Update target world position based on light position + offset
     useFrame(() => {
-        if (!directionalLightRef.current) return;
+        if (!directionalLightRef.current || !targetRef.current) return;
 
         const lightWorldPos = new Vector3();
         directionalLightRef.current.getWorldPosition(lightWorldPos);
 
-        const newTargetPos = new Vector3(
+        // Target is positioned relative to light's world position
+        targetRef.current.position.set(
             lightWorldPos.x + targetOffset[0],
             lightWorldPos.y + targetOffset[1],
             lightWorldPos.z + targetOffset[2]
         );
-
-        // Only update if position actually changed
-        if (!targetRef.current.position.equals(newTargetPos)) {
-            targetRef.current.position.copy(newTargetPos);
-            if (directionalLightRef.current.shadow) {
-                directionalLightRef.current.shadow.needsUpdate = true;
-            }
-        }
-
-        // Update camera helper in edit mode
-        if (editMode && cameraHelperRef.current) {
-            cameraHelperRef.current.update();
-        }
     });
-
-    // Create/destroy camera helper for edit mode
-    useEffect(() => {
-        if (editMode && directionalLightRef.current?.shadow.camera) {
-            const helper = new CameraHelper(directionalLightRef.current.shadow.camera);
-            cameraHelperRef.current = helper;
-            scene.add(helper);
-
-            return () => {
-                if (cameraHelperRef.current) {
-                    scene.remove(cameraHelperRef.current);
-                    cameraHelperRef.current.dispose();
-                    cameraHelperRef.current = null;
-                }
-            };
-        }
-    }, [editMode, scene]);
 
     return (
         <>
@@ -262,20 +222,19 @@ function DirectionalLightView({ properties, editMode }: { properties: any; editM
                 color={color}
                 intensity={intensity}
                 castShadow={castShadow}
-                shadow-mapSize={[shadowMapSize, shadowMapSize]}
+                shadow-mapSize-width={shadowMapSize}
+                shadow-mapSize-height={shadowMapSize}
+                shadow-camera-near={shadowCameraNear}
+                shadow-camera-far={shadowCameraFar}
+                shadow-camera-top={shadowCameraTop}
+                shadow-camera-bottom={shadowCameraBottom}
+                shadow-camera-left={shadowCameraLeft}
+                shadow-camera-right={shadowCameraRight}
                 shadow-bias={-0.001}
                 shadow-normalBias={0.02}
-            >
-                <orthographicCamera
-                    attach="shadow-camera"
-                    near={shadowCameraNear}
-                    far={shadowCameraFar}
-                    top={shadowCameraTop}
-                    bottom={shadowCameraBottom}
-                    left={shadowCameraLeft}
-                    right={shadowCameraRight}
-                />
-            </directionalLight>
+            />
+            {/* Target object - rendered declaratively in scene graph */}
+            <object3D ref={targetRef} />
             {editMode && (
                 <>
                     {/* Light source indicator */}

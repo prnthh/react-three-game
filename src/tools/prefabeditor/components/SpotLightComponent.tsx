@@ -113,6 +113,8 @@ function SpotLightView({ properties, editMode }: { properties: any; editMode?: b
                 penumbra={penumbra}
                 distance={distance}
                 castShadow={castShadow}
+                shadow-mapSize-width={1024}
+                shadow-mapSize-height={1024}
                 shadow-bias={-0.0001}
                 shadow-normalBias={0.02}
             />

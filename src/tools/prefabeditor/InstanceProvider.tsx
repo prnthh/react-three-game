@@ -1,8 +1,7 @@
 import React, { createContext, useContext, useMemo, useRef, useState, useEffect, useCallback } from "react";
 import { Merged } from '@react-three/drei';
 import { InstancedRigidBodies, RigidBodyProps } from "@react-three/rapier";
-import { useFrame } from "@react-three/fiber";
-import { Mesh, Matrix4, Object3D, Euler, Quaternion, Vector3, InstancedMesh } from "three";
+import { Mesh, Matrix4, Object3D } from "three";
 
 // --- Types ---
 export type InstanceData = {
@@ -25,34 +24,31 @@ type GameInstanceContextType = {
 };
 
 // --- Helpers ---
-const arraysEqual = (a: number[], b: number[]) =>
+const tupleEqual = (a: readonly number[], b: readonly number[]) =>
     a.length === b.length && a.every((v, i) => v === b[i]);
 
-const instancesEqual = (a: InstanceData, b: InstanceData) =>
-    a.id === b.id &&
-    a.meshPath === b.meshPath &&
-    a.physics?.type === b.physics?.type &&
-    arraysEqual(a.position, b.position) &&
-    arraysEqual(a.rotation, b.rotation) &&
-    arraysEqual(a.scale, b.scale);
+const instanceChanged = (a: InstanceData, b: InstanceData) =>
+    a.meshPath !== b.meshPath ||
+    a.physics?.type !== b.physics?.type ||
+    !tupleEqual(a.position, b.position) ||
+    !tupleEqual(a.rotation, b.rotation) ||
+    !tupleEqual(a.scale, b.scale);
 
-// Reusable objects for matrix computation (avoid allocations in hot paths)
-const _matrix = new Matrix4();
-const _position = new Vector3();
-const _quaternion = new Quaternion();
-const _euler = new Euler();
-const _scale = new Vector3();
+function extractMeshParts(model: Object3D): Mesh[] {
+    model.updateWorldMatrix(false, true);
+    const rootInverse = new Matrix4().copy(model.matrixWorld).invert();
+    const parts: Mesh[] = [];
 
-function composeMatrix(
-    position: [number, number, number],
-    rotation: [number, number, number],
-    scale: [number, number, number],
-    target: Matrix4 = _matrix
-): Matrix4 {
-    _position.set(...position);
-    _quaternion.setFromEuler(_euler.set(...rotation));
-    _scale.set(...scale);
-    return target.compose(_position, _quaternion, _scale);
+    model.traverse(child => {
+        if ((child as Mesh).isMesh) {
+            const mesh = child as Mesh;
+            const geometry = mesh.geometry.clone();
+            geometry.applyMatrix4(mesh.matrixWorld.clone().premultiply(rootInverse));
+            parts.push(new Mesh(geometry, mesh.material));
+        }
+    });
+
+    return parts;
 }
 
 // --- Context ---
@@ -76,7 +72,7 @@ export function GameInstanceProvider({
         setInstances(prev => {
             const idx = prev.findIndex(i => i.id === instance.id);
             if (idx === -1) return [...prev, instance];
-            if (instancesEqual(prev[idx], instance)) return prev;
+            if (!instanceChanged(prev[idx], instance)) return prev;
             const updated = [...prev];
             updated[idx] = instance;
             return updated;
@@ -93,20 +89,11 @@ export function GameInstanceProvider({
         const partCounts: Record<string, number> = {};
 
         Object.entries(models).forEach(([modelKey, model]) => {
-            model.updateWorldMatrix(false, true);
-            const rootInverse = new Matrix4().copy(model.matrixWorld).invert();
-            let partIndex = 0;
-
-            model.traverse((child: Object3D) => {
-                if ((child as Mesh).isMesh) {
-                    const mesh = child as Mesh;
-                    const geometry = mesh.geometry.clone();
-                    geometry.applyMatrix4(mesh.matrixWorld.clone().premultiply(rootInverse));
-                    meshParts[`${modelKey}__${partIndex}`] = new Mesh(geometry, mesh.material);
-                    partIndex++;
-                }
+            const parts = extractMeshParts(model);
+            parts.forEach((mesh, i) => {
+                meshParts[`${modelKey}__${i}`] = mesh;
             });
-            partCounts[modelKey] = partIndex;
+            partCounts[modelKey] = parts.length;
         });
 
         return { meshParts, partCounts };
@@ -177,6 +164,8 @@ export function GameInstanceProvider({
 }
 
 // --- Physics Instances ---
+// InstancedRigidBodies handles position/rotation/scale via the instances prop.
+// We pass scale in instances and let the library manage matrix updates.
 function PhysicsInstances({
     instances,
     physicsType,
@@ -190,23 +179,11 @@ function PhysicsInstances({
     partCount: number;
     meshParts: Record<string, Mesh>;
 }) {
-    const meshRefs = useRef<(InstancedMesh | null)[]>([]);
-
+    // InstancedRigidBodies expects { key, position, rotation, scale }
     const rigidBodyInstances = useMemo(() =>
         instances.map(({ id, position, rotation, scale }) => ({ key: id, position, rotation, scale })),
         [instances]
     );
-
-    // Sync visual matrices each frame (physics updates position/rotation, we need to apply scale)
-    useFrame(() => {
-        meshRefs.current.forEach(mesh => {
-            if (!mesh) return;
-            instances.forEach((inst, i) => {
-                mesh.setMatrixAt(i, composeMatrix(inst.position, inst.rotation, inst.scale));
-            });
-            mesh.instanceMatrix.needsUpdate = true;
-        });
-    });
 
     return (
         <InstancedRigidBodies
@@ -219,7 +196,6 @@ function PhysicsInstances({
                 return mesh ? (
                     <instancedMesh
                         key={i}
-                        ref={el => { meshRefs.current[i] = el; }}
                         args={[mesh.geometry, mesh.material, instances.length]}
                         frustumCulled={false}
                         castShadow

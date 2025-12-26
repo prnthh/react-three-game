@@ -42,7 +42,7 @@ const PrefabEditor = ({ basePath, initialPrefab, onPrefabChange, children }: { b
 
     return <>
         <GameCanvas>
-            <Physics paused={editMode}>
+            <Physics debug paused={editMode}>
                 <ambientLight intensity={1.5} />
                 <gridHelper args={[10, 10]} position={[0, -1, 0]} />
                 <PrefabRoot

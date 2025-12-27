@@ -69,6 +69,7 @@ export function cloneNode(node: GameObject): GameObject {
     return {
         ...node,
         id: crypto.randomUUID(),
+        name: `${node.name ?? "Node"} Copy`,
         children: node.children?.map(cloneNode)
     };
 }
@@ -77,4 +78,33 @@ export function cloneNode(node: GameObject): GameObject {
 export function getComponent<T = any>(node: GameObject, type: string): T | undefined {
     const comp = Object.values(node.components ?? {}).find(c => c?.type === type);
     return comp?.properties as T | undefined;
+}
+
+export function updateNodeById(
+  root: GameObject,
+  id: string,
+  updater: (node: GameObject) => GameObject
+): GameObject {
+  if (root.id === id) {
+    return updater(root);
+  }
+
+  if (!root.children) {
+    return root;
+  }
+
+  let didChange = false;
+
+  const newChildren = root.children.map(child => {
+    const updated = updateNodeById(child, id, updater);
+    if (updated !== child) didChange = true;
+    return updated;
+  });
+
+  if (!didChange) return root;
+
+  return {
+    ...root,
+    children: newChildren
+  };
 }

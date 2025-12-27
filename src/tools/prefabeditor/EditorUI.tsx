@@ -85,8 +85,10 @@ function NodeInspector({ node, updateNode, deleteNode, transformMode, setTransfo
             <div style={base.label}>Node ID</div>
             <input
                 style={base.input}
-                value={node.id}
-                onChange={e => updateNode(n => ({ ...n, id: e.target.value }))}
+                value={node.name ?? ""}
+                onChange={e =>
+                    updateNode(n => ({ ...n, name: e.target.value }))
+                }
             />
         </div>
 

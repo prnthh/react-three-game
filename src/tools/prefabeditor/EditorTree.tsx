@@ -2,7 +2,7 @@ import { Dispatch, SetStateAction, useState, MouseEvent } from 'react';
 import { Prefab, GameObject } from "./types";
 import { getComponent } from './components/ComponentRegistry';
 import { base, tree, menu } from './styles';
-import { findNode, findParent, deleteNode, cloneNode } from './utils';
+import { findNode, findParent, deleteNode, cloneNode, updateNodeById } from './utils';
 
 export default function EditorTree({ prefabData, setPrefabData, selectedId, setSelectedId }: {
     prefabData?: Prefab;
@@ -36,6 +36,7 @@ export default function EditorTree({ prefabData, setPrefabData, selectedId, setS
     const handleAddChild = (parentId: string) => {
         const newNode: GameObject = {
             id: crypto.randomUUID(),
+            name: "New Node",
             components: {
                 transform: {
                     type: "Transform",
@@ -44,15 +45,13 @@ export default function EditorTree({ prefabData, setPrefabData, selectedId, setS
             }
         };
 
-        setPrefabData(prev => {
-            const newRoot = JSON.parse(JSON.stringify(prev.root));
-            const parent = findNode(newRoot, parentId);
-            if (parent) {
-                parent.children = parent.children || [];
-                parent.children.push(newNode);
-            }
-            return { ...prev, root: newRoot };
-        });
+        setPrefabData(prev => ({
+            ...prev,
+            root: updateNodeById(prev.root, parentId, parent => ({
+                ...parent,
+                children: [...(parent.children ?? []), newNode]
+            }))
+        }));
         setContextMenu(null);
     };
 
@@ -60,19 +59,24 @@ export default function EditorTree({ prefabData, setPrefabData, selectedId, setS
         if (nodeId === prefabData.root.id) return;
 
         setPrefabData(prev => {
-            const newRoot = JSON.parse(JSON.stringify(prev.root));
-            const parent = findParent(newRoot, nodeId);
-            const node = findNode(newRoot, nodeId);
+            const node = findNode(prev.root, nodeId);
+            const parent = findParent(prev.root, nodeId);
+            if (!node || !parent) return prev;
 
-            if (parent && node) {
-                const clone = cloneNode(node);
-                parent.children = parent.children || [];
-                parent.children.push(clone);
-            }
-            return { ...prev, root: newRoot };
+            const clone = cloneNode(node);
+
+            return {
+                ...prev,
+                root: updateNodeById(prev.root, parent.id, p => ({
+                    ...p,
+                    children: [...(p.children ?? []), clone]
+                }))
+            };
         });
+
         setContextMenu(null);
     };
+
 
     const handleDelete = (nodeId: string) => {
         if (nodeId === prefabData.root.id) return;
@@ -104,28 +108,31 @@ export default function EditorTree({ prefabData, setPrefabData, selectedId, setS
         e.preventDefault();
 
         setPrefabData(prev => {
-            const newRoot = JSON.parse(JSON.stringify(prev.root));
-            const draggedNode = findNode(newRoot, draggedId);
-            if (draggedNode && findNode(draggedNode, targetId)) return prev;
+            const draggedNode = findNode(prev.root, draggedId);
+            const oldParent = findParent(prev.root, draggedId);
+            if (!draggedNode || !oldParent) return prev;
 
-            const parent = findParent(newRoot, draggedId);
-            if (!parent) return prev;
+            // Prevent dropping into own subtree
+            if (findNode(draggedNode, targetId)) return prev;
 
-            const nodeToMove = parent.children?.find(c => c.id === draggedId);
-            if (!nodeToMove) return prev;
+            // 1. Remove from old parent
+            let root = updateNodeById(prev.root, oldParent.id, p => ({
+                ...p,
+                children: p.children!.filter(c => c.id !== draggedId)
+            }));
 
-            parent.children = parent.children!.filter(c => c.id !== draggedId);
+            // 2. Add to new parent
+            root = updateNodeById(root, targetId, t => ({
+                ...t,
+                children: [...(t.children ?? []), draggedNode]
+            }));
 
-            const target = findNode(newRoot, targetId);
-            if (target) {
-                target.children = target.children || [];
-                target.children.push(nodeToMove);
-            }
-
-            return { ...prev, root: newRoot };
+            return { ...prev, root };
         });
+
         setDraggedId(null);
     };
+
 
     const renderNode = (node: GameObject, depth = 0): React.ReactNode => {
         if (!node) return null;
@@ -164,7 +171,9 @@ export default function EditorTree({ prefabData, setPrefabData, selectedId, setS
                         {isCollapsed ? '▶' : '▼'}
                     </span>
                     {!isRoot && <span style={{ marginRight: 4, opacity: 0.4 }}>⋮⋮</span>}
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{node.id}</span>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {node.name ?? node.id}
+                    </span>
                 </div>
                 {!isCollapsed && node.children && node.children.map(child => renderNode(child, depth + 1))}
             </div>

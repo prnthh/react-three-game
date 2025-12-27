@@ -6,6 +6,7 @@ export interface Prefab {
 
 export interface GameObject {
     id: string;
+    name?: string;
     disabled?: boolean;
     hidden?: boolean;
     children?: GameObject[];

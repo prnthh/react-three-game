@@ -271,7 +271,13 @@ function GameObjectRenderer({
 
     // --- 7. Wrap with physics if needed (RigidBody as outer parent, no transform) ---
     const physics = gameObject.components?.physics;
-    if (physics && !editMode) {
+
+    // Determine if model is safe/ready for physics. No model => safe; model => only safe once loaded.
+    const modelReady =
+        !gameObject.components?.model ||
+        !!loadedModels[gameObject.components.model.properties.filename];
+
+    if (physics && !editMode && modelReady) {
         const physicsDef = getComponent('Physics');
         if (physicsDef?.View) {
             return (

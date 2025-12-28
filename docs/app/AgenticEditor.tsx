@@ -243,7 +243,7 @@ type AgenticEditorProps = {
     /** Update callback to replace the prefab JSON (owned by the page). */
     onPrefabChange: (nextPrefab: any) => void;
     /** Optional: Ref to the canvas element for screenshot capture. */
-    canvasRef?: React.RefObject<HTMLCanvasElement>;
+    canvasRef?: React.RefObject<HTMLCanvasElement | null>;
 };
 
 export default function AgenticEditor({
@@ -441,7 +441,6 @@ CRITICAL RULES:
 3. Each object MUST have a UNIQUE id (cube1, cube2, cube3 - NOT all "cube1")
 4. Transform MUST include ALL THREE: position:[x,y,z], rotation:[x,y,z], scale:[x,y,z]
 5. NEVER use UUID-like ids from the scene - those are read-only
-6. DO NOT include "enabled" or "visible" fields
 
 OPERATIONS:
 ADD: {"root":{"children":{"$append":[{id:"cube1",components:{transform:{type:"Transform",properties:{position:[2,0,0],rotation:[0,0,0],scale:[1,1,1]}},mesh:{type:"Mesh",properties:{geometry:"box",material:"standard",color:"#ff0000"}}},children:[]}]}}}
@@ -633,8 +632,6 @@ ${JSON.stringify(prefab, null, 2)}
             }
 
             (nextPrefab as any).root.id = (nextPrefab as any).root.id ?? "root";
-            (nextPrefab as any).root.enabled = (nextPrefab as any).root.enabled ?? true;
-            (nextPrefab as any).root.visible = (nextPrefab as any).root.visible ?? true;
             (nextPrefab as any).root.components = (nextPrefab as any).root.components ?? {};
             (nextPrefab as any).root.children = (nextPrefab as any).root.children ?? [];
             if (!Array.isArray((nextPrefab as any).root.children)) {

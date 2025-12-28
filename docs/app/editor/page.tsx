@@ -7,13 +7,13 @@ import testPrefab from "../samples/test.json";
 
 export default function Home() {
   const [selectedPrefab, setSelectedPrefab] = useState<any>(testPrefab);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Find the canvas element after component mounts
   useEffect(() => {
     const canvas = document.querySelector("canvas");
-    if (canvas && canvasRef) {
-      (canvasRef as any).current = canvas;
+    if (canvas) {
+      canvasRef.current = canvas;
     }
   }, []);
 

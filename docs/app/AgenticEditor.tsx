@@ -1,11 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 const OPENAI_KEY_STORAGE_KEY = "react-three-game.openaiApiKey";
 
 type JsonValue = null | boolean | number | string | JsonObject | JsonValue[];
 type JsonObject = { [key: string]: JsonValue };
+
+type ChatMessage = {
+    id: string;
+    role: "user" | "assistant" | "system";
+    content: string;
+    timestamp: number;
+    canvasImage?: string;
+    patch?: any;
+    prefabSnapshot?: any;
+    error?: string;
+    applied?: boolean;
+    streaming?: boolean;
+};
 
 function isPlainObject(v: unknown): v is Record<string, any> {
     return typeof v === "object" && v !== null && !Array.isArray(v);
@@ -37,6 +50,7 @@ function tryExtractJson(text: string): any {
  * Deep-merge helper with a prefab-friendly rule:
  * - Objects merge recursively
  * - Arrays: default is to REPLACE unless the patch explicitly uses {$append: [...]}
+ * - Supports targeted updates by ID for array elements
  */
 function mergePrefab(base: any, patch: any): any {
     if (!isPlainObject(patch)) {
@@ -52,12 +66,40 @@ function mergePrefab(base: any, patch: any): any {
     }
 
     if (Array.isArray(base)) {
+        // Handle array of patches - if patch is array, check if it contains ID-based updates
+        if (Array.isArray(patch)) {
+            // Check if this looks like ID-based selective updates
+            const patchById = new Map<string, any>();
+            let hasIdPatches = false;
+
+            for (const item of patch) {
+                if (isPlainObject(item) && typeof item.id === "string") {
+                    patchById.set(item.id, item);
+                    hasIdPatches = true;
+                }
+            }
+
+            if (hasIdPatches) {
+                // Apply ID-based patches to matching elements
+                return base.map((baseItem: any) => {
+                    if (isPlainObject(baseItem) && typeof baseItem.id === "string") {
+                        const patchItem = patchById.get(baseItem.id);
+                        if (patchItem) {
+                            return mergePrefab(baseItem, patchItem);
+                        }
+                    }
+                    return baseItem;
+                });
+            }
+        }
+
         // Common case: patching an array property with {$append:[...]}
-        if (Object.keys(patch).length === 1 && "$append" in patch) {
+        if (isPlainObject(patch) && Object.keys(patch).length === 1 && "$append" in patch) {
             const toAppend = (patch as any).$append;
             if (!Array.isArray(toAppend)) return base;
             return [...base, ...toAppend];
         }
+
         // Otherwise, treat as replacement.
         return patch;
     }
@@ -71,8 +113,8 @@ function mergePrefab(base: any, patch: any): any {
         } else if (isPlainObject(v) && isPlainObject(bv)) {
             (out as any)[k] = mergePrefab(bv, v);
         } else if (Array.isArray(v)) {
-            // By default arrays replace to avoid accidental huge duplications.
-            (out as any)[k] = v;
+            // Enhanced: merge arrays with ID-based targeting
+            (out as any)[k] = mergePrefab(bv, v);
         } else {
             (out as any)[k] = v;
         }
@@ -108,15 +150,56 @@ function normalizePatchForPrefab(patch: any): any {
     return patch;
 }
 
-function stableStringify(v: any): string {
-    const seen = new WeakSet<object>();
-    return JSON.stringify(v, function (key, value) {
-        if (typeof value === "object" && value !== null) {
-            if (seen.has(value)) return "[Circular]";
-            seen.add(value);
+/**
+ * Validates a patch to ensure it won't crash the editor
+ */
+function validatePatch(patch: any): void {
+    function validateNode(node: any, path: string): void {
+        if (!isPlainObject(node)) return;
+
+        // If this looks like a prefab node, validate it
+        if (typeof node.id === "string") {
+            if (!isPlainObject(node.components)) {
+                throw new Error(`Node at ${path} has id "${node.id}" but missing or invalid components object`);
+            }
+
+            // Validate transform if present
+            const transform = node.components.transform;
+            if (transform) {
+                if (!isPlainObject(transform.properties)) {
+                    throw new Error(`Node "${node.id}" has invalid transform properties`);
+                }
+                const props = transform.properties;
+                if (props.position && !Array.isArray(props.position)) {
+                    throw new Error(`Node "${node.id}" has invalid position (must be array)`);
+                }
+                if (props.rotation && !Array.isArray(props.rotation)) {
+                    throw new Error(`Node "${node.id}" has invalid rotation (must be array)`);
+                }
+                if (props.scale && !Array.isArray(props.scale)) {
+                    throw new Error(`Node "${node.id}" has invalid scale (must be array)`);
+                }
+            }
+
+            // Validate children if present
+            if (node.children !== undefined && !Array.isArray(node.children)) {
+                throw new Error(`Node "${node.id}" has invalid children (must be array)`);
+            }
         }
-        return value;
-    });
+
+        // Recursively validate nested objects and arrays
+        for (const [key, value] of Object.entries(node)) {
+            if (key === "$append" && Array.isArray(value)) {
+                value.forEach((item, i) => validateNode(item, `${path}.$append[${i}]`));
+            } else if (Array.isArray(value)) {
+                value.forEach((item, i) => validateNode(item, `${path}.${key}[${i}]`));
+            } else if (isPlainObject(value)) {
+                validateNode(value, `${path}.${key}`);
+            }
+        }
+    }
+
+    validateNode(patch, "patch");
 }
 
 type AgenticEditorProps = {
@@ -124,25 +207,27 @@ type AgenticEditorProps = {
     prefab: any;
     /** Update callback to replace the prefab JSON (owned by the page). */
     onPrefabChange: (nextPrefab: any) => void;
+    /** Optional: Ref to the canvas element for screenshot capture. */
+    canvasRef?: React.RefObject<HTMLCanvasElement>;
 };
 
 export default function AgenticEditor({
     prefab,
     onPrefabChange,
+    canvasRef,
 }: AgenticEditorProps) {
     const [isExpanded, setIsExpanded] = useState<boolean>(false);
     const [openAiKey, setOpenAiKey] = useState<string>("");
     const [prompt, setPrompt] = useState<string>("");
     const [isGenerating, setIsGenerating] = useState<boolean>(false);
-    const [aiError, setAiError] = useState<string | null>(null);
-    const [aiRaw, setAiRaw] = useState<string>("");
-    const [aiPatchPreview, setAiPatchPreview] = useState<any | null>(null);
     const [applyMode, setApplyMode] = useState<"merge" | "replace">("merge");
-    const [previewMeta, setPreviewMeta] = useState<{
-        beforeChildren: number | null;
-        afterChildren: number | null;
-        addedChildIds: string[];
-    } | null>(null);
+    const [useVision, setUseVision] = useState<boolean>(true);
+
+    // Chat-based state
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [prefabHistory, setPrefabHistory] = useState<any[]>([prefab]);
+    const [currentHistoryIndex, setCurrentHistoryIndex] = useState<number>(0);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Persist the key between sessions (client-only).
     useEffect(() => {
@@ -166,31 +251,156 @@ export default function AgenticEditor({
         }
     }, [openAiKey]);
 
+    // Auto-scroll to bottom of messages
     useEffect(() => {
-        // If the user changes prompt/key, clear stale preview errors.
-        if (aiError) setAiError(null);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [prompt]);
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages]);
 
-    async function generatePrefabFromPrompt() {
-        setAiError(null);
-        setAiRaw("");
-        setAiPatchPreview(null);
-        setPreviewMeta(null);
+    async function captureCanvasImage(): Promise<string | null> {
+        if (!canvasRef?.current || !useVision) {
+            return null;
+        }
+
+        try {
+            const canvas = canvasRef.current;
+            const imageData = canvas.toDataURL("image/png");
+            return imageData;
+        } catch (e) {
+            console.warn("Failed to capture canvas image:", e);
+            return null;
+        }
+    }
+
+    async function sendMessage() {
+        const userPrompt = prompt.trim();
+        if (!userPrompt) return;
+
         const key = openAiKey.trim();
         if (!key) {
-            setAiError("Enter your OpenAI API key first.");
+            const errorMsg: ChatMessage = {
+                id: Date.now().toString(),
+                role: "system",
+                content: "⚠️ Please enter your OpenAI API key first.",
+                timestamp: Date.now(),
+                error: "No API key",
+            };
+            setMessages(prev => [...prev, errorMsg]);
             return;
         }
 
-        const userPrompt = prompt.trim();
-        if (!userPrompt) {
-            setAiError("Enter a prompt describing the prefab you want.");
-            return;
-        }
+        // Capture canvas before request
+        const canvasImage = await captureCanvasImage();
 
+        // Add user message
+        const userMessage: ChatMessage = {
+            id: Date.now().toString(),
+            role: "user",
+            content: userPrompt,
+            timestamp: Date.now(),
+            canvasImage: canvasImage ?? undefined,
+            prefabSnapshot: JSON.parse(JSON.stringify(prefab)),
+        };
+        setMessages(prev => [...prev, userMessage]);
+        setPrompt("");
         setIsGenerating(true);
+
         try {
+            // Build conversation history for the AI
+            const apiMessages: any[] = [
+                {
+                    role: "system",
+                    content:
+                        "You are an expert at generating react-three-game prefab edits as JSON patches. You can see the current 3D scene and understand the spatial layout of objects.\n\nYou can work iteratively across multiple turns. After applying a patch, you will receive a screenshot of the result. If the result is not perfect, you can continue making adjustments in subsequent turns until the user's goal is achieved.",
+                },
+            ];
+
+            // Add conversation history (last 5 user/assistant exchanges with images)
+            const recentMessages = messages.slice(-10).filter(m =>
+                (m.role === "user" || m.role === "assistant" || m.role === "system") &&
+                (m.canvasImage || m.content)
+            );
+
+            for (const histMsg of recentMessages) {
+                if (histMsg.role === "user" && histMsg.canvasImage) {
+                    apiMessages.push({
+                        role: "user",
+                        content: [
+                            { type: "text", text: `User request: ${histMsg.content}` },
+                            { type: "image_url", image_url: { url: histMsg.canvasImage, detail: "low" } }
+                        ]
+                    });
+                } else if (histMsg.role === "assistant" && histMsg.patch) {
+                    apiMessages.push({
+                        role: "assistant",
+                        content: JSON.stringify(histMsg.patch)
+                    });
+                } else if (histMsg.role === "system" && histMsg.canvasImage) {
+                    apiMessages.push({
+                        role: "user",
+                        content: [
+                            { type: "text", text: histMsg.content },
+                            { type: "image_url", image_url: { url: histMsg.canvasImage, detail: "low" } }
+                        ]
+                    });
+                }
+            }
+
+            // Enhanced prompt with better instructions
+            const enhancedPrompt = `You will be given the current prefab JSON${canvasImage ? " and a screenshot of the 3D scene" : ""}. Produce a SINGLE JSON object that represents a PATCH to apply.
+
+Goal: ${userPrompt}
+
+${recentMessages.length > 0 ? "You are working iteratively. Review the previous screenshots and patches to understand what has been done so far. Make incremental improvements until the goal is achieved." : ""}
+
+RULES:
+- Output ONLY valid JSON (no markdown/fences/text). All nodes need: id, enabled, visible, components{transform}, children[].
+- Transform: {"type":"Transform","properties":{"position":[x,y,z],"rotation":[x,y,z],"scale":[x,y,z]}} (rotation in radians)
+- ADD: {"root":{"children":{"$append":[{full node with all required fields}]}}}
+- MODIFY by ID: {"root":{"children":[{id:"target-id", components:{...complete}}]}}
+- DELETE: {"root":{"children":[...keep these, exclude deleted IDs...]}} or {"root":{"children":[]}} to clear all
+- IDs: simple strings (e.g. "cube1"), not UUIDs
+- Iterate across turns: make incremental changes, see results, refine until goal achieved
+
+Examples:
+// Add red cube at [2,0,0]
+{"root":{"children":{"$append":[{"id":"cube1","enabled":true,"visible":true,"components":{"transform":{"type":"Transform","properties":{"position":[2,0,0],"rotation":[0,0,0],"scale":[1,1,1]}},"mesh":{"type":"Mesh","properties":{"geometry":"box","material":"standard","color":"#ff0000"}}},"children":[]}]}}}
+
+// Modify cube1's position
+{"root":{"children":[{"id":"cube1","components":{"transform":{"type":"Transform","properties":{"position":[5,0,0],"rotation":[0,0,0],"scale":[1,1,1]}}}}]}}
+
+// Delete cube1 (keep sphere1, light1)
+{"root":{"children":[/* only sphere1 and light1 nodes here */]}}
+
+Current prefab:
+${JSON.stringify(prefab, null, 2)}
+`;
+
+            if (canvasImage) {
+                // Use vision model with image
+                apiMessages.push({
+                    role: "user",
+                    content: [
+                        {
+                            type: "text",
+                            text: enhancedPrompt,
+                        },
+                        {
+                            type: "image_url",
+                            image_url: {
+                                url: canvasImage,
+                                detail: "low",
+                            },
+                        },
+                    ],
+                });
+            } else {
+                // Text-only fallback
+                apiMessages.push({
+                    role: "user",
+                    content: enhancedPrompt,
+                });
+            }
+
             // NOTE: This calls OpenAI directly from the browser.
             // For production you should proxy via a Next.js route to avoid exposing keys.
             const res = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -200,20 +410,10 @@ export default function AgenticEditor({
                     Authorization: `Bearer ${key}`,
                 },
                 body: JSON.stringify({
-                    model: "gpt-4o-mini",
-                    temperature: 0.2,
-                    messages: [
-                        {
-                            role: "system",
-                            content:
-                                "You are an expert at generating react-three-game prefab edits as JSON patches.",
-                        },
-                        {
-                            role: "user",
-                            content:
-                                `You will be given the current prefab JSON. Produce a SINGLE JSON object that represents a PATCH to apply.\n\nGoal: ${userPrompt}\n\nRules:\n- Output ONLY JSON (no markdown).\n- Prefer returning a patch that modifies ONLY the parts needed.\n- To add new items to an array without replacing it, use: {"$append": [ ... ]}.\n- If your patch touches transforms, keep them local (position/rotation/scale arrays; rotation in radians).\n- IDs should be stable simple strings; do not invent UUIDs unless necessary.\n\nCurrent prefab (for context):\n${JSON.stringify(prefab)}\n`,
-                        },
-                    ],
+                    model: "gpt-5-nano-2025-08-07",
+                    messages: apiMessages,
+                    max_completion_tokens: 16000,
+                    stream: true,
                 }),
             });
 
@@ -222,61 +422,109 @@ export default function AgenticEditor({
                 throw new Error(`OpenAI error ${res.status}: ${text}`);
             }
 
-            const data = await res.json();
-            const content: unknown = data?.choices?.[0]?.message?.content;
-            if (typeof content !== "string" || !content.trim()) {
-                throw new Error("OpenAI returned an empty response.");
+            // Create streaming assistant message
+            const assistantId = (Date.now() + 1).toString();
+            const assistantMessage: ChatMessage = {
+                id: assistantId,
+                role: "assistant",
+                content: "",
+                timestamp: Date.now(),
+                streaming: true,
+            };
+            setMessages(prev => [...prev, assistantMessage]);
+
+            // Process the stream
+            const reader = res.body?.getReader();
+            const decoder = new TextDecoder();
+            let accumulatedContent = "";
+
+            if (!reader) {
+                throw new Error("Failed to get response stream reader");
             }
 
-            setAiRaw(content);
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
 
-            const parsedPatch = normalizePatchForPrefab(tryExtractJson(content));
+                const chunk = decoder.decode(value);
+                const lines = chunk.split("\n").filter(line => line.trim() !== "");
+
+                for (const line of lines) {
+                    if (line.startsWith("data: ")) {
+                        const data = line.slice(6);
+                        if (data === "[DONE]") continue;
+
+                        try {
+                            const parsed = JSON.parse(data);
+                            const delta = parsed.choices?.[0]?.delta?.content;
+                            if (delta) {
+                                accumulatedContent += delta;
+                                // Update message with streaming content
+                                setMessages(prev =>
+                                    prev.map(m =>
+                                        m.id === assistantId
+                                            ? { ...m, content: accumulatedContent }
+                                            : m
+                                    )
+                                );
+                            }
+                        } catch (e) {
+                            console.warn("Failed to parse streaming chunk:", e);
+                        }
+                    }
+                }
+            }
+
+            // Stream complete - parse the final content
+            if (!accumulatedContent.trim()) {
+                throw new Error("Model returned an empty response.");
+            }
+
+            const parsedPatch = normalizePatchForPrefab(tryExtractJson(accumulatedContent));
             if (!parsedPatch || typeof parsedPatch !== "object") {
                 throw new Error("Parsed patch was not an object.");
             }
 
-            // Build a preview of the next prefab without committing yet.
-            const nextPrefab =
-                applyMode === "replace" ? parsedPatch : mergePrefab(prefab, parsedPatch);
+            // Validate patch structure to prevent crashes
+            validatePatch(parsedPatch);
 
-            const beforeChildren = Array.isArray((prefab as any)?.root?.children)
-                ? (prefab as any).root.children.length
-                : null;
-            const afterChildren = Array.isArray((nextPrefab as any)?.root?.children)
-                ? (nextPrefab as any).root.children.length
-                : null;
-            const beforeIds = new Set(
-                Array.isArray((prefab as any)?.root?.children)
-                    ? (prefab as any).root.children
-                        .map((c: any) => (typeof c?.id === "string" ? c.id : null))
-                        .filter(Boolean)
-                    : []
+            // Update message with final patch (mark as applied immediately)
+            setMessages(prev =>
+                prev.map(m =>
+                    m.id === assistantId
+                        ? {
+                              ...m,
+                              content: `Generated patch with keys: ${Object.keys(parsedPatch).join(", ")}`,
+                              patch: parsedPatch,
+                              streaming: false,
+                              applied: true,
+                          }
+                        : m
+                )
             );
-            const addedChildIds = Array.isArray((nextPrefab as any)?.root?.children)
-                ? (nextPrefab as any).root.children
-                    .map((c: any) => (typeof c?.id === "string" ? c.id : null))
-                    .filter((id: any) => typeof id === "string" && !beforeIds.has(id))
-                    .slice(0, 8)
-                : [];
-            setPreviewMeta({ beforeChildren, afterChildren, addedChildIds });
 
-            // If merge produced no changes, surface a helpful warning.
-            if (applyMode === "merge") {
-                try {
-                    const before = stableStringify(prefab);
-                    const after = stableStringify(nextPrefab);
-                    if (before === after) {
-                        throw new Error(
-                            "Patch preview produced no changes. If you meant to add nodes, ensure your patch targets root.children (or return {\"$append\":[...]} with valid node objects)."
-                        );
-                    }
-                } catch (e: any) {
-                    // stableStringify should be safe, but don't block preview on failures.
-                    if (e?.message) setAiError(e.message);
-                }
-            }
+            // Auto-apply the patch
+            await applyPatchAuto(parsedPatch);
+        } catch (e: any) {
+            const errorMsg: ChatMessage = {
+                id: (Date.now() + 1).toString(),
+                role: "system",
+                content: `❌ Error: ${e?.message ?? String(e)}`,
+                timestamp: Date.now(),
+                error: e?.message ?? String(e),
+            };
+            setMessages(prev => [...prev, errorMsg]);
+        } finally {
+            setIsGenerating(false);
+        }
+    }
 
-            // Minimal normalization: ensure required fields exist to avoid editor crashes.
+    async function applyPatchAuto(patch: any) {
+        try {
+            const nextPrefab =
+                applyMode === "replace" ? patch : mergePrefab(prefab, patch);
+
+            // Minimal normalization
             if (!nextPrefab || typeof nextPrefab !== "object") {
                 throw new Error("Patch result is not an object.");
             }
@@ -293,7 +541,7 @@ export default function AgenticEditor({
             (nextPrefab as any).root.children = (nextPrefab as any).root.children ?? [];
             if (!Array.isArray((nextPrefab as any).root.children)) {
                 throw new Error(
-                    "Patch produced an invalid prefab: root.children must be an array. If you meant to append, use { root: { children: { \"$append\": [ ... ] } } }."
+                    "Patch produced an invalid prefab: root.children must be an array."
                 );
             }
             (nextPrefab as any).root.components.transform =
@@ -306,19 +554,60 @@ export default function AgenticEditor({
                     },
                 };
 
-            setAiPatchPreview({ patch: parsedPatch, nextPrefab });
+            // Apply to prefab
+            onPrefabChange(nextPrefab);
+
+            // Save to history
+            setPrefabHistory(prev => [...prev, nextPrefab]);
+            setCurrentHistoryIndex(prev => prev + 1);
+
+            // Capture result screenshot and add system message
+            setTimeout(async () => {
+                const resultImage = await captureCanvasImage();
+                const resultMsg: ChatMessage = {
+                    id: (Date.now() + 2).toString(),
+                    role: "system",
+                    content: "✅ Patch applied successfully. Here's the result:",
+                    timestamp: Date.now(),
+                    canvasImage: resultImage ?? undefined,
+                };
+                setMessages(prev => [...prev, resultMsg]);
+            }, 500);
         } catch (e: any) {
-            setAiError(e?.message ?? String(e));
-        } finally {
-            setIsGenerating(false);
+            const errorMsg: ChatMessage = {
+                id: (Date.now() + 2).toString(),
+                role: "system",
+                content: `❌ Failed to apply patch: ${e?.message ?? String(e)}`,
+                timestamp: Date.now(),
+                error: e?.message ?? String(e),
+            };
+            setMessages(prev => [...prev, errorMsg]);
         }
     }
 
-    function applyPreview() {
-        if (!aiPatchPreview?.nextPrefab) return;
-        onPrefabChange(aiPatchPreview.nextPrefab);
-        setAiPatchPreview(null);
-        setPreviewMeta(null);
+    function rollback() {
+        if (currentHistoryIndex <= 0) return;
+
+        const prevIndex = currentHistoryIndex - 1;
+        const prevPrefab = prefabHistory[prevIndex];
+
+        onPrefabChange(prevPrefab);
+        setCurrentHistoryIndex(prevIndex);
+
+        // Add system message
+        const rollbackMsg: ChatMessage = {
+            id: Date.now().toString(),
+            role: "system",
+            content: `↩️ Rolled back to version ${prevIndex + 1}/${prefabHistory.length}`,
+            timestamp: Date.now(),
+        };
+        setMessages(prev => [...prev, rollbackMsg]);
+    }
+
+    function clearChat() {
+        setMessages([]);
+        setPrefabHistory([prefab]);
+        setCurrentHistoryIndex(0);
     }
 
     return (
@@ -332,9 +621,10 @@ export default function AgenticEditor({
                     🤖
                 </button>
             ) : (
-                <div className="pointer-events-auto w-[360px] rounded-lg border border-gray-200 bg-white/90 p-3 text-sm text-black shadow backdrop-blur dark:border-gray-800 dark:bg-black/70 dark:text-white">
-                    <div className="mb-2 flex items-center justify-between">
-                        <div className="font-medium">AI Prefab Generator</div>
+                <div className="pointer-events-auto flex h-[600px] w-[420px] flex-col rounded-lg border border-gray-200 bg-white/90 shadow backdrop-blur dark:border-gray-800 dark:bg-black/70">
+                    {/* Header */}
+                    <div className="flex items-center justify-between border-b border-gray-200 p-3 dark:border-gray-800">
+                        <div className="font-medium text-black dark:text-white">AI Prefab Editor</div>
                         <button
                             className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                             onClick={() => setIsExpanded(false)}
@@ -345,21 +635,21 @@ export default function AgenticEditor({
                         </button>
                     </div>
 
-                    <label className="mb-1 block text-xs text-gray-600 dark:text-gray-300">
-                        OpenAI API key
-                    </label>
-                    <input
-                        className="mb-2 w-full rounded border border-gray-300 bg-white px-2 py-1 text-black outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-black dark:text-white"
-                        type="password"
-                        value={openAiKey}
-                        onChange={(e) => setOpenAiKey(e.target.value)}
-                        placeholder="sk-..."
-                        autoComplete="off"
-                    />
+                    {/* Settings */}
+                    <div className="border-b border-gray-200 p-3 text-sm dark:border-gray-800">
+                        <label className="mb-1 block text-xs text-gray-600 dark:text-gray-300">
+                            OpenAI API key
+                        </label>
+                        <input
+                            className="mb-2 w-full rounded border border-gray-300 bg-white px-2 py-1 text-black outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-black dark:text-white"
+                            type="password"
+                            value={openAiKey}
+                            onChange={(e) => setOpenAiKey(e.target.value)}
+                            placeholder="sk-..."
+                            autoComplete="off"
+                        />
 
-                    <div className="mb-2 flex items-center justify-between gap-2 text-xs text-gray-600 dark:text-gray-300">
-                        <span>Apply mode</span>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-between gap-2 text-xs text-gray-600 dark:text-gray-300">
                             <label className="flex items-center gap-1">
                                 <input
                                     type="radio"
@@ -367,7 +657,7 @@ export default function AgenticEditor({
                                     checked={applyMode === "merge"}
                                     onChange={() => setApplyMode("merge")}
                                 />
-                                <span>Merge patch</span>
+                                <span>Merge</span>
                             </label>
                             <label className="flex items-center gap-1">
                                 <input
@@ -378,104 +668,149 @@ export default function AgenticEditor({
                                 />
                                 <span>Replace</span>
                             </label>
+                            <label className="flex items-center gap-1">
+                                <input
+                                    type="checkbox"
+                                    checked={useVision}
+                                    onChange={(e) => setUseVision(e.target.checked)}
+                                    disabled={!canvasRef?.current}
+                                />
+                                <span>Vision {canvasRef?.current ? "✓" : "✗"}</span>
+                            </label>
                         </div>
                     </div>
 
-                    <label className="mb-1 block text-xs text-gray-600 dark:text-gray-300">
-                        Prompt
-                    </label>
-                    <textarea
-                        className="mb-2 w-full resize-none rounded border border-gray-300 bg-white px-2 py-1 text-black outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-black dark:text-white"
-                        rows={3}
-                        value={prompt}
-                        onChange={(e) => setPrompt(e.target.value)}
-                        placeholder="e.g. A small room with a checker floor and a red spotlight"
-                    />
-
-                    <div className="flex items-center justify-between gap-2">
-                        <button
-                            className="rounded bg-blue-600 px-3 py-1.5 text-white disabled:opacity-50"
-                            onClick={generatePrefabFromPrompt}
-                            disabled={isGenerating}
-                            type="button"
-                        >
-                            {isGenerating ? "Generating…" : "Generate"}
-                        </button>
-
-                        <button
-                            className="rounded bg-emerald-600 px-3 py-1.5 text-white disabled:opacity-50"
-                            onClick={applyPreview}
-                            disabled={isGenerating || !aiPatchPreview?.nextPrefab}
-                            type="button"
-                            title={
-                                aiPatchPreview?.nextPrefab
-                                    ? "Apply the previewed patch"
-                                    : "Generate a preview first"
-                            }
-                        >
-                            Apply
-                        </button>
-
-                        <button
-                            className="rounded border border-gray-300 px-3 py-1.5 text-black disabled:opacity-50 dark:border-gray-700 dark:text-white"
-                            onClick={() => {
-                                setAiError(null);
-                                setPrompt("");
-                                setAiRaw("");
-                                setAiPatchPreview(null);
-                            }}
-                            disabled={isGenerating}
-                            type="button"
-                        >
-                            Clear
-                        </button>
-                    </div>
-
-                    {aiPatchPreview ? (
-                        <div className="mt-2 rounded border border-gray-200 bg-gray-50 px-2 py-2 text-xs text-gray-800 dark:border-gray-800 dark:bg-black/30 dark:text-gray-200">
-                            <div className="mb-1 font-medium">Preview ready</div>
-                            <div className="space-y-1">
-                                <div>
-                                    Patch keys: <span className="font-mono">{Object.keys(aiPatchPreview.patch ?? {}).join(", ") || "(none)"}</span>
-                                </div>
-                                <div>
-                                    Root children:{" "}
-                                    <span className="font-mono">
-                                        {previewMeta?.beforeChildren ?? "?"} → {previewMeta?.afterChildren ?? "?"}
-                                    </span>
-                                </div>
-                                {previewMeta?.addedChildIds?.length ? (
-                                    <div>
-                                        Added ids:{" "}
-                                        <span className="font-mono">{previewMeta.addedChildIds.join(", ")}</span>
-                                    </div>
-                                ) : null}
+                    {/* Messages */}
+                    <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                        {messages.length === 0 ? (
+                            <div className="text-center text-xs text-gray-500 dark:text-gray-400 mt-8">
+                                Start by typing a prompt below to edit the scene.
+                                <br />
+                                Example: "Add a red cube at position [2, 0, 0]"
                             </div>
-                            <details className="mt-2">
-                                <summary className="cursor-pointer select-none">Show patch JSON</summary>
-                                <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded bg-white p-2 font-mono text-[11px] text-black dark:bg-black dark:text-white">
-                                    {JSON.stringify(aiPatchPreview.patch, null, 2)}
-                                </pre>
-                            </details>
-                        </div>
-                    ) : null}
+                        ) : (
+                            messages.map((msg) => (
+                                <div
+                                    key={msg.id}
+                                    className={`rounded-lg p-2 text-xs ${msg.role === "user"
+                                        ? "bg-blue-100 dark:bg-blue-900/30"
+                                        : msg.role === "assistant"
+                                            ? "bg-gray-100 dark:bg-gray-800/50"
+                                            : "bg-yellow-100 dark:bg-yellow-900/30"
+                                        }`}
+                                >
+                                    <div className="mb-1 font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                                        <span>{msg.role === "user" ? "You" : msg.role === "assistant" ? "Assistant" : "System"}</span>
+                                        {msg.streaming && (
+                                            <span className="text-blue-600 dark:text-blue-400 animate-pulse">●</span>
+                                        )}
+                                    </div>
+                                    {msg.role === "assistant" && msg.streaming && !msg.content ? (
+                                        <div className="text-gray-600 dark:text-gray-400 italic flex items-center gap-2">
+                                            <span className="animate-pulse">●</span>
+                                            <span>Thinking...</span>
+                                        </div>
+                                    ) : msg.role === "assistant" && msg.content && msg.streaming ? (
+                                        <details open className="mt-1">
+                                            <summary className="cursor-pointer select-none text-gray-600 dark:text-gray-400 font-medium">
+                                                Generating response...
+                                            </summary>
+                                            <div className="mt-2 text-black dark:text-white whitespace-pre-wrap font-mono text-[10px] max-h-48 overflow-auto">
+                                                {msg.content}
+                                                <span className="animate-pulse">▋</span>
+                                            </div>
+                                        </details>
+                                    ) : (
+                                        <div className="text-black dark:text-white whitespace-pre-wrap">
+                                            {msg.content}
+                                        </div>
+                                    )}
 
-                    {aiRaw ? (
-                        <details className="mt-2">
-                            <summary className="cursor-pointer select-none text-xs text-gray-600 dark:text-gray-300">
-                                Show raw model output
-                            </summary>
-                            <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded border border-gray-200 bg-white p-2 font-mono text-[11px] text-black dark:border-gray-800 dark:bg-black dark:text-white">
-                                {aiRaw}
-                            </pre>
-                        </details>
-                    ) : null}
+                                    {msg.canvasImage && (
+                                        <details className="mt-2">
+                                            <summary className="cursor-pointer select-none text-gray-600 dark:text-gray-400">
+                                                View screenshot
+                                            </summary>
+                                            <img
+                                                src={msg.canvasImage}
+                                                alt="Canvas"
+                                                className="mt-1 max-w-full rounded border border-gray-300 dark:border-gray-700"
+                                            />
+                                        </details>
+                                    )}
 
-                    {aiError ? (
-                        <div className="mt-2 rounded border border-red-300 bg-red-50 px-2 py-1 text-xs text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200">
-                            {aiError}
+                                    {msg.patch && (
+                                        <div className="mt-2 space-y-1">
+                                            <details>
+                                                <summary className="cursor-pointer select-none text-gray-600 dark:text-gray-400">
+                                                    View patch JSON
+                                                </summary>
+                                                <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap rounded bg-white p-2 font-mono text-[10px] text-black dark:bg-black dark:text-white">
+                                                    {JSON.stringify(msg.patch, null, 2)}
+                                                </pre>
+                                            </details>
+                                            {msg.applied && (
+                                                <div className="text-center text-green-600 dark:text-green-400">
+                                                    ✓ Auto-applied
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            ))
+                        )}
+                        <div ref={messagesEndRef} />
+                    </div>
+
+                    {/* Toolbar */}
+                    <div className="border-t border-gray-200 p-2 flex items-center gap-1 text-xs dark:border-gray-800">
+                        <button
+                            className="rounded bg-gray-200 px-2 py-1 text-black hover:bg-gray-300 disabled:opacity-50 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
+                            onClick={rollback}
+                            disabled={currentHistoryIndex <= 0}
+                            title="Rollback to previous version"
+                            type="button"
+                        >
+                            ↩️ Rollback
+                        </button>
+                        <button
+                            className="rounded bg-gray-200 px-2 py-1 text-black hover:bg-gray-300 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
+                            onClick={clearChat}
+                            title="Clear chat"
+                            type="button"
+                        >
+                            🗑️ Clear
+                        </button>
+                        <div className="text-gray-500 dark:text-gray-400 ml-auto">
+                            v{currentHistoryIndex + 1}/{prefabHistory.length}
                         </div>
-                    ) : null}
+                    </div>
+
+                    {/* Input */}
+                    <div className="border-t border-gray-200 p-3 dark:border-gray-800">
+                        <textarea
+                            className="mb-2 w-full resize-none rounded border border-gray-300 bg-white px-2 py-1 text-sm text-black outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-black dark:text-white"
+                            rows={2}
+                            value={prompt}
+                            onChange={(e) => setPrompt(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                    e.preventDefault();
+                                    sendMessage();
+                                }
+                            }}
+                            placeholder="Describe what you want to change..."
+                            disabled={isGenerating}
+                        />
+                        <button
+                            className="w-full rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                            onClick={sendMessage}
+                            disabled={isGenerating || !prompt.trim()}
+                            type="button"
+                        >
+                            {isGenerating ? "Generating..." : "Send"}
+                        </button>
+                    </div>
                 </div>
             )}
         </>

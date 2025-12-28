@@ -58,11 +58,21 @@ function mergePrefab(base: any, patch: any): any {
         return patch;
     }
 
-    // Special operator for arrays: { "$append": [...] }
+    // Special operator for arrays: { "$append": [...] } or { "$delete": [...] }
     if (Object.keys(patch).length === 1 && "$append" in patch) {
         const toAppend = (patch as any).$append;
         if (!Array.isArray(toAppend)) return base;
         return Array.isArray(base) ? [...base, ...toAppend] : [...toAppend];
+    }
+    if (Object.keys(patch).length === 1 && "$delete" in patch) {
+        const toDelete = (patch as any).$delete;
+        if (!Array.isArray(toDelete) || !Array.isArray(base)) return base;
+        return base.filter((item: any) => {
+            if (isPlainObject(item) && typeof item.id === "string") {
+                return !toDelete.includes(item.id);
+            }
+            return true;
+        });
     }
 
     if (Array.isArray(base)) {
@@ -93,11 +103,21 @@ function mergePrefab(base: any, patch: any): any {
             }
         }
 
-        // Common case: patching an array property with {$append:[...]}
+        // Common case: patching an array property with {$append:[...]} or {$delete:[...]}
         if (isPlainObject(patch) && Object.keys(patch).length === 1 && "$append" in patch) {
             const toAppend = (patch as any).$append;
             if (!Array.isArray(toAppend)) return base;
             return [...base, ...toAppend];
+        }
+        if (isPlainObject(patch) && Object.keys(patch).length === 1 && "$delete" in patch) {
+            const toDelete = (patch as any).$delete;
+            if (!Array.isArray(toDelete)) return base;
+            return base.filter((item: any) => {
+                if (isPlainObject(item) && typeof item.id === "string") {
+                    return !toDelete.includes(item.id);
+                }
+                return true;
+            });
         }
 
         // Otherwise, treat as replacement.
@@ -107,8 +127,8 @@ function mergePrefab(base: any, patch: any): any {
     const out: any = isPlainObject(base) ? { ...base } : {};
     for (const [k, v] of Object.entries(patch)) {
         const bv = (out as any)[k];
-        if (Array.isArray(bv) && isPlainObject(v) && Object.keys(v).length === 1 && "$append" in v) {
-            // Allow array append patches: { children: { "$append": [...] } }
+        if (Array.isArray(bv) && isPlainObject(v) && Object.keys(v).length === 1 && ("$append" in v || "$delete" in v)) {
+            // Allow array append/delete patches: { children: { "$append": [...] } } or { children: { "$delete": [...] } }
             (out as any)[k] = mergePrefab(bv, v);
         } else if (isPlainObject(v) && isPlainObject(bv)) {
             (out as any)[k] = mergePrefab(bv, v);
@@ -170,6 +190,21 @@ function validatePatch(patch: any): void {
                     throw new Error(`Node "${node.id}" has invalid transform properties`);
                 }
                 const props = transform.properties;
+
+                // For $append operations, require complete transform
+                if (path.includes("$append")) {
+                    if (!Array.isArray(props.position) || props.position.length !== 3) {
+                        throw new Error(`Node "${node.id}" in $append must have complete position [x,y,z]`);
+                    }
+                    if (!Array.isArray(props.rotation) || props.rotation.length !== 3) {
+                        throw new Error(`Node "${node.id}" in $append must have complete rotation [x,y,z]`);
+                    }
+                    if (!Array.isArray(props.scale) || props.scale.length !== 3) {
+                        throw new Error(`Node "${node.id}" in $append must have complete scale [x,y,z]`);
+                    }
+                }
+
+                // General validation
                 if (props.position && !Array.isArray(props.position)) {
                     throw new Error(`Node "${node.id}" has invalid position (must be array)`);
                 }
@@ -225,9 +260,15 @@ export default function AgenticEditor({
 
     // Chat-based state
     const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const messagesRef = useRef<ChatMessage[]>([]);
     const [prefabHistory, setPrefabHistory] = useState<any[]>([prefab]);
     const [currentHistoryIndex, setCurrentHistoryIndex] = useState<number>(0);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // Keep ref in sync with state
+    useEffect(() => {
+        messagesRef.current = messages;
+    }, [messages]);
 
     // Persist the key between sessions (client-only).
     useEffect(() => {
@@ -271,6 +312,29 @@ export default function AgenticEditor({
         }
     }
 
+    // Continue conversation without new user input (for auto-iteration)
+    async function continueConversation() {
+        const key = openAiKey.trim();
+        if (!key) return;
+
+        setIsGenerating(true);
+
+        try {
+            await makeApiCall(key, null);
+        } catch (e: any) {
+            const errorMsg: ChatMessage = {
+                id: (Date.now() + 1).toString(),
+                role: "system",
+                content: `❌ Error: ${e?.message ?? String(e)}`,
+                timestamp: Date.now(),
+                error: e?.message ?? String(e),
+            };
+            setMessages(prev => [...prev, errorMsg]);
+        } finally {
+            setIsGenerating(false);
+        }
+    }
+
     async function sendMessage() {
         const userPrompt = prompt.trim();
         if (!userPrompt) return;
@@ -305,206 +369,7 @@ export default function AgenticEditor({
         setIsGenerating(true);
 
         try {
-            // Build conversation history for the AI
-            const apiMessages: any[] = [
-                {
-                    role: "system",
-                    content:
-                        "You are an expert at generating react-three-game prefab edits as JSON patches. You can see the current 3D scene and understand the spatial layout of objects.\n\nYou can work iteratively across multiple turns. After applying a patch, you will receive a screenshot of the result. If the result is not perfect, you can continue making adjustments in subsequent turns until the user's goal is achieved.",
-                },
-            ];
-
-            // Add conversation history (last 5 user/assistant exchanges with images)
-            const recentMessages = messages.slice(-10).filter(m =>
-                (m.role === "user" || m.role === "assistant" || m.role === "system") &&
-                (m.canvasImage || m.content)
-            );
-
-            for (const histMsg of recentMessages) {
-                if (histMsg.role === "user" && histMsg.canvasImage) {
-                    apiMessages.push({
-                        role: "user",
-                        content: [
-                            { type: "text", text: `User request: ${histMsg.content}` },
-                            { type: "image_url", image_url: { url: histMsg.canvasImage, detail: "low" } }
-                        ]
-                    });
-                } else if (histMsg.role === "assistant" && histMsg.patch) {
-                    apiMessages.push({
-                        role: "assistant",
-                        content: JSON.stringify(histMsg.patch)
-                    });
-                } else if (histMsg.role === "system" && histMsg.canvasImage) {
-                    apiMessages.push({
-                        role: "user",
-                        content: [
-                            { type: "text", text: histMsg.content },
-                            { type: "image_url", image_url: { url: histMsg.canvasImage, detail: "low" } }
-                        ]
-                    });
-                }
-            }
-
-            // Enhanced prompt with better instructions
-            const enhancedPrompt = `You will be given the current prefab JSON${canvasImage ? " and a screenshot of the 3D scene" : ""}. Produce a SINGLE JSON object that represents a PATCH to apply.
-
-Goal: ${userPrompt}
-
-${recentMessages.length > 0 ? "You are working iteratively. Review the previous screenshots and patches to understand what has been done so far. Make incremental improvements until the goal is achieved." : ""}
-
-RULES:
-- Output ONLY valid JSON (no markdown/fences/text). All nodes need: id, enabled, visible, components{transform}, children[].
-- Transform: {"type":"Transform","properties":{"position":[x,y,z],"rotation":[x,y,z],"scale":[x,y,z]}} (rotation in radians)
-- ADD: {"root":{"children":{"$append":[{full node with all required fields}]}}}
-- MODIFY by ID: {"root":{"children":[{id:"target-id", components:{...complete}}]}}
-- DELETE: {"root":{"children":[...keep these, exclude deleted IDs...]}} or {"root":{"children":[]}} to clear all
-- IDs: simple strings (e.g. "cube1"), not UUIDs
-- Iterate across turns: make incremental changes, see results, refine until goal achieved
-
-Examples:
-// Add red cube at [2,0,0]
-{"root":{"children":{"$append":[{"id":"cube1","enabled":true,"visible":true,"components":{"transform":{"type":"Transform","properties":{"position":[2,0,0],"rotation":[0,0,0],"scale":[1,1,1]}},"mesh":{"type":"Mesh","properties":{"geometry":"box","material":"standard","color":"#ff0000"}}},"children":[]}]}}}
-
-// Modify cube1's position
-{"root":{"children":[{"id":"cube1","components":{"transform":{"type":"Transform","properties":{"position":[5,0,0],"rotation":[0,0,0],"scale":[1,1,1]}}}}]}}
-
-// Delete cube1 (keep sphere1, light1)
-{"root":{"children":[/* only sphere1 and light1 nodes here */]}}
-
-Current prefab:
-${JSON.stringify(prefab, null, 2)}
-`;
-
-            if (canvasImage) {
-                // Use vision model with image
-                apiMessages.push({
-                    role: "user",
-                    content: [
-                        {
-                            type: "text",
-                            text: enhancedPrompt,
-                        },
-                        {
-                            type: "image_url",
-                            image_url: {
-                                url: canvasImage,
-                                detail: "low",
-                            },
-                        },
-                    ],
-                });
-            } else {
-                // Text-only fallback
-                apiMessages.push({
-                    role: "user",
-                    content: enhancedPrompt,
-                });
-            }
-
-            // NOTE: This calls OpenAI directly from the browser.
-            // For production you should proxy via a Next.js route to avoid exposing keys.
-            const res = await fetch("https://api.openai.com/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${key}`,
-                },
-                body: JSON.stringify({
-                    model: "gpt-5-nano-2025-08-07",
-                    messages: apiMessages,
-                    max_completion_tokens: 16000,
-                    stream: true,
-                }),
-            });
-
-            if (!res.ok) {
-                const text = await res.text();
-                throw new Error(`OpenAI error ${res.status}: ${text}`);
-            }
-
-            // Create streaming assistant message
-            const assistantId = (Date.now() + 1).toString();
-            const assistantMessage: ChatMessage = {
-                id: assistantId,
-                role: "assistant",
-                content: "",
-                timestamp: Date.now(),
-                streaming: true,
-            };
-            setMessages(prev => [...prev, assistantMessage]);
-
-            // Process the stream
-            const reader = res.body?.getReader();
-            const decoder = new TextDecoder();
-            let accumulatedContent = "";
-
-            if (!reader) {
-                throw new Error("Failed to get response stream reader");
-            }
-
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                const chunk = decoder.decode(value);
-                const lines = chunk.split("\n").filter(line => line.trim() !== "");
-
-                for (const line of lines) {
-                    if (line.startsWith("data: ")) {
-                        const data = line.slice(6);
-                        if (data === "[DONE]") continue;
-
-                        try {
-                            const parsed = JSON.parse(data);
-                            const delta = parsed.choices?.[0]?.delta?.content;
-                            if (delta) {
-                                accumulatedContent += delta;
-                                // Update message with streaming content
-                                setMessages(prev =>
-                                    prev.map(m =>
-                                        m.id === assistantId
-                                            ? { ...m, content: accumulatedContent }
-                                            : m
-                                    )
-                                );
-                            }
-                        } catch (e) {
-                            console.warn("Failed to parse streaming chunk:", e);
-                        }
-                    }
-                }
-            }
-
-            // Stream complete - parse the final content
-            if (!accumulatedContent.trim()) {
-                throw new Error("Model returned an empty response.");
-            }
-
-            const parsedPatch = normalizePatchForPrefab(tryExtractJson(accumulatedContent));
-            if (!parsedPatch || typeof parsedPatch !== "object") {
-                throw new Error("Parsed patch was not an object.");
-            }
-
-            // Validate patch structure to prevent crashes
-            validatePatch(parsedPatch);
-
-            // Update message with final patch (mark as applied immediately)
-            setMessages(prev =>
-                prev.map(m =>
-                    m.id === assistantId
-                        ? {
-                              ...m,
-                              content: `Generated patch with keys: ${Object.keys(parsedPatch).join(", ")}`,
-                              patch: parsedPatch,
-                              streaming: false,
-                              applied: true,
-                          }
-                        : m
-                )
-            );
-
-            // Auto-apply the patch
-            await applyPatchAuto(parsedPatch);
+            await makeApiCall(key, userPrompt);
         } catch (e: any) {
             const errorMsg: ChatMessage = {
                 id: (Date.now() + 1).toString(),
@@ -517,6 +382,239 @@ ${JSON.stringify(prefab, null, 2)}
         } finally {
             setIsGenerating(false);
         }
+    }
+
+    // Core API call logic (used by both sendMessage and continueConversation)
+    async function makeApiCall(key: string, userPrompt: string | null) {
+        // Build conversation history for the AI
+        const apiMessages: any[] = [
+            {
+                role: "system",
+                content: "You are an expert at generating react-three-game prefab edits as JSON patches. You can see the current 3D scene and understand the spatial layout of objects.\n\nYou can work iteratively across multiple turns. After applying a patch, you will receive a screenshot of the result. If the result is not perfect, you can continue making adjustments in subsequent turns until the user's goal is achieved."
+            },
+        ];
+
+        // Use ref to get latest messages (avoid closure issues)
+        const recentMessages = messagesRef.current.slice(-10).filter(m =>
+            (m.role === "user" || m.role === "assistant" || m.role === "system") &&
+            (m.canvasImage || m.content)
+        );
+
+        for (const histMsg of recentMessages) {
+            if (histMsg.role === "user" && histMsg.canvasImage) {
+                apiMessages.push({
+                    role: "user",
+                    content: [
+                        { type: "text", text: `User request: ${histMsg.content}` },
+                        { type: "image_url", image_url: { url: histMsg.canvasImage, detail: "low" } }
+                    ]
+                });
+            } else if (histMsg.role === "assistant" && histMsg.patch) {
+                apiMessages.push({
+                    role: "assistant",
+                    content: JSON.stringify(histMsg.patch)
+                });
+            } else if (histMsg.role === "system" && histMsg.canvasImage) {
+                apiMessages.push({
+                    role: "user",
+                    content: [
+                        { type: "text", text: histMsg.content },
+                        { type: "image_url", image_url: { url: histMsg.canvasImage, detail: "low" } }
+                    ]
+                });
+            }
+        }
+
+        // Add context prompt (either with new user goal or as continuation)
+        if (userPrompt) {
+            // New user request - include full prompt with goal
+            const canvasImage = await captureCanvasImage();
+            const enhancedPrompt = `You will be given the current prefab JSON${canvasImage ? " and a screenshot of the 3D scene" : ""}. Produce a SINGLE JSON object that represents a PATCH to apply.
+
+Goal: ${userPrompt}
+
+${recentMessages.length > 0 ? "You are working iteratively. Review the previous screenshots and patches to understand what has been done so far. Make incremental improvements until the goal is achieved." : ""}
+
+CRITICAL RULES:
+1. Output ONLY valid JSON (no text/markdown before or after, no comments)
+2. All numbers must be bare numbers, NOT strings: position:[0,1,2] NOT position:["0","1","2"]
+3. Each object MUST have a UNIQUE id (cube1, cube2, cube3 - NOT all "cube1")
+4. Transform MUST include ALL THREE: position:[x,y,z], rotation:[x,y,z], scale:[x,y,z]
+5. NEVER use UUID-like ids from the scene - those are read-only
+6. DO NOT include "enabled" or "visible" fields
+
+OPERATIONS:
+ADD: {"root":{"children":{"$append":[{id:"cube1",components:{transform:{type:"Transform",properties:{position:[2,0,0],rotation:[0,0,0],scale:[1,1,1]}},mesh:{type:"Mesh",properties:{geometry:"box",material:"standard",color:"#ff0000"}}},children:[]}]}}}
+DELETE: {"root":{"children":{"$delete":["id1","id2"]}}}
+MODIFY: {"root":{"children":[{id:"cube1",components:{transform:{type:"Transform",properties:{position:[5,0,0],rotation:[0,0,0],scale:[1,1,1]}}}}]}}
+
+COMMON MISTAKES TO AVOID:
+❌ "position":["0","1","2"] → ✅ "position":[0,1,2] (numbers not strings!)
+❌ Multiple objects with id:"cube1" → ✅ id:"cube1", id:"cube2", id:"cube3" (unique!)
+❌ Partial transform → ✅ Include position AND rotation AND scale
+❌ Using UUIDs from scene → ✅ Use simple ids or $delete operation
+
+Current prefab:
+${JSON.stringify(prefab, null, 2)}
+`;
+
+            if (canvasImage) {
+                // Use vision model with image
+                apiMessages.push({
+                    role: "user",
+                    content: [
+                        { type: "text", text: enhancedPrompt },
+                        { type: "image_url", image_url: { url: canvasImage, detail: "low" } }
+                    ],
+                });
+            } else {
+                // Text-only fallback
+                apiMessages.push({
+                    role: "user",
+                    content: enhancedPrompt,
+                });
+            }
+        } else {
+            // Auto-continue - the evaluation screenshot was already added to conversation history
+            // No need to add another message - just let the AI respond to the evaluation
+        }
+
+        // NOTE: This calls OpenAI directly from the browser.
+        // For production you should proxy via a Next.js route to avoid exposing keys.
+        const res = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${key}`,
+            },
+            body: JSON.stringify({
+                model: "gpt-4o-mini",
+                messages: apiMessages,
+                stream: true,
+            }),
+        });
+
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(`OpenAI error ${res.status}: ${text}`);
+        }
+
+        // Create streaming assistant message
+        const assistantId = (Date.now() + 1).toString();
+        const assistantMessage: ChatMessage = {
+            id: assistantId,
+            role: "assistant",
+            content: "",
+            timestamp: Date.now(),
+            streaming: true,
+        };
+        setMessages(prev => [...prev, assistantMessage]);
+
+        // Process the stream
+        const reader = res.body?.getReader();
+        const decoder = new TextDecoder();
+        let accumulatedContent = "";
+
+        if (!reader) {
+            throw new Error("Failed to get response stream reader");
+        }
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value);
+            const lines = chunk.split("\n").filter(line => line.trim() !== "");
+
+            for (const line of lines) {
+                if (line.startsWith("data: ")) {
+                    const data = line.slice(6);
+                    if (data === "[DONE]") continue;
+
+                    try {
+                        const parsed = JSON.parse(data);
+
+                        // Handle Chat Completions API streaming format
+                        const delta = parsed.choices?.[0]?.delta?.content;
+                        if (delta) {
+                            accumulatedContent += delta;
+                            // Update message with streaming content
+                            setMessages(prev =>
+                                prev.map(m =>
+                                    m.id === assistantId
+                                        ? { ...m, content: accumulatedContent }
+                                        : m
+                                )
+                            );
+                        }
+                    } catch (e) {
+                        console.warn("Failed to parse streaming chunk:", e);
+                    }
+                }
+            }
+        }
+
+        // Stream complete - parse the final content
+        if (!accumulatedContent.trim()) {
+            throw new Error("Model returned an empty response.");
+        }
+
+        // Try to parse as JSON - if it fails, treat as conversational response
+        let parsedPatch;
+        try {
+            parsedPatch = normalizePatchForPrefab(tryExtractJson(accumulatedContent));
+        } catch (e) {
+            // Not valid JSON - conversational response, stop iteration
+            setMessages(prev =>
+                prev.map(m =>
+                    m.id === assistantId
+                        ? {
+                            ...m,
+                            content: accumulatedContent,
+                            streaming: false,
+                        }
+                        : m
+                )
+            );
+            return; // Stop iteration - let user respond
+        }
+
+        if (!parsedPatch || typeof parsedPatch !== "object") {
+            // Not a valid patch object - conversational response
+            setMessages(prev =>
+                prev.map(m =>
+                    m.id === assistantId
+                        ? {
+                            ...m,
+                            content: accumulatedContent,
+                            streaming: false,
+                        }
+                        : m
+                )
+            );
+            return; // Stop iteration - let user respond
+        }
+
+        // Validate patch structure to prevent crashes
+        validatePatch(parsedPatch);
+
+        // Update message with final patch (mark as applied immediately)
+        setMessages(prev =>
+            prev.map(m =>
+                m.id === assistantId
+                    ? {
+                        ...m,
+                        content: `Generated patch with keys: ${Object.keys(parsedPatch).join(", ")}`,
+                        patch: parsedPatch,
+                        streaming: false,
+                        applied: true,
+                    }
+                    : m
+            )
+        );
+
+        // Auto-apply the patch
+        await applyPatchAuto(parsedPatch);
     }
 
     async function applyPatchAuto(patch: any) {
@@ -561,18 +659,22 @@ ${JSON.stringify(prefab, null, 2)}
             setPrefabHistory(prev => [...prev, nextPrefab]);
             setCurrentHistoryIndex(prev => prev + 1);
 
-            // Capture result screenshot and add system message
-            setTimeout(async () => {
-                const resultImage = await captureCanvasImage();
-                const resultMsg: ChatMessage = {
-                    id: (Date.now() + 2).toString(),
-                    role: "system",
-                    content: "✅ Patch applied successfully. Here's the result:",
-                    timestamp: Date.now(),
-                    canvasImage: resultImage ?? undefined,
-                };
-                setMessages(prev => [...prev, resultMsg]);
-            }, 500);
+            // Capture result screenshot and add system message with critic prompt
+            const resultImage = await captureCanvasImage();
+            const resultMsg: ChatMessage = {
+                id: (Date.now() + 2).toString(),
+                role: "system",
+                content: "✅ Patch applied successfully. Here's the result:\n\nEvaluate the scene:\n- If it fully satisfies the goal: Output ONLY a JSON patch to continue improving\n- If you need clarification or the goal is achieved: Respond conversationally to discuss with the user",
+                timestamp: Date.now(),
+                canvasImage: resultImage ?? undefined,
+            };
+
+            // Add evaluation message to state and ref
+            setMessages(prev => [...prev, resultMsg]);
+            messagesRef.current = [...messagesRef.current, resultMsg];
+
+            // Auto-continue immediately (ref has latest messages)
+            await continueConversation();
         } catch (e: any) {
             const errorMsg: ChatMessage = {
                 id: (Date.now() + 2).toString(),

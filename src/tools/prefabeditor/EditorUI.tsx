@@ -33,6 +33,11 @@ function EditorUI({ prefabData, setPrefabData, selectedId, setSelectedId, transf
     const selectedNode = selectedId && prefabData ? findNode(prefabData.root, selectedId) : null;
 
     return <>
+        <style>{`.prefab-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+.prefab-scroll::-webkit-scrollbar-track { background: transparent; }
+.prefab-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 8px; }
+.prefab-scroll { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.06) transparent; }
+`}</style>
         <div style={inspector.panel}>
             <div style={base.header} onClick={() => setCollapsed(!collapsed)}>
                 <span>Inspector</span>
@@ -46,6 +51,7 @@ function EditorUI({ prefabData, setPrefabData, selectedId, setSelectedId, transf
                     transformMode={transformMode}
                     setTransformMode={setTransformMode}
                     basePath={basePath}
+                // add class to make scrollbar gutter transparent via CSS above
                 />
             )}
         </div>
@@ -79,7 +85,7 @@ function NodeInspector({ node, updateNode, deleteNode, transformMode, setTransfo
         if (!newAvailable.includes(addType)) setAddType(newAvailable[0] || "");
     }, [Object.keys(node.components || {}).join(',')]);
 
-    return <div style={inspector.content}>
+    return <div style={inspector.content} className="prefab-scroll">
         {/* Node ID */}
         <div style={base.section}>
             <div style={base.label}>Node ID</div>

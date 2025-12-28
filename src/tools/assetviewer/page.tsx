@@ -8,6 +8,13 @@ import { loadModel } from "../dragdrop/modelLoader";
 
 // view models and textures in manifest, onselect callback
 
+const styles: Record<string, any> = {
+    errorIcon: { color: '#fca5a5', fontSize: 12 }, // text-red-400 text-xs
+    flexFillRelative: { flex: 1, position: 'relative' },
+    bottomLabel: { backgroundColor: 'rgba(0,0,0,0.6)', fontSize: 10, padding: '0 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' },
+    iconLarge: { fontSize: 20 }
+};
+
 function getItemsInPath(files: string[], currentPath: string) {
     // Remove the leading category folder (e.g., /textures/, /models/, /sounds/)
     const filesWithoutCategory = files.map(file => {
@@ -40,10 +47,18 @@ function FolderTile({ name, onClick }: { name: string; onClick: () => void }) {
     return (
         <div
             onClick={onClick}
-            className="aspect-square bg-gray-800 cursor-pointer hover:bg-gray-700 flex flex-col items-center justify-center"
+            style={{
+                aspectRatio: '1 / 1',
+                backgroundColor: '#1f2937', /* gray-800 */
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center'
+            }}
         >
-            <div className="text-3xl">📁</div>
-            <div className="text-xs text-center truncate w-full px-1 mt-1">{name}</div>
+            <div style={{ fontSize: 24 }}>📁</div>
+            <div style={{ fontSize: 10, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%', padding: '0 4px', marginTop: 4 }}>{name}</div>
         </div>
     );
 }
@@ -90,11 +105,11 @@ function AssetListViewer({ files, selected, onSelect, renderCard }: AssetListVie
 
     if (showCompactView) {
         return (
-            <div className="flex gap-1 items-center">
+            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                 {renderCard(selected, onSelect)}
                 <button
                     onClick={() => setShowPicker(true)}
-                    className="px-2 py-1 bg-gray-800 hover:bg-gray-700 text-xs"
+                    style={{ padding: '4px 8px', backgroundColor: '#1f2937', color: 'inherit', fontSize: 12, cursor: 'pointer', border: 'none' }}
                 >
                     Change
                 </button>
@@ -111,12 +126,12 @@ function AssetListViewer({ files, selected, onSelect, renderCard }: AssetListVie
                         pathParts.pop();
                         setCurrentPath(pathParts.join('/'));
                     }}
-                    className="mb-1 px-2 py-1 bg-gray-800 hover:bg-gray-700 text-xs"
+                    style={{ marginBottom: 4, padding: '4px 8px', backgroundColor: '#1f2937', color: 'inherit', fontSize: 12, cursor: 'pointer', border: 'none' }}
                 >
                     ← Back
                 </button>
             )}
-            <div className="grid grid-cols-3 gap-1">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
                 {folders.map((folder) => (
                     <FolderTile
                         key={folder}
@@ -170,10 +185,10 @@ function TextureCard({ file, onSelect, basePath = "" }: { file: string; onSelect
         return (
             <div
                 ref={ref}
-                className="aspect-square bg-gray-700 cursor-pointer hover:bg-gray-600 flex items-center justify-center"
+                style={{ aspectRatio: '1 / 1', backgroundColor: '#374151', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 onClick={() => onSelect(file)}
             >
-                <div className="text-red-400 text-xs">✗</div>
+                <div style={styles.errorIcon}>✗</div>
             </div>
         );
     }
@@ -181,14 +196,14 @@ function TextureCard({ file, onSelect, basePath = "" }: { file: string; onSelect
     return (
         <div
             ref={ref}
-            className="aspect-square bg-gray-800 cursor-pointer hover:bg-gray-700 flex flex-col"
+            style={{ aspectRatio: '1 / 1', backgroundColor: '#1f2937', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
             onClick={() => onSelect(file)}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
-            <div className="flex-1 relative">
+            <div style={{ flex: 1, position: 'relative' }}>
                 {isInView ? (
-                    <View className="w-full h-full">
+                    <View style={{ width: '100%', height: '100%' }}>
                         <PerspectiveCamera makeDefault position={[0, 0, 2.5]} fov={50} />
                         <Suspense fallback={null}>
                             <ambientLight intensity={0.8} />
@@ -204,7 +219,7 @@ function TextureCard({ file, onSelect, basePath = "" }: { file: string; onSelect
                     </View>
                 ) : null}
             </div>
-            <div className="bg-black/60 text-[10px] px-1 truncate text-center">
+            <div style={{ backgroundColor: 'rgba(0,0,0,0.6)', fontSize: 10, padding: '0 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
                 {file.split('/').pop()}
             </div>
         </div>
@@ -256,10 +271,10 @@ function ModelCard({ file, onSelect, basePath = "" }: { file: string; onSelect: 
         return (
             <div
                 ref={ref}
-                className="aspect-square bg-gray-700 cursor-pointer hover:bg-gray-600 flex items-center justify-center"
+                style={{ aspectRatio: '1 / 1', backgroundColor: '#374151', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 onClick={() => onSelect(file)}
             >
-                <div className="text-red-400 text-xs">✗</div>
+                <div style={styles.errorIcon}>✗</div>
             </div>
         );
     }
@@ -267,12 +282,12 @@ function ModelCard({ file, onSelect, basePath = "" }: { file: string; onSelect: 
     return (
         <div
             ref={ref}
-            className="aspect-square bg-gray-900 cursor-pointer hover:bg-gray-800 flex flex-col"
+            style={{ aspectRatio: '1 / 1', backgroundColor: '#111827', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
             onClick={() => onSelect(file)}
         >
-            <div className="flex-1 relative">
+            <div style={styles.flexFillRelative}>
                 {isInView ? (
-                    <View className="w-full h-full">
+                    <View style={{ width: '100%', height: '100%' }}>
                         <PerspectiveCamera makeDefault position={[0, 1, 3]} fov={50} />
                         <Suspense fallback={null}>
                             <Stage intensity={0.5} environment="city">
@@ -283,7 +298,7 @@ function ModelCard({ file, onSelect, basePath = "" }: { file: string; onSelect: 
                     </View>
                 ) : null}
             </div>
-            <div className="bg-black/60 text-[10px] px-1 truncate text-center">
+            <div style={{ backgroundColor: 'rgba(0,0,0,0.6)', fontSize: 10, padding: '0 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
                 {file.split('/').pop()}
             </div>
         </div>
@@ -341,10 +356,10 @@ function SoundCard({ file, onSelect, basePath = "" }: { file: string; onSelect: 
     return (
         <div
             onClick={() => onSelect(file)}
-            className="aspect-square bg-gray-700 cursor-pointer hover:bg-gray-600 flex flex-col items-center justify-center"
+            style={{ aspectRatio: '1 / 1', backgroundColor: '#374151', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
         >
-            <div className="text-2xl">🔊</div>
-            <div className="text-[10px] px-1 mt-1 truncate text-center w-full">{fileName}</div>
+            <div style={styles.iconLarge}>🔊</div>
+            <div style={{ fontSize: 12, padding: '0 4px', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center', width: '100%' }}>{fileName}</div>
         </div>
     );
 }

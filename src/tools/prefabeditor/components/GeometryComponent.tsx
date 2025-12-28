@@ -2,9 +2,9 @@ import { Component } from "./ComponentRegistry";
 
 function GeometryComponentEditor({ component, onUpdate }: { component: any; onUpdate: (newComp: any) => void }) {
     return <div>
-        <label className="block text-[9px] text-cyan-400/60 uppercase tracking-wider mb-0.5">Type</label>
+        <label style={{ display: 'block', fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Type</label>
         <select
-            className="w-full bg-black/40 border border-cyan-500/30 px-1 py-0.5 text-[10px] text-cyan-300 font-mono focus:outline-none focus:border-cyan-400/50"
+            style={{ width: '100%', backgroundColor: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(34, 211, 238, 0.3)', padding: '2px 4px', fontSize: '10px', color: 'rgba(165, 243, 252, 1)', fontFamily: 'monospace', outline: 'none' }}
             value={component.properties.geometryType}
             onChange={e => onUpdate({ geometryType: e.target.value })}
         >

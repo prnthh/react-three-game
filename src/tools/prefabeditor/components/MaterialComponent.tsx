@@ -14,37 +14,37 @@ function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { compo
     }, [basePath]);
 
     return (
-        <div className="flex flex-col">
-            <div className="mb-1">
-                <label className="block text-[9px] text-cyan-400/60 uppercase tracking-wider mb-0.5">Color</label>
-                <div className="flex gap-0.5">
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ marginBottom: 4 }}>
+                <label style={{ display: 'block', fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Color</label>
+                <div style={{ display: 'flex', gap: 2 }}>
                     <input
                         type="color"
-                        className="h-5 w-5 bg-transparent border-none cursor-pointer"
+                        style={{ height: 20, width: 20, backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }}
                         value={component.properties.color}
                         onChange={e => onUpdate({ 'color': e.target.value })}
                     />
                     <input
                         type="text"
-                        className="flex-1 bg-black/40 border border-cyan-500/30 px-1 py-0.5 text-[10px] text-cyan-300 font-mono focus:outline-none focus:border-cyan-400/50"
+                        style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(34, 211, 238, 0.3)', padding: '2px 4px', fontSize: '10px', color: 'rgba(165, 243, 252, 1)', fontFamily: 'monospace', outline: 'none' }}
                         value={component.properties.color}
                         onChange={e => onUpdate({ 'color': e.target.value })}
                     />
                 </div>
             </div>
-            <div className="flex items-center gap-1 mb-1">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
                 <input
                     type="checkbox"
-                    className="w-3 h-3"
+                    style={{ width: 12, height: 12 }}
                     checked={component.properties.wireframe || false}
                     onChange={e => onUpdate({ 'wireframe': e.target.checked })}
                 />
-                <label className="text-[9px] text-cyan-400/60">Wireframe</label>
+                <label style={{ fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)' }}>Wireframe</label>
             </div>
 
             <div>
-                <label className="block text-[9px] text-cyan-400/60 uppercase tracking-wider mb-0.5">Texture</label>
-                <div className="max-h-32 overflow-y-auto">
+                <label style={{ display: 'block', fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Texture</label>
+                <div style={{ maxHeight: 128, overflowY: 'auto' }}>
                     <TextureListViewer
                         files={textureFiles}
                         selected={component.properties.texture || undefined}
@@ -55,24 +55,24 @@ function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { compo
             </div>
 
             {component.properties.texture && (
-                <div className="border-t border-cyan-500/20 pt-1 mt-1">
-                    <div className="flex items-center gap-1 mb-1">
+                <div style={{ borderTop: '1px solid rgba(34, 211, 238, 0.2)', paddingTop: 4, marginTop: 4 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
                         <input
                             type="checkbox"
-                            className="w-3 h-3"
+                            style={{ width: 12, height: 12 }}
                             checked={component.properties.repeat || false}
                             onChange={e => onUpdate({ 'repeat': e.target.checked })}
                         />
-                        <label className="text-[9px] text-cyan-400/60">Repeat Texture</label>
+                        <label style={{ fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)' }}>Repeat Texture</label>
                     </div>
 
                     {component.properties.repeat && (
                         <div>
-                            <label className="block text-[9px] text-cyan-400/60 uppercase tracking-wider mb-0.5">Repeat (X, Y)</label>
-                            <div className="flex gap-0.5">
+                            <label style={{ display: 'block', fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Repeat (X, Y)</label>
+                            <div style={{ display: 'flex', gap: 2 }}>
                                 <input
                                     type="number"
-                                    className="w-full bg-black/40 border border-cyan-500/30 px-1 py-0.5 text-[10px] text-cyan-300 font-mono focus:outline-none focus:border-cyan-400/50"
+                                    style={{ width: '100%', backgroundColor: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(34, 211, 238, 0.3)', padding: '2px 4px', fontSize: '10px', color: 'rgba(165, 243, 252, 1)', fontFamily: 'monospace', outline: 'none' }}
                                     value={component.properties.repeatCount?.[0] ?? 1}
                                     onChange={e => {
                                         const y = component.properties.repeatCount?.[1] ?? 1;
@@ -81,7 +81,7 @@ function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { compo
                                 />
                                 <input
                                     type="number"
-                                    className="w-full bg-black/40 border border-cyan-500/30 px-1 py-0.5 text-[10px] text-cyan-300 font-mono focus:outline-none focus:border-cyan-400/50"
+                                    style={{ width: '100%', backgroundColor: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(34, 211, 238, 0.3)', padding: '2px 4px', fontSize: '10px', color: 'rgba(165, 243, 252, 1)', fontFamily: 'monospace', outline: 'none' }}
                                     value={component.properties.repeatCount?.[1] ?? 1}
                                     onChange={e => {
                                         const x = component.properties.repeatCount?.[0] ?? 1;

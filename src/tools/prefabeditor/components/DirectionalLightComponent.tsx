@@ -18,127 +18,127 @@ function DirectionalLightComponentEditor({ component, onUpdate }: { component: a
         targetOffset: component.properties.targetOffset ?? [0, -5, 0]
     };
 
-    return <div className="flex flex-col gap-2">
+    return <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div>
-            <label className="block text-[9px] text-cyan-400/60 uppercase tracking-wider mb-0.5">Color</label>
-            <div className="flex gap-0.5">
+            <label style={{ display: 'block', fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Color</label>
+            <div style={{ display: 'flex', gap: 2 }}>
                 <input
                     type="color"
-                    className="h-5 w-5 bg-transparent border-none cursor-pointer"
+                    style={{ height: 20, width: 20, backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }}
                     value={props.color}
                     onChange={e => onUpdate({ ...component.properties, 'color': e.target.value })}
                 />
                 <input
                     type="text"
-                    className="flex-1 bg-black/40 border border-cyan-500/30 px-1 py-0.5 text-[10px] text-cyan-300 font-mono focus:outline-none focus:border-cyan-400/50"
+                    style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(34, 211, 238, 0.3)', padding: '2px 4px', fontSize: '10px', color: 'rgba(165, 243, 252, 1)', fontFamily: 'monospace', outline: 'none' }}
                     value={props.color}
                     onChange={e => onUpdate({ ...component.properties, 'color': e.target.value })}
                 />
             </div>
         </div>
         <div>
-            <label className="block text-[9px] text-cyan-400/60 uppercase tracking-wider mb-0.5">Intensity</label>
+            <label style={{ display: 'block', fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Intensity</label>
             <input
                 type="number"
                 step="0.1"
-                className="w-full bg-black/40 border border-cyan-500/30 px-1 py-0.5 text-[10px] text-cyan-300 font-mono focus:outline-none focus:border-cyan-400/50"
+                style={{ width: '100%', backgroundColor: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(34, 211, 238, 0.3)', padding: '2px 4px', fontSize: '10px', color: 'rgba(165, 243, 252, 1)', fontFamily: 'monospace', outline: 'none' }}
                 value={props.intensity}
                 onChange={e => onUpdate({ ...component.properties, 'intensity': parseFloat(e.target.value) })}
             />
         </div>
         <div>
-            <label className="block text-[9px] text-cyan-400/60 uppercase tracking-wider mb-0.5">Cast Shadow</label>
+            <label style={{ display: 'block', fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Cast Shadow</label>
             <input
                 type="checkbox"
-                className="h-4 w-4 bg-black/40 border border-cyan-500/30 cursor-pointer"
+                style={{ height: 16, width: 16, backgroundColor: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(34, 211, 238, 0.3)', cursor: 'pointer' }}
                 checked={props.castShadow}
                 onChange={e => onUpdate({ ...component.properties, 'castShadow': e.target.checked })}
             />
         </div>
         <div>
-            <label className="block text-[9px] text-cyan-400/60 uppercase tracking-wider mb-0.5">Shadow Map Size</label>
+            <label style={{ display: 'block', fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Shadow Map Size</label>
             <input
                 type="number"
                 step="256"
-                className="w-full bg-black/40 border border-cyan-500/30 px-1 py-0.5 text-[10px] text-cyan-300 font-mono focus:outline-none focus:border-cyan-400/50"
+                style={{ width: '100%', backgroundColor: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(34, 211, 238, 0.3)', padding: '2px 4px', fontSize: '10px', color: 'rgba(165, 243, 252, 1)', fontFamily: 'monospace', outline: 'none' }}
                 value={props.shadowMapSize}
                 onChange={e => onUpdate({ ...component.properties, 'shadowMapSize': parseFloat(e.target.value) })}
             />
         </div>
-        <div className="border-t border-cyan-500/20 pt-2 mt-2">
-            <label className="block text-[9px] text-cyan-400/60 uppercase tracking-wider mb-1">Shadow Camera</label>
-            <div className="grid grid-cols-2 gap-1">
+        <div style={{ borderTop: '1px solid rgba(34, 211, 238, 0.2)', paddingTop: 8, marginTop: 8 }}>
+            <label style={{ display: 'block', fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Shadow Camera</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
                 <div>
-                    <label className="block text-[8px] text-cyan-400/50 mb-0.5">Near</label>
+                    <label style={{ display: 'block', fontSize: '8px', color: 'rgba(34, 211, 238, 0.5)', marginBottom: 2 }}>Near</label>
                     <input
                         type="number"
                         step="0.1"
-                        className="w-full bg-black/40 border border-cyan-500/30 px-1 py-0.5 text-[10px] text-cyan-300 font-mono focus:outline-none focus:border-cyan-400/50"
+                        style={{ width: '100%', backgroundColor: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(34, 211, 238, 0.3)', padding: '2px 4px', fontSize: '10px', color: 'rgba(165, 243, 252, 1)', fontFamily: 'monospace', outline: 'none' }}
                         value={props.shadowCameraNear}
                         onChange={e => onUpdate({ ...component.properties, 'shadowCameraNear': parseFloat(e.target.value) })}
                     />
                 </div>
                 <div>
-                    <label className="block text-[8px] text-cyan-400/50 mb-0.5">Far</label>
+                    <label style={{ display: 'block', fontSize: '8px', color: 'rgba(34, 211, 238, 0.5)', marginBottom: 2 }}>Far</label>
                     <input
                         type="number"
                         step="1"
-                        className="w-full bg-black/40 border border-cyan-500/30 px-1 py-0.5 text-[10px] text-cyan-300 font-mono focus:outline-none focus:border-cyan-400/50"
+                        style={{ width: '100%', backgroundColor: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(34, 211, 238, 0.3)', padding: '2px 4px', fontSize: '10px', color: 'rgba(165, 243, 252, 1)', fontFamily: 'monospace', outline: 'none' }}
                         value={props.shadowCameraFar}
                         onChange={e => onUpdate({ ...component.properties, 'shadowCameraFar': parseFloat(e.target.value) })}
                     />
                 </div>
                 <div>
-                    <label className="block text-[8px] text-cyan-400/50 mb-0.5">Top</label>
+                    <label style={{ display: 'block', fontSize: '8px', color: 'rgba(34, 211, 238, 0.5)', marginBottom: 2 }}>Top</label>
                     <input
                         type="number"
                         step="1"
-                        className="w-full bg-black/40 border border-cyan-500/30 px-1 py-0.5 text-[10px] text-cyan-300 font-mono focus:outline-none focus:border-cyan-400/50"
+                        style={{ width: '100%', backgroundColor: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(34, 211, 238, 0.3)', padding: '2px 4px', fontSize: '10px', color: 'rgba(165, 243, 252, 1)', fontFamily: 'monospace', outline: 'none' }}
                         value={props.shadowCameraTop}
                         onChange={e => onUpdate({ ...component.properties, 'shadowCameraTop': parseFloat(e.target.value) })}
                     />
                 </div>
                 <div>
-                    <label className="block text-[8px] text-cyan-400/50 mb-0.5">Bottom</label>
+                    <label style={{ display: 'block', fontSize: '8px', color: 'rgba(34, 211, 238, 0.5)', marginBottom: 2 }}>Bottom</label>
                     <input
                         type="number"
                         step="1"
-                        className="w-full bg-black/40 border border-cyan-500/30 px-1 py-0.5 text-[10px] text-cyan-300 font-mono focus:outline-none focus:border-cyan-400/50"
+                        style={{ width: '100%', backgroundColor: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(34, 211, 238, 0.3)', padding: '2px 4px', fontSize: '10px', color: 'rgba(165, 243, 252, 1)', fontFamily: 'monospace', outline: 'none' }}
                         value={props.shadowCameraBottom}
                         onChange={e => onUpdate({ ...component.properties, 'shadowCameraBottom': parseFloat(e.target.value) })}
                     />
                 </div>
                 <div>
-                    <label className="block text-[8px] text-cyan-400/50 mb-0.5">Left</label>
+                    <label style={{ display: 'block', fontSize: '8px', color: 'rgba(34, 211, 238, 0.5)', marginBottom: 2 }}>Left</label>
                     <input
                         type="number"
                         step="1"
-                        className="w-full bg-black/40 border border-cyan-500/30 px-1 py-0.5 text-[10px] text-cyan-300 font-mono focus:outline-none focus:border-cyan-400/50"
+                        style={{ width: '100%', backgroundColor: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(34, 211, 238, 0.3)', padding: '2px 4px', fontSize: '10px', color: 'rgba(165, 243, 252, 1)', fontFamily: 'monospace', outline: 'none' }}
                         value={props.shadowCameraLeft}
                         onChange={e => onUpdate({ ...component.properties, 'shadowCameraLeft': parseFloat(e.target.value) })}
                     />
                 </div>
                 <div>
-                    <label className="block text-[8px] text-cyan-400/50 mb-0.5">Right</label>
+                    <label style={{ display: 'block', fontSize: '8px', color: 'rgba(34, 211, 238, 0.5)', marginBottom: 2 }}>Right</label>
                     <input
                         type="number"
                         step="1"
-                        className="w-full bg-black/40 border border-cyan-500/30 px-1 py-0.5 text-[10px] text-cyan-300 font-mono focus:outline-none focus:border-cyan-400/50"
+                        style={{ width: '100%', backgroundColor: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(34, 211, 238, 0.3)', padding: '2px 4px', fontSize: '10px', color: 'rgba(165, 243, 252, 1)', fontFamily: 'monospace', outline: 'none' }}
                         value={props.shadowCameraRight}
                         onChange={e => onUpdate({ ...component.properties, 'shadowCameraRight': parseFloat(e.target.value) })}
                     />
                 </div>
             </div>
         </div>
-        <div className="border-t border-cyan-500/20 pt-2 mt-2">
-            <label className="block text-[9px] text-cyan-400/60 uppercase tracking-wider mb-1">Target Offset</label>
-            <div className="grid grid-cols-3 gap-1">
+        <div style={{ borderTop: '1px solid rgba(34, 211, 238, 0.2)', paddingTop: 8, marginTop: 8 }}>
+            <label style={{ display: 'block', fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Target Offset</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4 }}>
                 <div>
-                    <label className="block text-[8px] text-cyan-400/50 mb-0.5">X</label>
+                    <label style={{ display: 'block', fontSize: '8px', color: 'rgba(34, 211, 238, 0.5)', marginBottom: 2 }}>X</label>
                     <input
                         type="number"
                         step="0.5"
-                        className="w-full bg-black/40 border border-cyan-500/30 px-1 py-0.5 text-[10px] text-cyan-300 font-mono focus:outline-none focus:border-cyan-400/50"
+                        style={{ width: '100%', backgroundColor: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(34, 211, 238, 0.3)', padding: '2px 4px', fontSize: '10px', color: 'rgba(165, 243, 252, 1)', fontFamily: 'monospace', outline: 'none' }}
                         value={props.targetOffset[0]}
                         onChange={e => onUpdate({
                             ...component.properties,
@@ -147,11 +147,11 @@ function DirectionalLightComponentEditor({ component, onUpdate }: { component: a
                     />
                 </div>
                 <div>
-                    <label className="block text-[8px] text-cyan-400/50 mb-0.5">Y</label>
+                    <label style={{ display: 'block', fontSize: '8px', color: 'rgba(34, 211, 238, 0.5)', marginBottom: 2 }}>Y</label>
                     <input
                         type="number"
                         step="0.5"
-                        className="w-full bg-black/40 border border-cyan-500/30 px-1 py-0.5 text-[10px] text-cyan-300 font-mono focus:outline-none focus:border-cyan-400/50"
+                        style={{ width: '100%', backgroundColor: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(34, 211, 238, 0.3)', padding: '2px 4px', fontSize: '10px', color: 'rgba(165, 243, 252, 1)', fontFamily: 'monospace', outline: 'none' }}
                         value={props.targetOffset[1]}
                         onChange={e => onUpdate({
                             ...component.properties,
@@ -160,11 +160,11 @@ function DirectionalLightComponentEditor({ component, onUpdate }: { component: a
                     />
                 </div>
                 <div>
-                    <label className="block text-[8px] text-cyan-400/50 mb-0.5">Z</label>
+                    <label style={{ display: 'block', fontSize: '8px', color: 'rgba(34, 211, 238, 0.5)', marginBottom: 2 }}>Z</label>
                     <input
                         type="number"
                         step="0.5"
-                        className="w-full bg-black/40 border border-cyan-500/30 px-1 py-0.5 text-[10px] text-cyan-300 font-mono focus:outline-none focus:border-cyan-400/50"
+                        style={{ width: '100%', backgroundColor: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(34, 211, 238, 0.3)', padding: '2px 4px', fontSize: '10px', color: 'rgba(165, 243, 252, 1)', fontFamily: 'monospace', outline: 'none' }}
                         value={props.targetOffset[2]}
                         onChange={e => onUpdate({
                             ...component.properties,

@@ -22,10 +22,10 @@ function TransformComponentEditor({ component, onUpdate, transformMode, setTrans
         },
     };
 
-    return <div className="flex flex-col">
+    return <div style={{ display: 'flex', flexDirection: 'column' }}>
         {transformMode && setTransformMode && (
-            <div className="mb-2">
-                <label className="block text-[9px] text-cyan-400/60 uppercase tracking-wider mb-1">Transform Mode</label>
+            <div style={{ marginBottom: 8 }}>
+                <label style={{ display: 'block', fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Transform Mode</label>
                 <div style={{ display: 'flex', gap: 6 }}>
                     {["translate", "rotate", "scale"].map(mode => (
                         <button
@@ -151,20 +151,20 @@ export function Vector3Input({
     ] as const;
 
     return (
-        <div className="mb-2">
-            <label className="block text-[9px] text-cyan-400/60 uppercase tracking-wider mb-1">
+        <div style={{ marginBottom: 8 }}>
+            <label style={{ display: 'block', fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
                 {label}
             </label>
 
-            <div className="flex gap-1">
+            <div style={{ display: 'flex', gap: 4 }}>
                 {axes.map(({ key, color, index }) => (
                     <div
                         key={key}
-                        className="flex-1 flex items-center gap-1 bg-black/30 border border-cyan-500/20 rounded px-1.5 py-1 min-h-[32px]"
+                        style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 4, backgroundColor: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(34, 211, 238, 0.2)', borderRadius: 4, padding: '4px 6px', minHeight: 32 }}
                     >
                         {/* SCRUB HANDLE */}
                         <span
-                            className={`text-xs font-bold text-${color}-400 w-3 cursor-ew-resize select-none`}
+                            style={{ fontSize: '12px', fontWeight: 'bold', color: color === 'red' ? 'rgba(248, 113, 113, 1)' : color === 'green' ? 'rgba(134, 239, 172, 1)' : 'rgba(96, 165, 250, 1)', width: 12, cursor: 'ew-resize', userSelect: 'none' }}
                             onPointerDown={e => startScrub(e, index)}
                             onPointerMove={onScrubMove}
                             onPointerUp={endScrub}
@@ -174,7 +174,7 @@ export function Vector3Input({
 
                         {/* TEXT INPUT */}
                         <input
-                            className="flex-1 bg-transparent text-xs text-cyan-200 font-mono outline-none w-full min-w-0"
+                            style={{ flex: 1, backgroundColor: 'transparent', fontSize: '12px', color: 'rgba(165, 243, 252, 1)', fontFamily: 'monospace', outline: 'none', width: '100%', minWidth: 0 }}
                             type="text"
                             value={draft[index]}
                             onChange={e => {

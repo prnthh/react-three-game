@@ -9,21 +9,21 @@ function RotatorComponentEditor({ component, onUpdate }: { component: any; onUpd
         axis: component.properties.axis ?? 'y'
     };
 
-    return <div className="flex flex-col gap-2">
+    return <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div>
-            <label className="block text-[9px] text-cyan-400/60 uppercase tracking-wider mb-0.5">Rotation Speed</label>
+            <label style={{ display: 'block', fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Rotation Speed</label>
             <input
                 type="number"
                 step="0.1"
-                className="w-full bg-black/40 border border-cyan-500/30 px-1 py-0.5 text-[10px] text-cyan-300 font-mono focus:outline-none focus:border-cyan-400/50"
+                style={{ width: '100%', backgroundColor: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(34, 211, 238, 0.3)', padding: '2px 4px', fontSize: '10px', color: 'rgba(165, 243, 252, 1)', fontFamily: 'monospace', outline: 'none' }}
                 value={props.speed}
                 onChange={e => onUpdate({ ...component.properties, speed: parseFloat(e.target.value) })}
             />
         </div>
         <div>
-            <label className="block text-[9px] text-cyan-400/60 uppercase tracking-wider mb-0.5">Rotation Axis</label>
+            <label style={{ display: 'block', fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Rotation Axis</label>
             <select
-                className="w-full bg-black/40 border border-cyan-500/30 px-1 py-0.5 text-[10px] text-cyan-300 font-mono focus:outline-none focus:border-cyan-400/50"
+                style={{ width: '100%', backgroundColor: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(34, 211, 238, 0.3)', padding: '2px 4px', fontSize: '10px', color: 'rgba(165, 243, 252, 1)', fontFamily: 'monospace', outline: 'none' }}
                 value={props.axis}
                 onChange={e => onUpdate({ ...component.properties, axis: e.target.value })}
             >

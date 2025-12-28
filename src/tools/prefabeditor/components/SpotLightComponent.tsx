@@ -11,74 +11,74 @@ function SpotLightComponentEditor({ component, onUpdate }: { component: any; onU
         castShadow: component.properties.castShadow ?? true
     };
 
-    return <div className="flex flex-col gap-2">
+    return <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div>
-            <label className="block text-[9px] text-cyan-400/60 uppercase tracking-wider mb-0.5">Color</label>
-            <div className="flex gap-0.5">
+            <label style={{ display: 'block', fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Color</label>
+            <div style={{ display: 'flex', gap: 2 }}>
                 <input
                     type="color"
-                    className="h-5 w-5 bg-transparent border-none cursor-pointer"
+                    style={{ height: 20, width: 20, backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }}
                     value={props.color}
                     onChange={e => onUpdate({ ...component.properties, 'color': e.target.value })}
                 />
                 <input
                     type="text"
-                    className="flex-1 bg-black/40 border border-cyan-500/30 px-1 py-0.5 text-[10px] text-cyan-300 font-mono focus:outline-none focus:border-cyan-400/50"
+                    style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(34, 211, 238, 0.3)', padding: '2px 4px', fontSize: '10px', color: 'rgba(165, 243, 252, 1)', fontFamily: 'monospace', outline: 'none' }}
                     value={props.color}
                     onChange={e => onUpdate({ ...component.properties, 'color': e.target.value })}
                 />
             </div>
         </div>
         <div>
-            <label className="block text-[9px] text-cyan-400/60 uppercase tracking-wider mb-0.5">Intensity</label>
+            <label style={{ display: 'block', fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Intensity</label>
             <input
                 type="number"
                 step="0.1"
-                className="w-full bg-black/40 border border-cyan-500/30 px-1 py-0.5 text-[10px] text-cyan-300 font-mono focus:outline-none focus:border-cyan-400/50"
+                style={{ width: '100%', backgroundColor: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(34, 211, 238, 0.3)', padding: '2px 4px', fontSize: '10px', color: 'rgba(165, 243, 252, 1)', fontFamily: 'monospace', outline: 'none' }}
                 value={props.intensity}
                 onChange={e => onUpdate({ ...component.properties, 'intensity': parseFloat(e.target.value) })}
             />
         </div>
         <div>
-            <label className="block text-[9px] text-cyan-400/60 uppercase tracking-wider mb-0.5">Angle</label>
+            <label style={{ display: 'block', fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Angle</label>
             <input
                 type="number"
                 step="0.1"
                 min="0"
                 max={Math.PI}
-                className="w-full bg-black/40 border border-cyan-500/30 px-1 py-0.5 text-[10px] text-cyan-300 font-mono focus:outline-none focus:border-cyan-400/50"
+                style={{ width: '100%', backgroundColor: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(34, 211, 238, 0.3)', padding: '2px 4px', fontSize: '10px', color: 'rgba(165, 243, 252, 1)', fontFamily: 'monospace', outline: 'none' }}
                 value={props.angle}
                 onChange={e => onUpdate({ ...component.properties, 'angle': parseFloat(e.target.value) })}
             />
         </div>
         <div>
-            <label className="block text-[9px] text-cyan-400/60 uppercase tracking-wider mb-0.5">Penumbra</label>
+            <label style={{ display: 'block', fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Penumbra</label>
             <input
                 type="number"
                 step="0.1"
                 min="0"
                 max="1"
-                className="w-full bg-black/40 border border-cyan-500/30 px-1 py-0.5 text-[10px] text-cyan-300 font-mono focus:outline-none focus:border-cyan-400/50"
+                style={{ width: '100%', backgroundColor: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(34, 211, 238, 0.3)', padding: '2px 4px', fontSize: '10px', color: 'rgba(165, 243, 252, 1)', fontFamily: 'monospace', outline: 'none' }}
                 value={props.penumbra}
                 onChange={e => onUpdate({ ...component.properties, 'penumbra': parseFloat(e.target.value) })}
             />
         </div>
         <div>
-            <label className="block text-[9px] text-cyan-400/60 uppercase tracking-wider mb-0.5">Distance</label>
+            <label style={{ display: 'block', fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Distance</label>
             <input
                 type="number"
                 step="1"
                 min="0"
-                className="w-full bg-black/40 border border-cyan-500/30 px-1 py-0.5 text-[10px] text-cyan-300 font-mono focus:outline-none focus:border-cyan-400/50"
+                style={{ width: '100%', backgroundColor: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(34, 211, 238, 0.3)', padding: '2px 4px', fontSize: '10px', color: 'rgba(165, 243, 252, 1)', fontFamily: 'monospace', outline: 'none' }}
                 value={props.distance}
                 onChange={e => onUpdate({ ...component.properties, 'distance': parseFloat(e.target.value) })}
             />
         </div>
         <div>
-            <label className="block text-[9px] text-cyan-400/60 uppercase tracking-wider mb-0.5">Cast Shadow</label>
+            <label style={{ display: 'block', fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Cast Shadow</label>
             <input
                 type="checkbox"
-                className="h-4 w-4 bg-black/40 border border-cyan-500/30 cursor-pointer"
+                style={{ height: 16, width: 16, backgroundColor: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(34, 211, 238, 0.3)', cursor: 'pointer' }}
                 checked={props.castShadow}
                 onChange={e => onUpdate({ ...component.properties, 'castShadow': e.target.checked })}
             />

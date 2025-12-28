@@ -2,21 +2,21 @@ import { RigidBody } from "@react-three/rapier";
 import type { ReactNode } from 'react';
 import { Component } from "./ComponentRegistry";
 
-const selectClass = "w-full bg-black/40 border border-cyan-500/30 px-1 py-0.5 text-[10px] text-cyan-300 font-mono focus:outline-none focus:border-cyan-400/50";
-const labelClass = "block text-[9px] text-cyan-400/60 uppercase tracking-wider mb-0.5";
+const selectClass = { width: '100%', backgroundColor: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(34, 211, 238, 0.3)', padding: '2px 4px', fontSize: '10px', color: 'rgba(165, 243, 252, 1)', fontFamily: 'monospace', outline: 'none' };
+const labelClass = { display: 'block', fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 };
 
 function PhysicsComponentEditor({ component, onUpdate }: { component: { properties: { type?: 'dynamic' | 'fixed'; collider?: string;[k: string]: any } }; onUpdate: (props: Partial<Record<string, any>>) => void }) {
     const { type = 'dynamic', collider = 'hull' } = component.properties;
     return (
         <div>
-            <label className={labelClass}>Type</label>
-            <select className={selectClass} value={type} onChange={e => onUpdate({ type: e.target.value })}>
+            <label style={labelClass}>Type</label>
+            <select style={selectClass as any} value={type} onChange={e => onUpdate({ type: e.target.value })}>
                 <option value="dynamic">Dynamic</option>
                 <option value="fixed">Fixed</option>
             </select>
 
-            <label className={`${labelClass} mt-2`}>Collider</label>
-            <select className={selectClass} value={collider} onChange={e => onUpdate({ collider: e.target.value })}>
+            <label style={{ ...labelClass, marginTop: 8 }}>Collider</label>
+            <select style={selectClass as any} value={collider} onChange={e => onUpdate({ collider: e.target.value })}>
                 <option value="hull">Hull (convex)</option>
                 <option value="trimesh">Trimesh (exact)</option>
                 <option value="cuboid">Cuboid (box)</option>

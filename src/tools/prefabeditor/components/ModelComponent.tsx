@@ -20,9 +20,9 @@ function ModelComponentEditor({ component, onUpdate, basePath = "" }: { componen
     };
 
     return <div>
-        <div className="mb-1">
-            <label className="block text-[9px] text-cyan-400/60 uppercase tracking-wider mb-0.5">Model</label>
-            <div className="max-h-32 overflow-y-auto">
+        <div style={{ marginBottom: 4 }}>
+            <label style={{ display: 'block', fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Model</label>
+            <div style={{ maxHeight: 128, overflowY: 'auto' }}>
                 <ModelListViewer
                     files={modelFiles}
                     selected={component.properties.filename ? `/${component.properties.filename}` : undefined}
@@ -31,15 +31,15 @@ function ModelComponentEditor({ component, onUpdate, basePath = "" }: { componen
                 />
             </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <input
                 type="checkbox"
                 id="instanced-checkbox"
                 checked={component.properties.instanced || false}
                 onChange={e => onUpdate({ 'instanced': e.target.checked })}
-                className="w-3 h-3"
+                style={{ width: 12, height: 12 }}
             />
-            <label htmlFor="instanced-checkbox" className="text-[9px] text-cyan-400/60">Instanced</label>
+            <label htmlFor="instanced-checkbox" style={{ fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)' }}>Instanced</label>
         </div>
     </div>;
 }

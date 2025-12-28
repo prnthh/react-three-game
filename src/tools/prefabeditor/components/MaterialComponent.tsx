@@ -1,6 +1,7 @@
 import { TextureListViewer } from '../../assetviewer/page';
 import { useEffect, useState } from 'react';
 import { Component } from './ComponentRegistry';
+import { Input, Label } from './Input';
 
 function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { component: any; onUpdate: (newComp: any) => void; basePath?: string }) {
     const [textureFiles, setTextureFiles] = useState<string[]>([]);
@@ -13,42 +14,54 @@ function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { compo
             .catch(console.error);
     }, [basePath]);
 
+    const textInputStyle = {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.4)',
+        border: '1px solid rgba(34, 211, 238, 0.3)',
+        padding: '2px 4px',
+        fontSize: '10px',
+        color: 'rgba(165, 243, 252, 1)',
+        fontFamily: 'monospace',
+        outline: 'none',
+    };
+
     return (
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <div style={{ marginBottom: 4 }}>
-                <label style={{ display: 'block', fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Color</label>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div>
+                <Label>Color</Label>
                 <div style={{ display: 'flex', gap: 2 }}>
                     <input
                         type="color"
                         style={{ height: 20, width: 20, backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }}
                         value={component.properties.color}
-                        onChange={e => onUpdate({ 'color': e.target.value })}
+                        onChange={e => onUpdate({ color: e.target.value })}
                     />
                     <input
                         type="text"
-                        style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(34, 211, 238, 0.3)', padding: '2px 4px', fontSize: '10px', color: 'rgba(165, 243, 252, 1)', fontFamily: 'monospace', outline: 'none' }}
+                        style={textInputStyle}
                         value={component.properties.color}
-                        onChange={e => onUpdate({ 'color': e.target.value })}
+                        onChange={e => onUpdate({ color: e.target.value })}
                     />
                 </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <input
                     type="checkbox"
                     style={{ width: 12, height: 12 }}
                     checked={component.properties.wireframe || false}
-                    onChange={e => onUpdate({ 'wireframe': e.target.checked })}
+                    onChange={e => onUpdate({ wireframe: e.target.checked })}
                 />
                 <label style={{ fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)' }}>Wireframe</label>
             </div>
 
             <div>
-                <label style={{ display: 'block', fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Texture</label>
+                <Label>Texture</Label>
                 <div style={{ maxHeight: 128, overflowY: 'auto' }}>
                     <TextureListViewer
                         files={textureFiles}
                         selected={component.properties.texture || undefined}
-                        onSelect={(file) => onUpdate({ 'texture': file })}
+                        onSelect={file => onUpdate({ texture: file })}
                         basePath={basePath}
                     />
                 </div>
@@ -61,31 +74,27 @@ function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { compo
                             type="checkbox"
                             style={{ width: 12, height: 12 }}
                             checked={component.properties.repeat || false}
-                            onChange={e => onUpdate({ 'repeat': e.target.checked })}
+                            onChange={e => onUpdate({ repeat: e.target.checked })}
                         />
                         <label style={{ fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)' }}>Repeat Texture</label>
                     </div>
 
                     {component.properties.repeat && (
                         <div>
-                            <label style={{ display: 'block', fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Repeat (X, Y)</label>
+                            <Label>Repeat (X, Y)</Label>
                             <div style={{ display: 'flex', gap: 2 }}>
-                                <input
-                                    type="number"
-                                    style={{ width: '100%', backgroundColor: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(34, 211, 238, 0.3)', padding: '2px 4px', fontSize: '10px', color: 'rgba(165, 243, 252, 1)', fontFamily: 'monospace', outline: 'none' }}
+                                <Input
                                     value={component.properties.repeatCount?.[0] ?? 1}
-                                    onChange={e => {
+                                    onChange={value => {
                                         const y = component.properties.repeatCount?.[1] ?? 1;
-                                        onUpdate({ 'repeatCount': [parseFloat(e.target.value), y] });
+                                        onUpdate({ repeatCount: [value, y] });
                                     }}
                                 />
-                                <input
-                                    type="number"
-                                    style={{ width: '100%', backgroundColor: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(34, 211, 238, 0.3)', padding: '2px 4px', fontSize: '10px', color: 'rgba(165, 243, 252, 1)', fontFamily: 'monospace', outline: 'none' }}
+                                <Input
                                     value={component.properties.repeatCount?.[1] ?? 1}
-                                    onChange={e => {
+                                    onChange={value => {
                                         const x = component.properties.repeatCount?.[0] ?? 1;
-                                        onUpdate({ 'repeatCount': [x, parseFloat(e.target.value)] });
+                                        onUpdate({ repeatCount: [x, value] });
                                     }}
                                 />
                             </div>

@@ -1,6 +1,7 @@
 import { ModelListViewer } from '../../assetviewer/page';
 import { useEffect, useState, useMemo } from 'react';
 import { Component } from './ComponentRegistry';
+import { Label } from './Input';
 
 function ModelComponentEditor({ component, onUpdate, basePath = "" }: { component: any; onUpdate: (newComp: any) => void; basePath?: string }) {
     const [modelFiles, setModelFiles] = useState<string[]>([]);
@@ -19,9 +20,9 @@ function ModelComponentEditor({ component, onUpdate, basePath = "" }: { componen
         onUpdate({ 'filename': filename });
     };
 
-    return <div>
-        <div style={{ marginBottom: 4 }}>
-            <label style={{ display: 'block', fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Model</label>
+    return <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div>
+            <Label>Model</Label>
             <div style={{ maxHeight: 128, overflowY: 'auto' }}>
                 <ModelListViewer
                     files={modelFiles}
@@ -36,7 +37,7 @@ function ModelComponentEditor({ component, onUpdate, basePath = "" }: { componen
                 type="checkbox"
                 id="instanced-checkbox"
                 checked={component.properties.instanced || false}
-                onChange={e => onUpdate({ 'instanced': e.target.checked })}
+                onChange={e => onUpdate({ instanced: e.target.checked })}
                 style={{ width: 12, height: 12 }}
             />
             <label htmlFor="instanced-checkbox" style={{ fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)' }}>Instanced</label>

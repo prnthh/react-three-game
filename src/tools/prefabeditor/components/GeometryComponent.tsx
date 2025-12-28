@@ -1,4 +1,5 @@
 import { Component } from "./ComponentRegistry";
+import { Input, Label } from "./Input";
 
 const GEOMETRY_ARGS: Record<string, {
     labels: string[];
@@ -28,38 +29,40 @@ function GeometryComponentEditor({
     const { geometryType, args = [] } = component.properties;
     const schema = GEOMETRY_ARGS[geometryType];
 
-    return (
-        <div className="flex flex-col gap-1">
-            {/* Geometry Type */}
-            <label className="label">Type</label>
-            <select
-                className="select"
-                value={geometryType}
-                onChange={e => {
-                    const type = e.target.value;
-                    onUpdate({
-                        geometryType: type,
-                        args: GEOMETRY_ARGS[type].defaults,
-                    });
-                }}
-            >
-                <option value="box">Box</option>
-                <option value="sphere">Sphere</option>
-                <option value="plane">Plane</option>
-            </select>
+    const selectStyle = {
+        width: '100%',
+        backgroundColor: 'rgba(0, 0, 0, 0.4)',
+        border: '1px solid rgba(34, 211, 238, 0.3)',
+        padding: '2px 4px',
+        fontSize: '10px',
+        color: 'rgba(165, 243, 252, 1)',
+        fontFamily: 'monospace',
+        outline: 'none',
+    };
 
-            {/* Args */}
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div>
+                <Label>Type</Label>
+                <select style={selectStyle} value={geometryType} onChange={e => {
+                    const type = e.target.value;
+                    onUpdate({ geometryType: type, args: GEOMETRY_ARGS[type].defaults });
+                }}>
+                    <option value="box">Box</option>
+                    <option value="sphere">Sphere</option>
+                    <option value="plane">Plane</option>
+                </select>
+            </div>
+
             {schema.labels.map((label, i) => (
                 <div key={label}>
-                    <label className="label">{label}</label>
-                    <input
-                        type="number"
-                        className="input"
+                    <Label>{label}</Label>
+                    <Input
                         value={args[i] ?? schema.defaults[i]}
                         step="0.1"
-                        onChange={e => {
+                        onChange={value => {
                             const next = [...args];
-                            next[i] = parseFloat(e.target.value);
+                            next[i] = value;
                             onUpdate({ args: next });
                         }}
                     />

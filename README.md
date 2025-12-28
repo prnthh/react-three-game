@@ -133,3 +133,20 @@ npm run release # build + publish
 ---
 
 React 19 · Three.js WebGPU · TypeScript 5 · Rapier WASM · MIT License
+
+## Manifest generation script
+
+A small helper script is included to auto-generate asset manifests from the `public` folder. See `docs/generate-manifests.sh`.
+
+- What it does: searches `public/models` for `.glb`/`.fbx`, `public/textures` for `.jpg`/`.png`, and `public/sound` for `.mp3`/`.wav`, then writes JSON arrays to `public/models/manifest.json`, `public/textures/manifest.json`, and `public/sound/manifest.json`. These manifest files are used top populate the Asset Viewer in the the Editor.
+- How to run:
+
+  1. Make it executable (once):
+
+    chmod +x docs/generate-manifests.sh
+
+  2. Run the script from the repo root (zsh/bash):
+
+    ./docs/generate-manifests.sh
+
+The script is intentionally simple and portable (uses `find`/`sed`). If you need different file types or output formatting, edit `docs/generate-manifests.sh`.

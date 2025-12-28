@@ -73,7 +73,7 @@ export default function Home() {
         </Link>
       </div>
 
-  <ClickToCopy text={"npm i react-three-game"} />
+      <ClickToCopy text={"npm i react-three-game"} />
       <Features />
     </div>
   </main>;

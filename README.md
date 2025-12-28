@@ -7,6 +7,7 @@ npm i react-three-game @react-three/fiber @react-three/rapier three
 ```
 
 ![Prefab Editor](assets/editor.gif)
+![Architecture](assets/architecture.png)
 
 ## Usage
 

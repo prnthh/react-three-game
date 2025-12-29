@@ -4,16 +4,34 @@ import { getComponent } from './components/ComponentRegistry';
 import { base, tree, menu } from './styles';
 import { findNode, findParent, deleteNode, cloneNode, updateNodeById } from './utils';
 
-export default function EditorTree({ prefabData, setPrefabData, selectedId, setSelectedId }: {
+export default function EditorTree({
+    prefabData,
+    setPrefabData,
+    selectedId,
+    setSelectedId,
+    onSave,
+    onLoad,
+    onUndo,
+    onRedo,
+    canUndo,
+    canRedo
+}: {
     prefabData?: Prefab;
     setPrefabData?: Dispatch<SetStateAction<Prefab>>;
     selectedId: string | null;
     setSelectedId: Dispatch<SetStateAction<string | null>>;
+    onSave?: () => void;
+    onLoad?: () => void;
+    onUndo?: () => void;
+    onRedo?: () => void;
+    canUndo?: boolean;
+    canRedo?: boolean;
 }) {
     const [contextMenu, setContextMenu] = useState<{ x: number, y: number, nodeId: string } | null>(null);
     const [draggedId, setDraggedId] = useState<string | null>(null);
     const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
     const [collapsed, setCollapsed] = useState(false);
+    const [fileMenuOpen, setFileMenuOpen] = useState(false);
 
     if (!prefabData || !setPrefabData) return null;
 
@@ -32,24 +50,21 @@ export default function EditorTree({ prefabData, setPrefabData, selectedId, setS
         });
     };
 
-    // Actions
     const handleAddChild = (parentId: string) => {
-        const newNode: GameObject = {
-            id: crypto.randomUUID(),
-            name: "New Node",
-            components: {
-                transform: {
-                    type: "Transform",
-                    properties: { ...getComponent('Transform')?.defaultProperties }
-                }
-            }
-        };
-
         setPrefabData(prev => ({
             ...prev,
             root: updateNodeById(prev.root, parentId, parent => ({
                 ...parent,
-                children: [...(parent.children ?? []), newNode]
+                children: [...(parent.children ?? []), {
+                    id: crypto.randomUUID(),
+                    name: "New Node",
+                    components: {
+                        transform: {
+                            type: "Transform",
+                            properties: { ...getComponent('Transform')?.defaultProperties }
+                        }
+                    }
+                }]
             }))
         }));
         setContextMenu(null);
@@ -57,41 +72,30 @@ export default function EditorTree({ prefabData, setPrefabData, selectedId, setS
 
     const handleDuplicate = (nodeId: string) => {
         if (nodeId === prefabData.root.id) return;
-
         setPrefabData(prev => {
             const node = findNode(prev.root, nodeId);
             const parent = findParent(prev.root, nodeId);
             if (!node || !parent) return prev;
-
-            const clone = cloneNode(node);
-
             return {
                 ...prev,
                 root: updateNodeById(prev.root, parent.id, p => ({
                     ...p,
-                    children: [...(p.children ?? []), clone]
+                    children: [...(p.children ?? []), cloneNode(node)]
                 }))
             };
         });
-
         setContextMenu(null);
     };
 
-
     const handleDelete = (nodeId: string) => {
         if (nodeId === prefabData.root.id) return;
-
         setPrefabData(prev => ({ ...prev, root: deleteNode(prev.root, nodeId)! }));
         if (selectedId === nodeId) setSelectedId(null);
         setContextMenu(null);
     };
 
-    // Drag and Drop
     const handleDragStart = (e: React.DragEvent, id: string) => {
-        if (id === prefabData.root.id) {
-            e.preventDefault();
-            return;
-        }
+        if (id === prefabData.root.id) return e.preventDefault();
         e.dataTransfer.effectAllowed = "move";
         setDraggedId(id);
     };
@@ -106,22 +110,16 @@ export default function EditorTree({ prefabData, setPrefabData, selectedId, setS
     const handleDrop = (e: React.DragEvent, targetId: string) => {
         if (!draggedId || draggedId === targetId) return;
         e.preventDefault();
-
         setPrefabData(prev => {
             const draggedNode = findNode(prev.root, draggedId);
             const oldParent = findParent(prev.root, draggedId);
-            if (!draggedNode || !oldParent) return prev;
+            if (!draggedNode || !oldParent || findNode(draggedNode, targetId)) return prev;
 
-            // Prevent dropping into own subtree
-            if (findNode(draggedNode, targetId)) return prev;
-
-            // 1. Remove from old parent
             let root = updateNodeById(prev.root, oldParent.id, p => ({
                 ...p,
                 children: p.children!.filter(c => c.id !== draggedId)
             }));
 
-            // 2. Add to new parent
             root = updateNodeById(root, targetId, t => ({
                 ...t,
                 children: [...(t.children ?? []), draggedNode]
@@ -129,7 +127,6 @@ export default function EditorTree({ prefabData, setPrefabData, selectedId, setS
 
             return { ...prev, root };
         });
-
         setDraggedId(null);
     };
 
@@ -182,10 +179,60 @@ export default function EditorTree({ prefabData, setPrefabData, selectedId, setS
 
     return (
         <>
-            <div style={{ ...tree.panel, width: collapsed ? 'auto' : 224 }} onClick={() => setContextMenu(null)}>
-                <div style={base.header} onClick={() => setCollapsed(!collapsed)}>
-                    <span>Scene</span>
-                    <span>{collapsed ? '▶' : '◀'}</span>
+            <div style={{ ...tree.panel, width: collapsed ? 'auto' : 224 }} onClick={() => { setContextMenu(null); setFileMenuOpen(false); }}>
+                <div style={base.header}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }} onClick={() => setCollapsed(!collapsed)}>
+                        <span>{collapsed ? '▶' : '▼'}</span>
+                        <span>Scene</span>
+                    </div>
+                    {!collapsed && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <button
+                                style={{ ...base.btn, padding: '2px 6px', fontSize: 10, opacity: canUndo ? 1 : 0.4 }}
+                                onClick={(e) => { e.stopPropagation(); onUndo?.(); }}
+                                disabled={!canUndo}
+                                title="Undo"
+                            >
+                                ↶
+                            </button>
+                            <button
+                                style={{ ...base.btn, padding: '2px 6px', fontSize: 10, opacity: canRedo ? 1 : 0.4 }}
+                                onClick={(e) => { e.stopPropagation(); onRedo?.(); }}
+                                disabled={!canRedo}
+                                title="Redo"
+                            >
+                                ↷
+                            </button>
+                            <div style={{ position: 'relative' }}>
+                                <button
+                                    style={{ ...base.btn, padding: '2px 6px', fontSize: 10 }}
+                                    onClick={(e) => { e.stopPropagation(); setFileMenuOpen(!fileMenuOpen); }}
+                                    title="File"
+                                >
+                                    ⋮
+                                </button>
+                                {fileMenuOpen && (
+                                    <div
+                                        style={{ ...menu.container, top: 28, right: 0 }}
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <button
+                                            style={menu.item}
+                                            onClick={() => { onLoad?.(); setFileMenuOpen(false); }}
+                                        >
+                                            📥 Load
+                                        </button>
+                                        <button
+                                            style={menu.item}
+                                            onClick={() => { onSave?.(); setFileMenuOpen(false); }}
+                                        >
+                                            💾 Save
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
                 {!collapsed && <div style={tree.scroll}>{renderNode(prefabData.root)}</div>}
             </div>

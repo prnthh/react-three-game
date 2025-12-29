@@ -442,10 +442,60 @@ CRITICAL RULES:
 4. Transform MUST include ALL THREE: position:[x,y,z], rotation:[x,y,z], scale:[x,y,z]
 5. NEVER use UUID-like ids from the scene - those are read-only
 
-OPERATIONS:
-ADD: {"root":{"children":{"$append":[{id:"cube1",components:{transform:{type:"Transform",properties:{position:[2,0,0],rotation:[0,0,0],scale:[1,1,1]}},mesh:{type:"Mesh",properties:{geometry:"box",material:"standard",color:"#ff0000"}}},children:[]}]}}}
-DELETE: {"root":{"children":{"$delete":["id1","id2"]}}}
-MODIFY: {"root":{"children":[{id:"cube1",components:{transform:{type:"Transform",properties:{position:[5,0,0],rotation:[0,0,0],scale:[1,1,1]}}}}]}}
+COMPONENT TYPES AND EXAMPLES:
+
+1. TRANSFORM (required for ALL entities - position, rotation, scale):
+   {"transform":{"type":"Transform","properties":{"position":[0,0,0],"rotation":[0,0,0],"scale":[1,1,1]}}}
+
+2. GEOMETRY + MATERIAL (for basic shapes like cubes, spheres, planes):
+   {"geometry":{"type":"Geometry","properties":{"geometryType":"box","args":[1,1,1]}},"material":{"type":"Material","properties":{"color":"#ff0000"}}}
+   // geometryType options: "box", "sphere", "plane"
+   // box args: [width, height, depth]
+   // sphere args: [radius, widthSegments, heightSegments]
+   // plane args: [width, height]
+
+3. MODEL (for loading 3D models from files - use instead of geometry):
+   {"model":{"type":"Model","properties":{"filename":"models/environment/tree.glb","instanced":true}}}
+   // filename: path to .glb/.gltf model file (relative to public folder)
+   // Add instanced:true ONLY when using MANY copies of same model (better performance via GPU instancing)
+
+4. MATERIAL (appearance - use with geometry OR model):
+   {"material":{"type":"Material","properties":{"color":"#ff0000"}}}
+   // Optional: wireframe:true, texture:"/path/to/texture.png", repeat:true, repeatCount:[4,4]
+
+5. PHYSICS (for collisions/dynamics):
+   {"physics":{"type":"Physics","properties":{"type":"dynamic","collider":"hull"}}}
+   // type: "dynamic" (movable) or "fixed" (static)
+   // collider: "hull", "trimesh", "cuboid", "ball"
+
+6. DIRECTIONALLIGHT (sun-like lighting):
+   {"directionallight":{"type":"DirectionalLight","properties":{"color":"#ffffff","intensity":1.0,"castShadow":true,"targetOffset":[2,-5,2]}}}
+
+7. SPOTLIGHT (cone-shaped light):
+   {"spotlight":{"type":"SpotLight","properties":{"color":"#ffffff","intensity":1.0,"angle":0.523,"penumbra":0.5,"distance":100,"castShadow":true}}}
+
+EXAMPLE SCENE BUILDING (step-by-step):
+
+STEP 1 - Add a red cube:
+{"root":{"children":{"$append":[{"id":"cube1","components":{"transform":{"type":"Transform","properties":{"position":[2,0,0],"rotation":[0,0,0],"scale":[1,1,1]}},"geometry":{"type":"Geometry","properties":{"geometryType":"box","args":[1,1,1]}},"material":{"type":"Material","properties":{"color":"#ff0000"}}},"children":[]}]}}}
+
+STEP 2 - Add a blue sphere:
+{"root":{"children":{"$append":[{"id":"ball1","components":{"transform":{"type":"Transform","properties":{"position":[0,2,0],"rotation":[0,0,0],"scale":[1,1,1]}},"geometry":{"type":"Geometry","properties":{"geometryType":"sphere","args":[0.5,32,16]}},"material":{"type":"Material","properties":{"color":"#0000ff"}}},"children":[]}]}}}
+
+STEP 3 - Add trees using instanced 3D models:
+{"root":{"children":{"$append":[{"id":"tree1","components":{"transform":{"type":"Transform","properties":{"position":[-3,0,2],"rotation":[0,0,0],"scale":[1,1,1]}},"model":{"type":"Model","properties":{"filename":"models/environment/tree.glb","instanced":true}},"physics":{"type":"Physics","properties":{"type":"fixed"}}},"children":[]},{"id":"tree2","components":{"transform":{"type":"Transform","properties":{"position":[3,0,2],"rotation":[0,0,0],"scale":[1,1,1]}},"model":{"type":"Model","properties":{"filename":"models/environment/tree.glb","instanced":true}},"physics":{"type":"Physics","properties":{"type":"fixed"}}},"children":[]}]}}}
+
+STEP 4 - Add a dynamic physics cube (will fall):
+{"root":{"children":{"$append":[{"id":"physics-cube","components":{"transform":{"type":"Transform","properties":{"position":[0,5,0],"rotation":[0,0,0],"scale":[1,1,1]}},"geometry":{"type":"Geometry","properties":{"geometryType":"box","args":[1,1,1]}},"material":{"type":"Material","properties":{"color":"#00ff00"}},"physics":{"type":"Physics","properties":{"type":"dynamic","collider":"cuboid"}}},"children":[]}]}}}
+
+STEP 5 - Add a yellow spotlight:
+{"root":{"children":{"$append":[{"id":"spot1","components":{"transform":{"type":"Transform","properties":{"position":[5,10,5],"rotation":[0,0,0],"scale":[1,1,1]}},"spotlight":{"type":"SpotLight","properties":{"color":"#ffff00","intensity":2.0,"angle":0.785,"penumbra":0.5,"distance":50,"castShadow":true}}},"children":[]}]}}}
+
+STEP 6 - Remove the sphere and first tree:
+{"root":{"children":{"$delete":["ball1","tree1"]}}}
+
+STEP 7 - Move the red cube to new position:
+{"root":{"children":[{"id":"cube1","components":{"transform":{"type":"Transform","properties":{"position":[5,0,0],"rotation":[0,0,0],"scale":[1,1,1]}}}}]}}
 
 COMMON MISTAKES TO AVOID:
 ❌ "position":["0","1","2"] → ✅ "position":[0,1,2] (numbers not strings!)

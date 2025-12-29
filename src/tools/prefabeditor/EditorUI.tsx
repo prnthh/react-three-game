@@ -5,7 +5,21 @@ import { getAllComponents } from './components/ComponentRegistry';
 import { base, inspector } from './styles';
 import { findNode, updateNode, deleteNode } from './utils';
 
-function EditorUI({ prefabData, setPrefabData, selectedId, setSelectedId, transformMode, setTransformMode, basePath }: {
+function EditorUI({
+    prefabData,
+    setPrefabData,
+    selectedId,
+    setSelectedId,
+    transformMode,
+    setTransformMode,
+    basePath,
+    onSave,
+    onLoad,
+    onUndo,
+    onRedo,
+    canUndo,
+    canRedo
+}: {
     prefabData?: Prefab;
     setPrefabData?: Dispatch<SetStateAction<Prefab>>;
     selectedId: string | null;
@@ -13,6 +27,12 @@ function EditorUI({ prefabData, setPrefabData, selectedId, setSelectedId, transf
     transformMode: "translate" | "rotate" | "scale";
     setTransformMode: (m: "translate" | "rotate" | "scale") => void;
     basePath?: string;
+    onSave?: () => void;
+    onLoad?: () => void;
+    onUndo?: () => void;
+    onRedo?: () => void;
+    canUndo?: boolean;
+    canRedo?: boolean;
 }) {
     const [collapsed, setCollapsed] = useState(false);
 
@@ -33,11 +53,12 @@ function EditorUI({ prefabData, setPrefabData, selectedId, setSelectedId, transf
     const selectedNode = selectedId && prefabData ? findNode(prefabData.root, selectedId) : null;
 
     return <>
-        <style>{`.prefab-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+        <style>{`
+.prefab-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
 .prefab-scroll::-webkit-scrollbar-track { background: transparent; }
 .prefab-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 8px; }
 .prefab-scroll { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.06) transparent; }
-`}</style>
+        `}</style>
         <div style={inspector.panel}>
             <div style={base.header} onClick={() => setCollapsed(!collapsed)}>
                 <span>Inspector</span>
@@ -51,7 +72,6 @@ function EditorUI({ prefabData, setPrefabData, selectedId, setSelectedId, transf
                     transformMode={transformMode}
                     setTransformMode={setTransformMode}
                     basePath={basePath}
-                // add class to make scrollbar gutter transparent via CSS above
                 />
             )}
         </div>
@@ -61,13 +81,26 @@ function EditorUI({ prefabData, setPrefabData, selectedId, setSelectedId, transf
                 setPrefabData={setPrefabData}
                 selectedId={selectedId}
                 setSelectedId={setSelectedId}
+                onSave={onSave}
+                onLoad={onLoad}
+                onUndo={onUndo}
+                onRedo={onRedo}
+                canUndo={canUndo}
+                canRedo={canRedo}
             />
         </div>
     </>;
 }
 
 
-function NodeInspector({ node, updateNode, deleteNode, transformMode, setTransformMode, basePath }: {
+function NodeInspector({
+    node,
+    updateNode,
+    deleteNode,
+    transformMode,
+    setTransformMode,
+    basePath
+}: {
     node: GameObjectType;
     updateNode: (updater: (n: GameObjectType) => GameObjectType) => void;
     deleteNode: () => void;

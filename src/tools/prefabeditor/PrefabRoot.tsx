@@ -46,6 +46,20 @@ export const PrefabRoot = forwardRef<Group, {
         if (id === selectedId) setSelectedObject(obj);
     }, [selectedId]);
 
+    // Suppress TransformControls scene graph warnings during transitions
+    useEffect(() => {
+        const originalError = console.error;
+        console.error = (...args: any[]) => {
+            if (typeof args[0] === 'string' && args[0].includes('TransformControls') && args[0].includes('scene graph')) {
+                return; // Suppress this specific error
+            }
+            originalError.apply(console, args);
+        };
+        return () => {
+            console.error = originalError;
+        };
+    }, []);
+
     useEffect(() => {
         setSelectedObject(selectedId ? objectRefs.current[selectedId] ?? null : null);
     }, [selectedId]);

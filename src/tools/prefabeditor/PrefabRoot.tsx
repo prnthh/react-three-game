@@ -1,18 +1,29 @@
 "use client";
 
 import { MapControls, TransformControls, useHelper } from "@react-three/drei";
-import { useState, useRef, useEffect, forwardRef, useCallback } from "react";
-import { Vector3, Euler, Quaternion, Group, Object3D, SRGBColorSpace, Texture, TextureLoader, Matrix4, BoxHelper } from "three";
+import { forwardRef, useCallback, useEffect, useRef, useState, } from "react";
+import { BoxHelper, Euler, Group, Matrix4, Object3D, Quaternion, SRGBColorSpace, Texture, TextureLoader, Vector3, } from "three";
+import { ThreeEvent } from "@react-three/fiber";
+
 import { Prefab, GameObject as GameObjectType } from "./types";
 import { getComponent, registerComponent } from "./components/ComponentRegistry";
-import { ThreeEvent } from "@react-three/fiber";
+import components from "./components";
 import { loadModel } from "../dragdrop/modelLoader";
 import { GameInstance, GameInstanceProvider } from "./InstanceProvider";
 import { updateNode } from "./utils";
-import components from './components/';
+import { PhysicsProps } from "./components/PhysicsComponent";
 
-// Register all components
+/* -------------------------------------------------- */
+/* Setup */
+/* -------------------------------------------------- */
+
 components.forEach(registerComponent);
+
+const IDENTITY = new Matrix4();
+
+/* -------------------------------------------------- */
+/* PrefabRoot */
+/* -------------------------------------------------- */
 
 export const PrefabRoot = forwardRef<Group, {
     editMode?: boolean;
@@ -23,9 +34,10 @@ export const PrefabRoot = forwardRef<Group, {
     transformMode?: "translate" | "rotate" | "scale";
     basePath?: string;
 }>(({ editMode, data, onPrefabChange, selectedId, onSelect, transformMode, basePath = "" }, ref) => {
-    const [loadedModels, setLoadedModels] = useState<Record<string, Object3D>>({});
-    const [loadedTextures, setLoadedTextures] = useState<Record<string, Texture>>({});
-    const loadingRefs = useRef<Set<string>>(new Set());
+
+    const [models, setModels] = useState<Record<string, Object3D>>({});
+    const [textures, setTextures] = useState<Record<string, Texture>>({});
+    const loading = useRef(new Set<string>());
     const objectRefs = useRef<Record<string, Object3D | null>>({});
     const [selectedObject, setSelectedObject] = useState<Object3D | null>(null);
 
@@ -35,147 +47,163 @@ export const PrefabRoot = forwardRef<Group, {
     }, [selectedId]);
 
     useEffect(() => {
-        setSelectedObject(selectedId ? objectRefs.current[selectedId] || null : null);
+        setSelectedObject(selectedId ? objectRefs.current[selectedId] ?? null : null);
     }, [selectedId]);
+
+    /* ---------------- Transform writeback ---------------- */
 
     const onTransformChange = () => {
         if (!selectedId || !onPrefabChange) return;
+
         const obj = objectRefs.current[selectedId];
         if (!obj) return;
 
-        // 1. Get world matrix from the actual Three object
-        const worldMatrix = obj.matrixWorld.clone();
-
-        // 2. Compute parent world matrix from the prefab tree
         const parentWorld = computeParentWorldMatrix(data.root, selectedId);
-        const parentInv = parentWorld.clone().invert();
+        const local = parentWorld.clone().invert().multiply(obj.matrixWorld);
 
-        // 3. Convert world -> local
-        const localMatrix = new Matrix4().multiplyMatrices(parentInv, worldMatrix);
+        const { position, rotation, scale } = decompose(local);
 
-        const lp = new Vector3();
-        const lq = new Quaternion();
-        const ls = new Vector3();
-        localMatrix.decompose(lp, lq, ls);
-
-        const le = new Euler().setFromQuaternion(lq);
-
-        // 4. Write back LOCAL transform into the prefab node
-        const newRoot = updateNode(data.root, selectedId, (node) => ({
+        const root = updateNode(data.root, selectedId, node => ({
             ...node,
             components: {
                 ...node.components,
                 transform: {
                     type: "Transform",
-                    properties: {
-                        position: [lp.x, lp.y, lp.z] as [number, number, number],
-                        rotation: [le.x, le.y, le.z] as [number, number, number],
-                        scale: [ls.x, ls.y, ls.z] as [number, number, number],
-                    },
+                    properties: { position, rotation, scale },
                 },
             },
         }));
 
-        onPrefabChange({ ...data, root: newRoot });
+        onPrefabChange({ ...data, root });
     };
 
+    /* ---------------- Asset loading ---------------- */
 
     useEffect(() => {
-        const loadAssets = async () => {
-            const modelsToLoad = new Set<string>();
-            const texturesToLoad = new Set<string>();
+        const modelsToLoad = new Set<string>();
+        const texturesToLoad = new Set<string>();
 
-            const traverse = (node?: GameObjectType | null) => {
-                if (!node) return;
-                if (node.components?.model?.properties?.filename) {
-                    modelsToLoad.add(node.components.model.properties.filename);
-                }
-                if (node.components?.material?.properties?.texture) {
-                    texturesToLoad.add(node.components.material.properties.texture);
-                }
-                node.children?.forEach(traverse);
-            };
-            traverse(data.root);
+        walk(data.root, node => {
+            node.components?.model?.properties?.filename &&
+                modelsToLoad.add(node.components.model.properties.filename);
+            node.components?.material?.properties?.texture &&
+                texturesToLoad.add(node.components.material.properties.texture);
+        });
 
-            for (const filename of modelsToLoad) {
-                if (!loadedModels[filename] && !loadingRefs.current.has(filename)) {
-                    loadingRefs.current.add(filename);
-                    // Load model directly from public root, prepend "/" if not present
-                    const modelPath = filename.startsWith('/') ? filename : `/${filename}`;
-                    const result = await loadModel(modelPath);
-                    if (result.success && result.model) {
-                        setLoadedModels(prev => ({ ...prev, [filename]: result.model }));
-                    }
-                }
-            }
+        modelsToLoad.forEach(async file => {
+            if (models[file] || loading.current.has(file)) return;
+            loading.current.add(file);
+            const path =
+                file.startsWith("/")
+                    ? `${basePath}${file}`
+                    : `${basePath}/${file}`;
 
-            const textureLoader = new TextureLoader();
-            for (const filename of texturesToLoad) {
-                if (!loadedTextures[filename] && !loadingRefs.current.has(filename)) {
-                    loadingRefs.current.add(filename);
-                    // Load texture directly from public root, prepend "/" if not present
-                    const texturePath = filename.startsWith('/') ? filename : `/${filename}`;
-                    textureLoader.load(texturePath, (texture) => {
-                        texture.colorSpace = SRGBColorSpace;
-                        setLoadedTextures(prev => ({ ...prev, [filename]: texture }));
-                    });
-                }
-            }
-        };
-        loadAssets();
-    }, [data, loadedModels, loadedTextures]);
+            const res = await loadModel(path);
+            res.success && res.model &&
+                setModels(m => ({ ...m, [file]: res.model }));
+        });
 
+        const loader = new TextureLoader();
+        texturesToLoad.forEach(file => {
+            if (textures[file] || loading.current.has(file)) return;
+            loading.current.add(file);
+            const path =
+                file.startsWith("/")
+                    ? `${basePath}${file}`
+                    : `${basePath}/${file}`;
 
+            loader.load(path, tex => {
+                tex.colorSpace = SRGBColorSpace;
+                setTextures(t => ({ ...t, [file]: tex }));
+            });
+        });
+    }, [data, models, textures]);
 
-    return <group ref={ref}>
-        <GameInstanceProvider
-            models={loadedModels}
-            onSelect={editMode ? onSelect : undefined}
-            registerRef={registerRef}
-            selectedId={selectedId}
-            editMode={editMode}
-        >
-            <GameObjectRenderer
-                gameObject={data.root}
+    /* ---------------- Render ---------------- */
+
+    return (
+        <group ref={ref}>
+            <GameInstanceProvider
+                models={models}
                 selectedId={selectedId}
+                editMode={editMode}
                 onSelect={editMode ? onSelect : undefined}
                 registerRef={registerRef}
-                loadedModels={loadedModels}
-                loadedTextures={loadedTextures}
-                editMode={editMode}
-                parentMatrix={new Matrix4()}
-            />
-        </GameInstanceProvider>
-
-
-        {editMode && <>
-            <MapControls makeDefault />
-
-            {selectedId && selectedObject && (
-                <TransformControls
-                    object={selectedObject}
-                    mode={transformMode}
-                    space="local"
-                    onObjectChange={onTransformChange}
+            >
+                <GameObjectRenderer
+                    gameObject={data.root}
+                    selectedId={selectedId}
+                    onSelect={editMode ? onSelect : undefined}
+                    registerRef={registerRef}
+                    loadedModels={models}
+                    loadedTextures={textures}
+                    editMode={editMode}
+                    parentMatrix={IDENTITY}
                 />
+            </GameInstanceProvider>
+
+            {editMode && (
+                <>
+                    <MapControls makeDefault />
+                    {selectedObject && (
+                        <TransformControls
+                            object={selectedObject}
+                            mode={transformMode}
+                            space="local"
+                            onObjectChange={onTransformChange}
+                        />
+                    )}
+                </>
             )}
-        </>}
-    </group>;
+        </group>
+    );
 });
 
-interface GameObjectRendererProps {
-    gameObject?: GameObjectType | null;
-    selectedId?: string | null;
-    onSelect?: (id: string) => void;
-    registerRef: (id: string, obj: Object3D | null) => void;
-    loadedModels: Record<string, Object3D>;
-    loadedTextures: Record<string, Texture>;
-    editMode?: boolean;
-    parentMatrix?: Matrix4;          // 👈 new
+/* -------------------------------------------------- */
+/* Renderer Switch */
+/* -------------------------------------------------- */
+
+export function GameObjectRenderer(props: RendererProps) {
+    const node = props.gameObject;
+    if (!node || node.hidden || node.disabled) return null;
+    return node.components?.model?.properties?.instanced
+        ? <InstancedNode {...props} />
+        : <StandardNode {...props} />;
 }
 
+/* -------------------------------------------------- */
+/* InstancedNode (terminal) */
+/* -------------------------------------------------- */
+function isPhysicsProps(v: any): v is PhysicsProps {
+    return v?.type === "fixed" || v?.type === "dynamic";
+}
 
-function GameObjectRenderer({
+function InstancedNode({ gameObject, parentMatrix = IDENTITY, editMode }: RendererProps) {
+    const world = parentMatrix.clone().multiply(compose(gameObject));
+    const { position, rotation, scale } = decompose(world);
+    const physicsProps = isPhysicsProps(
+        gameObject.components?.physics?.properties
+    )
+        ? gameObject.components?.physics?.properties
+        : undefined;
+
+    return (
+        <GameInstance
+            id={gameObject.id}
+            modelUrl={gameObject.components?.model?.properties?.filename}
+            position={position}
+            rotation={rotation}
+            scale={scale}
+            physics={editMode ? undefined : physicsProps}
+        />
+    );
+}
+
+/* -------------------------------------------------- */
+/* StandardNode */
+/* -------------------------------------------------- */
+
+function StandardNode({
     gameObject,
     selectedId,
     onSelect,
@@ -183,35 +211,33 @@ function GameObjectRenderer({
     loadedModels,
     loadedTextures,
     editMode,
-    parentMatrix = new Matrix4(),
-}: GameObjectRendererProps) {
+    parentMatrix = IDENTITY,
+}: RendererProps) {
 
-    // Early return if gameObject is null or undefined
-    if (!gameObject) return null;
-    if (gameObject.disabled === true || gameObject.hidden === true) return null;
-
-    // Build context object for passing to helper functions
-    const ctx = { gameObject, selectedId, onSelect, registerRef, loadedModels, loadedTextures, editMode };
-
-    // --- 1. Compute transforms (local + world) ---
-    const transformProps = getNodeTransformProps(gameObject);
-    const localMatrix = new Matrix4().compose(
-        new Vector3(...transformProps.position),
-        new Quaternion().setFromEuler(new Euler(...transformProps.rotation)),
-        new Vector3(...transformProps.scale)
-    );
-    const worldMatrix = parentMatrix.clone().multiply(localMatrix);
-
-    // --- 2. Handle selection interaction (edit mode only) ---
+    const groupRef = useRef<Object3D | null>(null);
     const clickValid = useRef(false);
-    const handlePointerDown = (e: ThreeEvent<PointerEvent>) => {
+    const isSelected = selectedId === gameObject.id;
+    const helperRef = groupRef as React.RefObject<Object3D>;
+
+    useHelper(
+        editMode && isSelected ? helperRef : null,
+        BoxHelper,
+        "cyan"
+    );
+
+    useEffect(() => {
+        registerRef(gameObject.id, groupRef.current);
+        return () => registerRef(gameObject.id, null);
+    }, [gameObject.id, registerRef]);
+
+    const world = parentMatrix.clone().multiply(compose(gameObject));
+
+    const onDown = (e: ThreeEvent<PointerEvent>) => {
         e.stopPropagation();
         clickValid.current = true;
     };
-    const handlePointerMove = () => {
-        if (clickValid.current) clickValid.current = false;
-    };
-    const handlePointerUp = (e: ThreeEvent<PointerEvent>) => {
+
+    const onUp = (e: ThreeEvent<PointerEvent>) => {
         if (clickValid.current) {
             e.stopPropagation();
             onSelect?.(gameObject.id);
@@ -219,189 +245,85 @@ function GameObjectRenderer({
         clickValid.current = false;
     };
 
-    // --- 3. If instanced model, short-circuit to GameInstance (terminal node) ---
-    const isInstanced = !!gameObject.components?.model?.properties?.instanced;
-    if (isInstanced) {
-        return renderInstancedNode(gameObject, worldMatrix, ctx);
-    }
-
-    // --- 4. Render core content using component system ---
-    const core = renderCoreNode(gameObject, ctx, parentMatrix);
-
-    // --- 5. Render children recursively (always relative transforms) ---
-    const children = (gameObject.children ?? []).map((child) => (
-        <GameObjectRenderer
-            key={child.id}
-            gameObject={child}
-            selectedId={selectedId}
-            onSelect={onSelect}
-            registerRef={registerRef}
-            loadedModels={loadedModels}
-            loadedTextures={loadedTextures}
-            editMode={editMode}
-            parentMatrix={worldMatrix}
-        />
-    ));
-
-    // --- 6. Inner content group with full transform and selection helper ---
-    const groupRef = useRef<Group>(null!);
-    const isSelected = selectedId === gameObject.id;
-
-    // Show BoxHelper when selected in edit mode
-    useHelper(editMode && isSelected ? groupRef : null, BoxHelper, 'cyan');
-
-    useEffect(() => {
-        registerRef(gameObject.id, groupRef.current);
-    }, [gameObject.id, registerRef]);
-
-    const innerGroup = (
+    const inner = (
         <group
             ref={groupRef}
-            position={transformProps.position}
-            rotation={transformProps.rotation}
-            scale={transformProps.scale}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
+            {...getNodeTransformProps(gameObject)}
+            onPointerDown={onDown}
+            onPointerMove={() => (clickValid.current = false)}
+            onPointerUp={onUp}
         >
-            {core}
-            {children}
+            {renderCoreNode(gameObject, { loadedModels, loadedTextures, editMode, registerRef }, parentMatrix)}
+            {gameObject.children?.map(child => (
+                <GameObjectRenderer
+                    key={child.id}
+                    {...{ child }}
+                    gameObject={child}
+                    selectedId={selectedId}
+                    onSelect={onSelect}
+                    registerRef={registerRef}
+                    loadedModels={loadedModels}
+                    loadedTextures={loadedTextures}
+                    editMode={editMode}
+                    parentMatrix={world}
+                />
+            ))}
         </group>
     );
 
-    // --- 7. Wrap with physics if needed (RigidBody as outer parent, no transform) ---
     const physics = gameObject.components?.physics;
+    const ready = !gameObject.components?.model ||
+        loadedModels[gameObject.components.model.properties.filename];
 
-    // Determine if model is safe/ready for physics. No model => safe; model => only safe once loaded.
-    const modelReady =
-        !gameObject.components?.model ||
-        !!loadedModels[gameObject.components.model.properties.filename];
-
-    if (physics && !editMode && modelReady) {
-        const physicsDef = getComponent('Physics');
-        if (physicsDef?.View) {
-            return (
-                <physicsDef.View properties={physics.properties}>
-                    {innerGroup}
-                </physicsDef.View>
-            );
-        }
+    if (physics && !editMode && ready) {
+        const def = getComponent("Physics");
+        return def?.View
+            ? <def.View properties={physics.properties}>{inner}</def.View>
+            : inner;
     }
 
-    return innerGroup;
+    return inner;
 }
 
-// Helper: render an instanced GameInstance (terminal node)
-function renderInstancedNode(gameObject: GameObjectType, worldMatrix: Matrix4, ctx: any) {
-    const physics = gameObject.components?.physics;
-    const wp = new Vector3();
-    const wq = new Quaternion();
-    const ws = new Vector3();
-    worldMatrix.decompose(wp, wq, ws);
-    const we = new Euler().setFromQuaternion(wq);
-    const modelUrl = gameObject.components?.model?.properties?.filename;
-    return (
-        <GameInstance
-            id={gameObject.id}
-            modelUrl={modelUrl}
-            position={[wp.x, wp.y, wp.z]}
-            rotation={[we.x, we.y, we.z]}
-            scale={[ws.x, ws.y, ws.z]}
-            physics={ctx.editMode ? undefined : (physics?.properties as any)}
-        />
+/* -------------------------------------------------- */
+/* Types & Helpers */
+/* -------------------------------------------------- */
+
+interface RendererProps {
+    gameObject: GameObjectType; // ← no longer optional
+    selectedId?: string | null;
+    onSelect?: (id: string) => void;
+    registerRef: (id: string, obj: Object3D | null) => void;
+    loadedModels: Record<string, Object3D>;
+    loadedTextures: Record<string, Texture>;
+    editMode?: boolean;
+    parentMatrix?: Matrix4;
+}
+
+function walk(node: GameObjectType, fn: (n: GameObjectType) => void) {
+    fn(node);
+    node.children?.forEach(c => walk(c, fn));
+}
+
+function compose(node?: GameObjectType | null) {
+    const { position, rotation, scale } = getNodeTransformProps(node);
+    return new Matrix4().compose(
+        new Vector3(...position),
+        new Quaternion().setFromEuler(new Euler(...rotation)),
+        new Vector3(...scale)
     );
 }
 
-// Helper: render main content for a non-instanced node using the component system
-function renderCoreNode(gameObject: GameObjectType, ctx: any, parentMatrix: Matrix4 | undefined) {
-    const geometry = gameObject.components?.geometry;
-    const material = gameObject.components?.material;
-    const model = gameObject.components?.model;
-
-    const geometryDef = geometry ? getComponent('Geometry') : undefined;
-    const materialDef = material ? getComponent('Material') : undefined;
-    const modelDef = model ? getComponent('Model') : undefined;
-
-    // Context props for all component Views
-    const contextProps = {
-        loadedModels: ctx.loadedModels,
-        loadedTextures: ctx.loadedTextures,
-        editMode: ctx.editMode,
-        parentMatrix,
-        registerRef: ctx.registerRef,
+function decompose(m: Matrix4) {
+    const p = new Vector3(), q = new Quaternion(), s = new Vector3();
+    m.decompose(p, q, s);
+    const e = new Euler().setFromQuaternion(q);
+    return {
+        position: [p.x, p.y, p.z] as [number, number, number],
+        rotation: [e.x, e.y, e.z] as [number, number, number],
+        scale: [s.x, s.y, s.z] as [number, number, number],
     };
-
-    // Collect wrapper and leaf components (excluding transform/physics which are handled separately)
-    const wrapperComponents: Array<{ key: string; View: any; properties: any }> = [];
-    const leafComponents: React.ReactNode[] = [];
-
-    if (gameObject.components) {
-        Object.entries(gameObject.components)
-            .filter(([key]) => !['geometry', 'material', 'model', 'transform', 'physics'].includes(key))
-            .forEach(([key, comp]) => {
-                if (!comp || !comp.type) return;
-                const def = getComponent(comp.type);
-                if (!def || !def.View) return;
-
-                // Components that accept children are wrappers, others are leaves
-                const viewString = def.View.toString();
-                if (viewString.includes('children')) {
-                    wrapperComponents.push({ key, View: def.View, properties: comp.properties });
-                } else {
-                    leafComponents.push(<def.View key={key} properties={comp.properties} {...contextProps} />);
-                }
-            });
-    }
-
-    // Build core content based on what components exist
-    let coreContent: React.ReactNode;
-
-    // Priority: Model > Geometry + Material > Empty
-    if (model && modelDef && modelDef.View) {
-        // Model component wraps its children (including material override)
-        coreContent = (
-            <modelDef.View properties={model.properties} {...contextProps}>
-                {material && materialDef && materialDef.View && (
-                    <materialDef.View
-                        key="material"
-                        properties={material.properties}
-                        {...contextProps}
-                    />
-                )}
-                {leafComponents}
-            </modelDef.View>
-        );
-    } else if (geometry && geometryDef && geometryDef.View) {
-        // Geometry + Material = mesh
-        coreContent = (
-            <mesh castShadow receiveShadow>
-                <geometryDef.View properties={geometry.properties} {...contextProps} />
-                {material && materialDef && materialDef.View && (
-                    <materialDef.View
-                        key="material"
-                        properties={material.properties}
-                        {...contextProps}
-                    />
-                )}
-                {leafComponents}
-            </mesh>
-        );
-    } else {
-        // No visual component - just render leaves
-        coreContent = <>{leafComponents}</>;
-    }
-
-    // Wrap core content with wrapper components (in order)
-    return wrapperComponents.reduce((content, { key, View, properties }) => {
-        return <View key={key} properties={properties} {...contextProps}>{content}</View>;
-    }, coreContent);
 }
-
-
-
-
-
-export default PrefabRoot;
 
 function getNodeTransformProps(node?: GameObjectType | null) {
     const t = node?.components?.transform?.properties;
@@ -413,37 +335,110 @@ function getNodeTransformProps(node?: GameObjectType | null) {
 }
 
 function computeParentWorldMatrix(root: GameObjectType, targetId: string): Matrix4 {
-    const identity = new Matrix4();
+    let result: Matrix4 | null = null;
 
-    function traverse(node: GameObjectType, parentWorld: Matrix4): Matrix4 | null {
+    const visit = (node: GameObjectType, parent: Matrix4) => {
         if (node.id === targetId) {
-            // parentWorld is what we want
-            return parentWorld.clone();
+            result = parent.clone();
+            return;
         }
+        const world = parent.clone().multiply(compose(node));
+        node.children?.forEach(c => !result && visit(c, world));
+    };
 
-        const { position, rotation, scale } = getNodeTransformProps(node);
+    visit(root, IDENTITY);
+    return result ?? IDENTITY;
+}
 
-        const localPos = new Vector3(...position);
-        const localRot = new Euler(...rotation);
-        const localScale = new Vector3(...scale);
+function renderCoreNode(
+    gameObject: GameObjectType,
+    ctx: {
+        loadedModels: Record<string, Object3D>;
+        loadedTextures: Record<string, Texture>;
+        editMode?: boolean;
+        registerRef: (id: string, obj: Object3D | null) => void;
+    },
+    parentMatrix?: Matrix4
+) {
+    const geometry = gameObject.components?.geometry;
+    const material = gameObject.components?.material;
+    const model = gameObject.components?.model;
 
-        const localMat = new Matrix4().compose(
-            localPos,
-            new Quaternion().setFromEuler(localRot),
-            localScale
-        );
+    const geometryDef = geometry && getComponent("Geometry");
+    const materialDef = material && getComponent("Material");
+    const modelDef = model && getComponent("Model");
 
-        const worldMat = parentWorld.clone().multiply(localMat);
+    const contextProps = {
+        loadedModels: ctx.loadedModels,
+        loadedTextures: ctx.loadedTextures,
+        editMode: ctx.editMode,
+        parentMatrix,
+        registerRef: ctx.registerRef,
+    };
 
-        if (node.children) {
-            for (const child of node.children) {
-                const res = traverse(child, worldMat);
-                if (res) return res;
-            }
-        }
+    const wrappers: Array<{ key: string; View: any; properties: any }> = [];
+    const leaves: React.ReactNode[] = [];
 
-        return null;
+    if (gameObject.components) {
+        Object.entries(gameObject.components)
+            .filter(([k]) => !["geometry", "material", "model", "transform", "physics"].includes(k))
+            .forEach(([key, comp]) => {
+                if (!comp?.type) return;
+                const def = getComponent(comp.type);
+                if (!def?.View) return;
+
+                // crude but works with your existing component API
+                if (def.View.toString().includes("children")) {
+                    wrappers.push({ key, View: def.View, properties: comp.properties });
+                } else {
+                    leaves.push(
+                        <def.View key={key} properties={comp.properties} {...contextProps} />
+                    );
+                }
+            });
     }
 
-    return traverse(root, identity) ?? identity;
+    let core: React.ReactNode;
+
+    if (model && modelDef?.View) {
+        core = (
+            <modelDef.View properties={model.properties} {...contextProps}>
+                {material && materialDef?.View && (
+                    <materialDef.View
+                        key="material"
+                        properties={material.properties}
+                        {...contextProps}
+                    />
+                )}
+                {leaves}
+            </modelDef.View>
+        );
+    } else if (geometry && geometryDef?.View) {
+        core = (
+            <mesh castShadow receiveShadow>
+                <geometryDef.View properties={geometry.properties} {...contextProps} />
+                {material && materialDef?.View && (
+                    <materialDef.View
+                        key="material"
+                        properties={material.properties}
+                        {...contextProps}
+                    />
+                )}
+                {leaves}
+            </mesh>
+        );
+    } else {
+        core = <>{leaves}</>;
+    }
+
+    return wrappers.reduce(
+        (acc, { key, View, properties }) => (
+            <View key={key} properties={properties} {...contextProps}>
+                {acc}
+            </View>
+        ),
+        core
+    );
 }
+
+export default PrefabRoot;

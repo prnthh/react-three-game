@@ -2,6 +2,7 @@ import React, { createContext, useContext, useMemo, useRef, useState, useEffect,
 import { Merged, useHelper } from '@react-three/drei';
 import { InstancedRigidBodies } from "@react-three/rapier";
 import { Mesh, Matrix4, Object3D, Group, Vector3, Quaternion, Euler, InstancedMesh, BoxHelper } from "three";
+import { PhysicsProps } from "./components/PhysicsComponent";
 
 // --- Types ---
 export type InstanceData = {
@@ -10,7 +11,7 @@ export type InstanceData = {
     rotation: [number, number, number];
     scale: [number, number, number];
     meshPath: string;
-    physics?: { type: 'dynamic' | 'fixed' };
+    physics?: PhysicsProps | undefined;
 };
 
 // Helper functions for comparison
@@ -374,7 +375,7 @@ export const GameInstance = React.forwardRef<Group, {
     position: [number, number, number];
     rotation: [number, number, number];
     scale: [number, number, number];
-    physics?: { type: 'dynamic' | 'fixed' };
+    physics?: PhysicsProps | undefined;
 }>(({
     id,
     modelUrl,

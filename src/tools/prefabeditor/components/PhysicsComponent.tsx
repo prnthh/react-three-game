@@ -3,6 +3,14 @@ import type { ReactNode } from 'react';
 import { Component } from "./ComponentRegistry";
 import { Label } from "./Input";
 
+export interface PhysicsProps {
+    type: "fixed" | "dynamic";
+    collider?: string;
+    mass?: number;
+    restitution?: number;
+    friction?: number;
+}
+
 function PhysicsComponentEditor({ component, onUpdate }: { component: { properties: { type?: 'dynamic' | 'fixed'; collider?: string;[k: string]: any } }; onUpdate: (props: Partial<Record<string, any>>) => void }) {
     const { type = 'dynamic', collider = 'hull' } = component.properties;
 

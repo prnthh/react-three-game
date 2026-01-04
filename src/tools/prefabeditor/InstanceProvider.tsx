@@ -40,6 +40,7 @@ type GameInstanceContextType = {
     instances: InstanceData[];
     meshes: Record<string, Mesh>;
     modelParts?: Record<string, number>;
+    hasInstance: (id: string) => boolean;
 };
 const GameInstanceContext = createContext<GameInstanceContextType | null>(null);
 
@@ -83,6 +84,10 @@ export function GameInstanceProvider({
             return prev.filter(i => i.id !== id);
         });
     }, []);
+
+    const hasInstance = useCallback((id: string) => {
+        return instances.some(i => i.id === id);
+    }, [instances]);
 
     // Flatten all model meshes once (models → flat mesh parts)
     // Note: Geometry is cloned with baked transforms for instancing
@@ -138,7 +143,8 @@ export function GameInstanceProvider({
                 removeInstance,
                 instances,
                 meshes: flatMeshes,
-                modelParts
+                modelParts,
+                hasInstance
             }}
         >
             {/* Render normal prefab hierarchy (non-instanced objects) */}
@@ -158,6 +164,8 @@ export function GameInstanceProvider({
                         modelKey={modelKey}
                         partCount={partCount}
                         flatMeshes={flatMeshes}
+                        onSelect={onSelect}
+                        editMode={editMode}
                     />
                 );
             })}
@@ -208,14 +216,19 @@ function InstancedRigidGroup({
     group,
     modelKey,
     partCount,
-    flatMeshes
+    flatMeshes,
+    onSelect,
+    editMode
 }: {
     group: { physicsType: string, instances: InstanceData[] },
     modelKey: string,
     partCount: number,
-    flatMeshes: Record<string, Mesh>
+    flatMeshes: Record<string, Mesh>,
+    onSelect?: (id: string | null) => void,
+    editMode?: boolean
 }) {
     const meshRefs = useRef<(InstancedMesh | null)[]>([]);
+    const rigidBodiesRef = useRef<any>(null);
 
     const instances = useMemo(
         () => group.instances.map(inst => ({
@@ -248,12 +261,48 @@ function InstancedRigidGroup({
             });
             mesh.instanceMatrix.needsUpdate = true;
         });
+
+        // Update rigid body positions when instances change
+        if (rigidBodiesRef.current) {
+            try {
+                group.instances.forEach((inst, i) => {
+                    const body = rigidBodiesRef.current?.at(i);
+                    if (body && body.setTranslation && body.setRotation) {
+                        pos.set(...inst.position);
+                        euler.set(...inst.rotation);
+                        quat.setFromEuler(euler);
+                        body.setTranslation(pos, false);
+                        body.setRotation(quat, false);
+                    }
+                });
+            } catch (error) {
+                // Ignore errors when switching between instanced/non-instanced states
+                console.warn('Failed to update rigidbody positions:', error);
+            }
+        }
     }, [group.instances]);
 
     const colliders = group.physicsType === 'fixed' ? 'trimesh' : 'hull';
 
+    // Handle click on instanced mesh in edit mode
+    const handleClick = (e: any) => {
+        if (!editMode || !onSelect) return;
+        e.stopPropagation();
+
+        // Get the instance index from the intersection
+        const instanceId = e.instanceId;
+        if (instanceId !== undefined && group.instances[instanceId]) {
+            onSelect(group.instances[instanceId].id);
+        }
+    };
+
+    // Add key to force remount when instance count changes significantly (helps with cleanup)
+    const rigidBodyKey = `rb_${modelKey}_${group.physicsType}_${group.instances.length}`;
+
     return (
         <InstancedRigidBodies
+            key={rigidBodyKey}
+            ref={rigidBodiesRef}
             instances={instances}
             colliders={colliders}
             type={group.physicsType as 'dynamic' | 'fixed'}
@@ -269,6 +318,7 @@ function InstancedRigidGroup({
                         castShadow
                         receiveShadow
                         frustumCulled={false}
+                        onClick={editMode ? handleClick : undefined}
                     />
                 );
             })}
@@ -368,6 +418,12 @@ function InstanceGroupItem({
 }
 
 
+// Hook to check if an instance exists
+export function useInstanceCheck(id: string): boolean {
+    const ctx = useContext(GameInstanceContext);
+    return ctx?.hasInstance(id) ?? false;
+}
+
 // GameInstance component: registers an instance for batch rendering (renders nothing itself)
 export const GameInstance = React.forwardRef<Group, {
     id: string;
@@ -395,7 +451,7 @@ export const GameInstance = React.forwardRef<Group, {
         rotation,
         scale,
         physics,
-    }), [id, modelUrl, position, rotation, scale, physics]);
+    }), [id, modelUrl, JSON.stringify(position), JSON.stringify(rotation), JSON.stringify(scale), JSON.stringify(physics)]);
 
     useEffect(() => {
         if (!addInstance || !removeInstance) return;

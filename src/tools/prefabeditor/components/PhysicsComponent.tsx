@@ -1,7 +1,9 @@
-import { RigidBody } from "@react-three/rapier";
+import { RigidBody, RapierRigidBody } from "@react-three/rapier";
 import type { ReactNode } from 'react';
+import { useEffect, useRef } from 'react';
 import { Component } from "./ComponentRegistry";
 import { Label } from "./Input";
+import { Quaternion, Euler } from 'three';
 
 export interface PhysicsProps {
     type: "fixed" | "dynamic";
@@ -52,18 +54,29 @@ interface PhysicsViewProps {
     properties: { type?: 'dynamic' | 'fixed'; collider?: string };
     editMode?: boolean;
     children?: ReactNode;
+    position?: [number, number, number];
+    rotation?: [number, number, number];
+    scale?: [number, number, number];
 }
 
-function PhysicsComponentView({ properties, editMode, children }: PhysicsViewProps) {
-    if (editMode) return <>{children}</>;
-
+function PhysicsComponentView({ properties, children, position, rotation, scale, editMode }: PhysicsViewProps) {
     const colliders = properties.collider || (properties.type === 'fixed' ? 'trimesh' : 'hull');
 
-    // Remount RigidBody when collider/type changes to avoid Rapier hook dependency warnings
-    const rbKey = `${properties.type || 'dynamic'}_${colliders}`;
+    // In edit mode, include position/rotation in key to force remount when transform changes
+    // This ensures the RigidBody debug visualization updates even when physics is paused
+    const rbKey = editMode
+        ? `${properties.type || 'dynamic'}_${colliders}_${position?.join(',')}_${rotation?.join(',')}`
+        : `${properties.type || 'dynamic'}_${colliders}`;
 
     return (
-        <RigidBody key={rbKey} type={properties.type} colliders={colliders as any}>
+        <RigidBody
+            key={rbKey}
+            type={properties.type}
+            colliders={colliders as any}
+            position={position}
+            rotation={rotation}
+            scale={scale}
+        >
             {children}
         </RigidBody>
     );

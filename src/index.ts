@@ -20,6 +20,7 @@ export {
   SoundListViewer,
   SharedCanvas,
 } from './tools/assetviewer/page';
+export { sound as soundManager } from './helpers/SoundManager';
 
 // Helpers
 export * from './helpers';

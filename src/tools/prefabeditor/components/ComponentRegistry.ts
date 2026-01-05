@@ -1,9 +1,11 @@
 import { FC } from "react";
+import { ComponentData, GameObject } from "../types";
 
 export interface Component {
     name: string;
     Editor: FC<{ 
-        component: any; 
+        node?: GameObject;
+        component: ComponentData; 
         onUpdate: (newComp: any) => void; 
         basePath?: string;
         transformMode?: "translate" | "rotate" | "scale";

@@ -1,6 +1,6 @@
 "use client";
 
-import { Canvas, extend } from "@react-three/fiber";
+import { Canvas, extend, CanvasProps } from "@react-three/fiber";
 import { WebGPURenderer, MeshBasicNodeMaterial, MeshStandardNodeMaterial, SpriteNodeMaterial, PCFShadowMap } from "three/webgpu";
 import { Suspense, useState } from "react";
 import { WebGPURendererParameters } from "three/src/renderers/webgpu/WebGPURenderer.Nodes.js";
@@ -15,8 +15,13 @@ extend({
     SpriteNodeMaterial: SpriteNodeMaterial,
 });
 
+interface GameCanvasProps extends Omit<CanvasProps, 'children'> {
+    loader?: boolean;
+    children: React.ReactNode;
+    glConfig?: WebGPURendererParameters;
+}
 
-export default function GameCanvas({ loader = false, children, ...props }: { loader?: boolean, children: React.ReactNode, props?: WebGPURendererParameters }) {
+export default function GameCanvas({ loader = false, children, glConfig, ...props }: GameCanvasProps) {
     const [frameloop, setFrameloop] = useState<"never" | "always">("never");
 
     return <>
@@ -30,7 +35,7 @@ export default function GameCanvas({ loader = false, children, ...props }: { loa
                     // @ts-expect-error futuristic
                     shadowMap: true,
                     antialias: true,
-                    ...props,
+                    ...glConfig,
                 });
                 await renderer.init().then(() => {
                     setFrameloop("always");
@@ -40,6 +45,7 @@ export default function GameCanvas({ loader = false, children, ...props }: { loa
             camera={{
                 position: [0, 1, 5],
             }}
+            {...props}
         >
             <Suspense>
                 {children}

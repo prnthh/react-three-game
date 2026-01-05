@@ -111,12 +111,19 @@ function NodeInspector({
     }, [Object.keys(node.components || {}).join(',')]);
 
     return <div style={inspector.content} className="prefab-scroll">
-        {/* Node ID */}
+        {/* Node Name */}
         <div style={base.section}>
-            <div style={base.label}>Node ID</div>
+            <div style={{ display: "flex", marginBottom: 8, alignItems: 'center', gap: 8 }}>
+                <div style={{ fontSize: 10, color: '#888', wordBreak: 'break-all', border: '1px solid rgba(255,255,255,0.1)', padding: '2px 4px', borderRadius: 4, flex: 1 }}>
+                    {node.id}
+                </div>
+                <button style={{ ...base.btn, ...base.btnDanger }} title="Delete Node" onClick={deleteNode}>❌</button>
+            </div>
+
             <input
                 style={base.input}
                 value={node.name ?? ""}
+                placeholder='Node name'
                 onChange={e =>
                     updateNode(n => ({ ...n, name: e.target.value }))
                 }
@@ -127,7 +134,6 @@ function NodeInspector({
         <div style={base.section}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                 <div style={base.label}>Components</div>
-                <button style={{ ...base.btn, ...base.btnDanger }} onClick={deleteNode}>Delete Node</button>
             </div>
 
             {node.components && Object.entries(node.components).map(([key, comp]: [string, any]) => {
@@ -143,6 +149,7 @@ function NodeInspector({
                             <div style={{ fontSize: 11, fontWeight: 500 }}>{key}</div>
                             <button
                                 style={{ ...base.btn, padding: '2px 6px' }}
+                                title="Remove Component"
                                 onClick={() => updateNode(n => {
                                     const { [key]: _, ...rest } = n.components || {};
                                     return { ...n, components: rest };
@@ -154,6 +161,7 @@ function NodeInspector({
                         {def.Editor && (
                             <def.Editor
                                 component={comp}
+                                node={node}
                                 onUpdate={(newProps: any) => updateNode(n => ({
                                     ...n,
                                     components: {
@@ -174,7 +182,6 @@ function NodeInspector({
         {/* Add Component */}
         {available.length > 0 && (
             <div>
-                <div style={base.label}>Add Component</div>
                 <div style={base.row}>
                     <select
                         style={{ ...base.input, flex: 1 }}
@@ -199,6 +206,7 @@ function NodeInspector({
                                 }));
                             }
                         }}
+                        title="Add Component"
                     >
                         +
                     </button>

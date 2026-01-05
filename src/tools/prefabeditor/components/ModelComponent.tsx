@@ -2,8 +2,9 @@ import { ModelListViewer } from '../../assetviewer/page';
 import { useEffect, useState, useMemo } from 'react';
 import { Component } from './ComponentRegistry';
 import { Label } from './Input';
+import { GameObject } from '../types';
 
-function ModelComponentEditor({ component, onUpdate, basePath = "" }: { component: any; onUpdate: (newComp: any) => void; basePath?: string }) {
+function ModelComponentEditor({ component, node, onUpdate, basePath = "" }: { component: any; node?: GameObject; onUpdate: (newComp: any) => void; basePath?: string }) {
     const [modelFiles, setModelFiles] = useState<string[]>([]);
 
     useEffect(() => {
@@ -25,6 +26,7 @@ function ModelComponentEditor({ component, onUpdate, basePath = "" }: { componen
             <Label>Model</Label>
             <div style={{ maxHeight: 128, overflowY: 'auto' }}>
                 <ModelListViewer
+                    key={node?.id}
                     files={modelFiles}
                     selected={component.properties.filename ? `/${component.properties.filename}` : undefined}
                     onSelect={handleModelSelect}

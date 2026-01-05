@@ -4,17 +4,14 @@ import EditorTree from './EditorTree';
 import { getAllComponents } from './components/ComponentRegistry';
 import { base, inspector } from './styles';
 import { findNode, updateNode, deleteNode } from './utils';
+import { useEditorContext } from './EditorContext';
 
 function EditorUI({
     prefabData,
     setPrefabData,
     selectedId,
     setSelectedId,
-    transformMode,
-    setTransformMode,
     basePath,
-    onSave,
-    onLoad,
     onUndo,
     onRedo,
     canUndo,
@@ -24,17 +21,14 @@ function EditorUI({
     setPrefabData?: Dispatch<SetStateAction<Prefab>>;
     selectedId: string | null;
     setSelectedId: Dispatch<SetStateAction<string | null>>;
-    transformMode: "translate" | "rotate" | "scale";
-    setTransformMode: (m: "translate" | "rotate" | "scale") => void;
     basePath?: string;
-    onSave?: () => void;
-    onLoad?: () => void;
     onUndo?: () => void;
     onRedo?: () => void;
     canUndo?: boolean;
     canRedo?: boolean;
 }) {
     const [collapsed, setCollapsed] = useState(false);
+    const { transformMode, setTransformMode } = useEditorContext();
 
     const updateNodeHandler = (updater: (n: GameObjectType) => GameObjectType) => {
         if (!prefabData || !setPrefabData || !selectedId) return;
@@ -81,8 +75,6 @@ function EditorUI({
                 setPrefabData={setPrefabData}
                 selectedId={selectedId}
                 setSelectedId={setSelectedId}
-                onSave={onSave}
-                onLoad={onLoad}
                 onUndo={onUndo}
                 onRedo={onRedo}
                 canUndo={canUndo}

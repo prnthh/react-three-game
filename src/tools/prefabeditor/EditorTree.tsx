@@ -2,15 +2,14 @@ import { Dispatch, SetStateAction, useState, MouseEvent } from 'react';
 import { Prefab, GameObject } from "./types";
 import { getComponent } from './components/ComponentRegistry';
 import { base, tree, menu } from './styles';
-import { findNode, findParent, deleteNode, cloneNode, updateNodeById } from './utils';
+import { findNode, findParent, deleteNode, cloneNode, updateNodeById, loadJson, saveJson, regenerateIds } from './utils';
+import { useEditorContext } from './EditorContext';
 
 export default function EditorTree({
     prefabData,
     setPrefabData,
     selectedId,
     setSelectedId,
-    onSave,
-    onLoad,
     onUndo,
     onRedo,
     canUndo,
@@ -20,8 +19,6 @@ export default function EditorTree({
     setPrefabData?: Dispatch<SetStateAction<Prefab>>;
     selectedId: string | null;
     setSelectedId: Dispatch<SetStateAction<string | null>>;
-    onSave?: () => void;
-    onLoad?: () => void;
     onUndo?: () => void;
     onRedo?: () => void;
     canUndo?: boolean;
@@ -212,23 +209,11 @@ export default function EditorTree({
                                     ⋮
                                 </button>
                                 {fileMenuOpen && (
-                                    <div
-                                        style={{ ...menu.container, top: 28, right: 0 }}
-                                        onClick={(e) => e.stopPropagation()}
-                                    >
-                                        <button
-                                            style={menu.item}
-                                            onClick={() => { onLoad?.(); setFileMenuOpen(false); }}
-                                        >
-                                            📥 Load
-                                        </button>
-                                        <button
-                                            style={menu.item}
-                                            onClick={() => { onSave?.(); setFileMenuOpen(false); }}
-                                        >
-                                            💾 Save
-                                        </button>
-                                    </div>
+                                    <FileMenu
+                                        prefabData={prefabData}
+                                        setPrefabData={setPrefabData}
+                                        onClose={() => setFileMenuOpen(false)}
+                                    />
                                 )}
                             </div>
                         </div>
@@ -259,5 +244,81 @@ export default function EditorTree({
                 </div>
             )}
         </>
+    );
+}
+
+function FileMenu({
+    prefabData,
+    setPrefabData,
+    onClose
+}: {
+    prefabData: Prefab;
+    setPrefabData: Dispatch<SetStateAction<Prefab>>;
+    onClose: () => void;
+}) {
+    const { onScreenshot, onExportGLB } = useEditorContext();
+
+    const handleLoad = async () => {
+        const loadedPrefab = await loadJson();
+        if (!loadedPrefab) return;
+        setPrefabData(loadedPrefab);
+        onClose();
+    };
+
+    const handleSave = () => {
+        saveJson(prefabData, "prefab");
+        onClose();
+    };
+
+    const handleLoadIntoScene = async () => {
+        const loadedPrefab = await loadJson();
+        if (!loadedPrefab) return;
+
+        setPrefabData(prev => ({
+            ...prev,
+            root: updateNodeById(prev.root, prev.root.id, root => ({
+                ...root,
+                children: [...(root.children ?? []), regenerateIds(loadedPrefab.root)]
+            }))
+        }));
+        onClose();
+    };
+
+    return (
+        <div
+            style={{ ...menu.container, top: 28, right: 0 }}
+            onClick={(e) => e.stopPropagation()}
+        >
+            <button
+                style={menu.item}
+                onClick={handleLoad}
+            >
+                📥 Load Prefab JSON
+            </button>
+            <button
+                style={menu.item}
+                onClick={handleSave}
+            >
+                💾 Save Prefab JSON
+            </button>
+            <button
+                style={menu.item}
+                onClick={handleLoadIntoScene}
+            >
+                📂 Load into Scene
+            </button>
+            <button
+                style={menu.item}
+                onClick={() => { onScreenshot?.(); onClose(); }}
+            >
+                📸 Screenshot
+            </button>
+            <button
+                style={menu.item}
+                onClick={() => { onExportGLB?.(); onClose(); }}
+            >
+                📦 Export GLB
+            </button>
+        </div>
     );
 }

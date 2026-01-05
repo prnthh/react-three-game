@@ -52,12 +52,19 @@ export function Label({ children }: { children: React.ReactNode }) {
 export function Vector3Input({
     label,
     value,
-    onChange
+    onChange,
+    snap
 }: {
     label: string;
     value: [number, number, number];
     onChange: (v: [number, number, number]) => void;
+    snap?: number;
 }) {
+    const snapValue = (num: number) => {
+        if (!snap) return num;
+        return Math.round(num / snap) * snap;
+    };
+
     const [draft, setDraft] = useState<[string, string, string]>(
         () => value.map(v => v.toString()) as any
     );
@@ -77,7 +84,7 @@ export function Vector3Input({
         const num = parseFloat(draft[index]);
         if (Number.isFinite(num)) {
             const next = [...value] as [number, number, number];
-            next[index] = num;
+            next[index] = snapValue(num);
             onChange(next);
         }
     };
@@ -105,7 +112,8 @@ export function Vector3Input({
         if (e.shiftKey) speed *= 0.1; // fine
         if (e.altKey) speed *= 5;     // coarse
 
-        const nextValue = startValue + dx * speed;
+        const rawValue = startValue + dx * speed;
+        const nextValue = snapValue(rawValue);
         const next = [...value] as [number, number, number];
         next[index] = nextValue;
 

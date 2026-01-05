@@ -1,7 +1,7 @@
 "use client";
 
 import { MapControls, TransformControls, useHelper } from "@react-three/drei";
-import { forwardRef, useCallback, useEffect, useRef, useState, } from "react";
+import { forwardRef, useCallback, useContext, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { BoxHelper, Euler, Group, Matrix4, Object3D, Quaternion, SRGBColorSpace, Texture, TextureLoader, Vector3, } from "three";
 import { ThreeEvent } from "@react-three/fiber";
 
@@ -12,60 +12,60 @@ import { loadModel } from "../dragdrop/modelLoader";
 import { GameInstance, GameInstanceProvider, useInstanceCheck } from "./InstanceProvider";
 import { updateNode } from "./utils";
 import { PhysicsProps } from "./components/PhysicsComponent";
-
-/* -------------------------------------------------- */
-/* Setup */
-/* -------------------------------------------------- */
+import { EditorContext } from "./EditorContext";
 
 components.forEach(registerComponent);
 
 const IDENTITY = new Matrix4();
 
-/* -------------------------------------------------- */
-/* PrefabRoot */
-/* -------------------------------------------------- */
+export interface PrefabRootRef {
+    root: Group | null;
+}
 
-export const PrefabRoot = forwardRef<Group, {
+export const PrefabRoot = forwardRef<PrefabRootRef, {
     editMode?: boolean;
     data: Prefab;
     onPrefabChange?: (data: Prefab) => void;
     selectedId?: string | null;
     onSelect?: (id: string | null) => void;
     onClick?: (event: ThreeEvent<PointerEvent>, entity: GameObjectType) => void;
-    transformMode?: "translate" | "rotate" | "scale";
     basePath?: string;
-}>(({ editMode, data, onPrefabChange, selectedId, onSelect, onClick, transformMode, basePath = "" }, ref) => {
+}>(({ editMode, data, onPrefabChange, selectedId, onSelect, onClick, basePath = "" }, ref) => {
 
+    // optional editor context
+    const editorContext = useContext(EditorContext);
+    const transformMode = editorContext?.transformMode ?? "translate";
+    const snapResolution = editorContext?.snapResolution ?? 0;
+
+    // prefab root state
     const [models, setModels] = useState<Record<string, Object3D>>({});
     const [textures, setTextures] = useState<Record<string, Texture>>({});
     const loading = useRef(new Set<string>());
     const objectRefs = useRef<Record<string, Object3D | null>>({});
     const [selectedObject, setSelectedObject] = useState<Object3D | null>(null);
+    const rootRef = useRef<Group>(null);
+
+    useImperativeHandle(ref, () => ({
+        root: rootRef.current
+    }), []);
 
     const registerRef = useCallback((id: string, obj: Object3D | null) => {
         objectRefs.current[id] = obj;
         if (id === selectedId) setSelectedObject(obj);
     }, [selectedId]);
 
-    // Suppress TransformControls scene graph warnings during transitions
     useEffect(() => {
         const originalError = console.error;
         console.error = (...args: any[]) => {
-            if (typeof args[0] === 'string' && args[0].includes('TransformControls') && args[0].includes('scene graph')) {
-                return; // Suppress this specific error
-            }
+            if (typeof args[0] === 'string' && args[0].includes('TransformControls') && args[0].includes('scene graph')) return;
             originalError.apply(console, args);
         };
-        return () => {
-            console.error = originalError;
-        };
+        return () => { console.error = originalError; };
     }, []);
 
     useEffect(() => {
         setSelectedObject(selectedId ? objectRefs.current[selectedId] ?? null : null);
     }, [selectedId]);
-
-    /* ---------------- Transform writeback ---------------- */
 
     const onTransformChange = () => {
         if (!selectedId || !onPrefabChange) return;
@@ -91,8 +91,6 @@ export const PrefabRoot = forwardRef<Group, {
 
         onPrefabChange({ ...data, root });
     };
-
-    /* ---------------- Asset loading ---------------- */
 
     useEffect(() => {
         const modelsToLoad = new Set<string>();
@@ -134,10 +132,8 @@ export const PrefabRoot = forwardRef<Group, {
         });
     }, [data, models, textures]);
 
-    /* ---------------- Render ---------------- */
-
     return (
-        <group ref={ref}>
+        <group ref={rootRef}>
             <GameInstanceProvider
                 models={models}
                 selectedId={selectedId}
@@ -163,10 +159,14 @@ export const PrefabRoot = forwardRef<Group, {
                     <MapControls makeDefault />
                     {selectedObject && (
                         <TransformControls
+                            key={`transform-${snapResolution}`}
                             object={selectedObject}
                             mode={transformMode}
                             space="local"
                             onObjectChange={onTransformChange}
+                            translationSnap={snapResolution > 0 ? snapResolution : undefined}
+                            rotationSnap={snapResolution > 0 ? snapResolution : undefined}
+                            scaleSnap={snapResolution > 0 ? snapResolution : undefined}
                         />
                     )}
                 </>
@@ -174,10 +174,6 @@ export const PrefabRoot = forwardRef<Group, {
         </group>
     );
 });
-
-/* -------------------------------------------------- */
-/* Renderer Switch */
-/* -------------------------------------------------- */
 
 export function GameObjectRenderer(props: RendererProps) {
     const node = props.gameObject;
@@ -188,17 +184,14 @@ export function GameObjectRenderer(props: RendererProps) {
     const [isTransitioning, setIsTransitioning] = useState(false);
 
     useEffect(() => {
-        // Detect instanced mode change
         if (prevInstancedRef.current !== undefined && prevInstancedRef.current !== isInstanced) {
             setIsTransitioning(true);
-            // Wait for cleanup, then allow new mode to render
             const timer = setTimeout(() => setIsTransitioning(false), 100);
             return () => clearTimeout(timer);
         }
         prevInstancedRef.current = isInstanced;
     }, [isInstanced]);
 
-    // Don't render during transition to avoid physics conflicts
     if (isTransitioning) return null;
 
     const key = `${node.id}_${isInstanced ? 'instanced' : 'standard'}`;
@@ -207,9 +200,6 @@ export function GameObjectRenderer(props: RendererProps) {
         : <StandardNode key={key} {...props} />;
 }
 
-/* -------------------------------------------------- */
-/* InstancedNode (terminal) */
-/* -------------------------------------------------- */
 function isPhysicsProps(v: any): v is PhysicsProps {
     return v?.type === "fixed" || v?.type === "dynamic";
 }
@@ -217,8 +207,6 @@ function isPhysicsProps(v: any): v is PhysicsProps {
 function InstancedNode({ gameObject, parentMatrix = IDENTITY, editMode, registerRef, selectedId: _selectedId, onSelect, onClick }: RendererProps) {
     const world = parentMatrix.clone().multiply(compose(gameObject));
     const { position: worldPosition, rotation: worldRotation, scale: worldScale } = decompose(world);
-
-    // Get local transform for proxy group (used by transform controls)
     const localTransform = getNodeTransformProps(gameObject);
 
     const physicsProps = isPhysicsProps(
@@ -239,12 +227,9 @@ function InstancedNode({ gameObject, parentMatrix = IDENTITY, editMode, register
 
     const modelUrl = gameObject.components?.model?.properties?.filename;
 
-    // In edit mode, create a proxy group at the same position for transform controls
-    // The GameInstance still needs the actual position so it renders correctly
     if (editMode) {
         return (
             <>
-                {/* Proxy group for transform controls - uses LOCAL transform */}
                 <group
                     ref={groupRef}
                     position={localTransform.position}
@@ -261,12 +246,10 @@ function InstancedNode({ gameObject, parentMatrix = IDENTITY, editMode, register
                         clickValid.current = false;
                     }}
                 >
-                    {/* Tiny invisible mesh for raycasting/selection */}
                     <mesh visible={false}>
                         <boxGeometry args={[0.01, 0.01, 0.01]} />
                     </mesh>
                 </group>
-                {/* Actual instance rendered by provider - uses WORLD transform */}
                 <GameInstance
                     id={gameObject.id}
                     modelUrl={modelUrl}
@@ -291,10 +274,6 @@ function InstancedNode({ gameObject, parentMatrix = IDENTITY, editMode, register
     );
 }
 
-/* -------------------------------------------------- */
-/* StandardNode */
-/* -------------------------------------------------- */
-
 function StandardNode({
     gameObject,
     selectedId,
@@ -311,11 +290,8 @@ function StandardNode({
     const helperRef = useRef<Object3D | null>(null);
     const clickValid = useRef(false);
     const isSelected = selectedId === gameObject.id;
-
-    // Check if this object still exists as an instance (to prevent physics overlap)
     const stillInstanced = useInstanceCheck(gameObject.id);
 
-    // Use helperRef for BoxHelper (shows actual content bounds at correct position)
     useHelper(
         editMode && isSelected ? helperRef as React.RefObject<Object3D> : null,
         BoxHelper,
@@ -348,8 +324,6 @@ function StandardNode({
         loadedModels[gameObject.components.model.properties.filename];
     const hasPhysics = physics && ready && !stillInstanced;
     const transform = getNodeTransformProps(gameObject);
-
-    // Prepare physics wrapper if needed
     const physicsDef = hasPhysics ? getComponent("Physics") : null;
     const isInstanced = gameObject.components?.model?.properties?.instanced;
     const physicsKey = `physics_${gameObject.id}_${isInstanced ? 'instanced' : 'standard'}`;
@@ -364,7 +338,6 @@ function StandardNode({
             {gameObject.children?.map(child => (
                 <GameObjectRenderer
                     key={child.id}
-                    {...{ child }}
                     gameObject={child}
                     selectedId={selectedId}
                     onSelect={onSelect}
@@ -379,23 +352,19 @@ function StandardNode({
         </group>
     );
 
-    // In edit mode, use proxy group pattern
     if (editMode) {
         return (
             <>
-                {/* Proxy group for transform controls - uses LOCAL transform */}
                 <group
                     ref={groupRef}
                     position={transform.position}
                     rotation={transform.rotation}
                     scale={transform.scale}
                 >
-                    {/* Tiny invisible mesh for raycasting/selection */}
                     <mesh visible={false}>
                         <boxGeometry args={[0.01, 0.01, 0.01]} />
                     </mesh>
                 </group>
-                {/* Helper group for BoxHelper - same transform as proxy, contains actual geometry */}
                 <group
                     ref={helperRef}
                     position={transform.position}
@@ -404,7 +373,6 @@ function StandardNode({
                 >
                     {inner}
                 </group>
-                {/* Actual content with physics wrapper if needed */}
                 {hasPhysics && physicsDef?.View ? (
                     <physicsDef.View
                         key={physicsKey}
@@ -419,7 +387,6 @@ function StandardNode({
         );
     }
 
-    // In play mode, apply transform directly to content
     if (hasPhysics && physicsDef?.View) {
         return (
             <physicsDef.View
@@ -448,12 +415,8 @@ function StandardNode({
     );
 }
 
-/* -------------------------------------------------- */
-/* Types & Helpers */
-/* -------------------------------------------------- */
-
 interface RendererProps {
-    gameObject: GameObjectType; // ← no longer optional
+    gameObject: GameObjectType;
     selectedId?: string | null;
     onSelect?: (id: string) => void;
     onClick?: (event: ThreeEvent<PointerEvent>, entity: GameObjectType) => void;
@@ -551,7 +514,6 @@ function renderCoreNode(
                 const def = getComponent(comp.type);
                 if (!def?.View) return;
 
-                // crude but works with your existing component API
                 if (def.View.toString().includes("children")) {
                     wrappers.push({ key, View: def.View, properties: comp.properties });
                 } else {

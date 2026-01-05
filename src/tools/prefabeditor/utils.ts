@@ -1,4 +1,37 @@
-import { GameObject } from "./types";
+import { GameObject, Prefab } from "./types";
+
+/** Save a prefab as JSON file */
+export function saveJson(data: Prefab, filename: string) {
+    const a = document.createElement('a');
+    a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
+    a.download = `${filename || 'prefab'}.json`;
+    a.click();
+}
+
+/** Load a prefab from JSON file */
+export function loadJson(): Promise<Prefab | undefined> {
+    return new Promise(resolve => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json,application/json';
+        input.onchange = e => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (!file) return resolve(undefined);
+            const reader = new FileReader();
+            reader.onload = e => {
+                try {
+                    const text = e.target?.result;
+                    if (typeof text === 'string') resolve(JSON.parse(text) as Prefab);
+                } catch (err) {
+                    console.error('Error parsing prefab JSON:', err);
+                    resolve(undefined);
+                }
+            };
+            reader.readAsText(file);
+        };
+        input.click();
+    });
+}
 
 /** Find a node by ID in the tree */
 export function findNode(root: GameObject, id: string): GameObject | null {
@@ -71,6 +104,15 @@ export function cloneNode(node: GameObject): GameObject {
         id: crypto.randomUUID(),
         name: `${node.name ?? "Node"} Copy`,
         children: node.children?.map(cloneNode)
+    };
+}
+
+/** Recursively update all IDs in a node tree */
+export function regenerateIds(node: GameObject): GameObject {
+    return {
+        ...node,
+        id: crypto.randomUUID(),
+        children: node.children?.map(regenerateIds)
     };
 }
 

@@ -1,4 +1,4 @@
-import { ModelListViewer } from '../../assetviewer/page';
+import { ModelListViewer, SingleModelViewer } from '../../assetviewer/page';
 import { useEffect, useState, useMemo } from 'react';
 import { Component } from './ComponentRegistry';
 import { Label } from './Input';
@@ -6,6 +6,7 @@ import { GameObject } from '../types';
 
 function ModelComponentEditor({ component, node, onUpdate, basePath = "" }: { component: any; node?: GameObject; onUpdate: (newComp: any) => void; basePath?: string }) {
     const [modelFiles, setModelFiles] = useState<string[]>([]);
+    const [showPicker, setShowPicker] = useState(false);
 
     useEffect(() => {
         const base = basePath ? `${basePath}/` : '';
@@ -23,15 +24,29 @@ function ModelComponentEditor({ component, node, onUpdate, basePath = "" }: { co
 
     return <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         <div>
-            <Label>Model</Label>
-            <div style={{ maxHeight: 128, overflowY: 'auto' }}>
-                <ModelListViewer
-                    key={node?.id}
-                    files={modelFiles}
-                    selected={component.properties.filename ? `/${component.properties.filename}` : undefined}
-                    onSelect={handleModelSelect}
-                    basePath={basePath}
-                />
+            <Label>Model File</Label>
+            <div style={{ maxHeight: 128, overflowY: 'auto', position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <SingleModelViewer file={component.properties.filename ? `/${component.properties.filename}` : undefined} basePath={basePath} />
+                <button
+                    onClick={() => setShowPicker(!showPicker)}
+                    style={{ padding: '4px 8px', backgroundColor: '#1f2937', color: 'inherit', fontSize: 10, cursor: 'pointer', border: '1px solid rgba(34, 211, 238, 0.3)', marginTop: 4 }}
+                >
+                    {showPicker ? 'Hide' : 'Change'}
+                </button>
+                {showPicker && (
+                    <div style={{ position: 'fixed', left: '-10px', top: '50%', transform: 'translate(-100%, -50%)', background: 'rgba(0,0,0,0.9)', padding: 16, border: '1px solid rgba(34, 211, 238, 0.3)', maxHeight: '80vh', overflowY: 'auto', zIndex: 1000 }}>
+                        <ModelListViewer
+                            key={node?.id}
+                            files={modelFiles}
+                            selected={component.properties.filename ? `/${component.properties.filename}` : undefined}
+                            onSelect={(file) => {
+                                handleModelSelect(file);
+                                setShowPicker(false);
+                            }}
+                            basePath={basePath}
+                        />
+                    </div>
+                )}
             </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>

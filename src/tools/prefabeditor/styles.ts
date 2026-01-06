@@ -27,7 +27,6 @@ export const base = {
         color: colors.text,
         border: `1px solid ${colors.border}`,
         borderRadius: 4,
-        overflow: 'hidden',
         backdropFilter: 'blur(8px)',
         fontFamily: fonts.family,
         fontSize: fonts.size,

@@ -1,4 +1,4 @@
-import { TextureListViewer } from '../../assetviewer/page';
+import { SingleTextureViewer, TextureListViewer } from '../../assetviewer/page';
 import { useEffect, useState } from 'react';
 import { Component } from './ComponentRegistry';
 import { Input, Label } from './Input';
@@ -21,6 +21,7 @@ import {
 
 function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { component: any; onUpdate: (newComp: any) => void; basePath?: string }) {
     const [textureFiles, setTextureFiles] = useState<string[]>([]);
+    const [showPicker, setShowPicker] = useState(false);
 
     useEffect(() => {
         const base = basePath ? `${basePath}/` : '';
@@ -72,15 +73,30 @@ function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { compo
             </div>
 
             <div>
-                <Label>Texture</Label>
-                <div style={{ maxHeight: 128, overflowY: 'auto' }}>
-                    <TextureListViewer
-                        files={textureFiles}
-                        selected={component.properties.texture || undefined}
-                        onSelect={file => onUpdate({ texture: file })}
-                        basePath={basePath}
-                    />
+                <Label>Texture File</Label>
+                <div style={{ maxHeight: 128, overflowY: 'auto', position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <SingleTextureViewer file={component.properties.texture || undefined} basePath={basePath} />
+                    <button
+                        onClick={() => setShowPicker(!showPicker)}
+                        style={{ padding: '4px 8px', backgroundColor: '#1f2937', color: 'inherit', fontSize: 10, cursor: 'pointer', border: '1px solid rgba(34, 211, 238, 0.3)', marginTop: 4 }}
+                    >
+                        {showPicker ? 'Hide' : 'Change'}
+                    </button>
+                    {showPicker && (
+                        <div style={{ position: 'fixed', left: '-10px', top: '50%', transform: 'translate(-100%, -50%)', background: 'rgba(0,0,0,0.9)', padding: 16, border: '1px solid rgba(34, 211, 238, 0.3)', maxHeight: '80vh', overflowY: 'auto', zIndex: 1000 }}>
+                            <TextureListViewer
+                                files={textureFiles}
+                                selected={component.properties.texture || undefined}
+                                onSelect={(file) => {
+                                    onUpdate({ texture: file });
+                                    setShowPicker(false);
+                                }}
+                                basePath={basePath}
+                            />
+                        </div>
+                    )}
                 </div>
+
             </div>
 
             {component.properties.texture && (

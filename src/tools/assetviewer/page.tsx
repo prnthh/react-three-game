@@ -48,6 +48,7 @@ function FolderTile({ name, onClick }: { name: string; onClick: () => void }) {
         <div
             onClick={onClick}
             style={{
+                maxWidth: 60,
                 aspectRatio: '1 / 1',
                 backgroundColor: '#1f2937', /* gray-800 */
                 cursor: 'pointer',
@@ -98,24 +99,7 @@ interface AssetListViewerProps {
 
 function AssetListViewer({ files, selected, onSelect, renderCard }: AssetListViewerProps) {
     const [currentPath, setCurrentPath] = useState('');
-    const [showPicker, setShowPicker] = useState(false);
     const { folders, filesInCurrentPath } = getItemsInPath(files, currentPath);
-
-    const showCompactView = selected && !showPicker;
-
-    if (showCompactView) {
-        return (
-            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                {renderCard(selected, onSelect)}
-                <button
-                    onClick={() => setShowPicker(true)}
-                    style={{ padding: '4px 8px', backgroundColor: '#1f2937', color: 'inherit', fontSize: 12, cursor: 'pointer', border: 'none' }}
-                >
-                    Change
-                </button>
-            </div>
-        );
-    }
 
     return (
         <div>
@@ -141,10 +125,7 @@ function AssetListViewer({ files, selected, onSelect, renderCard }: AssetListVie
                 ))}
                 {filesInCurrentPath.map((file) => (
                     <div key={file}>
-                        {renderCard(file, (f) => {
-                            onSelect(f);
-                            if (selected) setShowPicker(false);
-                        })}
+                        {renderCard(file, onSelect)}
                     </div>
                 ))}
             </div>
@@ -196,7 +177,7 @@ function TextureCard({ file, onSelect, basePath = "" }: { file: string; onSelect
     return (
         <div
             ref={ref}
-            style={{ aspectRatio: '1 / 1', backgroundColor: '#1f2937', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
+            style={{ maxWidth: 60, aspectRatio: '1 / 1', backgroundColor: '#1f2937', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
             onClick={() => onSelect(file)}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
@@ -282,7 +263,7 @@ function ModelCard({ file, onSelect, basePath = "" }: { file: string; onSelect: 
     return (
         <div
             ref={ref}
-            style={{ aspectRatio: '1 / 1', backgroundColor: '#111827', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
+            style={{ maxWidth: 60, aspectRatio: '1 / 1', backgroundColor: '#111827', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
             onClick={() => onSelect(file)}
         >
             <div style={styles.flexFillRelative}>
@@ -364,6 +345,32 @@ function SoundCard({ file, onSelect, basePath = "" }: { file: string; onSelect: 
     );
 }
 
+// Single Asset Viewer Components - display only one selected asset
+export function SingleTextureViewer({ file, basePath = "" }: { file?: string; basePath?: string }) {
+    if (!file) return null;
+    return (
+        <>
+            <TextureCard file={file} basePath={basePath} onSelect={() => { }} />
+            <SharedCanvas />
+        </>
+    );
+}
+
+export function SingleModelViewer({ file, basePath = "" }: { file?: string; basePath?: string }) {
+    if (!file) return null;
+    return (
+        <>
+            <ModelCard file={file} basePath={basePath} onSelect={() => { }} />
+            <SharedCanvas />
+        </>
+    );
+}
+
+export function SingleSoundViewer({ file, basePath = "" }: { file?: string; basePath?: string }) {
+    if (!file) return null;
+    return <SoundCard file={file} basePath={basePath} onSelect={() => { }} />;
+}
+
 // Shared Canvas Component - can be used independently in any viewer
 export function SharedCanvas() {
     return (
@@ -372,7 +379,7 @@ export function SharedCanvas() {
             dpr={[1, 1.5]}
             camera={{ position: [0, 0, 3], fov: 45, near: 0.1, far: 1000 }}
             style={{
-                position: 'fixed',
+                position: 'absolute',
                 top: 0,
                 left: 0,
                 width: '100vw',

@@ -2,6 +2,22 @@ import { TextureListViewer } from '../../assetviewer/page';
 import { useEffect, useState } from 'react';
 import { Component } from './ComponentRegistry';
 import { Input, Label } from './Input';
+import { useMemo } from 'react';
+import {
+    DoubleSide,
+    RepeatWrapping,
+    ClampToEdgeWrapping,
+    SRGBColorSpace,
+    Texture,
+    NearestFilter,
+    LinearFilter,
+    NearestMipmapNearestFilter,
+    NearestMipmapLinearFilter,
+    LinearMipmapNearestFilter,
+    LinearMipmapLinearFilter,
+    MinificationTextureFilter,
+    MagnificationTextureFilter
+} from 'three';
 
 function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { component: any; onUpdate: (newComp: any) => void; basePath?: string }) {
     const [textureFiles, setTextureFiles] = useState<string[]>([]);
@@ -100,22 +116,75 @@ function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { compo
                             </div>
                         </div>
                     )}
+
+                    <div style={{ marginTop: 4 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+                            <input
+                                type="checkbox"
+                                style={{ width: 12, height: 12 }}
+                                checked={component.properties.generateMipmaps !== false}
+                                onChange={e => onUpdate({ generateMipmaps: e.target.checked })}
+                            />
+                            <label style={{ fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)' }}>Generate Mipmaps</label>
+                        </div>
+
+                        <div>
+                            <Label>Min Filter</Label>
+                            <select
+                                style={{ ...textInputStyle, width: '100%', cursor: 'pointer' }}
+                                value={component.properties.minFilter || 'LinearMipmapLinearFilter'}
+                                onChange={e => onUpdate({ minFilter: e.target.value })}
+                            >
+                                <option value="NearestFilter">Nearest</option>
+                                <option value="NearestMipmapNearestFilter">Nearest Mipmap Nearest</option>
+                                <option value="NearestMipmapLinearFilter">Nearest Mipmap Linear</option>
+                                <option value="LinearFilter">Linear</option>
+                                <option value="LinearMipmapNearestFilter">Linear Mipmap Nearest</option>
+                                <option value="LinearMipmapLinearFilter">Linear Mipmap Linear (Default)</option>
+                            </select>
+                        </div>
+
+                        <div style={{ marginTop: 4 }}>
+                            <Label>Mag Filter</Label>
+                            <select
+                                style={{ ...textInputStyle, width: '100%', cursor: 'pointer' }}
+                                value={component.properties.magFilter || 'LinearFilter'}
+                                onChange={e => onUpdate({ magFilter: e.target.value })}
+                            >
+                                <option value="NearestFilter">Nearest</option>
+                                <option value="LinearFilter">Linear (Default)</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
     );
 };
 
-
-import { useMemo } from 'react';
-import { DoubleSide, RepeatWrapping, ClampToEdgeWrapping, SRGBColorSpace, Texture } from 'three';
-
 // View for Material component
 function MaterialComponentView({ properties, loadedTextures }: { properties: any, loadedTextures?: Record<string, Texture> }) {
     const textureName = properties?.texture;
     const repeat = properties?.repeat;
     const repeatCount = properties?.repeatCount;
+    const generateMipmaps = properties?.generateMipmaps !== false;
+    const minFilter = properties?.minFilter || 'LinearMipmapLinearFilter';
+    const magFilter = properties?.magFilter || 'LinearFilter';
     const texture = textureName && loadedTextures ? loadedTextures[textureName] : undefined;
+
+    const minFilterMap: Record<string, MinificationTextureFilter> = {
+        NearestFilter,
+        LinearFilter,
+        NearestMipmapNearestFilter,
+        NearestMipmapLinearFilter,
+        LinearMipmapNearestFilter,
+        LinearMipmapLinearFilter
+    };
+
+    const magFilterMap: Record<string, MagnificationTextureFilter> = {
+        NearestFilter,
+        LinearFilter
+    };
 
     const finalTexture = useMemo(() => {
         if (!texture) return undefined;
@@ -128,9 +197,12 @@ function MaterialComponentView({ properties, loadedTextures }: { properties: any
             t.repeat.set(1, 1);
         }
         t.colorSpace = SRGBColorSpace;
+        t.generateMipmaps = generateMipmaps;
+        t.minFilter = minFilterMap[minFilter] ?? LinearMipmapLinearFilter;
+        t.magFilter = magFilterMap[magFilter] ?? LinearFilter;
         t.needsUpdate = true;
         return t;
-    }, [texture, repeat, repeatCount?.[0], repeatCount?.[1]]);
+    }, [texture, repeat, repeatCount?.[0], repeatCount?.[1], generateMipmaps, minFilter, magFilter]);
 
     if (!properties) {
         return <meshStandardMaterial color="red" wireframe />;

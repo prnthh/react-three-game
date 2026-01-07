@@ -1,5 +1,3 @@
-"use client";
-
 import { MapControls, TransformControls, useHelper } from "@react-three/drei";
 import { forwardRef, useCallback, useContext, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { BoxHelper, Euler, Group, Matrix4, Object3D, Quaternion, SRGBColorSpace, Texture, TextureLoader, Vector3, } from "three";

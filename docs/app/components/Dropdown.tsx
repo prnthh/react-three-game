@@ -14,7 +14,8 @@ export default function Dropdown() {
     const options: DemoOption[] = [
         { label: "Viewer", href: "/demo" },
         { label: "Asset Viewer", href: "/demo/assetviewer" },
-        { label: "Editor", href: "/demo/editor" },
+        { label: "Custom Editor", href: "/demo/customeditor" },
+        { label: "Vanilla", href: "/demo/vanilla" },
     ];
 
     return (

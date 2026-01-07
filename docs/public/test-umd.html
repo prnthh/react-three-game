@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>React Three Game UMD Test</title>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- Load dependencies from CDN -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+  <!-- Three.js needs to be loaded as ES module -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.182.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.182.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <!-- Load the UMD bundle from unpkg CDN -->
+  <!-- For local testing, use: <script src="../../dist/index.umd.js"></script> -->
+  <script src="https://unpkg.com/react-three-game@0.0.41/dist/index.umd.js"></script>
+
+  <!-- Test the global exposure -->
+  <script>
+    console.log('window.ReactThreeGame:', window.ReactThreeGame);
+    console.log('Available exports:', Object.keys(window.ReactThreeGame));
+
+    // Test destructuring as per user's example
+    const { ModelListViewer, SharedCanvas, TextureListViewer } = window.ReactThreeGame;
+    console.log('ModelListViewer:', ModelListViewer);
+    console.log('SharedCanvas:', SharedCanvas);
+    console.log('TextureListViewer:', TextureListViewer);
+  </script>
+
+  <!-- Example with Babel standalone for JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script type="text/babel" data-type="module">
+    const { GameCanvas } = window.ReactThreeGame;
+
+    // Simple test component
+    function App() {
+      return React.createElement('div', null,
+        React.createElement('h1', null, 'React Three Game UMD Build Test'),
+        React.createElement('p', null, 'Check console for exported components')
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(React.createElement(App));
+  </script>
+</body>
+</html>

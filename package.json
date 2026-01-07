@@ -1,6 +1,6 @@
 {
   "name": "react-three-game",
-  "version": "0.0.40",
+  "version": "0.0.41",
   "description": "Batteries included React Three Fiber game engine",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -8,7 +8,9 @@
   "scripts": {
     "watch": "tsc --watch",
     "dev": "concurrently \"npm run watch\" \"cd docs && npm run dev\"",
-    "build": "tsc",
+    "build": "tsc && vite build",
+    "build:esm": "tsc",
+    "build:umd": "vite build",
     "release": "npm run build && npm publish --access public"
   },
   "keywords": [],
@@ -37,7 +39,8 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "three": "^0.182.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1"
   },
   "dependencies": {
     "react-error-boundary": "^6.0.0"

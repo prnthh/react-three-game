@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { PrefabEditor } from "react-three-game";
-import AgenticEditor from "../AgenticEditor";
+import AgenticEditor from "../components/AgenticEditor";
 import testPrefab from "../samples/test.json";
 
 export default function Home() {

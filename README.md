@@ -6,6 +6,23 @@ JSON-first 3D game engine. React Three Fiber + WebGPU + Rapier Physics.
 npm i react-three-game @react-three/fiber @react-three/rapier three
 ```
 
+### CDN / UMD Build
+
+For use with script tags (no build tools):
+
+```html
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/react-three-game@0.0.41/dist/index.umd.js"></script>
+
+<script>
+  const { ModelListViewer, SharedCanvas, TextureListViewer } = window.ReactThreeGame;
+  // Use components...
+</script>
+```
+
+See [docs/public/test-umd.html](docs/public/test-umd.html) for a complete example.
+
 ![Prefab Editor](assets/editor.gif)
 ![Architecture](assets/architecture.png)
 

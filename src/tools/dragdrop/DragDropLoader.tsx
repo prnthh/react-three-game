@@ -1,4 +1,3 @@
-"use client";
 // DragDropLoader.tsx
 import { useEffect, ChangeEvent } from "react";
 import { DRACOLoader, FBXLoader, GLTFLoader } from "three/examples/jsm/Addons.js";

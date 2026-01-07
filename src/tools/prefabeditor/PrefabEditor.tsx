@@ -1,5 +1,3 @@
-"use client";
-
 import GameCanvas from "../../shared/GameCanvas";
 import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
 import { Prefab } from "./types";

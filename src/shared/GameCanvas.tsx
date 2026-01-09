@@ -24,7 +24,7 @@ export default function GameCanvas({ loader = false, children, glConfig, ...prop
 
     return <>
         <Canvas
-            style={{ touchAction: 'none' }}
+            style={{ touchAction: 'none', userSelect: 'none' }}
             shadows={{ type: PCFShadowMap, }}
             frameloop={frameloop}
             gl={async ({ canvas }) => {

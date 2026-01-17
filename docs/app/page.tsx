@@ -59,7 +59,7 @@ export default function Home() {
         REACT-THREE-GAME
       </h1>
       <div className="mb-8 font-mono text-xs uppercase tracking-widest opacity-50">
-        Cross-Platform Game Engine
+        Batteries-included Game Engine <br /> for react-three-fiber
       </div>
 
       <div className="flex gap-3">

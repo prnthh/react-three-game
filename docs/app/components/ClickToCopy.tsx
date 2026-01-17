@@ -17,7 +17,7 @@ export default function ClickToCopy({ text = "npm i react-three-game" }: Props) 
 
     return (
         <div className="mt-8 border-t border-zinc-300 dark:border-zinc-800 pt-6">
-            <div className="mb-3 font-mono text-xs uppercase tracking-widest text-zinc-500 dark:text-zinc-600">
+            <div className="mb-3 font-mono text-xs uppercase tracking-widest opacity-50">
                 Install
             </div>
             <button

@@ -4,7 +4,6 @@ import EditorTree from './EditorTree';
 import { getAllComponents } from './components/ComponentRegistry';
 import { base, inspector } from './styles';
 import { findNode, updateNode, deleteNode } from './utils';
-import { useEditorContext } from './EditorContext';
 
 function EditorUI({
     prefabData,
@@ -28,7 +27,6 @@ function EditorUI({
     canRedo?: boolean;
 }) {
     const [collapsed, setCollapsed] = useState(false);
-    const { transformMode, setTransformMode } = useEditorContext();
 
     const updateNodeHandler = (updater: (n: GameObjectType) => GameObjectType) => {
         if (!prefabData || !setPrefabData || !selectedId) return;
@@ -63,8 +61,6 @@ function EditorUI({
                     node={selectedNode}
                     updateNode={updateNodeHandler}
                     deleteNode={deleteNodeHandler}
-                    transformMode={transformMode}
-                    setTransformMode={setTransformMode}
                     basePath={basePath}
                 />
             )}
@@ -89,15 +85,11 @@ function NodeInspector({
     node,
     updateNode,
     deleteNode,
-    transformMode,
-    setTransformMode,
     basePath
 }: {
     node: GameObjectType;
     updateNode: (updater: (n: GameObjectType) => GameObjectType) => void;
     deleteNode: () => void;
-    transformMode: "translate" | "rotate" | "scale";
-    setTransformMode: (m: "translate" | "rotate" | "scale") => void;
     basePath?: string;
 }) {
     const ALL_COMPONENTS = getAllComponents();
@@ -170,8 +162,6 @@ function NodeInspector({
                                     }
                                 }))}
                                 basePath={basePath}
-                                transformMode={transformMode}
-                                setTransformMode={setTransformMode}
                             />
                         )}
                     </div>

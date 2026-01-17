@@ -269,6 +269,8 @@ function ModelCard({ file, onSelect, basePath = "" }: { file: string; onSelect: 
                     <View style={{ width: '100%', height: '100%' }}>
                         <PerspectiveCamera makeDefault position={[0, 1, 3]} fov={50} />
                         <Suspense fallback={null}>
+                            <ambientLight intensity={1} />
+                            <pointLight position={[5, 5, 5]} intensity={0.5} />
                             <ModelPreview url={fullPath} onError={() => setError(true)} />
                             <OrbitControls enableZoom={false} />
                         </Suspense>

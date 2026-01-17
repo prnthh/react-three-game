@@ -1,7 +1,7 @@
 import { SingleTextureViewer, TextureListViewer } from '../../assetviewer/page';
 import { useEffect, useState } from 'react';
 import { Component } from './ComponentRegistry';
-import { Input, Label } from './Input';
+import { FieldRenderer, FieldDefinition, Input } from './Input';
 import { useMemo } from 'react';
 import {
     DoubleSide,
@@ -19,7 +19,15 @@ import {
     MagnificationTextureFilter
 } from 'three';
 
-function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { component: any; onUpdate: (newComp: any) => void; basePath?: string }) {
+function TexturePicker({
+    value,
+    onChange,
+    basePath
+}: {
+    value: string | undefined;
+    onChange: (v: string) => void;
+    basePath: string;
+}) {
     const [textureFiles, setTextureFiles] = useState<string[]>([]);
     const [showPicker, setShowPicker] = useState(false);
 
@@ -31,152 +39,101 @@ function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { compo
             .catch(console.error);
     }, [basePath]);
 
-    const textInputStyle = {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.4)',
-        border: '1px solid rgba(34, 211, 238, 0.3)',
-        padding: '2px 4px',
-        fontSize: '10px',
-        color: 'rgba(165, 243, 252, 1)',
-        fontFamily: 'monospace',
-        outline: 'none',
-    };
-
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <div>
-                <Label>Color</Label>
-                <div style={{ display: 'flex', gap: 2 }}>
-                    <input
-                        type="color"
-                        style={{ height: 20, width: 20, backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }}
-                        value={component.properties.color}
-                        onChange={e => onUpdate({ color: e.target.value })}
+        <div style={{ maxHeight: 128, overflowY: 'auto', position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <SingleTextureViewer file={value || undefined} basePath={basePath} />
+            <button
+                onClick={() => setShowPicker(!showPicker)}
+                style={{ padding: '4px 8px', backgroundColor: '#1f2937', color: 'inherit', fontSize: 10, cursor: 'pointer', border: '1px solid rgba(34, 211, 238, 0.3)', marginTop: 4 }}
+            >
+                {showPicker ? 'Hide' : 'Change'}
+            </button>
+            {showPicker && (
+                <div style={{ position: 'fixed', left: '-10px', top: '50%', transform: 'translate(-100%, -50%)', background: 'rgba(0,0,0,0.9)', padding: 16, border: '1px solid rgba(34, 211, 238, 0.3)', maxHeight: '80vh', overflowY: 'auto', zIndex: 1000 }}>
+                    <TextureListViewer
+                        files={textureFiles}
+                        selected={value || undefined}
+                        onSelect={(file) => {
+                            onChange(file);
+                            setShowPicker(false);
+                        }}
+                        basePath={basePath}
                     />
-                    <input
-                        type="text"
-                        style={textInputStyle}
-                        value={component.properties.color}
-                        onChange={e => onUpdate({ color: e.target.value })}
-                    />
-                </div>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <input
-                    type="checkbox"
-                    style={{ width: 12, height: 12 }}
-                    checked={component.properties.wireframe || false}
-                    onChange={e => onUpdate({ wireframe: e.target.checked })}
-                />
-                <label style={{ fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)' }}>Wireframe</label>
-            </div>
-
-            <div>
-                <Label>Texture File</Label>
-                <div style={{ maxHeight: 128, overflowY: 'auto', position: 'relative', display: 'flex', alignItems: 'center' }}>
-                    <SingleTextureViewer file={component.properties.texture || undefined} basePath={basePath} />
-                    <button
-                        onClick={() => setShowPicker(!showPicker)}
-                        style={{ padding: '4px 8px', backgroundColor: '#1f2937', color: 'inherit', fontSize: 10, cursor: 'pointer', border: '1px solid rgba(34, 211, 238, 0.3)', marginTop: 4 }}
-                    >
-                        {showPicker ? 'Hide' : 'Change'}
-                    </button>
-                    {showPicker && (
-                        <div style={{ position: 'fixed', left: '-10px', top: '50%', transform: 'translate(-100%, -50%)', background: 'rgba(0,0,0,0.9)', padding: 16, border: '1px solid rgba(34, 211, 238, 0.3)', maxHeight: '80vh', overflowY: 'auto', zIndex: 1000 }}>
-                            <TextureListViewer
-                                files={textureFiles}
-                                selected={component.properties.texture || undefined}
-                                onSelect={(file) => {
-                                    onUpdate({ texture: file });
-                                    setShowPicker(false);
-                                }}
-                                basePath={basePath}
-                            />
-                        </div>
-                    )}
-                </div>
-
-            </div>
-
-            {component.properties.texture && (
-                <div style={{ borderTop: '1px solid rgba(34, 211, 238, 0.2)', paddingTop: 4, marginTop: 4 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
-                        <input
-                            type="checkbox"
-                            style={{ width: 12, height: 12 }}
-                            checked={component.properties.repeat || false}
-                            onChange={e => onUpdate({ repeat: e.target.checked })}
-                        />
-                        <label style={{ fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)' }}>Repeat Texture</label>
-                    </div>
-
-                    {component.properties.repeat && (
-                        <div>
-                            <Label>Repeat (X, Y)</Label>
-                            <div style={{ display: 'flex', gap: 2 }}>
-                                <Input
-                                    value={component.properties.repeatCount?.[0] ?? 1}
-                                    onChange={value => {
-                                        const y = component.properties.repeatCount?.[1] ?? 1;
-                                        onUpdate({ repeatCount: [value, y] });
-                                    }}
-                                />
-                                <Input
-                                    value={component.properties.repeatCount?.[1] ?? 1}
-                                    onChange={value => {
-                                        const x = component.properties.repeatCount?.[0] ?? 1;
-                                        onUpdate({ repeatCount: [x, value] });
-                                    }}
-                                />
-                            </div>
-                        </div>
-                    )}
-
-                    <div style={{ marginTop: 4 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
-                            <input
-                                type="checkbox"
-                                style={{ width: 12, height: 12 }}
-                                checked={component.properties.generateMipmaps !== false}
-                                onChange={e => onUpdate({ generateMipmaps: e.target.checked })}
-                            />
-                            <label style={{ fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)' }}>Generate Mipmaps</label>
-                        </div>
-
-                        <div>
-                            <Label>Min Filter</Label>
-                            <select
-                                style={{ ...textInputStyle, width: '100%', cursor: 'pointer' }}
-                                value={component.properties.minFilter || 'LinearMipmapLinearFilter'}
-                                onChange={e => onUpdate({ minFilter: e.target.value })}
-                            >
-                                <option value="NearestFilter">Nearest</option>
-                                <option value="NearestMipmapNearestFilter">Nearest Mipmap Nearest</option>
-                                <option value="NearestMipmapLinearFilter">Nearest Mipmap Linear</option>
-                                <option value="LinearFilter">Linear</option>
-                                <option value="LinearMipmapNearestFilter">Linear Mipmap Nearest</option>
-                                <option value="LinearMipmapLinearFilter">Linear Mipmap Linear (Default)</option>
-                            </select>
-                        </div>
-
-                        <div style={{ marginTop: 4 }}>
-                            <Label>Mag Filter</Label>
-                            <select
-                                style={{ ...textInputStyle, width: '100%', cursor: 'pointer' }}
-                                value={component.properties.magFilter || 'LinearFilter'}
-                                onChange={e => onUpdate({ magFilter: e.target.value })}
-                            >
-                                <option value="NearestFilter">Nearest</option>
-                                <option value="LinearFilter">Linear (Default)</option>
-                            </select>
-                        </div>
-                    </div>
                 </div>
             )}
         </div>
     );
-};
+}
+
+function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { component: any; onUpdate: (newComp: any) => void; basePath?: string }) {
+    const hasTexture = !!component.properties.texture;
+    const hasRepeat = component.properties.repeat;
+
+    const fields: FieldDefinition[] = [
+        { name: 'color', type: 'color', label: 'Color' },
+        { name: 'wireframe', type: 'boolean', label: 'Wireframe' },
+        {
+            name: 'texture',
+            type: 'custom',
+            label: 'Texture File',
+            render: ({ value, onChange }) => (
+                <TexturePicker value={value} onChange={onChange} basePath={basePath} />
+            ),
+        },
+        // Conditional texture settings
+        ...(hasTexture ? [
+            { name: 'repeat', type: 'boolean', label: 'Repeat Texture' } as FieldDefinition,
+            ...(hasRepeat ? [{
+                name: 'repeatCount',
+                type: 'custom',
+                label: 'Repeat (X, Y)',
+                render: ({ value, onChange }: { value: [number, number] | undefined; onChange: (v: [number, number]) => void }) => (
+                    <div style={{ display: 'flex', gap: 2 }}>
+                        <Input
+                            value={value?.[0] ?? 1}
+                            onChange={v => onChange([v, value?.[1] ?? 1])}
+                        />
+                        <Input
+                            value={value?.[1] ?? 1}
+                            onChange={v => onChange([value?.[0] ?? 1, v])}
+                        />
+                    </div>
+                ),
+            } as FieldDefinition] : []),
+            { name: 'generateMipmaps', type: 'boolean', label: 'Generate Mipmaps' } as FieldDefinition,
+            {
+                name: 'minFilter',
+                type: 'select',
+                label: 'Min Filter',
+                options: [
+                    { value: 'NearestFilter', label: 'Nearest' },
+                    { value: 'NearestMipmapNearestFilter', label: 'Nearest Mipmap Nearest' },
+                    { value: 'NearestMipmapLinearFilter', label: 'Nearest Mipmap Linear' },
+                    { value: 'LinearFilter', label: 'Linear' },
+                    { value: 'LinearMipmapNearestFilter', label: 'Linear Mipmap Nearest' },
+                    { value: 'LinearMipmapLinearFilter', label: 'Linear Mipmap Linear (Default)' },
+                ],
+            } as FieldDefinition,
+            {
+                name: 'magFilter',
+                type: 'select',
+                label: 'Mag Filter',
+                options: [
+                    { value: 'NearestFilter', label: 'Nearest' },
+                    { value: 'LinearFilter', label: 'Linear (Default)' },
+                ],
+            } as FieldDefinition,
+        ] : []),
+    ];
+
+    return (
+        <FieldRenderer
+            fields={fields}
+            values={component.properties}
+            onChange={onUpdate}
+        />
+    );
+}
 
 // View for Material component
 function MaterialComponentView({ properties, loadedTextures }: { properties: any, loadedTextures?: Record<string, Texture> }) {

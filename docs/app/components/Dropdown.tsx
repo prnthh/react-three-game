@@ -15,7 +15,6 @@ export default function Dropdown() {
         { label: "Viewer", href: "/demo" },
         { label: "Asset Viewer", href: "/demo/assetviewer" },
         { label: "Custom Editor", href: "/demo/customeditor" },
-        { label: "Vanilla", href: "/demo/vanilla" },
     ];
 
     return (

@@ -1,5 +1,69 @@
 import React, { useEffect, useRef, useState } from 'react';
 
+// ============================================================================
+// Field Definition Types
+// ============================================================================
+
+export type FieldType = 'vector3' | 'number' | 'string' | 'color' | 'boolean' | 'select';
+
+interface BaseFieldDefinition {
+    name: string;
+    label: string;
+}
+
+interface Vector3FieldDefinition extends BaseFieldDefinition {
+    type: 'vector3';
+    snap?: number;
+}
+
+interface NumberFieldDefinition extends BaseFieldDefinition {
+    type: 'number';
+    min?: number;
+    max?: number;
+    step?: number;
+}
+
+interface StringFieldDefinition extends BaseFieldDefinition {
+    type: 'string';
+    placeholder?: string;
+}
+
+interface ColorFieldDefinition extends BaseFieldDefinition {
+    type: 'color';
+}
+
+interface BooleanFieldDefinition extends BaseFieldDefinition {
+    type: 'boolean';
+}
+
+interface SelectFieldDefinition extends BaseFieldDefinition {
+    type: 'select';
+    options: { value: string; label: string }[];
+}
+
+interface CustomFieldDefinition extends BaseFieldDefinition {
+    type: 'custom';
+    render: (props: {
+        value: any;
+        onChange: (value: any) => void;
+        values: Record<string, any>;
+        onChangeMultiple: (values: Record<string, any>) => void;
+    }) => React.ReactNode;
+}
+
+export type FieldDefinition =
+    | Vector3FieldDefinition
+    | NumberFieldDefinition
+    | StringFieldDefinition
+    | ColorFieldDefinition
+    | BooleanFieldDefinition
+    | SelectFieldDefinition
+    | CustomFieldDefinition;
+
+// ============================================================================
+// Shared Styles
+// ============================================================================
+
 // Shared styles
 const styles = {
     input: {
@@ -206,3 +270,238 @@ export function Vector3Input({
         </div>
     );
 }
+
+// ============================================================================
+// Additional Input Components
+// ============================================================================
+
+export function ColorInput({
+    label,
+    value,
+    onChange
+}: {
+    label?: string;
+    value: string;
+    onChange: (value: string) => void;
+}) {
+    return (
+        <div>
+            {label && <Label>{label}</Label>}
+            <div style={{ display: 'flex', gap: 2 }}>
+                <input
+                    type="color"
+                    style={{
+                        height: 20,
+                        width: 20,
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: 0,
+                    }}
+                    value={value}
+                    onChange={e => onChange(e.target.value)}
+                />
+                <input
+                    type="text"
+                    style={{ ...styles.input, flex: 1 }}
+                    value={value}
+                    onChange={e => onChange(e.target.value)}
+                />
+            </div>
+        </div>
+    );
+}
+
+export function StringInput({
+    label,
+    value,
+    onChange,
+    placeholder
+}: {
+    label?: string;
+    value: string;
+    onChange: (value: string) => void;
+    placeholder?: string;
+}) {
+    return (
+        <div>
+            {label && <Label>{label}</Label>}
+            <input
+                type="text"
+                style={styles.input}
+                value={value}
+                onChange={e => onChange(e.target.value)}
+                placeholder={placeholder}
+            />
+        </div>
+    );
+}
+
+export function BooleanInput({
+    label,
+    value,
+    onChange
+}: {
+    label?: string;
+    value: boolean;
+    onChange: (value: boolean) => void;
+}) {
+    return (
+        <div>
+            {label && <Label>{label}</Label>}
+            <input
+                type="checkbox"
+                style={{
+                    height: 16,
+                    width: 16,
+                    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                    border: '1px solid rgba(34, 211, 238, 0.3)',
+                    cursor: 'pointer',
+                }}
+                checked={value}
+                onChange={e => onChange(e.target.checked)}
+            />
+        </div>
+    );
+}
+
+export function SelectInput({
+    label,
+    value,
+    onChange,
+    options
+}: {
+    label?: string;
+    value: string;
+    onChange: (value: string) => void;
+    options: { value: string; label: string }[];
+}) {
+    return (
+        <div>
+            {label && <Label>{label}</Label>}
+            <select
+                style={styles.input as React.CSSProperties}
+                value={value}
+                onChange={e => onChange(e.target.value)}
+            >
+                {options.map(opt => (
+                    <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                    </option>
+                ))}
+            </select>
+        </div>
+    );
+}
+
+// ============================================================================
+// Field Renderer - Schema-driven UI generation
+// ============================================================================
+
+interface FieldRendererProps {
+    fields: FieldDefinition[];
+    values: Record<string, any>;
+    onChange: (values: Record<string, any>) => void;
+}
+
+export function FieldRenderer({ fields, values, onChange }: FieldRendererProps) {
+    const updateField = (name: string, value: any) => {
+        onChange({ [name]: value });
+    };
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {fields.map(field => {
+                const value = values[field.name];
+
+                switch (field.type) {
+                    case 'vector3':
+                        return (
+                            <Vector3Input
+                                key={field.name}
+                                label={field.label}
+                                value={value ?? [0, 0, 0]}
+                                onChange={v => updateField(field.name, v)}
+                                snap={field.snap}
+                            />
+                        );
+
+                    case 'number':
+                        return (
+                            <div key={field.name}>
+                                <Label>{field.label}</Label>
+                                <Input
+                                    value={value ?? 0}
+                                    onChange={v => updateField(field.name, v)}
+                                    min={field.min}
+                                    max={field.max}
+                                    step={field.step}
+                                />
+                            </div>
+                        );
+
+                    case 'string':
+                        return (
+                            <StringInput
+                                key={field.name}
+                                label={field.label}
+                                value={value ?? ''}
+                                onChange={v => updateField(field.name, v)}
+                                placeholder={field.placeholder}
+                            />
+                        );
+
+                    case 'color':
+                        return (
+                            <ColorInput
+                                key={field.name}
+                                label={field.label}
+                                value={value ?? '#ffffff'}
+                                onChange={v => updateField(field.name, v)}
+                            />
+                        );
+
+                    case 'boolean':
+                        return (
+                            <BooleanInput
+                                key={field.name}
+                                label={field.label}
+                                value={value ?? false}
+                                onChange={v => updateField(field.name, v)}
+                            />
+                        );
+
+                    case 'select':
+                        return (
+                            <SelectInput
+                                key={field.name}
+                                label={field.label}
+                                value={value ?? field.options[0]?.value ?? ''}
+                                onChange={v => updateField(field.name, v)}
+                                options={field.options}
+                            />
+                        );
+
+                    case 'custom':
+                        return (
+                            <div key={field.name}>
+                                {field.label && <Label>{field.label}</Label>}
+                                {field.render({
+                                    value,
+                                    onChange: v => updateField(field.name, v),
+                                    values,
+                                    onChangeMultiple: onChange,
+                                })}
+                            </div>
+                        );
+
+                    default:
+                        return null;
+                }
+            })}
+        </div>
+    );
+}
+
+// Export styles for use in custom field renderers
+export { styles };

@@ -1,5 +1,5 @@
 import { Component } from "./ComponentRegistry";
-import { Input, Label } from "./Input";
+import { FieldRenderer, FieldDefinition, Input, Label } from "./Input";
 
 const GEOMETRY_ARGS: Record<string, {
     labels: string[];
@@ -29,46 +29,63 @@ function GeometryComponentEditor({
     const { geometryType, args = [] } = component.properties;
     const schema = GEOMETRY_ARGS[geometryType];
 
-    const selectStyle = {
-        width: '100%',
-        backgroundColor: 'rgba(0, 0, 0, 0.4)',
-        border: '1px solid rgba(34, 211, 238, 0.3)',
-        padding: '2px 4px',
-        fontSize: '10px',
-        color: 'rgba(165, 243, 252, 1)',
-        fontFamily: 'monospace',
-        outline: 'none',
+    const fields: FieldDefinition[] = [
+        {
+            name: 'geometryType',
+            type: 'select',
+            label: 'Type',
+            options: [
+                { value: 'box', label: 'Box' },
+                { value: 'sphere', label: 'Sphere' },
+                { value: 'plane', label: 'Plane' },
+            ],
+        },
+        {
+            name: 'args',
+            type: 'custom',
+            label: '',
+            render: ({ values, onChangeMultiple }) => {
+                const currentType = values.geometryType;
+                const currentSchema = GEOMETRY_ARGS[currentType];
+                const currentArgs = values.args || currentSchema.defaults;
+
+                return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {currentSchema.labels.map((label, i) => (
+                            <div key={label}>
+                                <Label>{label}</Label>
+                                <Input
+                                    value={currentArgs[i] ?? currentSchema.defaults[i]}
+                                    step={0.1}
+                                    onChange={value => {
+                                        const next = [...currentArgs];
+                                        next[i] = value;
+                                        onChangeMultiple({ args: next });
+                                    }}
+                                />
+                            </div>
+                        ))}
+                    </div>
+                );
+            },
+        },
+    ];
+
+    // Handle geometry type change to reset args
+    const handleChange = (newValues: Record<string, any>) => {
+        if ('geometryType' in newValues && newValues.geometryType !== geometryType) {
+            onUpdate({ geometryType: newValues.geometryType, args: GEOMETRY_ARGS[newValues.geometryType].defaults });
+        } else {
+            onUpdate(newValues);
+        }
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div>
-                <Label>Type</Label>
-                <select style={selectStyle} value={geometryType} onChange={e => {
-                    const type = e.target.value;
-                    onUpdate({ geometryType: type, args: GEOMETRY_ARGS[type].defaults });
-                }}>
-                    <option value="box">Box</option>
-                    <option value="sphere">Sphere</option>
-                    <option value="plane">Plane</option>
-                </select>
-            </div>
-
-            {schema.labels.map((label, i) => (
-                <div key={label}>
-                    <Label>{label}</Label>
-                    <Input
-                        value={args[i] ?? schema.defaults[i]}
-                        step="0.1"
-                        onChange={value => {
-                            const next = [...args];
-                            next[i] = value;
-                            onUpdate({ args: next });
-                        }}
-                    />
-                </div>
-            ))}
-        </div>
+        <FieldRenderer
+            fields={fields}
+            values={component.properties}
+            onChange={handleChange}
+        />
     );
 }
 

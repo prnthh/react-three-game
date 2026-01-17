@@ -2,86 +2,82 @@ import { Component } from "./ComponentRegistry";
 import { useRef, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import { DirectionalLight, Object3D, Vector3 } from "three";
-import { Input, Label } from "./Input";
+import { FieldRenderer, FieldDefinition, Input } from "./Input";
+
+const smallLabel = { display: 'block', fontSize: '8px', color: 'rgba(34, 211, 238, 0.5)', marginBottom: 2 } as const;
+
+const directionalLightFields: FieldDefinition[] = [
+    { name: 'color', type: 'color', label: 'Color' },
+    { name: 'intensity', type: 'number', label: 'Intensity', step: 0.1, min: 0 },
+    { name: 'castShadow', type: 'boolean', label: 'Cast Shadow' },
+    { name: 'shadowMapSize', type: 'number', label: 'Shadow Map Size', step: 256, min: 256 },
+    {
+        name: '_shadowCamera',
+        type: 'custom',
+        label: 'Shadow Camera',
+        render: ({ values, onChangeMultiple }) => (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+                <div>
+                    <label style={smallLabel}>Near</label>
+                    <Input step={0.1} value={values.shadowCameraNear ?? 0.1} onChange={v => onChangeMultiple({ shadowCameraNear: v })} />
+                </div>
+                <div>
+                    <label style={smallLabel}>Far</label>
+                    <Input step={1} value={values.shadowCameraFar ?? 100} onChange={v => onChangeMultiple({ shadowCameraFar: v })} />
+                </div>
+                <div>
+                    <label style={smallLabel}>Top</label>
+                    <Input step={1} value={values.shadowCameraTop ?? 30} onChange={v => onChangeMultiple({ shadowCameraTop: v })} />
+                </div>
+                <div>
+                    <label style={smallLabel}>Bottom</label>
+                    <Input step={1} value={values.shadowCameraBottom ?? -30} onChange={v => onChangeMultiple({ shadowCameraBottom: v })} />
+                </div>
+                <div>
+                    <label style={smallLabel}>Left</label>
+                    <Input step={1} value={values.shadowCameraLeft ?? -30} onChange={v => onChangeMultiple({ shadowCameraLeft: v })} />
+                </div>
+                <div>
+                    <label style={smallLabel}>Right</label>
+                    <Input step={1} value={values.shadowCameraRight ?? 30} onChange={v => onChangeMultiple({ shadowCameraRight: v })} />
+                </div>
+            </div>
+        ),
+    },
+    {
+        name: 'targetOffset',
+        type: 'custom',
+        label: 'Target Offset',
+        render: ({ value, onChange }) => {
+            const offset = value ?? [0, -5, 0];
+            return (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4 }}>
+                    <div>
+                        <label style={smallLabel}>X</label>
+                        <Input step={0.5} value={offset[0]} onChange={v => onChange([v, offset[1], offset[2]])} />
+                    </div>
+                    <div>
+                        <label style={smallLabel}>Y</label>
+                        <Input step={0.5} value={offset[1]} onChange={v => onChange([offset[0], v, offset[2]])} />
+                    </div>
+                    <div>
+                        <label style={smallLabel}>Z</label>
+                        <Input step={0.5} value={offset[2]} onChange={v => onChange([offset[0], offset[1], v])} />
+                    </div>
+                </div>
+            );
+        },
+    },
+];
 
 function DirectionalLightComponentEditor({ component, onUpdate }: { component: any; onUpdate: (newComp: any) => void }) {
-    const props = {
-        color: component.properties.color ?? '#ffffff',
-        intensity: component.properties.intensity ?? 1.0,
-        castShadow: component.properties.castShadow ?? true,
-        shadowMapSize: component.properties.shadowMapSize ?? 1024,
-        shadowCameraNear: component.properties.shadowCameraNear ?? 0.1,
-        shadowCameraFar: component.properties.shadowCameraFar ?? 100,
-        shadowCameraTop: component.properties.shadowCameraTop ?? 30,
-        shadowCameraBottom: component.properties.shadowCameraBottom ?? -30,
-        shadowCameraLeft: component.properties.shadowCameraLeft ?? -30,
-        shadowCameraRight: component.properties.shadowCameraRight ?? 30,
-        targetOffset: component.properties.targetOffset ?? [0, -5, 0]
-    };
-
-    const textInputStyle = {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.4)',
-        border: '1px solid rgba(34, 211, 238, 0.3)',
-        padding: '2px 4px',
-        fontSize: '10px',
-        color: 'rgba(165, 243, 252, 1)',
-        fontFamily: 'monospace',
-        outline: 'none',
-    };
-
-    const smallLabel = { display: 'block', fontSize: '8px', color: 'rgba(34, 211, 238, 0.5)', marginBottom: 2 };
-
-    return <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <div>
-            <Label>Color</Label>
-            <div style={{ display: 'flex', gap: 2 }}>
-                <input
-                    type="color"
-                    style={{ height: 20, width: 20, backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }}
-                    value={props.color}
-                    onChange={e => onUpdate({ ...component.properties, color: e.target.value })}
-                />
-                <input type="text" style={textInputStyle} value={props.color} onChange={e => onUpdate({ ...component.properties, color: e.target.value })} />
-            </div>
-        </div>
-        <div>
-            <Label>Intensity</Label>
-            <Input step="0.1" value={props.intensity} onChange={value => onUpdate({ ...component.properties, intensity: value })} />
-        </div>
-        <div>
-            <Label>Cast Shadow</Label>
-            <input
-                type="checkbox"
-                style={{ height: 16, width: 16, backgroundColor: 'rgba(0, 0, 0, 0.4)', border: '1px solid rgba(34, 211, 238, 0.3)', cursor: 'pointer' }}
-                checked={props.castShadow}
-                onChange={e => onUpdate({ ...component.properties, castShadow: e.target.checked })}
-            />
-        </div>
-        <div>
-            <Label>Shadow Map Size</Label>
-            <Input step="256" value={props.shadowMapSize} onChange={value => onUpdate({ ...component.properties, shadowMapSize: value })} />
-        </div>
-        <div style={{ borderTop: '1px solid rgba(34, 211, 238, 0.2)', paddingTop: 8, marginTop: 8 }}>
-            <label style={{ display: 'block', fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Shadow Camera</label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
-                <div><label style={smallLabel}>Near</label><Input step="0.1" value={props.shadowCameraNear} onChange={value => onUpdate({ ...component.properties, shadowCameraNear: value })} /></div>
-                <div><label style={smallLabel}>Far</label><Input step="1" value={props.shadowCameraFar} onChange={value => onUpdate({ ...component.properties, shadowCameraFar: value })} /></div>
-                <div><label style={smallLabel}>Top</label><Input step="1" value={props.shadowCameraTop} onChange={value => onUpdate({ ...component.properties, shadowCameraTop: value })} /></div>
-                <div><label style={smallLabel}>Bottom</label><Input step="1" value={props.shadowCameraBottom} onChange={value => onUpdate({ ...component.properties, shadowCameraBottom: value })} /></div>
-                <div><label style={smallLabel}>Left</label><Input step="1" value={props.shadowCameraLeft} onChange={value => onUpdate({ ...component.properties, shadowCameraLeft: value })} /></div>
-                <div><label style={smallLabel}>Right</label><Input step="1" value={props.shadowCameraRight} onChange={value => onUpdate({ ...component.properties, shadowCameraRight: value })} /></div>
-            </div>
-        </div>
-        <div style={{ borderTop: '1px solid rgba(34, 211, 238, 0.2)', paddingTop: 8, marginTop: 8 }}>
-            <label style={{ display: 'block', fontSize: '9px', color: 'rgba(34, 211, 238, 0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Target Offset</label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4 }}>
-                <div><label style={smallLabel}>X</label><Input step="0.5" value={props.targetOffset[0]} onChange={value => onUpdate({ ...component.properties, targetOffset: [value, props.targetOffset[1], props.targetOffset[2]] })} /></div>
-                <div><label style={smallLabel}>Y</label><Input step="0.5" value={props.targetOffset[1]} onChange={value => onUpdate({ ...component.properties, targetOffset: [props.targetOffset[0], value, props.targetOffset[2]] })} /></div>
-                <div><label style={smallLabel}>Z</label><Input step="0.5" value={props.targetOffset[2]} onChange={value => onUpdate({ ...component.properties, targetOffset: [props.targetOffset[0], props.targetOffset[1], value] })} /></div>
-            </div>
-        </div>
-    </div>;
+    return (
+        <FieldRenderer
+            fields={directionalLightFields}
+            values={component.properties}
+            onChange={onUpdate}
+        />
+    );
 }
 
 function DirectionalLightView({ properties, editMode }: { properties: any; editMode?: boolean }) {

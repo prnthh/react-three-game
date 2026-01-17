@@ -3,13 +3,11 @@ import { ComponentData, GameObject } from "../types";
 
 export interface Component {
     name: string;
-    Editor: FC<{ 
+    Editor: FC<{
         node?: GameObject;
-        component: ComponentData; 
-        onUpdate: (newComp: any) => void; 
+        component: ComponentData;
+        onUpdate: (newComp: any) => void;
         basePath?: string;
-        transformMode?: "translate" | "rotate" | "scale";
-        setTransformMode?: (m: "translate" | "rotate" | "scale") => void;
     }>;
     defaultProperties: any;
     // Allow View to accept extra props for special cases (like material)

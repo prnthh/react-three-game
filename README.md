@@ -72,27 +72,61 @@ interface GameObject {
 ## Custom Components
 
 ```tsx
-import { Component, registerComponent } from 'react-three-game';
+import { Component, registerComponent, FieldRenderer, FieldDefinition } from 'react-three-game';
 import { useFrame } from '@react-three/fiber';
+
+const rotatorFields: FieldDefinition[] = [
+  { name: 'speed', type: 'number', label: 'Speed', step: 0.1 },
+  { name: 'axis', type: 'select', label: 'Axis', options: [
+    { value: 'x', label: 'X' },
+    { value: 'y', label: 'Y' },
+    { value: 'z', label: 'Z' },
+  ]},
+];
 
 const Rotator: Component = {
   name: 'Rotator',
   Editor: ({ component, onUpdate }) => (
-    <input type="number" value={component.properties.speed}
-      onChange={e => onUpdate({ speed: +e.target.value })} />
+    <FieldRenderer fields={rotatorFields} values={component.properties} onChange={onUpdate} />
   ),
   View: ({ properties, children }) => {
     const ref = useRef<Group>(null);
     useFrame((_, dt) => { ref.current!.rotation.y += dt * properties.speed });
     return <group ref={ref}>{children}</group>;
   },
-  defaultProperties: { speed: 1 }
+  defaultProperties: { speed: 1, axis: 'y' }
 };
 
 registerComponent(Rotator); // before rendering PrefabEditor
 ```
 
 **Wrapper** components accept `children` (animations, controllers). **Leaf** components don't (lights, particles).
+
+### Schema-Driven Field Types
+
+The `FieldRenderer` component auto-generates editor UI from a field schema:
+
+| Type | Description | Options |
+|------|-------------|---------|
+| `vector3` | X/Y/Z inputs with drag-to-scrub | `snap?: number` |
+| `number` | Numeric input | `min?`, `max?`, `step?` |
+| `string` | Text input | `placeholder?` |
+| `color` | Color picker + hex input | — |
+| `boolean` | Checkbox | — |
+| `select` | Dropdown | `options: { value, label }[]` |
+| `custom` | Render function for one-off UI | `render: (props) => ReactNode` |
+
+```tsx
+// Custom field example for complex one-off UI
+{
+  name: 'gradient',
+  type: 'custom',
+  label: 'Gradient',
+  render: ({ value, onChange, values, onChangeMultiple }) => (
+    <GradientPicker value={value} onChange={onChange} />
+  ),
+}
+```
 
 ## Visual Editor
 

@@ -12,6 +12,8 @@ export interface Component {
     defaultProperties: any;
     // Allow View to accept extra props for special cases (like material)
     View?: FC<any>;
+    // Non-composable components have special rendering logic in PrefabRoot
+    nonComposable?: boolean;
 }
 
 const REGISTRY: Record<string, Component> = {};
@@ -29,4 +31,10 @@ export function getComponent(name: string): Component | undefined {
 
 export function getAllComponents(): Record<string, Component> {
     return { ...REGISTRY };
+}
+
+export function getNonComposableKeys(): string[] {
+    return Object.values(REGISTRY)
+        .filter(c => c.nonComposable)
+        .map(c => c.name.toLowerCase());
 }

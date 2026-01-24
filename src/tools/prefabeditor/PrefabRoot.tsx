@@ -4,7 +4,7 @@ import { BoxHelper, Euler, Group, Matrix4, Object3D, Quaternion, SRGBColorSpace,
 import { ThreeEvent } from "@react-three/fiber";
 
 import { Prefab, GameObject as GameObjectType } from "./types";
-import { getComponent, registerComponent } from "./components/ComponentRegistry";
+import { getComponent, registerComponent, getNonComposableKeys } from "./components/ComponentRegistry";
 import components from "./components";
 import { loadModel } from "../dragdrop/modelLoader";
 import { GameInstance, GameInstanceProvider, useInstanceCheck } from "./InstanceProvider";
@@ -488,10 +488,12 @@ function renderCoreNode(
     const geometry = gameObject.components?.geometry;
     const material = gameObject.components?.material;
     const model = gameObject.components?.model;
+    const text = gameObject.components?.text;
 
     const geometryDef = geometry && getComponent("Geometry");
     const materialDef = material && getComponent("Material");
     const modelDef = model && getComponent("Model");
+    const textDef = text && getComponent("Text");
 
     const contextProps = {
         loadedModels: ctx.loadedModels,
@@ -506,7 +508,7 @@ function renderCoreNode(
 
     if (gameObject.components) {
         Object.entries(gameObject.components)
-            .filter(([k]) => !["geometry", "material", "model", "transform", "physics"].includes(k))
+            .filter(([k]) => !getNonComposableKeys().includes(k))
             .forEach(([key, comp]) => {
                 if (!comp?.type) return;
                 const def = getComponent(comp.type);
@@ -550,6 +552,13 @@ function renderCoreNode(
                 )}
                 {leaves}
             </mesh>
+        );
+    } else if (text && textDef?.View) {
+        core = (
+            <>
+                <textDef.View properties={text.properties} {...contextProps} />
+                {leaves}
+            </>
         );
     } else {
         core = <>{leaves}</>;

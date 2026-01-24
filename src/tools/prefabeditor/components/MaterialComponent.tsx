@@ -4,7 +4,6 @@ import { Component } from './ComponentRegistry';
 import { FieldRenderer, FieldDefinition, Input } from './Input';
 import { useMemo } from 'react';
 import {
-    DoubleSide,
     RepeatWrapping,
     ClampToEdgeWrapping,
     SRGBColorSpace,
@@ -190,7 +189,6 @@ function MaterialComponentView({ properties, loadedTextures }: { properties: any
             wireframe={wireframe}
             map={finalTexture}
             transparent={!!finalTexture}
-            side={DoubleSide}
         />
     );
 }
@@ -199,6 +197,7 @@ const MaterialComponent: Component = {
     name: 'Material',
     Editor: MaterialComponentEditor,
     View: MaterialComponentView,
+    nonComposable: true,
     defaultProperties: {
         color: '#ffffff',
         wireframe: false

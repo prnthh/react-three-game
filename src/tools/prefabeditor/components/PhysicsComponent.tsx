@@ -82,6 +82,7 @@ const PhysicsComponent: Component = {
     name: 'Physics',
     Editor: PhysicsComponentEditor,
     View: PhysicsComponentView,
+    nonComposable: true,
     defaultProperties: { type: 'dynamic', collider: 'hull' }
 };
 

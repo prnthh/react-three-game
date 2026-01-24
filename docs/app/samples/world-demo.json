@@ -1,0 +1,152 @@
+{
+  "id": "world-demo",
+  "name": "World Demo",
+  "root": {
+    "id": "root",
+    "enabled": true,
+    "visible": true,
+    "components": {
+      "transform": {
+        "type": "Transform",
+        "properties": {
+          "position": [0, 0, 0],
+          "rotation": [0, 0, 0],
+          "scale": [1, 1, 1]
+        }
+      }
+    },
+    "children": [
+      {
+        "id": "ground",
+        "enabled": true,
+        "visible": true,
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [0, 0, 0],
+              "rotation": [-1.5708, 0, 0],
+              "scale": [1, 1, 1]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "plane",
+              "args": [20, 20]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#3d5a3d"
+            }
+          }
+        }
+      },
+      {
+        "id": "player1",
+        "enabled": true,
+        "visible": true,
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [-2, 0.5, 0],
+              "rotation": [0, 0, 0],
+              "scale": [1, 1, 1]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [0.5, 32, 32]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#ff6b6b"
+            }
+          }
+        }
+      },
+      {
+        "id": "player2",
+        "enabled": true,
+        "visible": true,
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [2, 0.5, 0],
+              "rotation": [0, 0, 0],
+              "scale": [1, 1, 1]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [0.5, 32, 32]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#4ecdc4"
+            }
+          }
+        }
+      },
+      {
+        "id": "light",
+        "enabled": true,
+        "visible": true,
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [5, 10, 5],
+              "rotation": [0, 0, 0],
+              "scale": [1, 1, 1]
+            }
+          },
+          "directionalLight": {
+            "type": "DirectionalLight",
+            "properties": {
+              "color": "#ffffff",
+              "intensity": 2,
+              "castShadow": true,
+              "targetOffset": [0, -10, 0]
+            }
+          }
+        }
+      },
+      {
+        "id": "fillLight",
+        "enabled": true,
+        "visible": true,
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [-5, 5, -5],
+              "rotation": [0, 0, 0],
+              "scale": [1, 1, 1]
+            }
+          },
+          "directionalLight": {
+            "type": "DirectionalLight",
+            "properties": {
+              "color": "#aaccff",
+              "intensity": 0.5,
+              "castShadow": false
+            }
+          }
+        }
+      }
+    ]
+  }
+}

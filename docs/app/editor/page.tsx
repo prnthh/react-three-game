@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { PrefabEditor } from "react-three-game";
 import AgenticEditor from "../components/AgenticEditor";
-import testPrefab from "../samples/test.json";
+import testPrefab from "../samples/game-level.json";
 
 export default function Home() {
   const [selectedPrefab, setSelectedPrefab] = useState<any>(testPrefab);

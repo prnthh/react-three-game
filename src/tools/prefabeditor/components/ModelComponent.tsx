@@ -112,6 +112,7 @@ const ModelComponent: Component = {
     name: 'Model',
     Editor: ModelComponentEditor,
     View: ModelComponentView,
+    nonComposable: true,
     defaultProperties: {
         filename: '',
         instanced: false

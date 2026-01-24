@@ -9,6 +9,11 @@ npm i react-three-game @react-three/fiber @react-three/rapier three
 ![Prefab Editor](assets/editor.gif)
 ![Architecture](assets/architecture.png)
 
+## Agent Skill
+```bash
+npx skills add https://github.com/prnthh/react-three-game-skill
+```
+
 ## Usage
 
 ```jsx

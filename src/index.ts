@@ -26,6 +26,7 @@ export {
 
 // Prefab Editor - Styles & Utils
 export * from './tools/prefabeditor/utils';
+export type { ExportGLBOptions } from './tools/prefabeditor/utils';
 
 // Prefab Editor - Types
 export type { PrefabEditorRef } from './tools/prefabeditor/PrefabEditor';

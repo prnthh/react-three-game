@@ -1,6 +1,6 @@
 {
   "name": "react-three-game",
-  "version": "0.0.46",
+  "version": "0.0.48",
   "description": "Batteries included React Three Fiber game engine",
   "main": "dist/index.js",
   "module": "dist/index.js",

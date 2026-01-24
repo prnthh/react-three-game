@@ -4,6 +4,7 @@ import MaterialComponent from './MaterialComponent';
 import PhysicsComponent from './PhysicsComponent';
 import SpotLightComponent from './SpotLightComponent';
 import DirectionalLightComponent from './DirectionalLightComponent';
+import AmbientLightComponent from './AmbientLightComponent';
 import ModelComponent from './ModelComponent';
 import TextComponent from './TextComponent';
 
@@ -14,6 +15,7 @@ export default [
     PhysicsComponent,
     SpotLightComponent,
     DirectionalLightComponent,
+    AmbientLightComponent,
     ModelComponent,
     TextComponent
 ];

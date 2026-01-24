@@ -96,11 +96,40 @@ interface InputProps {
 }
 
 export function Input({ value, onChange, step, min, max, style }: InputProps) {
+    const [draft, setDraft] = useState<string>(() => value.toString());
+
+    useEffect(() => {
+        setDraft(value.toString());
+    }, [value]);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const inputValue = e.target.value;
+        setDraft(inputValue);
+
+        const num = parseFloat(inputValue);
+        if (Number.isFinite(num)) {
+            onChange(num);
+        }
+    };
+
+    const handleBlur = () => {
+        const num = parseFloat(draft);
+        if (!Number.isFinite(num)) {
+            setDraft(value.toString());
+        }
+    };
+
     return (
         <input
-            type="number"
-            value={value}
-            onChange={(e) => onChange(parseFloat(e.target.value))}
+            type="text"
+            value={draft}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            onKeyDown={e => {
+                if (e.key === 'Enter') {
+                    (e.target as HTMLInputElement).blur();
+                }
+            }}
             step={step}
             min={min}
             max={max}

@@ -1,4 +1,13 @@
 import { GameObject, Prefab } from "./types";
+import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
+import { Object3D } from 'three';
+
+export interface ExportGLBOptions {
+    filename?: string;
+    binary?: boolean;
+    onComplete?: (result: ArrayBuffer | object) => void;
+    onError?: (error: any) => void;
+}
 
 /** Save a prefab as JSON file */
 export function saveJson(data: Prefab, filename: string) {
@@ -31,6 +40,66 @@ export function loadJson(): Promise<Prefab | undefined> {
         };
         input.click();
     });
+}
+
+/**
+ * Export a Three.js scene or object to GLB format
+ * @param sceneRoot - The Three.js Object3D to export
+ * @param options - Export options
+ * @returns Promise that resolves when export is complete
+ */
+export function exportGLB(
+    sceneRoot: Object3D,
+    options: ExportGLBOptions = {}
+): Promise<ArrayBuffer | object> {
+    const {
+        filename = 'scene.glb',
+        binary = true,
+        onComplete,
+        onError
+    } = options;
+
+    return new Promise((resolve, reject) => {
+        const exporter = new GLTFExporter();
+
+        exporter.parse(
+            sceneRoot,
+            (result) => {
+                onComplete?.(result);
+                resolve(result);
+
+                // Trigger download if filename is provided
+                if (filename) {
+                    const blob = new Blob(
+                        [result as ArrayBuffer],
+                        { type: binary ? 'application/octet-stream' : 'application/json' }
+                    );
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }
+            },
+            (error) => {
+                console.error('Error exporting GLB:', error);
+                onError?.(error);
+                reject(error);
+            },
+            { binary }
+        );
+    });
+}
+
+/**
+ * Export a Three.js scene to GLB and return the ArrayBuffer without downloading
+ * @param sceneRoot - The Three.js Object3D to export
+ * @returns Promise that resolves with the GLB data as ArrayBuffer
+ */
+export async function exportGLBData(sceneRoot: Object3D): Promise<ArrayBuffer> {
+    const result = await exportGLB(sceneRoot, { filename: '', binary: true });
+    return result as ArrayBuffer;
 }
 
 /** Find a node by ID in the tree */

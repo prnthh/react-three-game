@@ -61,7 +61,7 @@ Use node materials only: `MeshStandardNodeMaterial`, `MeshBasicNodeMaterial` (no
 Set `model.properties.instanced = true` → uses `InstanceProvider.tsx` for batched rendering with physics.
 
 ## Built-in Components
-`Transform`, `Geometry` (box/sphere/plane), `Material` (color/texture), `Physics` (dynamic/fixed), `Model` (GLB/FBX), `SpotLight`, `DirectionalLight`
+`Transform`, `Geometry` (box/sphere/plane/cylinder), `Material` (color/texture), `Physics` (dynamic/fixed), `Model` (GLB/FBX), `SpotLight`, `DirectionalLight`, `AmbientLight`, `Text`
 
 ## Custom Components (User-space)
 See `docs/app/demo/editor/RotatorComponent.tsx` for runtime behavior example using `useFrame`. Register with `registerComponent()` before rendering `<PrefabEditor>`.

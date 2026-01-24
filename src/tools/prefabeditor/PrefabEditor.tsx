@@ -6,8 +6,7 @@ import { Physics } from "@react-three/rapier";
 import EditorUI from "./EditorUI";
 import { base, toolbar } from "./styles";
 import { EditorContext } from "./EditorContext";
-import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
-import { Group } from "three";
+import { exportGLB } from "./utils";
 
 export interface PrefabEditorRef {
     screenshot: () => void;
@@ -115,23 +114,9 @@ const PrefabEditor = forwardRef<PrefabEditorRef, {
         const sceneRoot = prefabRootRef.current?.root;
         if (!sceneRoot) return;
 
-        const exporter = new GLTFExporter();
-        exporter.parse(
-            sceneRoot,
-            (result) => {
-                const blob = new Blob([result as ArrayBuffer], { type: 'application/octet-stream' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${loadedPrefab.name || 'scene'}.glb`;
-                a.click();
-                URL.revokeObjectURL(url);
-            },
-            (error) => {
-                console.error('Error exporting GLB:', error);
-            },
-            { binary: true }
-        );
+        exportGLB(sceneRoot, {
+            filename: `${loadedPrefab.name || 'scene'}.glb`
+        });
     };
 
     useEffect(() => {

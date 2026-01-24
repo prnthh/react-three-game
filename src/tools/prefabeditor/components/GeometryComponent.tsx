@@ -17,6 +17,10 @@ const GEOMETRY_ARGS: Record<string, {
         labels: ["Width", "Height"],
         defaults: [1, 1],
     },
+    cylinder: {
+        labels: ["Radius Top", "Radius Bottom", "Height", "Radial Segments"],
+        defaults: [1, 1, 1, 32],
+    },
 };
 
 function GeometryComponentEditor({
@@ -38,6 +42,7 @@ function GeometryComponentEditor({
                 { value: 'box', label: 'Box' },
                 { value: 'sphere', label: 'Sphere' },
                 { value: 'plane', label: 'Plane' },
+                { value: 'cylinder', label: 'Cylinder' },
             ],
         },
         {
@@ -101,6 +106,8 @@ function GeometryComponentView({ properties, children }: { properties: any, chil
             return <sphereGeometry args={args as [number, number?, number?]} />;
         case "plane":
             return <planeGeometry args={args as [number, number]} />;
+        case "cylinder":
+            return <cylinderGeometry args={args as [number, number, number, number?]} />;
         default:
             return <boxGeometry args={[1, 1, 1]} />;
     }

@@ -1,17 +1,11 @@
 import { RigidBody, RapierRigidBody } from "@react-three/rapier";
+import type { RigidBodyOptions } from "@react-three/rapier";
 import type { ReactNode } from 'react';
-import { useEffect, useRef } from 'react';
 import { Component } from "./ComponentRegistry";
 import { FieldRenderer, FieldDefinition } from "./Input";
-import { Quaternion, Euler } from 'three';
+import { ComponentData } from "../types";
 
-export interface PhysicsProps {
-    type: "fixed" | "dynamic";
-    collider?: string;
-    mass?: number;
-    restitution?: number;
-    friction?: number;
-}
+export type PhysicsProps = RigidBodyOptions;
 
 const physicsFields: FieldDefinition[] = [
     {
@@ -21,10 +15,12 @@ const physicsFields: FieldDefinition[] = [
         options: [
             { value: 'dynamic', label: 'Dynamic' },
             { value: 'fixed', label: 'Fixed' },
+            { value: 'kinematicPosition', label: 'Kinematic Position' },
+            { value: 'kinematicVelocity', label: 'Kinematic Velocity' },
         ],
     },
     {
-        name: 'collider',
+        name: 'colliders',
         type: 'select',
         label: 'Collider',
         options: [
@@ -34,20 +30,60 @@ const physicsFields: FieldDefinition[] = [
             { value: 'ball', label: 'Ball (sphere)' },
         ],
     },
+    {
+        name: 'mass',
+        type: 'number',
+        label: 'Mass',
+    },
+    {
+        name: 'restitution',
+        type: 'number',
+        label: 'Restitution (Bounciness)',
+        min: 0,
+        max: 1,
+        step: 0.1,
+    },
+    {
+        name: 'friction',
+        type: 'number',
+        label: 'Friction',
+        min: 0,
+        step: 0.1,
+    },
+    {
+        name: 'linearDamping',
+        type: 'number',
+        label: 'Linear Damping',
+        min: 0,
+        step: 0.1,
+    },
+    {
+        name: 'angularDamping',
+        type: 'number',
+        label: 'Angular Damping',
+        min: 0,
+        step: 0.1,
+    },
+    {
+        name: 'gravityScale',
+        type: 'number',
+        label: 'Gravity Scale',
+        step: 0.1,
+    },
 ];
 
-function PhysicsComponentEditor({ component, onUpdate }: { component: { properties: { type?: 'dynamic' | 'fixed'; collider?: string;[k: string]: any } }; onUpdate: (props: Partial<Record<string, any>>) => void }) {
+function PhysicsComponentEditor({ component, onUpdate }: { component: ComponentData; onUpdate: (newComp: any) => void }) {
     return (
         <FieldRenderer
             fields={physicsFields}
             values={component.properties}
-            onChange={onUpdate}
+            onChange={(props) => onUpdate({ ...component, properties: { ...component.properties, ...props } })}
         />
     );
 }
 
 interface PhysicsViewProps {
-    properties: { type?: 'dynamic' | 'fixed'; collider?: string };
+    properties: PhysicsProps;
     editMode?: boolean;
     children?: ReactNode;
     position?: [number, number, number];
@@ -56,22 +92,24 @@ interface PhysicsViewProps {
 }
 
 function PhysicsComponentView({ properties, children, position, rotation, scale, editMode }: PhysicsViewProps) {
-    const colliders = properties.collider || (properties.type === 'fixed' ? 'trimesh' : 'hull');
+    const { type, colliders, ...otherProps } = properties;
+    const colliderType = colliders || (type === 'fixed' ? 'trimesh' : 'hull');
 
     // In edit mode, include position/rotation in key to force remount when transform changes
     // This ensures the RigidBody debug visualization updates even when physics is paused
     const rbKey = editMode
-        ? `${properties.type || 'dynamic'}_${colliders}_${position?.join(',')}_${rotation?.join(',')}`
-        : `${properties.type || 'dynamic'}_${colliders}`;
+        ? `${type || 'dynamic'}_${colliderType}_${position?.join(',')}_${rotation?.join(',')}`
+        : `${type || 'dynamic'}_${colliderType}`;
 
     return (
         <RigidBody
             key={rbKey}
-            type={properties.type}
-            colliders={colliders as any}
+            type={type}
+            colliders={colliderType as any}
             position={position}
             rotation={rotation}
             scale={scale}
+            {...otherProps}
         >
             {children}
         </RigidBody>
@@ -83,7 +121,7 @@ const PhysicsComponent: Component = {
     Editor: PhysicsComponentEditor,
     View: PhysicsComponentView,
     nonComposable: true,
-    defaultProperties: { type: 'dynamic', collider: 'hull' }
+    defaultProperties: { type: 'dynamic', colliders: 'hull' }
 };
 
 export default PhysicsComponent;

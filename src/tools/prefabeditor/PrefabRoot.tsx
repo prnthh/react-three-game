@@ -175,7 +175,7 @@ export const PrefabRoot = forwardRef<PrefabRootRef, {
 
 export function GameObjectRenderer(props: RendererProps) {
     const node = props.gameObject;
-    if (!node || node.hidden || node.disabled) return null;
+    if (!node || node.disabled) return null;
 
     const isInstanced = node.components?.model?.properties?.instanced;
     const prevInstancedRef = useRef<boolean | undefined>(undefined);

@@ -15,7 +15,6 @@ interface Prefab { id?: string; name?: string; root: GameObject; }
 interface GameObject {
   id: string;                    // Use crypto.randomUUID() for new nodes
   disabled?: boolean;
-  hidden?: boolean;
   components?: Record<string, { type: string; properties: any }>;
   children?: GameObject[];
 }
@@ -38,10 +37,16 @@ const MyComponent: Component = {
 | File | Purpose |
 |------|---------|
 | `src/index.ts` | All public exports - add new features here |
-| `src/tools/prefabeditor/PrefabRoot.tsx` | Recursive scene renderer, world matrix math |
-| `src/tools/prefabeditor/PrefabEditor.tsx` | Edit/play mode, physics pause, JSON import/export |
+| `src/tools/prefabeditor/PrefabRoot.tsx` | Pure renderer - renders prefab as Three.js objects for R3F integration |
+| `src/tools/prefabeditor/PrefabEditor.tsx` | Managed scene with editor UI and play/pause controls for physics |
 | `src/tools/prefabeditor/utils.ts` | Tree helpers: `findNode`, `updateNode`, `deleteNode`, `cloneNode` |
 | `src/shared/GameCanvas.tsx` | WebGPU renderer setup (use `MeshStandardNodeMaterial`) |
+
+## Usage Modes
+
+**GameCanvas + PrefabRoot**: Pure renderer for embedding prefab data in standard R3F applications. Minimal wrapper - just renders the prefab as Three.js objects. Requires manual `<Physics>` setup. Physics always active. Use this to integrate prefabs into larger R3F scenes.
+
+**PrefabEditor**: Managed scene with editor UI and play/pause controls for physics. Full authoring tool for level design and prototyping. Includes canvas, physics, transform gizmos, and inspector. Physics only runs in play mode. Can pass R3F components as children.
 
 ## Critical Patterns
 

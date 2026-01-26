@@ -25,8 +25,6 @@ export interface GroundOptions {
 	/** Physics body type. Defaults to "fixed". */
 	physicsType?: "fixed" | "dynamic" | "kinematic";
 
-	/** Set true to hide the node. */
-	hidden?: boolean;
 	/** Set true to disable the node. */
 	disabled?: boolean;
 }
@@ -52,14 +50,12 @@ export function ground(options: GroundOptions = {}): GameObject {
 		repeat = texture ? true : false,
 		repeatCount = [25, 25],
 		physicsType = "fixed",
-		hidden = false,
 		disabled = false,
 	} = options;
 
 	return {
 		id,
 		disabled,
-		hidden,
 		components: {
 			transform: {
 				type: "Transform",

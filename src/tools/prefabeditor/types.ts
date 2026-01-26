@@ -8,7 +8,6 @@ export interface GameObject {
     id: string;
     name?: string;
     disabled?: boolean;
-    hidden?: boolean;
     children?: GameObject[];
     components?: {
         [key: string]: ComponentData | undefined;

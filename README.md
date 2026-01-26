@@ -14,7 +14,13 @@ npm i react-three-game @react-three/fiber @react-three/rapier three
 npx skills add https://github.com/prnthh/react-three-game-skill
 ```
 
-## Usage
+## Usage Modes
+
+**GameCanvas + PrefabRoot**: Pure renderer for embedding prefab data in standard R3F applications. Minimal wrapper - just renders the prefab as Three.js objects. Requires manual `<Physics>` setup. Physics always active. Use this to integrate prefabs into larger R3F scenes.
+
+**PrefabEditor**: Managed scene with editor UI and play/pause controls for physics. Full authoring tool for level design and prototyping. Includes canvas, physics, transform gizmos, and inspector. Physics only runs in play mode. Can pass R3F components as children.
+
+## Basic Usage
 
 ```jsx
 import { Physics } from '@react-three/rapier';
@@ -57,7 +63,6 @@ import { GameCanvas, PrefabRoot } from 'react-three-game';
 interface GameObject {
   id: string;
   disabled?: boolean;
-  hidden?: boolean;
   components?: Record<string, { type: string; properties: any }>;
   children?: GameObject[];
 }
@@ -70,7 +75,7 @@ interface GameObject {
 | Transform | `position`, `rotation`, `scale` — all `[x,y,z]` arrays, rotation in radians |
 | Geometry | `geometryType`: box/sphere/plane/cylinder, `args`: dimension array |
 | Material | `color`, `texture?`, `metalness?`, `roughness?` |
-| Physics | `type`: dynamic/fixed |
+| Physics | `type`: dynamic/fixed/kinematicPosition/kinematicVelocity, `mass?`, `restitution?` (bounciness), `friction?`, plus any Rapier props |
 | Model | `filename` (GLB/FBX path), `instanced?` for GPU batching |
 | SpotLight | `color`, `intensity`, `angle`, `penumbra` |
 
@@ -133,14 +138,21 @@ The `FieldRenderer` component auto-generates editor UI from a field schema:
 }
 ```
 
-## Visual Editor
+## Prefab Editor
 
 ```jsx
 import { PrefabEditor } from 'react-three-game';
+
+// Standalone editor
 <PrefabEditor initialPrefab={sceneData} onPrefabChange={setSceneData} />
+
+// With custom R3F components
+<PrefabEditor initialPrefab={sceneData}>
+  <CustomComponent />
+</PrefabEditor>
 ```
 
-Keys: **T**ranslate / **R**otate / **S**cale. Drag tree nodes to reparent. Import/export JSON.
+Keys: **T**ranslate / **R**otate / **S**cale. Drag tree nodes to reparent. Import/export JSON. Physics only runs in play mode.
 
 ## Internals
 

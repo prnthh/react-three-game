@@ -1,10 +1,11 @@
 import { RigidBody, RapierRigidBody } from "@react-three/rapier";
-import type { RigidBodyOptions } from "@react-three/rapier";
+import type { RigidBodyOptions, CollisionPayload, IntersectionEnterPayload, IntersectionExitPayload } from "@react-three/rapier";
 import type { ReactNode } from 'react';
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import { Component } from "./ComponentRegistry";
 import { FieldRenderer, FieldDefinition } from "./Input";
 import { ComponentData } from "../types";
+import { gameEvents, getEntityIdFromRigidBody } from "../GameEvents";
 
 export type PhysicsProps = RigidBodyOptions;
 
@@ -71,6 +72,11 @@ const physicsFields: FieldDefinition[] = [
         label: 'Gravity Scale',
         step: 0.1,
     },
+    {
+        name: 'sensor',
+        type: 'boolean',
+        label: 'Sensor (Trigger Only)',
+    },
 ];
 
 function PhysicsComponentEditor({ component, onUpdate }: { component: ComponentData; onUpdate: (newComp: any) => void }) {
@@ -95,7 +101,7 @@ interface PhysicsViewProps {
 }
 
 function PhysicsComponentView({ properties, children, position, rotation, scale, editMode, nodeId, registerRigidBodyRef }: PhysicsViewProps) {
-    const { type, colliders, ...otherProps } = properties;
+    const { type, colliders, sensor, ...otherProps } = properties;
     const colliderType = colliders || (type === 'fixed' ? 'trimesh' : 'hull');
     const rigidBodyRef = useRef<RapierRigidBody>(null);
 
@@ -110,6 +116,43 @@ function PhysicsComponentView({ properties, children, position, rotation, scale,
             }
         };
     }, [nodeId, registerRigidBodyRef]);
+
+    // Event handlers for physics interactions
+    const handleIntersectionEnter = useCallback((payload: IntersectionEnterPayload) => {
+        if (!nodeId) return;
+        gameEvents.emit('sensor:enter', {
+            sourceEntityId: nodeId,
+            targetEntityId: getEntityIdFromRigidBody(payload.other.rigidBody),
+            targetRigidBody: payload.other.rigidBody,
+        });
+    }, [nodeId]);
+
+    const handleIntersectionExit = useCallback((payload: IntersectionExitPayload) => {
+        if (!nodeId) return;
+        gameEvents.emit('sensor:exit', {
+            sourceEntityId: nodeId,
+            targetEntityId: getEntityIdFromRigidBody(payload.other.rigidBody),
+            targetRigidBody: payload.other.rigidBody,
+        });
+    }, [nodeId]);
+
+    const handleCollisionEnter = useCallback((payload: CollisionPayload) => {
+        if (!nodeId) return;
+        gameEvents.emit('collision:enter', {
+            sourceEntityId: nodeId,
+            targetEntityId: getEntityIdFromRigidBody(payload.other.rigidBody),
+            targetRigidBody: payload.other.rigidBody,
+        });
+    }, [nodeId]);
+
+    const handleCollisionExit = useCallback((payload: CollisionPayload) => {
+        if (!nodeId) return;
+        gameEvents.emit('collision:exit', {
+            sourceEntityId: nodeId,
+            targetEntityId: getEntityIdFromRigidBody(payload.other.rigidBody),
+            targetRigidBody: payload.other.rigidBody,
+        });
+    }, [nodeId]);
 
     // In edit mode, include position/rotation in key to force remount when transform changes
     // This ensures the RigidBody debug visualization updates even when physics is paused
@@ -126,6 +169,12 @@ function PhysicsComponentView({ properties, children, position, rotation, scale,
             position={position}
             rotation={rotation}
             scale={scale}
+            sensor={sensor}
+            userData={{ entityId: nodeId }}
+            onIntersectionEnter={handleIntersectionEnter}
+            onIntersectionExit={handleIntersectionExit}
+            onCollisionEnter={handleCollisionEnter}
+            onCollisionExit={handleCollisionExit}
             {...otherProps}
         >
             {children}

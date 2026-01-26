@@ -35,6 +35,13 @@ export type { Component } from './tools/prefabeditor/components/ComponentRegistr
 export type { FieldDefinition, FieldType } from './tools/prefabeditor/components/Input';
 export type { Prefab, GameObject, ComponentData } from './tools/prefabeditor/types';
 
+// Game Events (physics + custom events)
+export { gameEvents, useGameEvent, getEntityIdFromRigidBody } from './tools/prefabeditor/GameEvents';
+export type { GameEventType, GameEventMap, GameEventPayload, PhysicsEventType, PhysicsEventPayload } from './tools/prefabeditor/GameEvents';
+// Backward compatibility aliases
+export { entityEvents, useEntityEvent } from './tools/prefabeditor/GameEvents';
+export type { EntityEventType, EntityEventPayload } from './tools/prefabeditor/GameEvents';
+
 // Asset Tools
 export { DragDropLoader } from './tools/dragdrop/DragDropLoader';
 export {

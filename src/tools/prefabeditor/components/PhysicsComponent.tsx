@@ -1,4 +1,4 @@
-import { RigidBody, RapierRigidBody } from "@react-three/rapier";
+import { RigidBody, RapierRigidBody, useRapier } from "@react-three/rapier";
 import type { RigidBodyOptions, CollisionPayload, IntersectionEnterPayload, IntersectionExitPayload } from "@react-three/rapier";
 import type { ReactNode } from 'react';
 import { useRef, useEffect, useCallback } from 'react';
@@ -7,7 +7,9 @@ import { FieldRenderer, FieldDefinition } from "./Input";
 import { ComponentData } from "../types";
 import { gameEvents, getEntityIdFromRigidBody } from "../GameEvents";
 
-export type PhysicsProps = RigidBodyOptions;
+export type PhysicsProps = RigidBodyOptions & {
+    activeCollisionTypes?: 'all' | undefined;
+};
 
 const physicsFields: FieldDefinition[] = [
     {
@@ -77,6 +79,15 @@ const physicsFields: FieldDefinition[] = [
         type: 'boolean',
         label: 'Sensor (Trigger Only)',
     },
+    {
+        name: 'activeCollisionTypes',
+        type: 'select',
+        label: 'Collision Detection',
+        options: [
+            { value: '', label: 'Default (Dynamic only)' },
+            { value: 'all', label: 'All (includes kinematic & fixed)' },
+        ],
+    },
 ];
 
 function PhysicsComponentEditor({ component, onUpdate }: { component: ComponentData; onUpdate: (newComp: any) => void }) {
@@ -101,9 +112,10 @@ interface PhysicsViewProps {
 }
 
 function PhysicsComponentView({ properties, children, position, rotation, scale, editMode, nodeId, registerRigidBodyRef }: PhysicsViewProps) {
-    const { type, colliders, sensor, ...otherProps } = properties;
+    const { type, colliders, sensor, activeCollisionTypes, ...otherProps } = properties;
     const colliderType = colliders || (type === 'fixed' ? 'trimesh' : 'hull');
     const rigidBodyRef = useRef<RapierRigidBody>(null);
+    const { rapier } = useRapier();
 
     // Register RigidBody ref when it's available
     useEffect(() => {
@@ -116,6 +128,22 @@ function PhysicsComponentView({ properties, children, position, rotation, scale,
             }
         };
     }, [nodeId, registerRigidBodyRef]);
+
+    // Configure active collision types for kinematic/sensor bodies
+    useEffect(() => {
+        if (activeCollisionTypes === 'all' && rigidBodyRef.current) {
+            const rb = rigidBodyRef.current;
+            // Apply to all colliders on this rigid body
+            for (let i = 0; i < rb.numColliders(); i++) {
+                const collider = rb.collider(i);
+                collider.setActiveCollisionTypes(
+                    rapier.ActiveCollisionTypes.DEFAULT |
+                    rapier.ActiveCollisionTypes.KINEMATIC_FIXED |
+                    rapier.ActiveCollisionTypes.KINEMATIC_KINEMATIC
+                );
+            }
+        }
+    }, [activeCollisionTypes, rapier, type, colliders]);
 
     // Event handlers for physics interactions
     const handleIntersectionEnter = useCallback((payload: IntersectionEnterPayload) => {

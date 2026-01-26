@@ -163,9 +163,13 @@ Keys: **T**ranslate / **R**otate / **S**cale. Drag tree nodes to reparent. Impor
 ## Tree Utilities
 
 ```typescript
-import { findNode, updateNode, deleteNode, cloneNode } from 'react-three-game';
+import { findNode, updateNode, updateNodeById, deleteNode, cloneNode, exportGLBData } from 'react-three-game';
 
-const updated = updateNode(root, nodeId, n => ({ ...n, disabled: true }));
+const node = findNode(root, nodeId);
+const updated = updateNode(root, nodeId, n => ({ ...n, disabled: true }));  // or updateNodeById
+const afterDelete = deleteNode(root, nodeId);
+const cloned = cloneNode(node);
+const glbData = await exportGLBData(sceneRoot);  // export scene to GLB ArrayBuffer
 ```
 
 ## Development

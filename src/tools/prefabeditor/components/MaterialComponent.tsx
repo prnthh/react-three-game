@@ -15,8 +15,18 @@ import {
     LinearMipmapNearestFilter,
     LinearMipmapLinearFilter,
     MinificationTextureFilter,
-    MagnificationTextureFilter
+    MagnificationTextureFilter,
+    MeshStandardMaterialProperties
 } from 'three';
+
+export interface MaterialProps extends Omit<MeshStandardMaterialProperties, 'args'> {
+    texture?: string;
+    repeat?: boolean;
+    repeatCount?: [number, number];
+    generateMipmaps?: boolean;
+    minFilter?: string;
+    magFilter?: string;
+}
 
 function TexturePicker({
     value,
@@ -71,6 +81,13 @@ function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { compo
     const fields: FieldDefinition[] = [
         { name: 'color', type: 'color', label: 'Color' },
         { name: 'wireframe', type: 'boolean', label: 'Wireframe' },
+        { name: 'transparent', type: 'boolean', label: 'Transparent' },
+        { name: 'opacity', type: 'number', label: 'Opacity', min: 0, max: 1, step: 0.01 },
+        { name: 'metalness', type: 'number', label: 'Metalness', min: 0, max: 1, step: 0.01 },
+        { name: 'roughness', type: 'number', label: 'Roughness', min: 0, max: 1, step: 0.01 },
+        { name: 'transmission', type: 'number', label: 'Transmission', min: 0, max: 1, step: 0.01 },
+        { name: 'thickness', type: 'number', label: 'Thickness', min: 0, step: 0.1 },
+        { name: 'ior', type: 'number', label: 'IOR (Index of Refraction)', min: 1, max: 2.333, step: 0.01 },
         {
             name: 'texture',
             type: 'custom',
@@ -135,7 +152,7 @@ function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { compo
 }
 
 // View for Material component
-function MaterialComponentView({ properties, loadedTextures }: { properties: any, loadedTextures?: Record<string, Texture> }) {
+function MaterialComponentView({ properties, loadedTextures }: { properties: MaterialProps, loadedTextures?: Record<string, Texture> }) {
     const textureName = properties?.texture;
     const repeat = properties?.repeat;
     const repeatCount = properties?.repeatCount;
@@ -143,6 +160,18 @@ function MaterialComponentView({ properties, loadedTextures }: { properties: any
     const minFilter = properties?.minFilter || 'LinearMipmapLinearFilter';
     const magFilter = properties?.magFilter || 'LinearFilter';
     const texture = textureName && loadedTextures ? loadedTextures[textureName] : undefined;
+
+    // Destructure all material props and separate custom texture handling props
+    const { 
+        texture: _texture, 
+        repeat: _repeat, 
+        repeatCount: _repeatCount, 
+        generateMipmaps: _generateMipmaps,
+        minFilter: _minFilter,
+        magFilter: _magFilter,
+        map: _map, // Filter out map since we set it explicitly
+        ...materialProps 
+    } = properties || {};
 
     const minFilterMap: Record<string, MinificationTextureFilter> = {
         NearestFilter,
@@ -180,15 +209,11 @@ function MaterialComponentView({ properties, loadedTextures }: { properties: any
         return <meshStandardMaterial color="red" wireframe />;
     }
 
-    const { color, wireframe = false } = properties;
-
     return (
         <meshStandardMaterial
             key={finalTexture?.uuid ?? 'no-texture'}
-            color={color}
-            wireframe={wireframe}
             map={finalTexture}
-            transparent={!!finalTexture}
+            {...materialProps}
         />
     );
 }
@@ -200,7 +225,11 @@ const MaterialComponent: Component = {
     nonComposable: true,
     defaultProperties: {
         color: '#ffffff',
-        wireframe: false
+        wireframe: false,
+        transparent: false,
+        opacity: 1,
+        metalness: 0,
+        roughness: 1
     }
 };
 

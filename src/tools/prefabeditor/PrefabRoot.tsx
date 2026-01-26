@@ -11,6 +11,7 @@ import { GameInstance, GameInstanceProvider, useInstanceCheck } from "./Instance
 import { updateNode } from "./utils";
 import { PhysicsProps } from "./components/PhysicsComponent";
 import { EditorContext } from "./EditorContext";
+import type { RapierRigidBody } from "@react-three/rapier";
 
 components.forEach(registerComponent);
 
@@ -18,6 +19,7 @@ const IDENTITY = new Matrix4();
 
 export interface PrefabRootRef {
     root: Group | null;
+    rigidBodyRefs: Map<string, RapierRigidBody | null>;
 }
 
 export const PrefabRoot = forwardRef<PrefabRootRef, {
@@ -40,17 +42,23 @@ export const PrefabRoot = forwardRef<PrefabRootRef, {
     const [textures, setTextures] = useState<Record<string, Texture>>({});
     const loading = useRef(new Set<string>());
     const objectRefs = useRef<Record<string, Object3D | null>>({});
+    const rigidBodyRefs = useRef<Map<string, RapierRigidBody | null>>(new Map());
     const [selectedObject, setSelectedObject] = useState<Object3D | null>(null);
     const rootRef = useRef<Group>(null);
 
     useImperativeHandle(ref, () => ({
-        root: rootRef.current
+        root: rootRef.current,
+        rigidBodyRefs: rigidBodyRefs.current
     }), []);
 
     const registerRef = useCallback((id: string, obj: Object3D | null) => {
         objectRefs.current[id] = obj;
         if (id === selectedId) setSelectedObject(obj);
     }, [selectedId]);
+
+    const registerRigidBodyRef = useCallback((id: string, rb: RapierRigidBody | null) => {
+        rigidBodyRefs.current.set(id, rb);
+    }, []);
 
     useEffect(() => {
         const originalError = console.error;
@@ -145,6 +153,7 @@ export const PrefabRoot = forwardRef<PrefabRootRef, {
                     onSelect={editMode ? onSelect : undefined}
                     onClick={onClick}
                     registerRef={registerRef}
+                    registerRigidBodyRef={registerRigidBodyRef}
                     loadedModels={models}
                     loadedTextures={textures}
                     editMode={editMode}
@@ -278,6 +287,7 @@ function StandardNode({
     onSelect,
     onClick,
     registerRef,
+    registerRigidBodyRef,
     loadedModels,
     loadedTextures,
     editMode,
@@ -341,6 +351,7 @@ function StandardNode({
                     onSelect={onSelect}
                     onClick={onClick}
                     registerRef={registerRef}
+                    registerRigidBodyRef={registerRigidBodyRef}
                     loadedModels={loadedModels}
                     loadedTextures={loadedTextures}
                     editMode={editMode}
@@ -379,6 +390,8 @@ function StandardNode({
                         rotation={transform.rotation}
                         scale={transform.scale}
                         editMode={editMode}
+                        nodeId={gameObject.id}
+                        registerRigidBodyRef={registerRigidBodyRef}
                     >{inner}</physicsDef.View>
                 ) : null}
             </>
@@ -394,6 +407,8 @@ function StandardNode({
                 rotation={transform.rotation}
                 scale={transform.scale}
                 editMode={editMode}
+                nodeId={gameObject.id}
+                registerRigidBodyRef={registerRigidBodyRef}
             >{inner}</physicsDef.View>
         );
     }
@@ -419,6 +434,7 @@ interface RendererProps {
     onSelect?: (id: string) => void;
     onClick?: (event: ThreeEvent<PointerEvent>, entity: GameObjectType) => void;
     registerRef: (id: string, obj: Object3D | null) => void;
+    registerRigidBodyRef: (id: string, rb: RapierRigidBody | null) => void;
     loadedModels: Record<string, Object3D>;
     loadedTextures: Record<string, Texture>;
     editMode?: boolean;

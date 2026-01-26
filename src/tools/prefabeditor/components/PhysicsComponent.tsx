@@ -1,6 +1,7 @@
 import { RigidBody, RapierRigidBody } from "@react-three/rapier";
 import type { RigidBodyOptions } from "@react-three/rapier";
 import type { ReactNode } from 'react';
+import { useRef, useEffect } from 'react';
 import { Component } from "./ComponentRegistry";
 import { FieldRenderer, FieldDefinition } from "./Input";
 import { ComponentData } from "../types";
@@ -89,11 +90,26 @@ interface PhysicsViewProps {
     position?: [number, number, number];
     rotation?: [number, number, number];
     scale?: [number, number, number];
+    nodeId?: string;
+    registerRigidBodyRef?: (id: string, rb: RapierRigidBody | null) => void;
 }
 
-function PhysicsComponentView({ properties, children, position, rotation, scale, editMode }: PhysicsViewProps) {
+function PhysicsComponentView({ properties, children, position, rotation, scale, editMode, nodeId, registerRigidBodyRef }: PhysicsViewProps) {
     const { type, colliders, ...otherProps } = properties;
     const colliderType = colliders || (type === 'fixed' ? 'trimesh' : 'hull');
+    const rigidBodyRef = useRef<RapierRigidBody>(null);
+
+    // Register RigidBody ref when it's available
+    useEffect(() => {
+        if (nodeId && registerRigidBodyRef && rigidBodyRef.current) {
+            registerRigidBodyRef(nodeId, rigidBodyRef.current);
+        }
+        return () => {
+            if (nodeId && registerRigidBodyRef) {
+                registerRigidBodyRef(nodeId, null);
+            }
+        };
+    }, [nodeId, registerRigidBodyRef]);
 
     // In edit mode, include position/rotation in key to force remount when transform changes
     // This ensures the RigidBody debug visualization updates even when physics is paused
@@ -104,6 +120,7 @@ function PhysicsComponentView({ properties, children, position, rotation, scale,
     return (
         <RigidBody
             key={rbKey}
+            ref={rigidBodyRef}
             type={type}
             colliders={colliderType as any}
             position={position}

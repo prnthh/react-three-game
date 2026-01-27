@@ -51,12 +51,12 @@ export const viewport: Viewport = {
 };
 
 export default function Home() {
-  return <main className="flex flex-col gap-4 h-screen w-screen items-center justify-center text-zinc-900 dark:text-zinc-100">
+  return <main className="flex flex-col gap-4 h-screen w-screen items-center justify-center text-zinc-900">
     <Section title="React-Three-Game">
       <h1 className="font-mono font-light tracking-wider">
         REACT-THREE-GAME (R3G)
       </h1>
-      <div className="mb-4 opacity-50">
+      <div className="mb-4 opacity-50 leading-tight">
         Batteries-included Game Engine <br /> for react-three-fiber.
       </div>
 
@@ -64,10 +64,9 @@ export default function Home() {
         <Dropdown />
         <Link
           href="/editor"
-          className="group relative overflow-hidden border border-zinc-400 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-900 px-6 py-3 font-mono uppercase tracking-wide transition-all hover:border-zinc-500"
+          className="border border-zinc-400 px-6 py-3 font-mono text-sm uppercase hover:bg-zinc-200"
         >
-          <span className="relative z-10">Use Editor</span>
-          <div className="absolute inset-0 -translate-x-full bg-zinc-200 dark:bg-zinc-800 transition-transform group-hover:translate-x-0" />
+          Use Editor
         </Link>
       </div>
 
@@ -81,9 +80,9 @@ export default function Home() {
 }
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => {
-  return <div className="relative border border-zinc-300 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-12 shadow-2xl shadow-zinc-200/50 dark:shadow-zinc-950/50">
-    <div className="absolute -left-px -top-px h-8 w-8 border-l border-t border-zinc-400 dark:border-zinc-600" />
-    <div className="absolute -right-px -top-px h-8 w-8 border-r border-t border-zinc-400 dark:border-zinc-600" />
+  return <div className="relative border border-zinc-300 bg-zinc-50 p-12 shadow-2xl shadow-zinc-200/50">
+    <div className="absolute -left-px -top-px h-8 w-8 border-l border-t border-zinc-400" />
+    <div className="absolute -right-px -top-px h-8 w-8 border-r border-t border-zinc-400" />
 
 
     {children}

@@ -9,11 +9,10 @@ export default function AssetViewerPage({ basePath = "" }: { basePath?: string }
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const base = basePath ? `${basePath}/` : '';
         Promise.all([
-            fetch(`/${base}textures/manifest.json`).then(r => r.json()),
-            fetch(`/${base}models/manifest.json`).then(r => r.json()),
-            fetch(`/${base}sound/manifest.json`).then(r => r.json()).catch(() => [])
+            fetch(`${basePath}/textures/manifest.json`).then(r => r.json()),
+            fetch(`${basePath}/models/manifest.json`).then(r => r.json()),
+            fetch(`${basePath}/sound/manifest.json`).then(r => r.json()).catch(() => [])
         ]).then(([textureData, modelData, soundData]) => {
             setTextures(textureData);
             setModels(modelData);

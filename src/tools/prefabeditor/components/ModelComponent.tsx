@@ -19,8 +19,7 @@ function ModelPicker({
     const [showPicker, setShowPicker] = useState(false);
 
     useEffect(() => {
-        const base = basePath ? `${basePath}/` : '';
-        fetch(`/${base}models/manifest.json`)
+        fetch(`${basePath}/models/manifest.json`)
             .then(r => r.json())
             .then(data => setModelFiles(Array.isArray(data) ? data : data.files || []))
             .catch(console.error);

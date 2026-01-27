@@ -41,8 +41,7 @@ function TexturePicker({
     const [showPicker, setShowPicker] = useState(false);
 
     useEffect(() => {
-        const base = basePath ? `${basePath}/` : '';
-        fetch(`/${base}textures/manifest.json`)
+        fetch(`${basePath}/textures/manifest.json`)
             .then(r => r.json())
             .then(data => setTextureFiles(Array.isArray(data) ? data : data.files || []))
             .catch(console.error);

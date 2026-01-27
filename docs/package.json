@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "generate-manifests": "sh ./public/generate-manifests.sh"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",

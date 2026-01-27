@@ -2,7 +2,7 @@
 
 # Script to generate manifest.json files for models, textures, and sound folders
 
-PUBLIC_DIR="./public"
+PUBLIC_DIR="../public"
 
 # Generate models manifest
 echo "Generating models manifest..."

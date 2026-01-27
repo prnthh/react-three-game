@@ -273,7 +273,7 @@ export default function EditorTree({
                 </div>
                 {!collapsed && (
                     <>
-                        <div style={{ padding: '4px 6px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                        <div style={{ padding: '4px 4px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                             <input
                                 type="text"
                                 placeholder="Search nodes..."

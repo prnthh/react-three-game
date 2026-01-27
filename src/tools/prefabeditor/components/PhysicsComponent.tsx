@@ -95,7 +95,7 @@ function PhysicsComponentEditor({ component, onUpdate }: { component: ComponentD
         <FieldRenderer
             fields={physicsFields}
             values={component.properties}
-            onChange={(props) => onUpdate({ ...component, properties: { ...component.properties, ...props } })}
+            onChange={onUpdate}
         />
     );
 }

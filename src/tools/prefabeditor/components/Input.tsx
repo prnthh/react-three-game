@@ -67,7 +67,7 @@ export type FieldDefinition =
 // Shared styles
 const styles = {
     input: {
-        width: '100%',
+        width: '80px',
         backgroundColor: 'rgba(0, 0, 0, 0.4)',
         border: '1px solid rgba(34, 211, 238, 0.3)',
         padding: '2px 4px',
@@ -75,11 +75,12 @@ const styles = {
         color: 'rgba(165, 243, 252, 1)',
         fontFamily: 'monospace',
         outline: 'none',
+        textAlign: 'right',
     } as React.CSSProperties,
     label: {
         display: 'block',
         fontSize: '9px',
-        color: 'rgba(34, 211, 238, 0.6)',
+        color: 'rgba(34, 211, 238, 0.9)',
         textTransform: 'uppercase',
         letterSpacing: '0.05em',
         marginBottom: 2,
@@ -93,9 +94,10 @@ interface InputProps {
     min?: number;
     max?: number;
     style?: React.CSSProperties;
+    label?: string;
 }
 
-export function Input({ value, onChange, step, min, max, style }: InputProps) {
+export function Input({ value, onChange, step, min, max, style, label }: InputProps) {
     const [draft, setDraft] = useState<string>(() => value.toString());
 
     useEffect(() => {
@@ -118,6 +120,93 @@ export function Input({ value, onChange, step, min, max, style }: InputProps) {
             setDraft(value.toString());
         }
     };
+
+    const dragState = useRef<{
+        startX: number;
+        startValue: number;
+    } | null>(null);
+
+    const startScrub = (e: React.PointerEvent) => {
+        if (!label) return;
+        e.preventDefault();
+
+        dragState.current = {
+            startX: e.clientX,
+            startValue: value
+        };
+
+        (e.target as HTMLElement).setPointerCapture(e.pointerId);
+        document.body.style.cursor = "ew-resize";
+    };
+
+    const onScrubMove = (e: React.PointerEvent) => {
+        if (!dragState.current) return;
+
+        const { startX, startValue } = dragState.current;
+        const dx = e.clientX - startX;
+
+        let speed = 0.02;
+        if (e.shiftKey) speed *= 0.1; // fine
+        if (e.altKey) speed *= 5;     // coarse
+
+        let nextValue = startValue + dx * speed;
+
+        // Apply min/max constraints
+        if (min !== undefined && nextValue < min) nextValue = min;
+        if (max !== undefined && nextValue > max) nextValue = max;
+
+        setDraft(nextValue.toFixed(3));
+        onChange(nextValue);
+    };
+
+    const endScrub = (e: React.PointerEvent) => {
+        if (!dragState.current) return;
+
+        dragState.current = null;
+        document.body.style.cursor = "";
+        (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    };
+
+    if (label) {
+        return (
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+            }}>
+                <span
+                    style={{
+                        ...styles.label,
+                        marginBottom: 0,
+                        cursor: 'ew-resize',
+                        userSelect: 'none',
+                        flex: '0 0 auto',
+                        minWidth: 20,
+                    }}
+                    onPointerDown={startScrub}
+                    onPointerMove={onScrubMove}
+                    onPointerUp={endScrub}
+                >
+                    {label}
+                </span>
+                <input
+                    type="text"
+                    value={draft}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                            (e.target as HTMLInputElement).blur();
+                        }
+                    }}
+                    step={step}
+                    min={min}
+                    max={max}
+                    style={{ ...styles.input, ...style }}
+                />
+            </div>
+        );
+    }
 
     return (
         <input
@@ -316,23 +405,25 @@ export function ColorInput({
     return (
         <div>
             {label && <Label>{label}</Label>}
-            <div style={{ display: 'flex', gap: 2 }}>
+            <div style={{ display: 'flex', gap: 4, justifyContent: 'space-between' }}>
                 <input
                     type="color"
                     style={{
-                        height: 20,
-                        width: 20,
+                        height: 32,
+                        width: 48,
                         backgroundColor: 'transparent',
-                        border: 'none',
+                        border: '1px solid rgba(34, 211, 238, 0.3)',
+                        borderRadius: 4,
                         cursor: 'pointer',
                         padding: 0,
+                        flexShrink: 0,
                     }}
                     value={value}
                     onChange={e => onChange(e.target.value)}
                 />
                 <input
                     type="text"
-                    style={{ ...styles.input, flex: 1 }}
+                    style={{ ...styles.input, }}
                     value={value}
                     onChange={e => onChange(e.target.value)}
                 />
@@ -376,7 +467,7 @@ export function BooleanInput({
     onChange: (value: boolean) => void;
 }) {
     return (
-        <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             {label && <Label>{label}</Label>}
             <input
                 type="checkbox"
@@ -406,7 +497,7 @@ export function SelectInput({
     options: { value: string; label: string }[];
 }) {
     return (
-        <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             {label && <Label>{label}</Label>}
             <select
                 style={styles.input as React.CSSProperties}
@@ -457,16 +548,15 @@ export function FieldRenderer({ fields, values, onChange }: FieldRendererProps) 
 
                     case 'number':
                         return (
-                            <div key={field.name}>
-                                <Label>{field.label}</Label>
-                                <Input
-                                    value={value ?? 0}
-                                    onChange={v => updateField(field.name, v)}
-                                    min={field.min}
-                                    max={field.max}
-                                    step={field.step}
-                                />
-                            </div>
+                            <Input
+                                key={field.name}
+                                label={field.label}
+                                value={value ?? 0}
+                                onChange={v => updateField(field.name, v)}
+                                min={field.min}
+                                max={field.max}
+                                step={field.step}
+                            />
                         );
 
                     case 'string':

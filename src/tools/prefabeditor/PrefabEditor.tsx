@@ -33,9 +33,10 @@ const DEFAULT_PREFAB: Prefab = {
 const PrefabEditor = forwardRef<PrefabEditorRef, {
     basePath?: string;
     initialPrefab?: Prefab;
+    physics?: boolean;
     onPrefabChange?: (prefab: Prefab) => void;
     children?: React.ReactNode;
-}>(({ basePath, initialPrefab, onPrefabChange, children }, ref) => {
+}>(({ basePath, initialPrefab, physics = true, onPrefabChange, children }, ref) => {
     const [editMode, setEditMode] = useState(true);
     const [loadedPrefab, setLoadedPrefab] = useState<Prefab>(initialPrefab ?? DEFAULT_PREFAB);
     const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -132,6 +133,23 @@ const PrefabEditor = forwardRef<PrefabEditorRef, {
         rootRef: prefabRootRef
     }), [loadedPrefab]);
 
+    const content = (
+        <>
+            <ambientLight intensity={1.5} />
+            <gridHelper args={[10, 10]} position={[0, -1, 0]} />
+            <PrefabRoot
+                ref={prefabRootRef}
+                data={loadedPrefab}
+                editMode={editMode}
+                onPrefabChange={updatePrefab}
+                selectedId={selectedId}
+                onSelect={setSelectedId}
+                basePath={basePath}
+            />
+            {children}
+        </>
+    );
+
     return <EditorContext.Provider value={{
         transformMode,
         setTransformMode,
@@ -141,20 +159,11 @@ const PrefabEditor = forwardRef<PrefabEditorRef, {
         onExportGLB: handleExportGLB
     }}>
         <GameCanvas>
-            <Physics debug={editMode} paused={editMode}>
-                <ambientLight intensity={1.5} />
-                <gridHelper args={[10, 10]} position={[0, -1, 0]} />
-                <PrefabRoot
-                    ref={prefabRootRef}
-                    data={loadedPrefab}
-                    editMode={editMode}
-                    onPrefabChange={updatePrefab}
-                    selectedId={selectedId}
-                    onSelect={setSelectedId}
-                    basePath={basePath}
-                />
-                {children}
-            </Physics>
+            {physics ? (
+                <Physics debug={editMode} paused={editMode}>
+                    {content}
+                </Physics>
+            ) : content}
         </GameCanvas>
 
         <div style={toolbar.panel}>

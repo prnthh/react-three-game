@@ -55,7 +55,15 @@ function TexturePicker({
                 onClick={() => setShowPicker(!showPicker)}
                 style={{ padding: '4px 8px', backgroundColor: '#1f2937', color: 'inherit', fontSize: 10, cursor: 'pointer', border: '1px solid rgba(34, 211, 238, 0.3)', marginTop: 4 }}
             >
-                {showPicker ? 'Hide' : 'Change'}
+                {showPicker ? 'Cancel' : 'Change'}
+            </button>
+            <button
+                onClick={() => {
+                    onChange(undefined as any);
+                }}
+                style={{ padding: '4px 8px', backgroundColor: '#1f2937', color: 'inherit', fontSize: 10, cursor: 'pointer', border: '1px solid rgba(34, 211, 238, 0.3)', marginTop: 4, marginLeft: 4 }}
+            >
+                Clear
             </button>
             {showPicker && (
                 <div style={{ position: 'fixed', left: '-10px', top: '50%', transform: 'translate(-100%, -50%)', background: 'rgba(0,0,0,0.9)', padding: 16, border: '1px solid rgba(34, 211, 238, 0.3)', maxHeight: '80vh', overflowY: 'auto', zIndex: 1000 }}>
@@ -106,12 +114,20 @@ function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { compo
                 render: ({ value, onChange }: { value: [number, number] | undefined; onChange: (v: [number, number]) => void }) => (
                     <div style={{ display: 'flex', gap: 2 }}>
                         <Input
+                            label="X"
                             value={value?.[0] ?? 1}
                             onChange={v => onChange([v, value?.[1] ?? 1])}
+                            min={0.01}
+                            max={100}
+                            step={0.1}
                         />
                         <Input
+                            label="Y"
                             value={value?.[1] ?? 1}
                             onChange={v => onChange([value?.[0] ?? 1, v])}
+                            min={0.01}
+                            max={100}
+                            step={0.1}
                         />
                     </div>
                 ),
@@ -162,15 +178,15 @@ function MaterialComponentView({ properties, loadedTextures }: { properties: Mat
     const texture = textureName && loadedTextures ? loadedTextures[textureName] : undefined;
 
     // Destructure all material props and separate custom texture handling props
-    const { 
-        texture: _texture, 
-        repeat: _repeat, 
-        repeatCount: _repeatCount, 
+    const {
+        texture: _texture,
+        repeat: _repeat,
+        repeatCount: _repeatCount,
         generateMipmaps: _generateMipmaps,
         minFilter: _minFilter,
         magFilter: _magFilter,
         map: _map, // Filter out map since we set it explicitly
-        ...materialProps 
+        ...materialProps
     } = properties || {};
 
     const minFilterMap: Record<string, MinificationTextureFilter> = {

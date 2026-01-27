@@ -45,7 +45,7 @@ export function ground(options: GroundOptions = {}): GameObject {
 		position = [0, 0, 0],
 		rotation = [-Math.PI / 2, 0, 0],
 		scale = [1, 1, 1],
-		color = "white",
+		color = "#eeeeee",
 		texture,
 		repeat = texture ? true : false,
 		repeatCount = [25, 25],

@@ -115,7 +115,15 @@ function PhysicsComponentView({ properties, children, position, rotation, scale,
     const { type, colliders, sensor, activeCollisionTypes, ...otherProps } = properties;
     const colliderType = colliders || (type === 'fixed' ? 'trimesh' : 'hull');
     const rigidBodyRef = useRef<RapierRigidBody>(null);
-    const { rapier } = useRapier();
+
+    // Try to get rapier context - will be null if not inside <Physics>
+    let rapier: any = null;
+    try {
+        const rapierContext = useRapier();
+        rapier = rapierContext.rapier;
+    } catch (e) {
+        // Not inside Physics context - that's ok, just won't have rapier features
+    }
 
     // Register RigidBody ref when it's available
     useEffect(() => {
@@ -131,7 +139,7 @@ function PhysicsComponentView({ properties, children, position, rotation, scale,
 
     // Configure active collision types for kinematic/sensor bodies
     useEffect(() => {
-        if (activeCollisionTypes === 'all' && rigidBodyRef.current) {
+        if (activeCollisionTypes === 'all' && rigidBodyRef.current && rapier) {
             const rb = rigidBodyRef.current;
             // Apply to all colliders on this rigid body
             for (let i = 0; i < rb.numColliders(); i++) {

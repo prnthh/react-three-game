@@ -39,7 +39,15 @@ function ModelPicker({
                 onClick={() => setShowPicker(!showPicker)}
                 style={{ padding: '4px 8px', backgroundColor: '#1f2937', color: 'inherit', fontSize: 10, cursor: 'pointer', border: '1px solid rgba(34, 211, 238, 0.3)', marginTop: 4 }}
             >
-                {showPicker ? 'Hide' : 'Change'}
+                {showPicker ? 'Cancel' : 'Change'}
+            </button>
+            <button
+                onClick={() => {
+                    onChange(undefined as any);
+                }}
+                style={{ padding: '4px 8px', backgroundColor: '#1f2937', color: 'inherit', fontSize: 10, cursor: 'pointer', border: '1px solid rgba(34, 211, 238, 0.3)', marginTop: 4, marginLeft: 4 }}
+            >
+                Clear
             </button>
             {showPicker && (
                 <div style={{ position: 'fixed', left: '-10px', top: '50%', transform: 'translate(-100%, -50%)', background: 'rgba(0,0,0,0.9)', padding: 16, border: '1px solid rgba(34, 211, 238, 0.3)', maxHeight: '80vh', overflowY: 'auto', zIndex: 1000 }}>

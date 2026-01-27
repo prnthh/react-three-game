@@ -55,20 +55,20 @@ function GeometryComponentEditor({
                 const currentArgs = values.args || currentSchema.defaults;
 
                 return (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                         {currentSchema.labels.map((label, i) => (
-                            <div key={label}>
-                                <Label>{label}</Label>
-                                <Input
-                                    value={currentArgs[i] ?? currentSchema.defaults[i]}
-                                    step={0.1}
-                                    onChange={value => {
-                                        const next = [...currentArgs];
-                                        next[i] = value;
-                                        onChangeMultiple({ args: next });
-                                    }}
-                                />
-                            </div>
+                            <Input
+                                key={label}
+                                label={label}
+                                value={currentArgs[i] ?? currentSchema.defaults[i]}
+                                step={0.1}
+                                min={0.01}
+                                onChange={value => {
+                                    const next = [...currentArgs];
+                                    next[i] = value;
+                                    onChangeMultiple({ args: next });
+                                }}
+                            />
                         ))}
                     </div>
                 );

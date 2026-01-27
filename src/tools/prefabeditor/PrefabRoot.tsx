@@ -11,7 +11,9 @@ import { GameInstance, GameInstanceProvider, useInstanceCheck } from "./Instance
 import { updateNode } from "./utils";
 import { PhysicsProps } from "./components/PhysicsComponent";
 import { EditorContext } from "./EditorContext";
-import type { RapierRigidBody } from "@react-three/rapier";
+
+// Dynamic type to avoid requiring @react-three/rapier when not using physics
+type RapierRigidBody = any;
 
 components.forEach(registerComponent);
 
@@ -19,7 +21,7 @@ const IDENTITY = new Matrix4();
 
 export interface PrefabRootRef {
     root: Group | null;
-    rigidBodyRefs: Map<string, RapierRigidBody | null>;
+    rigidBodyRefs: Map<string, any>; // RigidBody refs only populated when using physics
 }
 
 export const PrefabRoot = forwardRef<PrefabRootRef, {
@@ -56,7 +58,7 @@ export const PrefabRoot = forwardRef<PrefabRootRef, {
         if (id === selectedId) setSelectedObject(obj);
     }, [selectedId]);
 
-    const registerRigidBodyRef = useCallback((id: string, rb: RapierRigidBody | null) => {
+    const registerRigidBodyRef = useCallback((id: string, rb: any) => {
         rigidBodyRefs.current.set(id, rb);
     }, []);
 
@@ -126,14 +128,20 @@ export const PrefabRoot = forwardRef<PrefabRootRef, {
         texturesToLoad.forEach(file => {
             if (textures[file] || loading.current.has(file)) return;
             loading.current.add(file);
-            const path =
-                file.startsWith("/")
+
+            // Handle full URLs (http/https) or regular paths
+            const path = file.startsWith("http://") || file.startsWith("https://")
+                ? file
+                : file.startsWith("/")
                     ? `${basePath}${file}`
                     : `${basePath}/${file}`;
 
             loader.load(path, tex => {
                 tex.colorSpace = SRGBColorSpace;
                 setTextures(t => ({ ...t, [file]: tex }));
+            }, undefined, (err) => {
+                console.error(`Failed to load texture: ${path}`, err);
+                loading.current.delete(file);
             });
         });
     }, [data, models, textures]);
@@ -434,7 +442,7 @@ interface RendererProps {
     onSelect?: (id: string) => void;
     onClick?: (event: ThreeEvent<PointerEvent>, entity: GameObjectType) => void;
     registerRef: (id: string, obj: Object3D | null) => void;
-    registerRigidBodyRef: (id: string, rb: RapierRigidBody | null) => void;
+    registerRigidBodyRef: (id: string, rb: any) => void;
     loadedModels: Record<string, Object3D>;
     loadedTextures: Record<string, Texture>;
     editMode?: boolean;

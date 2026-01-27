@@ -35,18 +35,11 @@ export default function Home() {
                         material: {
                             type: "Material",
                             properties: {
-                                color: "white",
                                 texture: "/textures/GreyboxTextures/greybox_light_grid.png",
                                 repeat: true,
                                 repeatCount: [25, 25]
                             }
                         },
-                        physics: {
-                            type: "Physics",
-                            properties: {
-                                type: "fixed"
-                            }
-                        }
                     }
                 }
             ]

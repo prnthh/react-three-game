@@ -29,6 +29,7 @@ export default function EditorTree({
     const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
     const [collapsed, setCollapsed] = useState(false);
     const [fileMenuOpen, setFileMenuOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
 
     if (!prefabData || !setPrefabData) return null;
 
@@ -91,6 +92,17 @@ export default function EditorTree({
         setContextMenu(null);
     };
 
+    const handleToggleDisabled = (nodeId: string) => {
+        setPrefabData(prev => ({
+            ...prev,
+            root: updateNodeById(prev.root, nodeId, node => ({
+                ...node,
+                disabled: !node.disabled
+            }))
+        }));
+        setContextMenu(null);
+    };
+
     const handleDragStart = (e: React.DragEvent, id: string) => {
         if (id === prefabData.root.id) return e.preventDefault();
         e.dataTransfer.effectAllowed = "move";
@@ -128,8 +140,17 @@ export default function EditorTree({
     };
 
 
+    const matchesSearch = (node: GameObject, query: string): boolean => {
+        if (!query) return true;
+        const lowerQuery = query.toLowerCase();
+        const nodeName = (node.name ?? node.id).toLowerCase();
+        if (nodeName.includes(lowerQuery)) return true;
+        return node.children?.some(child => matchesSearch(child, query)) ?? false;
+    };
+
     const renderNode = (node: GameObject, depth = 0): React.ReactNode => {
         if (!node) return null;
+        if (!matchesSearch(node, searchQuery)) return null;
 
         const isSelected = node.id === selectedId;
         const isCollapsed = collapsedIds.has(node.id);
@@ -143,6 +164,10 @@ export default function EditorTree({
                         ...tree.row,
                         ...(isSelected ? tree.selected : {}),
                         paddingLeft: `${depth * 12 + 6}px`,
+                        opacity: node.disabled ? 0.4 : 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
                     }}
                     draggable={!isRoot}
                     onClick={(e) => { e.stopPropagation(); setSelectedId(node.id); }}
@@ -152,22 +177,44 @@ export default function EditorTree({
                     onDragOver={(e) => handleDragOver(e, node.id)}
                     onDrop={(e) => handleDrop(e, node.id)}
                 >
-                    <span
-                        style={{
-                            width: 12,
-                            opacity: 0.6,
-                            marginRight: 4,
-                            cursor: 'pointer',
-                            visibility: hasChildren ? 'visible' : 'hidden'
-                        }}
-                        onClick={(e) => hasChildren && toggleCollapse(e, node.id)}
-                    >
-                        {isCollapsed ? '▶' : '▼'}
-                    </span>
-                    {!isRoot && <span style={{ marginRight: 4, opacity: 0.4 }}>⋮⋮</span>}
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {node.name ?? node.id}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
+                        <span
+                            style={{
+                                width: 12,
+                                opacity: 0.6,
+                                marginRight: 4,
+                                cursor: 'pointer',
+                                visibility: hasChildren ? 'visible' : 'hidden'
+                            }}
+                            onClick={(e) => hasChildren && toggleCollapse(e, node.id)}
+                        >
+                            {isCollapsed ? '▶' : '▼'}
+                        </span>
+                        {!isRoot && <span style={{ marginRight: 4, opacity: 0.4 }}>⋮⋮</span>}
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {node.name ?? node.id}
+                        </span>
+                    </div>
+                    {!isRoot && (
+                        <button
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                padding: '0 4px',
+                                fontSize: 14,
+                                opacity: node.disabled ? 0.5 : 0.7,
+                                color: 'inherit',
+                            }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleDisabled(node.id);
+                            }}
+                            title={node.disabled ? 'Enable' : 'Disable'}
+                        >
+                            {node.disabled ? '◎' : '◉'}
+                        </button>
+                    )}
                 </div>
                 {!isCollapsed && node.children && node.children.map(child => renderNode(child, depth + 1))}
             </div>
@@ -176,6 +223,11 @@ export default function EditorTree({
 
     return (
         <>
+            <style>{`
+.tree-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+.tree-scroll::-webkit-scrollbar-track { background: transparent; }
+.tree-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 8px; }
+            `}</style>
             <div style={{ ...tree.panel, width: collapsed ? 'auto' : 224 }} onClick={() => { setContextMenu(null); setFileMenuOpen(false); }}>
                 <div style={base.header}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }} onClick={() => setCollapsed(!collapsed)}>
@@ -219,7 +271,30 @@ export default function EditorTree({
                         </div>
                     )}
                 </div>
-                {!collapsed && <div style={tree.scroll}>{renderNode(prefabData.root)}</div>}
+                {!collapsed && (
+                    <>
+                        <div style={{ padding: '4px 6px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                            <input
+                                type="text"
+                                placeholder="Search nodes..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onClick={(e) => e.stopPropagation()}
+                                style={{
+                                    width: '100%',
+                                    padding: '4px 8px',
+                                    background: 'rgba(255,255,255,0.05)',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    borderRadius: 3,
+                                    color: 'inherit',
+                                    fontSize: 11,
+                                    outline: 'none',
+                                }}
+                            />
+                        </div>
+                        <div className="tree-scroll" style={tree.scroll}>{renderNode(prefabData.root)}</div>
+                    </>
+                )}
             </div>
 
             {contextMenu && (

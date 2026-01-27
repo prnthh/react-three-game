@@ -62,7 +62,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "white",
+              "color": "#eeeeee",
               "texture": "/textures/GreyboxTextures/greybox_light_grid.png",
               "repeat": true,
               "repeatCount": [

@@ -39,7 +39,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "white",
+              "color": "#eeeeee",
               "texture": "/textures/GreyboxTextures/greybox_dark_grid.png",
               "repeat": true,
               "repeatCount": [20, 20]
@@ -76,7 +76,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "white",
+              "color": "#eeeeee",
               "texture": "/textures/GreyboxTextures/greybox_teal_grid.png",
               "repeat": true,
               "repeatCount": [3, 2]
@@ -113,7 +113,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "white",
+              "color": "#eeeeee",
               "texture": "/textures/GreyboxTextures/greybox_purple_grid.png",
               "repeat": true,
               "repeatCount": [2.5, 2.5]
@@ -150,7 +150,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "white",
+              "color": "#eeeeee",
               "texture": "/textures/GreyboxTextures/greybox_orange_grid.png",
               "repeat": true,
               "repeatCount": [4, 1.5]
@@ -187,7 +187,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "white",
+              "color": "#eeeeee",
               "texture": "/textures/GreyboxTextures/greybox_lime_grid.png",
               "repeat": true,
               "repeatCount": [2, 2]
@@ -224,7 +224,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "white",
+              "color": "#eeeeee",
               "texture": "/textures/GreyboxTextures/greybox_yellow_grid.png",
               "repeat": true,
               "repeatCount": [2.5, 1.5]
@@ -261,7 +261,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "white",
+              "color": "#eeeeee",
               "texture": "/textures/GreyboxTextures/greybox_grey_grid.png",
               "repeat": true,
               "repeatCount": [20, 3.5]
@@ -298,7 +298,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "white",
+              "color": "#eeeeee",
               "texture": "/textures/GreyboxTextures/greybox_grey_grid.png",
               "repeat": true,
               "repeatCount": [20, 3.5]
@@ -335,7 +335,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "white",
+              "color": "#eeeeee",
               "texture": "/textures/GreyboxTextures/greybox_grey_grid.png",
               "repeat": true,
               "repeatCount": [20, 3.5]
@@ -372,7 +372,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "white",
+              "color": "#eeeeee",
               "texture": "/textures/GreyboxTextures/greybox_red_grid.png",
               "repeat": true,
               "repeatCount": [1, 1.5]
@@ -409,7 +409,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "white",
+              "color": "#eeeeee",
               "texture": "/textures/GreyboxTextures/greybox_blue_grid.png",
               "repeat": true,
               "repeatCount": [1.5, 1]
@@ -580,7 +580,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "white",
+              "color": "#eeeeee",
               "texture": "/textures/GreyboxTextures/greybox_green_grid.png"
             }
           }
@@ -645,7 +645,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "white",
+              "color": "#eeeeee",
               "texture": "/textures/GreyboxTextures/greybox_teal_grid.png"
             }
           },
@@ -680,7 +680,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "white",
+              "color": "#eeeeee",
               "texture": "/textures/GreyboxTextures/greybox_teal_grid.png"
             }
           },

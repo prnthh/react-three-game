@@ -1,8 +1,8 @@
 "use client";
 
 import { PrefabEditor, registerComponent } from "react-three-game";
-import rotatorDemo from "../../samples/rotator-demo.json";
-import RotatorComponent from "../../plugins/RotatorComponent";
+import RotatorComponent from "./RotatorComponent";
+import rotatorDemo from "./rotator-demo.json";
 
 // Register custom component before using the editor
 registerComponent(RotatorComponent);

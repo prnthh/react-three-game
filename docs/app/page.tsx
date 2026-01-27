@@ -2,15 +2,16 @@
 import type { Viewport } from "next";
 import Link from "next/link";
 import ClickToCopy from "./components/ClickToCopy";
+import DemoApp from "./components/DemoAppLoader";
 import Dropdown from "./components/Dropdown";
 
 function Features() {
   return (
-    <div className="mt-6 border-t border-zinc-300 dark:border-zinc-800 pt-6">
-      <div className="mb-3 font-mono text-xs uppercase tracking-widest opacity-50">
+    <div>
+      <div className="mb-3 font-mono uppercase opacity-50">
         Features
       </div>
-      <ul className="space-y-1.5 font-mono text-sm text-opacity-50 dark:text-zinc-400">
+      <ul className="space-y-1.5 font-mono text-opacity-50 dark:text-zinc-400">
         <li className="flex items-start gap-2">
           <span className="text-green-500">▸</span>
           <span>JSON scene graph</span>
@@ -50,23 +51,20 @@ export const viewport: Viewport = {
 };
 
 export default function Home() {
-  return <main className="flex h-screen w-screen items-center justify-center bg-white dark:bg-black text-zinc-900 dark:text-zinc-100">
-    <div className="relative border border-zinc-300 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-12 shadow-2xl shadow-zinc-200/50 dark:shadow-zinc-950/50">
-      <div className="absolute -left-px -top-px h-8 w-8 border-l border-t border-zinc-400 dark:border-zinc-600" />
-      <div className="absolute -right-px -top-px h-8 w-8 border-r border-t border-zinc-400 dark:border-zinc-600" />
-
-      <h1 className="mb-2 font-mono text-3xl font-light tracking-wider">
-        REACT-THREE-GAME
+  return <main className="flex flex-col gap-4 h-screen w-screen items-center justify-center text-zinc-900 dark:text-zinc-100">
+    <Section title="React-Three-Game">
+      <h1 className="font-mono font-light tracking-wider">
+        REACT-THREE-GAME (R3G)
       </h1>
-      <div className="mb-8 font-mono text-xs uppercase tracking-widest opacity-50">
-        Batteries-included Game Engine <br /> for react-three-fiber
+      <div className="mb-4 opacity-50">
+        Batteries-included Game Engine <br /> for react-three-fiber.
       </div>
 
       <div className="flex gap-3">
         <Dropdown />
         <Link
           href="/editor"
-          className="group relative overflow-hidden border border-zinc-400 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-900 px-6 py-3 font-mono text-sm uppercase tracking-wide transition-all hover:border-zinc-500"
+          className="group relative overflow-hidden border border-zinc-400 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-900 px-6 py-3 font-mono uppercase tracking-wide transition-all hover:border-zinc-500"
         >
           <span className="relative z-10">Use Editor</span>
           <div className="absolute inset-0 -translate-x-full bg-zinc-200 dark:bg-zinc-800 transition-transform group-hover:translate-x-0" />
@@ -74,7 +72,20 @@ export default function Home() {
       </div>
 
       <ClickToCopy text={"npm i react-three-game"} />
+    </Section>
+    <Section title="Documentation">
       <Features />
-    </div>
+    </Section>
+    <DemoApp />
   </main>;
+}
+
+const Section = ({ title, children }: { title: string; children: React.ReactNode }) => {
+  return <div className="relative border border-zinc-300 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-12 shadow-2xl shadow-zinc-200/50 dark:shadow-zinc-950/50">
+    <div className="absolute -left-px -top-px h-8 w-8 border-l border-t border-zinc-400 dark:border-zinc-600" />
+    <div className="absolute -right-px -top-px h-8 w-8 border-r border-t border-zinc-400 dark:border-zinc-600" />
+
+
+    {children}
+  </div>;
 }

@@ -57,7 +57,7 @@ export default function Home() {
         REACT-THREE-GAME (R3G)
       </h1>
       <div className="mb-4 opacity-50 leading-tight">
-        Batteries-included Game Engine <br /> for react-three-fiber.
+        Batteries-included game engine <br /> for react-three-fiber.
       </div>
 
       <div className="flex gap-3">

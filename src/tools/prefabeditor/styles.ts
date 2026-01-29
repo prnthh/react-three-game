@@ -1,7 +1,7 @@
 // Shared editor styles - single source of truth for all prefab editor UI
 
 export const colors = {
-    bg: 'rgba(0,0,0,0.6)',
+    bg: 'rgba(100, 100, 100, 0.5)',
     bgLight: 'rgba(255,255,255,0.06)',
     bgHover: 'rgba(255,255,255,0.1)',
     border: 'rgba(255,255,255,0.15)',

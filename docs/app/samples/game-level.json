@@ -9,9 +9,21 @@
       "transform": {
         "type": "Transform",
         "properties": {
-          "position": [0, 0, 0],
-          "rotation": [0, 0, 0],
-          "scale": [1, 1, 1]
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
         }
       }
     },
@@ -24,25 +36,46 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [0, -0.5, 0],
-              "rotation": [0, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                0,
+                -0.5,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "box",
-              "args": [40, 1, 40]
+              "args": [
+                40,
+                1,
+                40
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
               "color": "#eeeeee",
-              "texture": "/textures/GreyboxTextures/greybox_dark_grid.png",
+              "texture": "/textures/prototyping_textures_32x32px/Prototype_grey_32x32px.png",
               "repeat": true,
-              "repeatCount": [20, 20]
+              "repeatCount": [
+                20,
+                20
+              ],
+              "minFilter": "NearestFilter",
+              "magFilter": "NearestFilter"
             }
           },
           "physics": {
@@ -61,16 +94,32 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [-8, 2, -5],
-              "rotation": [0, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                -8,
+                2,
+                -5
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "box",
-              "args": [6, 0.5, 4]
+              "args": [
+                6,
+                0.5,
+                4
+              ]
             }
           },
           "material": {
@@ -79,7 +128,10 @@
               "color": "#eeeeee",
               "texture": "/textures/GreyboxTextures/greybox_teal_grid.png",
               "repeat": true,
-              "repeatCount": [3, 2]
+              "repeatCount": [
+                3,
+                2
+              ]
             }
           },
           "physics": {
@@ -98,16 +150,32 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [0, 4, -8],
-              "rotation": [0, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                0,
+                4,
+                -8
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "box",
-              "args": [5, 0.5, 5]
+              "args": [
+                5,
+                0.5,
+                5
+              ]
             }
           },
           "material": {
@@ -116,7 +184,10 @@
               "color": "#eeeeee",
               "texture": "/textures/GreyboxTextures/greybox_purple_grid.png",
               "repeat": true,
-              "repeatCount": [2.5, 2.5]
+              "repeatCount": [
+                2.5,
+                2.5
+              ]
             }
           },
           "physics": {
@@ -135,16 +206,32 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [10, 3, 0],
-              "rotation": [0, 0.4, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                10,
+                3,
+                0
+              ],
+              "rotation": [
+                0,
+                0.4,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "box",
-              "args": [8, 0.5, 3]
+              "args": [
+                8,
+                0.5,
+                3
+              ]
             }
           },
           "material": {
@@ -153,7 +240,10 @@
               "color": "#eeeeee",
               "texture": "/textures/GreyboxTextures/greybox_orange_grid.png",
               "repeat": true,
-              "repeatCount": [4, 1.5]
+              "repeatCount": [
+                4,
+                1.5
+              ]
             }
           },
           "physics": {
@@ -172,16 +262,32 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [8, 6, -10],
-              "rotation": [0, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                8,
+                6,
+                -10
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "box",
-              "args": [4, 0.5, 4]
+              "args": [
+                4,
+                0.5,
+                4
+              ]
             }
           },
           "material": {
@@ -190,7 +296,10 @@
               "color": "#eeeeee",
               "texture": "/textures/GreyboxTextures/greybox_lime_grid.png",
               "repeat": true,
-              "repeatCount": [2, 2]
+              "repeatCount": [
+                2,
+                2
+              ]
             }
           },
           "physics": {
@@ -209,16 +318,32 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [-12, 1, -5],
-              "rotation": [0, 0, 0.3],
-              "scale": [1, 1, 1]
+              "position": [
+                -12,
+                1,
+                -5
+              ],
+              "rotation": [
+                0,
+                0,
+                0.3
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "box",
-              "args": [5, 0.3, 3]
+              "args": [
+                5,
+                0.3,
+                3
+              ]
             }
           },
           "material": {
@@ -227,7 +352,10 @@
               "color": "#eeeeee",
               "texture": "/textures/GreyboxTextures/greybox_yellow_grid.png",
               "repeat": true,
-              "repeatCount": [2.5, 1.5]
+              "repeatCount": [
+                2.5,
+                1.5
+              ]
             }
           },
           "physics": {
@@ -246,25 +374,44 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [0, 3, -20],
-              "rotation": [0, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                0,
+                3,
+                -20
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "box",
-              "args": [40, 7, 1]
+              "args": [
+                40,
+                7,
+                1
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
               "color": "#eeeeee",
-              "texture": "/textures/GreyboxTextures/greybox_grey_grid.png",
+              "texture": "/textures/prototyping_textures_32x32px/Prototype_grey_32x32px.png",
               "repeat": true,
-              "repeatCount": [20, 3.5]
+              "repeatCount": [
+                20,
+                3.5
+              ]
             }
           },
           "physics": {
@@ -283,25 +430,44 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [-20, 3, 0],
-              "rotation": [0, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                -20,
+                3,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "box",
-              "args": [1, 7, 40]
+              "args": [
+                1,
+                7,
+                40
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
               "color": "#eeeeee",
-              "texture": "/textures/GreyboxTextures/greybox_grey_grid.png",
+              "texture": "/textures/prototyping_textures_32x32px/Prototype_grey_32x32px.png",
               "repeat": true,
-              "repeatCount": [20, 3.5]
+              "repeatCount": [
+                20,
+                3.5
+              ]
             }
           },
           "physics": {
@@ -320,25 +486,44 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [20, 3, 0],
-              "rotation": [0, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                20,
+                3,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "box",
-              "args": [1, 7, 40]
+              "args": [
+                1,
+                7,
+                40
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
               "color": "#eeeeee",
-              "texture": "/textures/GreyboxTextures/greybox_grey_grid.png",
+              "texture": "/textures/prototyping_textures_32x32px/Prototype_grey_32x32px.png",
               "repeat": true,
-              "repeatCount": [20, 3.5]
+              "repeatCount": [
+                20,
+                3.5
+              ]
             }
           },
           "physics": {
@@ -357,16 +542,32 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [-5, 1.5, 5],
-              "rotation": [0, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                -5,
+                1.5,
+                5
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "box",
-              "args": [2, 3, 2]
+              "args": [
+                2,
+                3,
+                2
+              ]
             }
           },
           "material": {
@@ -375,7 +576,10 @@
               "color": "#eeeeee",
               "texture": "/textures/GreyboxTextures/greybox_red_grid.png",
               "repeat": true,
-              "repeatCount": [1, 1.5]
+              "repeatCount": [
+                1,
+                1.5
+              ]
             }
           },
           "physics": {
@@ -394,16 +598,32 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [5, 1, 8],
-              "rotation": [0, 0.8, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                5,
+                1,
+                8
+              ],
+              "rotation": [
+                0,
+                0.8,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "box",
-              "args": [3, 2, 1]
+              "args": [
+                3,
+                2,
+                1
+              ]
             }
           },
           "material": {
@@ -412,7 +632,10 @@
               "color": "#eeeeee",
               "texture": "/textures/GreyboxTextures/greybox_blue_grid.png",
               "repeat": true,
-              "repeatCount": [1.5, 1]
+              "repeatCount": [
+                1.5,
+                1
+              ]
             }
           },
           "physics": {
@@ -431,16 +654,33 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [-15, 2, -15],
-              "rotation": [0, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                -15,
+                2,
+                -15
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "cylinder",
-              "args": [1, 1, 4, 16]
+              "args": [
+                1,
+                1,
+                4,
+                16
+              ]
             }
           },
           "material": {
@@ -465,16 +705,33 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [15, 2, -15],
-              "rotation": [0, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                15,
+                2,
+                -15
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "cylinder",
-              "args": [1, 1, 4, 16]
+              "args": [
+                1,
+                1,
+                4,
+                16
+              ]
             }
           },
           "material": {
@@ -499,9 +756,21 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [-12, 0, 10],
-              "rotation": [0, 0, 0],
-              "scale": [1.5, 1.5, 1.5]
+              "position": [
+                -12,
+                0,
+                10
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1.5,
+                1.5,
+                1.5
+              ]
             }
           },
           "model": {
@@ -521,9 +790,21 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [14, 0, 12],
-              "rotation": [0, 1.2, 0],
-              "scale": [1.2, 1.2, 1.2]
+              "position": [
+                14,
+                0,
+                12
+              ],
+              "rotation": [
+                0,
+                1.2,
+                0
+              ],
+              "scale": [
+                1.2,
+                1.2,
+                1.2
+              ]
             }
           },
           "model": {
@@ -543,9 +824,21 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [-16, 0, -8],
-              "rotation": [0, 2.5, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                -16,
+                0,
+                -8
+              ],
+              "rotation": [
+                0,
+                2.5,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "model": {
@@ -565,16 +858,31 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [0, 0.1, 10],
-              "rotation": [-1.57, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                0,
+                0.1,
+                10
+              ],
+              "rotation": [
+                -1.57,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "plane",
-              "args": [3, 3]
+              "args": [
+                3,
+                3
+              ]
             }
           },
           "material": {
@@ -594,16 +902,33 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [0, 8, -15],
-              "rotation": [0, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                0,
+                8,
+                -15
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "cylinder",
-              "args": [3, 3, 0.5, 32]
+              "args": [
+                3,
+                3,
+                0.5,
+                32
+              ]
             }
           },
           "material": {
@@ -630,16 +955,32 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [-3, 5.5, -12],
-              "rotation": [0, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                -3,
+                5.5,
+                -12
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "box",
-              "args": [2, 0.4, 2]
+              "args": [
+                2,
+                0.4,
+                2
+              ]
             }
           },
           "material": {
@@ -665,16 +1006,32 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [3, 6.5, -13],
-              "rotation": [0, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                3,
+                6.5,
+                -13
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "box",
-              "args": [2, 0.4, 2]
+              "args": [
+                2,
+                0.4,
+                2
+              ]
             }
           },
           "material": {
@@ -700,9 +1057,21 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [10, 15, 10],
-              "rotation": [0, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                10,
+                15,
+                10
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "spotlight": {
@@ -726,9 +1095,21 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [-10, 12, -5],
-              "rotation": [0, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                -10,
+                12,
+                -5
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "spotlight": {
@@ -751,9 +1132,21 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [0, 10, -15],
-              "rotation": [0, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                0,
+                10,
+                -15
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "spotlight": {

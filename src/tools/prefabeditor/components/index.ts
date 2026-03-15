@@ -7,6 +7,8 @@ import DirectionalLightComponent from './DirectionalLightComponent';
 import AmbientLightComponent from './AmbientLightComponent';
 import ModelComponent from './ModelComponent';
 import TextComponent from './TextComponent';
+import EnvironmentComponent from './EnvironmentComponent';
+import CameraComponent from './CameraComponent';
 
 export default [
     GeometryComponent,
@@ -17,6 +19,8 @@ export default [
     DirectionalLightComponent,
     AmbientLightComponent,
     ModelComponent,
-    TextComponent
+    TextComponent,
+    EnvironmentComponent,
+    CameraComponent,
 ];
 

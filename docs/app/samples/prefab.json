@@ -148,7 +148,7 @@
               "metalness": 0,
               "roughness": 1,
               "side": "BackSide",
-              "texture": "/textures/proto32/white.png",
+              "texture": "/textures/proto32/grey.png",
               "repeat": true,
               "repeatCount": [
                 20,

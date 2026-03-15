@@ -1,5 +1,6 @@
 import { SingleTextureViewer, TextureListViewer } from '../../assetviewer/page';
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Component } from './ComponentRegistry';
 import { FieldRenderer, FieldDefinition, Input } from './Input';
 import { colors } from '../styles';
@@ -8,7 +9,9 @@ import {
     RepeatWrapping,
     ClampToEdgeWrapping,
     SRGBColorSpace,
+    LinearSRGBColorSpace,
     Texture,
+    Vector2,
     NearestFilter,
     LinearFilter,
     NearestMipmapNearestFilter,
@@ -17,17 +20,30 @@ import {
     LinearMipmapLinearFilter,
     MinificationTextureFilter,
     MagnificationTextureFilter,
-    MeshStandardMaterialProperties
+    MeshBasicMaterialProperties,
+    MeshStandardMaterialProperties,
+    FrontSide,
+    BackSide,
+    DoubleSide,
 } from 'three';
 
-export interface MaterialProps extends Omit<MeshStandardMaterialProperties, 'args'> {
+export interface MaterialProps extends Omit<MeshStandardMaterialProperties & MeshBasicMaterialProperties, 'args' | 'normalScale'> {
+    materialType?: 'standard' | 'basic';
+    transmission?: number;
+    thickness?: number;
+    ior?: number;
     texture?: string;
     repeat?: boolean;
     repeatCount?: [number, number];
     generateMipmaps?: boolean;
     minFilter?: string;
     magFilter?: string;
+    normalMapTexture?: string;
+    normalScale?: [number, number];
 }
+
+const PICKER_POPUP_WIDTH = 260;
+const PICKER_POPUP_HEIGHT = 360;
 
 function TexturePicker({
     value,
@@ -40,6 +56,8 @@ function TexturePicker({
 }) {
     const [textureFiles, setTextureFiles] = useState<string[]>([]);
     const [showPicker, setShowPicker] = useState(false);
+    const [popupStyle, setPopupStyle] = useState<React.CSSProperties | null>(null);
+    const triggerRef = useRef<HTMLButtonElement>(null);
 
     useEffect(() => {
         fetch(`${basePath}/textures/manifest.json`)
@@ -47,6 +65,45 @@ function TexturePicker({
             .then(data => setTextureFiles(Array.isArray(data) ? data : data.files || []))
             .catch(console.error);
     }, [basePath]);
+
+    useLayoutEffect(() => {
+        if (!showPicker || !triggerRef.current || typeof window === 'undefined') return;
+
+        const updatePosition = () => {
+            const rect = triggerRef.current?.getBoundingClientRect();
+            if (!rect) return;
+
+            const preferredLeft = rect.left - PICKER_POPUP_WIDTH - 8;
+            const fallbackLeft = rect.right + 8;
+            const fitsLeft = preferredLeft >= 8;
+            const left = fitsLeft ? preferredLeft : Math.min(fallbackLeft, window.innerWidth - PICKER_POPUP_WIDTH - 8);
+            const top = Math.min(Math.max(8, rect.top), window.innerHeight - PICKER_POPUP_HEIGHT - 8);
+
+            setPopupStyle({
+                position: 'fixed',
+                left,
+                top,
+                background: colors.bg,
+                padding: 12,
+                border: `1px solid ${colors.border}`,
+                borderRadius: 6,
+                width: PICKER_POPUP_WIDTH,
+                height: PICKER_POPUP_HEIGHT,
+                overflow: 'hidden',
+                zIndex: 1000,
+                boxShadow: '0 4px 16px rgba(0,0,0,0.6)',
+            });
+        };
+
+        updatePosition();
+        window.addEventListener('resize', updatePosition);
+        window.addEventListener('scroll', updatePosition, true);
+
+        return () => {
+            window.removeEventListener('resize', updatePosition);
+            window.removeEventListener('scroll', updatePosition, true);
+        };
+    }, [showPicker]);
 
     // Only show 3D preview for server-hosted textures (starting with / or http)
     const canPreview = value && (value.startsWith('/') || value.startsWith('http'));
@@ -60,6 +117,7 @@ function TexturePicker({
                     : null
             }
             <button
+                ref={triggerRef}
                 onClick={() => setShowPicker(!showPicker)}
                 style={{ padding: '4px 8px', backgroundColor: colors.bgLight, color: 'inherit', fontSize: 10, cursor: 'pointer', border: `1px solid ${colors.border}`, borderRadius: 3, marginTop: 4 }}
             >
@@ -73,8 +131,8 @@ function TexturePicker({
             >
                 Clear
             </button>
-            {showPicker && (
-                <div style={{ position: 'fixed', right: 60, top: 60, transform: 'translate(-100%,0%)', background: colors.bg, padding: 16, border: `1px solid ${colors.border}`, borderRadius: 4, maxHeight: '80vh', overflowY: 'auto', overflowX: 'hidden', width: 220, zIndex: 1000, boxShadow: '0 4px 16px rgba(0,0,0,0.6)' }}>
+            {showPicker && popupStyle && typeof document !== 'undefined' && createPortal(
+                <div style={popupStyle} onMouseLeave={() => setShowPicker(false)}>
                     <TextureListViewer
                         files={textureFiles}
                         selected={value || undefined}
@@ -84,26 +142,51 @@ function TexturePicker({
                         }}
                         basePath={basePath}
                     />
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );
 }
 
 function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { component: any; onUpdate: (newComp: any) => void; basePath?: string }) {
+    const materialType = component.properties.materialType ?? 'standard';
     const hasTexture = !!component.properties.texture;
     const hasRepeat = component.properties.repeat;
+    const isStandardMaterial = materialType === 'standard';
 
     const fields: FieldDefinition[] = [
+        {
+            name: 'materialType',
+            type: 'select',
+            label: 'Material Type',
+            options: [
+                { value: 'standard', label: 'Standard' },
+                { value: 'basic', label: 'Basic' },
+            ],
+        },
         { name: 'color', type: 'color', label: 'Color' },
+        { name: 'toneMapped', type: 'boolean', label: 'Tone Mapped' },
         { name: 'wireframe', type: 'boolean', label: 'Wireframe' },
         { name: 'transparent', type: 'boolean', label: 'Transparent' },
         { name: 'opacity', type: 'number', label: 'Opacity', min: 0, max: 1, step: 0.01 },
-        { name: 'metalness', type: 'number', label: 'Metalness', min: 0, max: 1, step: 0.01 },
-        { name: 'roughness', type: 'number', label: 'Roughness', min: 0, max: 1, step: 0.01 },
-        { name: 'transmission', type: 'number', label: 'Transmission', min: 0, max: 1, step: 0.01 },
-        { name: 'thickness', type: 'number', label: 'Thickness', min: 0, step: 0.1 },
-        { name: 'ior', type: 'number', label: 'IOR (Index of Refraction)', min: 1, max: 2.333, step: 0.01 },
+        ...(isStandardMaterial ? [
+            { name: 'metalness', type: 'number', label: 'Metalness', min: 0, max: 1, step: 0.01 },
+            { name: 'roughness', type: 'number', label: 'Roughness', min: 0, max: 1, step: 0.01 },
+            { name: 'transmission', type: 'number', label: 'Transmission', min: 0, max: 1, step: 0.01 },
+            { name: 'thickness', type: 'number', label: 'Thickness', min: 0, step: 0.1 },
+            { name: 'ior', type: 'number', label: 'IOR (Index of Refraction)', min: 1, max: 2.333, step: 0.01 },
+        ] as FieldDefinition[] : []),
+        {
+            name: 'side',
+            type: 'select',
+            label: 'Side',
+            options: [
+                { value: 'FrontSide', label: 'Front' },
+                { value: 'BackSide', label: 'Back' },
+                { value: 'DoubleSide', label: 'Double' },
+            ],
+        } as FieldDefinition,
         {
             name: 'texture',
             type: 'custom',
@@ -136,6 +219,39 @@ function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { compo
                             min={0.01}
                             max={100}
                             step={0.1}
+                        />
+                    </div>
+                ),
+            } as FieldDefinition] : []),
+            {
+                name: 'normalMapTexture',
+                type: 'custom',
+                label: 'Normal Map',
+                render: ({ value, onChange }) => (
+                    <TexturePicker value={value} onChange={onChange} basePath={basePath} />
+                ),
+            } as FieldDefinition,
+            ...(component.properties.normalMapTexture ? [{
+                name: 'normalScale',
+                type: 'custom',
+                label: 'Normal Scale (X, Y)',
+                render: ({ value, onChange }: { value: [number, number] | undefined; onChange: (v: [number, number]) => void }) => (
+                    <div style={{ display: 'flex', gap: 2 }}>
+                        <Input
+                            label="X"
+                            value={value?.[0] ?? 1}
+                            onChange={v => onChange([v, value?.[1] ?? 1])}
+                            min={0}
+                            max={5}
+                            step={0.01}
+                        />
+                        <Input
+                            label="Y"
+                            value={value?.[1] ?? 1}
+                            onChange={v => onChange([value?.[0] ?? 1, v])}
+                            min={0}
+                            max={5}
+                            step={0.01}
                         />
                     </div>
                 ),
@@ -177,6 +293,7 @@ function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { compo
 
 // View for Material component
 function MaterialComponentView({ properties, loadedTextures }: { properties: MaterialProps, loadedTextures?: Record<string, Texture> }) {
+    const materialType = properties?.materialType ?? 'standard';
     const textureName = properties?.texture;
     const repeat = properties?.repeat;
     const repeatCount = properties?.repeatCount;
@@ -184,6 +301,11 @@ function MaterialComponentView({ properties, loadedTextures }: { properties: Mat
     const minFilter = properties?.minFilter || 'LinearMipmapLinearFilter';
     const magFilter = properties?.magFilter || 'LinearFilter';
     const texture = textureName && loadedTextures ? loadedTextures[textureName] : undefined;
+
+    const normalMapTextureName = properties?.normalMapTexture;
+    const normalScaleProp = properties?.normalScale;
+    const normalMapTexture = normalMapTextureName && loadedTextures ? loadedTextures[normalMapTextureName] : undefined;
+    const materialSource: MaterialProps = properties ?? {};
 
     // Destructure all material props and separate custom texture handling props
     const {
@@ -193,9 +315,22 @@ function MaterialComponentView({ properties, loadedTextures }: { properties: Mat
         generateMipmaps: _generateMipmaps,
         minFilter: _minFilter,
         magFilter: _magFilter,
-        map: _map, // Filter out map since we set it explicitly
+        map: _map,
+        materialType: _materialType,
+        normalMapTexture: _normalMapTexture,
+        normalScale: _normalScale,
+        normalMap: _normalMap,
+        side: sideProp,
+        metalness: _metalness,
+        roughness: _roughness,
+        transmission: _transmission,
+        thickness: _thickness,
+        ior: _ior,
         ...materialProps
-    } = properties || {};
+    } = materialSource;
+
+    const sideMap: Record<string, any> = { FrontSide, BackSide, DoubleSide };
+    const resolvedSide = sideProp ? (sideMap[sideProp as unknown as string] ?? FrontSide) : FrontSide;
 
     const minFilterMap: Record<string, MinificationTextureFilter> = {
         NearestFilter,
@@ -229,15 +364,40 @@ function MaterialComponentView({ properties, loadedTextures }: { properties: Mat
         return t;
     }, [texture, repeat, repeatCount?.[0], repeatCount?.[1], generateMipmaps, minFilter, magFilter]);
 
+    const finalNormalMap = useMemo(() => {
+        if (!normalMapTexture) return undefined;
+        const t = normalMapTexture.clone();
+        t.colorSpace = LinearSRGBColorSpace;
+        t.needsUpdate = true;
+        return t;
+    }, [normalMapTexture]);
+
+    const normalScaleVec = useMemo(() => {
+        if (!finalNormalMap) return undefined;
+        return new Vector2(normalScaleProp?.[0] ?? 1, normalScaleProp?.[1] ?? 1);
+    }, [finalNormalMap, normalScaleProp?.[0], normalScaleProp?.[1]]);
+
     if (!properties) {
         return <meshStandardMaterial color="red" wireframe />;
     }
 
+    const materialKey = finalTexture?.uuid ?? 'no-texture';
+    const sharedProps = {
+        map: finalTexture,
+        side: resolvedSide,
+        ...materialProps,
+    };
+
+    if (materialType === 'basic') {
+        return <meshBasicMaterial key={materialKey} {...sharedProps} />;
+    }
+
     return (
         <meshStandardMaterial
-            key={finalTexture?.uuid ?? 'no-texture'}
-            map={finalTexture}
-            {...materialProps}
+            key={materialKey}
+            {...sharedProps}
+            normalMap={finalNormalMap}
+            normalScale={normalScaleVec}
         />
     );
 }
@@ -248,7 +408,9 @@ const MaterialComponent: Component = {
     View: MaterialComponentView,
     nonComposable: true,
     defaultProperties: {
+        materialType: 'standard',
         color: '#ffffff',
+        toneMapped: true,
         wireframe: false,
         transparent: false,
         opacity: 1,

@@ -63,7 +63,7 @@
             "type": "Material",
             "properties": {
               "color": "#eeeeee",
-              "texture": "/textures/GreyboxTextures/greybox_light_grid.png",
+              "texture": "/textures/proto32/green_lime.png",
               "repeat": true,
               "repeatCount": [
                 25,
@@ -151,7 +151,7 @@
                   "position": [
                     -5.702120615601614,
                     0,
-                    -9.160028569290597
+                    -9.160028569290596
                   ],
                   "rotation": [
                     0,
@@ -227,7 +227,7 @@
             "type": "Transform",
             "properties": {
               "position": [
-                11.469851773554673,
+                11.469851773554671,
                 0,
                 0
               ],
@@ -292,7 +292,7 @@
                   "position": [
                     -5.702120615601614,
                     0,
-                    -9.160028569290597
+                    -9.160028569290596
                   ],
                   "rotation": [
                     0,
@@ -395,6 +395,90 @@
             }
           }
         }
+      },
+      {
+        "id": "a6e69717-6766-4c32-8e16-6a690e834449",
+        "name": "environment",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                0,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "environment": {
+            "type": "Environment",
+            "properties": {}
+          }
+        },
+        "children": [
+          {
+            "id": "2457a6a4-f8c2-4316-a48e-c731e01a3b85",
+            "name": "sphere",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "sphere",
+                  "args": [
+                    100,
+                    32,
+                    16
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "basic",
+                  "color": "#ffffff",
+                  "toneMapped": true,
+                  "wireframe": false,
+                  "transparent": false,
+                  "opacity": 1,
+                  "metalness": 0,
+                  "roughness": 1,
+                  "texture": "/textures/skybox/skybox1.jpg",
+                  "side": "BackSide"
+                }
+              }
+            }
+          }
+        ]
       }
     ]
   }

@@ -97,7 +97,7 @@ function NodeInspector({
         if (!newAvailable.includes(addType)) setAddType(newAvailable[0] || "");
     }, [Object.keys(node.components || {}).join(',')]);
 
-    return <div style={{ ...inspector.content, paddingRight: 2 }} className="prefab-scroll">
+    return <div style={inspector.content} className="prefab-scroll">
         {/* Node Name */}
         <div style={base.section}>
             <div style={{ display: "flex", marginBottom: 8, alignItems: 'center', gap: 8 }}>

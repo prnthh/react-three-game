@@ -5,6 +5,11 @@ interface EditorContextType {
     setTransformMode: (mode: "translate" | "rotate" | "scale") => void;
     snapResolution: number;
     setSnapResolution: (resolution: number) => void;
+    positionSnap: number;
+    setPositionSnap: (resolution: number) => void;
+    rotationSnap: number;
+    setRotationSnap: (resolution: number) => void;
+    onFocusNode?: (nodeId: string) => void;
     onScreenshot?: () => void;
     onExportGLB?: () => void;
 }

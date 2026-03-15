@@ -63,12 +63,14 @@
             "type": "Material",
             "properties": {
               "color": "#eeeeee",
-              "texture": "/textures/GreyboxTextures/greybox_light_grid.png",
+              "texture": "/textures/proto32/white.png",
               "repeat": true,
               "repeatCount": [
                 25,
                 25
-              ]
+              ],
+              "minFilter": "LinearFilter",
+              "magFilter": "NearestFilter"
             }
           },
           "physics": {

@@ -89,6 +89,30 @@ const styles = {
     } as React.CSSProperties,
 };
 
+function getNumericStep(step: string | number | undefined, fallback: number) {
+    if (typeof step === 'number' && Number.isFinite(step) && step > 0) return step;
+
+    if (typeof step === 'string') {
+        const parsed = parseFloat(step);
+        if (Number.isFinite(parsed) && parsed > 0) return parsed;
+    }
+
+    return fallback;
+}
+
+function getStepPrecision(step: number) {
+    if (!Number.isFinite(step) || step <= 0) return 3;
+
+    const stepString = step.toString();
+    if (stepString.includes('e-')) {
+        const exponent = stepString.split('e-')[1];
+        return exponent ? parseInt(exponent, 10) : 3;
+    }
+
+    const decimal = stepString.split('.')[1];
+    return decimal?.length ?? 0;
+}
+
 interface InputProps {
     value: number;
     onChange: (value: number) => void;
@@ -129,15 +153,12 @@ export function Input({ value, onChange, step, min, max, style, label }: InputPr
     } | null>(null);
 
     const startScrub = (e: React.PointerEvent) => {
-        if (!label) return;
-        e.preventDefault();
-
         dragState.current = {
             startX: e.clientX,
             startValue: value
         };
 
-        (e.target as HTMLElement).setPointerCapture(e.pointerId);
+        e.currentTarget.setPointerCapture(e.pointerId);
         document.body.style.cursor = "ew-resize";
     };
 
@@ -146,18 +167,20 @@ export function Input({ value, onChange, step, min, max, style, label }: InputPr
 
         const { startX, startValue } = dragState.current;
         const dx = e.clientX - startX;
+        const baseStep = getNumericStep(step, 0.1);
+        let scrubStep = baseStep;
+        if (e.shiftKey) scrubStep /= 10;
+        if (e.altKey) scrubStep *= 10;
 
-        let speed = 0.02;
-        if (e.shiftKey) speed *= 0.1; // fine
-        if (e.altKey) speed *= 5;     // coarse
-
-        let nextValue = startValue + dx * speed;
+        const precision = getStepPrecision(scrubStep);
+        const deltaSteps = Math.round(dx / 8);
+        let nextValue = startValue + deltaSteps * scrubStep;
 
         // Apply min/max constraints
         if (min !== undefined && nextValue < min) nextValue = min;
         if (max !== undefined && nextValue > max) nextValue = max;
 
-        setDraft(nextValue.toFixed(3));
+        setDraft(nextValue.toFixed(precision));
         onChange(nextValue);
     };
 
@@ -166,7 +189,7 @@ export function Input({ value, onChange, step, min, max, style, label }: InputPr
 
         dragState.current = null;
         document.body.style.cursor = "";
-        (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+        e.currentTarget.releasePointerCapture(e.pointerId);
     };
 
     if (label) {
@@ -180,14 +203,10 @@ export function Input({ value, onChange, step, min, max, style, label }: InputPr
                     style={{
                         ...styles.label,
                         marginBottom: 0,
-                        cursor: 'ew-resize',
                         userSelect: 'none',
                         flex: '0 0 auto',
                         minWidth: 20,
                     }}
-                    onPointerDown={startScrub}
-                    onPointerMove={onScrubMove}
-                    onPointerUp={endScrub}
                 >
                     {label}
                 </span>
@@ -204,7 +223,10 @@ export function Input({ value, onChange, step, min, max, style, label }: InputPr
                     step={step}
                     min={min}
                     max={max}
-                    style={{ ...styles.input, ...style }}
+                    style={{ ...styles.input, cursor: 'ew-resize', ...style }}
+                    onPointerDown={startScrub}
+                    onPointerMove={onScrubMove}
+                    onPointerUp={endScrub}
                 />
             </div>
         );
@@ -224,7 +246,10 @@ export function Input({ value, onChange, step, min, max, style, label }: InputPr
             step={step}
             min={min}
             max={max}
-            style={{ ...styles.input, ...style }}
+            style={{ ...styles.input, cursor: 'ew-resize', ...style }}
+            onPointerDown={startScrub}
+            onPointerMove={onScrubMove}
+            onPointerUp={endScrub}
         />
     );
 }
@@ -237,12 +262,14 @@ export function Vector3Input({
     label,
     value,
     onChange,
-    snap
+    snap,
+    labelExtra
 }: {
     label: string;
     value: [number, number, number];
     onChange: (v: [number, number, number]) => void;
     snap?: number;
+    labelExtra?: React.ReactNode;
 }) {
     const snapValue = (num: number) => {
         if (!snap) return num;
@@ -274,15 +301,13 @@ export function Vector3Input({
     };
 
     const startScrub = (e: React.PointerEvent, index: number) => {
-        e.preventDefault();
-
         dragState.current = {
             index,
             startX: e.clientX,
             startValue: value[index]
         };
 
-        (e.target as HTMLElement).setPointerCapture(e.pointerId);
+        e.currentTarget.setPointerCapture(e.pointerId);
         document.body.style.cursor = "ew-resize";
     };
 
@@ -315,7 +340,7 @@ export function Vector3Input({
 
         dragState.current = null;
         document.body.style.cursor = "";
-        (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+        e.currentTarget.releasePointerCapture(e.pointerId);
     };
 
     const axes = [
@@ -326,7 +351,10 @@ export function Vector3Input({
 
     return (
         <div style={{ marginBottom: 8 }}>
-            <label style={{ ...styles.label, marginBottom: 4 }}>{label}</label>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                <label style={{ ...styles.label, marginBottom: 0 }}>{label}</label>
+                {labelExtra}
+            </div>
             <div style={{ display: 'flex', gap: 4 }}>
                 {axes.map(({ key, color, index }) => (
                     <div
@@ -341,7 +369,11 @@ export function Vector3Input({
                             borderRadius: 3,
                             padding: '4px 6px',
                             minHeight: 28,
+                            cursor: 'ew-resize',
                         }}
+                        onPointerDown={e => startScrub(e, index)}
+                        onPointerMove={onScrubMove}
+                        onPointerUp={endScrub}
                     >
                         <span
                             style={{
@@ -349,12 +381,8 @@ export function Vector3Input({
                                 fontWeight: 600,
                                 color,
                                 width: 12,
-                                cursor: 'ew-resize',
                                 userSelect: 'none',
                             }}
-                            onPointerDown={e => startScrub(e, index)}
-                            onPointerMove={onScrubMove}
-                            onPointerUp={endScrub}
                         >
                             {key.toUpperCase()}
                         </span>
@@ -369,6 +397,7 @@ export function Vector3Input({
                                 outline: 'none',
                                 width: '100%',
                                 minWidth: 0,
+                                cursor: 'inherit',
                             }}
                             type="text"
                             value={draft[index]}
@@ -512,6 +541,170 @@ export function SelectInput({
                 ))}
             </select>
         </div>
+    );
+}
+
+interface BoundFieldProps {
+    name: string;
+    values: Record<string, any>;
+    onChange: (values: Record<string, any>) => void;
+}
+
+interface BoundNumberFieldProps extends BoundFieldProps {
+    label: string;
+    fallback?: number;
+    step?: string | number;
+    min?: number;
+    max?: number;
+    style?: React.CSSProperties;
+}
+
+interface BoundStringFieldProps extends BoundFieldProps {
+    label: string;
+    fallback?: string;
+    placeholder?: string;
+}
+
+interface BoundColorFieldProps extends BoundFieldProps {
+    label: string;
+    fallback?: string;
+}
+
+interface BoundBooleanFieldProps extends BoundFieldProps {
+    label: string;
+    fallback?: boolean;
+}
+
+interface BoundSelectFieldProps extends BoundFieldProps {
+    label: string;
+    fallback?: string;
+    options: { value: string; label: string }[];
+}
+
+interface BoundVector3FieldProps extends BoundFieldProps {
+    label: string;
+    fallback?: [number, number, number];
+    snap?: number;
+    labelExtra?: React.ReactNode;
+}
+
+function bindFieldChange(name: string, onChange: (values: Record<string, any>) => void) {
+    return (value: any) => onChange({ [name]: value });
+}
+
+export function FieldGroup({ children }: { children: React.ReactNode }) {
+    return <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>{children}</div>;
+}
+
+export function NumberField({
+    name,
+    label,
+    values,
+    onChange,
+    fallback = 0,
+    step,
+    min,
+    max,
+    style,
+}: BoundNumberFieldProps) {
+    return (
+        <Input
+            label={label}
+            value={values[name] ?? fallback}
+            onChange={bindFieldChange(name, onChange)}
+            step={step}
+            min={min}
+            max={max}
+            style={style}
+        />
+    );
+}
+
+export function StringField({
+    name,
+    label,
+    values,
+    onChange,
+    fallback = '',
+    placeholder,
+}: BoundStringFieldProps) {
+    return (
+        <StringInput
+            label={label}
+            value={values[name] ?? fallback}
+            onChange={bindFieldChange(name, onChange)}
+            placeholder={placeholder}
+        />
+    );
+}
+
+export function ColorField({
+    name,
+    label,
+    values,
+    onChange,
+    fallback = '#ffffff',
+}: BoundColorFieldProps) {
+    return (
+        <ColorInput
+            label={label}
+            value={values[name] ?? fallback}
+            onChange={bindFieldChange(name, onChange)}
+        />
+    );
+}
+
+export function BooleanField({
+    name,
+    label,
+    values,
+    onChange,
+    fallback = false,
+}: BoundBooleanFieldProps) {
+    return (
+        <BooleanInput
+            label={label}
+            value={values[name] ?? fallback}
+            onChange={bindFieldChange(name, onChange)}
+        />
+    );
+}
+
+export function SelectField({
+    name,
+    label,
+    values,
+    onChange,
+    fallback,
+    options,
+}: BoundSelectFieldProps) {
+    return (
+        <SelectInput
+            label={label}
+            value={values[name] ?? fallback ?? options[0]?.value ?? ''}
+            onChange={bindFieldChange(name, onChange)}
+            options={options}
+        />
+    );
+}
+
+export function Vector3Field({
+    name,
+    label,
+    values,
+    onChange,
+    fallback = [0, 0, 0],
+    snap,
+    labelExtra,
+}: BoundVector3FieldProps) {
+    return (
+        <Vector3Input
+            label={label}
+            value={values[name] ?? fallback}
+            onChange={bindFieldChange(name, onChange)}
+            snap={snap}
+            labelExtra={labelExtra}
+        />
     );
 }
 

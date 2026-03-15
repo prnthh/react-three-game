@@ -1,10 +1,5 @@
 import { Component } from "./ComponentRegistry";
-import { FieldRenderer, FieldDefinition } from "./Input";
-
-const ambientLightFields: FieldDefinition[] = [
-    { name: 'color', type: 'color', label: 'Color' },
-    { name: 'intensity', type: 'number', label: 'Intensity', step: 0.1, min: 0 },
-];
+import { ColorField, FieldGroup, NumberField } from "./Input";
 
 function AmbientLightComponentEditor({
     component,
@@ -14,11 +9,10 @@ function AmbientLightComponentEditor({
     onUpdate: (newProps: any) => void;
 }) {
     return (
-        <FieldRenderer
-            fields={ambientLightFields}
-            values={component.properties}
-            onChange={onUpdate}
-        />
+        <FieldGroup>
+            <ColorField name="color" label="Color" values={component.properties} onChange={onUpdate} />
+            <NumberField name="intensity" label="Intensity" values={component.properties} onChange={onUpdate} min={0} step={0.1} fallback={1} />
+        </FieldGroup>
     );
 }
 

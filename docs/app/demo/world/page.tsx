@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { PrefabEditor, updateNodeById } from "react-three-game";
-import initialWorld from "../../samples/world-demo.json";
+import initialWorld from "./world-demo.json";
 import type { Prefab, PrefabEditorRef } from "react-three-game";
 
 // Component that handles the animation loop (runs inside the editor's Canvas)

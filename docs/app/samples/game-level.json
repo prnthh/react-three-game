@@ -68,7 +68,7 @@
             "type": "Material",
             "properties": {
               "color": "#eeeeee",
-              "texture": "/textures/prototyping_textures_32x32px/Prototype_grey_32x32px.png",
+              "texture": "/textures/proto32/checkers_01.png",
               "repeat": true,
               "repeatCount": [
                 20,
@@ -126,7 +126,7 @@
             "type": "Material",
             "properties": {
               "color": "#eeeeee",
-              "texture": "/textures/GreyboxTextures/greybox_teal_grid.png",
+              "texture": "/textures/proto32/orange_ochre.png",
               "repeat": true,
               "repeatCount": [
                 3,
@@ -182,7 +182,7 @@
             "type": "Material",
             "properties": {
               "color": "#eeeeee",
-              "texture": "/textures/GreyboxTextures/greybox_purple_grid.png",
+              "texture": "/textures/proto32/orange.png",
               "repeat": true,
               "repeatCount": [
                 2.5,
@@ -238,7 +238,7 @@
             "type": "Material",
             "properties": {
               "color": "#eeeeee",
-              "texture": "/textures/GreyboxTextures/greybox_orange_grid.png",
+              "texture": "/textures/proto32/orange.png",
               "repeat": true,
               "repeatCount": [
                 4,
@@ -294,7 +294,7 @@
             "type": "Material",
             "properties": {
               "color": "#eeeeee",
-              "texture": "/textures/GreyboxTextures/greybox_lime_grid.png",
+              "texture": "/textures/proto32/orange_ochre.png",
               "repeat": true,
               "repeatCount": [
                 2,
@@ -350,7 +350,7 @@
             "type": "Material",
             "properties": {
               "color": "#eeeeee",
-              "texture": "/textures/GreyboxTextures/greybox_yellow_grid.png",
+              "texture": "/textures/proto32/orange_ochre.png",
               "repeat": true,
               "repeatCount": [
                 2.5,
@@ -406,7 +406,7 @@
             "type": "Material",
             "properties": {
               "color": "#eeeeee",
-              "texture": "/textures/prototyping_textures_32x32px/Prototype_grey_32x32px.png",
+              "texture": "/textures/proto32/grey.png",
               "repeat": true,
               "repeatCount": [
                 20,
@@ -462,7 +462,7 @@
             "type": "Material",
             "properties": {
               "color": "#eeeeee",
-              "texture": "/textures/prototyping_textures_32x32px/Prototype_grey_32x32px.png",
+              "texture": "/textures/proto32/grey.png",
               "repeat": true,
               "repeatCount": [
                 20,
@@ -518,7 +518,7 @@
             "type": "Material",
             "properties": {
               "color": "#eeeeee",
-              "texture": "/textures/prototyping_textures_32x32px/Prototype_grey_32x32px.png",
+              "texture": "/textures/proto32/grey.png",
               "repeat": true,
               "repeatCount": [
                 20,
@@ -574,7 +574,7 @@
             "type": "Material",
             "properties": {
               "color": "#eeeeee",
-              "texture": "/textures/GreyboxTextures/greybox_red_grid.png",
+              "texture": "/textures/proto32/red_carmine.png",
               "repeat": true,
               "repeatCount": [
                 1,
@@ -630,7 +630,7 @@
             "type": "Material",
             "properties": {
               "color": "#eeeeee",
-              "texture": "/textures/GreyboxTextures/greybox_blue_grid.png",
+              "texture": "/textures/proto32/orange.png",
               "repeat": true,
               "repeatCount": [
                 1.5,
@@ -889,7 +889,7 @@
             "type": "Material",
             "properties": {
               "color": "#eeeeee",
-              "texture": "/textures/GreyboxTextures/greybox_green_grid.png"
+              "texture": "/textures/proto32/symbol_cross.png"
             }
           }
         }
@@ -987,7 +987,7 @@
             "type": "Material",
             "properties": {
               "color": "#eeeeee",
-              "texture": "/textures/GreyboxTextures/greybox_teal_grid.png"
+              "texture": "/textures/proto32/orange.png"
             }
           },
           "physics": {
@@ -1038,7 +1038,7 @@
             "type": "Material",
             "properties": {
               "color": "#eeeeee",
-              "texture": "/textures/GreyboxTextures/greybox_teal_grid.png"
+              "texture": "/textures/proto32/orange_ochre.png"
             }
           },
           "physics": {
@@ -1158,6 +1158,122 @@
               "penumbra": 0.3,
               "distance": 20
             }
+          }
+        }
+      },
+      {
+        "id": "819dd6b6-176f-436c-81cb-dd6c73406644",
+        "name": "environment",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                0,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "environment": {
+            "type": "Environment",
+            "properties": {
+              "intensity": 1,
+              "resolution": 256
+            }
+          }
+        },
+        "children": [
+          {
+            "id": "ae217e95-377c-4cef-b6ea-8741746364d6",
+            "name": "sphere",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "sphere",
+                  "args": [
+                    99.272109375,
+                    32,
+                    16
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "color": "#ffffff",
+                  "wireframe": false,
+                  "transparent": false,
+                  "opacity": 1,
+                  "metalness": 0,
+                  "roughness": 1,
+                  "side": "BackSide",
+                  "texture": "/textures/skybox/skybox1.jpg",
+                  "materialType": "basic"
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "a067d3e7-2766-4513-8a72-fba8c2bc3643",
+        "name": "camera",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                7.5,
+                20.5
+              ],
+              "rotation": [
+                -0.3503125,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "camera": {
+            "type": "Camera",
+            "properties": {}
           }
         }
       }

@@ -15,13 +15,20 @@ export { registerComponent } from './tools/prefabeditor/components/ComponentRegi
 // Prefab Editor - Input Components
 export {
   FieldRenderer,
+  FieldGroup,
   Input,
   Label,
   Vector3Input,
+  Vector3Field,
+  NumberField,
   ColorInput,
+  ColorField,
   StringInput,
+  StringField,
   BooleanInput,
+  BooleanField,
   SelectInput,
+  SelectField,
 } from './tools/prefabeditor/components/Input';
 
 // Prefab Editor - Styles & Utils

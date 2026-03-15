@@ -80,7 +80,7 @@ function DirectionalLightComponentEditor({ component, onUpdate }: { component: a
     );
 }
 
-function DirectionalLightView({ properties, editMode }: { properties: any; editMode?: boolean }) {
+function DirectionalLightView({ properties, editMode, isSelected }: { properties: any; editMode?: boolean; isSelected?: boolean }) {
     const color = properties.color ?? '#ffffff';
     const intensity = properties.intensity ?? 1.0;
     const castShadow = properties.castShadow ?? true;
@@ -138,7 +138,7 @@ function DirectionalLightView({ properties, editMode }: { properties: any; editM
             />
             {/* Target object - rendered declaratively in scene graph */}
             <object3D ref={targetRef} />
-            {editMode && (
+            {editMode && isSelected && (
                 <>
                     {/* Light source indicator */}
                     <mesh>

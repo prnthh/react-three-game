@@ -3,7 +3,7 @@ import type { RigidBodyOptions, CollisionPayload, IntersectionEnterPayload, Inte
 import type { ReactNode } from 'react';
 import { useRef, useEffect, useCallback } from 'react';
 import { Component } from "./ComponentRegistry";
-import { FieldRenderer, FieldDefinition } from "./Input";
+import { BooleanField, FieldGroup, NumberField, SelectField } from "./Input";
 import { ComponentData } from "../types";
 import { gameEvents, getEntityIdFromRigidBody } from "../GameEvents";
 
@@ -11,92 +11,51 @@ export type PhysicsProps = RigidBodyOptions & {
     activeCollisionTypes?: 'all' | undefined;
 };
 
-const physicsFields: FieldDefinition[] = [
-    {
-        name: 'type',
-        type: 'select',
-        label: 'Type',
-        options: [
-            { value: 'dynamic', label: 'Dynamic' },
-            { value: 'fixed', label: 'Fixed' },
-            { value: 'kinematicPosition', label: 'Kinematic Position' },
-            { value: 'kinematicVelocity', label: 'Kinematic Velocity' },
-        ],
-    },
-    {
-        name: 'colliders',
-        type: 'select',
-        label: 'Collider',
-        options: [
-            { value: 'hull', label: 'Hull (convex)' },
-            { value: 'trimesh', label: 'Trimesh (exact)' },
-            { value: 'cuboid', label: 'Cuboid (box)' },
-            { value: 'ball', label: 'Ball (sphere)' },
-        ],
-    },
-    {
-        name: 'mass',
-        type: 'number',
-        label: 'Mass',
-    },
-    {
-        name: 'restitution',
-        type: 'number',
-        label: 'Restitution (Bounciness)',
-        min: 0,
-        max: 1,
-        step: 0.1,
-    },
-    {
-        name: 'friction',
-        type: 'number',
-        label: 'Friction',
-        min: 0,
-        step: 0.1,
-    },
-    {
-        name: 'linearDamping',
-        type: 'number',
-        label: 'Linear Damping',
-        min: 0,
-        step: 0.1,
-    },
-    {
-        name: 'angularDamping',
-        type: 'number',
-        label: 'Angular Damping',
-        min: 0,
-        step: 0.1,
-    },
-    {
-        name: 'gravityScale',
-        type: 'number',
-        label: 'Gravity Scale',
-        step: 0.1,
-    },
-    {
-        name: 'sensor',
-        type: 'boolean',
-        label: 'Sensor (Trigger Only)',
-    },
-    {
-        name: 'activeCollisionTypes',
-        type: 'select',
-        label: 'Collision Detection',
-        options: [
-            { value: '', label: 'Default (Dynamic only)' },
-            { value: 'all', label: 'All (includes kinematic & fixed)' },
-        ],
-    },
-];
-
 function PhysicsComponentEditor({ component, onUpdate }: { component: ComponentData; onUpdate: (newComp: any) => void }) {
     return (
-        <FieldRenderer
-            fields={physicsFields}
-            values={component.properties}
-            onChange={onUpdate}
-        />
+        <FieldGroup>
+            <SelectField
+                name="type"
+                label="Type"
+                values={component.properties}
+                onChange={onUpdate}
+                options={[
+                    { value: 'dynamic', label: 'Dynamic' },
+                    { value: 'fixed', label: 'Fixed' },
+                    { value: 'kinematicPosition', label: 'Kinematic Position' },
+                    { value: 'kinematicVelocity', label: 'Kinematic Velocity' },
+                ]}
+            />
+            <SelectField
+                name="colliders"
+                label="Collider"
+                values={component.properties}
+                onChange={onUpdate}
+                options={[
+                    { value: 'hull', label: 'Hull (convex)' },
+                    { value: 'trimesh', label: 'Trimesh (exact)' },
+                    { value: 'cuboid', label: 'Cuboid (box)' },
+                    { value: 'ball', label: 'Ball (sphere)' },
+                ]}
+            />
+            <NumberField name="mass" label="Mass" values={component.properties} onChange={onUpdate} fallback={1} step={0.1} min={0} />
+            <NumberField name="restitution" label="Restitution (Bounciness)" values={component.properties} onChange={onUpdate} fallback={0} min={0} max={1} step={0.1} />
+            <NumberField name="friction" label="Friction" values={component.properties} onChange={onUpdate} fallback={0.5} min={0} step={0.1} />
+            <NumberField name="linearDamping" label="Linear Damping" values={component.properties} onChange={onUpdate} fallback={0} min={0} step={0.1} />
+            <NumberField name="angularDamping" label="Angular Damping" values={component.properties} onChange={onUpdate} fallback={0} min={0} step={0.1} />
+            <NumberField name="gravityScale" label="Gravity Scale" values={component.properties} onChange={onUpdate} fallback={1} step={0.1} />
+            <BooleanField name="sensor" label="Sensor (Trigger Only)" values={component.properties} onChange={onUpdate} fallback={false} />
+            <SelectField
+                name="activeCollisionTypes"
+                label="Collision Detection"
+                values={component.properties}
+                onChange={onUpdate}
+                options={[
+                    { value: '', label: 'Default (Dynamic only)' },
+                    { value: 'all', label: 'All (includes kinematic & fixed)' },
+                ]}
+            />
+        </FieldGroup>
     );
 }
 

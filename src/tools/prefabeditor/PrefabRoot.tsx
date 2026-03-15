@@ -8,7 +8,7 @@ import { getComponent, registerComponent, getNonComposableKeys } from "./compone
 import components from "./components";
 import { loadModel } from "../dragdrop/modelLoader";
 import { GameInstance, GameInstanceProvider, useInstanceCheck } from "./InstanceProvider";
-import { updateNode } from "./utils";
+import { focusCameraOnObject, updateNode } from "./utils";
 import { PhysicsProps } from "./components/PhysicsComponent";
 import { EditorContext } from "./EditorContext";
 
@@ -24,6 +24,7 @@ export interface PrefabRootRef {
     rigidBodyRefs: Map<string, any>; // RigidBody refs only populated when using physics
     injectModel: (filename: string, model: Object3D) => void;
     injectTexture: (filename: string, file: File) => void;
+    focusNode: (nodeId: string) => void;
 }
 
 export const PrefabRoot = forwardRef<PrefabRootRef, {
@@ -40,15 +41,19 @@ export const PrefabRoot = forwardRef<PrefabRootRef, {
     const editorContext = useContext(EditorContext);
     const transformMode = editorContext?.transformMode ?? "translate";
     const snapResolution = editorContext?.snapResolution ?? 0;
+    const positionSnap = editorContext?.positionSnap ?? 0.5;
+    const rotationSnap = editorContext?.rotationSnap ?? Math.PI / 4;
 
     // prefab root state
     const [models, setModels] = useState<Record<string, Object3D>>({});
     const [textures, setTextures] = useState<Record<string, Texture>>({});
     const loading = useRef(new Set<string>());
+    const failedTextures = useRef(new Set<string>());
     const objectRefs = useRef<Record<string, Object3D | null>>({});
     const rigidBodyRefs = useRef<Map<string, RapierRigidBody | null>>(new Map());
     const [selectedObject, setSelectedObject] = useState<Object3D | null>(null);
     const rootRef = useRef<Group>(null);
+    const controlsRef = useRef<any>(null);
 
     const injectModel = useCallback((filename: string, model: Object3D) => {
         setModels(m => ({ ...m, [filename]: model }));
@@ -69,7 +74,16 @@ export const PrefabRoot = forwardRef<PrefabRootRef, {
         root: rootRef.current,
         rigidBodyRefs: rigidBodyRefs.current,
         injectModel,
-        injectTexture
+        injectTexture,
+        focusNode: (nodeId: string) => {
+            const object = objectRefs.current[nodeId];
+            const controls = controlsRef.current;
+            const camera = controls?.object;
+
+            if (!object || !controls || !camera) return;
+
+            focusCameraOnObject(object, camera, controls.target, () => controls.update?.());
+        }
     }), [injectModel, injectTexture]);
 
     const registerRef = useCallback((id: string, obj: Object3D | null) => {
@@ -128,6 +142,8 @@ export const PrefabRoot = forwardRef<PrefabRootRef, {
                 modelsToLoad.add(node.components.model.properties.filename);
             node.components?.material?.properties?.texture &&
                 texturesToLoad.add(node.components.material.properties.texture);
+            node.components?.material?.properties?.normalMapTexture &&
+                texturesToLoad.add(node.components.material.properties.normalMapTexture);
         });
 
         modelsToLoad.forEach(async file => {
@@ -145,7 +161,7 @@ export const PrefabRoot = forwardRef<PrefabRootRef, {
 
         const loader = new TextureLoader();
         texturesToLoad.forEach(file => {
-            if (textures[file] || loading.current.has(file)) return;
+            if (textures[file] || loading.current.has(file) || failedTextures.current.has(file)) return;
             loading.current.add(file);
 
             // Handle full URLs (http/https) or regular paths
@@ -159,8 +175,9 @@ export const PrefabRoot = forwardRef<PrefabRootRef, {
                 tex.colorSpace = SRGBColorSpace;
                 setTextures(t => ({ ...t, [file]: tex }));
             }, undefined, (err) => {
-                console.error(`Failed to load texture: ${path}`, err);
+                console.warn(`Failed to load texture: ${path}`, err);
                 loading.current.delete(file);
+                failedTextures.current.add(file);
             });
         });
     }, [data, models, textures]);
@@ -190,16 +207,16 @@ export const PrefabRoot = forwardRef<PrefabRootRef, {
 
             {editMode && (
                 <>
-                    <MapControls makeDefault />
+                    <MapControls ref={controlsRef} makeDefault />
                     {selectedObject && (
                         <TransformControls
-                            key={`transform-${snapResolution}`}
+                            key={`transform-${transformMode}-${positionSnap}-${rotationSnap}-${snapResolution}`}
                             object={selectedObject}
                             mode={transformMode}
                             space="local"
                             onObjectChange={onTransformChange}
-                            translationSnap={snapResolution > 0 ? snapResolution : undefined}
-                            rotationSnap={snapResolution > 0 ? snapResolution : undefined}
+                            translationSnap={positionSnap > 0 ? positionSnap : undefined}
+                            rotationSnap={rotationSnap > 0 ? rotationSnap : undefined}
                             scaleSnap={snapResolution > 0 ? snapResolution : undefined}
                         />
                     )}
@@ -362,6 +379,19 @@ function StandardNode({
     const physicsDef = hasPhysics ? getComponent("Physics") : null;
     const isInstanced = gameObject.components?.model?.properties?.instanced;
     const physicsKey = `physics_${gameObject.id}_${isInstanced ? 'instanced' : 'standard'}`;
+    const renderCtx = createRenderContext(loadedModels, loadedTextures, editMode, selectedId, registerRef);
+    const childNodes = getChildHostComponents(gameObject).length > 0
+        ? renderHostedChildren(gameObject, renderCtx, world)
+        : renderSceneChildren(gameObject, world, {
+            selectedId,
+            onSelect,
+            onClick,
+            registerRef,
+            registerRigidBodyRef,
+            loadedModels,
+            loadedTextures,
+            editMode,
+        });
 
     const inner = (
         <group
@@ -369,22 +399,7 @@ function StandardNode({
             onPointerMove={editMode ? () => (clickValid.current = false) : undefined}
             onPointerUp={editMode ? onUp : undefined}
         >
-            {renderCoreNode(gameObject, { loadedModels, loadedTextures, editMode, registerRef }, parentMatrix)}
-            {gameObject.children?.map(child => (
-                <GameObjectRenderer
-                    key={child.id}
-                    gameObject={child}
-                    selectedId={selectedId}
-                    onSelect={onSelect}
-                    onClick={onClick}
-                    registerRef={registerRef}
-                    registerRigidBodyRef={registerRigidBodyRef}
-                    loadedModels={loadedModels}
-                    loadedTextures={loadedTextures}
-                    editMode={editMode}
-                    parentMatrix={world}
-                />
-            ))}
+            {renderCompositionNode(gameObject, renderCtx, parentMatrix, childNodes)}
         </group>
     );
 
@@ -468,6 +483,74 @@ interface RendererProps {
     parentMatrix?: Matrix4;
 }
 
+const CHILD_HOST_COMPONENT_TYPES = new Set(["Environment"]);
+
+function isChildHostType(type: string) {
+    return CHILD_HOST_COMPONENT_TYPES.has(type);
+}
+
+function getChildHostComponents(gameObject: GameObjectType) {
+    return Object.entries(gameObject.components ?? {}).flatMap(([key, comp]) => {
+        if (!comp?.type || !isChildHostType(comp.type)) return [];
+
+        const def = getComponent(comp.type);
+        if (!def?.View) return [];
+
+        return { key, View: def.View, properties: comp.properties };
+    });
+}
+
+interface RenderContext {
+    loadedModels: Record<string, Object3D>;
+    loadedTextures: Record<string, Texture>;
+    editMode?: boolean;
+    selectedId?: string | null;
+    registerRef: (id: string, obj: Object3D | null) => void;
+}
+
+interface RuntimeChildRendererProps {
+    selectedId?: string | null;
+    onSelect?: (id: string) => void;
+    onClick?: (event: ThreeEvent<PointerEvent>, entity: GameObjectType) => void;
+    registerRef: (id: string, obj: Object3D | null) => void;
+    registerRigidBodyRef: (id: string, rb: any) => void;
+    loadedModels: Record<string, Object3D>;
+    loadedTextures: Record<string, Texture>;
+    editMode?: boolean;
+}
+
+function createRenderContext(
+    loadedModels: Record<string, Object3D>,
+    loadedTextures: Record<string, Texture>,
+    editMode: boolean | undefined,
+    selectedId: string | null | undefined,
+    registerRef: (id: string, obj: Object3D | null) => void,
+): RenderContext {
+    return { loadedModels, loadedTextures, editMode, selectedId, registerRef };
+}
+
+function renderSceneChildren(
+    gameObject: GameObjectType,
+    parentMatrix: Matrix4,
+    props: RuntimeChildRendererProps,
+) {
+    return gameObject.children?.map(child =>
+        <GameObjectRenderer
+            key={child.id}
+            gameObject={child}
+            selectedId={props.selectedId}
+            onSelect={props.onSelect}
+            onClick={props.onClick}
+            registerRef={props.registerRef}
+            registerRigidBodyRef={props.registerRigidBodyRef}
+            loadedModels={props.loadedModels}
+            loadedTextures={props.loadedTextures}
+            editMode={props.editMode}
+            parentMatrix={parentMatrix}
+        />
+    );
+}
+
 function walk(node: GameObjectType, fn: (n: GameObjectType) => void) {
     fn(node);
     node.children?.forEach(c => walk(c, fn));
@@ -518,14 +601,55 @@ function computeParentWorldMatrix(root: GameObjectType, targetId: string): Matri
     return result ?? IDENTITY;
 }
 
-function renderCoreNode(
+function renderCompositionSubtree(
     gameObject: GameObjectType,
-    ctx: {
-        loadedModels: Record<string, Object3D>;
-        loadedTextures: Record<string, Texture>;
-        editMode?: boolean;
-        registerRef: (id: string, obj: Object3D | null) => void;
-    },
+    ctx: RenderContext,
+    parentMatrix = IDENTITY
+): React.ReactNode {
+    if (!gameObject || gameObject.disabled) return null;
+
+    const transform = getNodeTransformProps(gameObject);
+    const world = parentMatrix.clone().multiply(compose(gameObject));
+    const childNodes = renderHostedChildren(gameObject, ctx, world);
+
+    return (
+        <group
+            key={gameObject.id}
+            position={transform.position}
+            rotation={transform.rotation}
+            scale={transform.scale}
+        >
+            {renderCompositionNode(gameObject, ctx, parentMatrix, childNodes)}
+        </group>
+    );
+}
+
+function renderHostedChildren(
+    gameObject: GameObjectType,
+    ctx: RenderContext,
+    parentMatrix: Matrix4,
+) {
+    return gameObject.children?.map(child =>
+        renderCompositionSubtree(child, ctx, parentMatrix)
+    );
+}
+
+function renderCompositionNode(
+    gameObject: GameObjectType,
+    ctx: RenderContext,
+    parentMatrix?: Matrix4,
+    childNodes?: React.ReactNode
+) {
+    const ownContent = renderNodeOwnContent(gameObject, ctx, parentMatrix);
+    const siblingContent = renderNodeSiblingComponents(gameObject, ctx, parentMatrix);
+    const subtree = <>{ownContent}{siblingContent}{childNodes}</>;
+
+    return wrapWithChildHosts(gameObject, ctx, parentMatrix, subtree);
+}
+
+function renderNodeOwnContent(
+    gameObject: GameObjectType,
+    ctx: RenderContext,
     parentMatrix?: Matrix4
 ) {
     const geometry = gameObject.components?.geometry;
@@ -542,30 +666,11 @@ function renderCoreNode(
         loadedModels: ctx.loadedModels,
         loadedTextures: ctx.loadedTextures,
         editMode: ctx.editMode,
+        isSelected: ctx.selectedId === gameObject.id,
+        nodeId: gameObject.id,
         parentMatrix,
         registerRef: ctx.registerRef,
     };
-
-    const wrappers: Array<{ key: string; View: any; properties: any }> = [];
-    const leaves: React.ReactNode[] = [];
-
-    if (gameObject.components) {
-        Object.entries(gameObject.components)
-            .filter(([k]) => !getNonComposableKeys().includes(k))
-            .forEach(([key, comp]) => {
-                if (!comp?.type) return;
-                const def = getComponent(comp.type);
-                if (!def?.View) return;
-
-                if (def.View.toString().includes("children")) {
-                    wrappers.push({ key, View: def.View, properties: comp.properties });
-                } else {
-                    leaves.push(
-                        <def.View key={key} properties={comp.properties} {...contextProps} />
-                    );
-                }
-            });
-    }
 
     let core: React.ReactNode;
 
@@ -579,7 +684,6 @@ function renderCoreNode(
                         {...contextProps}
                     />
                 )}
-                {leaves}
             </modelDef.View>
         );
     } else if (geometry && geometryDef?.View) {
@@ -593,27 +697,73 @@ function renderCoreNode(
                         {...contextProps}
                     />
                 )}
-                {leaves}
             </mesh>
         );
     } else if (text && textDef?.View) {
         core = (
             <>
                 <textDef.View properties={text.properties} {...contextProps} />
-                {leaves}
             </>
         );
     } else {
-        core = <>{leaves}</>;
+        core = null;
     }
 
-    return wrappers.reduce(
+    return core;
+}
+
+function renderNodeSiblingComponents(
+    gameObject: GameObjectType,
+    ctx: RenderContext,
+    parentMatrix?: Matrix4
+) {
+    const contextProps = {
+        loadedModels: ctx.loadedModels,
+        loadedTextures: ctx.loadedTextures,
+        editMode: ctx.editMode,
+        isSelected: ctx.selectedId === gameObject.id,
+        nodeId: gameObject.id,
+        parentMatrix,
+        registerRef: ctx.registerRef,
+    };
+
+    return Object.entries(gameObject.components ?? {})
+        .filter(([key]) => !getNonComposableKeys().includes(key))
+        .flatMap(([key, comp]) => {
+            if (!comp?.type || isChildHostType(comp.type)) return [];
+
+            const def = getComponent(comp.type);
+            if (!def?.View) return [];
+
+            return <def.View key={key} properties={comp.properties} {...contextProps} />;
+        });
+}
+
+function wrapWithChildHosts(
+    gameObject: GameObjectType,
+    ctx: RenderContext,
+    parentMatrix: Matrix4 | undefined,
+    subtree: React.ReactNode
+) {
+    const contextProps = {
+        loadedModels: ctx.loadedModels,
+        loadedTextures: ctx.loadedTextures,
+        editMode: ctx.editMode,
+        isSelected: ctx.selectedId === gameObject.id,
+        nodeId: gameObject.id,
+        parentMatrix,
+        registerRef: ctx.registerRef,
+    };
+
+    const childHosts = getChildHostComponents(gameObject);
+
+    return childHosts.reduce(
         (acc, { key, View, properties }) => (
             <View key={key} properties={properties} {...contextProps}>
                 {acc}
             </View>
         ),
-        core
+        subtree
     );
 }
 

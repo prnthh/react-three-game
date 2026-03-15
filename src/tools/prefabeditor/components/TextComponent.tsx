@@ -1,5 +1,5 @@
 import { Component } from "./ComponentRegistry";
-import { FieldRenderer, FieldDefinition } from "./Input";
+import { ColorField, FieldGroup, NumberField, SelectField, StringField } from "./Input";
 import { Text } from 'three-text/three/react';
 import { useRef, useState, useCallback } from 'react';
 import { BufferGeometry, Mesh } from "three";
@@ -14,63 +14,64 @@ function TextComponentEditor({
     component: any;
     onUpdate: (newProps: any) => void;
 }) {
-    const fields: FieldDefinition[] = [
-        {
-            name: 'text',
-            type: 'string',
-            label: 'Text',
-            placeholder: 'Enter text...',
-        },
-        {
-            name: 'color',
-            type: 'color',
-            label: 'Color',
-        },
-        {
-            name: 'font',
-            type: 'string',
-            label: 'Font',
-            placeholder: '/fonts/NotoSans-Regular.ttf',
-        },
-        {
-            name: 'size',
-            type: 'number',
-            label: 'Size',
-            min: 0.01,
-            step: 0.1,
-        },
-        {
-            name: 'depth',
-            type: 'number',
-            label: 'Depth',
-            min: 0,
-            step: 0.1,
-        },
-        {
-            name: 'width',
-            type: 'number',
-            label: 'Width',
-            min: 0,
-            step: 0.5,
-        },
-        {
-            name: 'align',
-            type: 'select',
-            label: 'Align',
-            options: [
-                { value: 'left', label: 'Left' },
-                { value: 'center', label: 'Center' },
-                { value: 'right', label: 'Right' },
-            ],
-        },
-    ];
-
     return (
-        <FieldRenderer
-            fields={fields}
-            values={component.properties}
-            onChange={onUpdate}
-        />
+        <FieldGroup>
+            <StringField
+                name="text"
+                label="Text"
+                values={component.properties}
+                onChange={onUpdate}
+                placeholder="Enter text..."
+            />
+            <ColorField
+                name="color"
+                label="Color"
+                values={component.properties}
+                onChange={onUpdate}
+            />
+            <StringField
+                name="font"
+                label="Font"
+                values={component.properties}
+                onChange={onUpdate}
+                placeholder="/fonts/NotoSans-Regular.ttf"
+            />
+            <NumberField
+                name="size"
+                label="Size"
+                values={component.properties}
+                onChange={onUpdate}
+                min={0.01}
+                step={0.1}
+            />
+            <NumberField
+                name="depth"
+                label="Depth"
+                values={component.properties}
+                onChange={onUpdate}
+                min={0}
+                step={0.1}
+            />
+            <NumberField
+                name="width"
+                label="Width"
+                values={component.properties}
+                onChange={onUpdate}
+                min={0}
+                step={0.5}
+            />
+            <SelectField
+                name="align"
+                label="Align"
+                values={component.properties}
+                onChange={onUpdate}
+                options={[
+                    { value: 'left', label: 'Left' },
+                    { value: 'center', label: 'Center' },
+                    { value: 'right', label: 'Right' },
+                ]}
+            />
+        </FieldGroup>
     );
 }
 

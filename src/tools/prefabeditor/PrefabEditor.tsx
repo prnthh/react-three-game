@@ -36,13 +36,16 @@ const PrefabEditor = forwardRef<PrefabEditorRef, {
     initialPrefab?: Prefab;
     physics?: boolean;
     onPrefabChange?: (prefab: Prefab) => void;
+    uiPlugins?: React.ReactNode[] | React.ReactNode;
     children?: React.ReactNode;
-}>(({ basePath, initialPrefab, physics = true, onPrefabChange, children }, ref) => {
+}>(({ basePath, initialPrefab, physics = true, onPrefabChange, uiPlugins, children }, ref) => {
     const [editMode, setEditMode] = useState(true);
     const [loadedPrefab, setLoadedPrefab] = useState<Prefab>(initialPrefab ?? DEFAULT_PREFAB);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [transformMode, setTransformMode] = useState<"translate" | "rotate" | "scale">("translate");
     const [snapResolution, setSnapResolution] = useState(0);
+    const [positionSnap, setPositionSnap] = useState(0.5);
+    const [rotationSnap, setRotationSnap] = useState(Math.PI / 4);
     const [history, setHistory] = useState<Prefab[]>([loadedPrefab]);
     const [historyIndex, setHistoryIndex] = useState(0);
     const throttleRef = useRef<NodeJS.Timeout | null>(null);
@@ -119,6 +122,10 @@ const PrefabEditor = forwardRef<PrefabEditorRef, {
         exportGLB(sceneRoot, {
             filename: `${loadedPrefab.name || 'scene'}.glb`
         });
+    };
+
+    const handleFocusNode = (nodeId: string) => {
+        prefabRootRef.current?.focusNode(nodeId);
     };
 
     useEffect(() => {
@@ -214,10 +221,15 @@ const PrefabEditor = forwardRef<PrefabEditorRef, {
         setTransformMode,
         snapResolution,
         setSnapResolution,
+        positionSnap,
+        setPositionSnap,
+        rotationSnap,
+        setRotationSnap,
+        onFocusNode: handleFocusNode,
         onScreenshot: handleScreenshot,
         onExportGLB: handleExportGLB
     }}>
-        <GameCanvas>
+        <GameCanvas camera={{ position: [0, 5, 15] }}>
             {physics ? (
                 <Physics debug={editMode} paused={editMode}>
                     {content}
@@ -229,8 +241,9 @@ const PrefabEditor = forwardRef<PrefabEditorRef, {
             <button style={base.btn} onClick={() => setEditMode(!editMode)}>
                 {editMode ? "▶" : "⏸"}
             </button>
+            {uiPlugins}
         </div>
-        {editMode && <EditorUI
+        <EditorUI
             prefabData={loadedPrefab}
             setPrefabData={updatePrefab}
             selectedId={selectedId}
@@ -240,7 +253,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, {
             onRedo={redo}
             canUndo={historyIndex > 0}
             canRedo={historyIndex < history.length - 1}
-        />}
+        />
     </EditorContext.Provider>
 });
 

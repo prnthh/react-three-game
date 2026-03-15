@@ -40,9 +40,6 @@ export default function GameCanvas({ loader = false, children, glConfig, ...prop
                 });
                 return renderer
             }}
-            camera={{
-                position: [0, 1, 5],
-            }}
             {...props}
         >
             <Suspense>

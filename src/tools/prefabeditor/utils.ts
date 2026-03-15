@@ -1,6 +1,6 @@
 import { GameObject, Prefab } from "./types";
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
-import { Object3D } from 'three';
+import { Box3, Object3D, PerspectiveCamera, Quaternion, Vector3 } from 'three';
 
 export interface ExportGLBOptions {
     filename?: string;
@@ -9,10 +9,26 @@ export interface ExportGLBOptions {
     onError?: (error: any) => void;
 }
 
-/** Save a prefab as JSON file */
-export function saveJson(data: Prefab, filename: string) {
+/** Save a prefab as JSON file, showing a Save As dialog when supported */
+export async function saveJson(data: Prefab, filename: string) {
+    const json = JSON.stringify(data, null, 2);
+    if ('showSaveFilePicker' in window) {
+        try {
+            const handle = await (window as any).showSaveFilePicker({
+                suggestedName: `${filename || 'prefab'}.json`,
+                types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
+            });
+            const writable = await handle.createWritable();
+            await writable.write(json);
+            await writable.close();
+            return;
+        } catch (e: any) {
+            if (e?.name === 'AbortError') return; // user cancelled
+        }
+    }
+    // Fallback for browsers without File System Access API
     const a = document.createElement('a');
-    a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
+    a.href = "data:text/json;charset=utf-8," + encodeURIComponent(json);
     a.download = `${filename || 'prefab'}.json`;
     a.click();
 }
@@ -100,6 +116,41 @@ export function exportGLB(
 export async function exportGLBData(sceneRoot: Object3D): Promise<ArrayBuffer> {
     const result = await exportGLB(sceneRoot, { filename: '', binary: true });
     return result as ArrayBuffer;
+}
+
+export function focusCameraOnObject(
+    object: Object3D,
+    camera: Object3D,
+    target: Vector3,
+    update?: () => void,
+) {
+    const bounds = new Box3().setFromObject(object);
+    const center = new Vector3();
+    const size = new Vector3();
+    const quaternion = new Quaternion();
+    object.getWorldQuaternion(quaternion);
+
+    if (bounds.isEmpty()) {
+        object.getWorldPosition(center);
+        size.setScalar(1);
+    } else {
+        bounds.getCenter(center);
+        bounds.getSize(size);
+    }
+
+    const radius = Math.max(size.length() * 0.5, 1);
+    const forward = new Vector3(0, 0, 1).applyQuaternion(quaternion).normalize();
+    const worldUp = new Vector3(0, 1, 0);
+    const elevatedDirection = forward.clone().addScaledVector(worldUp, 0.65).normalize();
+    const distance = camera instanceof PerspectiveCamera
+        ? Math.max(radius / Math.tan((camera.fov * Math.PI) / 360) * 1.8, radius * 3.5)
+        : radius * 4.5;
+    const nextPosition = center.clone().add(elevatedDirection.multiplyScalar(distance));
+
+    camera.position.copy(nextPosition);
+    camera.lookAt(center);
+    target.copy(center);
+    update?.();
 }
 
 /** Find a node by ID in the tree */

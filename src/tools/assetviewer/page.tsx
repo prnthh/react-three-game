@@ -1,15 +1,26 @@
-import { Canvas, useLoader } from "@react-three/fiber";
+import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Stage, View, PerspectiveCamera } from "@react-three/drei";
-import { Suspense, useEffect, useState, useRef } from "react";
+import { Component as ReactComponent, Suspense, useEffect, useState, useRef } from "react";
 import { TextureLoader } from "three";
 import { loadModel } from "../dragdrop/modelLoader";
+
+class ErrorBoundary extends ReactComponent<{ onError?: () => void; children: React.ReactNode }, { hasError: boolean }> {
+    constructor(props: any) {
+        super(props);
+        this.state = { hasError: false };
+    }
+    static getDerivedStateFromError() { return { hasError: true }; }
+    componentDidCatch() { this.props.onError?.(); }
+    render() { return this.state.hasError ? null : this.props.children; }
+}
 
 // view models and textures in manifest, onselect callback
 
 const styles: Record<string, any> = {
     errorIcon: { color: '#fca5a5', fontSize: 12 }, // text-red-400 text-xs
     flexFillRelative: { flex: 1, position: 'relative' },
-    bottomLabel: { backgroundColor: 'rgba(0,0,0,0.6)', fontSize: 10, padding: '0 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' },
+    bottomLabel: { backgroundColor: 'rgba(0,0,0,0.6)', color: '#f9fafb', fontSize: 10, padding: '0 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' },
+    textLight: { color: '#f9fafb' },
     iconLarge: { fontSize: 20 }
 };
 
@@ -49,6 +60,7 @@ function FolderTile({ name, onClick }: { name: string; onClick: () => void }) {
                 maxWidth: 60,
                 aspectRatio: '1 / 1',
                 backgroundColor: '#1f2937', /* gray-800 */
+                color: '#f9fafb',
                 cursor: 'pointer',
                 display: 'flex',
                 flexDirection: 'column',
@@ -100,7 +112,7 @@ function AssetListViewer({ files, selected, onSelect, renderCard }: AssetListVie
     const { folders, filesInCurrentPath } = getItemsInPath(files, currentPath);
 
     return (
-        <div>
+        <div style={styles.textLight}>
             {currentPath && (
                 <button
                     onClick={() => {
@@ -140,17 +152,19 @@ interface TextureListViewerProps {
 
 export function TextureListViewer({ files, selected, onSelect, basePath = "" }: TextureListViewerProps) {
     return (
-        <>
-            <AssetListViewer
-                files={files}
-                selected={selected}
-                onSelect={onSelect}
-                renderCard={(file, onSelectHandler) => (
-                    <TextureCard file={file} basePath={basePath} onSelect={onSelectHandler} />
-                )}
-            />
+        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+            <div style={{ width: '100%', height: '100%', overflowY: 'auto', overflowX: 'hidden', paddingRight: 4 }}>
+                <AssetListViewer
+                    files={files}
+                    selected={selected}
+                    onSelect={onSelect}
+                    renderCard={(file, onSelectHandler) => (
+                        <TextureCard file={file} basePath={basePath} onSelect={onSelectHandler} />
+                    )}
+                />
+            </div>
             <SharedCanvas />
-        </>
+        </div>
     );
 }
 
@@ -175,7 +189,7 @@ function TextureCard({ file, onSelect, basePath = "" }: { file: string; onSelect
     return (
         <div
             ref={ref}
-            style={{ maxWidth: 60, aspectRatio: '1 / 1', backgroundColor: '#1f2937', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
+            style={{ maxWidth: 60, aspectRatio: '1 / 1', backgroundColor: '#1f2937', color: '#f9fafb', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
             onClick={() => onSelect(file)}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
@@ -184,21 +198,19 @@ function TextureCard({ file, onSelect, basePath = "" }: { file: string; onSelect
                 {isInView ? (
                     <View style={{ width: '100%', height: '100%' }}>
                         <PerspectiveCamera makeDefault position={[0, 0, 2.5]} fov={50} />
-                        <Suspense fallback={null}>
-                            <ambientLight intensity={0.8} />
-                            <pointLight position={[5, 5, 5]} intensity={0.5} />
-                            <TextureSphere url={fullPath} onError={() => setError(true)} />
-                            <OrbitControls
-                                enableZoom={false}
-                                enablePan={false}
-                                autoRotate={isHovered}
-                                autoRotateSpeed={2}
-                            />
-                        </Suspense>
+                        <ambientLight intensity={0.8} />
+                        <pointLight position={[5, 5, 5]} intensity={0.5} />
+                        <TextureSphere url={fullPath} onError={() => setError(true)} />
+                        <OrbitControls
+                            enableZoom={false}
+                            enablePan={false}
+                            autoRotate={isHovered}
+                            autoRotateSpeed={2}
+                        />
                     </View>
                 ) : null}
             </div>
-            <div style={{ backgroundColor: 'rgba(0,0,0,0.6)', fontSize: 10, padding: '0 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
+            <div style={styles.bottomLabel}>
                 {file.split('/').pop()}
             </div>
         </div>
@@ -206,10 +218,23 @@ function TextureCard({ file, onSelect, basePath = "" }: { file: string; onSelect
 }
 
 function TextureSphere({ url, onError }: { url: string; onError?: () => void }) {
-    const texture = useLoader(TextureLoader, url, undefined, (error) => {
-        console.error('Failed to load texture:', url, error);
-        onError?.();
-    });
+    const [texture, setTexture] = useState<any>(null);
+
+    useEffect(() => {
+        setTexture(null);
+        const loader = new TextureLoader();
+        loader.load(
+            url,
+            (tex) => setTexture(tex),
+            undefined,
+            (err) => {
+                console.warn('Failed to load texture:', url, err);
+                onError?.();
+            }
+        );
+    }, [url]);
+
+    if (!texture) return null;
     return (
         <mesh position={[0, 0, 0]}>
             <sphereGeometry args={[1, 32, 32]} />
@@ -227,17 +252,19 @@ interface ModelListViewerProps {
 
 export function ModelListViewer({ files, selected, onSelect, basePath = "" }: ModelListViewerProps) {
     return (
-        <>
-            <AssetListViewer
-                files={files}
-                selected={selected}
-                onSelect={onSelect}
-                renderCard={(file, onSelectHandler) => (
-                    <ModelCard file={file} basePath={basePath} onSelect={onSelectHandler} />
-                )}
-            />
+        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+            <div style={{ width: '100%', height: '100%', overflowY: 'auto', overflowX: 'hidden', paddingRight: 4 }}>
+                <AssetListViewer
+                    files={files}
+                    selected={selected}
+                    onSelect={onSelect}
+                    renderCard={(file, onSelectHandler) => (
+                        <ModelCard file={file} basePath={basePath} onSelect={onSelectHandler} />
+                    )}
+                />
+            </div>
             <SharedCanvas />
-        </>
+        </div>
     );
 }
 
@@ -261,7 +288,7 @@ function ModelCard({ file, onSelect, basePath = "" }: { file: string; onSelect: 
     return (
         <div
             ref={ref}
-            style={{ maxWidth: 60, aspectRatio: '1 / 1', backgroundColor: '#111827', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
+            style={{ maxWidth: 60, aspectRatio: '1 / 1', backgroundColor: '#111827', color: '#f9fafb', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
             onClick={() => onSelect(file)}
         >
             <div style={styles.flexFillRelative}>
@@ -277,7 +304,7 @@ function ModelCard({ file, onSelect, basePath = "" }: { file: string; onSelect: 
                     </View>
                 ) : null}
             </div>
-            <div style={{ backgroundColor: 'rgba(0,0,0,0.6)', fontSize: 10, padding: '0 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
+            <div style={styles.bottomLabel}>
                 {file.split('/').pop()}
             </div>
         </div>
@@ -335,10 +362,10 @@ function SoundCard({ file, onSelect, basePath = "" }: { file: string; onSelect: 
     return (
         <div
             onClick={() => onSelect(file)}
-            style={{ aspectRatio: '1 / 1', backgroundColor: '#374151', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
+            style={{ aspectRatio: '1 / 1', backgroundColor: '#374151', color: '#f9fafb', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
         >
             <div style={styles.iconLarge}>🔊</div>
-            <div style={{ fontSize: 12, padding: '0 4px', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center', width: '100%' }}>{fileName}</div>
+            <div style={{ color: '#f9fafb', fontSize: 12, padding: '0 4px', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center', width: '100%' }}>{fileName}</div>
         </div>
     );
 }
@@ -375,7 +402,11 @@ export function SharedCanvas() {
         <Canvas
             shadows
             dpr={[1, 1.5]}
+            gl={{ alpha: true }}
             camera={{ position: [0, 0, 3], fov: 45, near: 0.1, far: 1000 }}
+            onCreated={({ gl }) => {
+                gl.setClearAlpha(0);
+            }}
             style={{
                 position: 'fixed',
                 top: 0,
@@ -383,6 +414,7 @@ export function SharedCanvas() {
                 width: '100vw',
                 height: '100vh',
                 pointerEvents: 'none',
+                background: 'transparent',
             }}
             eventSource={typeof document !== 'undefined' ? document.getElementById('root') || undefined : undefined}
             eventPrefix="client"

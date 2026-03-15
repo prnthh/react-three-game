@@ -1,5 +1,5 @@
 import { Component } from "./ComponentRegistry";
-import { FieldRenderer, FieldDefinition, Label } from "./Input";
+import { Label, Vector3Field, Vector3Input } from "./Input";
 import { useEditorContext } from "../EditorContext";
 import { colors } from "../styles";
 
@@ -78,17 +78,41 @@ function TransformModeSelector({
     );
 }
 
+const snapLockBtnStyle: React.CSSProperties = {
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    padding: '0 2px',
+    fontSize: 12,
+    lineHeight: 1,
+    color: colors.textMuted,
+};
+
+function SnapLockButton({ locked, onToggle, title }: { locked: boolean; onToggle: () => void; title: string }) {
+    return (
+        <button style={snapLockBtnStyle} onClick={onToggle} title={title}>
+            {locked ? '🔒' : '🔓'}
+        </button>
+    );
+}
+
 function TransformComponentEditor({ component, onUpdate }: {
     component: any;
     onUpdate: (newComp: any) => void;
 }) {
-    const { transformMode, setTransformMode, snapResolution, setSnapResolution } = useEditorContext();
+    const {
+        transformMode,
+        setTransformMode,
+        snapResolution,
+        setSnapResolution,
+        positionSnap,
+        setPositionSnap,
+        rotationSnap,
+        setRotationSnap
+    } = useEditorContext();
 
-    const fields: FieldDefinition[] = [
-        { name: 'position', type: 'vector3', label: 'Position', snap: snapResolution },
-        { name: 'rotation', type: 'vector3', label: 'Rotation', snap: snapResolution },
-        { name: 'scale', type: 'vector3', label: 'Scale', snap: snapResolution },
-    ];
+    const positionSnapped = positionSnap > 0;
+    const rotationSnapped = rotationSnap > 0;
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -98,10 +122,38 @@ function TransformComponentEditor({ component, onUpdate }: {
                 snapResolution={snapResolution}
                 setSnapResolution={setSnapResolution}
             />
-            <FieldRenderer
-                fields={fields}
+            <Vector3Input
+                label="Position"
+                value={component.properties.position ?? [0, 0, 0]}
+                onChange={v => onUpdate({ position: v })}
+                snap={positionSnap}
+                labelExtra={
+                    <SnapLockButton
+                        locked={positionSnapped}
+                        onToggle={() => setPositionSnap(positionSnapped ? 0 : 0.5)}
+                        title={positionSnapped ? `Snap ON (0.5) — click to disable` : `Snap OFF — click to enable (0.5)`}
+                    />
+                }
+            />
+            <Vector3Input
+                label="Rotation"
+                value={component.properties.rotation ?? [0, 0, 0]}
+                onChange={v => onUpdate({ rotation: v })}
+                snap={rotationSnap}
+                labelExtra={
+                    <SnapLockButton
+                        locked={rotationSnapped}
+                        onToggle={() => setRotationSnap(rotationSnapped ? 0 : Math.PI / 4)}
+                        title={rotationSnapped ? `Snap ON (π/4) — click to disable` : `Snap OFF — click to enable (π/4)`}
+                    />
+                }
+            />
+            <Vector3Field
+                name="scale"
+                label="Scale"
                 values={component.properties}
                 onChange={onUpdate}
+                fallback={[1, 1, 1]}
             />
         </div>
     );

@@ -1,8 +1,12 @@
 import { ModelListViewer, SingleModelViewer } from '../../assetviewer/page';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useLayoutEffect, useState, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Component } from './ComponentRegistry';
 import { FieldRenderer, FieldDefinition } from './Input';
 import { GameObject } from '../types';
+
+const PICKER_POPUP_WIDTH = 260;
+const PICKER_POPUP_HEIGHT = 360;
 
 function ModelPicker({
     value,
@@ -17,6 +21,8 @@ function ModelPicker({
 }) {
     const [modelFiles, setModelFiles] = useState<string[]>([]);
     const [showPicker, setShowPicker] = useState(false);
+    const [popupStyle, setPopupStyle] = useState<React.CSSProperties | null>(null);
+    const triggerRef = useRef<HTMLButtonElement>(null);
 
     useEffect(() => {
         fetch(`${basePath}/models/manifest.json`)
@@ -24,6 +30,45 @@ function ModelPicker({
             .then(data => setModelFiles(Array.isArray(data) ? data : data.files || []))
             .catch(console.error);
     }, [basePath]);
+
+    useLayoutEffect(() => {
+        if (!showPicker || !triggerRef.current || typeof window === 'undefined') return;
+
+        const updatePosition = () => {
+            const rect = triggerRef.current?.getBoundingClientRect();
+            if (!rect) return;
+
+            const preferredLeft = rect.left - PICKER_POPUP_WIDTH - 8;
+            const fallbackLeft = rect.right + 8;
+            const fitsLeft = preferredLeft >= 8;
+            const left = fitsLeft ? preferredLeft : Math.min(fallbackLeft, window.innerWidth - PICKER_POPUP_WIDTH - 8);
+            const top = Math.min(Math.max(8, rect.top), window.innerHeight - PICKER_POPUP_HEIGHT - 8);
+
+            setPopupStyle({
+                position: 'fixed',
+                left,
+                top,
+                background: 'rgba(0,0,0,0.9)',
+                padding: 12,
+                border: '1px solid rgba(34, 211, 238, 0.3)',
+                borderRadius: 6,
+                width: PICKER_POPUP_WIDTH,
+                height: PICKER_POPUP_HEIGHT,
+                overflow: 'hidden',
+                zIndex: 1000,
+                boxShadow: '0 4px 16px rgba(0,0,0,0.6)',
+            });
+        };
+
+        updatePosition();
+        window.addEventListener('resize', updatePosition);
+        window.addEventListener('scroll', updatePosition, true);
+
+        return () => {
+            window.removeEventListener('resize', updatePosition);
+            window.removeEventListener('scroll', updatePosition, true);
+        };
+    }, [showPicker]);
 
     const handleModelSelect = (file: string) => {
         const filename = file.startsWith('/') ? file.slice(1) : file;
@@ -35,6 +80,7 @@ function ModelPicker({
         <div style={{ maxHeight: 128, overflow: 'visible', position: 'relative', display: 'flex', alignItems: 'center' }}>
             <SingleModelViewer file={value ? `/${value}` : undefined} basePath={basePath} />
             <button
+                ref={triggerRef}
                 onClick={() => setShowPicker(!showPicker)}
                 style={{ padding: '4px 8px', backgroundColor: '#1f2937', color: 'inherit', fontSize: 10, cursor: 'pointer', border: '1px solid rgba(34, 211, 238, 0.3)', marginTop: 4 }}
             >
@@ -48,8 +94,8 @@ function ModelPicker({
             >
                 Clear
             </button>
-            {showPicker && (
-                <div style={{ position: 'fixed', right: 60, top: 60, transform: 'translate(-100%,0%)', background: 'rgba(0,0,0,0.9)', padding: 16, border: '1px solid rgba(34, 211, 238, 0.3)', maxHeight: '80vh', overflowY: 'auto', overflowX: 'hidden', width: 220, zIndex: 1000 }}>
+            {showPicker && popupStyle && typeof document !== 'undefined' && createPortal(
+                <div style={popupStyle} onMouseLeave={() => setShowPicker(false)}>
                     <ModelListViewer
                         key={nodeId}
                         files={modelFiles}
@@ -57,7 +103,8 @@ function ModelPicker({
                         onSelect={handleModelSelect}
                         basePath={basePath}
                     />
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

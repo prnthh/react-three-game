@@ -219,3 +219,43 @@ export function updateNodeById(
     children: newChildren
   };
 }
+
+/** Create a GameObject node for a 3D model file */
+export function createModelNode(filename: string, name?: string): GameObject {
+    return {
+        id: crypto.randomUUID(),
+        name: name ?? filename.replace(/^.*[\/]/, '').replace(/\.[^.]+$/, ''),
+        components: {
+            transform: {
+                type: 'Transform',
+                properties: { position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1] }
+            },
+            model: {
+                type: 'Model',
+                properties: { filename, instanced: false }
+            }
+        }
+    };
+}
+
+/** Create a GameObject node for an image as a textured plane */
+export function createImageNode(texturePath: string, name?: string): GameObject {
+    return {
+        id: crypto.randomUUID(),
+        name: name ?? texturePath.replace(/^.*[\/]/, '').replace(/\.[^.]+$/, ''),
+        components: {
+            transform: {
+                type: 'Transform',
+                properties: { position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1] }
+            },
+            geometry: {
+                type: 'Geometry',
+                properties: { geometryType: 'plane', args: [1, 1] }
+            },
+            material: {
+                type: 'Material',
+                properties: { color: '#ffffff', texture: texturePath }
+            }
+        }
+    };
+}

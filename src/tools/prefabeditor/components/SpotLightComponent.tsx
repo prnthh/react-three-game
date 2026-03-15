@@ -1,6 +1,8 @@
 import { Component } from "./ComponentRegistry";
 import { useRef, useEffect } from "react";
 import { FieldRenderer, FieldDefinition } from "./Input";
+import { useHelper } from "@react-three/drei";
+import { SpotLightHelper } from "three";
 
 const spotLightFields: FieldDefinition[] = [
     { name: 'color', type: 'color', label: 'Color' },
@@ -31,6 +33,8 @@ function SpotLightView({ properties, editMode }: { properties: any; editMode?: b
 
     const spotLightRef = useRef<any>(null);
     const targetRef = useRef<any>(null);
+
+    useHelper(editMode ? spotLightRef : null, SpotLightHelper, color);
 
     useEffect(() => {
         if (spotLightRef.current && targetRef.current) {

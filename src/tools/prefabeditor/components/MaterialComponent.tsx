@@ -48,9 +48,17 @@ function TexturePicker({
             .catch(console.error);
     }, [basePath]);
 
+    // Only show 3D preview for server-hosted textures (starting with / or http)
+    const canPreview = value && (value.startsWith('/') || value.startsWith('http'));
+
     return (
         <div style={{ maxHeight: 128, overflow: 'visible', position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <SingleTextureViewer file={value || undefined} basePath={basePath} />
+            {canPreview
+                ? <SingleTextureViewer file={value} basePath={basePath} />
+                : value
+                    ? <span style={{ fontSize: 10, opacity: 0.6, maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</span>
+                    : null
+            }
             <button
                 onClick={() => setShowPicker(!showPicker)}
                 style={{ padding: '4px 8px', backgroundColor: colors.bgLight, color: 'inherit', fontSize: 10, cursor: 'pointer', border: `1px solid ${colors.border}`, borderRadius: 3, marginTop: 4 }}

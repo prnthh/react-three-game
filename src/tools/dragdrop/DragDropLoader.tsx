@@ -1,52 +1,20 @@
 // DragDropLoader.tsx
 import { useEffect, ChangeEvent } from "react";
-import { DRACOLoader, FBXLoader, GLTFLoader } from "three/examples/jsm/Addons.js";
+import { parseModelFromFile } from "./modelLoader";
 
 interface DragDropLoaderProps {
     onModelLoaded: (model: any, filename: string) => void;
 }
 
-// Shared file handling logic
 function handleFiles(files: File[], onModelLoaded: (model: any, filename: string) => void) {
-    files.forEach((file) => {
-        if (file.name.endsWith(".glb") || file.name.endsWith(".gltf")) {
-            loadGLTFFile(file, onModelLoaded);
-        } else if (file.name.endsWith(".fbx")) {
-            loadFBXFile(file, onModelLoaded);
+    files.forEach(async (file) => {
+        const result = await parseModelFromFile(file);
+        if (result.success && result.model) {
+            onModelLoaded(result.model, file.name);
+        } else {
+            console.error("Model parse error:", result.error);
         }
     });
-}
-
-function loadGLTFFile(file: File, onModelLoaded: (model: any, filename: string) => void) {
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        const arrayBuffer = event.target?.result;
-        if (arrayBuffer) {
-            const loader = new GLTFLoader();
-            const dracoLoader = new DRACOLoader();
-            dracoLoader.setDecoderPath("https://www.gstatic.com/draco/v1/decoders/");
-            loader.setDRACOLoader(dracoLoader);
-            loader.parse(arrayBuffer as ArrayBuffer, "", (gltf) => {
-                onModelLoaded(gltf.scene, file.name);
-            }, (error) => {
-                console.error("GLTFLoader parse error", error);
-            });
-        }
-    };
-    reader.readAsArrayBuffer(file);
-}
-
-function loadFBXFile(file: File, onModelLoaded: (model: any, filename: string) => void) {
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        const arrayBuffer = event.target?.result;
-        if (arrayBuffer) {
-            const loader = new FBXLoader();
-            const model = loader.parse(arrayBuffer as ArrayBuffer, "");
-            onModelLoaded(model, file.name);
-        }
-    };
-    reader.readAsArrayBuffer(file);
 }
 
 export function DragDropLoader({ onModelLoaded }: DragDropLoaderProps) {

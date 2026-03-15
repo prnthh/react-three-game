@@ -17,6 +17,42 @@ gltfLoader.setDRACOLoader(dracoLoader);
 
 const fbxLoader = new FBXLoader();
 
+/**
+ * Parse a model from a File object (e.g. from drag-drop or file picker).
+ * Returns the parsed Three.js Object3D scene.
+ */
+export function parseModelFromFile(file: File): Promise<ModelLoadResult> {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const arrayBuffer = event.target?.result as ArrayBuffer;
+            if (!arrayBuffer) {
+                resolve({ success: false, error: new Error('Failed to read file') });
+                return;
+            }
+            const name = file.name.toLowerCase();
+            if (name.endsWith('.glb') || name.endsWith('.gltf')) {
+                gltfLoader.parse(arrayBuffer, '', (gltf) => {
+                    resolve({ success: true, model: gltf.scene });
+                }, (error) => {
+                    resolve({ success: false, error });
+                });
+            } else if (name.endsWith('.fbx')) {
+                try {
+                    const model = fbxLoader.parse(arrayBuffer, '');
+                    resolve({ success: true, model });
+                } catch (error) {
+                    resolve({ success: false, error });
+                }
+            } else {
+                resolve({ success: false, error: new Error(`Unsupported file format: ${file.name}`) });
+            }
+        };
+        reader.onerror = () => resolve({ success: false, error: reader.error });
+        reader.readAsArrayBuffer(file);
+    });
+}
+
 export async function loadModel(
     filename: string,
     onProgress?: ProgressCallback

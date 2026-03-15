@@ -6,7 +6,8 @@ import { Physics } from "@react-three/rapier";
 import EditorUI from "./EditorUI";
 import { base, toolbar } from "./styles";
 import { EditorContext } from "./EditorContext";
-import { exportGLB } from "./utils";
+import { exportGLB, createModelNode, createImageNode } from "./utils";
+import { parseModelFromFile } from "../dragdrop/modelLoader";
 
 export interface PrefabEditorRef {
     screenshot: () => void;
@@ -124,6 +125,64 @@ const PrefabEditor = forwardRef<PrefabEditorRef, {
         const canvas = document.querySelector('canvas');
         if (canvas) canvasRef.current = canvas;
     }, []);
+
+    // --- Drag & drop files to add nodes ---
+    useEffect(() => {
+        const IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'svg'];
+        const MODEL_EXTS = ['glb', 'gltf', 'fbx'];
+
+        function handleDragOver(e: DragEvent) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        function handleDrop(e: DragEvent) {
+            e.preventDefault();
+            e.stopPropagation();
+            const files = e.dataTransfer?.files ? Array.from(e.dataTransfer.files) : [];
+            files.forEach(file => {
+                const ext = file.name.split('.').pop()?.toLowerCase();
+                if (!ext) return;
+
+                const baseName = file.name.replace(/\.[^.]+$/, '');
+
+                if (MODEL_EXTS.includes(ext)) {
+                    const modelPath = `models/${file.name}`;
+                    const newNode = createModelNode(modelPath, baseName);
+
+                    updatePrefab(prev => ({
+                        ...prev,
+                        root: { ...prev.root, children: [...(prev.root.children ?? []), newNode] }
+                    }));
+
+                    parseModelFromFile(file).then(result => {
+                        if (result.success && result.model) {
+                            prefabRootRef.current?.injectModel(modelPath, result.model);
+                        } else {
+                            console.error('Drop parse error:', result.error);
+                        }
+                    });
+                } else if (IMAGE_EXTS.includes(ext)) {
+                    const texturePath = `textures/${file.name}`;
+                    const newNode = createImageNode(texturePath, baseName);
+
+                    updatePrefab(prev => ({
+                        ...prev,
+                        root: { ...prev.root, children: [...(prev.root.children ?? []), newNode] }
+                    }));
+
+                    // Inject a blob URL texture so it renders immediately
+                    prefabRootRef.current?.injectTexture(texturePath, file);
+                }
+            });
+        }
+
+        window.addEventListener('dragover', handleDragOver);
+        window.addEventListener('drop', handleDrop);
+        return () => {
+            window.removeEventListener('dragover', handleDragOver);
+            window.removeEventListener('drop', handleDrop);
+        };
+    }, [loadedPrefab]);
 
     useImperativeHandle(ref, () => ({
         screenshot: handleScreenshot,

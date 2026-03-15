@@ -22,6 +22,8 @@ const IDENTITY = new Matrix4();
 export interface PrefabRootRef {
     root: Group | null;
     rigidBodyRefs: Map<string, any>; // RigidBody refs only populated when using physics
+    injectModel: (filename: string, model: Object3D) => void;
+    injectTexture: (filename: string, file: File) => void;
 }
 
 export const PrefabRoot = forwardRef<PrefabRootRef, {
@@ -48,10 +50,27 @@ export const PrefabRoot = forwardRef<PrefabRootRef, {
     const [selectedObject, setSelectedObject] = useState<Object3D | null>(null);
     const rootRef = useRef<Group>(null);
 
+    const injectModel = useCallback((filename: string, model: Object3D) => {
+        setModels(m => ({ ...m, [filename]: model }));
+    }, []);
+
+    const injectTexture = useCallback((filename: string, file: File) => {
+        loading.current.add(filename);
+        const url = URL.createObjectURL(file);
+        const loader = new TextureLoader();
+        loader.load(url, tex => {
+            tex.colorSpace = SRGBColorSpace;
+            setTextures(t => ({ ...t, [filename]: tex }));
+            URL.revokeObjectURL(url);
+        }, undefined, () => URL.revokeObjectURL(url));
+    }, []);
+
     useImperativeHandle(ref, () => ({
         root: rootRef.current,
-        rigidBodyRefs: rigidBodyRefs.current
-    }), []);
+        rigidBodyRefs: rigidBodyRefs.current,
+        injectModel,
+        injectTexture
+    }), [injectModel, injectTexture]);
 
     const registerRef = useCallback((id: string, obj: Object3D | null) => {
         objectRefs.current[id] = obj;

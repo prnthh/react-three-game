@@ -350,7 +350,7 @@ function FileMenu({
 
     return (
         <div
-            style={{ ...menu.container, top: 28, right: 0 }}
+            style={{ ...menu.container, position: 'absolute', top: 28, right: 0 }}
             onClick={(e) => e.stopPropagation()}
         >
             <button

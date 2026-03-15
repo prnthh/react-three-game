@@ -377,7 +377,7 @@ export function SharedCanvas() {
             dpr={[1, 1.5]}
             camera={{ position: [0, 0, 3], fov: 45, near: 0.1, far: 1000 }}
             style={{
-                position: 'absolute',
+                position: 'fixed',
                 top: 0,
                 left: 0,
                 width: '100vw',

@@ -1,15 +1,17 @@
 import { Component } from "./ComponentRegistry";
 import { FieldRenderer, FieldDefinition, Label } from "./Input";
 import { useEditorContext } from "../EditorContext";
+import { colors } from "../styles";
 
 const buttonStyle = {
-    padding: '2px 6px',
-    background: 'transparent',
-    color: 'rgba(255,255,255,0.9)',
-    border: '1px solid rgba(255,255,255,0.14)',
-    borderRadius: 4,
+    padding: '4px 8px',
+    background: colors.bgSurface,
+    color: colors.text,
+    border: `1px solid ${colors.border}`,
+    borderRadius: 3,
     cursor: 'pointer',
     font: 'inherit',
+    fontSize: 11,
     flex: 1,
 };
 
@@ -36,13 +38,15 @@ function TransformModeSelector({
                             onClick={() => setTransformMode(mode as any)}
                             style={{
                                 ...buttonStyle,
-                                background: isActive ? 'rgba(255,255,255,0.10)' : 'transparent',
+                                background: isActive ? colors.accentBg : colors.bgSurface,
+                                borderColor: isActive ? colors.accentBorder : colors.border,
+                                color: isActive ? colors.accent : colors.text,
                             }}
                             onPointerEnter={(e) => {
-                                if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                                if (!isActive) e.currentTarget.style.background = colors.bgHover;
                             }}
                             onPointerLeave={(e) => {
-                                if (!isActive) e.currentTarget.style.background = 'transparent';
+                                if (!isActive) e.currentTarget.style.background = colors.bgSurface;
                             }}
                         >
                             {mode}
@@ -55,14 +59,16 @@ function TransformModeSelector({
                     onClick={() => setSnapResolution(snapResolution > 0 ? 0 : 0.1)}
                     style={{
                         ...buttonStyle,
-                        background: snapResolution > 0 ? 'rgba(255,255,255,0.10)' : 'transparent',
+                        background: snapResolution > 0 ? colors.accentBg : colors.bgSurface,
+                        borderColor: snapResolution > 0 ? colors.accentBorder : colors.border,
+                        color: snapResolution > 0 ? colors.accent : colors.text,
                         width: '100%',
                     }}
                     onPointerEnter={(e) => {
-                        if (snapResolution === 0) e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                        if (snapResolution === 0) e.currentTarget.style.background = colors.bgHover;
                     }}
                     onPointerLeave={(e) => {
-                        if (snapResolution === 0) e.currentTarget.style.background = 'transparent';
+                        if (snapResolution === 0) e.currentTarget.style.background = colors.bgSurface;
                     }}
                 >
                     Snap: {snapResolution > 0 ? `ON (${snapResolution})` : 'OFF'}

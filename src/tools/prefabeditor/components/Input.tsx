@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { colors } from '../styles';
 
 // ============================================================================
 // Field Definition Types
@@ -61,29 +62,30 @@ export type FieldDefinition =
     | CustomFieldDefinition;
 
 // ============================================================================
-// Shared Styles
+// Shared Styles (derived from shared color tokens)
 // ============================================================================
 
-// Shared styles
 const styles = {
     input: {
         width: '80px',
-        backgroundColor: 'rgba(0, 0, 0, 0.4)',
-        border: '1px solid rgba(34, 211, 238, 0.3)',
-        padding: '2px 4px',
-        fontSize: '10px',
-        color: 'rgba(165, 243, 252, 1)',
+        backgroundColor: colors.bgInput,
+        border: `1px solid ${colors.border}`,
+        padding: '3px 6px',
+        fontSize: '11px',
+        color: colors.text,
         fontFamily: 'monospace',
         outline: 'none',
         textAlign: 'right',
+        borderRadius: 3,
     } as React.CSSProperties,
     label: {
         display: 'block',
-        fontSize: '9px',
-        color: 'rgba(34, 211, 238, 0.9)',
+        fontSize: '10px',
+        color: colors.textMuted,
         textTransform: 'uppercase',
         letterSpacing: '0.05em',
         marginBottom: 2,
+        fontWeight: 500,
     } as React.CSSProperties,
 };
 
@@ -317,9 +319,9 @@ export function Vector3Input({
     };
 
     const axes = [
-        { key: "x", color: 'rgba(248, 113, 113, 1)', index: 0 },
-        { key: "y", color: 'rgba(134, 239, 172, 1)', index: 1 },
-        { key: "z", color: 'rgba(96, 165, 250, 1)', index: 2 }
+        { key: "x", color: '#e06c75', index: 0 },
+        { key: "y", color: '#98c379', index: 1 },
+        { key: "z", color: '#61afef', index: 2 }
     ] as const;
 
     return (
@@ -334,17 +336,17 @@ export function Vector3Input({
                             display: 'flex',
                             alignItems: 'center',
                             gap: 4,
-                            backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                            border: '1px solid rgba(34, 211, 238, 0.2)',
-                            borderRadius: 4,
+                            backgroundColor: colors.bgInput,
+                            border: `1px solid ${colors.border}`,
+                            borderRadius: 3,
                             padding: '4px 6px',
-                            minHeight: 32,
+                            minHeight: 28,
                         }}
                     >
                         <span
                             style={{
-                                fontSize: '12px',
-                                fontWeight: 'bold',
+                                fontSize: 11,
+                                fontWeight: 600,
                                 color,
                                 width: 12,
                                 cursor: 'ew-resize',
@@ -361,8 +363,8 @@ export function Vector3Input({
                                 flex: 1,
                                 backgroundColor: 'transparent',
                                 border: 'none',
-                                fontSize: '12px',
-                                color: 'rgba(165, 243, 252, 1)',
+                                fontSize: 11,
+                                color: colors.text,
                                 fontFamily: 'monospace',
                                 outline: 'none',
                                 width: '100%',
@@ -411,11 +413,11 @@ export function ColorInput({
                     style={{
                         height: 32,
                         width: 48,
-                        backgroundColor: 'transparent',
-                        border: '1px solid rgba(34, 211, 238, 0.3)',
-                        borderRadius: 4,
+                        backgroundColor: colors.bgInput,
+                        border: `1px solid ${colors.border}`,
+                        borderRadius: 3,
                         cursor: 'pointer',
-                        padding: 0,
+                        padding: 2,
                         flexShrink: 0,
                     }}
                     value={value}
@@ -474,8 +476,7 @@ export function BooleanInput({
                 style={{
                     height: 16,
                     width: 16,
-                    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-                    border: '1px solid rgba(34, 211, 238, 0.3)',
+                    accentColor: colors.accent,
                     cursor: 'pointer',
                 }}
                 checked={value}

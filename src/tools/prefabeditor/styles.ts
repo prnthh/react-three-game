@@ -1,21 +1,27 @@
 // Shared editor styles - single source of truth for all prefab editor UI
 
 export const colors = {
-    bg: 'rgba(100, 100, 100, 0.5)',
-    bgLight: 'rgba(255,255,255,0.06)',
-    bgHover: 'rgba(255,255,255,0.1)',
-    border: 'rgba(255,255,255,0.15)',
-    borderLight: 'rgba(255,255,255,0.1)',
-    borderFaint: 'rgba(255,255,255,0.05)',
-    text: '#fff',
-    textMuted: 'rgba(255,255,255,0.7)',
-    danger: '#ffaaaa',
-    dangerBg: 'rgba(255,80,80,0.2)',
-    dangerBorder: 'rgba(255,80,80,0.4)',
+    bg: '#1e1e1e',
+    bgSurface: '#252526',
+    bgLight: '#2d2d2d',
+    bgHover: '#2a2d2e',
+    bgInput: '#1a1a1a',
+    border: '#3c3c3c',
+    borderLight: '#333333',
+    borderFaint: '#2a2a2a',
+    text: '#cccccc',
+    textMuted: '#999999',
+    textDim: '#666666',
+    accent: '#4c9eff',
+    accentBg: 'rgba(76, 158, 255, 0.12)',
+    accentBorder: 'rgba(76, 158, 255, 0.4)',
+    danger: '#f44747',
+    dangerBg: 'rgba(244, 71, 71, 0.12)',
+    dangerBorder: 'rgba(244, 71, 71, 0.35)',
 };
 
 export const fonts = {
-    family: 'system-ui, sans-serif',
+    family: 'system-ui, -apple-system, sans-serif',
     size: 11,
     sizeSm: 10,
 };
@@ -27,13 +33,13 @@ export const base = {
         color: colors.text,
         border: `1px solid ${colors.border}`,
         borderRadius: 4,
-        backdropFilter: 'blur(8px)',
         fontFamily: fonts.family,
         fontSize: fonts.size,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
     } as React.CSSProperties,
 
     header: {
-        padding: '6px 8px',
+        padding: '7px 10px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -41,24 +47,25 @@ export const base = {
         background: colors.bgLight,
         borderBottom: `1px solid ${colors.borderLight}`,
         fontSize: fonts.size,
-        fontWeight: 500,
+        fontWeight: 600,
         textTransform: 'uppercase',
-        letterSpacing: 0.5,
+        letterSpacing: 0.8,
+        color: colors.text,
     } as React.CSSProperties,
 
     input: {
         width: '100%',
-        background: colors.bgHover,
+        background: colors.bgInput,
         border: `1px solid ${colors.border}`,
         borderRadius: 3,
-        padding: '4px 6px',
+        padding: '5px 8px',
         color: colors.text,
         fontSize: fonts.size,
         outline: 'none',
     } as React.CSSProperties,
 
     btn: {
-        background: colors.bgHover,
+        background: colors.bgLight,
         border: `1px solid ${colors.border}`,
         borderRadius: 3,
         padding: '4px 8px',
@@ -76,10 +83,11 @@ export const base = {
 
     label: {
         fontSize: fonts.sizeSm,
-        opacity: 0.7,
+        color: colors.textMuted,
         marginBottom: 4,
         textTransform: 'uppercase',
         letterSpacing: 0.5,
+        fontWeight: 500,
     } as React.CSSProperties,
 
     row: {
@@ -125,18 +133,22 @@ export const tree = {
         overflowY: 'auto' as const,
         padding: 4,
         scrollbarWidth: 'thin' as const,
-        scrollbarColor: 'rgba(255,255,255,0.06) transparent',
+        scrollbarColor: `${colors.bgLight} transparent`,
     } as React.CSSProperties,
     row: {
         display: 'flex',
         alignItems: 'center',
         padding: '3px 6px',
-        borderBottom: `1px solid ${colors.borderFaint}`,
+        borderBottomWidth: 1,
+        borderBottomStyle: 'solid',
+        borderBottomColor: colors.borderFaint,
         cursor: 'pointer',
         whiteSpace: 'nowrap' as const,
+        borderRadius: 2,
     } as React.CSSProperties,
     selected: {
-        background: 'rgba(255,255,255,0.12)',
+        background: colors.accentBg,
+        borderBottomColor: colors.accentBorder,
     },
 };
 
@@ -144,18 +156,17 @@ export const menu = {
     container: {
         position: 'fixed' as const,
         zIndex: 50,
-        minWidth: 120,
-        background: 'rgba(0,0,0,0.85)',
+        minWidth: 140,
+        background: colors.bgSurface,
         border: `1px solid ${colors.border}`,
         borderRadius: 4,
         overflow: 'hidden',
-        boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-        backdropFilter: 'blur(8px)',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.6)',
     },
     item: {
         width: '100%',
         textAlign: 'left' as const,
-        padding: '6px 8px',
+        padding: '7px 12px',
         background: 'transparent',
         border: 'none',
         color: colors.text,
@@ -183,14 +194,38 @@ export const toolbar = {
         color: colors.text,
         fontFamily: fonts.family,
         fontSize: fonts.size,
-        backdropFilter: 'blur(8px)',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
     },
     divider: {
         width: 1,
-        background: 'rgba(255,255,255,0.2)',
+        background: colors.borderLight,
     },
     disabled: {
         opacity: 0.4,
         cursor: 'not-allowed',
     },
+};
+
+// Shared scrollbar CSS (inject via <style> tag since CSS can't be bundled)
+export const scrollbarCSS = `
+.prefab-scroll::-webkit-scrollbar,
+.tree-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.prefab-scroll::-webkit-scrollbar-track,
+.tree-scroll::-webkit-scrollbar-track { background: transparent; }
+.prefab-scroll::-webkit-scrollbar-thumb,
+.tree-scroll::-webkit-scrollbar-thumb { background: ${colors.border}; border-radius: 3px; }
+.prefab-scroll::-webkit-scrollbar-thumb:hover,
+.tree-scroll::-webkit-scrollbar-thumb:hover { background: #555; }
+.prefab-scroll { scrollbar-width: thin; scrollbar-color: ${colors.border} transparent; }
+`;
+
+// Reusable component card style for inspector sections
+export const componentCard = {
+    container: {
+        marginBottom: 8,
+        backgroundColor: colors.bgSurface,
+        padding: 8,
+        borderRadius: 4,
+        border: `1px solid ${colors.border}`,
+    } as React.CSSProperties,
 };

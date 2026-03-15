@@ -171,7 +171,7 @@ export function cloneNode(node: GameObject): GameObject {
     return {
         ...node,
         id: crypto.randomUUID(),
-        name: `${node.name ?? "Node"} Copy`,
+        name: `${node.name ?? node.id} Copy`,
         children: node.children?.map(cloneNode)
     };
 }

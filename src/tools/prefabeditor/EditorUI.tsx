@@ -2,7 +2,7 @@ import { Dispatch, SetStateAction, useState, useEffect } from 'react';
 import { Prefab, GameObject as GameObjectType } from "./types";
 import EditorTree from './EditorTree';
 import { getAllComponents } from './components/ComponentRegistry';
-import { base, inspector } from './styles';
+import { base, colors, inspector, scrollbarCSS, componentCard } from './styles';
 import { findNode, updateNode, deleteNode } from './utils';
 
 function EditorUI({
@@ -45,12 +45,7 @@ function EditorUI({
     const selectedNode = selectedId && prefabData ? findNode(prefabData.root, selectedId) : null;
 
     return <>
-        <style>{`
-.prefab-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
-.prefab-scroll::-webkit-scrollbar-track { background: transparent; }
-.prefab-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 8px; }
-.prefab-scroll { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.06) transparent; }
-        `}</style>
+        <style>{scrollbarCSS}</style>
         <div style={inspector.panel}>
             <div style={base.header} onClick={() => setCollapsed(!collapsed)}>
                 <span>Inspector</span>
@@ -106,7 +101,7 @@ function NodeInspector({
         {/* Node Name */}
         <div style={base.section}>
             <div style={{ display: "flex", marginBottom: 8, alignItems: 'center', gap: 8 }}>
-                <div style={{ fontSize: 10, color: '#888', wordBreak: 'break-all', border: '1px solid rgba(255,255,255,0.1)', padding: '2px 4px', borderRadius: 4, flex: 1 }}>
+                <div style={{ fontSize: 10, color: colors.textDim, wordBreak: 'break-all', border: `1px solid ${colors.border}`, padding: '2px 6px', borderRadius: 3, flex: 1, fontFamily: 'monospace' }}>
                     {node.id}
                 </div>
                 <button style={{ ...base.btn, ...base.btnDanger }} title="Delete Node" onClick={deleteNode}>❌</button>
@@ -131,12 +126,12 @@ function NodeInspector({
             {node.components && Object.entries(node.components).map(([key, comp]: [string, any]) => {
                 if (!comp) return null;
                 const def = ALL_COMPONENTS[comp.type];
-                if (!def) return <div key={key} style={{ color: '#ff8888', fontSize: 11 }}>
+                if (!def) return <div key={key} style={{ color: colors.danger, fontSize: 11 }}>
                     Unknown: {comp.type}
                 </div>;
 
                 return (
-                    <div key={key} style={{ marginBottom: 8, backgroundColor: 'rgba(255, 255, 255, 0.1)', padding: 8, borderRadius: 4 }}>
+                    <div key={key} style={componentCard.container}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                             <div style={{ fontSize: 11, fontWeight: 500 }}>{key}</div>
                             <button

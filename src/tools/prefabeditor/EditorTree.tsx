@@ -1,7 +1,7 @@
 import { Dispatch, SetStateAction, useState, MouseEvent } from 'react';
 import { Prefab, GameObject } from "./types";
 import { getComponent } from './components/ComponentRegistry';
-import { base, tree, menu } from './styles';
+import { base, colors, tree, menu } from './styles';
 import { findNode, findParent, deleteNode, cloneNode, updateNodeById, loadJson, saveJson, regenerateIds } from './utils';
 import { useEditorContext } from './EditorContext';
 
@@ -223,11 +223,6 @@ export default function EditorTree({
 
     return (
         <>
-            <style>{`
-.tree-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
-.tree-scroll::-webkit-scrollbar-track { background: transparent; }
-.tree-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 8px; }
-            `}</style>
             <div style={{ ...tree.panel, width: collapsed ? 'auto' : 224 }} onClick={() => { setContextMenu(null); setFileMenuOpen(false); }}>
                 <div style={base.header}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }} onClick={() => setCollapsed(!collapsed)}>
@@ -273,7 +268,7 @@ export default function EditorTree({
                 </div>
                 {!collapsed && (
                     <>
-                        <div style={{ padding: '4px 4px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                        <div style={{ padding: '4px 4px', borderBottom: `1px solid ${colors.borderLight}` }}>
                             <input
                                 type="text"
                                 placeholder="Search nodes..."
@@ -281,14 +276,8 @@ export default function EditorTree({
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 onClick={(e) => e.stopPropagation()}
                                 style={{
-                                    width: '100%',
+                                    ...base.input,
                                     padding: '4px 8px',
-                                    background: 'rgba(255,255,255,0.05)',
-                                    border: '1px solid rgba(255,255,255,0.1)',
-                                    borderRadius: 3,
-                                    color: 'inherit',
-                                    fontSize: 11,
-                                    outline: 'none',
                                 }}
                             />
                         </div>

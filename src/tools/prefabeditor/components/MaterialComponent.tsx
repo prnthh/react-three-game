@@ -2,6 +2,7 @@ import { SingleTextureViewer, TextureListViewer } from '../../assetviewer/page';
 import { useEffect, useState } from 'react';
 import { Component } from './ComponentRegistry';
 import { FieldRenderer, FieldDefinition, Input } from './Input';
+import { colors } from '../styles';
 import { useMemo } from 'react';
 import {
     RepeatWrapping,
@@ -48,11 +49,11 @@ function TexturePicker({
     }, [basePath]);
 
     return (
-        <div style={{ maxHeight: 128, overflowY: 'auto', position: 'relative', display: 'flex', alignItems: 'center' }}>
+        <div style={{ maxHeight: 128, overflow: 'visible', position: 'relative', display: 'flex', alignItems: 'center' }}>
             <SingleTextureViewer file={value || undefined} basePath={basePath} />
             <button
                 onClick={() => setShowPicker(!showPicker)}
-                style={{ padding: '4px 8px', backgroundColor: '#1f2937', color: 'inherit', fontSize: 10, cursor: 'pointer', border: '1px solid rgba(34, 211, 238, 0.3)', marginTop: 4 }}
+                style={{ padding: '4px 8px', backgroundColor: colors.bgLight, color: 'inherit', fontSize: 10, cursor: 'pointer', border: `1px solid ${colors.border}`, borderRadius: 3, marginTop: 4 }}
             >
                 {showPicker ? 'Cancel' : 'Change'}
             </button>
@@ -60,12 +61,12 @@ function TexturePicker({
                 onClick={() => {
                     onChange(undefined as any);
                 }}
-                style={{ padding: '4px 8px', backgroundColor: '#1f2937', color: 'inherit', fontSize: 10, cursor: 'pointer', border: '1px solid rgba(34, 211, 238, 0.3)', marginTop: 4, marginLeft: 4 }}
+                style={{ padding: '4px 8px', backgroundColor: colors.bgLight, color: 'inherit', fontSize: 10, cursor: 'pointer', border: `1px solid ${colors.border}`, borderRadius: 3, marginTop: 4, marginLeft: 4 }}
             >
                 Clear
             </button>
             {showPicker && (
-                <div style={{ position: 'fixed', left: '-10px', top: '50%', transform: 'translate(-100%, -50%)', background: 'rgba(0,0,0,0.9)', padding: 16, border: '1px solid rgba(34, 211, 238, 0.3)', maxHeight: '80vh', overflowY: 'auto', zIndex: 1000 }}>
+                <div style={{ position: 'fixed', right: 60, top: 60, transform: 'translate(-100%,0%)', background: colors.bg, padding: 16, border: `1px solid ${colors.border}`, borderRadius: 4, maxHeight: '80vh', overflowY: 'auto', overflowX: 'hidden', width: 220, zIndex: 1000, boxShadow: '0 4px 16px rgba(0,0,0,0.6)' }}>
                     <TextureListViewer
                         files={textureFiles}
                         selected={value || undefined}

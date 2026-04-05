@@ -3,15 +3,18 @@
 import { Physics, RigidBody } from "@react-three/rapier";
 import { OrbitControls } from "@react-three/drei";
 import { useState } from "react";
-import { DragDropLoader } from "./DragDropLoader";
+import { DragDropLoader } from "./index";
 import GameCanvas from "../../shared/GameCanvas";
 
 export default function Home() {
     const [models, setModels] = useState<any[]>([]);
 
     return (
-        <>
-            <DragDropLoader onModelLoaded={model => setModels(prev => [...prev, model])} />
+        <DragDropLoader
+            onModelLoaded={model => setModels(prev => [...prev, model])}
+            className="w-full items-center justify-items-center min-h-screen"
+            style={{ height: "100vh" }}
+        >
             <div className="w-full items-center justify-items-center min-h-screen" style={{ height: "100vh" }}>
                 <GameCanvas>
                     <Physics>
@@ -37,6 +40,6 @@ export default function Home() {
                     </Physics>
                 </GameCanvas>
             </div>
-        </>
+        </DragDropLoader>
     );
 }

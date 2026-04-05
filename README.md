@@ -26,43 +26,43 @@ npx skills add https://github.com/prnthh/react-three-game-skill
 import { Physics } from "@react-three/rapier";
 import { GameCanvas, PrefabRoot } from "react-three-game";
 
+const sceneData = {
+  root: {
+    id: "scene",
+    children: [
+      {
+        id: "ground",
+        components: {
+          transform: { type: "Transform", properties: { position: [0, 0, 0], rotation: [-1.57, 0, 0] } },
+          geometry: { type: "Geometry", properties: { geometryType: "plane", args: [50, 50] } },
+          material: { type: "Material", properties: { color: "#3a3" } },
+          physics: { type: "Physics", properties: { type: "fixed" } }
+        }
+      },
+      {
+        id: "ball",
+        components: {
+          transform: { type: "Transform", properties: { position: [0, 5, 0] } },
+          geometry: { type: "Geometry", properties: { geometryType: "sphere" } },
+          material: { type: "Material", properties: { color: "#f66" } },
+          physics: { type: "Physics", properties: { type: "dynamic" } }
+        }
+      }
+    ]
+  }
+};
+
 export default function Home() {
-    return (
-        <main className="flex h-screen w-screen">
-            <GameCanvas>
-                <Physics>
-                    <ambientLight intensity={0.8} />
-                    <PrefabRoot
-                        data={{
-                            root: {
-                                id: "scene",
-                                children: [
-                                    {
-                                        id: "ground",
-                                        components: {
-                                            transform: { type: "Transform", properties: { position: [0, 0, 0], rotation: [-1.57, 0, 0] } },
-                                            geometry: { type: "Geometry", properties: { geometryType: "plane", args: [50, 50] } },
-                                            material: { type: "Material", properties: { color: "#3a3" } },
-                                            physics: { type: "Physics", properties: { type: "fixed" } }
-                                        }
-                                    },
-                                    {
-                                        id: "ball",
-                                        components: {
-                                            transform: { type: "Transform", properties: { position: [0, 5, 0] } },
-                                            geometry: { type: "Geometry", properties: { geometryType: "sphere" } },
-                                            material: { type: "Material", properties: { color: "#f66" } },
-                                            physics: { type: "Physics", properties: { type: "dynamic" } }
-                                        }
-                                    }
-                                ]
-                            }
-                        }}
-                    />
-                </Physics>
-            </GameCanvas>
-        </main>
-    );
+  return (
+    <main className="flex h-screen w-screen">
+      <GameCanvas>
+        <Physics>
+          <ambientLight intensity={0.8} />
+          <PrefabRoot data={sceneData} />
+        </Physics>
+      </GameCanvas>
+    </main>
+  );
 }
 ```
 

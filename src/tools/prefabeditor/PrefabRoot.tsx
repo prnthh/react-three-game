@@ -6,7 +6,7 @@ import { ThreeEvent } from "@react-three/fiber";
 import { Prefab, GameObject as GameObjectType } from "./types";
 import { getComponent, registerComponent, getNonComposableKeys } from "./components/ComponentRegistry";
 import components from "./components";
-import { loadModel } from "../dragdrop/modelLoader";
+import { loadModel } from "../dragdrop";
 import { GameInstance, GameInstanceProvider, useInstanceCheck } from "./InstanceProvider";
 import { focusCameraOnObject, updateNode } from "./utils";
 import { PhysicsProps } from "./components/PhysicsComponent";
@@ -23,7 +23,7 @@ export interface PrefabRootRef {
     root: Group | null;
     rigidBodyRefs: Map<string, any>; // RigidBody refs only populated when using physics
     injectModel: (filename: string, model: Object3D) => void;
-    injectTexture: (filename: string, file: File) => void;
+    injectTexture: (filename: string, texture: Texture) => void;
     focusNode: (nodeId: string) => void;
 }
 
@@ -59,15 +59,9 @@ export const PrefabRoot = forwardRef<PrefabRootRef, {
         setModels(m => ({ ...m, [filename]: model }));
     }, []);
 
-    const injectTexture = useCallback((filename: string, file: File) => {
+    const injectTexture = useCallback((filename: string, texture: Texture) => {
         loading.current.add(filename);
-        const url = URL.createObjectURL(file);
-        const loader = new TextureLoader();
-        loader.load(url, tex => {
-            tex.colorSpace = SRGBColorSpace;
-            setTextures(t => ({ ...t, [filename]: tex }));
-            URL.revokeObjectURL(url);
-        }, undefined, () => URL.revokeObjectURL(url));
+        setTextures(t => ({ ...t, [filename]: texture }));
     }, []);
 
     useImperativeHandle(ref, () => ({
@@ -155,8 +149,11 @@ export const PrefabRoot = forwardRef<PrefabRootRef, {
                     : `${basePath}/${file}`;
 
             const res = await loadModel(path);
-            res.success && res.model &&
-                setModels(m => ({ ...m, [file]: res.model }));
+            const model = res.model;
+
+            if (res.success && model) {
+                setModels(m => ({ ...m, [file]: model }));
+            }
         });
 
         const loader = new TextureLoader();

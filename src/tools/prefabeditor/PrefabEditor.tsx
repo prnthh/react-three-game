@@ -7,7 +7,7 @@ import EditorUI from "./EditorUI";
 import { base, toolbar } from "./styles";
 import { EditorContext } from "./EditorContext";
 import { exportGLB, createModelNode, createImageNode } from "./utils";
-import { parseModelFromFile } from "../dragdrop/modelLoader";
+import { loadFiles } from "../dragdrop";
 
 export interface PrefabEditorRef {
     screenshot: () => void;
@@ -135,25 +135,21 @@ const PrefabEditor = forwardRef<PrefabEditorRef, {
 
     // --- Drag & drop files to add nodes ---
     useEffect(() => {
-        const IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'svg'];
-        const MODEL_EXTS = ['glb', 'gltf', 'fbx'];
-
         function handleDragOver(e: DragEvent) {
             e.preventDefault();
             e.stopPropagation();
         }
+
         function handleDrop(e: DragEvent) {
             e.preventDefault();
             e.stopPropagation();
+
             const files = e.dataTransfer?.files ? Array.from(e.dataTransfer.files) : [];
-            files.forEach(file => {
-                const ext = file.name.split('.').pop()?.toLowerCase();
-                if (!ext) return;
 
-                const baseName = file.name.replace(/\.[^.]+$/, '');
-
-                if (MODEL_EXTS.includes(ext)) {
-                    const modelPath = `models/${file.name}`;
+            void loadFiles(files, {
+                onModelLoaded: (model, filename) => {
+                    const modelPath = `models/${filename}`;
+                    const baseName = filename.replace(/\.[^.]+$/, '');
                     const newNode = createModelNode(modelPath, baseName);
 
                     updatePrefab(prev => ({
@@ -161,15 +157,11 @@ const PrefabEditor = forwardRef<PrefabEditorRef, {
                         root: { ...prev.root, children: [...(prev.root.children ?? []), newNode] }
                     }));
 
-                    parseModelFromFile(file).then(result => {
-                        if (result.success && result.model) {
-                            prefabRootRef.current?.injectModel(modelPath, result.model);
-                        } else {
-                            console.error('Drop parse error:', result.error);
-                        }
-                    });
-                } else if (IMAGE_EXTS.includes(ext)) {
-                    const texturePath = `textures/${file.name}`;
+                    prefabRootRef.current?.injectModel(modelPath, model);
+                },
+                onTextureLoaded: (texture, filename) => {
+                    const texturePath = `textures/${filename}`;
+                    const baseName = filename.replace(/\.[^.]+$/, '');
                     const newNode = createImageNode(texturePath, baseName);
 
                     updatePrefab(prev => ({
@@ -177,9 +169,11 @@ const PrefabEditor = forwardRef<PrefabEditorRef, {
                         root: { ...prev.root, children: [...(prev.root.children ?? []), newNode] }
                     }));
 
-                    // Inject a blob URL texture so it renders immediately
-                    prefabRootRef.current?.injectTexture(texturePath, file);
-                }
+                    prefabRootRef.current?.injectTexture(texturePath, texture);
+                },
+                onLoadError: error => {
+                    console.error('Drop asset error:', error);
+                },
             });
         }
 

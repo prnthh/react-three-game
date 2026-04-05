@@ -2,7 +2,7 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Stage, View, PerspectiveCamera } from "@react-three/drei";
 import { Component as ReactComponent, Suspense, useEffect, useState, useRef } from "react";
 import { TextureLoader } from "three";
-import { loadModel } from "../dragdrop/modelLoader";
+import { loadModel } from "../dragdrop";
 
 class ErrorBoundary extends ReactComponent<{ onError?: () => void; children: React.ReactNode }, { hasError: boolean }> {
     constructor(props: any) {

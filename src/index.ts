@@ -50,7 +50,7 @@ export { entityEvents, useEntityEvent } from './tools/prefabeditor/GameEvents';
 export type { EntityEventType, EntityEventPayload } from './tools/prefabeditor/GameEvents';
 
 // Asset Tools
-export { DragDropLoader } from './tools/dragdrop/DragDropLoader';
+export * from './tools/dragdrop';
 export {
   TextureListViewer,
   ModelListViewer,

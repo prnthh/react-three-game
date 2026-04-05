@@ -23,39 +23,47 @@ npx skills add https://github.com/prnthh/react-three-game-skill
 ## Basic Usage
 
 ```jsx
-import { Physics } from '@react-three/rapier';
-import { Canvas } from '@react-three/fiber';
-import { PrefabRoot } from 'react-three-game';
+import { Physics } from "@react-three/rapier";
+import { GameCanvas, PrefabRoot } from "react-three-game";
 
-<Canvas>
-  <Physics>
-    <PrefabRoot data={{
-      root: {
-        id: "scene",
-        children: [
-          {
-            id: "ground",
-            components: {
-              transform: { type: "Transform", properties: { position: [0, 0, 0], rotation: [-1.57, 0, 0] } },
-              geometry: { type: "Geometry", properties: { geometryType: "plane", args: [50, 50] } },
-              material: { type: "Material", properties: { color: "#3a3" } },
-              physics: { type: "Physics", properties: { type: "fixed" } }
-            }
-          },
-          {
-            id: "ball",
-            components: {
-              transform: { type: "Transform", properties: { position: [0, 5, 0] } },
-              geometry: { type: "Geometry", properties: { geometryType: "sphere" } },
-              material: { type: "Material", properties: { color: "#f66" } },
-              physics: { type: "Physics", properties: { type: "dynamic" } }
-            }
-          }
-        ]
-      }
-    }} />
-  </Physics>
-</Canvas>
+export default function Home() {
+    return (
+        <main className="flex h-screen w-screen">
+            <GameCanvas>
+                <Physics>
+                    <ambientLight intensity={0.8} />
+                    <PrefabRoot
+                        data={{
+                            root: {
+                                id: "scene",
+                                children: [
+                                    {
+                                        id: "ground",
+                                        components: {
+                                            transform: { type: "Transform", properties: { position: [0, 0, 0], rotation: [-1.57, 0, 0] } },
+                                            geometry: { type: "Geometry", properties: { geometryType: "plane", args: [50, 50] } },
+                                            material: { type: "Material", properties: { color: "#3a3" } },
+                                            physics: { type: "Physics", properties: { type: "fixed" } }
+                                        }
+                                    },
+                                    {
+                                        id: "ball",
+                                        components: {
+                                            transform: { type: "Transform", properties: { position: [0, 5, 0] } },
+                                            geometry: { type: "Geometry", properties: { geometryType: "sphere" } },
+                                            material: { type: "Material", properties: { color: "#f66" } },
+                                            physics: { type: "Physics", properties: { type: "dynamic" } }
+                                        }
+                                    }
+                                ]
+                            }
+                        }}
+                    />
+                </Physics>
+            </GameCanvas>
+        </main>
+    );
+}
 ```
 
 `GameCanvas` provides the library's WebGPU canvas setup.

@@ -166,6 +166,9 @@ import { PrefabEditor } from 'react-three-game';
 // Standalone editor
 <PrefabEditor initialPrefab={sceneData} onPrefabChange={setSceneData} />
 
+// Canvas-only editing mode (keeps canvas selection/gizmos, hides hierarchy + inspector + toolbar)
+<PrefabEditor initialPrefab={sceneData} showUI={false} />
+
 // With custom R3F components
 <PrefabEditor initialPrefab={sceneData}>
   <CustomComponent />

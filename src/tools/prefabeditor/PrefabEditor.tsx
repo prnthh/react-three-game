@@ -17,6 +17,16 @@ export interface PrefabEditorRef {
     rootRef: React.RefObject<PrefabRootRef | null>;
 }
 
+export interface PrefabEditorProps {
+    basePath?: string;
+    initialPrefab?: Prefab;
+    physics?: boolean;
+    onPrefabChange?: (prefab: Prefab) => void;
+    showUI?: boolean;
+    uiPlugins?: React.ReactNode[] | React.ReactNode;
+    children?: React.ReactNode;
+}
+
 const DEFAULT_PREFAB: Prefab = {
     id: "prefab-default",
     name: "New Prefab",
@@ -31,14 +41,7 @@ const DEFAULT_PREFAB: Prefab = {
     }
 };
 
-const PrefabEditor = forwardRef<PrefabEditorRef, {
-    basePath?: string;
-    initialPrefab?: Prefab;
-    physics?: boolean;
-    onPrefabChange?: (prefab: Prefab) => void;
-    uiPlugins?: React.ReactNode[] | React.ReactNode;
-    children?: React.ReactNode;
-}>(({ basePath, initialPrefab, physics = true, onPrefabChange, uiPlugins, children }, ref) => {
+const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath, initialPrefab, physics = true, onPrefabChange, showUI = true, uiPlugins, children }, ref) => {
     const [editMode, setEditMode] = useState(true);
     const [loadedPrefab, setLoadedPrefab] = useState<Prefab>(initialPrefab ?? DEFAULT_PREFAB);
     const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -231,23 +234,27 @@ const PrefabEditor = forwardRef<PrefabEditorRef, {
             ) : content}
         </GameCanvas>
 
-        <div style={toolbar.panel}>
-            <button style={base.btn} onClick={() => setEditMode(!editMode)}>
-                {editMode ? "▶" : "⏸"}
-            </button>
-            {uiPlugins}
-        </div>
-        <EditorUI
-            prefabData={loadedPrefab}
-            setPrefabData={updatePrefab}
-            selectedId={selectedId}
-            setSelectedId={setSelectedId}
-            basePath={basePath}
-            onUndo={undo}
-            onRedo={redo}
-            canUndo={historyIndex > 0}
-            canRedo={historyIndex < history.length - 1}
-        />
+        {showUI && (
+            <>
+                <div style={toolbar.panel}>
+                    <button style={base.btn} onClick={() => setEditMode(!editMode)}>
+                        {editMode ? "▶" : "⏸"}
+                    </button>
+                    {uiPlugins}
+                </div>
+                <EditorUI
+                    prefabData={loadedPrefab}
+                    setPrefabData={updatePrefab}
+                    selectedId={selectedId}
+                    setSelectedId={setSelectedId}
+                    basePath={basePath}
+                    onUndo={undo}
+                    onRedo={redo}
+                    canUndo={historyIndex > 0}
+                    canRedo={historyIndex < history.length - 1}
+                />
+            </>
+        )}
     </EditorContext.Provider>
 });
 

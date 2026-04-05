@@ -36,6 +36,7 @@ export interface PrefabEditorProps {
     onPrefabChange?: (prefab: Prefab) => void;
     showUI?: boolean;
     enableWindowDrop?: boolean;
+    canvasProps?: Omit<React.ComponentProps<typeof GameCanvas>, 'children' | 'canvasRef'>;
     uiPlugins?: React.ReactNode[] | React.ReactNode;
     children?: React.ReactNode;
 }
@@ -54,7 +55,7 @@ const DEFAULT_PREFAB: Prefab = {
     }
 };
 
-const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath, initialPrefab, physics = true, onPrefabChange, showUI = true, enableWindowDrop = true, uiPlugins, children }, ref) => {
+const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath, initialPrefab, physics = true, onPrefabChange, showUI = true, enableWindowDrop = true, canvasProps, uiPlugins, children }, ref) => {
     const [editMode, setEditMode] = useState(true);
     const [loadedPrefab, setLoadedPrefab] = useState<Prefab>(initialPrefab ?? DEFAULT_PREFAB);
     const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -70,6 +71,8 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const onPrefabChangeRef = useRef(onPrefabChange);
     const pendingPrefabChangeRef = useRef<Prefab | null>(null);
+    const [injectedModels, setInjectedModels] = useState<Record<string, Object3D>>({});
+    const [injectedTextures, setInjectedTextures] = useState<Record<string, Texture>>({});
 
     useEffect(() => {
         onPrefabChangeRef.current = onPrefabChange;
@@ -80,6 +83,8 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
         lastDataRef.current = JSON.stringify(prefab);
         pendingPrefabChangeRef.current = options?.notifyChange === false ? null : prefab;
         setSelectedId(null);
+        setInjectedModels({});
+        setInjectedTextures({});
         setHistory([prefab]);
         setHistoryIndex(0);
         setLoadedPrefab(prefab);
@@ -122,14 +127,14 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
     const addModel = (path: string, model: Object3D, options?: PrefabEditorAssetOptions) => {
         const node = createModelNode(path, options?.name);
         insertPrefabNode(node, options);
-        prefabRootRef.current?.injectModel(path, model);
+        setInjectedModels(prev => ({ ...prev, [path]: model }));
         return node;
     };
 
     const addTexture = (path: string, texture: Texture, options?: PrefabEditorAssetOptions) => {
         const node = createImageNode(path, options?.name);
         insertPrefabNode(node, options);
-        prefabRootRef.current?.injectTexture(path, texture);
+        setInjectedTextures(prev => ({ ...prev, [path]: texture }));
         return node;
     };
 
@@ -270,6 +275,8 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
                 selectedId={selectedId}
                 onSelect={setSelectedId}
                 basePath={basePath}
+                injectedModels={injectedModels}
+                injectedTextures={injectedTextures}
             />
             {children}
         </>
@@ -288,7 +295,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
         onScreenshot: handleScreenshot,
         onExportGLB: handleExportGLB
     }}>
-        <GameCanvas camera={{ position: [0, 5, 15] }} canvasRef={canvasRef}>
+        <GameCanvas camera={{ position: [0, 5, 15] }} canvasRef={canvasRef} {...canvasProps}>
             {physics ? (
                 <Physics debug={editMode} paused={editMode}>
                     {content}

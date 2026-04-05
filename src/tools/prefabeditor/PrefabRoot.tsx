@@ -1,5 +1,5 @@
 import { MapControls, TransformControls, useHelper } from "@react-three/drei";
-import { forwardRef, useCallback, useContext, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { forwardRef, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { BoxHelper, Euler, Group, Matrix4, Object3D, Quaternion, SRGBColorSpace, Texture, TextureLoader, Vector3, } from "three";
 import { ThreeEvent } from "@react-three/fiber";
 
@@ -22,8 +22,6 @@ const IDENTITY = new Matrix4();
 export interface PrefabRootRef {
     root: Group | null;
     rigidBodyRefs: Map<string, any>; // RigidBody refs only populated when using physics
-    injectModel: (filename: string, model: Object3D) => void;
-    injectTexture: (filename: string, texture: Texture) => void;
     focusNode: (nodeId: string) => void;
 }
 
@@ -35,7 +33,9 @@ export const PrefabRoot = forwardRef<PrefabRootRef, {
     onSelect?: (id: string | null) => void;
     onClick?: (event: ThreeEvent<PointerEvent>, entity: GameObjectType) => void;
     basePath?: string;
-}>(({ editMode, data, onPrefabChange, selectedId, onSelect, onClick, basePath = "" }, ref) => {
+    injectedModels?: Record<string, Object3D>;
+    injectedTextures?: Record<string, Texture>;
+}>(({ editMode, data, onPrefabChange, selectedId, onSelect, onClick, basePath = "", injectedModels = {}, injectedTextures = {} }, ref) => {
 
     // optional editor context
     const editorContext = useContext(EditorContext);
@@ -55,20 +55,12 @@ export const PrefabRoot = forwardRef<PrefabRootRef, {
     const rootRef = useRef<Group>(null);
     const controlsRef = useRef<any>(null);
 
-    const injectModel = useCallback((filename: string, model: Object3D) => {
-        setModels(m => ({ ...m, [filename]: model }));
-    }, []);
-
-    const injectTexture = useCallback((filename: string, texture: Texture) => {
-        loading.current.add(filename);
-        setTextures(t => ({ ...t, [filename]: texture }));
-    }, []);
+    const availableModels = useMemo(() => ({ ...models, ...injectedModels }), [models, injectedModels]);
+    const availableTextures = useMemo(() => ({ ...textures, ...injectedTextures }), [textures, injectedTextures]);
 
     useImperativeHandle(ref, () => ({
         root: rootRef.current,
         rigidBodyRefs: rigidBodyRefs.current,
-        injectModel,
-        injectTexture,
         focusNode: (nodeId: string) => {
             const object = objectRefs.current[nodeId];
             const controls = controlsRef.current;
@@ -78,7 +70,7 @@ export const PrefabRoot = forwardRef<PrefabRootRef, {
 
             focusCameraOnObject(object, camera, controls.target, () => controls.update?.());
         }
-    }), [injectModel, injectTexture]);
+    }), []);
 
     const registerRef = useCallback((id: string, obj: Object3D | null) => {
         objectRefs.current[id] = obj;
@@ -141,7 +133,7 @@ export const PrefabRoot = forwardRef<PrefabRootRef, {
         });
 
         modelsToLoad.forEach(async file => {
-            if (models[file] || loading.current.has(file)) return;
+            if (availableModels[file] || loading.current.has(file)) return;
             loading.current.add(file);
             const path =
                 file.startsWith("/")
@@ -158,7 +150,7 @@ export const PrefabRoot = forwardRef<PrefabRootRef, {
 
         const loader = new TextureLoader();
         texturesToLoad.forEach(file => {
-            if (textures[file] || loading.current.has(file) || failedTextures.current.has(file)) return;
+            if (availableTextures[file] || loading.current.has(file) || failedTextures.current.has(file)) return;
             loading.current.add(file);
 
             // Handle full URLs (http/https) or regular paths
@@ -177,12 +169,12 @@ export const PrefabRoot = forwardRef<PrefabRootRef, {
                 failedTextures.current.add(file);
             });
         });
-    }, [data, models, textures]);
+    }, [data, availableModels, availableTextures, basePath]);
 
     return (
         <group ref={rootRef}>
             <GameInstanceProvider
-                models={models}
+                models={availableModels}
                 selectedId={selectedId}
                 editMode={editMode}
                 onSelect={editMode ? onSelect : undefined}
@@ -195,8 +187,8 @@ export const PrefabRoot = forwardRef<PrefabRootRef, {
                     onClick={onClick}
                     registerRef={registerRef}
                     registerRigidBodyRef={registerRigidBodyRef}
-                    loadedModels={models}
-                    loadedTextures={textures}
+                    loadedModels={availableModels}
+                    loadedTextures={availableTextures}
                     editMode={editMode}
                     parentMatrix={IDENTITY}
                 />

@@ -3,7 +3,7 @@
 JSON-first 3D game engine. React Three Fiber + WebGPU + Rapier Physics.
 
 ```bash
-npm i react-three-game @react-three/fiber @react-three/rapier three
+npm i react-three-game @react-three/drei @react-three/fiber @react-three/rapier three
 ```
 
 ![Prefab Editor](assets/editor.gif)
@@ -102,8 +102,10 @@ interface GameObject {
 ## Custom Components
 
 ```tsx
+import { useRef } from 'react';
 import { Component, registerComponent, FieldRenderer, FieldDefinition } from 'react-three-game';
 import { useFrame } from '@react-three/fiber';
+import type { Group } from 'three';
 
 const rotatorFields: FieldDefinition[] = [
   { name: 'speed', type: 'number', label: 'Speed', step: 0.1 },
@@ -214,6 +216,7 @@ export function EmbeddedEditor({ prefab, onPrefabChange }: {
         showUI={false}
         physics={false}
         enableWindowDrop={false}
+        canvasProps={{ style: { height: '100%', width: '100%' } }}
       />
     </div>
   );
@@ -226,6 +229,7 @@ export function EmbeddedEditor({ prefab, onPrefabChange }: {
 - `addModel(path, model, options?)` creates a model node and injects the runtime asset in one step.
 - `addTexture(path, texture, options?)` creates a textured plane node and injects the runtime texture in one step.
 - `exportGLBData()` returns the GLB `ArrayBuffer` without triggering a download.
+- `canvasProps` forwards canvas-level sizing, camera, event, and style props to `GameCanvas`.
 - `setPrefab(prefab)` remains as a backward-compatible alias for `replacePrefab(prefab)`.
 
 Keys: **T**ranslate / **R**otate / **S**cale. Drag tree nodes to reparent. Physics only runs in play mode.

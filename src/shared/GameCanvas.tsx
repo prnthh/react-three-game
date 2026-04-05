@@ -20,12 +20,12 @@ interface GameCanvasProps extends Omit<CanvasProps, 'children'> {
     canvasRef?: React.RefObject<HTMLCanvasElement | null>;
 }
 
-export default function GameCanvas({ loader = false, children, glConfig, canvasRef, onCreated, ...props }: GameCanvasProps) {
+export default function GameCanvas({ loader = false, children, glConfig, canvasRef, onCreated, style, ...props }: GameCanvasProps) {
     const [frameloop, setFrameloop] = useState<"never" | "always">("never");
 
     return <>
         <Canvas
-            style={{ touchAction: 'none', userSelect: 'none' }}
+            style={{ touchAction: 'none', userSelect: 'none', ...style }}
             shadows={{ type: PCFShadowMap, }}
             frameloop={frameloop}
             gl={async ({ canvas }) => {

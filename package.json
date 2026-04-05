@@ -1,14 +1,20 @@
 {
   "name": "react-three-game",
-  "version": "0.0.60",
+  "version": "0.0.61",
   "description": "high performance 3D game engine for React",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
-    "watch": "tsc --watch",
+    "clean": "rm -rf dist",
+    "watch": "npm run clean && tsc --watch",
     "dev": "concurrently \"npm run watch\" \"cd docs && npm run dev\"",
-    "build": "tsc",
+    "build": "npm run clean && tsc",
     "release": "npm run build && npm publish --access public"
   },
   "keywords": [],

@@ -161,6 +161,7 @@ The `FieldRenderer` component auto-generates editor UI from a field schema:
 ## Prefab Editor
 
 ```jsx
+import { useRef } from 'react';
 import { PrefabEditor } from 'react-three-game';
 
 // Standalone editor
@@ -174,6 +175,58 @@ import { PrefabEditor } from 'react-three-game';
   <CustomComponent />
 </PrefabEditor>
 ```
+
+### Embedded / Headless Editor
+
+```tsx
+import { useRef } from 'react';
+import type { Object3D } from 'three';
+import { PrefabEditor, type PrefabEditorRef } from 'react-three-game';
+
+export function EmbeddedEditor({ prefab, onPrefabChange }: {
+  prefab: any;
+  onPrefabChange: (nextPrefab: any) => void;
+}) {
+  const editorRef = useRef<PrefabEditorRef>(null);
+
+  function loadScene(nextPrefab: any) {
+    editorRef.current?.replacePrefab(nextPrefab);
+  }
+
+  function importRuntimeModel(model: Object3D) {
+    editorRef.current?.addModel('models/runtime/chair.glb', model, {
+      name: 'Chair',
+      parentId: 'root',
+    });
+  }
+
+  return (
+    <div style={{ position: 'relative', height: 600 }}>
+      <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 10 }}>
+        <button onClick={() => loadScene(prefab)}>Reload Scene</button>
+        <button onClick={() => editorRef.current?.exportGLBData()}>Export GLB Data</button>
+      </div>
+
+      <PrefabEditor
+        ref={editorRef}
+        initialPrefab={prefab}
+        onPrefabChange={onPrefabChange}
+        showUI={false}
+        physics={false}
+        enableWindowDrop={false}
+      />
+    </div>
+  );
+}
+```
+
+`showUI={false}` hides the built-in editor chrome but keeps canvas selection, transform controls, and scene interaction. For embedded tools, use the editor ref instead of reaching through `rootRef`:
+
+- `replacePrefab(prefab)` replaces the current scene through the editor state pipeline and resets editor history/selection.
+- `addModel(path, model, options?)` creates a model node and injects the runtime asset in one step.
+- `addTexture(path, texture, options?)` creates a textured plane node and injects the runtime texture in one step.
+- `exportGLBData()` returns the GLB `ArrayBuffer` without triggering a download.
+- `setPrefab(prefab)` remains as a backward-compatible alias for `replacePrefab(prefab)`.
 
 Keys: **T**ranslate / **R**otate / **S**cale. Drag tree nodes to reparent. Physics only runs in play mode.
 

@@ -36,7 +36,7 @@ export * from './tools/prefabeditor/utils';
 export type { ExportGLBOptions } from './tools/prefabeditor/utils';
 
 // Prefab Editor - Types
-export type { PrefabEditorProps, PrefabEditorRef } from './tools/prefabeditor/PrefabEditor';
+export type { PrefabEditorAssetOptions, PrefabEditorProps, PrefabEditorRef } from './tools/prefabeditor/PrefabEditor';
 export type { PrefabRootRef } from './tools/prefabeditor/PrefabRoot';
 export type { Component } from './tools/prefabeditor/components/ComponentRegistry';
 export type { FieldDefinition, FieldType } from './tools/prefabeditor/components/Input';

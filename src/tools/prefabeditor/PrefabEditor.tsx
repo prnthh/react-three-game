@@ -1,19 +1,31 @@
 import GameCanvas from "../../shared/GameCanvas";
 import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
-import { Prefab } from "./types";
+import { Object3D, Texture } from "three";
+import { GameObject, Prefab } from "./types";
 import PrefabRoot, { PrefabRootRef } from "./PrefabRoot";
 import { Physics } from "@react-three/rapier";
 import EditorUI from "./EditorUI";
 import { base, toolbar } from "./styles";
 import { EditorContext } from "./EditorContext";
-import { exportGLB, createModelNode, createImageNode } from "./utils";
+import { createImageNode, createModelNode, exportGLB as exportSceneGLB, exportGLBData, insertNode } from "./utils";
+import type { ExportGLBOptions } from "./utils";
 import { loadFiles } from "../dragdrop";
+
+export interface PrefabEditorAssetOptions {
+    name?: string;
+    parentId?: string;
+    select?: boolean;
+}
 
 export interface PrefabEditorRef {
     screenshot: () => void;
-    exportGLB: () => void;
+    exportGLB: (options?: ExportGLBOptions) => Promise<ArrayBuffer | object | undefined>;
+    exportGLBData: () => Promise<ArrayBuffer | undefined>;
     prefab: Prefab;
     setPrefab: (prefab: Prefab) => void;
+    replacePrefab: (prefab: Prefab) => void;
+    addModel: (path: string, model: Object3D, options?: PrefabEditorAssetOptions) => GameObject;
+    addTexture: (path: string, texture: Texture, options?: PrefabEditorAssetOptions) => GameObject;
     rootRef: React.RefObject<PrefabRootRef | null>;
 }
 
@@ -23,6 +35,7 @@ export interface PrefabEditorProps {
     physics?: boolean;
     onPrefabChange?: (prefab: Prefab) => void;
     showUI?: boolean;
+    enableWindowDrop?: boolean;
     uiPlugins?: React.ReactNode[] | React.ReactNode;
     children?: React.ReactNode;
 }
@@ -41,7 +54,7 @@ const DEFAULT_PREFAB: Prefab = {
     }
 };
 
-const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath, initialPrefab, physics = true, onPrefabChange, showUI = true, uiPlugins, children }, ref) => {
+const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath, initialPrefab, physics = true, onPrefabChange, showUI = true, enableWindowDrop = true, uiPlugins, children }, ref) => {
     const [editMode, setEditMode] = useState(true);
     const [loadedPrefab, setLoadedPrefab] = useState<Prefab>(initialPrefab ?? DEFAULT_PREFAB);
     const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -55,22 +68,76 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
     const lastDataRef = useRef(JSON.stringify(loadedPrefab));
     const prefabRootRef = useRef<PrefabRootRef>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const onPrefabChangeRef = useRef(onPrefabChange);
+    const pendingPrefabChangeRef = useRef<Prefab | null>(null);
 
     useEffect(() => {
-        if (initialPrefab) setLoadedPrefab(initialPrefab);
+        onPrefabChangeRef.current = onPrefabChange;
+    }, [onPrefabChange]);
+
+    const replacePrefab = (prefab: Prefab, options?: { notifyChange?: boolean }) => {
+        if (throttleRef.current) clearTimeout(throttleRef.current);
+        lastDataRef.current = JSON.stringify(prefab);
+        pendingPrefabChangeRef.current = options?.notifyChange === false ? null : prefab;
+        setSelectedId(null);
+        setHistory([prefab]);
+        setHistoryIndex(0);
+        setLoadedPrefab(prefab);
+    };
+
+    useEffect(() => {
+        if (initialPrefab) replacePrefab(initialPrefab, { notifyChange: false });
     }, [initialPrefab]);
 
     const updatePrefab = (newPrefab: Prefab | ((prev: Prefab) => Prefab)) => {
-        setLoadedPrefab(newPrefab);
-        const resolved = typeof newPrefab === 'function' ? newPrefab(loadedPrefab) : newPrefab;
-        onPrefabChange?.(resolved);
+        setLoadedPrefab(prev => {
+            const resolved = typeof newPrefab === 'function' ? newPrefab(prev) : newPrefab;
+            if (Object.is(resolved, prev)) {
+                pendingPrefabChangeRef.current = null;
+                return prev;
+            }
+            pendingPrefabChangeRef.current = resolved;
+            return resolved;
+        });
+    };
+
+    useEffect(() => {
+        if (pendingPrefabChangeRef.current !== loadedPrefab) return;
+        onPrefabChangeRef.current?.(loadedPrefab);
+        pendingPrefabChangeRef.current = null;
+    }, [loadedPrefab]);
+
+    const insertPrefabNode = (node: GameObject, options?: PrefabEditorAssetOptions) => {
+        updatePrefab(prev => {
+            return { ...prev, root: insertNode(prev.root, node, options?.parentId) };
+        });
+
+        if (options?.select !== false) {
+            setSelectedId(node.id);
+        }
+
+        return node;
+    };
+
+    const addModel = (path: string, model: Object3D, options?: PrefabEditorAssetOptions) => {
+        const node = createModelNode(path, options?.name);
+        insertPrefabNode(node, options);
+        prefabRootRef.current?.injectModel(path, model);
+        return node;
+    };
+
+    const addTexture = (path: string, texture: Texture, options?: PrefabEditorAssetOptions) => {
+        const node = createImageNode(path, options?.name);
+        insertPrefabNode(node, options);
+        prefabRootRef.current?.injectTexture(path, texture);
+        return node;
     };
 
     const applyHistory = (index: number) => {
         setHistoryIndex(index);
         lastDataRef.current = JSON.stringify(history[index]);
+        pendingPrefabChangeRef.current = history[index];
         setLoadedPrefab(history[index]);
-        onPrefabChange?.(history[index]);
     };
 
     const undo = () => historyIndex > 0 && applyHistory(historyIndex - 1);
@@ -118,26 +185,31 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
         });
     };
 
-    const handleExportGLB = () => {
+    const handleExportGLB = async (options: ExportGLBOptions = {}) => {
         const sceneRoot = prefabRootRef.current?.root;
         if (!sceneRoot) return;
 
-        exportGLB(sceneRoot, {
-            filename: `${loadedPrefab.name || 'scene'}.glb`
+        return exportSceneGLB(sceneRoot, {
+            filename: `${loadedPrefab.name || 'scene'}.glb`,
+            ...options,
         });
+    };
+
+    const handleExportGLBData = async () => {
+        const sceneRoot = prefabRootRef.current?.root;
+        if (!sceneRoot) return;
+
+        return exportGLBData(sceneRoot);
     };
 
     const handleFocusNode = (nodeId: string) => {
         prefabRootRef.current?.focusNode(nodeId);
     };
 
-    useEffect(() => {
-        const canvas = document.querySelector('canvas');
-        if (canvas) canvasRef.current = canvas;
-    }, []);
-
     // --- Drag & drop files to add nodes ---
     useEffect(() => {
+        if (!enableWindowDrop) return;
+
         function handleDragOver(e: DragEvent) {
             e.preventDefault();
             e.stopPropagation();
@@ -151,28 +223,14 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
 
             void loadFiles(files, {
                 onModelLoaded: (model, filename) => {
-                    const modelPath = `models/${filename}`;
-                    const baseName = filename.replace(/\.[^.]+$/, '');
-                    const newNode = createModelNode(modelPath, baseName);
-
-                    updatePrefab(prev => ({
-                        ...prev,
-                        root: { ...prev.root, children: [...(prev.root.children ?? []), newNode] }
-                    }));
-
-                    prefabRootRef.current?.injectModel(modelPath, model);
+                    addModel(`models/${filename}`, model, {
+                        name: filename.replace(/\.[^.]+$/, '')
+                    });
                 },
                 onTextureLoaded: (texture, filename) => {
-                    const texturePath = `textures/${filename}`;
-                    const baseName = filename.replace(/\.[^.]+$/, '');
-                    const newNode = createImageNode(texturePath, baseName);
-
-                    updatePrefab(prev => ({
-                        ...prev,
-                        root: { ...prev.root, children: [...(prev.root.children ?? []), newNode] }
-                    }));
-
-                    prefabRootRef.current?.injectTexture(texturePath, texture);
+                    addTexture(`textures/${filename}`, texture, {
+                        name: filename.replace(/\.[^.]+$/, '')
+                    });
                 },
                 onLoadError: error => {
                     console.error('Drop asset error:', error);
@@ -186,13 +244,17 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
             window.removeEventListener('dragover', handleDragOver);
             window.removeEventListener('drop', handleDrop);
         };
-    }, [loadedPrefab]);
+    }, [enableWindowDrop]);
 
     useImperativeHandle(ref, () => ({
         screenshot: handleScreenshot,
         exportGLB: handleExportGLB,
+        exportGLBData: handleExportGLBData,
         prefab: loadedPrefab,
-        setPrefab: setLoadedPrefab,
+        setPrefab: replacePrefab,
+        replacePrefab,
+        addModel,
+        addTexture,
         rootRef: prefabRootRef
     }), [loadedPrefab]);
 
@@ -226,7 +288,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
         onScreenshot: handleScreenshot,
         onExportGLB: handleExportGLB
     }}>
-        <GameCanvas camera={{ position: [0, 5, 15] }}>
+        <GameCanvas camera={{ position: [0, 5, 15] }} canvasRef={canvasRef}>
             {physics ? (
                 <Physics debug={editMode} paused={editMode}>
                     {content}

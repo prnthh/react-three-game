@@ -205,6 +205,30 @@ export function updateNode(root: GameObject, id: string, update: (node: GameObje
     };
 }
 
+/** Immutably insert a node under a parent ID, defaulting to the root when the parent is missing */
+export function insertNode(root: GameObject, node: GameObject, parentId?: string): GameObject {
+    if (!parentId || parentId === root.id) {
+        return {
+            ...root,
+            children: [...(root.children ?? []), node]
+        };
+    }
+
+    const nextRoot = updateNode(root, parentId, parent => ({
+        ...parent,
+        children: [...(parent.children ?? []), node]
+    }));
+
+    if (nextRoot === root) {
+        return {
+            ...root,
+            children: [...(root.children ?? []), node]
+        };
+    }
+
+    return nextRoot;
+}
+
 /** Immutably delete a node by ID */
 export function deleteNode(root: GameObject, id: string): GameObject | null {
     if (root.id === id) return null;

@@ -17,9 +17,10 @@ interface GameCanvasProps extends Omit<CanvasProps, 'children'> {
     loader?: boolean;
     children: React.ReactNode;
     glConfig?: WebGPURendererParameters;
+    canvasRef?: React.RefObject<HTMLCanvasElement | null>;
 }
 
-export default function GameCanvas({ loader = false, children, glConfig, ...props }: GameCanvasProps) {
+export default function GameCanvas({ loader = false, children, glConfig, canvasRef, onCreated, ...props }: GameCanvasProps) {
     const [frameloop, setFrameloop] = useState<"never" | "always">("never");
 
     return <>
@@ -39,6 +40,12 @@ export default function GameCanvas({ loader = false, children, glConfig, ...prop
                     setFrameloop("always");
                 });
                 return renderer
+            }}
+            onCreated={(state) => {
+                if (canvasRef) {
+                    canvasRef.current = state.gl.domElement as HTMLCanvasElement;
+                }
+                onCreated?.(state);
             }}
             {...props}
         >

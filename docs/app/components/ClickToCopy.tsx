@@ -16,7 +16,7 @@ export default function ClickToCopy({ text = "npm i react-three-game" }: Props) 
     };
 
     return (
-        <div className="mt-4 border-t border-zinc-300 dark:border-zinc-800 pt-4">
+        <div>
             <div className="mb-3 font-mono text-xs uppercase opacity-50">
                 Install
             </div>

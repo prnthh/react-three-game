@@ -12,10 +12,10 @@ export default function Dropdown() {
     const [open, setOpen] = useState(false);
 
     const options: DemoOption[] = [
-        { label: "Viewer", href: "/demo" },
+        { label: "View / Play Mode", href: "/viewer" },
         { label: "Asset Viewer", href: "/demo/assetviewer" },
         { label: "Custom Component", href: "/demo/customcomponent" },
-        { label: "World", href: "/demo/world" },
+        { label: "ECS World", href: "/demo/world" },
         { label: "Physics", href: "/demo/physics" },
         { label: "Quake", href: "/demo/quake" },
     ];
@@ -34,7 +34,7 @@ export default function Dropdown() {
                 onClick={() => setOpen(!open)}
                 className="border border-zinc-400 px-6 py-3 font-mono text-sm uppercase hover:bg-zinc-200 inline-flex items-center gap-2"
             >
-                Try Demo
+                Demos
                 <span className="text-xs">▾</span>
             </button>
 
@@ -49,7 +49,8 @@ export default function Dropdown() {
                     <div
                         role="menu"
                         aria-label="Demo options"
-                        className="absolute left-0 z-20 mt-2 min-w-full overflow-hidden border border-zinc-300 bg-white shadow-xl shadow-zinc-200/40"
+                        onMouseLeave={() => setOpen(false)}
+                        className="absolute left-0 top-full z-20 mt-2 w-48 max-w-[calc(100vw-2rem)] overflow-hidden border border-zinc-300 bg-white shadow-xl shadow-zinc-200/40"
                     >
                         {options.map((opt) => (
                             <Link

@@ -129,7 +129,7 @@
       },
       {
         "id": "9a856370-a30e-4003-ac48-4ce6d7847118",
-        "name": "New Node",
+        "name": "tree",
         "components": {
           "transform": {
             "type": "Transform",
@@ -257,34 +257,8 @@
         ]
       },
       {
-        "id": "b2849500-5218-40d6-8279-38810e73565f",
-        "name": "New Node",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                0,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          }
-        }
-      },
-      {
         "id": "4483bb4c-6417-4fa3-871b-8159f5f610cf",
-        "name": "New Node",
+        "name": "light",
         "components": {
           "transform": {
             "type": "Transform",

@@ -3,8 +3,6 @@
   "name": "Game Level Demo",
   "root": {
     "id": "root",
-    "enabled": true,
-    "visible": true,
     "components": {
       "transform": {
         "type": "Transform",
@@ -30,8 +28,6 @@
     "children": [
       {
         "id": "main-floor",
-        "enabled": true,
-        "visible": true,
         "components": {
           "transform": {
             "type": "Transform",
@@ -88,8 +84,6 @@
       },
       {
         "id": "platform-1",
-        "enabled": true,
-        "visible": true,
         "components": {
           "transform": {
             "type": "Transform",
@@ -144,8 +138,6 @@
       },
       {
         "id": "platform-2",
-        "enabled": true,
-        "visible": true,
         "components": {
           "transform": {
             "type": "Transform",
@@ -200,8 +192,6 @@
       },
       {
         "id": "platform-3",
-        "enabled": true,
-        "visible": true,
         "components": {
           "transform": {
             "type": "Transform",
@@ -256,8 +246,6 @@
       },
       {
         "id": "platform-high",
-        "enabled": true,
-        "visible": true,
         "components": {
           "transform": {
             "type": "Transform",
@@ -312,8 +300,6 @@
       },
       {
         "id": "ramp-1",
-        "enabled": true,
-        "visible": true,
         "components": {
           "transform": {
             "type": "Transform",
@@ -368,8 +354,6 @@
       },
       {
         "id": "wall-back",
-        "enabled": true,
-        "visible": true,
         "components": {
           "transform": {
             "type": "Transform",
@@ -424,8 +408,6 @@
       },
       {
         "id": "wall-left",
-        "enabled": true,
-        "visible": true,
         "components": {
           "transform": {
             "type": "Transform",
@@ -480,8 +462,6 @@
       },
       {
         "id": "wall-right",
-        "enabled": true,
-        "visible": true,
         "components": {
           "transform": {
             "type": "Transform",
@@ -536,8 +516,6 @@
       },
       {
         "id": "obstacle-1",
-        "enabled": true,
-        "visible": true,
         "components": {
           "transform": {
             "type": "Transform",
@@ -592,8 +570,6 @@
       },
       {
         "id": "obstacle-2",
-        "enabled": true,
-        "visible": true,
         "components": {
           "transform": {
             "type": "Transform",
@@ -648,8 +624,6 @@
       },
       {
         "id": "cylinder-pillar-1",
-        "enabled": true,
-        "visible": true,
         "components": {
           "transform": {
             "type": "Transform",
@@ -699,8 +673,6 @@
       },
       {
         "id": "cylinder-pillar-2",
-        "enabled": true,
-        "visible": true,
         "components": {
           "transform": {
             "type": "Transform",
@@ -750,8 +722,6 @@
       },
       {
         "id": "tree-1",
-        "enabled": true,
-        "visible": true,
         "components": {
           "transform": {
             "type": "Transform",
@@ -784,8 +754,6 @@
       },
       {
         "id": "tree-2",
-        "enabled": true,
-        "visible": true,
         "components": {
           "transform": {
             "type": "Transform",
@@ -818,8 +786,6 @@
       },
       {
         "id": "tree-3",
-        "enabled": true,
-        "visible": true,
         "components": {
           "transform": {
             "type": "Transform",
@@ -852,8 +818,6 @@
       },
       {
         "id": "spawn-indicator",
-        "enabled": true,
-        "visible": true,
         "components": {
           "transform": {
             "type": "Transform",
@@ -896,8 +860,6 @@
       },
       {
         "id": "goal-platform",
-        "enabled": true,
-        "visible": true,
         "components": {
           "transform": {
             "type": "Transform",
@@ -949,8 +911,6 @@
       },
       {
         "id": "stepping-stone-1",
-        "enabled": true,
-        "visible": true,
         "components": {
           "transform": {
             "type": "Transform",
@@ -1000,8 +960,6 @@
       },
       {
         "id": "stepping-stone-2",
-        "enabled": true,
-        "visible": true,
         "components": {
           "transform": {
             "type": "Transform",
@@ -1051,8 +1009,6 @@
       },
       {
         "id": "main-light",
-        "enabled": true,
-        "visible": true,
         "components": {
           "transform": {
             "type": "Transform",
@@ -1089,8 +1045,6 @@
       },
       {
         "id": "fill-light",
-        "enabled": true,
-        "visible": true,
         "components": {
           "transform": {
             "type": "Transform",
@@ -1126,8 +1080,6 @@
       },
       {
         "id": "accent-light",
-        "enabled": true,
-        "visible": true,
         "components": {
           "transform": {
             "type": "Transform",

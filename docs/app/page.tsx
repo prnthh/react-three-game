@@ -11,7 +11,7 @@ function Features() {
       <div className="mb-3 font-mono uppercase font-black opacity-80">
         Highlights
       </div>
-      <ul className="space-y-1.5 font-mono text-opacity-50 dark:text-zinc-400">
+      <ul className="space-y-1.5 font-mono text-opacity-50 dark:text-zinc-400 text-left">
         <li className="flex items-start gap-2">
           <span className="text-green-500">▸</span>
           <span>JSON scene graph</span>
@@ -59,7 +59,7 @@ export default function Home() {
           REACT-THREE-GAME
         </h1>
         <div className="mb-4 opacity-80 tracking-tight leading-tight text-shadow-[0_0_3px_rgba(255,255,255,1)]">
-          composable game engine and editor in react-three-fiber
+          high performance 3D game engine for React
         </div>
       </div>
 
@@ -73,6 +73,9 @@ export default function Home() {
             Use Editor
           </Link>
         </div>
+      </Section>
+
+      <Section title="React-Three-Game">
 
         <ClickToCopy text={"npm i react-three-game"} />
       </Section>
@@ -91,11 +94,7 @@ export default function Home() {
 }
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => {
-  return <div className="relative border border-zinc-300 bg-zinc-50 p-4 shadow-2xl shadow-zinc-200/50">
-    <div className="absolute -left-px -top-px h-8 w-8 border-l border-t border-zinc-400" />
-    <div className="absolute -right-px -top-px h-8 w-8 border-r border-t border-zinc-400" />
-
-
+  return <div className="relative border border-zinc-300 bg-slate-100 p-4 shadow-2xl shadow-zinc-200/50">
     {children}
   </div>;
 }

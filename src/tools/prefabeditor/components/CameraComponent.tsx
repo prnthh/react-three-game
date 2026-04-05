@@ -1,16 +1,26 @@
-import { PerspectiveCamera, useHelper } from '@react-three/drei';
-import { useRef } from 'react';
+import { PerspectiveCamera } from '@react-three/drei';
+import { useEffect, useMemo, useState } from 'react';
 import { CameraHelper, PerspectiveCamera as ThreePerspectiveCamera } from 'three';
+import { useFrame } from '@react-three/fiber';
 import { Component } from './ComponentRegistry';
 import { FieldGroup, NumberField } from './Input';
 
+const cameraDefaults = {
+    fov: 50,
+    near: 0.1,
+    zoom: 1,
+    far: 1000,
+};
+
 function CameraComponentEditor({ component, onUpdate }: { component: any; onUpdate: (newComp: any) => void }) {
+    const values = { ...cameraDefaults, ...component.properties };
+
     return (
         <FieldGroup>
             <NumberField
                 name="fov"
                 label="FOV"
-                values={component.properties}
+                values={values}
                 onChange={onUpdate}
                 fallback={50}
                 min={1}
@@ -20,7 +30,7 @@ function CameraComponentEditor({ component, onUpdate }: { component: any; onUpda
             <NumberField
                 name="near"
                 label="Near"
-                values={component.properties}
+                values={values}
                 onChange={onUpdate}
                 fallback={0.1}
                 min={0.001}
@@ -29,7 +39,7 @@ function CameraComponentEditor({ component, onUpdate }: { component: any; onUpda
             <NumberField
                 name="zoom"
                 label="Zoom"
-                values={component.properties}
+                values={values}
                 onChange={onUpdate}
                 fallback={1}
                 min={0.01}
@@ -38,7 +48,7 @@ function CameraComponentEditor({ component, onUpdate }: { component: any; onUpda
             <NumberField
                 name="far"
                 label="Far"
-                values={component.properties}
+                values={values}
                 onChange={onUpdate}
                 fallback={1000}
                 min={0.1}
@@ -49,17 +59,44 @@ function CameraComponentEditor({ component, onUpdate }: { component: any; onUpda
 }
 
 function CameraComponentView({ properties, editMode, isSelected }: { properties: any; editMode?: boolean; isSelected?: boolean }) {
-    const fov = properties?.fov ?? 50;
-    const near = properties?.near ?? 0.1;
-    const zoom = properties?.zoom ?? 1;
-    const far = properties?.far ?? 1000;
-    const cameraRef = useRef<ThreePerspectiveCamera>(null);
+    const merged = { ...cameraDefaults, ...properties };
+    const fov = merged.fov;
+    const near = merged.near;
+    const zoom = merged.zoom;
+    const far = merged.far;
+    const [camera, setCamera] = useState<ThreePerspectiveCamera | null>(null);
+    const cameraHelper = useMemo(
+        () => camera ? new CameraHelper(camera) : null,
+        [camera]
+    );
 
-    useHelper(editMode && isSelected ? (cameraRef as React.RefObject<ThreePerspectiveCamera>) : null, CameraHelper);
+    useEffect(() => {
+        return () => {
+            cameraHelper?.dispose();
+        };
+    }, [cameraHelper]);
+
+    useFrame(() => {
+        if (camera && cameraHelper && editMode && isSelected) {
+            camera.updateProjectionMatrix();
+            camera.updateMatrixWorld();
+            cameraHelper.update();
+        }
+    });
 
     return (
         <>
-            <PerspectiveCamera ref={cameraRef} makeDefault={!editMode} fov={fov} near={near} zoom={zoom} far={far} />
+            <PerspectiveCamera
+                ref={(instance) => setCamera(instance)}
+                makeDefault={!editMode}
+                fov={fov}
+                near={near}
+                zoom={zoom}
+                far={far}
+            />
+            {editMode && isSelected && cameraHelper && (
+                <primitive object={cameraHelper} />
+            )}
             {editMode && !isSelected ? (
                 <mesh>
                     <boxGeometry args={[0.34, 0.22, 0.18]} />
@@ -74,7 +111,7 @@ const CameraComponent: Component = {
     name: 'Camera',
     Editor: CameraComponentEditor,
     View: CameraComponentView,
-    defaultProperties: {},
+    defaultProperties: cameraDefaults,
 };
 
 export default CameraComponent;

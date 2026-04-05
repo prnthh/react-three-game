@@ -1,10 +1,24 @@
 import { Component } from "./ComponentRegistry";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useMemo, useState } from "react";
 import { useFrame } from "@react-three/fiber";
-import { DirectionalLight, Object3D, Vector3 } from "three";
+import { CameraHelper, DirectionalLight, Object3D, OrthographicCamera, Vector3 } from "three";
 import { FieldRenderer, FieldDefinition, Input } from "./Input";
 
 const smallLabel = { display: 'block', fontSize: '8px', color: 'rgba(34, 211, 238, 0.5)', marginBottom: 2 } as const;
+
+const directionalLightDefaults = {
+    color: '#ffffff',
+    intensity: 1,
+    castShadow: true,
+    shadowMapSize: 1024,
+    shadowCameraNear: 0.1,
+    shadowCameraFar: 100,
+    shadowCameraTop: 30,
+    shadowCameraBottom: -30,
+    shadowCameraLeft: -30,
+    shadowCameraRight: 30,
+    targetOffset: [0, -5, 0],
+};
 
 const directionalLightFields: FieldDefinition[] = [
     { name: 'color', type: 'color', label: 'Color' },
@@ -71,51 +85,66 @@ const directionalLightFields: FieldDefinition[] = [
 ];
 
 function DirectionalLightComponentEditor({ component, onUpdate }: { component: any; onUpdate: (newComp: any) => void }) {
+    const values = { ...directionalLightDefaults, ...component.properties };
+    const fields = values.castShadow
+        ? directionalLightFields
+        : directionalLightFields.filter(field => field.name !== '_shadowCamera');
+
     return (
         <FieldRenderer
-            fields={directionalLightFields}
-            values={component.properties}
+            fields={fields}
+            values={values}
             onChange={onUpdate}
         />
     );
 }
 
 function DirectionalLightView({ properties, editMode, isSelected }: { properties: any; editMode?: boolean; isSelected?: boolean }) {
-    const color = properties.color ?? '#ffffff';
-    const intensity = properties.intensity ?? 1.0;
-    const castShadow = properties.castShadow ?? true;
-    const shadowMapSize = properties.shadowMapSize ?? 1024;
-    const shadowCameraNear = properties.shadowCameraNear ?? 0.1;
-    const shadowCameraFar = properties.shadowCameraFar ?? 100;
-    const shadowCameraTop = properties.shadowCameraTop ?? 30;
-    const shadowCameraBottom = properties.shadowCameraBottom ?? -30;
-    const shadowCameraLeft = properties.shadowCameraLeft ?? -30;
-    const shadowCameraRight = properties.shadowCameraRight ?? 30;
-    const targetOffset = properties.targetOffset ?? [0, -5, 0];
+    const merged = { ...directionalLightDefaults, ...properties };
+    const color = merged.color;
+    const intensity = merged.intensity;
+    const castShadow = merged.castShadow;
+    const shadowMapSize = merged.shadowMapSize;
+    const shadowCameraNear = merged.shadowCameraNear;
+    const shadowCameraFar = merged.shadowCameraFar;
+    const shadowCameraTop = merged.shadowCameraTop;
+    const shadowCameraBottom = merged.shadowCameraBottom;
+    const shadowCameraLeft = merged.shadowCameraLeft;
+    const shadowCameraRight = merged.shadowCameraRight;
+    const targetOffset = merged.targetOffset;
 
     const directionalLightRef = useRef<DirectionalLight>(null);
     const targetRef = useRef<Object3D>(null);
+    const [shadowCamera, setShadowCamera] = useState<OrthographicCamera | null>(null);
+    const shadowCameraHelper = useMemo(
+        () => shadowCamera ? new CameraHelper(shadowCamera) : null,
+        [shadowCamera]
+    );
 
-    // Set up light target reference when both refs are ready
+    useEffect(() => {
+        return () => {
+            shadowCameraHelper?.dispose();
+        };
+    }, [shadowCameraHelper]);
+
+    // Use a local target object so node transforms rotate the light direction naturally.
     useEffect(() => {
         if (directionalLightRef.current && targetRef.current) {
             directionalLightRef.current.target = targetRef.current;
+            setShadowCamera(directionalLightRef.current.shadow.camera);
         }
     }, []);
 
-    // Update target world position based on light position + offset
     useFrame(() => {
         if (!directionalLightRef.current || !targetRef.current) return;
 
-        const lightWorldPos = new Vector3();
-        directionalLightRef.current.getWorldPosition(lightWorldPos);
+        directionalLightRef.current.target.updateMatrixWorld();
 
-        // Target is positioned relative to light's world position
-        targetRef.current.position.set(
-            lightWorldPos.x + targetOffset[0],
-            lightWorldPos.y + targetOffset[1],
-            lightWorldPos.z + targetOffset[2]
-        );
+        if (shadowCamera && shadowCameraHelper && castShadow) {
+            shadowCamera.updateProjectionMatrix();
+            shadowCamera.updateMatrixWorld();
+            shadowCameraHelper.update();
+        }
     });
 
     return (
@@ -136,8 +165,10 @@ function DirectionalLightView({ properties, editMode, isSelected }: { properties
                 shadow-bias={-0.001}
                 shadow-normalBias={0.02}
             />
-            {/* Target object - rendered declaratively in scene graph */}
-            <object3D ref={targetRef} />
+            <object3D ref={targetRef} position={targetOffset as [number, number, number]} />
+            {editMode && isSelected && castShadow && shadowCameraHelper && (
+                <primitive object={shadowCameraHelper} />
+            )}
             {editMode && isSelected && (
                 <>
                     {/* Light source indicator */}
@@ -173,7 +204,7 @@ const DirectionalLightComponent: Component = {
     name: 'DirectionalLight',
     Editor: DirectionalLightComponentEditor,
     View: DirectionalLightView,
-    defaultProperties: {}
+    defaultProperties: directionalLightDefaults
 };
 
 export default DirectionalLightComponent;

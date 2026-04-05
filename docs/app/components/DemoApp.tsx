@@ -5,7 +5,7 @@ import demoprefab from "../samples/game-level.json";
 
 export default function DemoApp() {
     return (
-        <div className="absolute top-0 w-screen h-screen -z-1">
+        <div className="absolute inset-0 -z-1 h-full w-full">
             <GameCanvas>
                 <Physics>
                     <ambientLight intensity={0.8} />

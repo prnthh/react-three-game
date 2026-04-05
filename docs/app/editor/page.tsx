@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { PrefabEditor } from "react-three-game";
-import testPrefab from "../samples/game-level.json";
+import testPrefab from "../samples/throne.json";
 
 export default function Home() {
   const [selectedPrefab, setSelectedPrefab] = useState<any>(testPrefab);
@@ -31,14 +31,14 @@ export default function Home() {
   );
 }
 
-const Toolbar = ({ setSelectedPrefab }: { setSelectedPrefab: React.Dispatch<React.SetStateAction<any>> }) => {
+export const Toolbar = ({ setSelectedPrefab }: { setSelectedPrefab: React.Dispatch<React.SetStateAction<any>> }) => {
   return <>
     <select className="bg-white text-black" onChange={(e) => {
       import(`../samples/${e.target.value}`).then((mod) => {
         setSelectedPrefab(mod.default);
       });
     }}>
-      {['game-level', 'test', 'floor', 'killbox'].map((prefabName) => (
+      {['throne', 'game-level', 'test', 'floor', 'killbox'].map((prefabName) => (
         <option key={prefabName} value={prefabName}>{prefabName} prefab</option>
       ))}
     </select>

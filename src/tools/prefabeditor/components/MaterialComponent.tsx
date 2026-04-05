@@ -1,10 +1,13 @@
 import { SingleTextureViewer, TextureListViewer } from '../../assetviewer/page';
+import { extend } from '@react-three/fiber';
+import type { ThreeElement } from '@react-three/fiber';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Component } from './ComponentRegistry';
 import { FieldRenderer, FieldDefinition, Input } from './Input';
 import { colors } from '../styles';
 import { useMemo } from 'react';
+import { MeshBasicNodeMaterial, MeshStandardNodeMaterial } from 'three/webgpu';
 import {
     RepeatWrapping,
     ClampToEdgeWrapping,
@@ -27,6 +30,13 @@ import {
     DoubleSide,
 } from 'three';
 
+declare module '@react-three/fiber' {
+    interface ThreeElements {
+        meshBasicNodeMaterial: ThreeElement<typeof MeshBasicNodeMaterial>;
+        meshStandardNodeMaterial: ThreeElement<typeof MeshStandardNodeMaterial>;
+    }
+}
+
 export interface MaterialProps extends Omit<MeshStandardMaterialProperties & MeshBasicMaterialProperties, 'args' | 'normalScale'> {
     materialType?: 'standard' | 'basic';
     transmission?: number;
@@ -44,6 +54,10 @@ export interface MaterialProps extends Omit<MeshStandardMaterialProperties & Mes
 
 const PICKER_POPUP_WIDTH = 260;
 const PICKER_POPUP_HEIGHT = 360;
+extend({
+    MeshBasicNodeMaterial,
+    MeshStandardNodeMaterial,
+});
 
 function TexturePicker({
     value,
@@ -321,11 +335,6 @@ function MaterialComponentView({ properties, loadedTextures }: { properties: Mat
         normalScale: _normalScale,
         normalMap: _normalMap,
         side: sideProp,
-        metalness: _metalness,
-        roughness: _roughness,
-        transmission: _transmission,
-        thickness: _thickness,
-        ior: _ior,
         ...materialProps
     } = materialSource;
 
@@ -378,10 +387,10 @@ function MaterialComponentView({ properties, loadedTextures }: { properties: Mat
     }, [finalNormalMap, normalScaleProp?.[0], normalScaleProp?.[1]]);
 
     if (!properties) {
-        return <meshStandardMaterial color="red" wireframe />;
+        return <meshStandardNodeMaterial color="red" wireframe />;
     }
 
-    const materialKey = finalTexture?.uuid ?? 'no-texture';
+    const materialKey = `${finalTexture?.uuid ?? 'no-texture'}:${materialProps.transparent ? 'transparent' : 'opaque'}`;
     const sharedProps = {
         map: finalTexture,
         side: resolvedSide,
@@ -389,11 +398,11 @@ function MaterialComponentView({ properties, loadedTextures }: { properties: Mat
     };
 
     if (materialType === 'basic') {
-        return <meshBasicMaterial key={materialKey} {...sharedProps} />;
+        return <meshBasicNodeMaterial key={materialKey} {...sharedProps} />;
     }
 
     return (
-        <meshStandardMaterial
+        <meshStandardNodeMaterial
             key={materialKey}
             {...sharedProps}
             normalMap={finalNormalMap}

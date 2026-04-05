@@ -1,0 +1,326 @@
+{
+  "id": "4b7541a5-2780-4b53-8046-2cfe4c376227",
+  "name": "Throne Room",
+  "root": {
+    "id": "86f34bf6-b195-4261-81d5-3eee5e0a7487",
+    "name": "Scene",
+    "components": {
+      "transform": {
+        "type": "Transform",
+        "properties": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      }
+    },
+    "children": [
+      {
+        "id": "ad38b3e5-a4ef-4585-b25b-49a269e1c7c3",
+        "name": "floor",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                -1,
+                -2.220446049250313e-16
+              ],
+              "rotation": [
+                -1.5707963267948963,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "plane",
+              "args": [
+                50,
+                50
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#894848",
+              "toneMapped": true,
+              "wireframe": false,
+              "transparent": false,
+              "opacity": 1,
+              "metalness": 0,
+              "roughness": 1
+            }
+          }
+        }
+      },
+      {
+        "id": "2d2e3fbf-4992-4edc-b53b-cb6e25ba44d5",
+        "name": "walls",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                23.5,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                50,
+                50,
+                50
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#675151",
+              "toneMapped": true,
+              "wireframe": false,
+              "transparent": false,
+              "opacity": 1,
+              "metalness": 0,
+              "roughness": 1,
+              "side": "BackSide"
+            }
+          }
+        }
+      },
+      {
+        "id": "9a856370-a30e-4003-ac48-4ce6d7847118",
+        "name": "New Node",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                -1,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "model": {
+            "type": "Model",
+            "properties": {
+              "filename": "models/environment/tree.glb",
+              "instanced": false
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "6b8c4ec4-2bf9-4394-84fe-b38282e3393f",
+        "name": "env",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                0,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "environment": {
+            "type": "Environment",
+            "properties": {}
+          }
+        },
+        "children": [
+          {
+            "id": "75427159-bf48-4bcd-8881-4702e7541cb5",
+            "name": "sphere",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "sphere",
+                  "args": [
+                    100,
+                    32,
+                    16
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "basic",
+                  "color": "#ffffff",
+                  "toneMapped": true,
+                  "wireframe": false,
+                  "transparent": false,
+                  "opacity": 1,
+                  "metalness": 0,
+                  "roughness": 1,
+                  "texture": "/textures/skybox/skybox2.jpg",
+                  "side": "BackSide"
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "b2849500-5218-40d6-8279-38810e73565f",
+        "name": "New Node",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                0,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": "4483bb4c-6417-4fa3-871b-8159f5f610cf",
+        "name": "New Node",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -14.5,
+                22,
+                -12.5
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "directionallight": {
+            "type": "DirectionalLight",
+            "properties": {
+              "shadowCameraNear": 0,
+              "shadowCameraFar": 136,
+              "targetOffset": [
+                4,
+                -7,
+                3
+              ],
+              "castShadow": true
+            }
+          }
+        }
+      }
+    ]
+  }
+}

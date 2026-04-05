@@ -60,13 +60,22 @@ import { GameCanvas, PrefabRoot } from 'react-three-game';
 ## GameObject Schema
 
 ```typescript
+interface Prefab {
+  id?: string;
+  name?: string;
+  root: GameObject;
+}
+
 interface GameObject {
   id: string;
+  name?: string;
   disabled?: boolean;
   components?: Record<string, { type: string; properties: any }>;
   children?: GameObject[];
 }
 ```
+
+`disabled` is the canonical visibility toggle in the current schema. Transforms are local to the parent node.
 
 ## Built-in Components
 
@@ -110,7 +119,7 @@ const Rotator: Component = {
 registerComponent(Rotator); // before rendering PrefabEditor
 ```
 
-**Wrapper** components accept `children` (animations, controllers). **Leaf** components don't (lights, particles).
+Components may render visible content, wrap child content, or contribute runtime behavior. Keep those semantics explicit in the component `View` rather than relying on hidden tree rules.
 
 ### Schema-Driven Field Types
 
@@ -152,12 +161,16 @@ import { PrefabEditor } from 'react-three-game';
 </PrefabEditor>
 ```
 
-Keys: **T**ranslate / **R**otate / **S**cale. Drag tree nodes to reparent. Import/export JSON. Physics only runs in play mode.
+Keys: **T**ranslate / **R**otate / **S**cale. Drag tree nodes to reparent. Physics only runs in play mode.
+
+Editor menu structure:
+- `Menu > File`: new scene, load/save prefab JSON, load prefab into scene
+- `Menu > Export`: `GLB`, `PNG`
 
 ## Internals
 
 - **Transforms**: Local in JSON, world computed via matrix multiplication
-- **Instancing**: `model.properties.instanced = true` → `<Merged>` + `<InstancedRigidBodies>`
+- **Instancing**: `model.properties.instanced = true` switches the node to the batched instance path (`<Merged>` / `<InstancedRigidBodies>`) instead of the standard model render path
 - **Models**: GLB/GLTF (Draco) and FBX auto-load from `filename`
 
 ## Tree Utilities

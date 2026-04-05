@@ -1,40 +1,68 @@
 import { Component } from "./ComponentRegistry";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useMemo, useState } from "react";
 import { BooleanField, ColorField, FieldGroup, NumberField } from "./Input";
-import { useHelper } from "@react-three/drei";
-import { SpotLightHelper } from "three";
+import { SpotLight, SpotLightHelper } from "three";
+import { useFrame } from "@react-three/fiber";
+
+const spotLightDefaults = {
+    color: '#ffffff',
+    intensity: 1,
+    angle: Math.PI / 6,
+    penumbra: 0.5,
+    distance: 100,
+    castShadow: true,
+};
 
 function SpotLightComponentEditor({ component, onUpdate }: { component: any; onUpdate: (newComp: any) => void }) {
+    const values = { ...spotLightDefaults, ...component.properties };
+
     return (
         <FieldGroup>
-            <ColorField name="color" label="Color" values={component.properties} onChange={onUpdate} />
-            <NumberField name="intensity" label="Intensity" values={component.properties} onChange={onUpdate} min={0} step={0.1} fallback={1} />
-            <NumberField name="angle" label="Angle" values={component.properties} onChange={onUpdate} min={0} max={Math.PI} step={0.05} fallback={Math.PI / 6} />
-            <NumberField name="penumbra" label="Penumbra" values={component.properties} onChange={onUpdate} min={0} max={1} step={0.05} fallback={0.5} />
-            <NumberField name="distance" label="Distance" values={component.properties} onChange={onUpdate} min={0} step={1} fallback={100} />
-            <BooleanField name="castShadow" label="Cast Shadow" values={component.properties} onChange={onUpdate} fallback={true} />
+            <ColorField name="color" label="Color" values={values} onChange={onUpdate} />
+            <NumberField name="intensity" label="Intensity" values={values} onChange={onUpdate} min={0} step={0.1} fallback={1} />
+            <NumberField name="angle" label="Angle" values={values} onChange={onUpdate} min={0} max={Math.PI} step={0.05} fallback={Math.PI / 6} />
+            <NumberField name="penumbra" label="Penumbra" values={values} onChange={onUpdate} min={0} max={1} step={0.05} fallback={0.5} />
+            <NumberField name="distance" label="Distance" values={values} onChange={onUpdate} min={0} step={1} fallback={100} />
+            <BooleanField name="castShadow" label="Cast Shadow" values={values} onChange={onUpdate} fallback={true} />
         </FieldGroup>
     );
 }
 
 function SpotLightView({ properties, editMode, isSelected }: { properties: any; editMode?: boolean; isSelected?: boolean }) {
-    const color = properties.color ?? '#ffffff';
-    const intensity = properties.intensity ?? 1.0;
-    const angle = properties.angle ?? Math.PI / 6;
-    const penumbra = properties.penumbra ?? 0.5;
-    const distance = properties.distance ?? 100;
-    const castShadow = properties.castShadow ?? true;
+    const merged = { ...spotLightDefaults, ...properties };
+    const color = merged.color;
+    const intensity = merged.intensity;
+    const angle = merged.angle;
+    const penumbra = merged.penumbra;
+    const distance = merged.distance;
+    const castShadow = merged.castShadow;
 
-    const spotLightRef = useRef<any>(null);
+    const spotLightRef = useRef<SpotLight>(null);
     const targetRef = useRef<any>(null);
+    const [spotLight, setSpotLight] = useState<SpotLight | null>(null);
+    const spotLightHelper = useMemo(
+        () => spotLight ? new SpotLightHelper(spotLight, color) : null,
+        [spotLight, color]
+    );
 
-    useHelper(editMode && isSelected ? spotLightRef : null, SpotLightHelper, color);
+    useEffect(() => {
+        return () => {
+            spotLightHelper?.dispose();
+        };
+    }, [spotLightHelper]);
 
     useEffect(() => {
         if (spotLightRef.current && targetRef.current) {
             spotLightRef.current.target = targetRef.current;
+            setSpotLight(spotLightRef.current);
         }
     }, []);
+
+    useFrame(() => {
+        if (spotLightHelper && editMode && isSelected) {
+            spotLightHelper.update();
+        }
+    });
 
     return (
         <>
@@ -51,6 +79,9 @@ function SpotLightView({ properties, editMode, isSelected }: { properties: any; 
                 shadow-bias={-0.0001}
                 shadow-normalBias={0.02}
             />
+            {editMode && isSelected && spotLightHelper && (
+                <primitive object={spotLightHelper} />
+            )}
             <object3D ref={targetRef} position={[0, -5, 0]} />
             {editMode && (
                 <>
@@ -72,7 +103,7 @@ const SpotLightComponent: Component = {
     name: 'SpotLight',
     Editor: SpotLightComponentEditor,
     View: SpotLightView,
-    defaultProperties: {}
+    defaultProperties: spotLightDefaults
 };
 
 export default SpotLightComponent;

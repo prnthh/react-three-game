@@ -307,7 +307,12 @@ export function createModelNode(filename: string, name?: string): GameObject {
             },
             model: {
                 type: 'Model',
-                properties: { filename, instanced: false }
+                properties: {
+                    filename,
+                    instanced: false,
+                    repeat: false,
+                    repeatAxes: [{ axis: 'x', count: 1, offset: 1 }]
+                }
             }
         }
     };

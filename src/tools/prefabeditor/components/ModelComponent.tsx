@@ -1,12 +1,156 @@
 import { ModelListViewer, SingleModelViewer } from '../../assetviewer/page';
-import { useEffect, useLayoutEffect, useState, useMemo, useRef } from 'react';
+import { useContext, useEffect, useLayoutEffect, useState, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Component } from './ComponentRegistry';
-import { FieldRenderer, FieldDefinition } from './Input';
+import { BooleanField, FieldGroup, Input, Label, SelectInput } from './Input';
 import { GameObject } from '../types';
+import { EditorContext } from '../EditorContext';
+import { DEFAULT_REPEAT_AXES, getRepeatAxesFromModelProperties, normalizeRepeatAxes, RepeatAxisConfig } from '../InstanceProvider';
+import { colors } from '../styles';
 
 const PICKER_POPUP_WIDTH = 260;
 const PICKER_POPUP_HEIGHT = 360;
+const AXIS_OPTIONS = [
+    { value: 'x', label: 'X' },
+    { value: 'y', label: 'Y' },
+    { value: 'z', label: 'Z' },
+] as const;
+
+type RepeatAxis = {
+    axis: RepeatAxisConfig['axis'];
+    count: number;
+    offset: number;
+};
+
+function quantize(value: number, step: number) {
+    if (!Number.isFinite(value)) return 0;
+    if (!Number.isFinite(step) || step <= 0) return value;
+    return Math.round(value / step) * step;
+}
+
+function RepeatAxisEditor({
+    axes,
+    onChange,
+    positionSnap,
+}: {
+    axes: RepeatAxis[];
+    onChange: (axes: RepeatAxis[]) => void;
+    positionSnap: number;
+}) {
+    const addAxis = () => {
+        const used = new Set(axes.map(axis => axis.axis));
+        const nextAxis = AXIS_OPTIONS.find(option => !used.has(option.value));
+        if (!nextAxis) return;
+
+        onChange([...axes, { axis: nextAxis.value, count: 1, offset: 1 }]);
+    };
+
+    const updateAxis = (index: number, patch: Partial<RepeatAxis>) => {
+        const nextAxes = axes.map((axis, axisIndex) => axisIndex === index ? { ...axis, ...patch } : axis);
+        onChange(normalizeRepeatAxes(nextAxes));
+    };
+
+    const removeAxis = (index: number) => {
+        onChange(axes.filter((_, axisIndex) => axisIndex !== index));
+    };
+
+    const canAddAxis = axes.length < AXIS_OPTIONS.length;
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Label>Repeat Axes</Label>
+                <button
+                    type="button"
+                    onClick={addAxis}
+                    disabled={!canAddAxis}
+                    style={{
+                        width: 22,
+                        height: 22,
+                        borderRadius: 3,
+                        border: `1px solid ${canAddAxis ? colors.accentBorder : colors.border}`,
+                        background: canAddAxis ? colors.accentBg : colors.bgSurface,
+                        color: canAddAxis ? colors.accent : colors.textMuted,
+                        cursor: canAddAxis ? 'pointer' : 'not-allowed',
+                        fontSize: 14,
+                        lineHeight: 1,
+                        padding: 0,
+                    }}
+                    title={canAddAxis ? 'Add repeat axis' : 'All axes already in use'}
+                >
+                    +
+                </button>
+            </div>
+            {axes.map((axisConfig, index) => {
+                const usedByOthers = new Set(axes.filter((_, axisIndex) => axisIndex !== index).map(axis => axis.axis));
+                const axisOptions = AXIS_OPTIONS.filter(option => option.value === axisConfig.axis || !usedByOthers.has(option.value));
+
+                return (
+                    <div
+                        key={`${axisConfig.axis}-${index}`}
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 6,
+                            padding: 8,
+                            border: `1px solid ${colors.border}`,
+                            borderRadius: 4,
+                            background: colors.bgSurface,
+                        }}
+                    >
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'end' }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                                <SelectInput
+                                    label="Axis"
+                                    value={axisConfig.axis}
+                                    onChange={(axis) => updateAxis(index, { axis: axis as RepeatAxis['axis'] })}
+                                    options={axisOptions as { value: string; label: string }[]}
+                                />
+                            </div>
+                            {index > 0 ? (
+                                <button
+                                    type="button"
+                                    onClick={() => removeAxis(index)}
+                                    style={{
+                                        height: 24,
+                                        width: 28,
+                                        borderRadius: 3,
+                                        border: `1px solid ${colors.border}`,
+                                        background: colors.bgInput,
+                                        color: colors.text,
+                                        cursor: 'pointer',
+                                        padding: 0,
+                                        flexShrink: 0,
+                                    }}
+                                    title="Remove repeat axis"
+                                >
+                                    ×
+                                </button>
+                            ) : null}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            <Input
+                                label="Count"
+                                value={axisConfig.count}
+                                onChange={(count) => updateAxis(index, { count: Math.max(1, Math.floor(count)) })}
+                                step={1}
+                                min={1}
+                                style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
+                            />
+                            <Input
+                                label="Offset"
+                                value={axisConfig.offset}
+                                onChange={(offset) => updateAxis(index, { offset: quantize(offset, positionSnap) })}
+                                step={positionSnap > 0 ? positionSnap : 0.1}
+                                style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
+                            />
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
 
 function ModelPicker({
     value,
@@ -77,23 +221,43 @@ function ModelPicker({
     };
 
     return (
-        <div style={{ maxHeight: 128, overflow: 'visible', position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <SingleModelViewer file={value ? `/${value}` : undefined} basePath={basePath} />
-            <button
-                ref={triggerRef}
-                onClick={() => setShowPicker(!showPicker)}
-                style={{ padding: '4px 8px', backgroundColor: '#1f2937', color: 'inherit', fontSize: 10, cursor: 'pointer', border: '1px solid rgba(34, 211, 238, 0.3)', marginTop: 4 }}
-            >
-                {showPicker ? 'Cancel' : 'Change'}
-            </button>
-            <button
-                onClick={() => {
-                    onChange(undefined as any);
-                }}
-                style={{ padding: '4px 8px', backgroundColor: '#1f2937', color: 'inherit', fontSize: 10, cursor: 'pointer', border: '1px solid rgba(34, 211, 238, 0.3)', marginTop: 4, marginLeft: 4 }}
-            >
-                Clear
-            </button>
+        <div style={{ maxHeight: 160, overflow: 'visible', position: 'relative', display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ flex: '0 0 auto' }}>
+                <SingleModelViewer file={value ? `/${value}` : undefined} basePath={basePath} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: '0 0 84px', minWidth: 84, justifyContent: 'flex-end' }}>
+                <button
+                    ref={triggerRef}
+                    onClick={() => setShowPicker(!showPicker)}
+                    style={{
+                        width: '100%',
+                        padding: '6px 8px',
+                        backgroundColor: '#1f2937',
+                        color: 'inherit',
+                        fontSize: 10,
+                        cursor: 'pointer',
+                        border: '1px solid rgba(34, 211, 238, 0.3)',
+                    }}
+                >
+                    {showPicker ? 'Cancel' : 'Change'}
+                </button>
+                <button
+                    onClick={() => {
+                        onChange(undefined as any);
+                    }}
+                    style={{
+                        width: '100%',
+                        padding: '6px 8px',
+                        backgroundColor: '#1f2937',
+                        color: 'inherit',
+                        fontSize: 10,
+                        cursor: 'pointer',
+                        border: '1px solid rgba(34, 211, 238, 0.3)',
+                    }}
+                >
+                    Clear
+                </button>
+            </div>
             {showPicker && popupStyle && typeof document !== 'undefined' && createPortal(
                 <div style={popupStyle} onMouseLeave={() => setShowPicker(false)}>
                     <ModelListViewer
@@ -111,29 +275,44 @@ function ModelPicker({
 }
 
 function ModelComponentEditor({ component, node, onUpdate, basePath = "" }: { component: any; node?: GameObject; onUpdate: (newComp: any) => void; basePath?: string }) {
-    const fields: FieldDefinition[] = [
-        {
-            name: 'filename',
-            type: 'custom',
-            label: 'Model File',
-            render: ({ value, onChange }) => (
-                <ModelPicker
-                    value={value}
-                    onChange={onChange}
-                    basePath={basePath}
-                    nodeId={node?.id}
-                />
-            ),
-        },
-        { name: 'instanced', type: 'boolean', label: 'Instanced' },
-    ];
+    const editorContext = useContext(EditorContext);
+    const positionSnap = editorContext?.positionSnap ?? 0.5;
+    const repeatAxes = getRepeatAxesFromModelProperties(component.properties);
 
     return (
-        <FieldRenderer
-            fields={fields}
-            values={component.properties}
-            onChange={onUpdate}
-        />
+        <FieldGroup>
+            <ModelPicker
+                value={component.properties.filename}
+                onChange={(filename) => onUpdate({ filename })}
+                basePath={basePath}
+                nodeId={node?.id}
+            />
+            <BooleanField
+                name="instanced"
+                label="Instanced"
+                values={component.properties}
+                onChange={onUpdate}
+                fallback={false}
+            />
+            {component.properties.instanced && (
+                <>
+                    <BooleanField
+                        name="repeat"
+                        label="Repeat"
+                        values={component.properties}
+                        onChange={onUpdate}
+                        fallback={false}
+                    />
+                    {component.properties.repeat && (
+                        <RepeatAxisEditor
+                            axes={repeatAxes}
+                            onChange={(nextAxes) => onUpdate({ repeatAxes: nextAxes })}
+                            positionSnap={positionSnap}
+                        />
+                    )}
+                </>
+            )}
+        </FieldGroup>
     );
 }
 
@@ -169,7 +348,9 @@ const ModelComponent: Component = {
     nonComposable: true,
     defaultProperties: {
         filename: '',
-        instanced: false
+        instanced: false,
+        repeat: false,
+        repeatAxes: DEFAULT_REPEAT_AXES
     }
 };
 

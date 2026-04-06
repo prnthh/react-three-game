@@ -7,7 +7,7 @@ import { Prefab, GameObject as GameObjectType } from "./types";
 import { getComponent, registerComponent, getNonComposableKeys } from "./components/ComponentRegistry";
 import components from "./components";
 import { loadModel } from "../dragdrop";
-import { GameInstance, GameInstanceProvider, useInstanceCheck } from "./InstanceProvider";
+import { GameInstance, GameInstanceProvider, getRepeatAxesFromModelProperties, RepeatAxisConfig, useInstanceCheck } from "./InstanceProvider";
 import { focusCameraOnObject, updateNode } from "./utils";
 import { PhysicsProps } from "./components/PhysicsComponent";
 import { EditorContext } from "./EditorContext";
@@ -18,6 +18,11 @@ type RapierRigidBody = any;
 components.forEach(registerComponent);
 
 const IDENTITY = new Matrix4();
+
+type ModelRepeatSettings = {
+    repeat: boolean;
+    repeatAxes: RepeatAxisConfig[];
+};
 
 export interface PrefabRootRef {
     root: Group | null;
@@ -241,12 +246,10 @@ export function GameObjectRenderer(props: RendererProps) {
 }
 
 function isPhysicsProps(v: any): v is PhysicsProps {
-    return v?.type === "fixed" || v?.type === "dynamic";
+    return v?.type === "fixed" || v?.type === "dynamic" || v?.type === "kinematicPosition" || v?.type === "kinematicVelocity";
 }
 
 function InstancedNode({ gameObject, parentMatrix = IDENTITY, editMode, registerRef, selectedId: _selectedId, onSelect, onClick }: RendererProps) {
-    const world = parentMatrix.clone().multiply(compose(gameObject));
-    const { position: worldPosition, rotation: worldRotation, scale: worldScale } = decompose(world);
     const localTransform = getNodeTransformProps(gameObject);
 
     const physicsProps = isPhysicsProps(
@@ -254,6 +257,11 @@ function InstancedNode({ gameObject, parentMatrix = IDENTITY, editMode, register
     )
         ? gameObject.components?.physics?.properties
         : undefined;
+    const modelUrl = gameObject.components?.model?.properties?.filename;
+    const instances = useMemo(
+        () => buildRepeatedInstances(gameObject, parentMatrix, modelUrl, physicsProps),
+        [gameObject, modelUrl, parentMatrix, physicsProps]
+    );
 
     const groupRef = useRef<Group>(null);
     const clickValid = useRef(false);
@@ -264,8 +272,6 @@ function InstancedNode({ gameObject, parentMatrix = IDENTITY, editMode, register
             return () => registerRef(gameObject.id, null);
         }
     }, [gameObject.id, registerRef, editMode]);
-
-    const modelUrl = gameObject.components?.model?.properties?.filename;
 
     if (editMode) {
         return (
@@ -290,27 +296,37 @@ function InstancedNode({ gameObject, parentMatrix = IDENTITY, editMode, register
                         <boxGeometry args={[0.01, 0.01, 0.01]} />
                     </mesh>
                 </group>
-                <GameInstance
-                    id={gameObject.id}
-                    modelUrl={modelUrl}
-                    position={worldPosition}
-                    rotation={worldRotation}
-                    scale={worldScale}
-                    physics={physicsProps}
-                />
+                {instances.map(instance => (
+                    <GameInstance
+                        key={instance.id}
+                        id={instance.id}
+                        sourceId={gameObject.id}
+                        modelUrl={instance.modelUrl}
+                        position={instance.position}
+                        rotation={instance.rotation}
+                        scale={instance.scale}
+                        physics={instance.physics}
+                    />
+                ))}
             </>
         );
     }
 
     return (
-        <GameInstance
-            id={gameObject.id}
-            modelUrl={gameObject.components?.model?.properties?.filename}
-            position={worldPosition}
-            rotation={worldRotation}
-            scale={worldScale}
-            physics={physicsProps}
-        />
+        <>
+            {instances.map(instance => (
+                <GameInstance
+                    key={instance.id}
+                    id={instance.id}
+                    sourceId={gameObject.id}
+                    modelUrl={instance.modelUrl}
+                    position={instance.position}
+                    rotation={instance.rotation}
+                    scale={instance.scale}
+                    physics={instance.physics}
+                />
+            ))}
+        </>
     );
 }
 
@@ -552,6 +568,82 @@ function compose(node?: GameObjectType | null) {
         new Quaternion().setFromEuler(new Euler(...rotation)),
         new Vector3(...scale)
     );
+}
+
+function getModelRepeatSettings(node?: GameObjectType | null): ModelRepeatSettings {
+    const properties = node?.components?.model?.properties ?? {};
+    return {
+        repeat: Boolean(properties.repeat),
+        repeatAxes: getRepeatAxesFromModelProperties(properties),
+    };
+}
+
+function buildRepeatedInstances(
+    gameObject: GameObjectType,
+    parentMatrix: Matrix4,
+    modelUrl: string | undefined,
+    physics: PhysicsProps | undefined,
+) {
+    if (!modelUrl) return [];
+
+    const transform = getNodeTransformProps(gameObject);
+    const repeat = getModelRepeatSettings(gameObject);
+    const counts: [number, number, number] = [1, 1, 1];
+    const offsets: [number, number, number] = [0, 0, 0];
+
+    if (repeat.repeat) {
+        for (const entry of repeat.repeatAxes) {
+            const axisIndex = entry.axis === 'x' ? 0 : entry.axis === 'y' ? 1 : 2;
+            counts[axisIndex] = entry.count;
+            offsets[axisIndex] = entry.offset;
+        }
+    }
+
+    const baseTranslation = new Matrix4().makeTranslation(transform.position[0], transform.position[1], transform.position[2]);
+    const baseRotation = new Matrix4().makeRotationFromEuler(new Euler(...transform.rotation));
+    const baseScale = new Matrix4().makeScale(transform.scale[0], transform.scale[1], transform.scale[2]);
+    const offsetMatrix = new Matrix4();
+    const worldMatrix = new Matrix4();
+    const instances: Array<{
+        id: string;
+        modelUrl: string;
+        position: [number, number, number];
+        rotation: [number, number, number];
+        scale: [number, number, number];
+        physics: PhysicsProps | undefined;
+    }> = [];
+
+    for (let x = 0; x < counts[0]; x++) {
+        for (let y = 0; y < counts[1]; y++) {
+            for (let z = 0; z < counts[2]; z++) {
+                offsetMatrix.makeTranslation(
+                    x * offsets[0],
+                    y * offsets[1],
+                    z * offsets[2],
+                );
+
+                worldMatrix.copy(parentMatrix)
+                    .multiply(baseTranslation)
+                    .multiply(baseRotation)
+                    .multiply(offsetMatrix)
+                    .multiply(baseScale);
+
+                const { position, rotation, scale } = decompose(worldMatrix);
+                const isBaseInstance = x === 0 && y === 0 && z === 0;
+
+                instances.push({
+                    id: isBaseInstance ? gameObject.id : `${gameObject.id}__repeat_${x}_${y}_${z}`,
+                    modelUrl,
+                    position,
+                    rotation,
+                    scale,
+                    physics,
+                });
+            }
+        }
+    }
+
+    return instances;
 }
 
 function decompose(m: Matrix4) {

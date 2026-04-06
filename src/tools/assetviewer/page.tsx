@@ -268,7 +268,17 @@ export function ModelListViewer({ files, selected, onSelect, basePath = "" }: Mo
     );
 }
 
-function ModelCard({ file, onSelect, basePath = "" }: { file: string; onSelect: (file: string) => void; basePath?: string }) {
+function ModelCard({
+    file,
+    onSelect,
+    basePath = "",
+    size = 60,
+}: {
+    file: string;
+    onSelect: (file: string) => void;
+    basePath?: string;
+    size?: number;
+}) {
     const [error, setError] = useState(false);
     const { ref, isInView } = useInView();
     const fullPath = basePath ? `/${basePath}${file}` : file;
@@ -288,7 +298,7 @@ function ModelCard({ file, onSelect, basePath = "" }: { file: string; onSelect: 
     return (
         <div
             ref={ref}
-            style={{ maxWidth: 60, aspectRatio: '1 / 1', backgroundColor: '#111827', color: '#f9fafb', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
+            style={{ width: size, aspectRatio: '1 / 1', backgroundColor: '#111827', color: '#f9fafb', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
             onClick={() => onSelect(file)}
         >
             <div style={styles.flexFillRelative}>
@@ -385,7 +395,7 @@ export function SingleModelViewer({ file, basePath = "" }: { file?: string; base
     if (!file) return null;
     return (
         <>
-            <ModelCard file={file} basePath={basePath} onSelect={() => { }} />
+            <ModelCard file={file} basePath={basePath} onSelect={() => { }} size={112} />
             <SharedCanvas />
         </>
     );

@@ -21,6 +21,7 @@ export interface PrefabEditorRef {
     screenshot: () => void;
     exportGLB: (options?: ExportGLBOptions) => Promise<ArrayBuffer | object | undefined>;
     exportGLBData: () => Promise<ArrayBuffer | undefined>;
+    clearSelection: () => Promise<void>;
     prefab: Prefab;
     setPrefab: (prefab: Prefab) => void;
     replacePrefab: (prefab: Prefab) => void;
@@ -190,7 +191,21 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
         });
     };
 
+    const clearSelection = async () => {
+        if (!selectedId) return;
+
+        setSelectedId(null);
+
+        await new Promise<void>(resolve => {
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => resolve());
+            });
+        });
+    };
+
     const handleExportGLB = async (options: ExportGLBOptions = {}) => {
+        await clearSelection();
+
         const sceneRoot = prefabRootRef.current?.root;
         if (!sceneRoot) return;
 
@@ -201,6 +216,8 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
     };
 
     const handleExportGLBData = async () => {
+        await clearSelection();
+
         const sceneRoot = prefabRootRef.current?.root;
         if (!sceneRoot) return;
 
@@ -255,6 +272,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
         screenshot: handleScreenshot,
         exportGLB: handleExportGLB,
         exportGLBData: handleExportGLBData,
+        clearSelection,
         prefab: loadedPrefab,
         setPrefab: replacePrefab,
         replacePrefab,

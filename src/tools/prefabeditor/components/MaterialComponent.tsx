@@ -4,7 +4,7 @@ import type { ThreeElement } from '@react-three/fiber';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Component } from './ComponentRegistry';
-import { FieldRenderer, FieldDefinition, Input } from './Input';
+import { FieldRenderer, FieldDefinition, Label, NumberInput } from './Input';
 import { colors } from '../styles';
 import { useMemo } from 'react';
 import { MeshBasicNodeMaterial, MeshStandardNodeMaterial } from 'three/webgpu';
@@ -218,22 +218,28 @@ function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { compo
                 label: 'Repeat (X, Y)',
                 render: ({ value, onChange }: { value: [number, number] | undefined; onChange: (v: [number, number]) => void }) => (
                     <div style={{ display: 'flex', gap: 2 }}>
-                        <Input
-                            label="X"
-                            value={value?.[0] ?? 1}
-                            onChange={v => onChange([v, value?.[1] ?? 1])}
-                            min={0.01}
-                            max={100}
-                            step={0.1}
-                        />
-                        <Input
-                            label="Y"
-                            value={value?.[1] ?? 1}
-                            onChange={v => onChange([value?.[0] ?? 1, v])}
-                            min={0.01}
-                            max={100}
-                            step={0.1}
-                        />
+                        <div style={{ flex: 1 }}>
+                            <Label>X</Label>
+                            <NumberInput
+                                value={value?.[0] ?? 1}
+                                onChange={v => onChange([v, value?.[1] ?? 1])}
+                                min={0.01}
+                                max={100}
+                                step={0.1}
+                                style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
+                            />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                            <Label>Y</Label>
+                            <NumberInput
+                                value={value?.[1] ?? 1}
+                                onChange={v => onChange([value?.[0] ?? 1, v])}
+                                min={0.01}
+                                max={100}
+                                step={0.1}
+                                style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
+                            />
+                        </div>
                     </div>
                 ),
             } as FieldDefinition] : []),
@@ -251,22 +257,28 @@ function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { compo
                 label: 'Normal Scale (X, Y)',
                 render: ({ value, onChange }: { value: [number, number] | undefined; onChange: (v: [number, number]) => void }) => (
                     <div style={{ display: 'flex', gap: 2 }}>
-                        <Input
-                            label="X"
-                            value={value?.[0] ?? 1}
-                            onChange={v => onChange([v, value?.[1] ?? 1])}
-                            min={0}
-                            max={5}
-                            step={0.01}
-                        />
-                        <Input
-                            label="Y"
-                            value={value?.[1] ?? 1}
-                            onChange={v => onChange([value?.[0] ?? 1, v])}
-                            min={0}
-                            max={5}
-                            step={0.01}
-                        />
+                        <div style={{ flex: 1 }}>
+                            <Label>X</Label>
+                            <NumberInput
+                                value={value?.[0] ?? 1}
+                                onChange={v => onChange([v, value?.[1] ?? 1])}
+                                min={0}
+                                max={5}
+                                step={0.01}
+                                style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
+                            />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                            <Label>Y</Label>
+                            <NumberInput
+                                value={value?.[1] ?? 1}
+                                onChange={v => onChange([value?.[0] ?? 1, v])}
+                                min={0}
+                                max={5}
+                                step={0.01}
+                                style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
+                            />
+                        </div>
                     </div>
                 ),
             } as FieldDefinition] : []),

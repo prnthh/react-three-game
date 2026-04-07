@@ -8,6 +8,8 @@ export { sound as soundManager } from './helpers/SoundManager';
 // Prefab Editor - Components
 export { default as PrefabEditor } from './tools/prefabeditor/PrefabEditor';
 export { default as PrefabRoot } from './tools/prefabeditor/PrefabRoot';
+export { useEditorContext } from './tools/prefabeditor/EditorContext';
+export type { EditorContextType } from './tools/prefabeditor/EditorContext';
 
 // Prefab Editor - Component Registry
 export { registerComponent } from './tools/prefabeditor/components/ComponentRegistry';
@@ -16,7 +18,6 @@ export { registerComponent } from './tools/prefabeditor/components/ComponentRegi
 export {
   FieldRenderer,
   FieldGroup,
-  Input,
   Label,
   Vector3Input,
   Vector3Field,
@@ -44,7 +45,7 @@ export type { Prefab, GameObject, ComponentData } from './tools/prefabeditor/typ
 
 // Game Events (physics + custom events)
 export { gameEvents, useGameEvent, getEntityIdFromRigidBody } from './tools/prefabeditor/GameEvents';
-export type { GameEventType, GameEventMap, GameEventPayload, PhysicsEventType, PhysicsEventPayload } from './tools/prefabeditor/GameEvents';
+export type { GameEventType, GameEventMap, GameEventPayload, PhysicsEventType, InteractionEventType, PhysicsEventPayload, ClickEventPayload } from './tools/prefabeditor/GameEvents';
 // Backward compatibility aliases
 export { entityEvents, useEntityEvent } from './tools/prefabeditor/GameEvents';
 export type { EntityEventType, EntityEventPayload } from './tools/prefabeditor/GameEvents';

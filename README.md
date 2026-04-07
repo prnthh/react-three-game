@@ -68,98 +68,6 @@ export default function Home() {
 
 `GameCanvas` provides the library's WebGPU canvas setup.
 
-## GameObject Schema
-
-```typescript
-interface Prefab {
-  id?: string;
-  name?: string;
-  root: GameObject;
-}
-
-interface GameObject {
-  id: string;
-  name?: string;
-  disabled?: boolean;
-  components?: Record<string, { type: string; properties: any }>;
-  children?: GameObject[];
-}
-```
-
-`disabled` is the canonical visibility toggle in the current schema. Transforms are local to the parent node.
-
-## Built-in Components
-
-| Component | Key Properties |
-|-----------|----------------|
-| Transform | `position`, `rotation`, `scale` — all `[x,y,z]` arrays, rotation in radians |
-| Geometry | `geometryType`: box/sphere/plane/cylinder, `args`: dimension array |
-| Material | `color`, `texture?`, `metalness?`, `roughness?` |
-| Physics | `type`: dynamic/fixed/kinematicPosition/kinematicVelocity, `mass?`, `restitution?` (bounciness), `friction?`, plus any Rapier props |
-| Model | `filename` (GLB/FBX path), `instanced?` for GPU batching |
-| SpotLight | `color`, `intensity`, `angle`, `penumbra` |
-
-## Custom Components
-
-```tsx
-import { useRef } from 'react';
-import { Component, registerComponent, FieldRenderer, FieldDefinition } from 'react-three-game';
-import { useFrame } from '@react-three/fiber';
-import type { Group } from 'three';
-
-const rotatorFields: FieldDefinition[] = [
-  { name: 'speed', type: 'number', label: 'Speed', step: 0.1 },
-  { name: 'axis', type: 'select', label: 'Axis', options: [
-    { value: 'x', label: 'X' },
-    { value: 'y', label: 'Y' },
-    { value: 'z', label: 'Z' },
-  ]},
-];
-
-const Rotator: Component = {
-  name: 'Rotator',
-  Editor: ({ component, onUpdate }) => (
-    <FieldRenderer fields={rotatorFields} values={component.properties} onChange={onUpdate} />
-  ),
-  View: ({ properties, children }) => {
-    const ref = useRef<Group>(null);
-    useFrame((_, dt) => { ref.current!.rotation.y += dt * properties.speed });
-    return <group ref={ref}>{children}</group>;
-  },
-  defaultProperties: { speed: 1, axis: 'y' }
-};
-
-registerComponent(Rotator); // before rendering PrefabEditor
-```
-
-Components may render visible content, wrap child content, or contribute runtime behavior. Keep those semantics explicit in the component `View` rather than relying on hidden tree rules.
-
-### Schema-Driven Field Types
-
-The `FieldRenderer` component auto-generates editor UI from a field schema:
-
-| Type | Description | Options |
-|------|-------------|---------|
-| `vector3` | X/Y/Z inputs with drag-to-scrub | `snap?: number` |
-| `number` | Numeric input | `min?`, `max?`, `step?` |
-| `string` | Text input | `placeholder?` |
-| `color` | Color picker + hex input | — |
-| `boolean` | Checkbox | — |
-| `select` | Dropdown | `options: { value, label }[]` |
-| `custom` | Render function for one-off UI | `render: (props) => ReactNode` |
-
-```tsx
-// Custom field example for complex one-off UI
-{
-  name: 'gradient',
-  type: 'custom',
-  label: 'Gradient',
-  render: ({ value, onChange, values, onChangeMultiple }) => (
-    <GradientPicker value={value} onChange={onChange} />
-  ),
-}
-```
-
 ## Prefab Editor
 
 ```jsx
@@ -226,11 +134,54 @@ export function EmbeddedEditor({ prefab, onPrefabChange }: {
 `showUI={false}` hides the built-in editor chrome but keeps canvas selection, transform controls, and scene interaction. For embedded tools, use the editor ref instead of reaching through `rootRef`:
 
 - `replacePrefab(prefab)` replaces the current scene through the editor state pipeline and resets editor history/selection.
+- `setPrefab(prefab)` updates the current prefab in place and preserves selection when the selected node ID still exists.
 - `addModel(path, model, options?)` creates a model node and injects the runtime asset in one step.
 - `addTexture(path, texture, options?)` creates a textured plane node and injects the runtime texture in one step.
 - `exportGLBData()` returns the GLB `ArrayBuffer` without triggering a download.
 - `canvasProps` forwards canvas-level sizing, camera, event, and style props to `GameCanvas`.
-- `setPrefab(prefab)` remains as a backward-compatible alias for `replacePrefab(prefab)`.
+
+### Editor State Bridge
+
+Compose small helper components inside `PrefabEditor` when custom UI needs to control the editor.
+
+```tsx
+import { useEffect } from 'react';
+import {
+  PrefabEditor,
+  useEditorContext,
+  type EditorContextType,
+} from 'react-three-game';
+
+function EditorStateBridge({ onReady }: { onReady: (editorState: EditorContextType) => void }) {
+  const editorState = useEditorContext();
+
+  useEffect(() => {
+    onReady(editorState);
+  }, [editorState, onReady]);
+
+  return null;
+}
+
+function CustomEditor() {
+  return (
+    <PrefabEditor initialPrefab={sceneData} showUI={false}>
+      <EditorStateBridge onReady={({ setTransformMode }) => setTransformMode('translate')} />
+    </PrefabEditor>
+  );
+}
+```
+
+- `useEditorContext()` is available to children rendered inside `PrefabEditor`.
+- Use it for editor state: transform mode, edit/play checks, focus actions, and export buttons.
+- Keep bridge components small and focused on one editor concern.
+
+### Edit Mode vs Play Mode
+
+- edit mode: selection, inspector, transform gizmos, editor shortcuts
+- play mode: physics and runtime behavior
+- skip editor-only code when `editMode` is `false`
+- use `showUI={false}` for custom shells
+- use `enableWindowDrop={false}` when the host app owns drag/drop
 
 Keys: **T**ranslate / **R**otate / **S**cale. Drag tree nodes to reparent. Physics only runs in play mode.
 
@@ -238,11 +189,36 @@ Editor menu structure:
 - `Menu > File`: new scene, load/save prefab JSON, load prefab into scene
 - `Menu > Export`: `GLB`, `PNG`
 
-## Internals
+## GameObject Schema
 
-- **Transforms**: Local in JSON, world computed via matrix multiplication
-- **Instancing**: `model.properties.instanced = true` switches the node to the batched instance path (`<Merged>` / `<InstancedRigidBodies>`) instead of the standard model render path
-- **Models**: GLB/GLTF (Draco) and FBX auto-load from `filename`
+```typescript
+interface Prefab {
+  id?: string;
+  name?: string;
+  root: GameObject;
+}
+
+interface GameObject {
+  id: string;
+  name?: string;
+  disabled?: boolean;
+  components?: Record<string, { type: string; properties: any }>;
+  children?: GameObject[];
+}
+```
+
+`disabled` is the canonical visibility toggle in the current schema. Transforms are local to the parent node.
+
+## Built-in Components
+
+| Component | Key Properties |
+|-----------|----------------|
+| Transform | `position`, `rotation`, `scale` — all `[x,y,z]` arrays, rotation in radians |
+| Geometry | `geometryType`: box/sphere/plane/cylinder, `args`: dimension array |
+| Material | `color`, `texture?`, `metalness?`, `roughness?` |
+| Physics | `type`: dynamic/fixed/kinematicPosition/kinematicVelocity, `mass?`, `restitution?` (bounciness), `friction?`, `linearVelocity?`, `angularVelocity?`, plus any Rapier props |
+| Model | `filename` (GLB/FBX path), `instanced?` for GPU batching |
+| SpotLight | `color`, `intensity`, `angle`, `penumbra` |
 
 ## Tree Utilities
 
@@ -255,6 +231,103 @@ const afterDelete = deleteNode(root, nodeId);
 const cloned = cloneNode(node);
 const glbData = await exportGLBData(sceneRoot);  // export scene to GLB ArrayBuffer
 ```
+
+### Scene State Updates
+
+```tsx
+function VisibilityToggle({
+  editorRef,
+  visible,
+}: {
+  editorRef: React.RefObject<PrefabEditorRef | null>;
+  visible: boolean;
+}) {
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const prefab = editor.prefab;
+    const root = updateNodeById(prefab.root, 'helper-grid', node => ({
+      ...node,
+      disabled: !visible,
+    }));
+
+    editor.setPrefab({ ...prefab, root });
+  }, [editorRef, visible]);
+
+  return null;
+}
+```
+
+- Use `updateNode(...)` or `updateNodeById(...)` for scene state changes inside the prefab tree.
+- For sensor and collision event patterns, see advanced physics examples.
+
+## Custom Components
+
+```tsx
+import { useRef } from 'react';
+import { Component, registerComponent, FieldRenderer, FieldDefinition } from 'react-three-game';
+import { useFrame } from '@react-three/fiber';
+import type { Group } from 'three';
+
+const rotatorFields: FieldDefinition[] = [
+  { name: 'speed', type: 'number', label: 'Speed', step: 0.1 },
+  { name: 'axis', type: 'select', label: 'Axis', options: [
+    { value: 'x', label: 'X' },
+    { value: 'y', label: 'Y' },
+    { value: 'z', label: 'Z' },
+  ]},
+];
+
+const Rotator: Component = {
+  name: 'Rotator',
+  Editor: ({ component, onUpdate }) => (
+    <FieldRenderer fields={rotatorFields} values={component.properties} onChange={onUpdate} />
+  ),
+  View: ({ properties, children }) => {
+    const ref = useRef<Group>(null);
+    useFrame((_, dt) => { ref.current!.rotation.y += dt * properties.speed });
+    return <group ref={ref}>{children}</group>;
+  },
+  defaultProperties: { speed: 1, axis: 'y' }
+};
+
+registerComponent(Rotator); // before rendering PrefabEditor
+```
+
+Components may render visible content, wrap child content, or contribute runtime behavior. Keep those semantics explicit in the component `View` rather than relying on hidden tree rules.
+
+### Schema-Driven Field Types
+
+The `FieldRenderer` component auto-generates editor UI from a field schema:
+
+| Type | Description | Options |
+|------|-------------|---------|
+| `vector3` | X/Y/Z inputs with drag-to-scrub | `snap?: number` |
+| `number` | Numeric input | `min?`, `max?`, `step?` |
+| `string` | Text input | `placeholder?` |
+| `color` | Color picker + hex input | — |
+| `boolean` | Checkbox | — |
+| `select` | Dropdown | `options: { value, label }[]` |
+| `custom` | Render function for one-off UI | `render: (props) => ReactNode` |
+
+```tsx
+// Custom field example for complex one-off UI
+{
+  name: 'gradient',
+  type: 'custom',
+  label: 'Gradient',
+  render: ({ value, onChange, values, onChangeMultiple }) => (
+    <GradientPicker value={value} onChange={onChange} />
+  ),
+}
+```
+
+## Internals
+
+- **Transforms**: Local in JSON, world computed via matrix multiplication
+- **Instancing**: `model.properties.instanced = true` switches the node to the batched instance path (`<Merged>` / `<InstancedRigidBodies>`) instead of the standard model render path
+- **Models**: GLB/GLTF (Draco) and FBX auto-load from `filename`
 
 ## Development
 

@@ -97,11 +97,17 @@ function CameraComponentView({ properties, editMode, isSelected }: { properties:
             {editMode && isSelected && cameraHelper && (
                 <primitive object={cameraHelper} />
             )}
-            {editMode && !isSelected ? (
-                <mesh>
-                    <boxGeometry args={[0.34, 0.22, 0.18]} />
-                    <meshBasicMaterial color="#22d3ee" wireframe />
-                </mesh>
+            {editMode ? (
+                <group>
+                    <mesh>
+                        <boxGeometry args={[0.3, 0.3, 0.5]} />
+                        <meshBasicMaterial color={'#22d3ee'} wireframe />
+                    </mesh>
+                    <mesh position={[0, 0, -0.25]} rotation={[Math.PI / 2, 0, 0]}>
+                        <coneGeometry args={[0.08, 0.16, 16]} />
+                        <meshBasicMaterial color={'#22d3ee'} wireframe />
+                    </mesh>
+                </group>
             ) : null}
         </>
     );

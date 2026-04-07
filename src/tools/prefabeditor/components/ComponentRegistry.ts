@@ -19,9 +19,6 @@ export interface Component {
 const REGISTRY: Record<string, Component> = {};
 
 export function registerComponent(component: Component) {
-    if (REGISTRY[component.name]) {
-        throw new Error(`Component with name ${component.name} already registered.`);
-    }
     REGISTRY[component.name] = component;
 }
 

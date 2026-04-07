@@ -1,6 +1,7 @@
 import { createContext, useContext } from "react";
 
-interface EditorContextType {
+export interface EditorContextType {
+    editMode: boolean;
     transformMode: "translate" | "rotate" | "scale";
     setTransformMode: (mode: "translate" | "rotate" | "scale") => void;
     snapResolution: number;

@@ -113,6 +113,28 @@ function getStepPrecision(step: number) {
     return decimal?.length ?? 0;
 }
 
+function clampNumber(value: number, min?: number, max?: number) {
+    if (min !== undefined && value < min) return min;
+    if (max !== undefined && value > max) return max;
+    return value;
+}
+
+function normalizeNumber(value: number, step?: string | number, min?: number, max?: number) {
+    const clampedValue = clampNumber(value, min, max);
+    const normalizedStep = getNumericStep(step, 0);
+    if (!Number.isFinite(normalizedStep) || normalizedStep <= 0) return clampedValue;
+
+    const precision = getStepPrecision(normalizedStep);
+    const stepBase = min ?? 0;
+    const steppedValue = stepBase + Math.round((clampedValue - stepBase) / normalizedStep) * normalizedStep;
+
+    return Number(steppedValue.toFixed(precision));
+}
+
+function isIncompleteNumber(value: string) {
+    return value === '' || value === '-' || value === '.' || value === '-.';
+}
+
 interface InputProps {
     value: number;
     onChange: (value: number) => void;
@@ -120,30 +142,49 @@ interface InputProps {
     min?: number;
     max?: number;
     style?: React.CSSProperties;
-    label?: string;
 }
 
-export function Input({ value, onChange, step, min, max, style, label }: InputProps) {
-    const [draft, setDraft] = useState<string>(() => value.toString());
+export function NumberInput({ value, onChange, step, min, max, style }: InputProps) {
+    const [draft, setDraft] = useState(() => value.toString());
+    const [isFocused, setIsFocused] = useState(false);
 
     useEffect(() => {
-        setDraft(value.toString());
-    }, [value]);
+        if (!isFocused) {
+            setDraft(value.toString());
+        }
+    }, [value, isFocused]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const inputValue = e.target.value;
         setDraft(inputValue);
 
-        const num = parseFloat(inputValue);
+        if (isIncompleteNumber(inputValue)) return;
+
+        const num = Number(inputValue);
         if (Number.isFinite(num)) {
-            onChange(num);
+            onChange(clampNumber(num, min, max));
         }
     };
 
     const handleBlur = () => {
-        const num = parseFloat(draft);
+        setIsFocused(false);
+
+        if (isIncompleteNumber(draft)) {
+            setDraft(value.toString());
+            return;
+        }
+
+        const num = Number(draft);
         if (!Number.isFinite(num)) {
             setDraft(value.toString());
+            return;
+        }
+
+        const normalized = normalizeNumber(num, step, min, max);
+        setDraft(normalized.toString());
+
+        if (normalized !== value) {
+            onChange(normalized);
         }
     };
 
@@ -172,15 +213,11 @@ export function Input({ value, onChange, step, min, max, style, label }: InputPr
         if (e.shiftKey) scrubStep /= 10;
         if (e.altKey) scrubStep *= 10;
 
-        const precision = getStepPrecision(scrubStep);
         const deltaSteps = Math.round(dx / 8);
-        let nextValue = startValue + deltaSteps * scrubStep;
+        const rawValue = startValue + deltaSteps * scrubStep;
+        const nextValue = normalizeNumber(rawValue, scrubStep, min, max);
 
-        // Apply min/max constraints
-        if (min !== undefined && nextValue < min) nextValue = min;
-        if (max !== undefined && nextValue > max) nextValue = max;
-
-        setDraft(nextValue.toFixed(precision));
+        setDraft(nextValue.toString());
         onChange(nextValue);
     };
 
@@ -192,58 +229,20 @@ export function Input({ value, onChange, step, min, max, style, label }: InputPr
         e.currentTarget.releasePointerCapture(e.pointerId);
     };
 
-    if (label) {
-        return (
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-            }}>
-                <span
-                    style={{
-                        ...styles.label,
-                        marginBottom: 0,
-                        userSelect: 'none',
-                        flex: '0 0 auto',
-                        minWidth: 20,
-                    }}
-                >
-                    {label}
-                </span>
-                <input
-                    type="text"
-                    value={draft}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    onKeyDown={e => {
-                        if (e.key === 'Enter') {
-                            (e.target as HTMLInputElement).blur();
-                        }
-                    }}
-                    step={step}
-                    min={min}
-                    max={max}
-                    style={{ ...styles.input, cursor: 'ew-resize', ...style }}
-                    onPointerDown={startScrub}
-                    onPointerMove={onScrubMove}
-                    onPointerUp={endScrub}
-                />
-            </div>
-        );
-    }
-
     return (
         <input
-            type="text"
+            type="number"
+            inputMode="decimal"
             value={draft}
             onChange={handleChange}
+            onFocus={() => setIsFocused(true)}
             onBlur={handleBlur}
             onKeyDown={e => {
                 if (e.key === 'Enter') {
                     (e.target as HTMLInputElement).blur();
                 }
             }}
-            step={step}
+            step={step ?? 'any'}
             min={min}
             max={max}
             style={{ ...styles.input, cursor: 'ew-resize', ...style }}
@@ -256,6 +255,36 @@ export function Input({ value, onChange, step, min, max, style, label }: InputPr
 
 export function Label({ children }: { children: React.ReactNode }) {
     return <label style={styles.label}>{children}</label>;
+}
+
+export function FieldRow({
+    label,
+    children,
+}: {
+    label: string;
+    children: React.ReactNode;
+}) {
+    return (
+        <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 8,
+        }}>
+            <span
+                style={{
+                    ...styles.label,
+                    marginBottom: 0,
+                    userSelect: 'none',
+                    flex: '0 0 auto',
+                    minWidth: 20,
+                }}
+            >
+                {label}
+            </span>
+            {children}
+        </div>
+    );
 }
 
 export function Vector3Input({
@@ -277,13 +306,12 @@ export function Vector3Input({
     };
 
     const [draft, setDraft] = useState<[string, string, string]>(
-        () => value.map(v => v.toString()) as any
+        () => value.map(v => v.toString()) as [string, string, string]
     );
 
-    // Sync external changes (gizmo, undo, etc.)
     useEffect(() => {
-        setDraft(value.map(v => v.toString()) as any);
-    }, [value[0], value[1], value[2]]);
+        setDraft(value.map(v => v.toString()) as [string, string, string]);
+    }, [value]);
 
     const dragState = useRef<{
         index: number;
@@ -292,12 +320,20 @@ export function Vector3Input({
     } | null>(null);
 
     const commit = (index: number) => {
-        const num = parseFloat(draft[index]);
-        if (Number.isFinite(num)) {
-            const next = [...value] as [number, number, number];
-            next[index] = snapValue(num);
-            onChange(next);
+        if (isIncompleteNumber(draft[index])) {
+            setDraft(value.map(v => v.toString()) as [string, string, string]);
+            return;
         }
+
+        const num = Number(draft[index]);
+        if (!Number.isFinite(num)) {
+            setDraft(value.map(v => v.toString()) as [string, string, string]);
+            return;
+        }
+
+        const next = [...value] as [number, number, number];
+        next[index] = snapValue(num);
+        onChange(next);
     };
 
     const startScrub = (e: React.PointerEvent, index: number) => {
@@ -327,8 +363,8 @@ export function Vector3Input({
         next[index] = nextValue;
 
         setDraft(d => {
-            const copy = [...d] as any;
-            copy[index] = nextValue.toFixed(3);
+            const copy = [...d] as [string, string, string];
+            copy[index] = nextValue.toString();
             return copy;
         });
 
@@ -399,10 +435,12 @@ export function Vector3Input({
                                 minWidth: 0,
                                 cursor: 'inherit',
                             }}
-                            type="text"
+                            type="number"
+                            inputMode="decimal"
+                            step={snap ?? 'any'}
                             value={draft[index]}
                             onChange={e => {
-                                const next = [...draft] as any;
+                                const next = [...draft] as [string, string, string];
                                 next[index] = e.target.value;
                                 setDraft(next);
                             }}
@@ -608,15 +646,16 @@ export function NumberField({
     style,
 }: BoundNumberFieldProps) {
     return (
-        <Input
-            label={label}
-            value={values[name] ?? fallback}
-            onChange={bindFieldChange(name, onChange)}
-            step={step}
-            min={min}
-            max={max}
-            style={style}
-        />
+        <FieldRow label={label}>
+            <NumberInput
+                value={values[name] ?? fallback}
+                onChange={bindFieldChange(name, onChange)}
+                step={step}
+                min={min}
+                max={max}
+                style={style}
+            />
+        </FieldRow>
     );
 }
 
@@ -742,15 +781,15 @@ export function FieldRenderer({ fields, values, onChange }: FieldRendererProps) 
 
                     case 'number':
                         return (
-                            <Input
-                                key={field.name}
-                                label={field.label}
-                                value={value ?? 0}
-                                onChange={v => updateField(field.name, v)}
-                                min={field.min}
-                                max={field.max}
-                                step={field.step}
-                            />
+                            <FieldRow key={field.name} label={field.label}>
+                                <NumberInput
+                                    value={value ?? 0}
+                                    onChange={v => updateField(field.name, v)}
+                                    min={field.min}
+                                    max={field.max}
+                                    step={field.step}
+                                />
+                            </FieldRow>
                         );
 
                     case 'string':

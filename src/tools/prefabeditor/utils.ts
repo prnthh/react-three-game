@@ -1,6 +1,6 @@
 import { GameObject, Prefab } from "./types";
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
-import { Box3, Object3D, PerspectiveCamera, Quaternion, Vector3 } from 'three';
+import { Box3, Euler, Matrix4, Object3D, PerspectiveCamera, Quaternion, Vector3 } from 'three';
 
 export interface ExportGLBOptions {
     filename?: string;
@@ -151,6 +151,47 @@ export function focusCameraOnObject(
     camera.lookAt(center);
     target.copy(center);
     update?.();
+}
+
+export function decompose(m: Matrix4) {
+    const p = new Vector3(), q = new Quaternion(), s = new Vector3();
+    m.decompose(p, q, s);
+    const e = new Euler().setFromQuaternion(q);
+    return {
+        position: [p.x, p.y, p.z] as [number, number, number],
+        rotation: [e.x, e.y, e.z] as [number, number, number],
+        scale: [s.x, s.y, s.z] as [number, number, number],
+    };
+}
+
+function compose(node?: GameObject | null) {
+    const t = node?.components?.transform?.properties;
+    const position = t?.position ?? [0, 0, 0];
+    const rotation = t?.rotation ?? [0, 0, 0];
+    const scale = t?.scale ?? [1, 1, 1];
+
+    return new Matrix4().compose(
+        new Vector3(...position),
+        new Quaternion().setFromEuler(new Euler(...rotation)),
+        new Vector3(...scale)
+    );
+}
+
+export function computeParentWorldMatrix(root: GameObject, targetId: string): Matrix4 {
+    const identity = new Matrix4();
+    let result: Matrix4 | null = null;
+
+    const visit = (node: GameObject, parent: Matrix4) => {
+        if (node.id === targetId) {
+            result = parent.clone();
+            return;
+        }
+        const world = parent.clone().multiply(compose(node));
+        node.children?.forEach(child => !result && visit(child, world));
+    };
+
+    visit(root, identity);
+    return result ?? identity;
 }
 
 /** Find a node by ID in the tree */

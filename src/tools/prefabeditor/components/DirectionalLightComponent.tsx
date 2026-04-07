@@ -2,7 +2,7 @@ import { Component } from "./ComponentRegistry";
 import { useRef, useEffect, useMemo, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { CameraHelper, DirectionalLight, Object3D, OrthographicCamera, Vector3 } from "three";
-import { FieldRenderer, FieldDefinition, Input } from "./Input";
+import { FieldRenderer, FieldDefinition, NumberInput } from "./Input";
 
 const smallLabel = { display: 'block', fontSize: '8px', color: 'rgba(34, 211, 238, 0.5)', marginBottom: 2 } as const;
 
@@ -33,27 +33,27 @@ const directionalLightFields: FieldDefinition[] = [
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
                 <div>
                     <label style={smallLabel}>Near</label>
-                    <Input step={0.1} value={values.shadowCameraNear ?? 0.1} onChange={v => onChangeMultiple({ shadowCameraNear: v })} />
+                    <NumberInput step={0.1} value={values.shadowCameraNear ?? 0.1} onChange={v => onChangeMultiple({ shadowCameraNear: v })} />
                 </div>
                 <div>
                     <label style={smallLabel}>Far</label>
-                    <Input step={1} value={values.shadowCameraFar ?? 100} onChange={v => onChangeMultiple({ shadowCameraFar: v })} />
+                    <NumberInput step={1} value={values.shadowCameraFar ?? 100} onChange={v => onChangeMultiple({ shadowCameraFar: v })} />
                 </div>
                 <div>
                     <label style={smallLabel}>Top</label>
-                    <Input step={1} value={values.shadowCameraTop ?? 30} onChange={v => onChangeMultiple({ shadowCameraTop: v })} />
+                    <NumberInput step={1} value={values.shadowCameraTop ?? 30} onChange={v => onChangeMultiple({ shadowCameraTop: v })} />
                 </div>
                 <div>
                     <label style={smallLabel}>Bottom</label>
-                    <Input step={1} value={values.shadowCameraBottom ?? -30} onChange={v => onChangeMultiple({ shadowCameraBottom: v })} />
+                    <NumberInput step={1} value={values.shadowCameraBottom ?? -30} onChange={v => onChangeMultiple({ shadowCameraBottom: v })} />
                 </div>
                 <div>
                     <label style={smallLabel}>Left</label>
-                    <Input step={1} value={values.shadowCameraLeft ?? -30} onChange={v => onChangeMultiple({ shadowCameraLeft: v })} />
+                    <NumberInput step={1} value={values.shadowCameraLeft ?? -30} onChange={v => onChangeMultiple({ shadowCameraLeft: v })} />
                 </div>
                 <div>
                     <label style={smallLabel}>Right</label>
-                    <Input step={1} value={values.shadowCameraRight ?? 30} onChange={v => onChangeMultiple({ shadowCameraRight: v })} />
+                    <NumberInput step={1} value={values.shadowCameraRight ?? 30} onChange={v => onChangeMultiple({ shadowCameraRight: v })} />
                 </div>
             </div>
         ),
@@ -68,15 +68,15 @@ const directionalLightFields: FieldDefinition[] = [
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4 }}>
                     <div>
                         <label style={smallLabel}>X</label>
-                        <Input step={0.5} value={offset[0]} onChange={v => onChange([v, offset[1], offset[2]])} />
+                        <NumberInput step={0.5} value={offset[0]} onChange={v => onChange([v, offset[1], offset[2]])} />
                     </div>
                     <div>
                         <label style={smallLabel}>Y</label>
-                        <Input step={0.5} value={offset[1]} onChange={v => onChange([offset[0], v, offset[2]])} />
+                        <NumberInput step={0.5} value={offset[1]} onChange={v => onChange([offset[0], v, offset[2]])} />
                     </div>
                     <div>
                         <label style={smallLabel}>Z</label>
-                        <Input step={0.5} value={offset[2]} onChange={v => onChange([offset[0], offset[1], v])} />
+                        <NumberInput step={0.5} value={offset[2]} onChange={v => onChange([offset[0], offset[1], v])} />
                     </div>
                 </div>
             );

@@ -42,6 +42,8 @@ function PlayerAnimator({ editorRef }: { editorRef: React.RefObject<PrefabEditor
 
         // Update player1
         newRoot = updateNodeById(newRoot, "player1", (node) => {
+            if (node.locked) return node;
+
             const transform = node.components?.transform?.properties;
             if (!transform) return node;
 
@@ -70,6 +72,8 @@ function PlayerAnimator({ editorRef }: { editorRef: React.RefObject<PrefabEditor
 
         // Update player2
         newRoot = updateNodeById(newRoot, "player2", (node) => {
+            if (node.locked) return node;
+
             const transform = node.components?.transform?.properties;
             if (!transform) return node;
 

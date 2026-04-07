@@ -13,11 +13,11 @@ export default function Dropdown() {
 
     const options: DemoOption[] = [
         { label: "View / Play Mode", href: "/viewer" },
-        { label: "Asset Viewer", href: "/demo/assetviewer" },
         { label: "Custom Component", href: "/demo/customcomponent" },
         { label: "ECS World", href: "/demo/world" },
         { label: "Physics", href: "/demo/physics" },
         { label: "Quake", href: "/demo/quake" },
+        { label: "Asset Viewer", href: "/demo/assetviewer" },
     ];
 
     return (

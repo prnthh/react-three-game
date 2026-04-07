@@ -130,16 +130,20 @@ export function MenuTriggerButton({
 export function TreeNodeMenu({
     isRoot,
     nodeId,
+    locked,
     onAddChild,
     onFocus,
+    onToggleLock,
     onDuplicate,
     onDelete,
     onClose,
 }: {
     isRoot: boolean;
     nodeId: string;
+    locked?: boolean;
     onAddChild: (parentId: string) => void;
     onFocus: (nodeId: string) => void;
+    onToggleLock?: (nodeId: string) => void;
     onDuplicate?: (nodeId: string) => void;
     onDelete?: (nodeId: string) => void;
     onClose: () => void;
@@ -152,6 +156,11 @@ export function TreeNodeMenu({
             <MenuItemButton onClick={() => { onFocus(nodeId); onClose(); }}>
                 Focus Camera
             </MenuItemButton>
+            {!isRoot && onToggleLock && (
+                <MenuItemButton onClick={() => { onToggleLock(nodeId); onClose(); }}>
+                    {locked ? 'Unlock' : 'Lock'}
+                </MenuItemButton>
+            )}
             {!isRoot && onDuplicate && (
                 <MenuItemButton onClick={() => { onDuplicate(nodeId); onClose(); }}>
                     Duplicate
@@ -202,18 +211,16 @@ export function TreeContextMenu({
     }, [contextMenu, onClose]);
 
     useEffect(() => {
-        if (!contextMenu || !panelRef.current || typeof window === 'undefined') return;
+        if (!contextMenu) {
+            setPosition(null);
+            return;
+        }
+        if (!panelRef.current || typeof window === 'undefined') return;
 
         const panelRect = panelRef.current.getBoundingClientRect();
         const left = Math.max(8, Math.min(contextMenu.x, window.innerWidth - panelRect.width - 8));
         const top = Math.max(8, Math.min(contextMenu.y, window.innerHeight - panelRect.height - 8));
         setPosition({ left, top });
-    }, [contextMenu]);
-
-    useEffect(() => {
-        if (!contextMenu) {
-            setPosition(null);
-        }
     }, [contextMenu]);
 
     if (!contextMenu || typeof document === 'undefined') return null;

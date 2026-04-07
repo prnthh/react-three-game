@@ -79,6 +79,8 @@ export function getRepeatAxesFromModelProperties(properties: Record<string, any>
 export type InstanceData = {
     id: string;
     sourceId: string;
+    clickable?: boolean;
+    locked?: boolean;
     position: [number, number, number];
     rotation: [number, number, number];
     scale: [number, number, number];
@@ -155,9 +157,24 @@ function emitCollisionExit(sourceId: string, payload: CollisionPayload) {
     });
 }
 
+function emitClick(sourceId: string, instanceId: string | undefined, event: any) {
+    gameEvents.emit('click', {
+        sourceEntityId: sourceId,
+        instanceEntityId: instanceId && instanceId !== sourceId ? instanceId : undefined,
+        point: [event.point.x, event.point.y, event.point.z],
+        button: event.button,
+        altKey: event.nativeEvent.altKey,
+        ctrlKey: event.nativeEvent.ctrlKey,
+        metaKey: event.nativeEvent.metaKey,
+        shiftKey: event.nativeEvent.shiftKey,
+    });
+}
+
 function instanceEquals(a: InstanceData, b: InstanceData): boolean {
     return a.id === b.id &&
         a.sourceId === b.sourceId &&
+        a.clickable === b.clickable &&
+        a.locked === b.locked &&
         a.meshPath === b.meshPath &&
         arrayEquals(a.position, b.position) &&
         arrayEquals(a.rotation, b.rotation) &&
@@ -449,15 +466,25 @@ function InstancedRigidGroup({
 
     // Handle click on instanced mesh in edit mode
     const handleClick = (e: any) => {
-        if (!editMode || !onSelect) return;
-        e.stopPropagation();
-
-        // Get the instance index from the intersection
         const instanceId = e.instanceId;
-        if (instanceId !== undefined && group.instances[instanceId]) {
-            onSelect(group.instances[instanceId].sourceId);
+        const instance = instanceId !== undefined ? group.instances[instanceId] : undefined;
+        if (!instance) return;
+
+        if (editMode) {
+            if (!onSelect || instance.locked) return;
+
+            e.stopPropagation();
+            onSelect(instance.sourceId);
+            return;
         }
+
+        if (!instance.clickable) return;
+
+        e.stopPropagation();
+        emitClick(instance.sourceId, instance.id, e);
     };
+
+    const shouldHandleClick = editMode || group.instances.some(inst => inst.clickable);
 
     // Add key to force remount when instance count changes significantly (helps with cleanup)
     const rigidBodyKey = `rb_${modelKey}_${group.instances.map(inst => `${inst.id}:${getPhysicsSignature(inst.physics)}`).join('|')}`;
@@ -479,7 +506,7 @@ function InstancedRigidGroup({
                         castShadow
                         receiveShadow
                         frustumCulled={false}
-                        onClick={editMode ? handleClick : undefined}
+                        onClick={shouldHandleClick ? handleClick : undefined}
                     />
                 );
             })}
@@ -548,7 +575,10 @@ function InstanceGroupItem({
 }) {
     const clickValid = useRef(false);
     const groupRef = useRef<Group>(null!);
+    const isLocked = Boolean(instance.locked);
     const isSelected = selectedId === instance.id || selectedId === instance.sourceId;
+    const canSelect = editMode && !isLocked;
+    const canClick = !editMode && Boolean(instance.clickable);
 
     // Use BoxHelper when object is selected in edit mode
     useHelper(editMode && isSelected ? groupRef : null, BoxHelper, 'cyan');
@@ -565,15 +595,19 @@ function InstanceGroupItem({
             position={instance.position}
             rotation={instance.rotation}
             scale={instance.scale}
-            onPointerDown={(e) => { e.stopPropagation(); clickValid.current = true; }}
-            onPointerMove={() => { clickValid.current = false; }}
-            onPointerUp={(e) => {
+            onPointerDown={canSelect || canClick ? (e) => { e.stopPropagation(); clickValid.current = true; } : undefined}
+            onPointerMove={canSelect || canClick ? () => { clickValid.current = false; } : undefined}
+            onPointerUp={canSelect || canClick ? (e) => {
                 if (clickValid.current) {
                     e.stopPropagation();
-                    onSelect?.(instance.sourceId);
+                    if (editMode) {
+                        onSelect?.(instance.sourceId);
+                    } else if (instance.clickable) {
+                        emitClick(instance.sourceId, instance.id, e);
+                    }
                 }
                 clickValid.current = false;
-            }}
+            } : undefined}
         >
             {InstanceComponents.map((Instance, i) => <Instance key={i} />)}
         </group>
@@ -591,7 +625,9 @@ export function useInstanceCheck(id: string): boolean {
 export const GameInstance = React.forwardRef<Group, {
     id: string;
     sourceId?: string;
+    clickable?: boolean;
     modelUrl: string;
+    locked?: boolean;
     position: [number, number, number];
     rotation: [number, number, number];
     scale: [number, number, number];
@@ -599,7 +635,9 @@ export const GameInstance = React.forwardRef<Group, {
 }>(({
     id,
     sourceId,
+    clickable = false,
     modelUrl,
+    locked = false,
     position,
     rotation,
     scale,
@@ -612,12 +650,14 @@ export const GameInstance = React.forwardRef<Group, {
     const instance = useMemo<InstanceData>(() => ({
         id,
         sourceId: sourceId ?? id,
+        clickable,
+        locked,
         meshPath: modelUrl,
         position,
         rotation,
         scale,
         physics,
-    }), [id, sourceId, modelUrl, JSON.stringify(position), JSON.stringify(rotation), JSON.stringify(scale), getPhysicsSignature(physics)]);
+    }), [id, sourceId, clickable, locked, modelUrl, JSON.stringify(position), JSON.stringify(rotation), JSON.stringify(scale), getPhysicsSignature(physics)]);
 
     useEffect(() => {
         if (!addInstance || !removeInstance) return;

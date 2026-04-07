@@ -3,13 +3,94 @@ import type { RigidBodyOptions, CollisionPayload, IntersectionEnterPayload, Inte
 import type { ReactNode } from 'react';
 import { useRef, useEffect, useCallback } from 'react';
 import { Component } from "./ComponentRegistry";
-import { BooleanField, FieldGroup, NumberField, SelectField } from "./Input";
+import { BooleanField, FieldGroup, NumberField, SelectField, Vector3Field } from "./Input";
 import { ComponentData } from "../types";
 import { gameEvents, getEntityIdFromRigidBody } from "../GameEvents";
+import { colors } from "../styles";
 
 export type PhysicsProps = RigidBodyOptions & {
     activeCollisionTypes?: 'all' | undefined;
+    linearVelocity?: [number, number, number];
+    angularVelocity?: [number, number, number];
 };
+
+const enabledAxesFallback: [boolean, boolean, boolean] = [true, true, true];
+
+function LockedAxisField({
+    label,
+    values,
+    onChange,
+}: {
+    label: string;
+    values: Record<string, any>;
+    onChange: (newComp: any) => void;
+}) {
+    const enabledTranslations = Array.isArray(values.enabledTranslations)
+        ? values.enabledTranslations as [boolean, boolean, boolean]
+        : enabledAxesFallback;
+
+    const axisLabels = ['X', 'Y', 'Z'] as const;
+
+    const toggleAxisLock = (index: number) => {
+        const nextEnabledTranslations = [...enabledTranslations] as [boolean, boolean, boolean];
+        nextEnabledTranslations[index] = !nextEnabledTranslations[index];
+        onChange({ enabledTranslations: nextEnabledTranslations });
+    };
+
+    return (
+        <div>
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 4,
+            }}>
+                <span style={{
+                    display: 'block',
+                    fontSize: '10px',
+                    color: colors.textMuted,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    fontWeight: 500,
+                }}>
+                    {label}
+                </span>
+                <span style={{
+                    fontSize: '10px',
+                    color: colors.textDim,
+                }}>
+                    Active means locked
+                </span>
+            </div>
+            <div style={{ display: 'flex', gap: 4 }}>
+                {axisLabels.map((axisLabel, index) => {
+                    const isLocked = !enabledTranslations[index];
+
+                    return (
+                        <button
+                            key={axisLabel}
+                            type="button"
+                            onClick={() => toggleAxisLock(index)}
+                            style={{
+                                flex: 1,
+                                backgroundColor: isLocked ? colors.dangerBg : colors.bgInput,
+                                border: `1px solid ${isLocked ? colors.dangerBorder : colors.border}`,
+                                borderRadius: 3,
+                                padding: '6px 8px',
+                                color: isLocked ? colors.danger : colors.textMuted,
+                                fontSize: '11px',
+                                fontFamily: 'monospace',
+                                cursor: 'pointer',
+                            }}
+                        >
+                            {axisLabel}
+                        </button>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
 
 function PhysicsComponentEditor({ component, onUpdate }: { component: ComponentData; onUpdate: (newComp: any) => void }) {
     return (
@@ -44,6 +125,9 @@ function PhysicsComponentEditor({ component, onUpdate }: { component: ComponentD
             <NumberField name="linearDamping" label="Linear Damping" values={component.properties} onChange={onUpdate} fallback={0} min={0} step={0.1} />
             <NumberField name="angularDamping" label="Angular Damping" values={component.properties} onChange={onUpdate} fallback={0} min={0} step={0.1} />
             <NumberField name="gravityScale" label="Gravity Scale" values={component.properties} onChange={onUpdate} fallback={1} step={0.1} />
+            <Vector3Field name="linearVelocity" label="Linear Velocity" values={component.properties} onChange={onUpdate} fallback={[0, 0, 0]} />
+            <Vector3Field name="angularVelocity" label="Angular Velocity" values={component.properties} onChange={onUpdate} fallback={[0, 0, 0]} />
+            <LockedAxisField label="Lock Movement" values={component.properties} onChange={onUpdate} />
             <BooleanField name="sensor" label="Sensor (Trigger Only)" values={component.properties} onChange={onUpdate} fallback={false} />
             <SelectField
                 name="activeCollisionTypes"
@@ -71,9 +155,23 @@ interface PhysicsViewProps {
 }
 
 function PhysicsComponentView({ properties, children, position, rotation, scale, editMode, nodeId, registerRigidBodyRef }: PhysicsViewProps) {
-    const { type, colliders, sensor, activeCollisionTypes, ...otherProps } = properties;
+    const {
+        type,
+        colliders,
+        sensor,
+        activeCollisionTypes,
+        linearVelocity = [0, 0, 0],
+        angularVelocity = [0, 0, 0],
+        enabledTranslations = enabledAxesFallback,
+        ...otherProps
+    } = properties;
     const colliderType = colliders || (type === 'fixed' ? 'trimesh' : 'hull');
     const rigidBodyRef = useRef<RapierRigidBody>(null);
+    const linearVelocityKey = linearVelocity.join(',');
+    const angularVelocityKey = angularVelocity.join(',');
+    const rbKey = editMode
+        ? `${type || 'dynamic'}_${colliderType}_${position?.join(',')}_${rotation?.join(',')}`
+        : `${type || 'dynamic'}_${colliderType}`;
 
     // Try to get rapier context - will be null if not inside <Physics>
     let rapier: any = null;
@@ -112,6 +210,27 @@ function PhysicsComponentView({ properties, children, position, rotation, scale,
         }
     }, [activeCollisionTypes, rapier, type, colliders]);
 
+    // Seed authored velocities when the body instance changes or the authored values change.
+    useEffect(() => {
+        if (!rigidBodyRef.current) return;
+
+        rigidBodyRef.current.setLinvel({
+            x: linearVelocity[0],
+            y: linearVelocity[1],
+            z: linearVelocity[2],
+        }, true);
+    }, [rbKey, linearVelocityKey]);
+
+    useEffect(() => {
+        if (!rigidBodyRef.current) return;
+
+        rigidBodyRef.current.setAngvel({
+            x: angularVelocity[0],
+            y: angularVelocity[1],
+            z: angularVelocity[2],
+        }, true);
+    }, [rbKey, angularVelocityKey]);
+
     // Event handlers for physics interactions
     const handleIntersectionEnter = useCallback((payload: IntersectionEnterPayload) => {
         if (!nodeId) return;
@@ -149,12 +268,6 @@ function PhysicsComponentView({ properties, children, position, rotation, scale,
         });
     }, [nodeId]);
 
-    // In edit mode, include position/rotation in key to force remount when transform changes
-    // This ensures the RigidBody debug visualization updates even when physics is paused
-    const rbKey = editMode
-        ? `${type || 'dynamic'}_${colliderType}_${position?.join(',')}_${rotation?.join(',')}`
-        : `${type || 'dynamic'}_${colliderType}`;
-
     return (
         <RigidBody
             key={rbKey}
@@ -165,6 +278,7 @@ function PhysicsComponentView({ properties, children, position, rotation, scale,
             rotation={rotation}
             scale={scale}
             sensor={sensor}
+            enabledTranslations={enabledTranslations}
             userData={{ entityId: nodeId }}
             onIntersectionEnter={handleIntersectionEnter}
             onIntersectionExit={handleIntersectionExit}
@@ -182,7 +296,13 @@ const PhysicsComponent: Component = {
     Editor: PhysicsComponentEditor,
     View: PhysicsComponentView,
     nonComposable: true,
-    defaultProperties: { type: 'dynamic', colliders: 'hull' }
+    defaultProperties: {
+        type: 'dynamic',
+        colliders: 'hull',
+        linearVelocity: [0, 0, 0],
+        angularVelocity: [0, 0, 0],
+        enabledTranslations: [true, true, true],
+    }
 };
 
 export default PhysicsComponent;

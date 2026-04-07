@@ -178,7 +178,7 @@ function TextureCard({ file, onSelect, basePath = "" }: { file: string; onSelect
         return (
             <div
                 ref={ref}
-                style={{ aspectRatio: '1 / 1', backgroundColor: '#374151', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                style={{ aspectRatio: '1 / 1', backgroundColor: '#c30000', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 onClick={() => onSelect(file)}
             >
                 <div style={styles.errorIcon}>✗</div>
@@ -189,7 +189,7 @@ function TextureCard({ file, onSelect, basePath = "" }: { file: string; onSelect
     return (
         <div
             ref={ref}
-            style={{ maxWidth: 60, aspectRatio: '1 / 1', backgroundColor: '#1f2937', color: '#f9fafb', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
+            style={{ maxWidth: 60, aspectRatio: '1 / 1', backgroundColor: '#aeaeae', color: '#f9fafb', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
             onClick={() => onSelect(file)}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
@@ -287,7 +287,7 @@ function ModelCard({
         return (
             <div
                 ref={ref}
-                style={{ aspectRatio: '1 / 1', backgroundColor: '#374151', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                style={{ aspectRatio: '1 / 1', backgroundColor: '#c30000', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 onClick={() => onSelect(file)}
             >
                 <div style={styles.errorIcon}>✗</div>
@@ -298,7 +298,7 @@ function ModelCard({
     return (
         <div
             ref={ref}
-            style={{ width: size, aspectRatio: '1 / 1', backgroundColor: '#111827', color: '#f9fafb', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
+            style={{ width: size, aspectRatio: '1 / 1', backgroundColor: '#aeaeae', color: '#f9fafb', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
             onClick={() => onSelect(file)}
         >
             <div style={styles.flexFillRelative}>

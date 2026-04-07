@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction, useState, useEffect } from 'react';
+import { Dispatch, SetStateAction, useState } from 'react';
 import { Prefab, GameObject as GameObjectType } from "./types";
 import EditorTree from './EditorTree';
 import { getAllComponents } from './components/ComponentRegistry';
@@ -90,12 +90,8 @@ function NodeInspector({
     const ALL_COMPONENTS = getAllComponents();
     const allKeys = Object.keys(ALL_COMPONENTS);
     const available = allKeys.filter(k => !node.components?.[k.toLowerCase()]);
-    const [addType, setAddType] = useState(available[0] || "");
-
-    useEffect(() => {
-        const newAvailable = allKeys.filter(k => !node.components?.[k.toLowerCase()]);
-        if (!newAvailable.includes(addType)) setAddType(newAvailable[0] || "");
-    }, [Object.keys(node.components || {}).join(',')]);
+    const [preferredAddType, setAddType] = useState(available[0] || "");
+    const addType = available.includes(preferredAddType) ? preferredAddType : (available[0] || "");
 
     return <div style={inspector.content} className="prefab-scroll">
         {/* Node Name */}

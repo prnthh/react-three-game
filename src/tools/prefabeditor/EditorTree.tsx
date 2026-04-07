@@ -157,14 +157,28 @@ export default function EditorTree({
         if (selectedId === nodeId) setSelectedId(null);
     };
 
-    const handleToggleDisabled = (nodeId: string) => {
+    const toggleNodeFlag = (nodeId: string, key: 'disabled' | 'locked') => {
         setPrefabData(prev => ({
             ...prev,
             root: updateNodeById(prev.root, nodeId, node => ({
                 ...node,
-                disabled: !node.disabled
+                [key]: !node[key]
             }))
         }));
+    };
+
+    const handleToggleDisabled = (nodeId: string) => {
+        toggleNodeFlag(nodeId, 'disabled');
+    };
+
+    const handleToggleLocked = (nodeId: string) => {
+        const willLock = !findNode(prefabData.root, nodeId)?.locked;
+
+        toggleNodeFlag(nodeId, 'locked');
+
+        if (willLock && selectedId === nodeId) {
+            setSelectedId(null);
+        }
     };
 
     const closeContextMenu = () => setContextMenu(null);
@@ -183,8 +197,10 @@ export default function EditorTree({
         <TreeNodeMenu
             isRoot={isRoot}
             nodeId={nodeId}
+            locked={findNode(prefabData.root, nodeId)?.locked}
             onAddChild={handleAddChild}
             onFocus={handleFocus}
+            onToggleLock={isRoot ? undefined : handleToggleLocked}
             onDuplicate={isRoot ? undefined : handleDuplicate}
             onDelete={isRoot ? undefined : handleDelete}
             onClose={onClose}
@@ -294,6 +310,7 @@ export default function EditorTree({
                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {node.name ?? node.id}
                         </span>
+                        {node.locked && <span style={{ marginLeft: 6, opacity: 0.6 }}>🔒</span>}
                     </div>
                     {!isRoot && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>

@@ -2,7 +2,7 @@ import { ModelListViewer, SingleModelViewer } from '../../assetviewer/page';
 import { useContext, useEffect, useLayoutEffect, useState, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Component } from './ComponentRegistry';
-import { BooleanField, FieldGroup, Input, Label, SelectInput } from './Input';
+import { BooleanField, FieldGroup, Label, NumberInput, SelectInput } from './Input';
 import { GameObject } from '../types';
 import { EditorContext } from '../EditorContext';
 import { DEFAULT_REPEAT_AXES, getRepeatAxesFromModelProperties, normalizeRepeatAxes, RepeatAxisConfig } from '../InstanceProvider';
@@ -129,21 +129,25 @@ function RepeatAxisEditor({
                             ) : null}
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                            <Input
-                                label="Count"
-                                value={axisConfig.count}
-                                onChange={(count) => updateAxis(index, { count: Math.max(1, Math.floor(count)) })}
-                                step={1}
-                                min={1}
-                                style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
-                            />
-                            <Input
-                                label="Offset"
-                                value={axisConfig.offset}
-                                onChange={(offset) => updateAxis(index, { offset: quantize(offset, positionSnap) })}
-                                step={positionSnap > 0 ? positionSnap : 0.1}
-                                style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
-                            />
+                            <div>
+                                <Label>Count</Label>
+                                <NumberInput
+                                    value={axisConfig.count}
+                                    onChange={(count) => updateAxis(index, { count: Math.max(1, Math.floor(count)) })}
+                                    step={1}
+                                    min={1}
+                                    style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
+                                />
+                            </div>
+                            <div>
+                                <Label>Offset</Label>
+                                <NumberInput
+                                    value={axisConfig.offset}
+                                    onChange={(offset) => updateAxis(index, { offset: quantize(offset, positionSnap) })}
+                                    step={positionSnap > 0 ? positionSnap : 0.1}
+                                    style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
+                                />
+                            </div>
                         </div>
                     </div>
                 );

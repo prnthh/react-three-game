@@ -9,6 +9,7 @@ import ModelComponent from './ModelComponent';
 import TextComponent from './TextComponent';
 import EnvironmentComponent from './EnvironmentComponent';
 import CameraComponent from './CameraComponent';
+import ClickComponent from './ClickComponent';
 
 export default [
     GeometryComponent,
@@ -22,5 +23,6 @@ export default [
     TextComponent,
     EnvironmentComponent,
     CameraComponent,
+    ClickComponent,
 ];
 

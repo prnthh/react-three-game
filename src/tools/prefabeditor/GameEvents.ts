@@ -12,11 +12,24 @@ export type PhysicsEventType =
     | 'collision:enter'
     | 'collision:exit';
 
+export type InteractionEventType = 'click';
+
 /** Payload for physics events */
 export interface PhysicsEventPayload {
     sourceEntityId: string;
     targetEntityId: string | null;
     targetRigidBody: RapierRigidBody | null | undefined;
+}
+
+export interface ClickEventPayload {
+    sourceEntityId: string;
+    instanceEntityId?: string;
+    point: [number, number, number];
+    button: number;
+    altKey: boolean;
+    ctrlKey: boolean;
+    metaKey: boolean;
+    shiftKey: boolean;
 }
 
 // ============================================================================
@@ -38,6 +51,7 @@ export interface GameEventMap {
     'sensor:exit': PhysicsEventPayload;
     'collision:enter': PhysicsEventPayload;
     'collision:exit': PhysicsEventPayload;
+    'click': ClickEventPayload;
 }
 
 /** All registered event types */
@@ -60,11 +74,12 @@ const subscribers = new Map<string, Set<EventHandler<any>>>();
 /**
  * Game event system for all game interactions.
  *
- * Built-in physics events:
+ * Built-in events:
  * - sensor:enter - Something entered a sensor collider
  * - sensor:exit - Something exited a sensor collider
  * - collision:enter - A collision started
  * - collision:exit - A collision ended
+ * - click - A prefab entity with a Click component was clicked in play mode
  *
  * Custom events:
  * - Emit any event type with any payload

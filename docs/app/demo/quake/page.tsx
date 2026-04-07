@@ -1,9 +1,12 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { PrefabEditor } from "react-three-game";
+import { PrefabEditor, registerComponent } from "react-three-game";
 import type { Prefab, PrefabEditorRef } from "react-three-game";
 import { parseQuakeMap, quakeMapToPrefab } from "./quakeMapParser";
+import QuakeBrushComponent from "./QuakeBrushComponent";
+
+registerComponent(QuakeBrushComponent);
 
 export default function QuakeMapDemo() {
     const editorRef = useRef<PrefabEditorRef | null>(null);

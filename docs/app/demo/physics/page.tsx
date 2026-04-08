@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef } from "react";
-import { insertNode, PrefabEditor, updateNodeById, useGameEvent } from "react-three-game";
+import { PrefabEditor, useGameEvent } from "react-three-game";
 import type { GameObject, PrefabEditorRef } from "react-three-game";
 import { Quaternion, Vector3 } from "three";
 
@@ -167,8 +167,8 @@ function createProjectileNode(position: [number, number, number], velocity: [num
 }
 
 function createProjectileFromCannon(editor: PrefabEditorRef | null, barrelEntityId = CANNON_BARREL_ID): GameObject | null {
-    const barrelObject = editor?.rootRef.current?.getObject(barrelEntityId)
-        ?? editor?.rootRef.current?.getObject(CANNON_BARREL_ID);
+    const barrelObject = editor?.viewRef.current?.getObject(barrelEntityId)
+        ?? editor?.viewRef.current?.getObject(CANNON_BARREL_ID);
     if (!barrelObject) return null;
 
     barrelObject.updateWorldMatrix(true, false);
@@ -194,8 +194,7 @@ function createProjectileFromCannon(editor: PrefabEditorRef | null, barrelEntity
 function updateTargetColor(editor: PrefabEditorRef | null, color: string) {
     if (!editor) return;
 
-    const currentPrefab = editor.prefab;
-    const root = updateNodeById(currentPrefab.root, TARGET_ID, (node) => ({
+    editor.scene.update(TARGET_ID, node => ({
         ...node,
         components: {
             ...node.components,
@@ -209,13 +208,9 @@ function updateTargetColor(editor: PrefabEditorRef | null, color: string) {
             },
         },
     }));
-
-    if (root !== currentPrefab.root) {
-        editor.setPrefab({ ...currentPrefab, root });
-    }
 }
 
-function CannonController({ editorRef, onFire }: { editorRef: React.RefObject<PrefabEditorRef | null>; onFire: (barrelEntityId: string) => void }) {
+function CannonController({ onFire }: { onFire: (barrelEntityId: string) => void }) {
     useGameEvent('click', (payload) => {
         onFire(payload.sourceEntityId);
     }, [onFire]);
@@ -247,10 +242,7 @@ export default function PhysicsDemo() {
         const projectile = createProjectileFromCannon(editorRef.current, barrelEntityId);
         if (!projectile || !editor) return;
 
-        editor.setPrefab({
-            ...editor.prefab,
-            root: insertNode(editor.prefab.root, projectile),
-        });
+        editor.scene.add(projectile);
     }, []);
 
     const handleTargetColorChange = useCallback((color: string) => {
@@ -260,7 +252,7 @@ export default function PhysicsDemo() {
     return (
         <main className="flex h-screen w-screen">
             <PrefabEditor ref={editorRef} initialPrefab={prefab}>
-                <CannonController editorRef={editorRef} onFire={fireCannon} />
+                <CannonController onFire={fireCannon} />
                 <TargetController onTargetColorChange={handleTargetColorChange} />
             </PrefabEditor>
         </main>

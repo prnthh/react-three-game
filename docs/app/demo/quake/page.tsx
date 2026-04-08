@@ -36,17 +36,7 @@ export default function QuakeMapDemo() {
 
     if (loading) {
         return (
-            <div
-                style={{
-                    position: "absolute",
-                    top: "50%",
-                    left: "50%",
-                    transform: "translate(-50%, -50%)",
-                    color: "#ffaa44",
-                    fontFamily: '"Courier New", monospace',
-                    fontSize: "18px",
-                }}
-            >
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-mono text-lg text-[#ffaa44]">
                 Loading DM1 map...
             </div>
         );
@@ -54,17 +44,7 @@ export default function QuakeMapDemo() {
 
     if (!mapPrefab) {
         return (
-            <div
-                style={{
-                    position: "absolute",
-                    top: "50%",
-                    left: "50%",
-                    transform: "translate(-50%, -50%)",
-                    color: "#ff4444",
-                    fontFamily: '"Courier New", monospace',
-                    fontSize: "18px",
-                }}
-            >
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-mono text-lg text-[#ff4444]">
                 Failed to load map
             </div>
         );
@@ -73,30 +53,17 @@ export default function QuakeMapDemo() {
     return (
         <>
             {/* Info overlay */}
-            <div
-                style={{
-                    position: "absolute",
-                    top: 10,
-                    left: 10,
-                    background: "rgba(0, 0, 0, 0.7)",
-                    color: "#ffaa44",
-                    padding: "12px",
-                    borderRadius: "8px",
-                    fontFamily: '"Courier New", monospace',
-                    fontSize: "12px",
-                    zIndex: 900,
-                }}
-            >
-                <div style={{ fontWeight: "bold", marginBottom: "8px" }}>
+            <div className="absolute left-2.5 top-2.5 z-[900] rounded-lg bg-black/70 p-3 font-mono text-xs text-[#ffaa44]">
+                <div className="mb-2 font-bold">
                     Quake DM1
                 </div>
-                <div style={{ fontSize: "11px", color: "#ccaa88" }}>
+                <div className="text-[11px] text-[#ccaa88]">
                     <div>Place of Two Deaths</div>
                     <div>{mapPrefab.root.children?.length || 0} brushes</div>
                 </div>
             </div>
 
-            <div className="w-screen h-screen">
+            <div className="h-screen w-screen">
 
                 {/* Map in editor mode */}
                 <PrefabEditor ref={editorRef} initialPrefab={mapPrefab} />

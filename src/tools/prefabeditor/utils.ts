@@ -4,18 +4,15 @@ import { Box3, Euler, Matrix4, Object3D, PerspectiveCamera, Quaternion, Vector3 
 
 export interface ExportGLBOptions {
     filename?: string;
-    binary?: boolean;
-    onComplete?: (result: ArrayBuffer | object) => void;
-    onError?: (error: any) => void;
 }
 
-/** Save a prefab as JSON file, showing a Save As dialog when supported */
+/** Save scene JSON, showing a Save As dialog when supported */
 export async function saveJson(data: Prefab, filename: string) {
     const json = JSON.stringify(data, null, 2);
     if ('showSaveFilePicker' in window) {
         try {
             const handle = await (window as any).showSaveFilePicker({
-                suggestedName: `${filename || 'prefab'}.json`,
+                suggestedName: `${filename || 'scene'}.json`,
                 types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
             });
             const writable = await handle.createWritable();
@@ -29,11 +26,11 @@ export async function saveJson(data: Prefab, filename: string) {
     // Fallback for browsers without File System Access API
     const a = document.createElement('a');
     a.href = "data:text/json;charset=utf-8," + encodeURIComponent(json);
-    a.download = `${filename || 'prefab'}.json`;
+    a.download = `${filename || 'scene'}.json`;
     a.click();
 }
 
-/** Load a prefab from JSON file */
+/** Load scene JSON from a file */
 export function loadJson(): Promise<Prefab | undefined> {
     return new Promise(resolve => {
         const input = document.createElement('input');
@@ -48,7 +45,7 @@ export function loadJson(): Promise<Prefab | undefined> {
                     const text = e.target?.result;
                     if (typeof text === 'string') resolve(JSON.parse(text) as Prefab);
                 } catch (err) {
-                    console.error('Error parsing prefab JSON:', err);
+                    console.error('Error parsing scene JSON:', err);
                     resolve(undefined);
                 }
             };
@@ -59,63 +56,40 @@ export function loadJson(): Promise<Prefab | undefined> {
 }
 
 /**
- * Export a Three.js scene or object to GLB format
- * @param sceneRoot - The Three.js Object3D to export
- * @param options - Export options
- * @returns Promise that resolves when export is complete
+ * Export a Three.js scene or object to GLB binary data
  */
-export function exportGLB(
-    sceneRoot: Object3D,
-    options: ExportGLBOptions = {}
-): Promise<ArrayBuffer | object> {
-    const {
-        filename = 'scene.glb',
-        binary = true,
-        onComplete,
-        onError
-    } = options;
-
+export function exportGLBData(sceneRoot: Object3D): Promise<ArrayBuffer> {
     return new Promise((resolve, reject) => {
-        const exporter = new GLTFExporter();
-
-        exporter.parse(
+        new GLTFExporter().parse(
             sceneRoot,
-            (result) => {
-                onComplete?.(result);
-                resolve(result);
-
-                // Trigger download if filename is provided
-                if (filename) {
-                    const blob = new Blob(
-                        [result as ArrayBuffer],
-                        { type: binary ? 'application/octet-stream' : 'application/json' }
-                    );
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = filename;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                }
-            },
-            (error) => {
-                console.error('Error exporting GLB:', error);
-                onError?.(error);
-                reject(error);
-            },
-            { binary }
+            (result) => resolve(result as ArrayBuffer),
+            (error) => reject(error),
+            { binary: true }
         );
     });
 }
 
 /**
- * Export a Three.js scene to GLB and return the ArrayBuffer without downloading
- * @param sceneRoot - The Three.js Object3D to export
- * @returns Promise that resolves with the GLB data as ArrayBuffer
+ * Export a Three.js scene or object to GLB and trigger a download
  */
-export async function exportGLBData(sceneRoot: Object3D): Promise<ArrayBuffer> {
-    const result = await exportGLB(sceneRoot, { filename: '', binary: true });
-    return result as ArrayBuffer;
+export async function exportGLB(
+    sceneRoot: Object3D,
+    options: ExportGLBOptions = {}
+): Promise<ArrayBuffer> {
+    const { filename = 'scene.glb' } = options;
+    const data = await exportGLBData(sceneRoot);
+
+    if (filename) {
+        const blob = new Blob([data], { type: 'application/octet-stream' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    return data;
 }
 
 export function focusCameraOnObject(
@@ -164,132 +138,33 @@ export function decompose(m: Matrix4) {
     };
 }
 
-function compose(node?: GameObject | null) {
-    const t = node?.components?.transform?.properties;
-    const position = t?.position ?? [0, 0, 0];
-    const rotation = t?.rotation ?? [0, 0, 0];
-    const scale = t?.scale ?? [1, 1, 1];
+/** Compute the parent world matrix for a node using the normalized store data */
+export function computeParentWorldMatrix(
+    state: {
+        nodesById: Record<string, { components?: Record<string, { properties?: Record<string, any> } | undefined> }>;
+        parentIdById: Record<string, string | null>;
+    },
+    targetId: string,
+) {
+    const parentWorld = new Matrix4();
+    const chain: string[] = [];
+    let currentId: string | null | undefined = state.parentIdById[targetId];
 
-    return new Matrix4().compose(
-        new Vector3(...position),
-        new Quaternion().setFromEuler(new Euler(...rotation)),
-        new Vector3(...scale)
-    );
-}
-
-export function computeParentWorldMatrix(root: GameObject, targetId: string): Matrix4 {
-    const identity = new Matrix4();
-    let result: Matrix4 | null = null;
-
-    const visit = (node: GameObject, parent: Matrix4) => {
-        if (node.id === targetId) {
-            result = parent.clone();
-            return;
-        }
-        const world = parent.clone().multiply(compose(node));
-        node.children?.forEach(child => !result && visit(child, world));
-    };
-
-    visit(root, identity);
-    return result ?? identity;
-}
-
-/** Find a node by ID in the tree */
-export function findNode(root: GameObject, id: string): GameObject | null {
-    if (root.id === id) return root;
-    for (const child of root.children ?? []) {
-        const found = findNode(child, id);
-        if (found) return found;
-    }
-    return null;
-}
-
-/** Find the parent of a node by ID */
-export function findParent(root: GameObject, id: string): GameObject | null {
-    for (const child of root.children ?? []) {
-        if (child.id === id) return root;
-        const found = findParent(child, id);
-        if (found) return found;
-    }
-    return null;
-}
-
-/** Find all nodes matching a predicate */
-export function findAll(root: GameObject, predicate: (node: GameObject) => boolean): GameObject[] {
-    const results: GameObject[] = [];
-    if (predicate(root)) results.push(root);
-    for (const child of root.children ?? []) {
-        results.push(...findAll(child, predicate));
-    }
-    return results;
-}
-
-/** Find all nodes that have a specific component type */
-export function findByComponent(root: GameObject, componentType: string): GameObject[] {
-    return findAll(root, node => 
-        Object.values(node.components ?? {}).some(c => c?.type === componentType)
-    );
-}
-
-/** Get a flattened list of all nodes */
-export function flatten(root: GameObject): GameObject[] {
-    return findAll(root, () => true);
-}
-
-/** Immutably update a node by ID */
-export function updateNode(root: GameObject, id: string, update: (node: GameObject) => GameObject): GameObject {
-    if (root.id === id) return update(root);
-    if (!root.children) return root;
-    return {
-        ...root,
-        children: root.children.map(child => updateNode(child, id, update))
-    };
-}
-
-/** Immutably insert a node under a parent ID, defaulting to the root when the parent is missing */
-export function insertNode(root: GameObject, node: GameObject, parentId?: string): GameObject {
-    if (!parentId || parentId === root.id) {
-        return {
-            ...root,
-            children: [...(root.children ?? []), node]
-        };
+    while (currentId) {
+        chain.unshift(currentId);
+        currentId = state.parentIdById[currentId];
     }
 
-    const nextRoot = updateNode(root, parentId, parent => ({
-        ...parent,
-        children: [...(parent.children ?? []), node]
-    }));
-
-    if (nextRoot === root) {
-        return {
-            ...root,
-            children: [...(root.children ?? []), node]
-        };
+    for (const nodeId of chain) {
+        const transform = state.nodesById[nodeId]?.components?.transform?.properties;
+        parentWorld.multiply(new Matrix4().compose(
+            new Vector3(...(transform?.position ?? [0, 0, 0])),
+            new Quaternion().setFromEuler(new Euler(...(transform?.rotation ?? [0, 0, 0]))),
+            new Vector3(...(transform?.scale ?? [1, 1, 1])),
+        ));
     }
 
-    return nextRoot;
-}
-
-/** Immutably delete a node by ID */
-export function deleteNode(root: GameObject, id: string): GameObject | null {
-    if (root.id === id) return null;
-    if (!root.children) return root;
-    return {
-        ...root,
-        children: root.children
-            .map(child => deleteNode(child, id))
-            .filter((child): child is GameObject => child !== null)
-    };
-}
-
-/** Deep clone a node with new IDs */
-export function cloneNode(node: GameObject): GameObject {
-    return {
-        ...node,
-        id: crypto.randomUUID(),
-        name: `${node.name ?? node.id} Copy`,
-        children: node.children?.map(cloneNode)
-    };
+    return parentWorld;
 }
 
 /** Recursively update all IDs in a node tree */
@@ -299,41 +174,6 @@ export function regenerateIds(node: GameObject): GameObject {
         id: crypto.randomUUID(),
         children: node.children?.map(regenerateIds)
     };
-}
-
-/** Get component data from a node */
-export function getComponent<T = any>(node: GameObject, type: string): T | undefined {
-    const comp = Object.values(node.components ?? {}).find(c => c?.type === type);
-    return comp?.properties as T | undefined;
-}
-
-export function updateNodeById(
-  root: GameObject,
-  id: string,
-  updater: (node: GameObject) => GameObject
-): GameObject {
-  if (root.id === id) {
-    return updater(root);
-  }
-
-  if (!root.children) {
-    return root;
-  }
-
-  let didChange = false;
-
-  const newChildren = root.children.map(child => {
-    const updated = updateNodeById(child, id, updater);
-    if (updated !== child) didChange = true;
-    return updated;
-  });
-
-  if (!didChange) return root;
-
-  return {
-    ...root,
-    children: newChildren
-  };
 }
 
 /** Create a GameObject node for a 3D model file */

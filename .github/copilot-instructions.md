@@ -1,7 +1,7 @@
 # react-three-game - AI Coding Agent Instructions
 
 ## Project Overview
-AI-native 3D game engine where **scenes are JSON prefabs**. Unity-like GameObject+Component architecture built on React Three Fiber + WebGPU.
+AI-native 3D game engine where **scenes are JSON prefabs**. Unity-like GameObject+Component architecture built on React Three Fiber + WebGPU. Zustand-backed normalized store for fast scene mutations.
 
 ## Monorepo Structure
 - **`/src`** → Library source, builds to `/dist`, published as `react-three-game`
@@ -15,6 +15,7 @@ interface Prefab { id?: string; name?: string; root: GameObject; }
 interface GameObject {
   id: string;                    // Use crypto.randomUUID() for new nodes
   disabled?: boolean;
+  locked?: boolean;
   components?: Record<string, { type: string; properties: any }>;
   children?: GameObject[];
 }
@@ -36,25 +37,49 @@ const MyComponent: Component = {
 ## Key Files
 | File | Purpose |
 |------|---------|
-| `src/index.ts` | All public exports - add new features here |
-| `src/tools/prefabeditor/PrefabRoot.tsx` | Pure renderer - renders prefab as Three.js objects for R3F integration |
-| `src/tools/prefabeditor/PrefabEditor.tsx` | Managed scene with editor UI and play/pause controls for physics |
-| `src/tools/prefabeditor/utils.ts` | Tree helpers: `findNode`, `updateNode`, `deleteNode`, `cloneNode` |
+| `src/index.ts` | All public exports (explicit, no wildcards) |
+| `src/tools/prefabeditor/prefabStore.ts` | Zustand store — normalized scene state (nodesById, childIdsById, parentIdById) |
+| `src/tools/prefabeditor/sceneApi.ts` | Unity-style Scene/Entity/EntityComponent handle API |
+| `src/tools/prefabeditor/PrefabRoot.tsx` | Pure renderer — subscribe-per-node via `usePrefabNode` |
+| `src/tools/prefabeditor/PrefabEditor.tsx` | Managed editor: canvas, physics, gizmos, inspector, undo/redo |
+| `src/tools/prefabeditor/utils.ts` | IO helpers: `loadJson`, `saveJson`, `exportGLB`, `computeParentWorldMatrix` |
+| `src/tools/prefabeditor/GameEvents.ts` | Typed pub/sub for physics and custom game events |
 | `src/shared/GameCanvas.tsx` | WebGPU renderer setup (use `MeshStandardNodeMaterial`) |
 
 ## Usage Modes
 
-**PrefabRoot**: Pure renderer for embedding prefab data in standard R3F applications. Render it inside a regular `@react-three/fiber` `Canvas`. `GameCanvas` provides the WebGPU canvas setup. Add a `Physics` wrapper to enable physics. Use this to integrate prefabs into larger R3F scenes.
+**PrefabRoot**: Pure renderer for embedding prefab data in standard R3F applications. Render it inside a `<Canvas>` with `<Physics>` wrapper for physics. Accepts `scene` prop (static prefab) or `store` prop (external Zustand store).
 
-**PrefabEditor**: Managed scene with editor UI and play/pause controls for physics. Full authoring tool for level design and prototyping. Includes canvas, physics, transform gizmos, and inspector. Physics only runs in play mode. Can pass R3F components as children.
+**PrefabEditor**: Managed editor with inspector, tree, transform gizmos, play/pause, undo/redo. Exposes `PrefabEditorRef` with `scene` (Scene API), `save()`, `load()`, `addModel()`, `addTexture()`.
+
+## Scene Data Architecture
+
+### Normalized Store (prefabStore.ts)
+The store normalizes the recursive `GameObject` tree into flat maps for O(1) lookups:
+- `nodesById` — every node record (without children)
+- `childIdsById` — ordered child IDs per node
+- `parentIdById` — parent lookup
+
+Mutations (`updateNode`, `addChild`, `deleteNode`, `duplicateNode`, `moveNode`) produce new object references for changed maps only — untouched nodes stay identity-stable for React memoization.
+
+### Scene API (sceneApi.ts)
+Unity-style imperative handles for runtime mutation:
+```typescript
+const scene: Scene = editorRef.current.scene;
+scene.rootId;                                    // root node ID
+scene.find("ball")                               // Entity | null
+  ?.getComponent<{ position: number[] }>("Transform")
+  ?.set("position", [0, 5, 0]);
+scene.add(newNode, { parentId: "root" });         // spawn entity
+scene.remove("ball");                             // delete entity
+scene.update("ball", node => ({ ...node, ... })); // whole-node update
+scene.update({ id1: fn1, id2: fn2 });             // batched update
+```
 
 ## Critical Patterns
 
-### Tree Manipulation (Immutable)
-```typescript
-import { updateNode, findNode, deleteNode } from 'react-three-game';
-const newRoot = updateNode(root, nodeId, node => ({ ...node, components: { ...node.components, physics: {...} } }));
-```
+### Per-Node Reactivity
+Use `usePrefabNode(id)` and `usePrefabChildIds(id)` in renderer components. These select from the store and only re-render when their specific node changes.
 
 ### WebGPU Materials
 Use node materials only: `MeshStandardNodeMaterial`, `MeshBasicNodeMaterial` (not `MeshStandardMaterial`).
@@ -65,11 +90,19 @@ Use node materials only: `MeshStandardNodeMaterial`, `MeshBasicNodeMaterial` (no
 ### Model Instancing
 Set `model.properties.instanced = true` → uses `InstanceProvider.tsx` for batched rendering with physics.
 
+### Game Events
+```typescript
+import { gameEvents, useGameEvent } from 'react-three-game';
+gameEvents.emit('sensor:enter', payload);
+useGameEvent('click', (payload) => { ... });
+// Extend GameEventMap via module augmentation for custom typed events
+```
+
 ## Built-in Components
-`Transform`, `Geometry` (box/sphere/plane/cylinder), `Material` (color/texture), `Physics` (dynamic/fixed), `Model` (GLB/FBX), `SpotLight`, `DirectionalLight`, `AmbientLight`, `Text`
+`Transform`, `Geometry` (box/sphere/plane/cylinder), `Material` (color/texture), `Physics` (dynamic/fixed/kinematic + sensor), `Model` (GLB/FBX + instancing + repeat), `SpotLight`, `DirectionalLight`, `AmbientLight`, `Text`, `Environment`, `Camera`, `Click`
 
 ## Custom Components (User-space)
-See `docs/app/demo/editor/RotatorComponent.tsx` for runtime behavior example using `useFrame`. Register with `registerComponent()` before rendering `<PrefabEditor>`.
+See `docs/app/demo/customcomponent/RotatorComponent.tsx` for runtime behavior using `useFrame`. Register with `registerComponent()` before rendering `<PrefabEditor>`.
 
 ## Development Workflow
 1. **Edit library**: Modify `/src`, auto-rebuilds via `tsc --watch`
@@ -81,3 +114,5 @@ See `docs/app/demo/editor/RotatorComponent.tsx` for runtime behavior example usi
 - Component keys: lowercase in JSON (`"transform"`), TitleCase in registry (`"Transform"`)
 - Asset paths: Relative to `/public` (e.g., `models/cars/taxi/model.glb`)
 - All Three.js renders must be inside `<GameCanvas>` (WebGPU init required)
+- Exports: Always explicit in `src/index.ts`, never `export *`
+- Public API naming: `PrefabEditor`, `PrefabRoot`, `Scene`, `Entity` — internal filenames match (PrefabEditor.tsx, PrefabRoot.tsx)

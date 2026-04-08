@@ -1,109 +1,49 @@
-import { Dispatch, SetStateAction, useState, MouseEvent } from 'react';
-import { Prefab, GameObject } from "./types";
+import { memo, MouseEvent, useCallback, useState } from 'react';
+import { Prefab } from "./types";
 import { getComponent } from './components/ComponentRegistry';
 import { base, colors, tree } from './styles';
-import { findNode, findParent, deleteNode, cloneNode, updateNodeById } from './utils';
 import { useEditorContext } from './EditorContext';
 import { Dropdown } from './Dropdown';
-import { FileMenu, MenuTriggerButton, TreeContextMenu, TreeContextMenuState, TreeNodeMenu } from './EditorTreeMenus';
+import { FileMenu, TreeContextMenu, TreeContextMenuState, TreeNodeMenu } from './EditorTreeMenus';
+import { PrefabStoreState, usePrefabChildIds, usePrefabNode, usePrefabRootId, usePrefabStore, usePrefabStoreApi } from './prefabStore';
 
 type DropPosition = 'before' | 'inside';
 
-function moveNode(root: GameObject, draggedId: string, targetId: string, position: DropPosition): GameObject {
-    const draggedNode = findNode(root, draggedId);
-    const oldParent = findParent(root, draggedId);
-
-    if (!draggedNode || !oldParent || findNode(draggedNode, targetId)) {
-        return root;
-    }
-
-    if (position === 'before') {
-        const targetParent = findParent(root, targetId);
-        if (!targetParent?.children) return root;
-
-        if (targetParent.id === oldParent.id) {
-            const siblings = targetParent.children.filter(child => child.id !== draggedId);
-            const targetIndex = siblings.findIndex(child => child.id === targetId);
-            if (targetIndex === -1) return root;
-
-            siblings.splice(targetIndex, 0, draggedNode);
-            return updateNodeById(root, targetParent.id, parent => ({ ...parent, children: siblings }));
-        }
-
-        const rootWithoutDragged = updateNodeById(root, oldParent.id, parent => ({
-            ...parent,
-            children: (parent.children ?? []).filter(child => child.id !== draggedId)
-        }));
-
-        return updateNodeById(rootWithoutDragged, targetParent.id, parent => {
-            const children = [...(parent.children ?? [])];
-            const targetIndex = children.findIndex(child => child.id === targetId);
-            if (targetIndex === -1) return parent;
-
-            children.splice(targetIndex, 0, draggedNode);
-            return { ...parent, children };
-        });
-    }
-
-    const rootWithoutDragged = updateNodeById(root, oldParent.id, parent => ({
-        ...parent,
-        children: (parent.children ?? []).filter(child => child.id !== draggedId)
-    }));
-
-    return updateNodeById(rootWithoutDragged, targetId, target => ({
-        ...target,
-        children: [...(target.children ?? []), draggedNode]
-    }));
-}
-
-function duplicateNodeBelow(root: GameObject, nodeId: string): { root: GameObject; duplicatedId: string } | null {
-    const node = findNode(root, nodeId);
-    const parent = findParent(root, nodeId);
-    if (!node || !parent) return null;
-
-    const duplicate = cloneNode(node);
-    const nextRoot = updateNodeById(root, parent.id, currentParent => ({
-        ...currentParent,
-        children: (() => {
-            const children = [...(currentParent.children ?? [])];
-            const index = children.findIndex(child => child.id === nodeId);
-            if (index === -1) return [...children, duplicate];
-            children.splice(index + 1, 0, duplicate);
-            return children;
-        })()
-    }));
-
-    return { root: nextRoot, duplicatedId: duplicate.id };
-}
-
 export default function EditorTree({
-    prefabData,
-    setPrefabData,
     selectedId,
     setSelectedId,
+    getPrefab,
+    onReplacePrefab,
+    onImportPrefab,
     onUndo,
     onRedo,
     canUndo,
     canRedo
 }: {
-    prefabData?: Prefab;
-    setPrefabData?: Dispatch<SetStateAction<Prefab>>;
     selectedId: string | null;
-    setSelectedId: Dispatch<SetStateAction<string | null>>;
+    setSelectedId: (id: string | null) => void;
+    getPrefab: () => Prefab;
+    onReplacePrefab: (prefab: Prefab) => void;
+    onImportPrefab: (prefab: Prefab) => void;
     onUndo?: () => void;
     onRedo?: () => void;
     canUndo?: boolean;
     canRedo?: boolean;
 }) {
     const { onFocusNode } = useEditorContext();
+    const rootId = usePrefabRootId();
+    const store = usePrefabStoreApi();
+    const addChild = usePrefabStore(state => state.addChild);
+    const duplicateNode = usePrefabStore(state => state.duplicateNode);
+    const deleteNode = usePrefabStore(state => state.deleteNode);
+    const toggleNodeFlag = usePrefabStore(state => state.toggleNodeFlag);
+    const moveNode = usePrefabStore(state => state.moveNode);
     const [draggedId, setDraggedId] = useState<string | null>(null);
     const [dropTarget, setDropTarget] = useState<{ id: string; position: DropPosition } | null>(null);
     const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
     const [collapsed, setCollapsed] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [contextMenu, setContextMenu] = useState<TreeContextMenuState>(null);
-
-    if (!prefabData || !setPrefabData) return null;
 
     const toggleCollapse = (e: MouseEvent, id: string) => {
         e.stopPropagation();
@@ -126,45 +66,20 @@ export default function EditorTree({
             }
         };
 
-        setPrefabData(prev => ({
-            ...prev,
-            root: updateNodeById(prev.root, parentId, parent => ({
-                ...parent,
-                children: [...(parent.children ?? []), newNode]
-            }))
-        }));
+        addChild(parentId, newNode);
         setSelectedId(newNode.id);
     };
 
     const handleDuplicate = (nodeId: string) => {
-        if (nodeId === prefabData.root.id) return;
-        setPrefabData(prev => {
-            const result = duplicateNodeBelow(prev.root, nodeId);
-            if (!result) return prev;
-
-            setSelectedId(result.duplicatedId);
-
-            return {
-                ...prev,
-                root: result.root
-            };
-        });
+        if (nodeId === rootId) return;
+        const duplicatedId = duplicateNode(nodeId);
+        if (duplicatedId) setSelectedId(duplicatedId);
     };
 
     const handleDelete = (nodeId: string) => {
-        if (nodeId === prefabData.root.id) return;
-        setPrefabData(prev => ({ ...prev, root: deleteNode(prev.root, nodeId)! }));
+        if (nodeId === rootId) return;
+        deleteNode(nodeId);
         if (selectedId === nodeId) setSelectedId(null);
-    };
-
-    const toggleNodeFlag = (nodeId: string, key: 'disabled' | 'locked') => {
-        setPrefabData(prev => ({
-            ...prev,
-            root: updateNodeById(prev.root, nodeId, node => ({
-                ...node,
-                [key]: !node[key]
-            }))
-        }));
     };
 
     const handleToggleDisabled = (nodeId: string) => {
@@ -172,13 +87,9 @@ export default function EditorTree({
     };
 
     const handleToggleLocked = (nodeId: string) => {
-        const willLock = !findNode(prefabData.root, nodeId)?.locked;
-
+        const willLock = !store.getState().nodesById[nodeId]?.locked;
         toggleNodeFlag(nodeId, 'locked');
-
-        if (willLock && selectedId === nodeId) {
-            setSelectedId(null);
-        }
+        if (willLock && selectedId === nodeId) setSelectedId(null);
     };
 
     const closeContextMenu = () => setContextMenu(null);
@@ -197,7 +108,7 @@ export default function EditorTree({
         <TreeNodeMenu
             isRoot={isRoot}
             nodeId={nodeId}
-            locked={findNode(prefabData.root, nodeId)?.locked}
+            locked={store.getState().nodesById[nodeId]?.locked}
             onAddChild={handleAddChild}
             onFocus={handleFocus}
             onToggleLock={isRoot ? undefined : handleToggleLocked}
@@ -208,7 +119,7 @@ export default function EditorTree({
     );
 
     const handleDragStart = (e: React.DragEvent, id: string) => {
-        if (id === prefabData.root.id) return e.preventDefault();
+        if (id === rootId) return e.preventDefault();
         e.dataTransfer.effectAllowed = "move";
         setDraggedId(id);
     };
@@ -221,8 +132,6 @@ export default function EditorTree({
 
     const handleDragOver = (e: React.DragEvent<HTMLDivElement>, targetId: string, isRoot: boolean) => {
         if (!draggedId || draggedId === targetId) return;
-        const draggedNode = findNode(prefabData.root, draggedId);
-        if (draggedNode && findNode(draggedNode, targetId)) return;
         e.preventDefault();
         setDropTarget({ id: targetId, position: getDropPosition(e, isRoot) });
     };
@@ -236,157 +145,15 @@ export default function EditorTree({
     const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetId: string, isRoot: boolean) => {
         if (!draggedId || draggedId === targetId) return;
         e.preventDefault();
-        const dropPosition = getDropPosition(e, isRoot);
-        setPrefabData(prev => {
-            const root = moveNode(prev.root, draggedId, targetId, dropPosition);
-            return root === prev.root ? prev : { ...prev, root };
-        });
+        moveNode(draggedId, targetId, getDropPosition(e, isRoot));
         setDraggedId(null);
         setDropTarget(null);
     };
 
-
-    const matchesSearch = (node: GameObject, query: string): boolean => {
-        if (!query) return true;
-        const lowerQuery = query.toLowerCase();
-        const nodeName = (node.name ?? node.id).toLowerCase();
-        if (nodeName.includes(lowerQuery)) return true;
-        return node.children?.some(child => matchesSearch(child, query)) ?? false;
-    };
-
-    const renderNode = (node: GameObject, depth = 0): React.ReactNode => {
-        if (!node) return null;
-        if (!matchesSearch(node, searchQuery)) return null;
-
-        const isSelected = node.id === selectedId;
-        const isCollapsed = collapsedIds.has(node.id);
-        const hasChildren = node.children && node.children.length > 0;
-        const isRoot = node.id === prefabData.root.id;
-        const isDropTarget = dropTarget?.id === node.id;
-        const showDropBefore = isDropTarget && dropTarget?.position === 'before';
-        const showDropInside = isDropTarget && dropTarget?.position === 'inside';
-
-        return (
-            <div key={node.id}>
-                <div
-                    style={{
-                        ...tree.row,
-                        ...(isSelected ? tree.selected : {}),
-                        paddingLeft: `${depth * 12 + 6}px`,
-                        opacity: node.disabled ? 0.4 : 1,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        borderTop: showDropBefore ? `2px solid ${colors.accent}` : undefined,
-                        boxShadow: showDropInside ? `inset 0 0 0 1px ${colors.accentBorder}` : undefined,
-                    }}
-                    draggable={!isRoot}
-                    onClick={(e) => { e.stopPropagation(); setSelectedId(node.id); }}
-                    onContextMenu={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openContextMenu(node.id, e.clientX, e.clientY);
-                    }}
-                    onDragStart={(e) => handleDragStart(e, node.id)}
-                    onDragEnd={() => { setDraggedId(null); setDropTarget(null); }}
-                    onDragOver={(e) => handleDragOver(e, node.id, isRoot)}
-                    onDragLeave={(e) => handleDragLeave(e, node.id)}
-                    onDrop={(e) => handleDrop(e, node.id, isRoot)}
-                >
-                    <div style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
-                        <span
-                            style={{
-                                width: 12,
-                                opacity: 0.6,
-                                marginRight: 4,
-                                cursor: 'pointer',
-                                visibility: hasChildren ? 'visible' : 'hidden'
-                            }}
-                            onClick={(e) => hasChildren && toggleCollapse(e, node.id)}
-                        >
-                            {isCollapsed ? '▶' : '▼'}
-                        </span>
-                        {!isRoot && <span style={{ marginRight: 4, opacity: 0.4 }}>⋮⋮</span>}
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {node.name ?? node.id}
-                        </span>
-                        {node.locked && <span style={{ marginLeft: 6, opacity: 0.6 }}>🔒</span>}
-                    </div>
-                    {!isRoot && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            <Dropdown
-                                placement="bottom-end"
-                                trigger={({ ref, toggle }) => (
-                                    <MenuTriggerButton
-                                        buttonRef={ref}
-                                        onToggle={toggle}
-                                        title="Node Actions"
-                                        style={{
-                                            background: 'none',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            padding: '0 4px',
-                                            fontSize: 14,
-                                            opacity: 0.7,
-                                            color: 'inherit',
-                                        }}
-                                    >
-                                        ⋯
-                                    </MenuTriggerButton>
-                                )}
-                            >
-                                {(close) => renderTreeNodeMenu(node.id, false, close)}
-                            </Dropdown>
-                            <button
-                                style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    padding: '0 4px',
-                                    fontSize: 14,
-                                    opacity: node.disabled ? 0.5 : 0.7,
-                                    color: 'inherit',
-                                }}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleToggleDisabled(node.id);
-                                }}
-                                title={node.disabled ? 'Enable' : 'Disable'}
-                            >
-                                {node.disabled ? '◎' : '◉'}
-                            </button>
-                        </div>
-                    )}
-                    {isRoot && (
-                        <Dropdown
-                            placement="bottom-end"
-                            trigger={({ ref, toggle }) => (
-                                <MenuTriggerButton
-                                    buttonRef={ref}
-                                    onToggle={toggle}
-                                    title="Scene Actions"
-                                    style={{
-                                        background: 'none',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        padding: '0 4px',
-                                        fontSize: 14,
-                                        opacity: 0.7,
-                                        color: 'inherit',
-                                    }}
-                                >
-                                    ⋯
-                                </MenuTriggerButton>
-                            )}
-                        >
-                            {(close) => renderTreeNodeMenu(node.id, true, close)}
-                        </Dropdown>
-                    )}
-                </div>
-                {!isCollapsed && node.children && node.children.map(child => renderNode(child, depth + 1))}
-            </div>
-        );
-    };
+    const visibleIds = usePrefabStore(useCallback(
+        state => searchQuery ? buildVisibleIds(state, rootId, searchQuery) : null,
+        [rootId, searchQuery]
+    ));
 
     return (
         <>
@@ -417,20 +184,24 @@ export default function EditorTree({
                             <Dropdown
                                 placement="bottom-end"
                                 trigger={({ ref, toggle }) => (
-                                    <MenuTriggerButton
-                                        buttonRef={ref}
-                                        onToggle={toggle}
+                                    <button
+                                        ref={ref}
                                         title="Menu"
                                         style={{ ...base.btn, padding: '2px 6px', fontSize: 10 }}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            toggle();
+                                        }}
                                     >
                                         ⋮
-                                    </MenuTriggerButton>
+                                    </button>
                                 )}
                             >
                                 {(close) => (
                                     <FileMenu
-                                        prefabData={prefabData}
-                                        setPrefabData={setPrefabData}
+                                        getPrefab={getPrefab}
+                                        onReplacePrefab={onReplacePrefab}
+                                        onImportPrefab={onImportPrefab}
                                         onClose={close}
                                     />
                                 )}
@@ -453,7 +224,27 @@ export default function EditorTree({
                                 }}
                             />
                         </div>
-                        <div className="tree-scroll" style={tree.scroll}>{renderNode(prefabData.root)}</div>
+                        <div style={tree.scroll}>
+                            <TreeNode
+                                nodeId={rootId}
+                                depth={0}
+                                rootId={rootId}
+                                visibleIds={visibleIds}
+                                collapsedIds={collapsedIds}
+                                dropTarget={dropTarget}
+                                selectedNodeId={selectedId}
+                                onToggleCollapse={toggleCollapse}
+                                onOpenContextMenu={openContextMenu}
+                                onDragStart={handleDragStart}
+                                onDragOver={handleDragOver}
+                                onDragLeave={handleDragLeave}
+                                onDrop={handleDrop}
+                                onDragEnd={() => { setDraggedId(null); setDropTarget(null); }}
+                                renderTreeNodeMenu={renderTreeNodeMenu}
+                                onToggleDisabled={handleToggleDisabled}
+                                setSelectedId={setSelectedId}
+                            />
+                        </div>
                     </>
                 )}
             </div>
@@ -461,9 +252,233 @@ export default function EditorTree({
                 contextMenu={contextMenu}
                 onClose={closeContextMenu}
             >
-                {(nodeId, close) => renderTreeNodeMenu(nodeId, nodeId === prefabData.root.id, close)}
+                {(nodeId, close) => renderTreeNodeMenu(nodeId, nodeId === rootId, close)}
             </TreeContextMenu>
 
         </>
     );
+}
+
+const TreeNode = memo(function TreeNode({
+    nodeId,
+    depth,
+    rootId,
+    visibleIds,
+    collapsedIds,
+    dropTarget,
+    selectedNodeId,
+    onToggleCollapse,
+    onOpenContextMenu,
+    onDragStart,
+    onDragOver,
+    onDragLeave,
+    onDrop,
+    onDragEnd,
+    renderTreeNodeMenu,
+    onToggleDisabled,
+    setSelectedId,
+}: {
+    nodeId: string;
+    depth: number;
+    rootId: string;
+    visibleIds: Set<string> | null;
+    collapsedIds: Set<string>;
+    dropTarget: { id: string; position: DropPosition } | null;
+    selectedNodeId: string | null;
+    onToggleCollapse: (e: MouseEvent, id: string) => void;
+    onOpenContextMenu: (nodeId: string, x: number, y: number) => void;
+    onDragStart: (e: React.DragEvent, id: string) => void;
+    onDragOver: (e: React.DragEvent<HTMLDivElement>, targetId: string, isRoot: boolean) => void;
+    onDragLeave: (e: React.DragEvent<HTMLDivElement>, targetId: string) => void;
+    onDrop: (e: React.DragEvent<HTMLDivElement>, targetId: string, isRoot: boolean) => void;
+    onDragEnd: () => void;
+    renderTreeNodeMenu: (nodeId: string, isRoot: boolean, onClose: () => void) => React.ReactNode;
+    onToggleDisabled: (nodeId: string) => void;
+    setSelectedId: (id: string | null) => void;
+}) {
+    const node = usePrefabNode(nodeId);
+    const childIds = usePrefabChildIds(nodeId);
+    const isSelected = selectedNodeId === nodeId;
+
+    if (!node || (visibleIds && !visibleIds.has(nodeId))) return null;
+
+    const isCollapsed = collapsedIds.has(nodeId);
+    const hasChildren = childIds.length > 0;
+    const isRoot = nodeId === rootId;
+    const isDropTarget = dropTarget?.id === nodeId;
+    const showDropBefore = isDropTarget && dropTarget?.position === 'before';
+    const showDropInside = isDropTarget && dropTarget?.position === 'inside';
+
+    return (
+        <div>
+            <div
+                style={{
+                    ...tree.row,
+                    ...(isSelected ? tree.selected : {}),
+                    paddingLeft: `${depth * 12 + 6}px`,
+                    opacity: node.disabled ? 0.4 : 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    borderTop: showDropBefore ? `2px solid ${colors.accent}` : undefined,
+                    boxShadow: showDropInside ? `inset 0 0 0 1px ${colors.accentBorder}` : undefined,
+                }}
+                draggable={!isRoot}
+                onClick={(e) => { e.stopPropagation(); setSelectedId(nodeId); }}
+                onContextMenu={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onOpenContextMenu(nodeId, e.clientX, e.clientY);
+                }}
+                onDragStart={(e) => onDragStart(e, nodeId)}
+                onDragEnd={onDragEnd}
+                onDragOver={(e) => onDragOver(e, nodeId, isRoot)}
+                onDragLeave={(e) => onDragLeave(e, nodeId)}
+                onDrop={(e) => onDrop(e, nodeId, isRoot)}
+            >
+                <div style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
+                    <span
+                        style={{
+                            width: 12,
+                            opacity: 0.6,
+                            marginRight: 4,
+                            cursor: 'pointer',
+                            visibility: hasChildren ? 'visible' : 'hidden'
+                        }}
+                        onClick={(e) => hasChildren && onToggleCollapse(e, nodeId)}
+                    >
+                        {isCollapsed ? '▶' : '▼'}
+                    </span>
+                    {!isRoot && <span style={{ marginRight: 4, opacity: 0.4 }}>⋮⋮</span>}
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {node.name ?? node.id}
+                    </span>
+                    {node.locked && <span style={{ marginLeft: 6, opacity: 0.6 }}>🔒</span>}
+                </div>
+                {!isRoot && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Dropdown
+                            placement="bottom-end"
+                            trigger={({ ref, toggle }) => (
+                                <button
+                                    ref={ref}
+                                    title="Node Actions"
+                                    style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        padding: '0 4px',
+                                        fontSize: 14,
+                                        opacity: 0.7,
+                                        color: 'inherit',
+                                    }}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggle();
+                                    }}
+                                >
+                                    ⋯
+                                </button>
+                            )}
+                        >
+                            {(close) => renderTreeNodeMenu(nodeId, false, close)}
+                        </Dropdown>
+                        <button
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                padding: '0 4px',
+                                fontSize: 14,
+                                opacity: node.disabled ? 0.5 : 0.7,
+                                color: 'inherit',
+                            }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onToggleDisabled(nodeId);
+                            }}
+                            title={node.disabled ? 'Enable' : 'Disable'}
+                        >
+                            {node.disabled ? '◎' : '◉'}
+                        </button>
+                    </div>
+                )}
+                {isRoot && (
+                    <Dropdown
+                        placement="bottom-end"
+                        trigger={({ ref, toggle }) => (
+                            <button
+                                ref={ref}
+                                title="Scene Actions"
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    padding: '0 4px',
+                                    fontSize: 14,
+                                    opacity: 0.7,
+                                    color: 'inherit',
+                                }}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggle();
+                                }}
+                            >
+                                ⋯
+                            </button>
+                        )}
+                    >
+                        {(close) => renderTreeNodeMenu(nodeId, true, close)}
+                    </Dropdown>
+                )}
+            </div>
+            {!isCollapsed && childIds.map(childId => (
+                <TreeNode
+                    key={childId}
+                    nodeId={childId}
+                    depth={depth + 1}
+                    rootId={rootId}
+                    visibleIds={visibleIds}
+                    collapsedIds={collapsedIds}
+                    dropTarget={dropTarget}
+                    selectedNodeId={selectedNodeId}
+                    onToggleCollapse={onToggleCollapse}
+                    onOpenContextMenu={onOpenContextMenu}
+                    onDragStart={onDragStart}
+                    onDragOver={onDragOver}
+                    onDragLeave={onDragLeave}
+                    onDrop={onDrop}
+                    onDragEnd={onDragEnd}
+                    renderTreeNodeMenu={renderTreeNodeMenu}
+                    onToggleDisabled={onToggleDisabled}
+                    setSelectedId={setSelectedId}
+                />
+            ))}
+        </div>
+    );
+});
+
+function buildVisibleIds(state: Pick<PrefabStoreState, 'nodesById' | 'childIdsById'>, rootId: string, query: string) {
+    if (!query) return null;
+
+    const visibleIds = new Set<string>();
+    const lowerQuery = query.toLowerCase();
+
+    const visit = (nodeId: string): boolean => {
+        const node = state.nodesById[nodeId];
+        if (!node) return false;
+
+        const selfMatches = (node.name ?? node.id).toLowerCase().includes(lowerQuery);
+        const childMatches = (state.childIdsById[nodeId] ?? []).some(visit);
+
+        if (selfMatches || childMatches) {
+            visibleIds.add(nodeId);
+            return true;
+        }
+
+        return false;
+    };
+
+    visit(rootId);
+    return visibleIds;
 }

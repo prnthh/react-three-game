@@ -75,7 +75,7 @@ function TextComponentEditor({
     );
 }
 
-function TextComponentView({ properties }: { properties: any }) {
+function TextComponentView({ properties, children }: { properties: any; children?: React.ReactNode }) {
     const { text = '', font, size, depth, width, align, color } = properties;
     const textContent = String(text || '');
     const meshRef = useRef<Mesh>(null);
@@ -114,6 +114,7 @@ function TextComponentView({ properties }: { properties: any }) {
             >
                 {textContent}
             </Text>
+            {children}
         </group>
     );
 }
@@ -122,7 +123,6 @@ const TextComponent: Component = {
     name: 'Text',
     Editor: TextComponentEditor,
     View: TextComponentView,
-    nonComposable: true,
     defaultProperties: {
         text: 'Hello World',
         color: '#888888',

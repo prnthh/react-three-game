@@ -58,7 +58,7 @@ function CameraComponentEditor({ component, onUpdate }: { component: any; onUpda
     );
 }
 
-function CameraComponentView({ properties, editMode, isSelected }: { properties: any; editMode?: boolean; isSelected?: boolean }) {
+function CameraComponentView({ properties, children, editMode, isSelected }: { properties: any; children?: React.ReactNode; editMode?: boolean; isSelected?: boolean }) {
     const merged = { ...cameraDefaults, ...properties };
     const fov = merged.fov;
     const near = merged.near;
@@ -109,6 +109,7 @@ function CameraComponentView({ properties, editMode, isSelected }: { properties:
                     </mesh>
                 </group>
             ) : null}
+            {children}
         </>
     );
 }

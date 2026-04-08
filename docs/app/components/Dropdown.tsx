@@ -34,7 +34,7 @@ export default function Dropdown() {
                 onClick={() => setOpen(!open)}
                 className="border border-zinc-400 px-6 py-3 font-mono text-sm uppercase hover:bg-zinc-200 inline-flex items-center gap-2"
             >
-                Demos
+                Examples
                 <span className="text-xs">▾</span>
             </button>
 

@@ -1,20 +1,20 @@
-import { Dispatch, SetStateAction, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Prefab } from './types';
 import { menu } from './styles';
 import { useEditorContext } from './EditorContext';
 import { getComponent } from './components/ComponentRegistry';
-import { loadJson, saveJson, regenerateIds, updateNodeById } from './utils';
+import { loadJson, saveJson } from './utils';
 
 export type TreeContextMenuState = { nodeId: string; x: number; y: number } | null;
 
 function createEmptyPrefab(): Prefab {
     return {
         id: crypto.randomUUID(),
-        name: 'New Scene',
+        name: 'New Prefab',
         root: {
             id: crypto.randomUUID(),
-            name: 'Scene',
+            name: 'Root',
             components: {
                 transform: {
                     type: 'Transform',
@@ -96,34 +96,6 @@ function MenuSubmenu({
                 </div>
             )}
         </div>
-    );
-}
-
-export function MenuTriggerButton({
-    buttonRef,
-    onToggle,
-    title,
-    style,
-    children,
-}: {
-    buttonRef: React.RefObject<HTMLButtonElement | null>;
-    onToggle: () => void;
-    title: string;
-    style: React.CSSProperties;
-    children: React.ReactNode;
-}) {
-    return (
-        <button
-            ref={buttonRef}
-            style={style}
-            onClick={(e) => {
-                e.stopPropagation();
-                onToggle();
-            }}
-            title={title}
-        >
-            {children}
-        </button>
     );
 }
 
@@ -244,58 +216,54 @@ export function TreeContextMenu({
 }
 
 export function FileMenu({
-    prefabData,
-    setPrefabData,
+    getPrefab,
+    onReplacePrefab,
+    onImportPrefab,
     onClose
 }: {
-    prefabData: Prefab;
-    setPrefabData: Dispatch<SetStateAction<Prefab>>;
+    getPrefab: () => Prefab;
+    onReplacePrefab: (prefab: Prefab) => void;
+    onImportPrefab: (prefab: Prefab) => void;
     onClose: () => void;
 }) {
     const { onScreenshot, onExportGLB } = useEditorContext();
 
-    const handleNewScene = () => {
-        setPrefabData(createEmptyPrefab());
+    const handleNew = () => {
+        onReplacePrefab(createEmptyPrefab());
         onClose();
     };
 
-    const handleNewSceneFromPrefab = async () => {
-        const loadedPrefab = await loadJson();
-        if (!loadedPrefab) return;
-        setPrefabData(loadedPrefab);
+    const handleOpen = async () => {
+        const loaded = await loadJson();
+        if (!loaded) return;
+        onReplacePrefab(loaded);
         onClose();
     };
 
     const handleSave = () => {
-        saveJson(prefabData, 'prefab');
+        saveJson(getPrefab(), 'prefab');
         onClose();
     };
 
-    const handleLoadIntoScene = async () => {
-        const loadedPrefab = await loadJson();
-        if (!loadedPrefab) return;
+    const handleImport = async () => {
+        const loaded = await loadJson();
+        if (!loaded) return;
 
-        setPrefabData(prev => ({
-            ...prev,
-            root: updateNodeById(prev.root, prev.root.id, root => ({
-                ...root,
-                children: [...(root.children ?? []), regenerateIds(loadedPrefab.root)]
-            }))
-        }));
+        onImportPrefab(loaded);
         onClose();
     };
 
     return (
         <MenuPanel style={{ overflow: 'visible' }}>
             <MenuSubmenu label="File">
-                <MenuItemButton onClick={handleNewScene}>
-                    New Scene
+                <MenuItemButton onClick={handleNew}>
+                    New Prefab
                 </MenuItemButton>
-                <MenuItemButton onClick={handleNewSceneFromPrefab}>
-                    New Scene from Prefab
+                <MenuItemButton onClick={handleOpen}>
+                    Open Prefab
                 </MenuItemButton>
-                <MenuItemButton onClick={handleLoadIntoScene}>
-                    Load Prefab into Scene
+                <MenuItemButton onClick={handleImport}>
+                    Import Prefab
                 </MenuItemButton>
                 <MenuItemButton onClick={handleSave}>
                     Save Prefab

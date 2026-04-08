@@ -13,7 +13,7 @@ extend({
     SpriteNodeMaterial: SpriteNodeMaterial,
 });
 
-interface GameCanvasProps extends Omit<CanvasProps, 'children'> {
+export interface GameCanvasProps extends Omit<CanvasProps, 'children'> {
     loader?: boolean;
     children: React.ReactNode;
     glConfig?: WebGPURendererParameters;

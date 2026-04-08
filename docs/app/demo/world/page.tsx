@@ -2,9 +2,42 @@
 
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import { PrefabEditor, updateNodeById } from "react-three-game";
+import { PrefabEditor } from "react-three-game";
 import initialWorld from "./world-demo.json";
-import type { Prefab, PrefabEditorRef } from "react-three-game";
+import type { EntityComponent, Prefab, PrefabEditorRef } from "react-three-game";
+
+const PLAYER_SPEED = 1.2;
+const WORLD_BOUNDARY = 8;
+const PLAYER_IDS = ["player1", "player2"] as const;
+
+type PlayerVelocity = { x: number; z: number };
+type Position3 = [number, number, number];
+type TransformProperties = { position?: Position3 };
+type PlayerId = typeof PLAYER_IDS[number];
+
+function getPosition(transform: EntityComponent<TransformProperties>): Position3 | null {
+    const position = transform.get<Position3>("position");
+
+    if (!Array.isArray(position) || position.length !== 3) {
+        return null;
+    }
+
+    return position as Position3;
+}
+
+function clampToWorldBounds(value: number) {
+    return Math.max(-WORLD_BOUNDARY, Math.min(WORLD_BOUNDARY, value));
+}
+
+function getNextPlayerPosition(position: Position3, velocity: PlayerVelocity, delta: number): Position3 {
+    const [x, y, z] = position;
+
+    return [
+        clampToWorldBounds(x + velocity.x * PLAYER_SPEED * delta),
+        y,
+        clampToWorldBounds(z + velocity.z * PLAYER_SPEED * delta),
+    ];
+}
 
 // Component that handles the animation loop (runs inside the editor's Canvas)
 function PlayerAnimator({ editorRef }: { editorRef: React.RefObject<PrefabEditorRef | null> }) {
@@ -17,7 +50,7 @@ function PlayerAnimator({ editorRef }: { editorRef: React.RefObject<PrefabEditor
     // Time tracking for velocity changes
     const lastVelocityChange = useRef(0);
 
-    useFrame((state) => {
+    useFrame((state, delta) => {
         if (!editorRef.current) return;
 
         const time = state.clock.getElapsedTime();
@@ -36,73 +69,18 @@ function PlayerAnimator({ editorRef }: { editorRef: React.RefObject<PrefabEditor
             };
         }
 
-        // Update player positions via the editor ref
-        const currentPrefab = editorRef.current.prefab;
-        let newRoot = currentPrefab.root;
+        for (const playerId of PLAYER_IDS) {
+            const transform = editorRef.current.scene.find(playerId)?.getComponent<TransformProperties>("Transform");
+            if (!transform) {
+                continue;
+            }
 
-        // Update player1
-        newRoot = updateNodeById(newRoot, "player1", (node) => {
-            if (node.locked) return node;
+            const position = getPosition(transform);
+            if (!position) {
+                continue;
+            }
 
-            const transform = node.components?.transform?.properties;
-            if (!transform) return node;
-
-            const pos = transform.position as [number, number, number];
-            let newX = pos[0] + velocities.current.player1.x * 0.02;
-            let newZ = pos[2] + velocities.current.player1.z * 0.02;
-
-            // Keep within bounds
-            newX = Math.max(-8, Math.min(8, newX));
-            newZ = Math.max(-8, Math.min(8, newZ));
-
-            return {
-                ...node,
-                components: {
-                    ...node.components,
-                    transform: {
-                        ...node.components!.transform!,
-                        properties: {
-                            ...transform,
-                            position: [newX, pos[1], newZ],
-                        },
-                    },
-                },
-            };
-        });
-
-        // Update player2
-        newRoot = updateNodeById(newRoot, "player2", (node) => {
-            if (node.locked) return node;
-
-            const transform = node.components?.transform?.properties;
-            if (!transform) return node;
-
-            const pos = transform.position as [number, number, number];
-            let newX = pos[0] + velocities.current.player2.x * 0.02;
-            let newZ = pos[2] + velocities.current.player2.z * 0.02;
-
-            // Keep within bounds
-            newX = Math.max(-8, Math.min(8, newX));
-            newZ = Math.max(-8, Math.min(8, newZ));
-
-            return {
-                ...node,
-                components: {
-                    ...node.components,
-                    transform: {
-                        ...node.components!.transform!,
-                        properties: {
-                            ...transform,
-                            position: [newX, pos[1], newZ],
-                        },
-                    },
-                },
-            };
-        });
-
-        // Only update if something changed
-        if (newRoot !== currentPrefab.root) {
-            editorRef.current.setPrefab({ ...currentPrefab, root: newRoot });
+            transform.set("position", getNextPlayerPosition(position, velocities.current[playerId as PlayerId], delta));
         }
     });
 

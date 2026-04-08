@@ -38,7 +38,7 @@ function SpotLightComponentEditor({ component, onUpdate, basePath = "" }: { comp
     );
 }
 
-function SpotLightView({ properties, editMode, isSelected, loadedTextures }: { properties: any; editMode?: boolean; isSelected?: boolean; loadedTextures?: LoadedTextures }) {
+function SpotLightView({ properties, children, editMode, isSelected, loadedTextures }: { properties: any; children?: React.ReactNode; editMode?: boolean; isSelected?: boolean; loadedTextures?: LoadedTextures }) {
     const merged = { ...spotLightDefaults, ...properties };
     const color = merged.color;
     const intensity = merged.intensity;
@@ -107,6 +107,7 @@ function SpotLightView({ properties, editMode, isSelected, loadedTextures }: { p
                     </mesh>
                 </>
             )}
+            {children}
         </>
     );
 }

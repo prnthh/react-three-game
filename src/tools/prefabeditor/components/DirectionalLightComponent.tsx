@@ -99,7 +99,7 @@ function DirectionalLightComponentEditor({ component, onUpdate }: { component: a
     );
 }
 
-function DirectionalLightView({ properties, editMode, isSelected }: { properties: any; editMode?: boolean; isSelected?: boolean }) {
+function DirectionalLightView({ properties, children, editMode, isSelected }: { properties: any; children?: React.ReactNode; editMode?: boolean; isSelected?: boolean }) {
     const merged = { ...directionalLightDefaults, ...properties };
     const color = merged.color;
     const intensity = merged.intensity;
@@ -196,6 +196,7 @@ function DirectionalLightView({ properties, editMode, isSelected }: { properties
                     </line>
                 </>
             )}
+            {children}
         </>
     );
 }

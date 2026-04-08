@@ -189,18 +189,3 @@ export function getEntityIdFromRigidBody(rigidBody: RapierRigidBody | null | und
     return userData?.entityId ?? null;
 }
 
-// ============================================================================
-// Backward Compatibility Aliases
-// ============================================================================
-
-/** @deprecated Use gameEvents instead */
-export const entityEvents = gameEvents;
-
-/** @deprecated Use useGameEvent instead */
-export const useEntityEvent = useGameEvent;
-
-/** @deprecated Use GameEventType instead */
-export type EntityEventType = PhysicsEventType;
-
-/** @deprecated Use PhysicsEventPayload instead */
-export type EntityEventPayload = PhysicsEventPayload;

@@ -116,6 +116,8 @@ export const inspector = {
         maxHeight: '80vh',
         overflowY: 'auto' as const,
         overflowX: 'hidden' as const,
+        scrollbarWidth: 'thin' as const,
+        scrollbarColor: `${colors.bgLight} transparent`,
         boxSizing: 'border-box' as const,
         display: 'flex',
         flexDirection: 'column' as const,
@@ -209,19 +211,6 @@ export const toolbar = {
         cursor: 'not-allowed',
     },
 };
-
-// Shared scrollbar CSS (inject via <style> tag since CSS can't be bundled)
-export const scrollbarCSS = `
-.prefab-scroll::-webkit-scrollbar,
-.tree-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
-.prefab-scroll::-webkit-scrollbar-track,
-.tree-scroll::-webkit-scrollbar-track { background: transparent; }
-.prefab-scroll::-webkit-scrollbar-thumb,
-.tree-scroll::-webkit-scrollbar-thumb { background: ${colors.border}; border-radius: 3px; }
-.prefab-scroll::-webkit-scrollbar-thumb:hover,
-.tree-scroll::-webkit-scrollbar-thumb:hover { background: #555; }
-.prefab-scroll { scrollbar-width: thin; scrollbar-color: ${colors.border} transparent; }
-`;
 
 // Reusable component card style for inspector sections
 export const componentCard = {

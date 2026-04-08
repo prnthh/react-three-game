@@ -16,9 +16,14 @@ function AmbientLightComponentEditor({
     );
 }
 
-function AmbientLightComponentView({ properties }: { properties: any }) {
+function AmbientLightComponentView({ properties, children }: { properties: any; children?: React.ReactNode }) {
     const { color = '#ffffff', intensity = 1 } = properties;
-    return <ambientLight color={color} intensity={intensity} />;
+    return (
+        <>
+            <ambientLight color={color} intensity={intensity} />
+            {children}
+        </>
+    );
 }
 
 const AmbientLightComponent: Component = {

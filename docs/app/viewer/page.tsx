@@ -7,7 +7,7 @@ import { Toolbar } from "../editor/page";
 import { OrbitControls } from "@react-three/drei";
 
 export default function Home() {
-    const [selectedPrefab, setSelectedPrefab] = useState<any>(inlinePrefab);
+    const [selectedScene, setSelectedScene] = useState<any>(inlinePrefab);
 
     return (
         <main className="flex h-screen w-screen flex-col items-center justify-between bg-white dark:bg-black sm:items-start">
@@ -15,13 +15,13 @@ export default function Home() {
                 <Physics>
                     <ambientLight intensity={0.8} />
                     <PrefabRoot
-                        data={selectedPrefab} />
+                        data={selectedScene} />
                 </Physics>
                 <OrbitControls />
             </GameCanvas>
 
             <div className="fixed top-2 left-1/2 -translate-x-1/2 z-2">
-                <Toolbar setSelectedPrefab={setSelectedPrefab} />
+                <Toolbar setSelectedPrefab={setSelectedScene} />
             </div>
         </main>
     );

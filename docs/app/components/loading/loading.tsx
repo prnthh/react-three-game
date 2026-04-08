@@ -19,32 +19,11 @@ const LoadingSpinner = () => {
     }, [index]);
 
     return (
-        <div className="terminal-loading">
+        <div className="fixed inset-0 z-50 bg-[#0a0a0a] p-8 font-mono text-sm text-[#00ff00]">
             {lines.slice(0, index).map((line, i) => (
                 <div key={i}>{line}</div>
             ))}
-            <div className="cursor">█</div>
-
-            <style jsx>{`
-                .terminal-loading {
-                    position: fixed;
-                    inset: 0;
-                    z-index: 50;
-                    background: #0a0a0a;
-                    color: #00ff00;
-                    font-family: monospace;
-                    padding: 2rem;
-                    font-size: 14px;
-                }
-
-                .cursor {
-                    animation: blink 1s infinite;
-                }
-
-                @keyframes blink {
-                    50% { opacity: 0; }
-                }
-            `}</style>
+            <div className="animate-pulse">█</div>
         </div>
     );
 };

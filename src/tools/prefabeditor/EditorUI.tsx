@@ -1,25 +1,27 @@
-import { Dispatch, SetStateAction, useState } from 'react';
-import { Prefab, GameObject as GameObjectType } from "./types";
+import { useState } from 'react';
+import { GameObject as GameObjectType, Prefab } from "./types";
 import EditorTree from './EditorTree';
 import { getAllComponents } from './components/ComponentRegistry';
-import { base, colors, inspector, scrollbarCSS, componentCard } from './styles';
-import { findNode, updateNode, deleteNode } from './utils';
+import { base, colors, inspector, componentCard } from './styles';
+import { usePrefabStore } from './prefabStore';
 
 function EditorUI({
-    prefabData,
-    setPrefabData,
     selectedId,
     setSelectedId,
+    getPrefab,
+    onReplacePrefab,
+    onImportPrefab,
     basePath,
     onUndo,
     onRedo,
     canUndo,
     canRedo
 }: {
-    prefabData?: Prefab;
-    setPrefabData?: Dispatch<SetStateAction<Prefab>>;
     selectedId: string | null;
-    setSelectedId: Dispatch<SetStateAction<string | null>>;
+    setSelectedId: (id: string | null) => void;
+    getPrefab: () => Prefab;
+    onReplacePrefab: (prefab: Prefab) => void;
+    onImportPrefab: (prefab: Prefab) => void;
     basePath?: string;
     onUndo?: () => void;
     onRedo?: () => void;
@@ -27,25 +29,23 @@ function EditorUI({
     canRedo?: boolean;
 }) {
     const [collapsed, setCollapsed] = useState(false);
+    const rootId = usePrefabStore(state => state.rootId);
+    const selectedNode = usePrefabStore(state => selectedId ? state.nodesById[selectedId] ?? null : null);
+    const updateNode = usePrefabStore(state => state.updateNode);
+    const deleteNode = usePrefabStore(state => state.deleteNode);
 
-    const updateNodeHandler = (updater: (n: GameObjectType) => GameObjectType) => {
-        if (!prefabData || !setPrefabData || !selectedId) return;
-        setPrefabData(prev => ({
-            ...prev,
-            root: updateNode(prev.root, selectedId, updater)
-        }));
+    const updateNodeHandler = (update: (n: GameObjectType) => GameObjectType) => {
+        if (!selectedId) return;
+        updateNode(selectedId, update);
     };
 
     const deleteNodeHandler = () => {
-        if (!prefabData || !setPrefabData || !selectedId || selectedId === prefabData.root.id) return;
-        setPrefabData(prev => ({ ...prev, root: deleteNode(prev.root, selectedId)! }));
+        if (!selectedId || selectedId === rootId) return;
+        deleteNode(selectedId);
         setSelectedId(null);
     };
 
-    const selectedNode = selectedId && prefabData ? findNode(prefabData.root, selectedId) : null;
-
     return <>
-        <style>{scrollbarCSS}</style>
         <div style={inspector.panel}>
             <div style={base.header} onClick={() => setCollapsed(!collapsed)}>
                 <span>Inspector</span>
@@ -62,10 +62,11 @@ function EditorUI({
         </div>
         <div style={{ position: 'absolute', top: 8, left: 8, zIndex: 20 }}>
             <EditorTree
-                prefabData={prefabData}
-                setPrefabData={setPrefabData}
                 selectedId={selectedId}
                 setSelectedId={setSelectedId}
+                getPrefab={getPrefab}
+                onReplacePrefab={onReplacePrefab}
+                onImportPrefab={onImportPrefab}
                 onUndo={onUndo}
                 onRedo={onRedo}
                 canUndo={canUndo}
@@ -83,7 +84,7 @@ function NodeInspector({
     basePath
 }: {
     node: GameObjectType;
-    updateNode: (updater: (n: GameObjectType) => GameObjectType) => void;
+    updateNode: (update: (n: GameObjectType) => GameObjectType) => void;
     deleteNode: () => void;
     basePath?: string;
 }) {
@@ -93,7 +94,7 @@ function NodeInspector({
     const [preferredAddType, setAddType] = useState(available[0] || "");
     const addType = available.includes(preferredAddType) ? preferredAddType : (available[0] || "");
 
-    return <div style={inspector.content} className="prefab-scroll">
+    return <div style={inspector.content}>
         {/* Node Name */}
         <div style={base.section}>
             <div style={{ display: "flex", marginBottom: 8, alignItems: 'center', gap: 8 }}>

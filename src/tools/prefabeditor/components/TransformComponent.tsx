@@ -1,5 +1,5 @@
 import { Component } from "./ComponentRegistry";
-import { Label, Vector3Field, Vector3Input } from "./Input";
+import { Label, Vector3Input } from "./Input";
 import { useEditorContext } from "../EditorContext";
 import { colors } from "../styles";
 
@@ -17,18 +17,14 @@ const buttonStyle = {
 
 function TransformModeSelector({
     transformMode,
-    setTransformMode,
-    snapResolution,
-    setSnapResolution
+    setTransformMode
 }: {
     transformMode: "translate" | "rotate" | "scale";
     setTransformMode: (m: "translate" | "rotate" | "scale") => void;
-    snapResolution: number;
-    setSnapResolution: (v: number) => void;
 }) {
     return (
         <div style={{ marginBottom: 8 }}>
-            <Label>Transform Mode {snapResolution > 0 && `(Snap: ${snapResolution})`}</Label>
+            <Label>Transform Mode</Label>
             <div style={{ display: 'flex', gap: 6 }}>
                 {["translate", "rotate", "scale"].map(mode => {
                     const isActive = transformMode === mode;
@@ -53,26 +49,6 @@ function TransformModeSelector({
                         </button>
                     );
                 })}
-            </div>
-            <div style={{ marginTop: 6 }}>
-                <button
-                    onClick={() => setSnapResolution(snapResolution > 0 ? 0 : 0.1)}
-                    style={{
-                        ...buttonStyle,
-                        background: snapResolution > 0 ? colors.accentBg : colors.bgSurface,
-                        borderColor: snapResolution > 0 ? colors.accentBorder : colors.border,
-                        color: snapResolution > 0 ? colors.accent : colors.text,
-                        width: '100%',
-                    }}
-                    onPointerEnter={(e) => {
-                        if (snapResolution === 0) e.currentTarget.style.background = colors.bgHover;
-                    }}
-                    onPointerLeave={(e) => {
-                        if (snapResolution === 0) e.currentTarget.style.background = colors.bgSurface;
-                    }}
-                >
-                    Snap: {snapResolution > 0 ? `ON (${snapResolution})` : 'OFF'}
-                </button>
             </div>
         </div>
     );
@@ -103,14 +79,15 @@ function TransformComponentEditor({ component, onUpdate }: {
     const {
         transformMode,
         setTransformMode,
-        snapResolution,
-        setSnapResolution,
+        scaleSnap,
+        setScaleSnap,
         positionSnap,
         setPositionSnap,
         rotationSnap,
         setRotationSnap
     } = useEditorContext();
 
+    const scaleSnapped = scaleSnap > 0;
     const positionSnapped = positionSnap > 0;
     const rotationSnapped = rotationSnap > 0;
 
@@ -119,8 +96,6 @@ function TransformComponentEditor({ component, onUpdate }: {
             <TransformModeSelector
                 transformMode={transformMode}
                 setTransformMode={setTransformMode}
-                snapResolution={snapResolution}
-                setSnapResolution={setSnapResolution}
             />
             <Vector3Input
                 label="Position"
@@ -148,12 +123,18 @@ function TransformComponentEditor({ component, onUpdate }: {
                     />
                 }
             />
-            <Vector3Field
-                name="scale"
+            <Vector3Input
                 label="Scale"
-                values={component.properties}
-                onChange={onUpdate}
-                fallback={[1, 1, 1]}
+                value={component.properties.scale ?? [1, 1, 1]}
+                onChange={v => onUpdate({ scale: v })}
+                snap={scaleSnap}
+                labelExtra={
+                    <SnapLockButton
+                        locked={scaleSnapped}
+                        onToggle={() => setScaleSnap(scaleSnapped ? 0 : 0.1)}
+                        title={scaleSnapped ? `Snap ON (0.1) — click to disable` : `Snap OFF — click to enable (0.1)`}
+                    />
+                }
             />
         </div>
     );

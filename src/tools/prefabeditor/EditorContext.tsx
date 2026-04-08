@@ -4,8 +4,8 @@ export interface EditorContextType {
     editMode: boolean;
     transformMode: "translate" | "rotate" | "scale";
     setTransformMode: (mode: "translate" | "rotate" | "scale") => void;
-    snapResolution: number;
-    setSnapResolution: (resolution: number) => void;
+    scaleSnap: number;
+    setScaleSnap: (resolution: number) => void;
     positionSnap: number;
     setPositionSnap: (resolution: number) => void;
     rotationSnap: number;

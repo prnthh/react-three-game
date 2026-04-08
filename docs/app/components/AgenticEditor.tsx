@@ -238,9 +238,9 @@ function validatePatch(patch: any): void {
 }
 
 type AgenticEditorProps = {
-    /** Current prefab JSON (owned by the page). */
+    /** Current prefab JSON document (owned by the page). */
     prefab: any;
-    /** Update callback to replace the prefab JSON (owned by the page). */
+    /** Update callback to replace the prefab JSON document (owned by the page). */
     onPrefabChange: (nextPrefab: any) => void;
     /** Optional: Ref to the canvas element for screenshot capture. */
     canvasRef?: React.RefObject<HTMLCanvasElement | null>;
@@ -699,7 +699,7 @@ ${JSON.stringify(prefab, null, 2)}
                     },
                 };
 
-            // Apply to prefab
+            // Apply to scene data
             onPrefabChange(nextPrefab);
 
             // Save to history
@@ -773,7 +773,7 @@ ${JSON.stringify(prefab, null, 2)}
                 <div className="pointer-events-auto flex h-[600px] w-[420px] flex-col rounded-lg border border-gray-200 bg-white/90 shadow backdrop-blur dark:border-gray-800 dark:bg-black/70">
                     {/* Header */}
                     <div className="flex items-center justify-between border-b border-gray-200 p-3 dark:border-gray-800">
-                        <div className="font-medium text-black dark:text-white">AI Prefab Editor</div>
+                        <div className="font-medium text-black dark:text-white">AI Scene Editor</div>
                         <button
                             className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                             onClick={() => setIsExpanded(false)}

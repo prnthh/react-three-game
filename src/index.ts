@@ -81,3 +81,16 @@ export { loadFiles } from './tools/dragdrop/DragDropLoader';
 export type { AssetLoadOptions } from './tools/dragdrop/DragDropLoader';
 export { loadModel, loadTexture } from './tools/dragdrop/modelLoader';
 export type { LoadedModel, LoadedTexture, LoadedModels, LoadedTextures, ModelLoadResult, ProgressCallback, TextureLoadResult } from './tools/dragdrop/modelLoader';
+
+// Asset Viewer
+export {
+  TextureListViewer,
+  ModelListViewer,
+  SoundListViewer,
+  TexturePicker,
+  ModelPicker,
+  SingleTextureViewer,
+  SingleModelViewer,
+  SingleSoundViewer,
+  SharedCanvas,
+} from './tools/assetviewer/page';

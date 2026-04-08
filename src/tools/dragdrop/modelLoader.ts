@@ -4,6 +4,8 @@ import { DRACOLoader, FBXLoader, GLTFLoader } from "three/examples/jsm/Addons.js
 
 export type LoadedModel = Object3D;
 export type LoadedTexture = Texture;
+export type LoadedModels = Record<string, LoadedModel>;
+export type LoadedTextures = Record<string, LoadedTexture>;
 
 export type ModelLoadResult = {
     success: boolean;

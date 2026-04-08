@@ -1,13 +1,11 @@
-import { SingleTextureViewer, TextureListViewer } from '../../assetviewer/page';
 import { extend } from '@react-three/fiber';
 import type { ThreeElement } from '@react-three/fiber';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { Component } from './ComponentRegistry';
 import { FieldRenderer, FieldDefinition, Label, NumberInput } from './Input';
-import { colors } from '../styles';
 import { useMemo } from 'react';
 import { MeshBasicNodeMaterial, MeshStandardNodeMaterial } from 'three/webgpu';
+import { TexturePicker } from '../../assetviewer/page';
+import { LoadedTextures } from '../../dragdrop';
 import {
     RepeatWrapping,
     ClampToEdgeWrapping,
@@ -52,116 +50,10 @@ export interface MaterialProps extends Omit<MeshStandardMaterialProperties & Mes
     normalScale?: [number, number];
 }
 
-const PICKER_POPUP_WIDTH = 260;
-const PICKER_POPUP_HEIGHT = 360;
 extend({
     MeshBasicNodeMaterial,
     MeshStandardNodeMaterial,
 });
-
-function TexturePicker({
-    value,
-    onChange,
-    basePath
-}: {
-    value: string | undefined;
-    onChange: (v: string) => void;
-    basePath: string;
-}) {
-    const [textureFiles, setTextureFiles] = useState<string[]>([]);
-    const [showPicker, setShowPicker] = useState(false);
-    const [popupStyle, setPopupStyle] = useState<React.CSSProperties | null>(null);
-    const triggerRef = useRef<HTMLButtonElement>(null);
-
-    useEffect(() => {
-        fetch(`${basePath}/textures/manifest.json`)
-            .then(r => r.json())
-            .then(data => setTextureFiles(Array.isArray(data) ? data : data.files || []))
-            .catch(console.error);
-    }, [basePath]);
-
-    useLayoutEffect(() => {
-        if (!showPicker || !triggerRef.current || typeof window === 'undefined') return;
-
-        const updatePosition = () => {
-            const rect = triggerRef.current?.getBoundingClientRect();
-            if (!rect) return;
-
-            const preferredLeft = rect.left - PICKER_POPUP_WIDTH - 8;
-            const fallbackLeft = rect.right + 8;
-            const fitsLeft = preferredLeft >= 8;
-            const left = fitsLeft ? preferredLeft : Math.min(fallbackLeft, window.innerWidth - PICKER_POPUP_WIDTH - 8);
-            const top = Math.min(Math.max(8, rect.top), window.innerHeight - PICKER_POPUP_HEIGHT - 8);
-
-            setPopupStyle({
-                position: 'fixed',
-                left,
-                top,
-                background: colors.bg,
-                padding: 12,
-                border: `1px solid ${colors.border}`,
-                borderRadius: 6,
-                width: PICKER_POPUP_WIDTH,
-                height: PICKER_POPUP_HEIGHT,
-                overflow: 'hidden',
-                zIndex: 1000,
-                boxShadow: '0 4px 16px rgba(0,0,0,0.6)',
-            });
-        };
-
-        updatePosition();
-        window.addEventListener('resize', updatePosition);
-        window.addEventListener('scroll', updatePosition, true);
-
-        return () => {
-            window.removeEventListener('resize', updatePosition);
-            window.removeEventListener('scroll', updatePosition, true);
-        };
-    }, [showPicker]);
-
-    // Only show 3D preview for server-hosted textures (starting with / or http)
-    const canPreview = value && (value.startsWith('/') || value.startsWith('http'));
-
-    return (
-        <div style={{ maxHeight: 128, overflow: 'visible', position: 'relative', display: 'flex', alignItems: 'center' }}>
-            {canPreview
-                ? <SingleTextureViewer file={value} basePath={basePath} />
-                : value
-                    ? <span style={{ fontSize: 10, opacity: 0.6, maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</span>
-                    : null
-            }
-            <button
-                ref={triggerRef}
-                onClick={() => setShowPicker(!showPicker)}
-                style={{ padding: '4px 8px', backgroundColor: colors.bgLight, color: 'inherit', fontSize: 10, cursor: 'pointer', border: `1px solid ${colors.border}`, borderRadius: 3, marginTop: 4 }}
-            >
-                {showPicker ? 'Cancel' : 'Change'}
-            </button>
-            <button
-                onClick={() => {
-                    onChange(undefined as any);
-                }}
-                style={{ padding: '4px 8px', backgroundColor: colors.bgLight, color: 'inherit', fontSize: 10, cursor: 'pointer', border: `1px solid ${colors.border}`, borderRadius: 3, marginTop: 4, marginLeft: 4 }}
-            >
-                Clear
-            </button>
-            {showPicker && popupStyle && typeof document !== 'undefined' && createPortal(
-                <div style={popupStyle} onMouseLeave={() => setShowPicker(false)}>
-                    <TextureListViewer
-                        files={textureFiles}
-                        selected={value || undefined}
-                        onSelect={(file) => {
-                            onChange(file);
-                            setShowPicker(false);
-                        }}
-                        basePath={basePath}
-                    />
-                </div>,
-                document.body
-            )}
-        </div>
-    );
-}
 
 function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { component: any; onUpdate: (newComp: any) => void; basePath?: string }) {
     const materialType = component.properties.materialType ?? 'standard';
@@ -318,7 +210,7 @@ function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { compo
 }
 
 // View for Material component
-function MaterialComponentView({ properties, loadedTextures }: { properties: MaterialProps, loadedTextures?: Record<string, Texture> }) {
+function MaterialComponentView({ properties, loadedTextures }: { properties: MaterialProps, loadedTextures?: LoadedTextures }) {
     const materialType = properties?.materialType ?? 'standard';
     const textureName = properties?.texture;
     const repeat = properties?.repeat;

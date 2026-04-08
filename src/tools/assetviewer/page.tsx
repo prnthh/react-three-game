@@ -1,6 +1,7 @@
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Stage, View, PerspectiveCamera } from "@react-three/drei";
-import { Component as ReactComponent, Suspense, useEffect, useState, useRef } from "react";
+import { Component as ReactComponent, Suspense, useEffect, useLayoutEffect, useState, useRef } from "react";
+import { createPortal } from 'react-dom';
 import { TextureLoader } from "three";
 import { loadModel } from "../dragdrop";
 
@@ -380,9 +381,179 @@ function SoundCard({ file, onSelect, basePath = "" }: { file: string; onSelect: 
     );
 }
 
+const PICKER_POPUP_WIDTH = 260;
+const PICKER_POPUP_HEIGHT = 360;
+
+function AssetPicker({
+    value,
+    onChange,
+    basePath,
+    manifestFolder,
+    preview,
+    renderList,
+    rootStyle,
+    controlsStyle,
+    changeButtonStyle,
+    clearButtonStyle,
+    popupStyle,
+}: {
+    value: string | undefined;
+    onChange: (value: string | undefined) => void;
+    basePath: string;
+    manifestFolder: string;
+    preview?: React.ReactNode;
+    renderList: (props: {
+        files: string[];
+        value: string | undefined;
+        onSelect: (file: string) => void;
+        basePath: string;
+    }) => React.ReactNode;
+    rootStyle?: React.CSSProperties;
+    controlsStyle?: React.CSSProperties;
+    changeButtonStyle?: React.CSSProperties;
+    clearButtonStyle?: React.CSSProperties;
+    popupStyle?: React.CSSProperties;
+}) {
+    const [files, setFiles] = useState<string[]>([]);
+    const [showPicker, setShowPicker] = useState(false);
+    const [resolvedPopupStyle, setResolvedPopupStyle] = useState<React.CSSProperties | null>(null);
+    const triggerRef = useRef<HTMLButtonElement>(null);
+
+    useEffect(() => {
+        fetch(`${basePath}/${manifestFolder}/manifest.json`)
+            .then(r => r.json())
+            .then(data => setFiles(Array.isArray(data) ? data : data.files || []))
+            .catch(console.error);
+    }, [basePath, manifestFolder]);
+
+    useLayoutEffect(() => {
+        if (!showPicker || !triggerRef.current || typeof window === 'undefined') return;
+
+        const updatePosition = () => {
+            const rect = triggerRef.current?.getBoundingClientRect();
+            if (!rect) return;
+
+            const preferredLeft = rect.left - PICKER_POPUP_WIDTH - 8;
+            const fallbackLeft = rect.right + 8;
+            const fitsLeft = preferredLeft >= 8;
+            const left = fitsLeft ? preferredLeft : Math.min(fallbackLeft, window.innerWidth - PICKER_POPUP_WIDTH - 8);
+            const top = Math.min(Math.max(8, rect.top), window.innerHeight - PICKER_POPUP_HEIGHT - 8);
+
+            setResolvedPopupStyle({
+                position: 'fixed',
+                left,
+                top,
+                padding: 12,
+                width: PICKER_POPUP_WIDTH,
+                height: PICKER_POPUP_HEIGHT,
+                overflow: 'hidden',
+                zIndex: 1000,
+                boxShadow: '0 4px 16px rgba(0,0,0,0.6)',
+                background: '#111827',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: 6,
+                ...popupStyle,
+            });
+        };
+
+        updatePosition();
+        window.addEventListener('resize', updatePosition);
+        window.addEventListener('scroll', updatePosition, true);
+
+        return () => {
+            window.removeEventListener('resize', updatePosition);
+            window.removeEventListener('scroll', updatePosition, true);
+        };
+    }, [popupStyle, showPicker]);
+
+    return (
+        <div style={rootStyle}>
+            {preview}
+            <div style={controlsStyle}>
+                <button
+                    ref={triggerRef}
+                    onClick={() => setShowPicker(!showPicker)}
+                    style={changeButtonStyle}
+                >
+                    {showPicker ? 'Cancel' : 'Change'}
+                </button>
+                <button
+                    onClick={() => onChange(undefined)}
+                    style={clearButtonStyle}
+                >
+                    Clear
+                </button>
+            </div>
+            {showPicker && resolvedPopupStyle && typeof document !== 'undefined' && createPortal(
+                <div style={resolvedPopupStyle} onMouseLeave={() => setShowPicker(false)}>
+                    {renderList({
+                        files,
+                        value,
+                        onSelect: (file) => {
+                            onChange(file);
+                            setShowPicker(false);
+                        },
+                        basePath,
+                    })}
+                </div>,
+                document.body
+            )}
+        </div>
+    );
+}
+
+export function TexturePicker({ value, onChange, basePath = "" }: { value: string | undefined; onChange: (value: string | undefined) => void; basePath?: string }) {
+    return (
+        <AssetPicker
+            value={value}
+            onChange={onChange}
+            basePath={basePath}
+            manifestFolder="textures"
+            rootStyle={{ maxHeight: 128, overflow: 'visible', position: 'relative', display: 'flex', alignItems: 'center' }}
+            changeButtonStyle={{ padding: '4px 8px', backgroundColor: '#1f2937', color: 'inherit', fontSize: 10, cursor: 'pointer', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 3, marginTop: 4 }}
+            clearButtonStyle={{ padding: '4px 8px', backgroundColor: '#1f2937', color: 'inherit', fontSize: 10, cursor: 'pointer', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 3, marginTop: 4, marginLeft: 4 }}
+            preview={<SingleTextureViewer file={value} basePath={basePath} />}
+            renderList={({ files, value: selectedValue, onSelect, basePath: currentBasePath }) => (
+                <TextureListViewer
+                    files={files}
+                    selected={selectedValue || undefined}
+                    onSelect={onSelect}
+                    basePath={currentBasePath}
+                />
+            )}
+        />
+    );
+}
+
+export function ModelPicker({ value, onChange, basePath = "", pickerKey }: { value: string | undefined; onChange: (value: string | undefined) => void; basePath?: string; pickerKey?: string }) {
+    return (
+        <AssetPicker
+            value={value}
+            onChange={onChange}
+            basePath={basePath}
+            manifestFolder="models"
+            rootStyle={{ maxHeight: 160, overflow: 'visible', position: 'relative', display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}
+            controlsStyle={{ display: 'flex', flexDirection: 'column', gap: 6, flex: '0 0 84px', minWidth: 84, justifyContent: 'flex-end' }}
+            changeButtonStyle={{ width: '100%', padding: '6px 8px', backgroundColor: '#1f2937', color: 'inherit', fontSize: 10, cursor: 'pointer', border: '1px solid rgba(34, 211, 238, 0.3)' }}
+            clearButtonStyle={{ width: '100%', padding: '6px 8px', backgroundColor: '#1f2937', color: 'inherit', fontSize: 10, cursor: 'pointer', border: '1px solid rgba(34, 211, 238, 0.3)' }}
+            popupStyle={{ background: 'rgba(0,0,0,0.9)', border: '1px solid rgba(34, 211, 238, 0.3)' }}
+            preview={<div style={{ flex: '0 0 auto' }}><SingleModelViewer file={value ? `/${value}` : undefined} basePath={basePath} /></div>}
+            renderList={({ files, value: selectedValue, onSelect, basePath: currentBasePath }) => (
+                <ModelListViewer
+                    key={pickerKey}
+                    files={files}
+                    selected={selectedValue ? `/${selectedValue}` : undefined}
+                    onSelect={(file) => onSelect(file.startsWith('/') ? file.slice(1) : file)}
+                    basePath={currentBasePath}
+                />
+            )}
+        />
+    );
+}
+
 // Single Asset Viewer Components - display only one selected asset
 export function SingleTextureViewer({ file, basePath = "" }: { file?: string; basePath?: string }) {
-    if (!file) return null;
+    if (!file) return <div style={{ width: 60, aspectRatio: '1 / 1', backgroundColor: '#1f2937', border: '1px dashed rgba(255,255,255,0.12)' }} />;
     return (
         <>
             <TextureCard file={file} basePath={basePath} onSelect={() => { }} />
@@ -392,7 +563,7 @@ export function SingleTextureViewer({ file, basePath = "" }: { file?: string; ba
 }
 
 export function SingleModelViewer({ file, basePath = "" }: { file?: string; basePath?: string }) {
-    if (!file) return null;
+    if (!file) return <div style={{ width: 112, aspectRatio: '1 / 1', backgroundColor: '#1f2937', border: '1px dashed rgba(255,255,255,0.12)' }} />;
     return (
         <>
             <ModelCard file={file} basePath={basePath} onSelect={() => { }} size={112} />

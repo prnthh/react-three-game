@@ -2,6 +2,7 @@ import { MapControls, TransformControls } from "@react-three/drei";
 import GameCanvas from "../../shared/GameCanvas";
 import { useState, useRef, useEffect, forwardRef, useImperativeHandle, SetStateAction } from "react";
 import { Object3D, Texture } from "three";
+import { LoadedModels, LoadedTextures } from "../dragdrop";
 import { GameObject, Prefab } from "./types";
 import PrefabRoot, { PrefabRootRef } from "./PrefabRoot";
 import { Physics } from "@react-three/rapier";
@@ -75,8 +76,8 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
     const controlsRef = useRef<any>(null);
     const onPrefabChangeRef = useRef(onPrefabChange);
     const pendingPrefabChangeRef = useRef<Prefab | null>(null);
-    const [injectedModels, setInjectedModels] = useState<Record<string, Object3D>>({});
-    const [injectedTextures, setInjectedTextures] = useState<Record<string, Texture>>({});
+    const [injectedModels, setInjectedModels] = useState<LoadedModels>({});
+    const [injectedTextures, setInjectedTextures] = useState<LoadedTextures>({});
 
     onPrefabChangeRef.current = onPrefabChange;
 

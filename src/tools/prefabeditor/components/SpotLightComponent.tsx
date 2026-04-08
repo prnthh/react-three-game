@@ -1,34 +1,44 @@
 import { Component } from "./ComponentRegistry";
 import { useRef, useEffect, useMemo, useState } from "react";
-import { BooleanField, ColorField, FieldGroup, NumberField } from "./Input";
+import { BooleanField, ColorField, FieldGroup, Label, NumberField } from "./Input";
 import { SpotLight, SpotLightHelper } from "three";
+import { LoadedTextures } from "../../dragdrop";
 import { useFrame } from "@react-three/fiber";
+import { TexturePicker } from "../../assetviewer/page";
 
 const spotLightDefaults = {
     color: '#ffffff',
-    intensity: 1,
-    angle: Math.PI / 6,
+    intensity: 200,
+    angle: 0.5,
     penumbra: 0.5,
     distance: 100,
     castShadow: true,
 };
 
-function SpotLightComponentEditor({ component, onUpdate }: { component: any; onUpdate: (newComp: any) => void }) {
+function SpotLightComponentEditor({ component, onUpdate, basePath = "" }: { component: any; onUpdate: (newComp: any) => void; basePath?: string }) {
     const values = { ...spotLightDefaults, ...component.properties };
 
     return (
         <FieldGroup>
             <ColorField name="color" label="Color" values={values} onChange={onUpdate} />
-            <NumberField name="intensity" label="Intensity" values={values} onChange={onUpdate} min={0} step={0.1} fallback={1} />
-            <NumberField name="angle" label="Angle" values={values} onChange={onUpdate} min={0} max={Math.PI} step={0.05} fallback={Math.PI / 6} />
+            <NumberField name="intensity" label="Intensity" values={values} onChange={onUpdate} min={0} step={1} fallback={200} />
+            <NumberField name="angle" label="Angle" values={values} onChange={onUpdate} min={0} max={Math.PI} step={0.05} fallback={0.5} />
             <NumberField name="penumbra" label="Penumbra" values={values} onChange={onUpdate} min={0} max={1} step={0.05} fallback={0.5} />
             <NumberField name="distance" label="Distance" values={values} onChange={onUpdate} min={0} step={1} fallback={100} />
             <BooleanField name="castShadow" label="Cast Shadow" values={values} onChange={onUpdate} fallback={true} />
+            <div>
+                <Label>Texture Map</Label>
+                <TexturePicker
+                    value={values.map}
+                    onChange={(map) => onUpdate({ map })}
+                    basePath={basePath}
+                />
+            </div>
         </FieldGroup>
     );
 }
 
-function SpotLightView({ properties, editMode, isSelected }: { properties: any; editMode?: boolean; isSelected?: boolean }) {
+function SpotLightView({ properties, editMode, isSelected, loadedTextures }: { properties: any; editMode?: boolean; isSelected?: boolean; loadedTextures?: LoadedTextures }) {
     const merged = { ...spotLightDefaults, ...properties };
     const color = merged.color;
     const intensity = merged.intensity;
@@ -36,6 +46,7 @@ function SpotLightView({ properties, editMode, isSelected }: { properties: any; 
     const penumbra = merged.penumbra;
     const distance = merged.distance;
     const castShadow = merged.castShadow;
+    const textureMap = merged.map && loadedTextures ? loadedTextures[merged.map] : undefined;
 
     const spotLightRef = useRef<SpotLight>(null);
     const targetRef = useRef<any>(null);
@@ -73,6 +84,7 @@ function SpotLightView({ properties, editMode, isSelected }: { properties: any; 
                 angle={angle}
                 penumbra={penumbra}
                 distance={distance}
+                map={textureMap}
                 castShadow={castShadow}
                 shadow-mapSize-width={1024}
                 shadow-mapSize-height={1024}

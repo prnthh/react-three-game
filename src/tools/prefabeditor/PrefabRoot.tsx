@@ -1,12 +1,12 @@
 import { useHelper } from "@react-three/drei";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
-import { BoxHelper, Euler, Group, Matrix4, Object3D, Quaternion, Texture, Vector3, } from "three";
+import { BoxHelper, Euler, Group, Matrix4, Object3D, Quaternion, Vector3, } from "three";
 import { ThreeEvent } from "@react-three/fiber";
 
 import { Prefab, GameObject as GameObjectType } from "./types";
 import { getComponent, registerComponent, getNonComposableKeys } from "./components/ComponentRegistry";
 import components from "./components";
-import { loadModel, loadTexture } from "../dragdrop";
+import { loadModel, loadTexture, LoadedModels, LoadedTextures } from "../dragdrop";
 import { GameInstance, GameInstanceProvider, getRepeatAxesFromModelProperties, RepeatAxisConfig, useInstanceCheck } from "./InstanceProvider";
 import { decompose } from "./utils";
 import { PhysicsProps } from "./components/PhysicsComponent";
@@ -39,13 +39,13 @@ export const PrefabRoot = forwardRef<PrefabRootRef, {
     onSelectedObjectChange?: (object: Object3D | null) => void;
     onFocusNode?: (nodeId: string) => void;
     basePath?: string;
-    injectedModels?: Record<string, Object3D>;
-    injectedTextures?: Record<string, Texture>;
+    injectedModels?: LoadedModels;
+    injectedTextures?: LoadedTextures;
 }>(({ editMode, data, selectedId, onSelect, onClick, onSelectedObjectChange, onFocusNode, basePath = "", injectedModels = {}, injectedTextures = {} }, ref) => {
 
     // prefab root state
-    const [models, setModels] = useState<Record<string, Object3D>>({});
-    const [textures, setTextures] = useState<Record<string, Texture>>({});
+    const [models, setModels] = useState<LoadedModels>({});
+    const [textures, setTextures] = useState<LoadedTextures>({});
     const loading = useRef(new Set<string>());
     const failedTextures = useRef(new Set<string>());
     const objectRefs = useRef<Record<string, Object3D | null>>({});
@@ -87,12 +87,22 @@ export const PrefabRoot = forwardRef<PrefabRootRef, {
         const texturesToLoad = new Set<string>();
 
         walk(data.root, node => {
-            node.components?.model?.properties?.filename &&
-                modelsToLoad.add(node.components.model.properties.filename);
-            node.components?.material?.properties?.texture &&
-                texturesToLoad.add(node.components.material.properties.texture);
-            node.components?.material?.properties?.normalMapTexture &&
-                texturesToLoad.add(node.components.material.properties.normalMapTexture);
+            Object.values(node.components ?? {}).forEach(component => {
+                if (!component?.type) return;
+
+                if (component.type === 'Model' && component.properties?.filename) {
+                    modelsToLoad.add(component.properties.filename);
+                }
+
+                if (component.type === 'Material') {
+                    component.properties?.texture && texturesToLoad.add(component.properties.texture);
+                    component.properties?.normalMapTexture && texturesToLoad.add(component.properties.normalMapTexture);
+                }
+
+                if (component.type === 'SpotLight' && component.properties?.map) {
+                    texturesToLoad.add(component.properties.map);
+                }
+            });
         });
 
         modelsToLoad.forEach(async file => {
@@ -427,8 +437,8 @@ interface RendererProps {
     onClick?: (event: ThreeEvent<PointerEvent>, entity: GameObjectType) => void;
     registerRef: (id: string, obj: Object3D | null) => void;
     registerRigidBodyRef: (id: string, rb: any) => void;
-    loadedModels: Record<string, Object3D>;
-    loadedTextures: Record<string, Texture>;
+    loadedModels: LoadedModels;
+    loadedTextures: LoadedTextures;
     editMode?: boolean;
     parentMatrix?: Matrix4;
 }
@@ -445,8 +455,8 @@ function getChildHostComponents(gameObject: GameObjectType) {
 }
 
 interface RenderContext {
-    loadedModels: Record<string, Object3D>;
-    loadedTextures: Record<string, Texture>;
+    loadedModels: LoadedModels;
+    loadedTextures: LoadedTextures;
     editMode?: boolean;
     selectedId?: string | null;
     registerRef: (id: string, obj: Object3D | null) => void;
@@ -458,14 +468,14 @@ interface RuntimeChildRendererProps {
     onClick?: (event: ThreeEvent<PointerEvent>, entity: GameObjectType) => void;
     registerRef: (id: string, obj: Object3D | null) => void;
     registerRigidBodyRef: (id: string, rb: any) => void;
-    loadedModels: Record<string, Object3D>;
-    loadedTextures: Record<string, Texture>;
+    loadedModels: LoadedModels;
+    loadedTextures: LoadedTextures;
     editMode?: boolean;
 }
 
 function createRenderContext(
-    loadedModels: Record<string, Object3D>,
-    loadedTextures: Record<string, Texture>,
+    loadedModels: LoadedModels,
+    loadedTextures: LoadedTextures,
     editMode: boolean | undefined,
     selectedId: string | null | undefined,
     registerRef: (id: string, obj: Object3D | null) => void,

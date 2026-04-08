@@ -26,7 +26,7 @@ export default function GameCanvas({ loader = false, children, glConfig, canvasR
     return <>
         <Canvas
             style={{ touchAction: 'none', userSelect: 'none', ...style }}
-            shadows={{ type: PCFShadowMap, }}
+            shadows={{ type: PCFShadowMap }}
             frameloop={frameloop}
             gl={async ({ canvas }) => {
                 const renderer = new WebGPURenderer({

@@ -1,6 +1,6 @@
-import { ModelListViewer, SingleModelViewer } from '../../assetviewer/page';
-import { useContext, useEffect, useLayoutEffect, useState, useMemo, useRef } from 'react';
-import { createPortal } from 'react-dom';
+import { ModelPicker } from '../../assetviewer/page';
+import { LoadedModels } from '../../dragdrop';
+import { useContext, useMemo } from 'react';
 import { Component } from './ComponentRegistry';
 import { BooleanField, FieldGroup, Label, NumberInput, SelectInput } from './Input';
 import { GameObject } from '../types';
@@ -8,8 +8,6 @@ import { EditorContext } from '../EditorContext';
 import { DEFAULT_REPEAT_AXES, getRepeatAxesFromModelProperties, normalizeRepeatAxes, RepeatAxisConfig } from '../InstanceProvider';
 import { colors } from '../styles';
 
-const PICKER_POPUP_WIDTH = 260;
-const PICKER_POPUP_HEIGHT = 360;
 const AXIS_OPTIONS = [
     { value: 'x', label: 'X' },
     { value: 'y', label: 'Y' },
@@ -156,128 +154,6 @@ function RepeatAxisEditor({
     );
 }
 
-function ModelPicker({
-    value,
-    onChange,
-    basePath,
-    nodeId
-}: {
-    value: string | undefined;
-    onChange: (v: string) => void;
-    basePath: string;
-    nodeId?: string;
-}) {
-    const [modelFiles, setModelFiles] = useState<string[]>([]);
-    const [showPicker, setShowPicker] = useState(false);
-    const [popupStyle, setPopupStyle] = useState<React.CSSProperties | null>(null);
-    const triggerRef = useRef<HTMLButtonElement>(null);
-
-    useEffect(() => {
-        fetch(`${basePath}/models/manifest.json`)
-            .then(r => r.json())
-            .then(data => setModelFiles(Array.isArray(data) ? data : data.files || []))
-            .catch(console.error);
-    }, [basePath]);
-
-    useLayoutEffect(() => {
-        if (!showPicker || !triggerRef.current || typeof window === 'undefined') return;
-
-        const updatePosition = () => {
-            const rect = triggerRef.current?.getBoundingClientRect();
-            if (!rect) return;
-
-            const preferredLeft = rect.left - PICKER_POPUP_WIDTH - 8;
-            const fallbackLeft = rect.right + 8;
-            const fitsLeft = preferredLeft >= 8;
-            const left = fitsLeft ? preferredLeft : Math.min(fallbackLeft, window.innerWidth - PICKER_POPUP_WIDTH - 8);
-            const top = Math.min(Math.max(8, rect.top), window.innerHeight - PICKER_POPUP_HEIGHT - 8);
-
-            setPopupStyle({
-                position: 'fixed',
-                left,
-                top,
-                background: 'rgba(0,0,0,0.9)',
-                padding: 12,
-                border: '1px solid rgba(34, 211, 238, 0.3)',
-                borderRadius: 6,
-                width: PICKER_POPUP_WIDTH,
-                height: PICKER_POPUP_HEIGHT,
-                overflow: 'hidden',
-                zIndex: 1000,
-                boxShadow: '0 4px 16px rgba(0,0,0,0.6)',
-            });
-        };
-
-        updatePosition();
-        window.addEventListener('resize', updatePosition);
-        window.addEventListener('scroll', updatePosition, true);
-
-        return () => {
-            window.removeEventListener('resize', updatePosition);
-            window.removeEventListener('scroll', updatePosition, true);
-        };
-    }, [showPicker]);
-
-    const handleModelSelect = (file: string) => {
-        const filename = file.startsWith('/') ? file.slice(1) : file;
-        onChange(filename);
-        setShowPicker(false);
-    };
-
-    return (
-        <div style={{ maxHeight: 160, overflow: 'visible', position: 'relative', display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ flex: '0 0 auto' }}>
-                <SingleModelViewer file={value ? `/${value}` : undefined} basePath={basePath} />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: '0 0 84px', minWidth: 84, justifyContent: 'flex-end' }}>
-                <button
-                    ref={triggerRef}
-                    onClick={() => setShowPicker(!showPicker)}
-                    style={{
-                        width: '100%',
-                        padding: '6px 8px',
-                        backgroundColor: '#1f2937',
-                        color: 'inherit',
-                        fontSize: 10,
-                        cursor: 'pointer',
-                        border: '1px solid rgba(34, 211, 238, 0.3)',
-                    }}
-                >
-                    {showPicker ? 'Cancel' : 'Change'}
-                </button>
-                <button
-                    onClick={() => {
-                        onChange(undefined as any);
-                    }}
-                    style={{
-                        width: '100%',
-                        padding: '6px 8px',
-                        backgroundColor: '#1f2937',
-                        color: 'inherit',
-                        fontSize: 10,
-                        cursor: 'pointer',
-                        border: '1px solid rgba(34, 211, 238, 0.3)',
-                    }}
-                >
-                    Clear
-                </button>
-            </div>
-            {showPicker && popupStyle && typeof document !== 'undefined' && createPortal(
-                <div style={popupStyle} onMouseLeave={() => setShowPicker(false)}>
-                    <ModelListViewer
-                        key={nodeId}
-                        files={modelFiles}
-                        selected={value ? `/${value}` : undefined}
-                        onSelect={handleModelSelect}
-                        basePath={basePath}
-                    />
-                </div>,
-                document.body
-            )}
-        </div>
-    );
-}
-
 function ModelComponentEditor({ component, node, onUpdate, basePath = "" }: { component: any; node?: GameObject; onUpdate: (newComp: any) => void; basePath?: string }) {
     const editorContext = useContext(EditorContext);
     const positionSnap = editorContext?.positionSnap ?? 0.5;
@@ -289,7 +165,7 @@ function ModelComponentEditor({ component, node, onUpdate, basePath = "" }: { co
                 value={component.properties.filename}
                 onChange={(filename) => onUpdate({ filename })}
                 basePath={basePath}
-                nodeId={node?.id}
+                pickerKey={node?.id}
             />
             <BooleanField
                 name="instanced"
@@ -321,7 +197,7 @@ function ModelComponentEditor({ component, node, onUpdate, basePath = "" }: { co
 }
 
 // View for Model component
-function ModelComponentView({ properties, loadedModels, children }: { properties: any, loadedModels?: Record<string, any>, children?: React.ReactNode }) {
+function ModelComponentView({ properties, loadedModels, children }: { properties: any, loadedModels?: LoadedModels, children?: React.ReactNode }) {
     // Instanced models are handled elsewhere (GameInstance), so only render non-instanced here
     if (!properties.filename || properties.instanced) return <>{children}</>;
 

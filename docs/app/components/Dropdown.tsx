@@ -12,7 +12,7 @@ export default function Dropdown() {
     const [open, setOpen] = useState(false);
 
     const options: DemoOption[] = [
-        { label: "View / Play Mode", href: "/viewer" },
+        { label: "Viewer Mode", href: "/viewer" },
         { label: "Custom Component", href: "/demo/customcomponent" },
         { label: "ECS World", href: "/demo/world" },
         { label: "Physics", href: "/demo/physics" },

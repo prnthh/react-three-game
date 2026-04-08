@@ -9,20 +9,49 @@ function Features() {
   return (
     <div>
       <div className="mb-3 font-mono uppercase font-black opacity-80">
-        Highlights
+        How it works
       </div>
       <ul className="space-y-1.5 font-mono text-opacity-50 dark:text-zinc-400 text-left">
         <li className="flex items-start gap-2">
           <span className="text-green-500">▸</span>
-          <span>JSON scene graph</span>
+          <span>Create prefabs in the editor</span>
         </li>
         <li className="flex items-start gap-2">
           <span className="text-green-500">▸</span>
-          <span>Component-based architecture</span>
+          <span>Export prefabs as JSON</span>
         </li>
         <li className="flex items-start gap-2">
           <span className="text-green-500">▸</span>
-          <span>Visual prefab editor with hot reload</span>
+          <span>Load prefabs in your app using viewer</span>
+        </li>
+      </ul>
+
+    </div>
+  );
+}
+
+function Features2() {
+  return (
+    <div> <div className="mb-3 font-mono uppercase font-black opacity-80">
+      Highlights
+    </div>
+      <ul className="space-y-1.5 font-mono text-opacity-50 dark:text-zinc-400 text-left">
+
+        <li className="flex items-start gap-2">
+          <span className="text-green-500">▸</span>
+          <span>JSON serialised prefabs</span>
+        </li>
+        <li className="flex items-start gap-2">
+          <span className="text-green-500">▸</span>
+          <span>Lightweight embeddable viewer mode</span>
+        </li>
+        <li className="flex items-start gap-2">
+          <span className="text-green-500">▸</span>
+          <span>Define custom components</span>
+        </li>
+        <li className="flex items-start gap-2">
+          <span className="text-green-500">▸</span>
+          <span>Composable with react-three-fiber</span>
         </li>
         <li className="flex items-start gap-2">
           <span className="text-green-500">▸</span>
@@ -35,6 +64,10 @@ function Features() {
         <li className="flex items-start gap-2">
           <span className="text-green-500">▸</span>
           <span>Automatic instancing optimization</span>
+        </li>
+        <li className="flex items-start gap-2">
+          <span className="text-green-500">▸</span>
+          <span>Visual editor with hot reload</span>
         </li>
       </ul>
     </div>
@@ -83,9 +116,12 @@ export default function Home() {
       <DemoApp />
     </main>
     <div className="w-full bg-blue-950 text-center relative flex flex-col items-center gap-6 py-12">
-      <div className="max-w-[80vw]">
+      <div className="max-w-[80vw] flex gap-3">
         <Section title="Documentation">
           <Features />
+        </Section>
+        <Section title="Documentation">
+          <Features2 />
         </Section>
       </div>
 

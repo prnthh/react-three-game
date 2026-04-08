@@ -56,5 +56,10 @@ export {
   TextureListViewer,
   ModelListViewer,
   SoundListViewer,
+  TexturePicker,
+  ModelPicker,
+  SingleTextureViewer,
+  SingleModelViewer,
+  SingleSoundViewer,
   SharedCanvas,
 } from './tools/assetviewer/page';

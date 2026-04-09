@@ -3,8 +3,6 @@
   "name": "Test Prefab",
   "root": {
     "id": "root",
-    "enabled": true,
-    "visible": true,
     "components": {
       "transform": {
         "type": "Transform",
@@ -30,8 +28,6 @@
     "children": [
       {
         "id": "model-node2",
-        "enabled": true,
-        "visible": true,
         "components": {
           "transform": {
             "type": "Transform",
@@ -71,8 +67,6 @@
       },
       {
         "id": "light",
-        "enabled": true,
-        "visible": true,
         "components": {
           "transform": {
             "type": "Transform",

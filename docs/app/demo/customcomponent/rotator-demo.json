@@ -9,9 +9,21 @@
       "transform": {
         "type": "Transform",
         "properties": {
-          "position": [0, 0, 0],
-          "rotation": [0, 0, 0],
-          "scale": [1, 1, 1]
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
         }
       }
     },
@@ -24,25 +36,47 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [0, -2, 0],
-              "rotation": [-1.57, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                0,
+                -2,
+                0
+              ],
+              "rotation": [
+                -1.57,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "plane",
-              "args": [20, 20]
+              "args": [
+                20,
+                20
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#333333"
+              "color": "#ffffff",
+              "texture": "/textures/floor/terrain/rock-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                10,
+                10
+              ]
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "rotating-cube-1",
@@ -52,32 +86,50 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [-3, 0, 0],
-              "rotation": [0, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                -3,
+                0,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "box",
-              "args": [1, 1, 1]
+              "args": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#ff6b6b"
+              "color": "#ff6b6b",
+              "texture": "/textures/proto32/white.png"
             }
           },
           "rotator": {
             "type": "Rotator",
             "properties": {
-              "speed": 1.0,
+              "speed": 1,
               "axis": "y"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "rotating-cube-2",
@@ -87,32 +139,50 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [0, 0, 0],
-              "rotation": [0, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                0,
+                0,
+                -4.5
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "box",
-              "args": [1, 1, 1]
+              "args": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#4ecdc4"
+              "color": "#4ecdc4",
+              "texture": "/textures/proto32/white.png"
             }
           },
           "rotator": {
             "type": "Rotator",
             "properties": {
-              "speed": 2.0,
+              "speed": 2,
               "axis": "x"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "rotating-cube-3",
@@ -122,22 +192,39 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [3, 0, 0],
-              "rotation": [0, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                3,
+                0,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "box",
-              "args": [1, 1, 1]
+              "args": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#ffe66d"
+              "color": "#ffe66d",
+              "texture": "/textures/proto32/white.png"
             }
           },
           "rotator": {
@@ -147,7 +234,8 @@
               "axis": "z"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "light",
@@ -157,23 +245,36 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [5, 5, 5],
-              "rotation": [0, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                0,
+                9,
+                -1.5
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "spotlight": {
             "type": "SpotLight",
             "properties": {
               "color": "#ffffff",
-              "intensity": 100,
-              "angle": 0.5,
+              "intensity": 400,
+              "angle": 1.05,
               "penumbra": 0.5,
               "distance": 50,
               "castShadow": true
             }
           }
-        }
+        },
+        "children": []
       }
     ]
   }

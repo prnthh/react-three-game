@@ -123,7 +123,7 @@ const GeometryComponent: Component = {
     name: 'Geometry',
     Editor: GeometryComponentEditor,
     View: GeometryComponentView,
-    nonComposable: true,
+    isWrapper: true,
     defaultProperties: {
         geometryType: 'box',
         args: getDefaultArgs('box'),

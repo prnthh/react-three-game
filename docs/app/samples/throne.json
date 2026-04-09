@@ -74,7 +74,8 @@
               "roughness": 1
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "2d2e3fbf-4992-4edc-b53b-cb6e25ba44d5",
@@ -125,7 +126,8 @@
               "side": "BackSide"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "9a856370-a30e-4003-ac48-4ce6d7847118",
@@ -135,9 +137,9 @@
             "type": "Transform",
             "properties": {
               "position": [
-                0,
+                -16.5,
                 -1,
-                0
+                -16
               ],
               "rotation": [
                 0,
@@ -151,22 +153,19 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
           "model": {
             "type": "Model",
             "properties": {
               "filename": "models/environment/tree.glb",
-              "instanced": false
+              "instanced": true,
+              "repeat": true,
+              "repeatAxes": [
+                {
+                  "axis": "x",
+                  "count": 4,
+                  "offset": 10.5
+                }
+              ]
             }
           }
         },
@@ -252,7 +251,8 @@
                   "side": "BackSide"
                 }
               }
-            }
+            },
+            "children": []
           }
         ]
       },
@@ -293,7 +293,8 @@
               "castShadow": true
             }
           }
-        }
+        },
+        "children": []
       }
     ]
   }

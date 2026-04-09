@@ -1,11 +1,12 @@
 import { ChangeEvent, useRef } from "react";
 import type { DragEvent, HTMLAttributes, MouseEvent, ReactNode } from "react";
-import type { LoadedModel, LoadedTexture } from "./modelLoader";
-import { canParseModelFile, canParseTextureFile, parseModelFromFile, parseTextureFromFile } from "./modelLoader";
+import type { LoadedModel, LoadedSound, LoadedTexture } from "./modelLoader";
+import { canParseModelFile, canParseSoundFile, canParseTextureFile, parseModelFromFile, parseSoundFromFile, parseTextureFromFile } from "./modelLoader";
 
 export interface AssetLoadOptions {
     onModelLoaded?: (model: LoadedModel, filename: string, file: File) => void | Promise<void>;
     onTextureLoaded?: (texture: LoadedTexture, filename: string, file: File) => void | Promise<void>;
+    onSoundLoaded?: (sound: LoadedSound, filename: string, file: File) => void | Promise<void>;
     onUnhandledFile?: (file: File) => void | Promise<void>;
     onFilesLoaded?: (files: File[]) => void | Promise<void>;
     onLoadError?: (error: unknown, filename: string, file: File) => void | Promise<void>;
@@ -23,7 +24,7 @@ export interface FilePickerProps extends AssetLoadOptions, DivProps {
     multiple?: boolean;
 }
 
-const DEFAULT_ACCEPT = ".glb,.gltf,.fbx,.png,.jpg,.jpeg,.webp,.gif,.bmp,.svg";
+const DEFAULT_ACCEPT = ".glb,.gltf,.fbx,.png,.jpg,.jpeg,.webp,.gif,.bmp,.svg,.mp3,.wav,.ogg,.m4a";
 
 function getFiles(fileList?: FileList | null) {
     return fileList ? Array.from(fileList) : [];
@@ -31,12 +32,13 @@ function getFiles(fileList?: FileList | null) {
 
 export async function loadFiles(
     files: File[],
-    { onModelLoaded, onTextureLoaded, onUnhandledFile, onFilesLoaded, onLoadError }: AssetLoadOptions,
+    { onModelLoaded, onTextureLoaded, onSoundLoaded, onUnhandledFile, onFilesLoaded, onLoadError }: AssetLoadOptions,
 ) {
     await Promise.all(
         files.map(async (file) => {
             const shouldParseModel = canParseModelFile(file);
             const shouldParseTexture = canParseTextureFile(file);
+            const shouldParseSound = canParseSoundFile(file);
 
             if (shouldParseModel) {
                 const result = await parseModelFromFile(file);
@@ -72,6 +74,23 @@ export async function loadFiles(
                 return;
             }
 
+            if (shouldParseSound) {
+                const result = await parseSoundFromFile(file);
+
+                if (result.success && result.sound) {
+                    await onSoundLoaded?.(result.sound, file.name, file);
+                    return;
+                }
+
+                if (onLoadError) {
+                    await onLoadError(result.error, file.name, file);
+                    return;
+                }
+
+                console.error("Sound parse error:", result.error);
+                return;
+            }
+
             if (onUnhandledFile) {
                 await onUnhandledFile(file);
             }
@@ -89,6 +108,7 @@ function createLoadHandlers(options: AssetLoadOptions) {
     return {
         onFilesLoaded: options.onFilesLoaded,
         onModelLoaded: options.onModelLoaded,
+        onSoundLoaded: options.onSoundLoaded,
         onTextureLoaded: options.onTextureLoaded,
         onUnhandledFile: options.onUnhandledFile,
         onLoadError: options.onLoadError,

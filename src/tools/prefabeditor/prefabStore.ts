@@ -4,6 +4,7 @@ import { useStore } from "zustand";
 import { createStore, type StoreApi } from "zustand/vanilla";
 
 import { GameObject, Prefab } from "./types";
+import { getComponentAssetRefs } from "./components/ComponentRegistry";
 
 export type PrefabNodeRecord = Omit<GameObject, "children">;
 
@@ -53,6 +54,10 @@ export function usePrefabStoreApi() {
         throw new Error("usePrefabStoreApi must be used within PrefabStoreProvider");
     }
     return store;
+}
+
+export function useOptionalPrefabStoreApi() {
+    return useContext(PrefabStoreContext);
 }
 
 export function usePrefabStore<T>(selector: (state: PrefabStoreState) => T) {
@@ -401,7 +406,10 @@ function collectSubtreeAssetRefs(node: GameObject): string[] {
 }
 
 function collectAssetRefsForIds(ids: string[], nodesById: Record<string, PrefabNodeRecord>) {
-    return ids.flatMap(id => getAssetRefs(nodesById[id]));
+    return ids.reduce<string[]>((refs, id) => {
+        refs.push(...getAssetRefs(nodesById[id]));
+        return refs;
+    }, []);
 }
 
 function getAssetRefs(node?: Pick<GameObject, "components"> | null) {
@@ -410,17 +418,8 @@ function getAssetRefs(node?: Pick<GameObject, "components"> | null) {
     Object.values(node?.components ?? {}).forEach(component => {
         if (!component?.type) return;
 
-        if (component.type === "Model" && component.properties?.filename) {
-            refs.push(`model:${component.properties.filename}`);
-        }
-
-        if (component.type === "Material") {
-            if (component.properties?.texture) refs.push(`texture:${component.properties.texture}`);
-            if (component.properties?.normalMapTexture) refs.push(`texture:${component.properties.normalMapTexture}`);
-        }
-
-        if (component.type === "SpotLight" && component.properties?.map) {
-            refs.push(`texture:${component.properties.map}`);
+        for (const ref of getComponentAssetRefs(component.type, component.properties ?? {})) {
+            refs.push(`${ref.type}:${ref.path}`);
         }
     });
 

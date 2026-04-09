@@ -1,6 +1,6 @@
 import { Component } from "./ComponentRegistry";
 import { Label, Vector3Input } from "./Input";
-import { useEditorContext } from "../EditorContext";
+import { useEditorContext } from "../PrefabEditor";
 import { colors } from "../styles";
 
 const buttonStyle = {
@@ -143,7 +143,7 @@ function TransformComponentEditor({ component, onUpdate }: {
 const TransformComponent: Component = {
     name: 'Transform',
     Editor: TransformComponentEditor,
-    nonComposable: true,
+    isWrapper: true,
     defaultProperties: {
         position: [0, 0, 0],
         rotation: [0, 0, 0],

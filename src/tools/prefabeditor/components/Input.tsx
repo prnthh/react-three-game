@@ -634,6 +634,98 @@ export function FieldGroup({ children }: { children: React.ReactNode }) {
     return <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>{children}</div>;
 }
 
+interface ListEditorOption {
+    value: string;
+    label: string;
+}
+
+interface ListEditorProps<T> {
+    label: string;
+    items: T[];
+    renderItem: (item: T, index: number) => React.ReactNode;
+    onAdd: (value: string) => void;
+    addOptions?: ListEditorOption[];
+    emptyMessage?: string;
+    canAdd?: boolean;
+    addButtonTitle?: string;
+    addDisabledTitle?: string;
+}
+
+export function ListEditor<T>({
+    label,
+    items,
+    renderItem,
+    onAdd,
+    addOptions = [],
+    emptyMessage = 'No items added.',
+    canAdd = true,
+    addButtonTitle = 'Add item',
+    addDisabledTitle = 'No more items available',
+}: ListEditorProps<T>) {
+    const [selectedAddValue, setSelectedAddValue] = useState('');
+    const hasAddSelector = addOptions.length > 0;
+    const resolvedAddValue = hasAddSelector ? (selectedAddValue || addOptions[0]?.value || '') : '';
+    const canAddItem = canAdd && (!hasAddSelector || resolvedAddValue !== '');
+
+    useEffect(() => {
+        if (!hasAddSelector) {
+            if (selectedAddValue !== '') {
+                setSelectedAddValue('');
+            }
+            return;
+        }
+
+        const stillAvailable = addOptions.some(option => option.value === selectedAddValue);
+        if (!stillAvailable) {
+            setSelectedAddValue(addOptions[0]?.value ?? '');
+        }
+    }, [addOptions, hasAddSelector, selectedAddValue]);
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Label>{label}</Label>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    {hasAddSelector ? (
+                        <div style={{ minWidth: 140 }}>
+                            <SelectInput
+                                value={resolvedAddValue}
+                                onChange={setSelectedAddValue}
+                                options={canAdd ? addOptions : [{ value: '', label: 'All items added' }]}
+                            />
+                        </div>
+                    ) : null}
+                    <button
+                        type="button"
+                        onClick={() => onAdd(resolvedAddValue)}
+                        disabled={!canAddItem}
+                        style={{
+                            width: 22,
+                            height: 22,
+                            borderRadius: 3,
+                            border: `1px solid ${canAddItem ? colors.accentBorder : colors.border}`,
+                            background: canAddItem ? colors.accentBg : colors.bgSurface,
+                            color: canAddItem ? colors.accent : colors.textMuted,
+                            cursor: canAddItem ? 'pointer' : 'not-allowed',
+                            fontSize: 14,
+                            lineHeight: 1,
+                            padding: 0,
+                            flexShrink: 0,
+                        }}
+                        title={canAddItem ? addButtonTitle : addDisabledTitle}
+                    >
+                        +
+                    </button>
+                </div>
+            </div>
+            {items.length === 0 ? (
+                <div style={{ fontSize: 11, color: colors.textMuted }}>{emptyMessage}</div>
+            ) : null}
+            {items.map(renderItem)}
+        </div>
+    );
+}
+
 export function NumberField({
     name,
     label,

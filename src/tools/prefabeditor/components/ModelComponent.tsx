@@ -2,9 +2,9 @@ import { ModelPicker } from '../../assetviewer/page';
 import { LoadedModels } from '../../dragdrop';
 import { useContext, useMemo } from 'react';
 import { Component } from './ComponentRegistry';
-import { BooleanField, FieldGroup, Label, NumberInput, SelectInput } from './Input';
+import { BooleanField, FieldGroup, Label, ListEditor, NumberInput, SelectInput } from './Input';
 import { GameObject } from '../types';
-import { EditorContext } from '../EditorContext';
+import { EditorContext } from '../PrefabEditor';
 import { DEFAULT_REPEAT_AXES, getRepeatAxesFromModelProperties, normalizeRepeatAxes, RepeatAxisConfig } from '../InstanceProvider';
 import { colors } from '../styles';
 
@@ -35,12 +35,10 @@ function RepeatAxisEditor({
     onChange: (axes: RepeatAxis[]) => void;
     positionSnap: number;
 }) {
-    const addAxis = () => {
-        const used = new Set(axes.map(axis => axis.axis));
-        const nextAxis = AXIS_OPTIONS.find(option => !used.has(option.value));
-        if (!nextAxis) return;
+    const addAxis = (axisValue: string) => {
+        if (!axisValue) return;
 
-        onChange([...axes, { axis: nextAxis.value, count: 1, offset: 1 }]);
+        onChange([...axes, { axis: axisValue as RepeatAxis['axis'], count: 1, offset: 1 }]);
     };
 
     const updateAxis = (index: number, patch: Partial<RepeatAxis>) => {
@@ -52,34 +50,19 @@ function RepeatAxisEditor({
         onChange(axes.filter((_, axisIndex) => axisIndex !== index));
     };
 
-    const canAddAxis = axes.length < AXIS_OPTIONS.length;
+    const availableAxisOptions = AXIS_OPTIONS.filter(option => !axes.some(axis => axis.axis === option.value));
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Label>Repeat Axes</Label>
-                <button
-                    type="button"
-                    onClick={addAxis}
-                    disabled={!canAddAxis}
-                    style={{
-                        width: 22,
-                        height: 22,
-                        borderRadius: 3,
-                        border: `1px solid ${canAddAxis ? colors.accentBorder : colors.border}`,
-                        background: canAddAxis ? colors.accentBg : colors.bgSurface,
-                        color: canAddAxis ? colors.accent : colors.textMuted,
-                        cursor: canAddAxis ? 'pointer' : 'not-allowed',
-                        fontSize: 14,
-                        lineHeight: 1,
-                        padding: 0,
-                    }}
-                    title={canAddAxis ? 'Add repeat axis' : 'All axes already in use'}
-                >
-                    +
-                </button>
-            </div>
-            {axes.map((axisConfig, index) => {
+        <ListEditor
+            label="Repeat Axes"
+            items={axes}
+            onAdd={addAxis}
+            addOptions={availableAxisOptions as { value: string; label: string }[]}
+            canAdd={availableAxisOptions.length > 0}
+            emptyMessage="No repeat axes added."
+            addButtonTitle="Add repeat axis"
+            addDisabledTitle="All axes already in use"
+            renderItem={(axisConfig, index) => {
                 const usedByOthers = new Set(axes.filter((_, axisIndex) => axisIndex !== index).map(axis => axis.axis));
                 const axisOptions = AXIS_OPTIONS.filter(option => option.value === axisConfig.axis || !usedByOthers.has(option.value));
 
@@ -105,26 +88,24 @@ function RepeatAxisEditor({
                                     options={axisOptions as { value: string; label: string }[]}
                                 />
                             </div>
-                            {index > 0 ? (
-                                <button
-                                    type="button"
-                                    onClick={() => removeAxis(index)}
-                                    style={{
-                                        height: 24,
-                                        width: 28,
-                                        borderRadius: 3,
-                                        border: `1px solid ${colors.border}`,
-                                        background: colors.bgInput,
-                                        color: colors.text,
-                                        cursor: 'pointer',
-                                        padding: 0,
-                                        flexShrink: 0,
-                                    }}
-                                    title="Remove repeat axis"
-                                >
-                                    ×
-                                </button>
-                            ) : null}
+                            <button
+                                type="button"
+                                onClick={() => removeAxis(index)}
+                                style={{
+                                    height: 24,
+                                    width: 28,
+                                    borderRadius: 3,
+                                    border: `1px solid ${colors.border}`,
+                                    background: colors.bgInput,
+                                    color: colors.text,
+                                    cursor: 'pointer',
+                                    padding: 0,
+                                    flexShrink: 0,
+                                }}
+                                title="Remove repeat axis"
+                            >
+                                ×
+                            </button>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                             <div>
@@ -149,8 +130,8 @@ function RepeatAxisEditor({
                         </div>
                     </div>
                 );
-            })}
-        </div>
+            }}
+        />
     );
 }
 
@@ -230,7 +211,11 @@ const ModelComponent: Component = {
         instanced: false,
         repeat: false,
         repeatAxes: DEFAULT_REPEAT_AXES
-    }
+    },
+    getAssetRefs: (properties) => {
+        if (properties.filename) return [{ type: 'model', path: properties.filename }];
+        return [];
+    },
 };
 
 export default ModelComponent;

@@ -2,25 +2,38 @@ import type { ThreeEvent } from '@react-three/fiber';
 import { useRef } from 'react';
 import { gameEvents } from '../GameEvents';
 import { Component } from './ComponentRegistry';
-import { FieldGroup } from './Input';
+import { FieldGroup, StringField } from './Input';
+import type { ComponentData } from '../types';
 
-function ClickComponentEditor() {
+type ClickProperties = {
+    eventName?: string;
+};
+
+function ClickComponentEditor({ component, onUpdate }: { component: ComponentData; onUpdate: (newComp: any) => void }) {
     return (
         <FieldGroup>
             <div style={{ fontSize: 12, opacity: 0.8 }}>
-                Emits a click game event in play mode when this entity is clicked.
+                Emits a game event in play mode when this entity is clicked.
             </div>
+            <StringField
+                name="eventName"
+                label="Emit Event"
+                values={component.properties}
+                onChange={onUpdate}
+                placeholder="click"
+            />
         </FieldGroup>
     );
 }
 
-function ClickComponentView({ children, editMode, nodeId }: { children?: React.ReactNode; editMode?: boolean; nodeId?: string }) {
+function ClickComponentView({ children, editMode, nodeId, properties }: { children?: React.ReactNode; editMode?: boolean; nodeId?: string; properties?: ClickProperties }) {
     const clickValid = useRef(false);
+    const eventName = properties?.eventName || 'click';
 
     const emitClick = (event: ThreeEvent<PointerEvent>) => {
         if (!nodeId) return;
 
-        gameEvents.emit('click', {
+        gameEvents.emit(eventName, {
             sourceEntityId: nodeId,
             point: [event.point.x, event.point.y, event.point.z],
             button: event.button,
@@ -60,7 +73,9 @@ const ClickComponent: Component = {
     name: 'Click',
     Editor: ClickComponentEditor,
     View: ClickComponentView,
-    defaultProperties: {},
+    defaultProperties: {
+        eventName: 'click',
+    },
 };
 
 export default ClickComponent;

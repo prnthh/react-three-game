@@ -1,4 +1,6 @@
 import type { ComponentData, GameObject, Prefab } from "./types";
+import { findComponentEntry } from "./types";
+import { getComponentDef } from "./components/ComponentRegistry";
 
 export interface SpawnOptions {
     name?: string;
@@ -19,9 +21,16 @@ export interface EntityComponent<TProperties = Record<string, any>> {
 
 export interface Entity {
     readonly id: string;
+    readonly name: string | undefined;
+    readonly enabled: boolean;
+    readonly parent: Entity | null;
+    readonly children: Entity[];
     set: (data: EntityData) => void;
     update: (update: (node: EntityData) => EntityData) => void;
     getComponent: <TProperties = Record<string, any>>(name: string) => EntityComponent<TProperties> | null;
+    addComponent: (type: string, properties?: Record<string, any>) => EntityComponent | null;
+    removeComponent: (name: string) => void;
+    destroy: () => void;
 }
 
 export type EntityUpdate = (node: EntityData) => EntityData;
@@ -29,8 +38,9 @@ export type SceneUpdates = Record<string, EntityUpdate>;
 
 export interface Scene {
     readonly rootId: string;
-    find: (id: string) => Entity | null;
+    find: (nameOrId: string) => Entity | null;
     get: (id: string) => Entity;
+    create: (name: string, components?: Record<string, { type: string; properties?: Record<string, any> }>, options?: SpawnOptions) => Entity;
     update: {
         (id: string, update: EntityUpdate): void;
         (updates: SceneUpdates): void;
@@ -42,6 +52,9 @@ export interface Scene {
 interface SceneAdapter {
     getRootId: () => string;
     getNode: (id: string) => EntityData | null;
+    getChildIds: (id: string) => string[];
+    getParentId: (id: string) => string | null;
+    findByName: (name: string) => string | null;
     updateNode: (id: string, update: (node: EntityData) => EntityData) => void;
     updateNodes: (updates: Record<string, (node: EntityData) => EntityData>) => void;
     addNode: (node: GameObject, options?: SpawnOptions) => string;
@@ -53,15 +66,8 @@ function missingNode(id: string): never {
 }
 
 function normalizePath(path?: PropertyPath): Array<string | number> {
-    if (path === undefined) {
-        return [];
-    }
-
-    if (Array.isArray(path)) {
-        return path;
-    }
-
-    return path.split(".").filter(Boolean);
+    if (!path) return [];
+    return Array.isArray(path) ? path : path.split(".").filter(Boolean);
 }
 
 function getValueAtPath(value: unknown, path?: PropertyPath): unknown {
@@ -113,34 +119,11 @@ function setValueAtPath<T>(value: T, path: PropertyPath, nextValue: unknown): T 
     return cloneBranch(value, 0) as T;
 }
 
-function findComponentEntry(node: EntityData, name: string): [string, ComponentData] | null {
-    if (!node.components) {
-        return null;
-    }
-
-    const direct = node.components[name];
-    if (direct) {
-        return [name, direct];
-    }
-
-    const normalizedName = name.toLowerCase();
-    for (const [key, component] of Object.entries(node.components)) {
-        if (!component) {
-            continue;
-        }
-
-        if (key.toLowerCase() === normalizedName || component.type.toLowerCase() === normalizedName) {
-            return [key, component];
-        }
-    }
-
-    return null;
-}
-
 export function createScene(adapter: SceneAdapter): Scene {
-    const findNode = (id: string) => adapter.getNode(id) ? createNode(id) : null;
-
-    const getNode = (id: string) => findNode(id) ?? missingNode(id);
+    const getNode = (id: string) => {
+        if (!adapter.getNode(id)) missingNode(id);
+        return createNode(id);
+    };
 
     function createComponent<TProperties = Record<string, any>>(
         entityId: string,
@@ -209,6 +192,19 @@ export function createScene(adapter: SceneAdapter): Scene {
     function createNode(id: string): Entity {
         return {
             id,
+            get name() {
+                return adapter.getNode(id)?.name;
+            },
+            get enabled() {
+                return !adapter.getNode(id)?.disabled;
+            },
+            get parent() {
+                const parentId = adapter.getParentId(id);
+                return parentId ? createNode(parentId) : null;
+            },
+            get children() {
+                return adapter.getChildIds(id).map(createNode);
+            },
             set(data) {
                 adapter.updateNode(id, () => data);
             },
@@ -217,17 +213,38 @@ export function createScene(adapter: SceneAdapter): Scene {
             },
             getComponent(name) {
                 const node = adapter.getNode(id);
-                if (!node) {
-                    return null;
-                }
+                if (!node) return null;
 
                 const entry = findComponentEntry(node, name);
-                if (!entry) {
-                    return null;
-                }
+                if (!entry) return null;
 
                 const [componentKey, component] = entry;
                 return createComponent(id, componentKey, component.type);
+            },
+            addComponent(type, properties) {
+                const def = getComponentDef(type);
+                const key = type.toLowerCase();
+                const props = properties ?? def?.defaultProperties ?? {};
+                adapter.updateNode(id, node => ({
+                    ...node,
+                    components: {
+                        ...node.components,
+                        [key]: { type, properties: props },
+                    },
+                }));
+                return createComponent(id, key, type);
+            },
+            removeComponent(name) {
+                adapter.updateNode(id, node => {
+                    const entry = findComponentEntry(node, name);
+                    if (!entry) return node;
+                    const [key] = entry;
+                    const { [key]: _, ...rest } = node.components ?? {};
+                    return { ...node, components: rest };
+                });
+            },
+            destroy() {
+                adapter.removeNode(id);
             },
         };
     }
@@ -255,8 +272,27 @@ export function createScene(adapter: SceneAdapter): Scene {
         get rootId() {
             return adapter.getRootId();
         },
-        find: findNode,
+        find(nameOrId: string) {
+            // Try by ID first, then by name
+            if (adapter.getNode(nameOrId)) return createNode(nameOrId);
+            const foundId = adapter.findByName(nameOrId);
+            return foundId ? createNode(foundId) : null;
+        },
         get: getNode,
+        create(name, components, options) {
+            const node: GameObject = {
+                id: crypto.randomUUID(),
+                name,
+                components: {
+                    transform: {
+                        type: "Transform",
+                        properties: { position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1] },
+                    },
+                    ...components,
+                },
+            };
+            return createNode(adapter.addNode(node, options));
+        },
         update,
         add(node, options) {
             return createNode(adapter.addNode(node, options));

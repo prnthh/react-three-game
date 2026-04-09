@@ -1,14 +1,13 @@
 import { MapControls, TransformControls } from "@react-three/drei";
 import GameCanvas from "../../shared/GameCanvas";
-import { useCallback, useEffect, useMemo, useRef, useState, forwardRef, useImperativeHandle } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, forwardRef, useImperativeHandle, createContext, useContext } from "react";
 import { Object3D, Texture } from "three";
 import { LoadedModels, LoadedTextures } from "../dragdrop";
-import { GameObject, Prefab } from "./types";
+import { GameObject, Prefab, findComponentEntry } from "./types";
 import PrefabRoot, { PrefabRootRef } from "./PrefabRoot";
 import { Physics } from "@react-three/rapier";
 import EditorUI from "./EditorUI";
 import { base, toolbar } from "./styles";
-import { EditorContext } from "./EditorContext";
 import { createImageNode, createModelNode, computeParentWorldMatrix, decompose, exportGLB as exportGLBFile, exportGLBData, focusCameraOnObject, regenerateIds } from "./utils";
 import type { ExportGLBOptions } from "./utils";
 import { loadFiles } from "../dragdrop";
@@ -28,10 +27,42 @@ export interface PrefabEditorRef {
     viewRef: React.RefObject<PrefabRootRef | null>;
 }
 
+export enum PrefabEditorMode {
+    Edit = "edit",
+    Play = "play",
+}
+
+export interface EditorContextType {
+    mode: PrefabEditorMode;
+    setMode: (mode: PrefabEditorMode) => void;
+    transformMode: "translate" | "rotate" | "scale";
+    setTransformMode: (mode: "translate" | "rotate" | "scale") => void;
+    scaleSnap: number;
+    setScaleSnap: (resolution: number) => void;
+    positionSnap: number;
+    setPositionSnap: (resolution: number) => void;
+    rotationSnap: number;
+    setRotationSnap: (resolution: number) => void;
+    onFocusNode?: (nodeId: string) => void;
+    onScreenshot?: () => void;
+    onExportGLB?: () => void;
+}
+
+export const EditorContext = createContext<EditorContextType | null>(null);
+
+export function useEditorContext() {
+    const context = useContext(EditorContext);
+    if (!context) {
+        throw new Error("useEditorContext must be used within EditorContext.Provider");
+    }
+    return context;
+}
+
 export interface PrefabEditorProps {
     basePath?: string;
     initialPrefab?: Prefab;
     physics?: boolean;
+    mode?: PrefabEditorMode;
     onChange?: (prefab: Prefab) => void;
     showUI?: boolean;
     enableWindowDrop?: boolean;
@@ -39,6 +70,9 @@ export interface PrefabEditorProps {
     uiPlugins?: React.ReactNode[] | React.ReactNode;
     children?: React.ReactNode;
 }
+
+const MAX_HISTORY_LENGTH = 50;
+const HISTORY_DEBOUNCE_MS = 500;
 
 const DEFAULT_PREFAB: Prefab = {
     id: "prefab-default",
@@ -54,8 +88,8 @@ const DEFAULT_PREFAB: Prefab = {
     }
 };
 
-const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath, initialPrefab, physics = true, onChange, showUI = true, enableWindowDrop = true, canvasProps, uiPlugins, children }, ref) => {
-    const [editMode, setEditMode] = useState(true);
+const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath, initialPrefab, physics = true, mode: initialMode = PrefabEditorMode.Edit, onChange, showUI = true, enableWindowDrop = true, canvasProps, uiPlugins, children }, ref) => {
+    const [mode, setMode] = useState<PrefabEditorMode>(initialMode);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [transformMode, setTransformMode] = useState<"translate" | "rotate" | "scale">("translate");
     const [scaleSnap, setScaleSnap] = useState(0);
@@ -74,6 +108,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
     const onChangeRef = useRef(onChange);
     const [injectedModels, setInjectedModels] = useState<LoadedModels>({});
     const [injectedTextures, setInjectedTextures] = useState<LoadedTextures>({});
+    const isEditMode = mode === PrefabEditorMode.Edit;
 
     const getPrefab = useCallback(() => prefabStoreToPrefab(prefabStore.getState()), [prefabStore]);
 
@@ -88,16 +123,21 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
         setSelectedId(nodeId);
     }, [prefabStore]);
 
-    const toggleEditMode = () => {
-        setEditMode(prev => {
-            const next = !prev;
-            if (!next) {
-                setSelectedId(null);
-                setSelectedObject(null);
-            }
-            return next;
+    const updateMode = useCallback((nextMode: PrefabEditorMode) => {
+        setMode(prev => {
+            if (prev === nextMode) return prev;
+            if (nextMode === PrefabEditorMode.Play) { setSelectedId(null); setSelectedObject(null); }
+            return nextMode;
         });
+    }, []);
+
+    const toggleMode = () => {
+        updateMode(isEditMode ? PrefabEditorMode.Play : PrefabEditorMode.Edit);
     };
+
+    useEffect(() => {
+        updateMode(initialMode);
+    }, [initialMode, updateMode]);
 
     const loadPrefab = useCallback((prefab: Prefab, options?: { resetHistory?: boolean; notifyChange?: boolean }) => {
         changeOriginRef.current = options?.notifyChange === false ? "replace-silent" : "replace";
@@ -143,7 +183,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
                 historyTimeout = null;
             }
 
-            if (changeOrigin || !editMode) {
+            if (changeOrigin || !isEditMode) {
                 changeOriginRef.current = null;
                 return;
             }
@@ -152,13 +192,13 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
                 const currentHistoryIndex = historyIndexRef.current;
                 setHistory(prev => {
                     const nextHistory = [...prev.slice(0, currentHistoryIndex + 1), nextPrefab];
-                    return nextHistory.length > 50 ? nextHistory.slice(1) : nextHistory;
+                    return nextHistory.length > MAX_HISTORY_LENGTH ? nextHistory.slice(1) : nextHistory;
                 });
-                const nextHistoryIndex = Math.min(currentHistoryIndex + 1, 49);
+                const nextHistoryIndex = Math.min(currentHistoryIndex + 1, MAX_HISTORY_LENGTH - 1);
                 historyIndexRef.current = nextHistoryIndex;
                 setHistoryIndex(nextHistoryIndex);
                 historyTimeout = null;
-            }, 500);
+            }, HISTORY_DEBOUNCE_MS);
         });
 
         return () => {
@@ -167,7 +207,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
             }
             unsubscribe();
         };
-    }, [editMode, prefabStore]);
+    }, [isEditMode, prefabStore]);
 
     useEffect(() => {
         if (!selectedId) return;
@@ -231,7 +271,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
     const redo = () => historyIndex < history.length - 1 && applyHistory(historyIndex + 1);
 
     useEffect(() => {
-        if (!editMode) return;
+        if (!isEditMode) return;
 
         const handleKeyDown = (e: KeyboardEvent) => {
             if (!(e.ctrlKey || e.metaKey)) return;
@@ -240,7 +280,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [editMode, historyIndex, history]);
+    }, [isEditMode, historyIndex, history]);
 
     const handleScreenshot = useCallback(() => {
         const canvas = canvasRef.current;
@@ -298,6 +338,16 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
     const scene = useMemo(() => createScene({
         getRootId: () => prefabStore.getState().rootId,
         getNode: (id) => prefabStore.getState().nodesById[id] ?? null,
+        getChildIds: (id) => prefabStore.getState().childIdsById[id] ?? [],
+        getParentId: (id) => prefabStore.getState().parentIdById[id] ?? null,
+        findByName: (name) => {
+            const state = prefabStore.getState();
+            const normalized = name.toLowerCase();
+            for (const [id, node] of Object.entries(state.nodesById)) {
+                if (node.name?.toLowerCase() === normalized) return id;
+            }
+            return null;
+        },
         updateNode: (id, update) => prefabStore.getState().updateNode(id, update),
         updateNodes: (updates) => prefabStore.getState().updateNodes(
             Object.entries(updates).map(([id, update]) => ({ id, update }))
@@ -316,21 +366,25 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
         const local = parentWorld.clone().invert().multiply(object.matrixWorld);
         const { position, rotation, scale } = decompose(local);
 
-        prefabStore.getState().updateNode(selectedId, node => ({
-            ...node,
-            components: {
-                ...node.components,
-                transform: {
-                    type: "Transform",
-                    properties: { position, rotation, scale },
+        prefabStore.getState().updateNode(selectedId, node => {
+            const entry = findComponentEntry(node, "Transform");
+            const key = entry?.[0] ?? "transform";
+            return {
+                ...node,
+                components: {
+                    ...node.components,
+                    [key]: {
+                        type: "Transform",
+                        properties: { position, rotation, scale },
+                    },
                 },
-            },
-        }));
+            };
+        });
     };
 
     // --- Drag & drop files to add nodes ---
     useEffect(() => {
-        if (!enableWindowDrop || !editMode) return;
+        if (!enableWindowDrop || !isEditMode) return;
 
         function handleDragOver(e: DragEvent) {
             e.preventDefault();
@@ -366,7 +420,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
             window.removeEventListener('dragover', handleDragOver);
             window.removeEventListener('drop', handleDrop);
         };
-    }, [addModel, addTexture, editMode, enableWindowDrop]);
+    }, [addModel, addTexture, isEditMode, enableWindowDrop]);
 
     useImperativeHandle(ref, () => ({
         screenshot: handleScreenshot,
@@ -388,11 +442,11 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
             <PrefabRoot
                 ref={prefabRootRef}
                 store={prefabStore}
-                editMode={editMode}
+                editMode={isEditMode}
                 selectedId={selectedId}
                 onSelect={setSelection}
-                onSelectedObjectChange={editMode ? setSelectedObject : undefined}
-                onFocusNode={editMode ? handleFocusNode : undefined}
+                onSelectedObjectChange={isEditMode ? setSelectedObject : undefined}
+                onFocusNode={isEditMode ? handleFocusNode : undefined}
                 basePath={basePath}
                 injectedModels={injectedModels}
                 injectedTextures={injectedTextures}
@@ -402,7 +456,8 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
     );
 
     return <PrefabStoreProvider store={prefabStore}><EditorContext.Provider value={{
-        editMode,
+        mode,
+        setMode: updateMode,
         transformMode,
         setTransformMode,
         scaleSnap,
@@ -411,7 +466,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
         setPositionSnap,
         rotationSnap,
         setRotationSnap,
-        onFocusNode: editMode ? handleFocusNode : undefined,
+        onFocusNode: isEditMode ? handleFocusNode : undefined,
         onScreenshot: handleScreenshot,
         onExportGLB: handleExportGLB
     }}>
@@ -419,7 +474,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
             camera={{ position: [0, 5, 15] }}
             canvasRef={canvasRef}
             {...canvasProps}
-            onPointerMissed={editMode
+            onPointerMissed={isEditMode
                 ? (event) => {
                     const button = event.button ?? (event as MouseEvent & { sourceEvent?: MouseEvent }).sourceEvent?.button ?? 0;
                     if (button === 0 && selectedId) {
@@ -430,12 +485,12 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
                 : canvasProps?.onPointerMissed}
         >
             {physics ? (
-                <Physics debug={editMode} paused={editMode}>
+                <Physics debug={isEditMode} paused={isEditMode}>
                     {content}
                 </Physics>
             ) : content}
 
-            {editMode && (
+            {isEditMode && (
                 <>
                     <MapControls ref={controlsRef} makeDefault />
                     {selectedObject && (
@@ -457,12 +512,12 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
         {showUI && (
             <>
                 <div style={toolbar.panel}>
-                    <button style={base.btn} onClick={toggleEditMode}>
-                        {editMode ? "▶" : "⏸"}
+                    <button style={base.btn} onClick={toggleMode}>
+                        {isEditMode ? "▶" : "⏸"}
                     </button>
                     {uiPlugins}
                 </div>
-                {editMode && (
+                {isEditMode && (
                     <EditorUI
                         selectedId={selectedId}
                         setSelectedId={setSelection}

@@ -116,7 +116,11 @@ const SpotLightComponent: Component = {
     name: 'SpotLight',
     Editor: SpotLightComponentEditor,
     View: SpotLightView,
-    defaultProperties: spotLightDefaults
+    defaultProperties: spotLightDefaults,
+    getAssetRefs: (properties) => {
+        if (properties.map) return [{ type: 'texture', path: properties.map }];
+        return [];
+    },
 };
 
 export default SpotLightComponent;

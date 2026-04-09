@@ -95,6 +95,14 @@ class SoundManager {
     src.start()
   }
 
+  hasBuffer(path: string) {
+    return this.buffers.has(path)
+  }
+
+  setBuffer(path: string, buffer: AudioBuffer) {
+    this.buffers.set(path, buffer)
+  }
+
   /** Load and play SFX - accepts file path directly */
   async play(
     path: string,

@@ -67,11 +67,21 @@ Unity-style imperative handles for runtime mutation:
 ```typescript
 const scene: Scene = editorRef.current.scene;
 scene.rootId;                                    // root node ID
-scene.find("ball")                               // Entity | null
+scene.find("ball")                               // by name or ID → Entity | null
   ?.getComponent<{ position: number[] }>("Transform")
   ?.set("position", [0, 5, 0]);
-scene.add(newNode, { parentId: "root" });         // spawn entity
-scene.remove("ball");                             // delete entity
+scene.create("Cube", {                            // auto UUID + Transform
+  geometry: { type: "Geometry", properties: { geometryType: "box" } },
+});
+scene.add(newNode, { parentId: "root" });         // spawn entity from full GameObject
+scene.remove("ball");                             // delete entity by ID
+entity.addComponent("Physics", { type: "dynamic" }); // add component
+entity.removeComponent("Physics");                // remove component
+entity.destroy();                                 // self-remove
+entity.name;                                      // readonly name
+entity.enabled;                                   // !disabled
+entity.parent;                                    // parent Entity | null
+entity.children;                                  // child Entity[]
 scene.update("ball", node => ({ ...node, ... })); // whole-node update
 scene.update({ id1: fn1, id2: fn2 });             // batched update
 ```

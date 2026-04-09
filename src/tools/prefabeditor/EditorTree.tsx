@@ -1,8 +1,8 @@
 import { memo, MouseEvent, useCallback, useState } from 'react';
 import { Prefab } from "./types";
-import { getComponent } from './components/ComponentRegistry';
+import { getComponentDef } from './components/ComponentRegistry';
 import { base, colors, tree } from './styles';
-import { useEditorContext } from './EditorContext';
+import { useEditorContext } from './PrefabEditor';
 import { Dropdown } from './Dropdown';
 import { FileMenu, TreeContextMenu, TreeContextMenuState, TreeNodeMenu } from './EditorTreeMenus';
 import { PrefabStoreState, usePrefabChildIds, usePrefabNode, usePrefabRootId, usePrefabStore, usePrefabStoreApi } from './prefabStore';
@@ -61,7 +61,7 @@ export default function EditorTree({
             components: {
                 transform: {
                     type: "Transform",
-                    properties: { ...getComponent('Transform')?.defaultProperties }
+                    properties: { ...getComponentDef('Transform')?.defaultProperties }
                 }
             }
         };
@@ -363,15 +363,7 @@ const TreeNode = memo(function TreeNode({
                                 <button
                                     ref={ref}
                                     title="Node Actions"
-                                    style={{
-                                        background: 'none',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        padding: '0 4px',
-                                        fontSize: 14,
-                                        opacity: 0.7,
-                                        color: 'inherit',
-                                    }}
+                                    style={tree.iconButton}
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         toggle();
@@ -384,15 +376,7 @@ const TreeNode = memo(function TreeNode({
                             {(close) => renderTreeNodeMenu(nodeId, false, close)}
                         </Dropdown>
                         <button
-                            style={{
-                                background: 'none',
-                                border: 'none',
-                                cursor: 'pointer',
-                                padding: '0 4px',
-                                fontSize: 14,
-                                opacity: node.disabled ? 0.5 : 0.7,
-                                color: 'inherit',
-                            }}
+                            style={{ ...tree.iconButton, opacity: node.disabled ? 0.5 : 0.7 }}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onToggleDisabled(nodeId);
@@ -410,15 +394,7 @@ const TreeNode = memo(function TreeNode({
                             <button
                                 ref={ref}
                                 title="Scene Actions"
-                                style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    padding: '0 4px',
-                                    fontSize: 14,
-                                    opacity: 0.7,
-                                    color: 'inherit',
-                                }}
+                                style={tree.iconButton}
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     toggle();

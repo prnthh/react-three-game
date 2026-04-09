@@ -9,12 +9,13 @@ export { sound as soundManager } from './helpers/SoundManager';
 
 // Prefab Editor
 export { default as PrefabEditor } from './tools/prefabeditor/PrefabEditor';
+export { PrefabEditorMode } from './tools/prefabeditor/PrefabEditor';
 export { default as PrefabRoot } from './tools/prefabeditor/PrefabRoot';
-export { useEditorContext } from './tools/prefabeditor/EditorContext';
-export type { EditorContextType } from './tools/prefabeditor/EditorContext';
+export { useEditorContext } from './tools/prefabeditor/PrefabEditor';
+export type { EditorContextType } from './tools/prefabeditor/PrefabEditor';
 
 // Prefab Editor - Store & Scene API
-export { createPrefabStore, prefabStoreToPrefab } from './tools/prefabeditor/prefabStore';
+export { createPrefabStore, prefabStoreToPrefab, usePrefabStoreApi } from './tools/prefabeditor/prefabStore';
 export type { PrefabStoreApi, PrefabStoreState } from './tools/prefabeditor/prefabStore';
 export { createScene } from './tools/prefabeditor/sceneApi';
 
@@ -25,6 +26,7 @@ export { registerComponent } from './tools/prefabeditor/components/ComponentRegi
 export {
   FieldRenderer,
   FieldGroup,
+  ListEditor,
   Label,
   Vector3Input,
   Vector3Field,
@@ -70,7 +72,8 @@ export type {
 export type { PrefabRootProps, PrefabRootRef } from './tools/prefabeditor/PrefabRoot';
 export type { Component } from './tools/prefabeditor/components/ComponentRegistry';
 export type { FieldDefinition, FieldType } from './tools/prefabeditor/components/Input';
-export type { Prefab, GameObject, ComponentData as ComponentDefinition } from './tools/prefabeditor/types';
+export type { Prefab, GameObject, ComponentData } from './tools/prefabeditor/types';
+export { findComponent, findComponentEntry, hasComponent } from './tools/prefabeditor/types';
 
 // Game Events (physics + custom events)
 export { gameEvents, useGameEvent, getEntityIdFromRigidBody } from './tools/prefabeditor/GameEvents';
@@ -79,18 +82,30 @@ export type { GameEventType, GameEventMap, GameEventPayload, PhysicsEventType, I
 // Asset Loading
 export { loadFiles } from './tools/dragdrop/DragDropLoader';
 export type { AssetLoadOptions } from './tools/dragdrop/DragDropLoader';
-export { loadModel, loadTexture } from './tools/dragdrop/modelLoader';
-export type { LoadedModel, LoadedTexture, LoadedModels, LoadedTextures, ModelLoadResult, ProgressCallback, TextureLoadResult } from './tools/dragdrop/modelLoader';
+export { loadModel, loadSound, loadTexture } from './tools/dragdrop/modelLoader';
+export type {
+  LoadedModel,
+  LoadedModels,
+  ModelLoadResult,
+  LoadedSound,
+  LoadedSounds,
+  SoundLoadResult,
+  LoadedTexture,
+  LoadedTextures,
+  TextureLoadResult,
+  ProgressCallback,
+} from './tools/dragdrop/modelLoader';
 
 // Asset Viewer
 export {
-  TextureListViewer,
   ModelListViewer,
   SoundListViewer,
-  TexturePicker,
   ModelPicker,
-  SingleTextureViewer,
+  SoundPicker,
+  TextureListViewer,
+  TexturePicker,
   SingleModelViewer,
   SingleSoundViewer,
+  SingleTextureViewer,
   SharedCanvas,
 } from './tools/assetviewer/page';

@@ -154,6 +154,15 @@ export const tree = {
         background: colors.accentBg,
         borderBottomColor: colors.accentBorder,
     },
+    iconButton: {
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        padding: '0 4px',
+        fontSize: 14,
+        opacity: 0.7,
+        color: 'inherit',
+    } as React.CSSProperties,
 };
 
 export const menu = {

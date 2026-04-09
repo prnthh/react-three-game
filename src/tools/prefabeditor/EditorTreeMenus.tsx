@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Prefab } from './types';
 import { menu } from './styles';
-import { useEditorContext } from './EditorContext';
-import { getComponent } from './components/ComponentRegistry';
+import { useEditorContext } from './PrefabEditor';
+import { getComponentDef } from './components/ComponentRegistry';
 import { loadJson, saveJson } from './utils';
 
 export type TreeContextMenuState = { nodeId: string; x: number; y: number } | null;
@@ -18,7 +18,7 @@ function createEmptyPrefab(): Prefab {
             components: {
                 transform: {
                     type: 'Transform',
-                    properties: { ...getComponent('Transform')?.defaultProperties }
+                    properties: { ...getComponentDef('Transform')?.defaultProperties }
                 }
             },
             children: []

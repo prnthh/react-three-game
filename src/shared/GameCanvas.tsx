@@ -4,9 +4,6 @@ import { Suspense, useState } from "react";
 import { WebGPURendererParameters } from "three/src/renderers/webgpu/WebGPURenderer.Nodes.js";
 import { Loader } from "@react-three/drei";
 
-// generic version
-// extend(THREE as any)
-
 extend({
     MeshBasicNodeMaterial: MeshBasicNodeMaterial,
     MeshStandardNodeMaterial: MeshStandardNodeMaterial,

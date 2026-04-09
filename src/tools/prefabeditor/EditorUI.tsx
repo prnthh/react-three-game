@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { GameObject as GameObjectType, Prefab } from "./types";
+import { GameObject as GameObjectType, Prefab, hasComponent } from "./types";
 import EditorTree from './EditorTree';
-import { getAllComponents } from './components/ComponentRegistry';
+import { getAllComponentDefs } from './components/ComponentRegistry';
 import { base, colors, inspector, componentCard } from './styles';
 import { usePrefabStore } from './prefabStore';
 
@@ -88,9 +88,9 @@ function NodeInspector({
     deleteNode: () => void;
     basePath?: string;
 }) {
-    const ALL_COMPONENTS = getAllComponents();
+    const ALL_COMPONENTS = getAllComponentDefs();
     const allKeys = Object.keys(ALL_COMPONENTS);
-    const available = allKeys.filter(k => !node.components?.[k.toLowerCase()]);
+    const available = allKeys.filter(k => !hasComponent(node, k));
     const [preferredAddType, setAddType] = useState(available[0] || "");
     const addType = available.includes(preferredAddType) ? preferredAddType : (available[0] || "");
 
@@ -135,7 +135,7 @@ function NodeInspector({
                                 style={{ ...base.btn, padding: '2px 6px' }}
                                 title="Remove Component"
                                 onClick={() => updateNode(n => {
-                                    const { [key]: _, ...rest } = n.components || {};
+                                    const { [key]: _, ...rest } = n.components ?? {};
                                     return { ...n, components: rest };
                                 })}
                             >

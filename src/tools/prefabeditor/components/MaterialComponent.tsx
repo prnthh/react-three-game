@@ -319,7 +319,7 @@ const MaterialComponent: Component = {
     name: 'Material',
     Editor: MaterialComponentEditor,
     View: MaterialComponentView,
-    nonComposable: true,
+    isWrapper: true,
     defaultProperties: {
         materialType: 'standard',
         color: '#ffffff',
@@ -329,7 +329,13 @@ const MaterialComponent: Component = {
         opacity: 1,
         metalness: 0,
         roughness: 1
-    }
+    },
+    getAssetRefs: (properties) => {
+        const refs: { type: 'texture'; path: string }[] = [];
+        if (properties.texture) refs.push({ type: 'texture', path: properties.texture });
+        if (properties.normalMapTexture) refs.push({ type: 'texture', path: properties.normalMapTexture });
+        return refs;
+    },
 };
 
 export default MaterialComponent;

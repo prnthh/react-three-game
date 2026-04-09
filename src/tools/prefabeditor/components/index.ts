@@ -10,6 +10,7 @@ import TextComponent from './TextComponent';
 import EnvironmentComponent from './EnvironmentComponent';
 import CameraComponent from './CameraComponent';
 import ClickComponent from './ClickComponent';
+import SoundComponent from './SoundComponent';
 
 export default [
     GeometryComponent,
@@ -24,5 +25,6 @@ export default [
     EnvironmentComponent,
     CameraComponent,
     ClickComponent,
+    SoundComponent,
 ];
 

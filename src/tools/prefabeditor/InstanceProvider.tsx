@@ -6,6 +6,7 @@ import { ActiveCollisionTypes } from "@dimforge/rapier3d-compat";
 import { Mesh, Matrix4, Object3D, Group, Vector3, Quaternion, Euler, InstancedMesh, BoxHelper } from "three";
 import { PhysicsProps } from "./components/PhysicsComponent";
 import { gameEvents, getEntityIdFromRigidBody } from "./GameEvents";
+import { useClickValid } from "./useClickValid";
 
 export type RepeatAxisConfig = {
     axis: 'x' | 'y' | 'z';
@@ -21,23 +22,24 @@ export function normalizeRepeatAxes(value: unknown): RepeatAxisConfig[] {
     }
 
     const seen = new Set<string>();
-    const normalized = value.flatMap((entry): RepeatAxisConfig[] => {
-        if (!entry || typeof entry !== 'object') return [];
+    const normalized = value.reduce<RepeatAxisConfig[]>((result, entry) => {
+        if (!entry || typeof entry !== 'object') return result;
 
         const axisValue = (entry as any).axis;
-        if (axisValue !== 'x' && axisValue !== 'y' && axisValue !== 'z') return [];
-        if (seen.has(axisValue)) return [];
+        if (axisValue !== 'x' && axisValue !== 'y' && axisValue !== 'z') return result;
+        if (seen.has(axisValue)) return result;
         seen.add(axisValue);
 
         const countValue = Number((entry as any).count);
         const offsetValue = Number((entry as any).offset);
 
-        return [{
+        result.push({
             axis: axisValue,
             count: Number.isFinite(countValue) ? Math.max(1, Math.floor(countValue)) : 1,
             offset: Number.isFinite(offsetValue) ? offsetValue : 1,
-        }];
-    });
+        });
+        return result;
+    }, []);
 
     return normalized.length > 0 ? normalized : DEFAULT_REPEAT_AXES;
 }
@@ -80,6 +82,7 @@ export type InstanceData = {
     id: string;
     sourceId: string;
     clickable?: boolean;
+    clickEventName?: string;
     locked?: boolean;
     position: [number, number, number];
     rotation: [number, number, number];
@@ -125,40 +128,17 @@ function getColliderType(physics: PhysicsProps) {
     return physics.colliders || (physics.type === 'fixed' ? 'trimesh' : 'hull');
 }
 
-function emitSensorEnter(sourceId: string, payload: IntersectionEnterPayload) {
-    gameEvents.emit('sensor:enter', {
+function emitPhysicsEvent(sourceId: string, eventName: string | undefined, payload: { other: { rigidBody?: any } }) {
+    if (!eventName) return;
+    gameEvents.emit(eventName, {
         sourceEntityId: sourceId,
         targetEntityId: getEntityIdFromRigidBody(payload.other.rigidBody),
         targetRigidBody: payload.other.rigidBody,
     });
 }
 
-function emitSensorExit(sourceId: string, payload: IntersectionExitPayload) {
-    gameEvents.emit('sensor:exit', {
-        sourceEntityId: sourceId,
-        targetEntityId: getEntityIdFromRigidBody(payload.other.rigidBody),
-        targetRigidBody: payload.other.rigidBody,
-    });
-}
-
-function emitCollisionEnter(sourceId: string, payload: CollisionPayload) {
-    gameEvents.emit('collision:enter', {
-        sourceEntityId: sourceId,
-        targetEntityId: getEntityIdFromRigidBody(payload.other.rigidBody),
-        targetRigidBody: payload.other.rigidBody,
-    });
-}
-
-function emitCollisionExit(sourceId: string, payload: CollisionPayload) {
-    gameEvents.emit('collision:exit', {
-        sourceEntityId: sourceId,
-        targetEntityId: getEntityIdFromRigidBody(payload.other.rigidBody),
-        targetRigidBody: payload.other.rigidBody,
-    });
-}
-
-function emitClick(sourceId: string, instanceId: string | undefined, event: any) {
-    gameEvents.emit('click', {
+function emitClick(sourceId: string, instanceId: string | undefined, eventName: string, event: any) {
+    gameEvents.emit(eventName, {
         sourceEntityId: sourceId,
         instanceEntityId: instanceId && instanceId !== sourceId ? instanceId : undefined,
         point: [event.point.x, event.point.y, event.point.z],
@@ -174,6 +154,7 @@ function instanceEquals(a: InstanceData, b: InstanceData): boolean {
     return a.id === b.id &&
         a.sourceId === b.sourceId &&
         a.clickable === b.clickable &&
+        a.clickEventName === b.clickEventName &&
         a.locked === b.locked &&
         a.meshPath === b.meshPath &&
         arrayEquals(a.position, b.position) &&
@@ -395,10 +376,10 @@ function InstancedRigidGroup({
                 ...rigidBodyProps,
                 colliders: getColliderType(inst.physics) as any,
                 userData: { ...(userData as Record<string, unknown> | undefined), entityId: inst.sourceId },
-                onIntersectionEnter: (payload: IntersectionEnterPayload) => emitSensorEnter(inst.sourceId, payload),
-                onIntersectionExit: (payload: IntersectionExitPayload) => emitSensorExit(inst.sourceId, payload),
-                onCollisionEnter: (payload: CollisionPayload) => emitCollisionEnter(inst.sourceId, payload),
-                onCollisionExit: (payload: CollisionPayload) => emitCollisionExit(inst.sourceId, payload),
+                onIntersectionEnter: (payload: IntersectionEnterPayload) => emitPhysicsEvent(inst.sourceId, inst.physics.sensorEnterEventName, payload),
+                onIntersectionExit: (payload: IntersectionExitPayload) => emitPhysicsEvent(inst.sourceId, inst.physics.sensorExitEventName, payload),
+                onCollisionEnter: (payload: CollisionPayload) => emitPhysicsEvent(inst.sourceId, inst.physics.collisionEnterEventName, payload),
+                onCollisionExit: (payload: CollisionPayload) => emitPhysicsEvent(inst.sourceId, inst.physics.collisionExitEventName, payload),
             };
         }),
         [group.instances]
@@ -481,7 +462,7 @@ function InstancedRigidGroup({
         if (!instance.clickable) return;
 
         e.stopPropagation();
-        emitClick(instance.sourceId, instance.id, e);
+        emitClick(instance.sourceId, instance.id, instance.clickEventName || 'click', e);
     };
 
     const shouldHandleClick = editMode || group.instances.some(inst => inst.clickable);
@@ -573,12 +554,19 @@ function InstanceGroupItem({
     selectedId?: string | null;
     editMode?: boolean;
 }) {
-    const clickValid = useRef(false);
     const groupRef = useRef<Group>(null!);
     const isLocked = Boolean(instance.locked);
     const isSelected = selectedId === instance.id || selectedId === instance.sourceId;
     const canSelect = editMode && !isLocked;
     const canClick = !editMode && Boolean(instance.clickable);
+
+    const pointerHandlers = useClickValid(canSelect || canClick, (e: any) => {
+        if (editMode) {
+            onSelect?.(instance.sourceId);
+        } else if (instance.clickable) {
+            emitClick(instance.sourceId, instance.id, instance.clickEventName || 'click', e);
+        }
+    });
 
     // Use BoxHelper when object is selected in edit mode
     useHelper(editMode && isSelected ? groupRef : null, BoxHelper, 'cyan');
@@ -595,19 +583,7 @@ function InstanceGroupItem({
             position={instance.position}
             rotation={instance.rotation}
             scale={instance.scale}
-            onPointerDown={canSelect || canClick ? (e) => { e.stopPropagation(); clickValid.current = true; } : undefined}
-            onPointerMove={canSelect || canClick ? () => { clickValid.current = false; } : undefined}
-            onPointerUp={canSelect || canClick ? (e) => {
-                if (clickValid.current) {
-                    e.stopPropagation();
-                    if (editMode) {
-                        onSelect?.(instance.sourceId);
-                    } else if (instance.clickable) {
-                        emitClick(instance.sourceId, instance.id, e);
-                    }
-                }
-                clickValid.current = false;
-            } : undefined}
+            {...pointerHandlers}
         >
             {InstanceComponents.map((Instance, i) => <Instance key={i} />)}
         </group>
@@ -626,6 +602,7 @@ export const GameInstance = React.forwardRef<Group, {
     id: string;
     sourceId?: string;
     clickable?: boolean;
+    clickEventName?: string;
     modelUrl: string;
     locked?: boolean;
     position: [number, number, number];
@@ -636,6 +613,7 @@ export const GameInstance = React.forwardRef<Group, {
     id,
     sourceId,
     clickable = false,
+    clickEventName,
     modelUrl,
     locked = false,
     position,
@@ -646,18 +624,40 @@ export const GameInstance = React.forwardRef<Group, {
     const ctx = useContext(GameInstanceContext);
     const addInstance = ctx?.addInstance;
     const removeInstance = ctx?.removeInstance;
+    const [positionX, positionY, positionZ] = position;
+    const [rotationX, rotationY, rotationZ] = rotation;
+    const [scaleX, scaleY, scaleZ] = scale;
+    const physicsSignature = getPhysicsSignature(physics);
 
     const instance = useMemo<InstanceData>(() => ({
         id,
         sourceId: sourceId ?? id,
         clickable,
+        clickEventName,
         locked,
         meshPath: modelUrl,
         position,
         rotation,
         scale,
         physics,
-    }), [id, sourceId, clickable, locked, modelUrl, JSON.stringify(position), JSON.stringify(rotation), JSON.stringify(scale), getPhysicsSignature(physics)]);
+    }), [
+        id,
+        sourceId,
+        clickable,
+        clickEventName,
+        locked,
+        modelUrl,
+        positionX,
+        positionY,
+        positionZ,
+        rotationX,
+        rotationY,
+        rotationZ,
+        scaleX,
+        scaleY,
+        scaleZ,
+        physicsSignature,
+    ]);
 
     useEffect(() => {
         if (!addInstance || !removeInstance) return;

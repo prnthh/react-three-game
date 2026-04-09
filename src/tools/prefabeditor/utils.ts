@@ -1,4 +1,4 @@
-import { GameObject, Prefab } from "./types";
+import { GameObject, Prefab, findComponent } from "./types";
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import { Box3, Euler, Matrix4, Object3D, PerspectiveCamera, Quaternion, Vector3 } from 'three';
 
@@ -138,6 +138,19 @@ export function decompose(m: Matrix4) {
     };
 }
 
+/** Build a local Matrix4 from position/rotation/scale arrays. */
+export function composeTransform(
+    position: [number, number, number] = [0, 0, 0],
+    rotation: [number, number, number] = [0, 0, 0],
+    scale: [number, number, number] = [1, 1, 1],
+): Matrix4 {
+    return new Matrix4().compose(
+        new Vector3(...position),
+        new Quaternion().setFromEuler(new Euler(...rotation)),
+        new Vector3(...scale),
+    );
+}
+
 /** Compute the parent world matrix for a node using the normalized store data */
 export function computeParentWorldMatrix(
     state: {
@@ -156,11 +169,11 @@ export function computeParentWorldMatrix(
     }
 
     for (const nodeId of chain) {
-        const transform = state.nodesById[nodeId]?.components?.transform?.properties;
-        parentWorld.multiply(new Matrix4().compose(
-            new Vector3(...(transform?.position ?? [0, 0, 0])),
-            new Quaternion().setFromEuler(new Euler(...(transform?.rotation ?? [0, 0, 0]))),
-            new Vector3(...(transform?.scale ?? [1, 1, 1])),
+        const transform = findComponent(state.nodesById[nodeId], "Transform")?.properties;
+        parentWorld.multiply(composeTransform(
+            transform?.position,
+            transform?.rotation,
+            transform?.scale,
         ));
     }
 
@@ -176,47 +189,45 @@ export function regenerateIds(node: GameObject): GameObject {
     };
 }
 
-/** Create a GameObject node for a 3D model file */
-export function createModelNode(filename: string, name?: string): GameObject {
+function createNode(path: string, name: string | undefined, extraComponents: Record<string, { type: string; properties: any }>): GameObject {
     return {
         id: crypto.randomUUID(),
-        name: name ?? filename.replace(/^.*[\/]/, '').replace(/\.[^.]+$/, ''),
+        name: name ?? path.replace(/^.*[\/]/, '').replace(/\.[^.]+$/, ''),
         components: {
             transform: {
                 type: 'Transform',
                 properties: { position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1] }
             },
-            model: {
-                type: 'Model',
-                properties: {
-                    filename,
-                    instanced: false,
-                    repeat: false,
-                    repeatAxes: [{ axis: 'x', count: 1, offset: 1 }]
-                }
-            }
+            ...extraComponents,
         }
     };
 }
 
-/** Create a GameObject node for an image as a textured plane */
-export function createImageNode(texturePath: string, name?: string): GameObject {
-    return {
-        id: crypto.randomUUID(),
-        name: name ?? texturePath.replace(/^.*[\/]/, '').replace(/\.[^.]+$/, ''),
-        components: {
-            transform: {
-                type: 'Transform',
-                properties: { position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1] }
-            },
-            geometry: {
-                type: 'Geometry',
-                properties: { geometryType: 'plane', args: [1, 1] }
-            },
-            material: {
-                type: 'Material',
-                properties: { color: '#ffffff', texture: texturePath }
+/** Create a GameObject node for a 3D model file */
+export function createModelNode(filename: string, name?: string): GameObject {
+    return createNode(filename, name, {
+        model: {
+            type: 'Model',
+            properties: {
+                filename,
+                instanced: false,
+                repeat: false,
+                repeatAxes: [{ axis: 'x', count: 1, offset: 1 }]
             }
         }
-    };
+    });
+}
+
+/** Create a GameObject node for an image as a textured plane */
+export function createImageNode(texturePath: string, name?: string): GameObject {
+    return createNode(texturePath, name, {
+        geometry: {
+            type: 'Geometry',
+            properties: { geometryType: 'plane', args: [1, 1] }
+        },
+        material: {
+            type: 'Material',
+            properties: { color: '#ffffff', texture: texturePath }
+        }
+    });
 }

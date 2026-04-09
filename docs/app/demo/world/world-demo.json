@@ -3,114 +3,197 @@
   "name": "World Demo",
   "root": {
     "id": "root",
-    "enabled": true,
-    "visible": true,
     "components": {
       "transform": {
         "type": "Transform",
         "properties": {
-          "position": [0, 0, 0],
-          "rotation": [0, 0, 0],
-          "scale": [1, 1, 1]
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
         }
       }
     },
     "children": [
       {
         "id": "ground",
-        "enabled": true,
-        "visible": true,
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [0, 0, 0],
-              "rotation": [-1.5708, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                0,
+                0,
+                0
+              ],
+              "rotation": [
+                -1.5708,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "plane",
-              "args": [20, 20]
+              "args": [
+                50,
+                50
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#3d5a3d"
+              "color": "#5f8a56",
+              "texture": "/textures/proto32/white.png",
+              "generateMipmaps": true,
+              "repeat": true,
+              "repeatCount": [
+                25,
+                25
+              ],
+              "minFilter": "LinearMipmapNearestFilter",
+              "magFilter": "NearestFilter"
+            }
+          },
+          "physics": {
+            "type": "Physics",
+            "properties": {
+              "type": "fixed"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "player1",
-        "enabled": true,
-        "visible": true,
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [-2, 0.5, 0],
-              "rotation": [0, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                7.43203909163511,
+                0.5,
+                1.2419675332262365
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "sphere",
-              "args": [0.5, 32, 32]
+              "args": [
+                0.5,
+                32,
+                32
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#ff6b6b"
+              "color": "#ff6b6b",
+              "transparent": true,
+              "opacity": 0.74
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "player2",
-        "enabled": true,
-        "visible": true,
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [2, 0.5, 0],
-              "rotation": [0, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                3.730938547393605,
+                0.5,
+                7.503371647681142
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "sphere",
-              "args": [0.5, 32, 32]
+              "args": [
+                0.5,
+                32,
+                32
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#4ecdc4"
+              "color": "#4ecdc4",
+              "transparent": true,
+              "opacity": 0.68
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "light",
-        "enabled": true,
-        "visible": true,
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [5, 10, 5],
-              "rotation": [0, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                5,
+                10,
+                5
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "directionalLight": {
@@ -119,22 +202,37 @@
               "color": "#ffffff",
               "intensity": 2,
               "castShadow": true,
-              "targetOffset": [0, -10, 0]
+              "targetOffset": [
+                0,
+                -10,
+                0
+              ]
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "fillLight",
-        "enabled": true,
-        "visible": true,
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [-5, 5, -5],
-              "rotation": [0, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                -5,
+                5,
+                -5
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "directionalLight": {
@@ -145,7 +243,101 @@
               "castShadow": false
             }
           }
-        }
+        },
+        "children": []
+      },
+      {
+        "id": "player",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                1.3,
+                6
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "physics": {
+            "type": "Physics",
+            "properties": {
+              "type": "dynamic",
+              "colliders": "capsule",
+              "capsuleRadius": 0.35,
+              "capsuleHalfHeight": 0.45,
+              "canSleep": false,
+              "friction": 0,
+              "enabledRotations": [false, false, false]
+            }
+          },
+          "firstpersonplayer": {
+            "type": "FirstPersonPlayer",
+            "properties": {
+              "footstepEventName": "player:footstep"
+            }
+          }
+        },
+        "children": [
+          {
+            "id": "player-camera",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [0, 0.54, 0],
+                  "rotation": [0, 0, 0],
+                  "scale": [1, 1, 1]
+                }
+              },
+              "camera": {
+                "type": "Camera",
+                "properties": {
+                  "fov": 90,
+                  "near": 0.1,
+                  "far": 1000
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "player-footsteps",
+            "components": {
+              "sound": {
+                "type": "Sound",
+                "properties": {
+                  "eventName": "player:footstep",
+                  "clips": [
+                    "/sound/hit.mp3",
+                    "/sound/hit2.mp3"
+                  ],
+                  "clipMode": "random",
+                  "positional": true,
+                  "refDistance": 1.5,
+                  "maxDistance": 10,
+                  "randomizePitch": true,
+                  "minPitch": 0.9,
+                  "maxPitch": 1.04,
+                  "randomizeVolume": true,
+                  "minVolume": 0.2,
+                  "maxVolume": 0.32
+                }
+              }
+            },
+            "children": []
+          }
+        ]
       }
     ]
   }

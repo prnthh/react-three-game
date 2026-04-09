@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useRef } from "react";
-import { PrefabEditor, useGameEvent } from "react-three-game";
-import type { GameObject, PrefabEditorRef } from "react-three-game";
+import { PrefabEditor, PrefabEditorMode, useGameEvent } from "react-three-game";
+import type { PrefabEditorRef } from "react-three-game";
 import { Quaternion, Vector3 } from "three";
 
 const CANNON_BARREL_LENGTH = 1.8;
@@ -11,6 +11,11 @@ const CANNON_BARREL_ID = "cannon-barrel";
 const TARGET_ID = "wall-target";
 const TARGET_IDLE_COLOR = "#22c55e";
 const TARGET_HIT_COLOR = "#ef4444";
+const CANNON_FIRE_SOUND = "/sound/explode.mp3";
+const TARGET_HIT_SOUNDS = ["/sound/hit.mp3", "/sound/hit2.mp3"];
+const CANNON_FIRE_EVENT = "cannon:fire";
+const TARGET_HIT_EVENT = "target:hit";
+const TARGET_RESET_EVENT = "target:reset";
 
 const prefab = {
     id: "scene",
@@ -78,9 +83,30 @@ const prefab = {
                                 type: "Material",
                                 properties: { color: "#22c55e", opacity: 0.9, transparent: true }
                             },
+                            sound: {
+                                type: "Sound",
+                                properties: {
+                                    eventName: TARGET_HIT_EVENT,
+                                    clips: TARGET_HIT_SOUNDS,
+                                    clipMode: "random",
+                                    positional: true,
+                                    refDistance: 2.2,
+                                    maxDistance: 18,
+                                    rolloffFactor: 1.2,
+                                    randomizePitch: true,
+                                    minPitch: 0.94,
+                                    maxPitch: 1.08,
+                                    volume: 0.8,
+                                }
+                            },
                             physics: {
                                 type: "Physics",
-                                properties: { type: "fixed", sensor: true, colliders: "cuboid" }
+                                properties: {
+                                    type: "fixed",
+                                    colliders: "cuboid",
+                                    collisionEnterEventName: TARGET_HIT_EVENT,
+                                    collisionExitEventName: TARGET_RESET_EVENT,
+                                }
                             }
                         }
                     }
@@ -124,7 +150,19 @@ const prefab = {
                     },
                     click: {
                         type: "Click",
-                        properties: {}
+                        properties: { eventName: CANNON_FIRE_EVENT }
+                    },
+                    sound: {
+                        type: "Sound",
+                        properties: {
+                            path: CANNON_FIRE_SOUND,
+                            eventName: CANNON_FIRE_EVENT,
+                            positional: true,
+                            refDistance: 3,
+                            maxDistance: 26,
+                            rolloffFactor: 1,
+                            volume: 0.9,
+                        }
                     }
                 }
             }
@@ -132,44 +170,10 @@ const prefab = {
     }
 };
 
-function createProjectileNode(position: [number, number, number], velocity: [number, number, number]): GameObject {
-    return {
-        id: `projectile-${crypto.randomUUID()}`,
-        components: {
-            transform: {
-                type: 'Transform',
-                properties: {
-                    position,
-                    rotation: [0, 0, 0],
-                    scale: [1, 1, 1],
-                },
-            },
-            geometry: {
-                type: 'Geometry',
-                properties: { geometryType: 'sphere', args: [0.28, 24, 24] },
-            },
-            material: {
-                type: 'Material',
-                properties: { color: '#f8fafc' },
-            },
-            physics: {
-                type: 'Physics',
-                properties: {
-                    type: 'dynamic',
-                    colliders: 'ball',
-                    restitution: 0.3,
-                    friction: 0.6,
-                    linearVelocity: velocity,
-                },
-            },
-        },
-    };
-}
-
-function createProjectileFromCannon(editor: PrefabEditorRef | null, barrelEntityId = CANNON_BARREL_ID): GameObject | null {
+function fireProjectileFromCannon(editor: PrefabEditorRef | null, barrelEntityId = CANNON_BARREL_ID) {
     const barrelObject = editor?.viewRef.current?.getObject(barrelEntityId)
         ?? editor?.viewRef.current?.getObject(CANNON_BARREL_ID);
-    if (!barrelObject) return null;
+    if (!barrelObject || !editor) return;
 
     barrelObject.updateWorldMatrix(true, false);
 
@@ -185,33 +189,31 @@ function createProjectileFromCannon(editor: PrefabEditorRef | null, barrelEntity
     const spawnPosition = worldPosition.clone().add(muzzleOffset);
     const launchVelocity = direction.multiplyScalar(PROJECTILE_SPEED);
 
-    return createProjectileNode(
-        [spawnPosition.x, spawnPosition.y, spawnPosition.z],
-        [launchVelocity.x, launchVelocity.y, launchVelocity.z]
-    );
+    editor.scene.create("projectile", {
+        transform: {
+            type: 'Transform', properties: {
+                position: [spawnPosition.x, spawnPosition.y, spawnPosition.z],
+            },
+        },
+        geometry: { type: 'Geometry', properties: { geometryType: 'sphere', args: [0.28, 24, 24] } },
+        material: { type: 'Material', properties: { color: '#f8fafc' } },
+        physics: {
+            type: 'Physics', properties: {
+                type: 'dynamic', colliders: 'ball', restitution: 0.3, friction: 0.6,
+                linearVelocity: [launchVelocity.x, launchVelocity.y, launchVelocity.z],
+            },
+        },
+    });
 }
 
 function updateTargetColor(editor: PrefabEditorRef | null, color: string) {
     if (!editor) return;
-
-    editor.scene.update(TARGET_ID, node => ({
-        ...node,
-        components: {
-            ...node.components,
-            material: {
-                ...node.components?.material,
-                type: 'Material',
-                properties: {
-                    ...node.components?.material?.properties,
-                    color,
-                },
-            },
-        },
-    }));
+    editor.scene.find(TARGET_ID)?.getComponent("Material")?.set("color", color);
 }
 
 function CannonController({ onFire }: { onFire: (barrelEntityId: string) => void }) {
-    useGameEvent('click', (payload) => {
+    useGameEvent(CANNON_FIRE_EVENT, (payload) => {
+        if (typeof payload.sourceEntityId !== 'string') return;
         onFire(payload.sourceEntityId);
     }, [onFire]);
 
@@ -219,13 +221,13 @@ function CannonController({ onFire }: { onFire: (barrelEntityId: string) => void
 }
 
 function TargetController({ onTargetColorChange }: { onTargetColorChange: (color: string) => void }) {
-    useGameEvent('sensor:enter', (payload) => {
+    useGameEvent(TARGET_HIT_EVENT, (payload) => {
         if (payload.sourceEntityId !== TARGET_ID) return;
 
         onTargetColorChange(TARGET_HIT_COLOR);
     }, [onTargetColorChange]);
 
-    useGameEvent('sensor:exit', (payload) => {
+    useGameEvent(TARGET_RESET_EVENT, (payload) => {
         if (payload.sourceEntityId !== TARGET_ID) return;
 
         onTargetColorChange(TARGET_IDLE_COLOR);
@@ -238,11 +240,7 @@ export default function PhysicsDemo() {
     const editorRef = useRef<PrefabEditorRef>(null);
 
     const fireCannon = useCallback((barrelEntityId: string) => {
-        const editor = editorRef.current;
-        const projectile = createProjectileFromCannon(editorRef.current, barrelEntityId);
-        if (!projectile || !editor) return;
-
-        editor.scene.add(projectile);
+        fireProjectileFromCannon(editorRef.current, barrelEntityId);
     }, []);
 
     const handleTargetColorChange = useCallback((color: string) => {
@@ -251,7 +249,7 @@ export default function PhysicsDemo() {
 
     return (
         <main className="flex h-screen w-screen">
-            <PrefabEditor ref={editorRef} initialPrefab={prefab}>
+            <PrefabEditor ref={editorRef} initialPrefab={prefab} mode={PrefabEditorMode.Play}>
                 <CannonController onFire={fireCannon} />
                 <TargetController onTargetColorChange={handleTargetColorChange} />
             </PrefabEditor>

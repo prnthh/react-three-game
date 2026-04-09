@@ -551,6 +551,30 @@ export function ModelPicker({ value, onChange, basePath = "", pickerKey }: { val
     );
 }
 
+export function SoundPicker({ value, onChange, basePath = "" }: { value: string | undefined; onChange: (value: string | undefined) => void; basePath?: string }) {
+    return (
+        <AssetPicker
+            value={value}
+            onChange={onChange}
+            basePath={basePath}
+            manifestFolder="sound"
+            rootStyle={{ maxHeight: 76, overflow: 'visible', position: 'relative', display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}
+            controlsStyle={{ display: 'flex', flexDirection: 'column', gap: 6, flex: '0 0 84px', minWidth: 84, justifyContent: 'flex-end' }}
+            changeButtonStyle={{ width: '100%', padding: '6px 8px', backgroundColor: '#1f2937', color: 'inherit', fontSize: 10, cursor: 'pointer', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 3 }}
+            clearButtonStyle={{ width: '100%', padding: '6px 8px', backgroundColor: '#1f2937', color: 'inherit', fontSize: 10, cursor: 'pointer', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 3 }}
+            preview={<div style={{ flex: '0 0 auto', minWidth: 84 }}>{value ? <SingleSoundViewer file={value} basePath={basePath} /> : <div style={{ width: 84, height: 60, backgroundColor: '#1f2937', border: '1px dashed rgba(255,255,255,0.12)', borderRadius: 4 }} />}</div>}
+            renderList={({ files, value: selectedValue, onSelect, basePath: currentBasePath }) => (
+                <SoundListViewer
+                    files={files}
+                    selected={selectedValue || undefined}
+                    onSelect={onSelect}
+                    basePath={currentBasePath}
+                />
+            )}
+        />
+    );
+}
+
 // Single Asset Viewer Components - display only one selected asset
 export function SingleTextureViewer({ file, basePath = "" }: { file?: string; basePath?: string }) {
     if (!file) return <div style={{ width: 60, aspectRatio: '1 / 1', backgroundColor: '#1f2937', border: '1px dashed rgba(255,255,255,0.12)' }} />;

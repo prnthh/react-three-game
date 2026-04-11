@@ -72,8 +72,9 @@ export type {
   PropertyPath,
   SceneUpdates,
 } from './tools/prefabeditor/scene';
-export type { PrefabRootProps, PrefabRootRef, SceneRuntime } from './tools/prefabeditor/PrefabRoot';
-export { useSceneRuntime } from './tools/prefabeditor/PrefabRoot';
+export type { PrefabRootProps, AssetRuntime } from './tools/prefabeditor/PrefabRoot';
+export type { EntityRuntime, LiveObjectRef, LiveRigidBodyRef } from './tools/prefabeditor/PrefabRoot';
+export { useAssetRuntime, useEntityRuntime, useEntityObjectRef, useEntityRigidBodyRef } from './tools/prefabeditor/PrefabRoot';
 export type { Component, ComponentViewProps } from './tools/prefabeditor/components/ComponentRegistry';
 export type { FieldDefinition, FieldType } from './tools/prefabeditor/components/Input';
 export type { Prefab, GameObject, ComponentData } from './tools/prefabeditor/types';
@@ -82,10 +83,6 @@ export { findComponent, findComponentEntry, hasComponent } from './tools/prefabe
 // Game Events (physics + custom events)
 export { gameEvents, useGameEvent, getEntityIdFromRigidBody } from './tools/prefabeditor/GameEvents';
 export type { GameEventType, GameEventMap, GameEventPayload, PhysicsEventType, InteractionEventType, PhysicsEventPayload, ClickEventPayload } from './tools/prefabeditor/GameEvents';
-
-// RefBridge & Systems
-export { createRefBridge } from './tools/prefabeditor/RefBridge';
-export type { RefBridge } from './tools/prefabeditor/RefBridge';
 
 // Asset Loading
 export { loadFiles } from './tools/dragdrop/DragDropLoader';

@@ -1,6 +1,6 @@
 "use client";
 
-import { FieldRenderer, useSceneRuntime } from "react-three-game";
+import { FieldRenderer, useEntityRigidBodyRef, useEntityRuntime } from "react-three-game";
 import type { Component, FieldDefinition } from "react-three-game";
 import { PointerLockControls } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
@@ -74,8 +74,9 @@ function FirstPersonPlayerEditor({ component, onUpdate }: { component: any; onUp
     return <FieldRenderer fields={firstPersonPlayerFields} values={component.properties} onChange={onUpdate} />;
 }
 
-function FirstPersonPlayerView({ properties, editMode, nodeId, children }: { properties: FirstPersonPlayerProperties; editMode?: boolean; nodeId?: string; children?: React.ReactNode }) {
-    const { getRigidBody } = useSceneRuntime();
+function FirstPersonPlayerView({ properties, children }: { properties: FirstPersonPlayerProperties; children?: React.ReactNode }) {
+    const { editMode } = useEntityRuntime();
+    const rigidBodyRef = useEntityRigidBodyRef();
     const planarVelocityRef = useRef(new Vector3());
     const footstepTimerRef = useRef(0);
     const movementRef = useRef<MovementState>({
@@ -98,8 +99,6 @@ function FirstPersonPlayerView({ properties, editMode, nodeId, children }: { pro
     const footstepMinInterval = properties.footstepMinInterval ?? DEFAULT_FOOTSTEP_MIN_INTERVAL;
     const footstepMaxInterval = properties.footstepMaxInterval ?? DEFAULT_FOOTSTEP_MAX_INTERVAL;
     const footstepMinSpeed = properties.footstepMinSpeed ?? DEFAULT_FOOTSTEP_MIN_SPEED;
-
-    const resolveRigidBody = () => (nodeId ? getRigidBody(nodeId) : null);
 
     useEffect(() => {
         const setKey = (pressed: boolean) => (event: KeyboardEvent) => {
@@ -136,7 +135,7 @@ function FirstPersonPlayerView({ properties, editMode, nodeId, children }: { pro
     }, []);
 
     useBeforePhysicsStep((world) => {
-        const rigidBody = resolveRigidBody();
+        const rigidBody = rigidBodyRef.current;
         if (!rigidBody) return;
         const delta = world.timestep;
 

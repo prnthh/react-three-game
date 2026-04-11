@@ -299,6 +299,7 @@ export function updateAssetRefsForNodeChange(
     }
 
     const nextAssetRefCounts = { ...assetRefCounts };
+
     removeAssetRefs(nextAssetRefCounts, currentRefs);
     addAssetRefs(nextAssetRefCounts, nextRefs);
     return nextAssetRefCounts;

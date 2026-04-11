@@ -3,7 +3,7 @@ import type { RigidBodyOptions, CollisionPayload, IntersectionEnterPayload, Inte
 import type { ReactNode } from 'react';
 import { useRef, useEffect, useCallback } from 'react';
 import { Component } from "./ComponentRegistry";
-import { useSceneRuntime } from "../PrefabRoot";
+import { useAssetRuntime, useEntityRuntime } from "../PrefabRoot";
 import { BooleanField, FieldGroup, ListEditor, NumberField, SelectField, SelectInput, StringInput, Vector3Field } from "./Input";
 import { ComponentData } from "../types";
 import { gameEvents, getEntityIdFromRigidBody } from "../GameEvents";
@@ -321,16 +321,15 @@ function PhysicsComponentEditor({ component, onUpdate }: { component: ComponentD
 
 interface PhysicsViewProps {
     properties: PhysicsProps;
-    editMode?: boolean;
     children?: ReactNode;
     position?: [number, number, number];
     rotation?: [number, number, number];
     scale?: [number, number, number];
-    nodeId?: string;
 }
 
-function PhysicsComponentView({ properties, children, position, rotation, scale, editMode, nodeId }: PhysicsViewProps) {
-    const { registerRigidBodyRef } = useSceneRuntime();
+function PhysicsComponentView({ properties, children, position, rotation, scale }: PhysicsViewProps) {
+    const { registerRigidBodyRef } = useAssetRuntime();
+    const { editMode, nodeId } = useEntityRuntime();
     const {
         type,
         colliders,

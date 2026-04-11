@@ -2,6 +2,7 @@ import { PerspectiveCamera, useHelper } from '@react-three/drei';
 import { useRef } from 'react';
 import { CameraHelper, Object3D, PerspectiveCamera as ThreePerspectiveCamera } from 'three';
 import { useFrame } from '@react-three/fiber';
+import { useEntityRuntime } from '../PrefabRoot';
 import { Component } from './ComponentRegistry';
 import { FieldGroup, NumberField } from './Input';
 
@@ -58,7 +59,8 @@ function CameraComponentEditor({ component, onUpdate }: { component: any; onUpda
     );
 }
 
-function CameraComponentView({ properties, children, editMode, isSelected }: { properties: any; children?: React.ReactNode; editMode?: boolean; isSelected?: boolean }) {
+function CameraComponentView({ properties, children }: { properties: any; children?: React.ReactNode }) {
+    const { editMode, isSelected } = useEntityRuntime();
     const merged = { ...cameraDefaults, ...properties };
     const fov = merged.fov;
     const near = merged.near;

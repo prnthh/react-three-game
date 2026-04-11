@@ -1,6 +1,7 @@
 import type { ThreeEvent } from '@react-three/fiber';
 import { useRef } from 'react';
 import { gameEvents } from '../GameEvents';
+import { useEntityRuntime } from '../PrefabRoot';
 import { Component } from './ComponentRegistry';
 import { FieldGroup, StringField } from './Input';
 import type { ComponentData } from '../types';
@@ -26,8 +27,9 @@ function ClickComponentEditor({ component, onUpdate }: { component: ComponentDat
     );
 }
 
-function ClickComponentView({ children, editMode, nodeId, properties }: { children?: React.ReactNode; editMode?: boolean; nodeId?: string; properties?: ClickProperties }) {
+function ClickComponentView({ children, properties }: { children?: React.ReactNode; properties?: ClickProperties }) {
     const clickValid = useRef(false);
+    const { editMode, nodeId } = useEntityRuntime();
     const eventName = properties?.eventName || 'click';
 
     const emitClick = (event: ThreeEvent<PointerEvent>) => {

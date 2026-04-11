@@ -3,6 +3,7 @@ import { useHelper } from "@react-three/drei";
 import { useRef, useEffect, useMemo, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { CameraHelper, DirectionalLight, Object3D, OrthographicCamera, Vector3 } from "three";
+import { useEntityRuntime } from "../PrefabRoot";
 import { BooleanField, ColorField, NumberField, NumberInput, Vector3Input } from "./Input";
 import { LightSection, ShadowBiasField, mergeWithDefaults } from "./lightUtils";
 import { colors } from "../styles";
@@ -227,7 +228,8 @@ function DirectionalLightComponentEditor({ component, onUpdate }: { component: a
     );
 }
 
-function DirectionalLightView({ properties, children, editMode, isSelected }: { properties: any; children?: React.ReactNode; editMode?: boolean; isSelected?: boolean }) {
+function DirectionalLightView({ properties, children }: { properties: any; children?: React.ReactNode }) {
+    const { editMode, isSelected } = useEntityRuntime();
     const merged = mergeWithDefaults(directionalLightDefaults, properties);
     const color = merged.color;
     const intensity = merged.intensity;

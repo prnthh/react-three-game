@@ -2,7 +2,7 @@ import { extend } from '@react-three/fiber';
 import type { ThreeElement } from '@react-three/fiber';
 import { Component } from './ComponentRegistry';
 import { FieldRenderer, FieldDefinition, Label, NumberInput } from './Input';
-import { useSceneRuntime } from '../PrefabRoot';
+import { useAssetRuntime } from '../PrefabRoot';
 import { useMemo } from 'react';
 import { MeshBasicNodeMaterial, MeshStandardNodeMaterial } from 'three/webgpu';
 import { TexturePicker } from '../../assetviewer/page';
@@ -211,7 +211,7 @@ function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { compo
 
 // View for Material component
 function MaterialComponentView({ properties: rawProps }: { properties: Record<string, any> }) {
-    const { getTexture } = useSceneRuntime();
+    const { getTexture } = useAssetRuntime();
     const properties = rawProps as MaterialProps;
     const materialType = properties?.materialType ?? 'standard';
     const textureName = properties?.texture;

@@ -9,12 +9,6 @@ export interface ComponentViewProps<P = Record<string, any>> {
     properties: P;
     /** Children to render (for wrapper / child-host components). */
     children?: React.ReactNode;
-    /** The entity ID this component belongs to. */
-    nodeId?: string;
-    /** True when the editor is in edit mode. */
-    editMode?: boolean;
-    /** True when this entity is selected in the editor. */
-    isSelected?: boolean;
     /** Entity local position (passed to wrapper components like Physics). */
     position?: [number, number, number];
     /** Entity local rotation in radians (passed to wrapper components like Physics). */

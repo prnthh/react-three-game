@@ -1,4 +1,4 @@
-import { Component, FieldRenderer, FieldDefinition, useSceneRuntime } from "react-three-game";
+import { Component, FieldRenderer, FieldDefinition, useEntityObjectRef, useEntityRuntime } from "react-three-game";
 import { useFrame } from "@react-three/fiber";
 
 const rotatorFields: FieldDefinition[] = [
@@ -25,15 +25,16 @@ function RotatorComponentEditor({ component, onUpdate }: { component: any; onUpd
     );
 }
 
-// The view component for Rotator — uses RefBridge for direct Object3D mutation (no wrapper group)
-function RotatorView({ properties, children, nodeId }: { properties: any; children?: React.ReactNode; nodeId?: string }) {
-    const { refBridge, editMode } = useSceneRuntime();
+// The view component for Rotator mutates its own live Object3D via node-local runtime hooks.
+function RotatorView({ properties, children }: { properties: any; children?: React.ReactNode }) {
+    const { editMode } = useEntityRuntime();
+    const objectRef = useEntityObjectRef();
     const speed = properties.speed ?? 1.0;
     const axis = properties.axis ?? 'y';
 
     useFrame((_, delta) => {
-        if (editMode || !nodeId) return;
-        const obj = refBridge.get(nodeId);
+        if (editMode) return;
+        const obj = objectRef.current;
         if (obj) {
             obj.rotation[axis as 'x' | 'y' | 'z'] += delta * speed;
         }

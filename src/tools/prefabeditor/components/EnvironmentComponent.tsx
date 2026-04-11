@@ -1,7 +1,7 @@
 import { Environment } from '@react-three/drei';
 import { Component } from './ComponentRegistry';
 import { FieldGroup, NumberField } from './Input';
-import { useSceneRuntime } from '../PrefabRoot';
+import { useAssetRuntime } from '../PrefabRoot';
 
 function EnvironmentView({
     properties,
@@ -10,7 +10,7 @@ function EnvironmentView({
     properties: any;
     children?: React.ReactNode;
 }) {
-    const { getAssetRevision } = useSceneRuntime();
+    const { getAssetRevision } = useAssetRuntime();
     const { intensity = 1, resolution = 256 } = properties;
     const environmentRevision = `${getAssetRevision()}::${intensity}::${resolution}`;
 

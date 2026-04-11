@@ -3,7 +3,7 @@ import { useThree } from '@react-three/fiber';
 import { SoundPicker } from '../../assetviewer/page';
 import { sound as soundManager } from '../../../helpers/SoundManager';
 import { gameEvents } from '../GameEvents';
-import { useSceneRuntime } from '../PrefabRoot';
+import { useAssetRuntime, useEntityRuntime } from '../PrefabRoot';
 import { Component } from './ComponentRegistry';
 import { BooleanField, FieldGroup, FieldRenderer, ListEditor, NumberField, SelectField, StringField } from './Input';
 import { colors } from '../styles';
@@ -249,8 +249,9 @@ function payloadMatchesNode(nodeId: string | undefined, payload: unknown) {
     return hasEntityIds ? ids.includes(nodeId) : true;
 }
 
-function SoundComponentView({ properties, editMode, nodeId, children }: { properties: SoundProperties; editMode?: boolean; nodeId?: string; children?: React.ReactNode }) {
-    const { getSound } = useSceneRuntime();
+function SoundComponentView({ properties, children }: { properties: SoundProperties; children?: React.ReactNode }) {
+    const { getSound } = useAssetRuntime();
+    const { editMode, nodeId } = useEntityRuntime();
     const { camera } = useThree();
     const { eventName, positional = false, refDistance = 1, maxDistance = 24, rolloffFactor = 1, distanceModel = 'inverse' } = properties;
     const sequenceIndexRef = useRef(0);

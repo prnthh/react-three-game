@@ -1,3 +1,4 @@
+import type { Object3D } from "three";
 import type { ComponentData, GameObject, Prefab } from "./types";
 import { findComponentEntry } from "./types";
 import { createComponentData, createNode as createPrefabNode } from "./prefab";
@@ -25,6 +26,8 @@ export interface Entity {
 	readonly enabled: boolean;
 	readonly parent: Entity | null;
 	readonly children: Entity[];
+	readonly object: Object3D | null;
+	readonly rigidBody: any;
 	set: (data: EntityData) => void;
 	update: (update: (node: EntityData) => EntityData) => void;
 	getComponent: <TProperties = Record<string, any>>(name: string) => EntityComponent<TProperties> | null;
@@ -38,7 +41,7 @@ export type SceneUpdates = Record<string, EntityUpdate>;
 
 export interface Scene {
 	readonly rootId: string;
-	find: (nameOrId: string) => Entity | null;
+	find: (id: string) => Entity | null;
 	get: (id: string) => Entity;
 	create: (name: string, components?: Record<string, { type: string; properties?: Record<string, any> }>, options?: SpawnOptions) => Entity;
 	update: {
@@ -54,11 +57,12 @@ interface SceneAdapter {
 	getNode: (id: string) => EntityData | null;
 	getChildIds: (id: string) => string[];
 	getParentId: (id: string) => string | null;
-	findByName: (name: string) => string | null;
 	updateNode: (id: string, update: (node: EntityData) => EntityData) => void;
 	updateNodes: (updates: Record<string, (node: EntityData) => EntityData>) => void;
 	addNode: (node: GameObject, options?: SpawnOptions) => string;
 	removeNode: (id: string) => void;
+	getObject?: (id: string) => Object3D | null;
+	getRigidBody?: (id: string) => any;
 }
 
 function missingNode(id: string): never {
@@ -205,6 +209,12 @@ export function createScene(adapter: SceneAdapter): Scene {
 			get children() {
 				return adapter.getChildIds(id).map(createNode);
 			},
+			get object() {
+				return adapter.getObject?.(id) ?? null;
+			},
+			get rigidBody() {
+				return adapter.getRigidBody?.(id) ?? null;
+			},
 			set(data) {
 				adapter.updateNode(id, () => data);
 			},
@@ -270,10 +280,8 @@ export function createScene(adapter: SceneAdapter): Scene {
 		get rootId() {
 			return adapter.getRootId();
 		},
-		find(nameOrId: string) {
-			if (adapter.getNode(nameOrId)) return createNode(nameOrId);
-			const foundId = adapter.findByName(nameOrId);
-			return foundId ? createNode(foundId) : null;
+		find(id: string) {
+			return adapter.getNode(id) ? createNode(id) : null;
 		},
 		get: getNode,
 		create(name, components, options) {

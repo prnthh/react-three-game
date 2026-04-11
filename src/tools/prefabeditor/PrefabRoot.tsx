@@ -15,7 +15,6 @@ import { composeTransform, decompose } from "./utils";
 import { isPhysicsProps, PhysicsProps } from "./components/PhysicsComponent";
 import { denormalizePrefab } from "./prefab";
 import { createPrefabStore, PrefabStoreApi, PrefabStoreProvider, useOptionalPrefabStoreApi, usePrefabChildIds, usePrefabNode, usePrefabRootId } from "./prefabStore";
-import { createRefBridge, type RefBridge } from "./RefBridge";
 import { sound as soundManager } from "../../helpers/SoundManager";
 
 // Dynamic type to avoid requiring @react-three/rapier when not using physics
@@ -28,13 +27,10 @@ const EMPTY_MODELS: LoadedModels = {};
 const EMPTY_TEXTURES: LoadedTextures = {};
 const EMPTY_SOUNDS: LoadedSounds = {};
 
-/** Runtime context available to all component Views inside a PrefabRoot. */
-export interface SceneRuntime {
-    refBridge: RefBridge;
-    getRigidBody: (id: string) => any;
+/** Scene-wide shared services available to component Views inside a PrefabRoot. */
+export interface AssetRuntime {
     /** @internal Used by PhysicsComponent. */
     registerRigidBodyRef: (id: string, rb: any) => void;
-    editMode?: boolean;
     /** Get a loaded model by asset path. */
     getModel: (path: string) => Object3D | null;
     /** Get a loaded texture by asset path. */
@@ -45,13 +41,90 @@ export interface SceneRuntime {
     getAssetRevision: () => string;
 }
 
-const SceneRuntimeContext = createContext<SceneRuntime | null>(null);
+interface AssetRuntimeContextValue extends AssetRuntime {
+    getObject: (id: string) => Object3D | null;
+    getRigidBody: (id: string) => any;
+}
 
-/** Access the scene runtime (refBridge, getRigidBody, editMode) from within a component View. */
-export function useSceneRuntime(): SceneRuntime {
-    const ctx = useContext(SceneRuntimeContext);
-    if (!ctx) throw new Error("useSceneRuntime must be used inside <PrefabRoot>");
+const AssetRuntimeContext = createContext<AssetRuntimeContextValue | null>(null);
+const EntityRuntimeContext = createContext<EntityRuntime | null>(null);
+
+export interface EntityRuntime {
+    nodeId: string;
+    editMode?: boolean;
+    isSelected?: boolean;
+    getObject: <T extends Object3D = Object3D>() => T | null;
+    getRigidBody: <T = any>() => T | null;
+}
+
+export interface LiveObjectRef<T extends Object3D = Object3D> {
+    readonly current: T | null;
+}
+
+export interface LiveRigidBodyRef<T = any> {
+    readonly current: T | null;
+}
+
+/** Access scene-wide shared services from within a component View. */
+export function useAssetRuntime(): AssetRuntime {
+    const ctx = useContext(AssetRuntimeContext);
+    if (!ctx) throw new Error("useAssetRuntime must be used inside <PrefabRoot>");
     return ctx;
+}
+
+/** Access the current node's runtime from within a component View. */
+export function useEntityRuntime(): EntityRuntime {
+    const ctx = useContext(EntityRuntimeContext);
+    if (!ctx) throw new Error("useEntityRuntime must be used inside a component View rendered by <PrefabRoot>");
+    return ctx;
+}
+
+/** Read the current component's Object3D through a live ref-like accessor. */
+export function useEntityObjectRef<T extends Object3D = Object3D>(): LiveObjectRef<T> {
+    const { getObject } = useEntityRuntime();
+
+    return useMemo(() => ({
+        get current() {
+            return getObject<T>();
+        },
+    }), [getObject]);
+}
+
+/** Read the current component's rigid body through a live ref-like accessor. */
+export function useEntityRigidBodyRef<T = any>(): LiveRigidBodyRef<T> {
+    const { getRigidBody } = useEntityRuntime();
+
+    return useMemo(() => ({
+        get current() {
+            return getRigidBody<T>();
+        },
+    }), [getRigidBody]);
+}
+
+function EntityRuntimeScope({
+    nodeId,
+    editMode,
+    isSelected,
+    children,
+}: {
+    nodeId: string;
+    editMode?: boolean;
+    isSelected?: boolean;
+    children: React.ReactNode;
+}) {
+    const assetRuntime = useContext(AssetRuntimeContext);
+    if (!assetRuntime) throw new Error("EntityRuntimeScope must be used inside <PrefabRoot>");
+
+    const { getObject, getRigidBody } = assetRuntime;
+    const value = useMemo<EntityRuntime>(() => ({
+        nodeId,
+        editMode,
+        isSelected,
+        getObject: <T extends Object3D = Object3D>() => getObject(nodeId) as T | null,
+        getRigidBody: <T = any>() => getRigidBody(nodeId) as T | null,
+    }), [editMode, getObject, getRigidBody, isSelected, nodeId]);
+
+    return <EntityRuntimeContext.Provider value={value}>{children}</EntityRuntimeContext.Provider>;
 }
 
 /** Resolve a relative or absolute asset file path against a base path. */
@@ -69,8 +142,6 @@ function isNodeReady(node: GameObjectType, loadedModels: LoadedModels): boolean 
 
 export interface PrefabRootRef {
     root: Group | null;
-    refBridge: RefBridge;
-    rigidBodyRefs: Map<string, any>;
     getObject: (nodeId: string) => Object3D | null;
     getRigidBody: (nodeId: string) => any;
     addModel: (path: string, model: Object3D) => void;
@@ -103,7 +174,6 @@ export const PrefabRoot = forwardRef<PrefabRootRef, PrefabRootProps>(({ editMode
     const objectRefs = useRef<Record<string, Object3D | null>>({});
     const rigidBodyRefs = useRef<Map<string, RapierRigidBody | null>>(new Map());
     const rootRef = useRef<Group>(null);
-    const [refBridge] = useState(() => createRefBridge());
     const parentStore = useOptionalPrefabStoreApi();
     const [ownedStore] = useState(() => createPrefabStore(data ?? denormalizePrefab(store?.getState() ?? parentStore?.getState() ?? missingStoreState())));
     const resolvedStore = store ?? parentStore ?? ownedStore;
@@ -115,11 +185,13 @@ export const PrefabRoot = forwardRef<PrefabRootRef, PrefabRootProps>(({ editMode
     const availableTextures = useMemo(() => ({ ...textures, ...injectedTextures }), [textures, injectedTextures]);
     const availableSounds = useMemo(() => ({ ...sounds, ...injectedSounds }), [sounds, injectedSounds]);
 
+    const getObject = useCallback((id: string) => {
+        return objectRefs.current[id] ?? null;
+    }, []);
+
     useImperativeHandle(ref, () => ({
         root: rootRef.current,
-        refBridge,
-        rigidBodyRefs: rigidBodyRefs.current,
-        getObject: (nodeId: string) => objectRefs.current[nodeId] ?? null,
+        getObject,
         getRigidBody: (nodeId: string) => rigidBodyRefs.current.get(nodeId) ?? null,
         addModel: (path: string, model: Object3D) => setInjectedModels(prev => ({ ...prev, [path]: model })),
         addTexture: (path: string, texture: Texture) => setInjectedTextures(prev => ({ ...prev, [path]: texture })),
@@ -127,12 +199,11 @@ export const PrefabRoot = forwardRef<PrefabRootRef, PrefabRootProps>(({ editMode
             soundManager.setBuffer(path, sound);
             setInjectedSounds(prev => ({ ...prev, [path]: sound }));
         },
-    }), [refBridge]);
+    }), [getObject]);
 
     const registerRef = useCallback((id: string, obj: Object3D | null) => {
         objectRefs.current[id] = obj;
-        refBridge.register(id, obj);
-    }, [refBridge]);
+    }, []);
 
     const registerRigidBodyRef = useCallback((id: string, rb: any) => {
         rigidBodyRefs.current.set(id, rb);
@@ -238,11 +309,10 @@ export const PrefabRoot = forwardRef<PrefabRootRef, PrefabRootProps>(({ editMode
     const availableSoundsRef = useRef(availableSounds);
     availableSoundsRef.current = availableSounds;
 
-    const sceneRuntime = useMemo<SceneRuntime>(() => ({
-        refBridge,
+    const assetRuntime = useMemo<AssetRuntimeContextValue>(() => ({
+        getObject,
         getRigidBody,
         registerRigidBodyRef,
-        editMode,
         getModel: (path: string) => availableModelsRef.current[path] ?? null,
         getTexture: (path: string) => availableTexturesRef.current[path] ?? null,
         getSound: (path: string) => availableSoundsRef.current[path] ?? null,
@@ -251,7 +321,7 @@ export const PrefabRoot = forwardRef<PrefabRootRef, PrefabRootProps>(({ editMode
             const textureKeys = Object.keys(availableTexturesRef.current).sort().join('|');
             return `${textureKeys}::${modelKeys}`;
         },
-    }), [refBridge, getRigidBody, registerRigidBodyRef, editMode]);
+    }), [getObject, getRigidBody, registerRigidBodyRef]);
 
     const content = (
         <group ref={rootRef}>
@@ -276,10 +346,10 @@ export const PrefabRoot = forwardRef<PrefabRootRef, PrefabRootProps>(({ editMode
     );
 
     if (!shouldProvideStoreContext) {
-        return <SceneRuntimeContext.Provider value={sceneRuntime}>{content}</SceneRuntimeContext.Provider>;
+        return <AssetRuntimeContext.Provider value={assetRuntime}>{content}</AssetRuntimeContext.Provider>;
     }
 
-    return <PrefabStoreProvider store={resolvedStore}><SceneRuntimeContext.Provider value={sceneRuntime}>{content}</SceneRuntimeContext.Provider></PrefabStoreProvider>;
+    return <PrefabStoreProvider store={resolvedStore}><AssetRuntimeContext.Provider value={assetRuntime}>{content}</AssetRuntimeContext.Provider></PrefabStoreProvider>;
 });
 
 function StoreRootNode(props: Omit<RendererProps, "nodeId">) {
@@ -457,69 +527,61 @@ function StandardNode({
         <group
             {...clickHandlers}
         >
-            {renderCompositionNode(gameObject, renderCtx, isSelected, parentMatrix, childNodes)}
+            {renderCompositionNode(gameObject, renderCtx, childNodes)}
         </group>
     );
 
-    if (editMode) {
-        return (
-            <>
+    return (
+        <EntityRuntimeScope nodeId={nodeId} editMode={editMode} isSelected={isSelected}>
+            {editMode ? (
+                <>
+                    <group
+                        ref={groupRef}
+                        position={transform.position}
+                        rotation={transform.rotation}
+                        scale={transform.scale}
+                    >
+                        <mesh visible={false}>
+                            <boxGeometry args={[0.01, 0.01, 0.01]} />
+                        </mesh>
+                    </group>
+                    <group
+                        ref={helperRef}
+                        position={transform.position}
+                        rotation={transform.rotation}
+                        scale={transform.scale}
+                    >
+                        {inner}
+                    </group>
+                    {hasPhysics && physicsDef?.View ? (
+                        <physicsDef.View
+                            key={physicsKey}
+                            properties={physics.properties}
+                            position={transform.position}
+                            rotation={transform.rotation}
+                            scale={transform.scale}
+                        >{inner}</physicsDef.View>
+                    ) : null}
+                </>
+            ) : hasPhysics && physicsDef?.View ? (
+                <physicsDef.View
+                    key={physicsKey}
+                    properties={physics.properties}
+                    position={transform.position}
+                    rotation={transform.rotation}
+                    scale={transform.scale}
+                >{inner}</physicsDef.View>
+            ) : (
                 <group
                     ref={groupRef}
                     position={transform.position}
                     rotation={transform.rotation}
                     scale={transform.scale}
                 >
-                    <mesh visible={false}>
-                        <boxGeometry args={[0.01, 0.01, 0.01]} />
-                    </mesh>
-                </group>
-                <group
-                    ref={helperRef}
-                    position={transform.position}
-                    rotation={transform.rotation}
-                    scale={transform.scale}
-                >
                     {inner}
                 </group>
-                {hasPhysics && physicsDef?.View ? (
-                    <physicsDef.View
-                        key={physicsKey}
-                        properties={physics.properties}
-                        position={transform.position}
-                        rotation={transform.rotation}
-                        scale={transform.scale}
-                        editMode={editMode}
-                        nodeId={nodeId}
-                    >{inner}</physicsDef.View>
-                ) : null}
-            </>
-        );
-    }
-
-    if (hasPhysics && physicsDef?.View) {
-        return (
-            <physicsDef.View
-                key={physicsKey}
-                properties={physics.properties}
-                position={transform.position}
-                rotation={transform.rotation}
-                scale={transform.scale}
-                editMode={editMode}
-                nodeId={nodeId}
-            >{inner}</physicsDef.View>
-        );
-    }
-
-    return (
-        <group
-            ref={groupRef}
-            position={transform.position}
-            rotation={transform.rotation}
-            scale={transform.scale}
-        >
-            {inner}
-        </group>
+            )}
+        </EntityRuntimeScope>
     );
 }
 
@@ -669,14 +731,16 @@ function renderCompositionSubtree(
     const childNodes = <CompositionChildren childIds={childIds} ctx={ctx} parentMatrix={world} />;
 
     return (
-        <group
-            key={gameObject.id}
-            position={transform.position}
-            rotation={transform.rotation}
-            scale={transform.scale}
-        >
-            {renderCompositionNode(gameObject, ctx, isSelected, parentMatrix, childNodes)}
-        </group>
+        <EntityRuntimeScope nodeId={gameObject.id} editMode={ctx.editMode} isSelected={isSelected}>
+            <group
+                key={gameObject.id}
+                position={transform.position}
+                rotation={transform.rotation}
+                scale={transform.scale}
+            >
+                {renderCompositionNode(gameObject, ctx, childNodes)}
+            </group>
+        </EntityRuntimeScope>
     );
 }
 
@@ -725,32 +789,13 @@ function CompositionSubtree({
 function renderCompositionNode(
     gameObject: GameObjectType,
     ctx: RenderContext,
-    isSelected: boolean,
-    parentMatrix?: Matrix4,
     childNodes?: React.ReactNode
 ) {
-    const ownContent = renderNodeOwnContent(gameObject, ctx, isSelected, parentMatrix);
-    return wrapWithChildHosts(gameObject, ctx, isSelected, parentMatrix, <>{ownContent}{childNodes}</>);
+    const ownContent = renderNodeOwnContent(gameObject);
+    return wrapWithChildHosts(gameObject, <>{ownContent}{childNodes}</>);
 }
 
-function buildContextProps(
-    gameObject: GameObjectType,
-    _ctx: RenderContext,
-    isSelected: boolean,
-) {
-    return {
-        editMode: _ctx.editMode,
-        isSelected,
-        nodeId: gameObject.id,
-    };
-}
-
-function renderNodeOwnContent(
-    gameObject: GameObjectType,
-    ctx: RenderContext,
-    isSelected: boolean,
-    parentMatrix?: Matrix4
-) {
+function renderNodeOwnContent(gameObject: GameObjectType) {
     const geometry = findComponent(gameObject, "Geometry");
     const material = findComponent(gameObject, "Material");
 
@@ -759,16 +804,13 @@ function renderNodeOwnContent(
 
     if (!geometry || !geometryDef?.View) return null;
 
-    const contextProps = buildContextProps(gameObject, ctx, isSelected);
-
     return (
         <mesh castShadow receiveShadow>
-            <geometryDef.View properties={geometry.properties} {...contextProps} />
+            <geometryDef.View properties={geometry.properties} />
             {material && materialDef?.View && (
                 <materialDef.View
                     key="material"
                     properties={material.properties}
-                    {...contextProps}
                 />
             )}
         </mesh>
@@ -777,17 +819,13 @@ function renderNodeOwnContent(
 
 function wrapWithChildHosts(
     gameObject: GameObjectType,
-    ctx: RenderContext,
-    isSelected: boolean,
-    parentMatrix: Matrix4 | undefined,
     subtree: React.ReactNode
 ) {
-    const contextProps = buildContextProps(gameObject, ctx, isSelected);
     const childHosts = getChildHostComponents(gameObject);
 
     return childHosts.reduce(
         (acc, { key, View, properties }) => (
-            <View key={key} properties={properties} {...contextProps}>
+            <View key={key} properties={properties}>
                 {acc}
             </View>
         ),

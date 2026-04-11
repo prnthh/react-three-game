@@ -24,7 +24,6 @@ export interface PrefabEditorRef {
     load: (prefab: Prefab, options?: { resetHistory?: boolean; notifyChange?: boolean }) => void;
     addModel: (path: string, model: Object3D, options?: SpawnOptions) => GameObject;
     addTexture: (path: string, texture: Texture, options?: SpawnOptions) => GameObject;
-    viewRef: React.RefObject<PrefabRootRef | null>;
 }
 
 export enum PrefabEditorMode {
@@ -101,6 +100,8 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
     const isEditMode = mode === PrefabEditorMode.Edit;
 
     const getPrefab = useCallback(() => denormalizePrefab(prefabStore.getState()), [prefabStore]);
+    const getObject = useCallback((nodeId: string) => prefabRootRef.current?.getObject(nodeId) ?? null, []);
+    const getRigidBody = useCallback((nodeId: string) => prefabRootRef.current?.getRigidBody(nodeId) ?? null, []);
 
     onChangeRef.current = onChange;
 
@@ -216,8 +217,8 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
             return;
         }
 
-        setSelectedObject(prefabRootRef.current?.getObject(selectedId) ?? null);
-    }, [selectedId]);
+        setSelectedObject(getObject(selectedId));
+    }, [getObject, selectedId]);
 
     const addNode = useCallback((node: GameObject, options?: SpawnOptions) => {
         const { addChild, rootId } = prefabStore.getState();
@@ -314,40 +315,34 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
     }, [clearSelection]);
 
     const handleFocusNode = useCallback((nodeId: string) => {
-        const object = prefabRootRef.current?.getObject(nodeId);
+        const object = getObject(nodeId);
         const controls = controlsRef.current;
         const camera = controls?.object;
 
         if (!object || !controls || !camera) return;
 
         focusCameraOnObject(object, camera, controls.target, () => controls.update?.());
-    }, []);
+    }, [getObject]);
 
     const scene = useMemo(() => createScene({
         getRootId: () => prefabStore.getState().rootId,
         getNode: (id: string) => prefabStore.getState().nodesById[id] ?? null,
         getChildIds: (id: string) => prefabStore.getState().childIdsById[id] ?? [],
         getParentId: (id: string) => prefabStore.getState().parentIdById[id] ?? null,
-        findByName: (name: string) => {
-            const state = prefabStore.getState();
-            const normalized = name.toLowerCase();
-            for (const [id, node] of Object.entries(state.nodesById)) {
-                if (node.name?.toLowerCase() === normalized) return id;
-            }
-            return null;
-        },
         updateNode: (id: string, update: (node: any) => any) => prefabStore.getState().updateNode(id, update),
         updateNodes: (updates: Record<string, (node: any) => any>) => prefabStore.getState().updateNodes(
             Object.entries(updates).map(([id, update]) => ({ id, update }))
         ),
         addNode: (node: GameObject, options?: SpawnOptions) => addNode(node, options).id,
         removeNode: (id: string) => prefabStore.getState().deleteNode(id),
-    }), [addNode, prefabStore]);
+        getObject,
+        getRigidBody,
+    }), [addNode, getObject, getRigidBody, prefabStore]);
 
     const handleTransformChange = () => {
         if (!selectedId) return;
 
-        const object = prefabRootRef.current?.getObject(selectedId);
+        const object = getObject(selectedId);
         if (!object) return;
 
         const parentWorld = computeParentWorldMatrix(prefabStore.getState(), selectedId);
@@ -419,13 +414,12 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
         scene,
         load: loadPrefab,
         addModel,
-        addTexture,
-        viewRef: prefabRootRef
+        addTexture
     }), [addModel, addTexture, clearSelection, getPrefab, handleExportGLB, handleExportGLBData, handleScreenshot, loadPrefab, scene]);
 
     const content = (
         <>
-            <gridHelper args={[10, 10]} position={[0, -1, 0]} />
+            {isEditMode ? <gridHelper args={[10, 10]} position={[0, -1, 0]} /> : null}
             <PrefabRoot
                 ref={prefabRootRef}
                 store={prefabStore}

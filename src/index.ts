@@ -72,9 +72,9 @@ export type {
   PropertyPath,
   SceneUpdates,
 } from './tools/prefabeditor/scene';
-export type { PrefabRootProps, AssetRuntime } from './tools/prefabeditor/PrefabRoot';
-export type { EntityRuntime, LiveObjectRef, LiveRigidBodyRef } from './tools/prefabeditor/PrefabRoot';
-export { useAssetRuntime, useEntityRuntime, useEntityObjectRef, useEntityRigidBodyRef } from './tools/prefabeditor/PrefabRoot';
+export type { PrefabRootProps } from './tools/prefabeditor/PrefabRoot';
+export type { AssetRuntime, EntityRuntime, LiveObjectRef, LiveRigidBodyRef } from './tools/prefabeditor/runtimeContext';
+export { useAssetRuntime, useEntityRuntime, useEntityObjectRef, useEntityRigidBodyRef } from './tools/prefabeditor/runtimeContext';
 export type { Component, ComponentViewProps } from './tools/prefabeditor/components/ComponentRegistry';
 export type { FieldDefinition, FieldType } from './tools/prefabeditor/components/Input';
 export type { Prefab, GameObject, ComponentData } from './tools/prefabeditor/types';

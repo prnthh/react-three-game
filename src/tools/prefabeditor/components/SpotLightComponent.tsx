@@ -3,7 +3,7 @@ import { useHelper } from "@react-three/drei";
 import { useRef, useEffect } from "react";
 import { BooleanField, ColorField, Label, NumberField, Vector3Input } from "./Input";
 import { Object3D, SpotLight, SpotLightHelper } from "three";
-import { useAssetRuntime, useEntityRuntime } from "../PrefabRoot";
+import { useAssetRuntime, useEntityRuntime } from "../runtimeContext";
 import { useFrame } from "@react-three/fiber";
 import { TexturePicker } from "../../assetviewer/page";
 import { LightSection, ShadowBiasField, mergeWithDefaults } from "./lightUtils";

@@ -13,7 +13,7 @@ import CameraComponent from './CameraComponent';
 import ClickComponent from './ClickComponent';
 import SoundComponent from './SoundComponent';
 
-export default [
+export const builtinComponents = [
     GeometryComponent,
     TransformComponent,
     MaterialComponent,

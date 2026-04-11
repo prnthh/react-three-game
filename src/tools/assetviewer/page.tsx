@@ -3,7 +3,7 @@ import { OrbitControls, Stage, View, PerspectiveCamera } from "@react-three/drei
 import { Component as ReactComponent, Suspense, useEffect, useLayoutEffect, useState, useRef } from "react";
 import { createPortal } from 'react-dom';
 import { TextureLoader } from "three";
-import { loadModel } from "../dragdrop";
+import { loadModel } from "../dragdrop/modelLoader";
 
 class ErrorBoundary extends ReactComponent<{ onError?: () => void; children: React.ReactNode }, { hasError: boolean }> {
     constructor(props: any) {

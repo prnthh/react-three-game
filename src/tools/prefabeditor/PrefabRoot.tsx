@@ -1,5 +1,5 @@
 import { useHelper } from "@react-three/drei";
-import { forwardRef, createContext, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { forwardRef, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { BoxHelper, Euler, Group, Matrix4, Object3D, Quaternion, Texture, Vector3, } from "three";
 import { ThreeEvent } from "@react-three/fiber";
 import { useStore } from "zustand";
@@ -8,124 +8,25 @@ import { useClickValid } from "./useClickValid";
 import { GameObject as GameObjectType, Prefab, findComponent } from "./types";
 import type { Component } from "./components/ComponentRegistry";
 import { getComponentDef, getComponentAssetRefs, registerComponent } from "./components/ComponentRegistry";
-import components from "./components";
+import { builtinComponents } from "./components";
 import { loadModel, loadSound, loadTexture, LoadedModels, LoadedSounds, LoadedTextures } from "../dragdrop";
 import { GameInstance, GameInstanceProvider, getRepeatAxesFromModelProperties, RepeatAxisConfig, useInstanceCheck } from "./InstanceProvider";
 import { composeTransform, decompose } from "./utils";
 import { isPhysicsProps, PhysicsProps } from "./components/PhysicsComponent";
 import { denormalizePrefab } from "./prefab";
 import { createPrefabStore, PrefabStoreApi, PrefabStoreProvider, useOptionalPrefabStoreApi, usePrefabChildIds, usePrefabNode, usePrefabRootId } from "./prefabStore";
+import { AssetRuntimeContext, EntityRuntimeScope, type AssetRuntimeContextValue } from "./runtimeContext";
 import { sound as soundManager } from "../../helpers/SoundManager";
 
 // Dynamic type to avoid requiring @react-three/rapier when not using physics
 type RapierRigidBody = any;
 
-components.forEach(registerComponent);
+builtinComponents.forEach(registerComponent);
 
 const IDENTITY = new Matrix4();
 const EMPTY_MODELS: LoadedModels = {};
 const EMPTY_TEXTURES: LoadedTextures = {};
 const EMPTY_SOUNDS: LoadedSounds = {};
-
-/** Scene-wide shared services available to component Views inside a PrefabRoot. */
-export interface AssetRuntime {
-    /** @internal Used by PhysicsComponent. */
-    registerRigidBodyRef: (id: string, rb: any) => void;
-    /** Get a loaded model by asset path. */
-    getModel: (path: string) => Object3D | null;
-    /** Get a loaded texture by asset path. */
-    getTexture: (path: string) => Texture | null;
-    /** Get a loaded sound buffer by asset path. */
-    getSound: (path: string) => AudioBuffer | null;
-    /** Get a revision string that changes when loaded assets change (for cache-busting keys). */
-    getAssetRevision: () => string;
-}
-
-interface AssetRuntimeContextValue extends AssetRuntime {
-    getObject: (id: string) => Object3D | null;
-    getRigidBody: (id: string) => any;
-}
-
-const AssetRuntimeContext = createContext<AssetRuntimeContextValue | null>(null);
-const EntityRuntimeContext = createContext<EntityRuntime | null>(null);
-
-export interface EntityRuntime {
-    nodeId: string;
-    editMode?: boolean;
-    isSelected?: boolean;
-    getObject: <T extends Object3D = Object3D>() => T | null;
-    getRigidBody: <T = any>() => T | null;
-}
-
-export interface LiveObjectRef<T extends Object3D = Object3D> {
-    readonly current: T | null;
-}
-
-export interface LiveRigidBodyRef<T = any> {
-    readonly current: T | null;
-}
-
-/** Access scene-wide shared services from within a component View. */
-export function useAssetRuntime(): AssetRuntime {
-    const ctx = useContext(AssetRuntimeContext);
-    if (!ctx) throw new Error("useAssetRuntime must be used inside <PrefabRoot>");
-    return ctx;
-}
-
-/** Access the current node's runtime from within a component View. */
-export function useEntityRuntime(): EntityRuntime {
-    const ctx = useContext(EntityRuntimeContext);
-    if (!ctx) throw new Error("useEntityRuntime must be used inside a component View rendered by <PrefabRoot>");
-    return ctx;
-}
-
-/** Read the current component's Object3D through a live ref-like accessor. */
-export function useEntityObjectRef<T extends Object3D = Object3D>(): LiveObjectRef<T> {
-    const { getObject } = useEntityRuntime();
-
-    return useMemo(() => ({
-        get current() {
-            return getObject<T>();
-        },
-    }), [getObject]);
-}
-
-/** Read the current component's rigid body through a live ref-like accessor. */
-export function useEntityRigidBodyRef<T = any>(): LiveRigidBodyRef<T> {
-    const { getRigidBody } = useEntityRuntime();
-
-    return useMemo(() => ({
-        get current() {
-            return getRigidBody<T>();
-        },
-    }), [getRigidBody]);
-}
-
-function EntityRuntimeScope({
-    nodeId,
-    editMode,
-    isSelected,
-    children,
-}: {
-    nodeId: string;
-    editMode?: boolean;
-    isSelected?: boolean;
-    children: React.ReactNode;
-}) {
-    const assetRuntime = useContext(AssetRuntimeContext);
-    if (!assetRuntime) throw new Error("EntityRuntimeScope must be used inside <PrefabRoot>");
-
-    const { getObject, getRigidBody } = assetRuntime;
-    const value = useMemo<EntityRuntime>(() => ({
-        nodeId,
-        editMode,
-        isSelected,
-        getObject: <T extends Object3D = Object3D>() => getObject(nodeId) as T | null,
-        getRigidBody: <T = any>() => getRigidBody(nodeId) as T | null,
-    }), [editMode, getObject, getRigidBody, isSelected, nodeId]);
-
-    return <EntityRuntimeContext.Provider value={value}>{children}</EntityRuntimeContext.Provider>;
-}
 
 /** Resolve a relative or absolute asset file path against a base path. */
 function resolveAssetPath(basePath: string, file: string): string {

@@ -2,7 +2,7 @@ import { PerspectiveCamera, useHelper } from '@react-three/drei';
 import { useRef } from 'react';
 import { CameraHelper, Object3D, PerspectiveCamera as ThreePerspectiveCamera } from 'three';
 import { useFrame } from '@react-three/fiber';
-import { useEntityRuntime } from '../PrefabRoot';
+import { useEntityRuntime } from '../runtimeContext';
 import { Component } from './ComponentRegistry';
 import { FieldGroup, NumberField } from './Input';
 

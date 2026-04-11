@@ -3,7 +3,7 @@ import { useThree } from '@react-three/fiber';
 import { SoundPicker } from '../../assetviewer/page';
 import { sound as soundManager } from '../../../helpers/SoundManager';
 import { gameEvents } from '../GameEvents';
-import { useAssetRuntime, useEntityRuntime } from '../PrefabRoot';
+import { useAssetRuntime, useEntityRuntime } from '../runtimeContext';
 import { Component } from './ComponentRegistry';
 import { BooleanField, FieldGroup, FieldRenderer, ListEditor, NumberField, SelectField, StringField } from './Input';
 import { colors } from '../styles';

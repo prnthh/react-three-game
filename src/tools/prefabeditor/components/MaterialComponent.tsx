@@ -2,7 +2,7 @@ import { extend } from '@react-three/fiber';
 import type { ThreeElement } from '@react-three/fiber';
 import { Component } from './ComponentRegistry';
 import { FieldRenderer, FieldDefinition, Label, NumberInput } from './Input';
-import { useAssetRuntime } from '../PrefabRoot';
+import { useAssetRuntime } from '../runtimeContext';
 import { useMemo } from 'react';
 import { MeshBasicNodeMaterial, MeshStandardNodeMaterial } from 'three/webgpu';
 import { TexturePicker } from '../../assetviewer/page';

@@ -155,7 +155,7 @@ const prefab = {
                     sound: {
                         type: "Sound",
                         properties: {
-                            path: CANNON_FIRE_SOUND,
+                            clips: [CANNON_FIRE_SOUND],
                             eventName: CANNON_FIRE_EVENT,
                             positional: true,
                             refDistance: 3,

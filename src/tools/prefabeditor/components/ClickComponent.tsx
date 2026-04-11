@@ -1,7 +1,7 @@
 import type { ThreeEvent } from '@react-three/fiber';
 import { useRef } from 'react';
 import { gameEvents } from '../GameEvents';
-import { useEntityRuntime } from '../PrefabRoot';
+import { useEntityRuntime } from '../runtimeContext';
 import { Component } from './ComponentRegistry';
 import { FieldGroup, StringField } from './Input';
 import type { ComponentData } from '../types';

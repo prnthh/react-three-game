@@ -1,7 +1,7 @@
 import { Environment } from '@react-three/drei';
 import { Component } from './ComponentRegistry';
 import { FieldGroup, NumberField } from './Input';
-import { useAssetRuntime } from '../PrefabRoot';
+import { useAssetRuntime } from '../runtimeContext';
 
 function EnvironmentView({
     properties,

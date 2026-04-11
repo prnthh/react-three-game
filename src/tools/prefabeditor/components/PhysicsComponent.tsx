@@ -3,6 +3,7 @@ import type { RigidBodyOptions, CollisionPayload, IntersectionEnterPayload, Inte
 import type { ReactNode } from 'react';
 import { useRef, useEffect, useCallback } from 'react';
 import { Component } from "./ComponentRegistry";
+import { useSceneRuntime } from "../PrefabRoot";
 import { BooleanField, FieldGroup, ListEditor, NumberField, SelectField, SelectInput, StringInput, Vector3Field } from "./Input";
 import { ComponentData } from "../types";
 import { gameEvents, getEntityIdFromRigidBody } from "../GameEvents";
@@ -326,10 +327,10 @@ interface PhysicsViewProps {
     rotation?: [number, number, number];
     scale?: [number, number, number];
     nodeId?: string;
-    registerRigidBodyRef?: (id: string, rb: RapierRigidBody | null) => void;
 }
 
-function PhysicsComponentView({ properties, children, position, rotation, scale, editMode, nodeId, registerRigidBodyRef }: PhysicsViewProps) {
+function PhysicsComponentView({ properties, children, position, rotation, scale, editMode, nodeId }: PhysicsViewProps) {
+    const { registerRigidBodyRef } = useSceneRuntime();
     const {
         type,
         colliders,
@@ -367,11 +368,11 @@ function PhysicsComponentView({ properties, children, position, rotation, scale,
 
     // Register RigidBody ref when it's available
     useEffect(() => {
-        if (nodeId && registerRigidBodyRef && rigidBodyRef.current) {
+        if (nodeId && rigidBodyRef.current) {
             registerRigidBodyRef(nodeId, rigidBodyRef.current);
         }
         return () => {
-            if (nodeId && registerRigidBodyRef) {
+            if (nodeId) {
                 registerRigidBodyRef(nodeId, null);
             }
         };

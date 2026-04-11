@@ -1,12 +1,11 @@
 "use client";
 
-import { FieldRenderer } from "react-three-game";
+import { FieldRenderer, useSceneRuntime } from "react-three-game";
 import type { Component, FieldDefinition } from "react-three-game";
 import { PointerLockControls } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 import { useBeforePhysicsStep, useRapier } from "@react-three/rapier";
 import { useEffect, useRef } from "react";
-import type { RapierRigidBody } from "@react-three/rapier";
 import { gameEvents } from "react-three-game";
 import { Vector3 } from "three";
 
@@ -75,7 +74,8 @@ function FirstPersonPlayerEditor({ component, onUpdate }: { component: any; onUp
     return <FieldRenderer fields={firstPersonPlayerFields} values={component.properties} onChange={onUpdate} />;
 }
 
-function FirstPersonPlayerView({ properties, editMode, nodeId, getRigidBody, children }: { properties: FirstPersonPlayerProperties; editMode?: boolean; nodeId?: string; getRigidBody?: (id: string) => RapierRigidBody | null; children?: React.ReactNode }) {
+function FirstPersonPlayerView({ properties, editMode, nodeId, children }: { properties: FirstPersonPlayerProperties; editMode?: boolean; nodeId?: string; children?: React.ReactNode }) {
+    const { getRigidBody } = useSceneRuntime();
     const planarVelocityRef = useRef(new Vector3());
     const footstepTimerRef = useRef(0);
     const movementRef = useRef<MovementState>({
@@ -99,7 +99,7 @@ function FirstPersonPlayerView({ properties, editMode, nodeId, getRigidBody, chi
     const footstepMaxInterval = properties.footstepMaxInterval ?? DEFAULT_FOOTSTEP_MAX_INTERVAL;
     const footstepMinSpeed = properties.footstepMinSpeed ?? DEFAULT_FOOTSTEP_MIN_SPEED;
 
-    const resolveRigidBody = () => (nodeId && getRigidBody ? getRigidBody(nodeId) : null);
+    const resolveRigidBody = () => (nodeId ? getRigidBody(nodeId) : null);
 
     useEffect(() => {
         const setKey = (pressed: boolean) => (event: KeyboardEvent) => {

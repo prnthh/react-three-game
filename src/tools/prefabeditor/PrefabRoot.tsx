@@ -1,6 +1,6 @@
 import { useHelper } from "@react-three/drei";
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
-import { BoxHelper, Euler, Group, Matrix4, Object3D, Quaternion, Vector3, } from "three";
+import { forwardRef, createContext, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { BoxHelper, Euler, Group, Matrix4, Object3D, Quaternion, Texture, Vector3, } from "three";
 import { ThreeEvent } from "@react-three/fiber";
 import { useStore } from "zustand";
 import { useClickValid } from "./useClickValid";
@@ -13,7 +13,9 @@ import { loadModel, loadSound, loadTexture, LoadedModels, LoadedSounds, LoadedTe
 import { GameInstance, GameInstanceProvider, getRepeatAxesFromModelProperties, RepeatAxisConfig, useInstanceCheck } from "./InstanceProvider";
 import { composeTransform, decompose } from "./utils";
 import { isPhysicsProps, PhysicsProps } from "./components/PhysicsComponent";
-import { createPrefabStore, PrefabStoreApi, PrefabStoreProvider, prefabStoreToPrefab, useOptionalPrefabStoreApi, usePrefabChildIds, usePrefabNode, usePrefabRootId } from "./prefabStore";
+import { denormalizePrefab } from "./prefab";
+import { createPrefabStore, PrefabStoreApi, PrefabStoreProvider, useOptionalPrefabStoreApi, usePrefabChildIds, usePrefabNode, usePrefabRootId } from "./prefabStore";
+import { createRefBridge, type RefBridge } from "./RefBridge";
 import { sound as soundManager } from "../../helpers/SoundManager";
 
 // Dynamic type to avoid requiring @react-three/rapier when not using physics
@@ -25,6 +27,32 @@ const IDENTITY = new Matrix4();
 const EMPTY_MODELS: LoadedModels = {};
 const EMPTY_TEXTURES: LoadedTextures = {};
 const EMPTY_SOUNDS: LoadedSounds = {};
+
+/** Runtime context available to all component Views inside a PrefabRoot. */
+export interface SceneRuntime {
+    refBridge: RefBridge;
+    getRigidBody: (id: string) => any;
+    /** @internal Used by PhysicsComponent. */
+    registerRigidBodyRef: (id: string, rb: any) => void;
+    editMode?: boolean;
+    /** Get a loaded model by asset path. */
+    getModel: (path: string) => Object3D | null;
+    /** Get a loaded texture by asset path. */
+    getTexture: (path: string) => Texture | null;
+    /** Get a loaded sound buffer by asset path. */
+    getSound: (path: string) => AudioBuffer | null;
+    /** Get a revision string that changes when loaded assets change (for cache-busting keys). */
+    getAssetRevision: () => string;
+}
+
+const SceneRuntimeContext = createContext<SceneRuntime | null>(null);
+
+/** Access the scene runtime (refBridge, getRigidBody, editMode) from within a component View. */
+export function useSceneRuntime(): SceneRuntime {
+    const ctx = useContext(SceneRuntimeContext);
+    if (!ctx) throw new Error("useSceneRuntime must be used inside <PrefabRoot>");
+    return ctx;
+}
 
 /** Resolve a relative or absolute asset file path against a base path. */
 function resolveAssetPath(basePath: string, file: string): string {
@@ -41,10 +69,13 @@ function isNodeReady(node: GameObjectType, loadedModels: LoadedModels): boolean 
 
 export interface PrefabRootRef {
     root: Group | null;
-    rigidBodyRefs: Map<string, any>; // RigidBody refs only populated when using physics
+    refBridge: RefBridge;
+    rigidBodyRefs: Map<string, any>;
     getObject: (nodeId: string) => Object3D | null;
     getRigidBody: (nodeId: string) => any;
-    focusNode: (nodeId: string) => void;
+    addModel: (path: string, model: Object3D) => void;
+    addTexture: (path: string, texture: Texture) => void;
+    addSound: (path: string, sound: AudioBuffer) => void;
 }
 
 export interface PrefabRootProps {
@@ -54,19 +85,17 @@ export interface PrefabRootProps {
     selectedId?: string | null;
     onSelect?: (id: string | null) => void;
     onClick?: (event: ThreeEvent<PointerEvent>, entity: GameObjectType) => void;
-    onSelectedObjectChange?: (object: Object3D | null) => void;
-    onFocusNode?: (nodeId: string) => void;
     basePath?: string;
-    injectedModels?: LoadedModels;
-    injectedTextures?: LoadedTextures;
-    injectedSounds?: LoadedSounds;
 }
 
-export const PrefabRoot = forwardRef<PrefabRootRef, PrefabRootProps>(({ editMode, data, store, selectedId, onSelect, onClick, onSelectedObjectChange, onFocusNode, basePath = "", injectedModels = EMPTY_MODELS, injectedTextures = EMPTY_TEXTURES, injectedSounds = EMPTY_SOUNDS }, ref) => {
+export const PrefabRoot = forwardRef<PrefabRootRef, PrefabRootProps>(({ editMode, data, store, selectedId, onSelect, onClick, basePath = "" }, ref) => {
 
     const [models, setModels] = useState<LoadedModels>({});
     const [textures, setTextures] = useState<LoadedTextures>({});
     const [sounds, setSounds] = useState<LoadedSounds>({});
+    const [injectedModels, setInjectedModels] = useState<LoadedModels>(EMPTY_MODELS);
+    const [injectedTextures, setInjectedTextures] = useState<LoadedTextures>(EMPTY_TEXTURES);
+    const [injectedSounds, setInjectedSounds] = useState<LoadedSounds>(EMPTY_SOUNDS);
     const loading = useRef(new Set<string>());
     const failedModels = useRef(new Set<string>());
     const failedTextures = useRef(new Set<string>());
@@ -74,8 +103,9 @@ export const PrefabRoot = forwardRef<PrefabRootRef, PrefabRootProps>(({ editMode
     const objectRefs = useRef<Record<string, Object3D | null>>({});
     const rigidBodyRefs = useRef<Map<string, RapierRigidBody | null>>(new Map());
     const rootRef = useRef<Group>(null);
+    const [refBridge] = useState(() => createRefBridge());
     const parentStore = useOptionalPrefabStoreApi();
-    const [ownedStore] = useState(() => createPrefabStore(data ?? prefabStoreToPrefab(store?.getState() ?? parentStore?.getState() ?? missingStoreState())));
+    const [ownedStore] = useState(() => createPrefabStore(data ?? denormalizePrefab(store?.getState() ?? parentStore?.getState() ?? missingStoreState())));
     const resolvedStore = store ?? parentStore ?? ownedStore;
     const usesOwnedStore = resolvedStore === ownedStore;
     const shouldProvideStoreContext = !parentStore || parentStore !== resolvedStore;
@@ -87,18 +117,22 @@ export const PrefabRoot = forwardRef<PrefabRootRef, PrefabRootProps>(({ editMode
 
     useImperativeHandle(ref, () => ({
         root: rootRef.current,
+        refBridge,
         rigidBodyRefs: rigidBodyRefs.current,
         getObject: (nodeId: string) => objectRefs.current[nodeId] ?? null,
         getRigidBody: (nodeId: string) => rigidBodyRefs.current.get(nodeId) ?? null,
-        focusNode: (nodeId: string) => onFocusNode?.(nodeId),
-    }), [onFocusNode]);
+        addModel: (path: string, model: Object3D) => setInjectedModels(prev => ({ ...prev, [path]: model })),
+        addTexture: (path: string, texture: Texture) => setInjectedTextures(prev => ({ ...prev, [path]: texture })),
+        addSound: (path: string, sound: AudioBuffer) => {
+            soundManager.setBuffer(path, sound);
+            setInjectedSounds(prev => ({ ...prev, [path]: sound }));
+        },
+    }), [refBridge]);
 
     const registerRef = useCallback((id: string, obj: Object3D | null) => {
         objectRefs.current[id] = obj;
-        if (id === selectedId) {
-            onSelectedObjectChange?.(obj);
-        }
-    }, [onSelectedObjectChange, selectedId]);
+        refBridge.register(id, obj);
+    }, [refBridge]);
 
     const registerRigidBodyRef = useCallback((id: string, rb: any) => {
         rigidBodyRefs.current.set(id, rb);
@@ -196,6 +230,29 @@ export const PrefabRoot = forwardRef<PrefabRootRef, PrefabRootProps>(({ editMode
         syncAssets();
     }, [resolvedStore, assetManifestKey, basePath, injectedModels, injectedSounds, injectedTextures, models, sounds, textures]);
 
+    // Keep refs current so context getters are always fresh without changing context identity
+    const availableModelsRef = useRef(availableModels);
+    availableModelsRef.current = availableModels;
+    const availableTexturesRef = useRef(availableTextures);
+    availableTexturesRef.current = availableTextures;
+    const availableSoundsRef = useRef(availableSounds);
+    availableSoundsRef.current = availableSounds;
+
+    const sceneRuntime = useMemo<SceneRuntime>(() => ({
+        refBridge,
+        getRigidBody,
+        registerRigidBodyRef,
+        editMode,
+        getModel: (path: string) => availableModelsRef.current[path] ?? null,
+        getTexture: (path: string) => availableTexturesRef.current[path] ?? null,
+        getSound: (path: string) => availableSoundsRef.current[path] ?? null,
+        getAssetRevision: () => {
+            const modelKeys = Object.keys(availableModelsRef.current).sort().join('|');
+            const textureKeys = Object.keys(availableTexturesRef.current).sort().join('|');
+            return `${textureKeys}::${modelKeys}`;
+        },
+    }), [refBridge, getRigidBody, registerRigidBodyRef, editMode]);
+
     const content = (
         <group ref={rootRef}>
             <GameInstanceProvider
@@ -210,11 +267,7 @@ export const PrefabRoot = forwardRef<PrefabRootRef, PrefabRootProps>(({ editMode
                     onSelect={editMode ? onSelect : undefined}
                     onClick={onClick}
                     registerRef={registerRef}
-                    registerRigidBodyRef={registerRigidBodyRef}
-                    getRigidBody={getRigidBody}
                     loadedModels={availableModels}
-                    loadedSounds={availableSounds}
-                    loadedTextures={availableTextures}
                     editMode={editMode}
                     parentMatrix={IDENTITY}
                 />
@@ -223,10 +276,10 @@ export const PrefabRoot = forwardRef<PrefabRootRef, PrefabRootProps>(({ editMode
     );
 
     if (!shouldProvideStoreContext) {
-        return content;
+        return <SceneRuntimeContext.Provider value={sceneRuntime}>{content}</SceneRuntimeContext.Provider>;
     }
 
-    return <PrefabStoreProvider store={resolvedStore}>{content}</PrefabStoreProvider>;
+    return <PrefabStoreProvider store={resolvedStore}><SceneRuntimeContext.Provider value={sceneRuntime}>{content}</SceneRuntimeContext.Provider></PrefabStoreProvider>;
 });
 
 function StoreRootNode(props: Omit<RendererProps, "nodeId">) {
@@ -351,11 +404,7 @@ function StandardNode({
     onSelect,
     onClick,
     registerRef,
-    registerRigidBodyRef,
-    getRigidBody,
     loadedModels,
-    loadedSounds,
-    loadedTextures,
     editMode,
     parentMatrix = IDENTITY,
 }: RendererProps) {
@@ -395,13 +444,13 @@ function StandardNode({
     const physicsDef = hasPhysics ? getComponentDef(physics.type) : null;
     const isInstanced = findComponent(gameObject, "Model")?.properties?.instanced;
     const physicsKey = `physics_${nodeId}_${isInstanced ? 'instanced' : 'standard'}`;
-    const renderCtx: RenderContext = { loadedModels, loadedSounds, loadedTextures, editMode, registerRef, getRigidBody };
+    const renderCtx: RenderContext = { loadedModels, editMode, registerRef };
     const childNodes = getChildHostComponents(gameObject).length > 0
         ? <CompositionChildren childIds={childIds} selectedId={selectedId} ctx={renderCtx} parentMatrix={world} />
         : <ChildNodes childIds={childIds} parentMatrix={world}
             selectedId={selectedId} onSelect={onSelect} onClick={onClick}
-            registerRef={registerRef} registerRigidBodyRef={registerRigidBodyRef} getRigidBody={getRigidBody}
-            loadedModels={loadedModels} loadedSounds={loadedSounds} loadedTextures={loadedTextures} editMode={editMode}
+            registerRef={registerRef}
+            loadedModels={loadedModels} editMode={editMode}
         />;
 
     const inner = (
@@ -442,7 +491,6 @@ function StandardNode({
                         scale={transform.scale}
                         editMode={editMode}
                         nodeId={nodeId}
-                        registerRigidBodyRef={registerRigidBodyRef}
                     >{inner}</physicsDef.View>
                 ) : null}
             </>
@@ -459,7 +507,6 @@ function StandardNode({
                 scale={transform.scale}
                 editMode={editMode}
                 nodeId={nodeId}
-                registerRigidBodyRef={registerRigidBodyRef}
             >{inner}</physicsDef.View>
         );
     }
@@ -482,11 +529,7 @@ interface RendererProps {
     onSelect?: (id: string) => void;
     onClick?: (event: ThreeEvent<PointerEvent>, entity: GameObjectType) => void;
     registerRef: (id: string, obj: Object3D | null) => void;
-    registerRigidBodyRef: (id: string, rb: any) => void;
-    getRigidBody: (id: string) => any;
     loadedModels: LoadedModels;
-    loadedSounds: LoadedSounds;
-    loadedTextures: LoadedTextures;
     editMode?: boolean;
     parentMatrix?: Matrix4;
 }
@@ -507,11 +550,8 @@ function getChildHostComponents(gameObject: GameObjectType) {
 
 interface RenderContext {
     loadedModels: LoadedModels;
-    loadedSounds: LoadedSounds;
-    loadedTextures: LoadedTextures;
     editMode?: boolean;
     registerRef: (id: string, obj: Object3D | null) => void;
-    getRigidBody: (id: string) => any;
 }
 
 function ChildNodes({ childIds, parentMatrix, ...props }: { childIds: string[]; parentMatrix: Matrix4 } & Omit<RendererProps, 'nodeId' | 'parentMatrix'>) {
@@ -695,20 +735,13 @@ function renderCompositionNode(
 
 function buildContextProps(
     gameObject: GameObjectType,
-    ctx: RenderContext,
+    _ctx: RenderContext,
     isSelected: boolean,
-    parentMatrix?: Matrix4,
 ) {
     return {
-        loadedModels: ctx.loadedModels,
-        loadedSounds: ctx.loadedSounds,
-        loadedTextures: ctx.loadedTextures,
-        editMode: ctx.editMode,
+        editMode: _ctx.editMode,
         isSelected,
         nodeId: gameObject.id,
-        parentMatrix,
-        registerRef: ctx.registerRef,
-        getRigidBody: ctx.getRigidBody,
     };
 }
 
@@ -726,7 +759,7 @@ function renderNodeOwnContent(
 
     if (!geometry || !geometryDef?.View) return null;
 
-    const contextProps = buildContextProps(gameObject, ctx, isSelected, parentMatrix);
+    const contextProps = buildContextProps(gameObject, ctx, isSelected);
 
     return (
         <mesh castShadow receiveShadow>
@@ -749,7 +782,7 @@ function wrapWithChildHosts(
     parentMatrix: Matrix4 | undefined,
     subtree: React.ReactNode
 ) {
-    const contextProps = buildContextProps(gameObject, ctx, isSelected, parentMatrix);
+    const contextProps = buildContextProps(gameObject, ctx, isSelected);
     const childHosts = getChildHostComponents(gameObject);
 
     return childHosts.reduce(

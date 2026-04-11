@@ -31,15 +31,15 @@ export default function AssetViewerPage({ basePath = "" }: { basePath?: string }
                 <h1 className="text-lg mb-2 font-bold">Asset Viewer</h1>
 
                 <h2 className="text-sm mt-4 mb-1 font-semibold">Textures ({textures.length})</h2>
-                <TextureListViewer files={textures} basePath={basePath} onSelect={() => {}} />
+                <TextureListViewer files={textures} basePath={basePath} onSelect={() => { }} />
 
                 <h2 className="text-sm mt-4 mb-1 font-semibold">Models ({models.length})</h2>
-                <ModelListViewer files={models} basePath={basePath} onSelect={() => {}} />
+                <ModelListViewer files={models} basePath={basePath} onSelect={() => { }} />
 
                 {sounds.length > 0 && (
                     <>
                         <h2 className="text-sm mt-4 mb-1 font-semibold">Sounds ({sounds.length})</h2>
-                        <SoundListViewer files={sounds} basePath={basePath} onSelect={() => {}} />
+                        <SoundListViewer files={sounds} basePath={basePath} onSelect={() => { }} />
                     </>
                 )}
             </div>

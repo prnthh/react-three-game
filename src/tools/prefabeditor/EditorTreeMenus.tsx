@@ -1,30 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Prefab } from './types';
+import { createEmptyPrefab } from './prefab';
 import { menu } from './styles';
 import { useEditorContext } from './PrefabEditor';
-import { getComponentDef } from './components/ComponentRegistry';
 import { loadJson, saveJson } from './utils';
 
 export type TreeContextMenuState = { nodeId: string; x: number; y: number } | null;
-
-function createEmptyPrefab(): Prefab {
-    return {
-        id: crypto.randomUUID(),
-        name: 'New Prefab',
-        root: {
-            id: crypto.randomUUID(),
-            name: 'Root',
-            components: {
-                transform: {
-                    type: 'Transform',
-                    properties: { ...getComponentDef('Transform')?.defaultProperties }
-                }
-            },
-            children: []
-        }
-    };
-}
 
 function MenuPanel({
     children,

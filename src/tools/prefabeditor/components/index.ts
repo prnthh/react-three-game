@@ -3,6 +3,7 @@ import TransformComponent from './TransformComponent';
 import MaterialComponent from './MaterialComponent';
 import PhysicsComponent from './PhysicsComponent';
 import SpotLightComponent from './SpotLightComponent';
+import PointLightComponent from './PointLightComponent';
 import DirectionalLightComponent from './DirectionalLightComponent';
 import AmbientLightComponent from './AmbientLightComponent';
 import ModelComponent from './ModelComponent';
@@ -18,6 +19,7 @@ export default [
     MaterialComponent,
     PhysicsComponent,
     SpotLightComponent,
+    PointLightComponent,
     DirectionalLightComponent,
     AmbientLightComponent,
     ModelComponent,

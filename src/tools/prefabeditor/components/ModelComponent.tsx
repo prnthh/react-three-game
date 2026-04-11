@@ -1,8 +1,8 @@
 import { ModelPicker } from '../../assetviewer/page';
-import { LoadedModels } from '../../dragdrop';
 import { useContext, useMemo } from 'react';
 import { Component } from './ComponentRegistry';
 import { BooleanField, FieldGroup, Label, ListEditor, NumberInput, SelectInput } from './Input';
+import { useSceneRuntime } from '../PrefabRoot';
 import { GameObject } from '../types';
 import { EditorContext } from '../PrefabEditor';
 import { DEFAULT_REPEAT_AXES, getRepeatAxesFromModelProperties, normalizeRepeatAxes, RepeatAxisConfig } from '../InstanceProvider';
@@ -178,11 +178,12 @@ function ModelComponentEditor({ component, node, onUpdate, basePath = "" }: { co
 }
 
 // View for Model component
-function ModelComponentView({ properties, loadedModels, children }: { properties: any, loadedModels?: LoadedModels, children?: React.ReactNode }) {
+function ModelComponentView({ properties, children }: { properties: any, children?: React.ReactNode }) {
+    const { getModel } = useSceneRuntime();
     // Instanced models are handled elsewhere (GameInstance), so only render non-instanced here
     if (!properties.filename || properties.instanced) return <>{children}</>;
 
-    const sourceModel = loadedModels?.[properties.filename];
+    const sourceModel = getModel(properties.filename);
 
     // Clone model once and set up shadows - memoized to avoid cloning on every render
     const clonedModel = useMemo(() => {

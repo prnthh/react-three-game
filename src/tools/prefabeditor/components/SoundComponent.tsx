@@ -2,8 +2,8 @@ import { useEffect, useRef } from 'react';
 import { useThree } from '@react-three/fiber';
 import { SoundPicker } from '../../assetviewer/page';
 import { sound as soundManager } from '../../../helpers/SoundManager';
-import type { LoadedSounds } from '../../dragdrop';
 import { gameEvents } from '../GameEvents';
+import { useSceneRuntime } from '../PrefabRoot';
 import { Component } from './ComponentRegistry';
 import { BooleanField, FieldGroup, FieldRenderer, ListEditor, NumberField, SelectField, StringField } from './Input';
 import { colors } from '../styles';
@@ -13,7 +13,6 @@ import { AudioListener, PositionalAudio } from 'three';
 type ClipMode = 'single' | 'random' | 'sequence';
 
 type SoundProperties = {
-    path?: string;
     clips?: string[];
     eventName?: string;
     clipMode?: ClipMode;
@@ -80,13 +79,13 @@ function getVolumeValue(properties: SoundProperties) {
     return Number.isFinite(properties.volume) ? Number(properties.volume) : 1;
 }
 
-function resolveClipPaths({ path, clips, clipMode }: SoundProperties) {
+function resolveClipPaths({ clips, clipMode }: SoundProperties) {
     const normalizedClips = normalizeClips(clips);
     if (normalizedClips.length > 0) {
         return { paths: normalizedClips, mode: clipMode ?? 'random' };
     }
 
-    return path ? { paths: [path], mode: 'single' as const } : { paths: [], mode: 'single' as const };
+    return { paths: [], mode: 'single' as const };
 }
 
 function pickClip(paths: string[], mode: ClipMode, sequenceIndexRef: React.MutableRefObject<number>) {
@@ -104,28 +103,33 @@ function pickClip(paths: string[], mode: ClipMode, sequenceIndexRef: React.Mutab
 }
 
 function SoundComponentEditor({ component, onUpdate, basePath = '' }: { component: ComponentData; onUpdate: (newComp: any) => void; basePath?: string }) {
-    const clips = normalizeClips(component.properties.clips);
+    const clips = Array.isArray(component.properties.clips)
+        ? component.properties.clips.map((clip: unknown) => typeof clip === 'string' ? clip : '')
+        : [];
     const randomizePitch = Boolean(component.properties.randomizePitch);
     const randomizeVolume = Boolean(component.properties.randomizeVolume);
     const positional = Boolean(component.properties.positional);
 
+    const setClips = (nextClips: string[]) => {
+        onUpdate({ clips: nextClips });
+    };
+
     const addClip = () => {
-        onUpdate({ clips: [...clips, ''] });
+        setClips([...clips, '']);
     };
 
     const updateClip = (index: number, nextPath: string) => {
-        onUpdate({
-            clips: clips.map((clip, clipIndex) => clipIndex === index ? nextPath : clip),
-        });
+        const nextClips = [...clips];
+        nextClips[index] = nextPath;
+        setClips(nextClips);
     };
 
     const removeClip = (index: number) => {
-        onUpdate({ clips: clips.filter((_, clipIndex) => clipIndex !== index) });
+        setClips(clips.filter((_, clipIndex) => clipIndex !== index));
     };
 
     return (
         <FieldGroup>
-            <SoundPicker value={component.properties.path} onChange={(path) => onUpdate({ path: path ?? '' })} basePath={basePath} />
             <StringField
                 name="eventName"
                 label="Listen Event"
@@ -245,7 +249,8 @@ function payloadMatchesNode(nodeId: string | undefined, payload: unknown) {
     return hasEntityIds ? ids.includes(nodeId) : true;
 }
 
-function SoundComponentView({ properties, editMode, nodeId, children, loadedSounds }: { properties: SoundProperties; editMode?: boolean; nodeId?: string; children?: React.ReactNode; loadedSounds?: LoadedSounds }) {
+function SoundComponentView({ properties, editMode, nodeId, children }: { properties: SoundProperties; editMode?: boolean; nodeId?: string; children?: React.ReactNode }) {
+    const { getSound } = useSceneRuntime();
     const { camera } = useThree();
     const { eventName, positional = false, refDistance = 1, maxDistance = 24, rolloffFactor = 1, distanceModel = 'inverse' } = properties;
     const sequenceIndexRef = useRef(0);
@@ -308,7 +313,7 @@ function SoundComponentView({ properties, editMode, nodeId, children, loadedSoun
             const volume = getVolumeValue(properties);
 
             if (!positional) {
-                const loadedBuffer = loadedSounds?.[clip];
+                const loadedBuffer = getSound(clip);
 
                 if (loadedBuffer && !soundManager.hasBuffer(clip)) {
                     soundManager.setBuffer(clip, loadedBuffer);
@@ -325,7 +330,7 @@ function SoundComponentView({ properties, editMode, nodeId, children, loadedSoun
 
             const audio = positionalAudioRef.current;
             const listener = listenerRef.current;
-            const buffer = loadedSounds?.[clip];
+            const buffer = getSound(clip);
             if (!audio || !listener || !buffer) {
                 return;
             }
@@ -342,7 +347,7 @@ function SoundComponentView({ properties, editMode, nodeId, children, loadedSoun
             audio.setVolume(volume);
             audio.play();
         });
-    }, [editMode, eventName, loadedSounds, mode, nodeId, paths, positional, properties]);
+    }, [editMode, eventName, getSound, mode, nodeId, paths, positional, properties]);
 
     return (
         <>
@@ -357,7 +362,6 @@ const SoundComponent: Component = {
     Editor: SoundComponentEditor,
     View: SoundComponentView,
     defaultProperties: {
-        path: '',
         eventName: '',
         clips: [],
         clipMode: 'single',
@@ -377,7 +381,6 @@ const SoundComponent: Component = {
     },
     getAssetRefs: (properties) => {
         const refs: { type: 'sound'; path: string }[] = [];
-        if (properties.path) refs.push({ type: 'sound', path: properties.path });
         if (Array.isArray(properties.clips)) {
             properties.clips.forEach((clip: unknown) => {
                 if (typeof clip === 'string' && clip.trim().length > 0) {

@@ -3,13 +3,13 @@
 import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
 import { PrefabEditor, registerComponent } from "react-three-game";
-import initialWorld from "./world-demo.json";
+import initialWorld from "../../samples/killbox.json";
 import type { EntityComponent, Prefab, PrefabEditorRef } from "react-three-game";
 import FirstPersonPlayer from "./FirstPersonPlayer";
 
 const ORB_SPEED = 1.2;
 const WORLD_BOUNDARY = 8;
-const ORB_IDS = ["player1", "player2"] as const;
+const ORB_IDS = ["orb1", "orb2"] as const;
 
 registerComponent(FirstPersonPlayer);
 
@@ -56,8 +56,8 @@ export default function Home() {
 
 function OrbAnimator({ editorRef }: { editorRef: React.RefObject<PrefabEditorRef | null> }) {
     const velocities = useRef<Record<OrbId, OrbVelocity>>({
-        player1: { x: 0, z: 0 },
-        player2: { x: 0, z: 0 },
+        orb1: { x: 0, z: 0 },
+        orb2: { x: 0, z: 0 },
     });
     const lastVelocityChange = useRef(0);
 
@@ -70,11 +70,11 @@ function OrbAnimator({ editorRef }: { editorRef: React.RefObject<PrefabEditorRef
 
         if (time - lastVelocityChange.current > 1 + Math.random()) {
             lastVelocityChange.current = time;
-            velocities.current.player1 = {
+            velocities.current.orb1 = {
                 x: (Math.random() - 0.5) * 2,
                 z: (Math.random() - 0.5) * 2,
             };
-            velocities.current.player2 = {
+            velocities.current.orb2 = {
                 x: (Math.random() - 0.5) * 2,
                 z: (Math.random() - 0.5) * 2,
             };

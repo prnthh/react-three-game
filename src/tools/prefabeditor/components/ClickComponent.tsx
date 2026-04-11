@@ -54,6 +54,9 @@ function ClickComponentView({ children, editMode, nodeId, properties }: { childr
                 event.stopPropagation();
                 clickValid.current = true;
             }}
+            onClick={(event) => {
+                event.stopPropagation();
+            }}
             onPointerMove={() => {
                 clickValid.current = false;
             }}

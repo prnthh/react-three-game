@@ -1,7 +1,5 @@
-import { Component, FieldRenderer, FieldDefinition } from "react-three-game";
+import { Component, FieldRenderer, FieldDefinition, useSceneRuntime } from "react-three-game";
 import { useFrame } from "@react-three/fiber";
-import { useRef } from "react";
-import { Group } from "three";
 
 const rotatorFields: FieldDefinition[] = [
     { name: 'speed', type: 'number', label: 'Rotation Speed', step: 0.1 },
@@ -27,29 +25,21 @@ function RotatorComponentEditor({ component, onUpdate }: { component: any; onUpd
     );
 }
 
-// The view component for Rotator
-function RotatorView({ properties, children }: { properties: any; children?: React.ReactNode }) {
-    const groupRef = useRef<Group>(null);
+// The view component for Rotator — uses RefBridge for direct Object3D mutation (no wrapper group)
+function RotatorView({ properties, children, nodeId }: { properties: any; children?: React.ReactNode; nodeId?: string }) {
+    const { refBridge, editMode } = useSceneRuntime();
     const speed = properties.speed ?? 1.0;
     const axis = properties.axis ?? 'y';
 
-    useFrame((state, delta) => {
-        if (groupRef.current) {
-            if (axis === 'x') {
-                groupRef.current.rotation.x += delta * speed;
-            } else if (axis === 'y') {
-                groupRef.current.rotation.y += delta * speed;
-            } else if (axis === 'z') {
-                groupRef.current.rotation.z += delta * speed;
-            }
+    useFrame((_, delta) => {
+        if (editMode || !nodeId) return;
+        const obj = refBridge.get(nodeId);
+        if (obj) {
+            obj.rotation[axis as 'x' | 'y' | 'z'] += delta * speed;
         }
     });
 
-    return (
-        <group ref={groupRef}>
-            {children}
-        </group>
-    );
+    return <>{children}</>;
 }
 
 const RotatorComponent: Component = {

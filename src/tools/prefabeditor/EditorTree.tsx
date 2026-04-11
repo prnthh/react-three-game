@@ -1,10 +1,10 @@
 import { memo, MouseEvent, useCallback, useState } from 'react';
 import { Prefab } from "./types";
-import { getComponentDef } from './components/ComponentRegistry';
 import { base, colors, tree } from './styles';
 import { useEditorContext } from './PrefabEditor';
 import { Dropdown } from './Dropdown';
 import { FileMenu, TreeContextMenu, TreeContextMenuState, TreeNodeMenu } from './EditorTreeMenus';
+import { createEmptyNode } from './prefab';
 import { PrefabStoreState, usePrefabChildIds, usePrefabNode, usePrefabRootId, usePrefabStore, usePrefabStoreApi } from './prefabStore';
 
 type DropPosition = 'before' | 'inside';
@@ -55,16 +55,7 @@ export default function EditorTree({
     };
 
     const handleAddChild = (parentId: string) => {
-        const newNode = {
-            id: crypto.randomUUID(),
-            name: "New Node",
-            components: {
-                transform: {
-                    type: "Transform",
-                    properties: { ...getComponentDef('Transform')?.defaultProperties }
-                }
-            }
-        };
+        const newNode = createEmptyNode();
 
         addChild(parentId, newNode);
         setSelectedId(newNode.id);

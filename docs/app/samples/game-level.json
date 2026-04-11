@@ -63,8 +63,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#eeeeee",
-              "texture": "/textures/proto32/checkers_01.png",
+              "color": "#9dad7f",
               "repeat": true,
               "repeatCount": [
                 20,
@@ -80,7 +79,8 @@
               "type": "fixed"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "platform-1",
@@ -134,7 +134,8 @@
               "type": "fixed"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "platform-2",
@@ -188,7 +189,8 @@
               "type": "fixed"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "platform-3",
@@ -242,7 +244,8 @@
               "type": "fixed"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "platform-high",
@@ -296,7 +299,8 @@
               "type": "fixed"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "ramp-1",
@@ -350,7 +354,8 @@
               "type": "fixed"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "wall-back",
@@ -404,7 +409,8 @@
               "type": "fixed"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "wall-left",
@@ -458,7 +464,8 @@
               "type": "fixed"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "wall-right",
@@ -512,7 +519,8 @@
               "type": "fixed"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "obstacle-1",
@@ -566,7 +574,8 @@
               "type": "fixed"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "obstacle-2",
@@ -620,7 +629,8 @@
               "type": "fixed"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "cylinder-pillar-1",
@@ -669,7 +679,8 @@
               "type": "fixed"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "cylinder-pillar-2",
@@ -718,7 +729,8 @@
               "type": "fixed"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "tree-1",
@@ -750,7 +762,8 @@
               "instanced": false
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "tree-2",
@@ -782,7 +795,8 @@
               "instanced": false
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "tree-3",
@@ -814,7 +828,8 @@
               "instanced": false
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "spawn-indicator",
@@ -856,7 +871,8 @@
               "texture": "/textures/proto32/symbol_cross.png"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "goal-platform",
@@ -907,7 +923,8 @@
               "type": "fixed"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "stepping-stone-1",
@@ -956,7 +973,8 @@
               "type": "fixed"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "stepping-stone-2",
@@ -1005,7 +1023,8 @@
               "type": "fixed"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "main-light",
@@ -1038,10 +1057,13 @@
               "angle": 0.8,
               "penumbra": 0.5,
               "distance": 50,
-              "castShadow": true
+              "castShadow": true,
+              "shadowBias": -0.003
             }
           }
-        }
+        },
+        "disabled": false,
+        "children": []
       },
       {
         "id": "fill-light",
@@ -1050,9 +1072,9 @@
             "type": "Transform",
             "properties": {
               "position": [
-                -10,
-                12,
-                -5
+                -13,
+                28.5,
+                -1
               ],
               "rotation": [
                 0,
@@ -1070,13 +1092,17 @@
             "type": "SpotLight",
             "properties": {
               "color": "#b0c4de",
-              "intensity": 80,
+              "intensity": 500,
               "angle": 0.9,
               "penumbra": 0.8,
-              "distance": 40
+              "distance": 200,
+              "castShadow": true,
+              "shadowBias": -0.001
             }
           }
-        }
+        },
+        "disabled": false,
+        "children": []
       },
       {
         "id": "accent-light",
@@ -1086,7 +1112,7 @@
             "properties": {
               "position": [
                 0,
-                10,
+                23,
                 -15
               ],
               "rotation": [
@@ -1105,99 +1131,17 @@
             "type": "SpotLight",
             "properties": {
               "color": "#ffd700",
-              "intensity": 50,
-              "angle": 0.4,
+              "intensity": 500,
+              "angle": 0.5,
               "penumbra": 0.3,
-              "distance": 20
-            }
-          }
-        }
-      },
-      {
-        "id": "819dd6b6-176f-436c-81cb-dd6c73406644",
-        "name": "environment",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                0,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "environment": {
-            "type": "Environment",
-            "properties": {
-              "intensity": 1,
-              "resolution": 256
+              "distance": 38,
+              "castShadow": true,
+              "shadowBias": -0.0002
             }
           }
         },
-        "children": [
-          {
-            "id": "ae217e95-377c-4cef-b6ea-8741746364d6",
-            "name": "sphere",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
-                  ]
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "geometryType": "sphere",
-                  "args": [
-                    99.272109375,
-                    32,
-                    16
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "color": "#ffffff",
-                  "wireframe": false,
-                  "transparent": false,
-                  "opacity": 1,
-                  "metalness": 0,
-                  "roughness": 1,
-                  "side": "BackSide",
-                  "texture": "/textures/skybox/skybox1.jpg",
-                  "materialType": "basic"
-                }
-              }
-            }
-          }
-        ]
+        "disabled": false,
+        "children": []
       },
       {
         "id": "a067d3e7-2766-4513-8a72-fba8c2bc3643",
@@ -1227,7 +1171,96 @@
             "type": "Camera",
             "properties": {}
           }
-        }
+        },
+        "children": []
+      },
+      {
+        "id": "dfa52af0-5a65-4088-89ef-95ada74565de",
+        "name": "New Node",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                0,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "environment": {
+            "type": "Environment",
+            "properties": {
+              "intensity": 0.8
+            }
+          }
+        },
+        "disabled": false,
+        "children": [
+          {
+            "id": "bf2731ee-39dc-4f05-a19c-b49d894542b5",
+            "name": "New Node",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "sphere",
+                  "args": [
+                    120,
+                    32,
+                    16
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "basic",
+                  "color": "#ffffff",
+                  "toneMapped": true,
+                  "wireframe": false,
+                  "transparent": false,
+                  "opacity": 1,
+                  "metalness": 0,
+                  "roughness": 1,
+                  "side": "BackSide",
+                  "texture": "/textures/skybox/skybox3.jpg"
+                }
+              }
+            },
+            "children": []
+          }
+        ]
       }
     ]
   }

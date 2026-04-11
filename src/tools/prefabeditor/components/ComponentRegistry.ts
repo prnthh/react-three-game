@@ -3,6 +3,26 @@ import { ComponentData, GameObject } from "../types";
 
 export type AssetRef = { type: "model" | "texture" | "sound"; path: string };
 
+/** Props every component View receives from the renderer. */
+export interface ComponentViewProps<P = Record<string, any>> {
+    /** This component's own data from the prefab JSON. */
+    properties: P;
+    /** Children to render (for wrapper / child-host components). */
+    children?: React.ReactNode;
+    /** The entity ID this component belongs to. */
+    nodeId?: string;
+    /** True when the editor is in edit mode. */
+    editMode?: boolean;
+    /** True when this entity is selected in the editor. */
+    isSelected?: boolean;
+    /** Entity local position (passed to wrapper components like Physics). */
+    position?: [number, number, number];
+    /** Entity local rotation in radians (passed to wrapper components like Physics). */
+    rotation?: [number, number, number];
+    /** Entity local scale (passed to wrapper components like Physics). */
+    scale?: [number, number, number];
+}
+
 export interface Component {
     name: string;
     Editor: FC<{
@@ -12,11 +32,10 @@ export interface Component {
         basePath?: string;
     }>;
     defaultProperties: any;
-    // Allow View to accept extra props for special cases (like material)
-    View?: FC<any>;
+    View?: FC<ComponentViewProps>;
     /** When true, this component wraps child entities (e.g. Physics wraps children in RigidBody). */
     isWrapper?: boolean;
-    // Declare which asset paths this component references (for asset loading)
+    /** Declare which asset paths this component references (for asset loading). */
     getAssetRefs?: (properties: Record<string, any>) => AssetRef[];
 }
 

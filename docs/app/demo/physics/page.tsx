@@ -252,6 +252,7 @@ export default function PhysicsDemo() {
             <PrefabEditor ref={editorRef} initialPrefab={prefab} mode={PrefabEditorMode.Play}>
                 <CannonController onFire={fireCannon} />
                 <TargetController onTargetColorChange={handleTargetColorChange} />
+                <ambientLight intensity={1.5} />
             </PrefabEditor>
         </main>
     );

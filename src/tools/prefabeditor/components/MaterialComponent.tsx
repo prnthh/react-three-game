@@ -2,10 +2,10 @@ import { extend } from '@react-three/fiber';
 import type { ThreeElement } from '@react-three/fiber';
 import { Component } from './ComponentRegistry';
 import { FieldRenderer, FieldDefinition, Label, NumberInput } from './Input';
+import { useSceneRuntime } from '../PrefabRoot';
 import { useMemo } from 'react';
 import { MeshBasicNodeMaterial, MeshStandardNodeMaterial } from 'three/webgpu';
 import { TexturePicker } from '../../assetviewer/page';
-import { LoadedTextures } from '../../dragdrop';
 import {
     RepeatWrapping,
     ClampToEdgeWrapping,
@@ -210,7 +210,9 @@ function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { compo
 }
 
 // View for Material component
-function MaterialComponentView({ properties, loadedTextures }: { properties: MaterialProps, loadedTextures?: LoadedTextures }) {
+function MaterialComponentView({ properties: rawProps }: { properties: Record<string, any> }) {
+    const { getTexture } = useSceneRuntime();
+    const properties = rawProps as MaterialProps;
     const materialType = properties?.materialType ?? 'standard';
     const textureName = properties?.texture;
     const repeat = properties?.repeat;
@@ -218,11 +220,11 @@ function MaterialComponentView({ properties, loadedTextures }: { properties: Mat
     const generateMipmaps = properties?.generateMipmaps !== false;
     const minFilter = properties?.minFilter || 'LinearMipmapLinearFilter';
     const magFilter = properties?.magFilter || 'LinearFilter';
-    const texture = textureName && loadedTextures ? loadedTextures[textureName] : undefined;
+    const texture = textureName ? getTexture(textureName) ?? undefined : undefined;
 
     const normalMapTextureName = properties?.normalMapTexture;
     const normalScaleProp = properties?.normalScale;
-    const normalMapTexture = normalMapTextureName && loadedTextures ? loadedTextures[normalMapTextureName] : undefined;
+    const normalMapTexture = normalMapTextureName ? getTexture(normalMapTextureName) ?? undefined : undefined;
     const materialSource: MaterialProps = properties ?? {};
 
     // Destructure all material props and separate custom texture handling props

@@ -17,7 +17,8 @@ export type { EditorContextType } from './tools/prefabeditor/PrefabEditor';
 // Prefab Editor - Store & Scene API
 export { createPrefabStore, prefabStoreToPrefab, usePrefabStoreApi } from './tools/prefabeditor/prefabStore';
 export type { PrefabStoreApi, PrefabStoreState } from './tools/prefabeditor/prefabStore';
-export { createScene } from './tools/prefabeditor/sceneApi';
+export { createScene } from './tools/prefabeditor/scene';
+export { denormalizePrefab } from './tools/prefabeditor/prefab';
 
 // Prefab Editor - Component Registry
 export { registerComponent } from './tools/prefabeditor/components/ComponentRegistry';
@@ -49,10 +50,12 @@ export {
   exportGLBData,
   regenerateIds,
   computeParentWorldMatrix,
-  createModelNode,
-  createImageNode,
 } from './tools/prefabeditor/utils';
 export type { ExportGLBOptions } from './tools/prefabeditor/utils';
+export {
+  createModelNode,
+  createImageNode,
+} from './tools/prefabeditor/prefab';
 
 // Prefab Editor - Types
 export type {
@@ -68,9 +71,10 @@ export type {
   EntityUpdate,
   PropertyPath,
   SceneUpdates,
-} from './tools/prefabeditor/sceneApi';
-export type { PrefabRootProps, PrefabRootRef } from './tools/prefabeditor/PrefabRoot';
-export type { Component } from './tools/prefabeditor/components/ComponentRegistry';
+} from './tools/prefabeditor/scene';
+export type { PrefabRootProps, PrefabRootRef, SceneRuntime } from './tools/prefabeditor/PrefabRoot';
+export { useSceneRuntime } from './tools/prefabeditor/PrefabRoot';
+export type { Component, ComponentViewProps } from './tools/prefabeditor/components/ComponentRegistry';
 export type { FieldDefinition, FieldType } from './tools/prefabeditor/components/Input';
 export type { Prefab, GameObject, ComponentData } from './tools/prefabeditor/types';
 export { findComponent, findComponentEntry, hasComponent } from './tools/prefabeditor/types';
@@ -78,6 +82,10 @@ export { findComponent, findComponentEntry, hasComponent } from './tools/prefabe
 // Game Events (physics + custom events)
 export { gameEvents, useGameEvent, getEntityIdFromRigidBody } from './tools/prefabeditor/GameEvents';
 export type { GameEventType, GameEventMap, GameEventPayload, PhysicsEventType, InteractionEventType, PhysicsEventPayload, ClickEventPayload } from './tools/prefabeditor/GameEvents';
+
+// RefBridge & Systems
+export { createRefBridge } from './tools/prefabeditor/RefBridge';
+export type { RefBridge } from './tools/prefabeditor/RefBridge';
 
 // Asset Loading
 export { loadFiles } from './tools/dragdrop/DragDropLoader';

@@ -29,7 +29,7 @@ export const Toolbar = ({ setSelectedPrefab }: { setSelectedPrefab: React.Dispat
         setSelectedPrefab(mod.default);
       });
     }}>
-      {['throne', 'game-level', 'test', 'floor', 'killbox'].map((prefabName) => (
+      {['throne', 'game-level', 'killbox'].map((prefabName) => (
         <option key={prefabName} value={prefabName}>{prefabName} prefab</option>
       ))}
     </select>

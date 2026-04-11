@@ -1,6 +1,6 @@
-import { PerspectiveCamera } from '@react-three/drei';
-import { useEffect, useMemo, useState } from 'react';
-import { CameraHelper, PerspectiveCamera as ThreePerspectiveCamera } from 'three';
+import { PerspectiveCamera, useHelper } from '@react-three/drei';
+import { useRef } from 'react';
+import { CameraHelper, Object3D, PerspectiveCamera as ThreePerspectiveCamera } from 'three';
 import { useFrame } from '@react-three/fiber';
 import { Component } from './ComponentRegistry';
 import { FieldGroup, NumberField } from './Input';
@@ -64,39 +64,29 @@ function CameraComponentView({ properties, children, editMode, isSelected }: { p
     const near = merged.near;
     const zoom = merged.zoom;
     const far = merged.far;
-    const [camera, setCamera] = useState<ThreePerspectiveCamera | null>(null);
-    const cameraHelper = useMemo(
-        () => camera ? new CameraHelper(camera) : null,
-        [camera]
+    const cameraRef = useRef<ThreePerspectiveCamera>(null);
+    useHelper(
+        editMode && isSelected ? cameraRef as React.RefObject<Object3D> : null,
+        CameraHelper
     );
 
-    useEffect(() => {
-        return () => {
-            cameraHelper?.dispose();
-        };
-    }, [cameraHelper]);
-
     useFrame(() => {
-        if (camera && cameraHelper && editMode && isSelected) {
-            camera.updateProjectionMatrix();
-            camera.updateMatrixWorld();
-            cameraHelper.update();
+        if (cameraRef.current && editMode && isSelected) {
+            cameraRef.current.updateProjectionMatrix();
+            cameraRef.current.updateMatrixWorld();
         }
     });
 
     return (
         <>
             <PerspectiveCamera
-                ref={(instance) => setCamera(instance)}
+                ref={cameraRef}
                 makeDefault={!editMode}
                 fov={fov}
                 near={near}
                 zoom={zoom}
                 far={far}
             />
-            {editMode && isSelected && cameraHelper && (
-                <primitive object={cameraHelper} />
-            )}
             {editMode ? (
                 <group>
                     <mesh>

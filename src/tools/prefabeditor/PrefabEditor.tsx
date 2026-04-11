@@ -2,17 +2,17 @@ import { MapControls, TransformControls } from "@react-three/drei";
 import GameCanvas from "../../shared/GameCanvas";
 import { useCallback, useEffect, useMemo, useRef, useState, forwardRef, useImperativeHandle, createContext, useContext } from "react";
 import { Object3D, Texture } from "three";
-import { LoadedModels, LoadedTextures } from "../dragdrop";
 import { GameObject, Prefab, findComponentEntry } from "./types";
 import PrefabRoot, { PrefabRootRef } from "./PrefabRoot";
 import { Physics } from "@react-three/rapier";
 import EditorUI from "./EditorUI";
 import { base, toolbar } from "./styles";
-import { createImageNode, createModelNode, computeParentWorldMatrix, decompose, exportGLB as exportGLBFile, exportGLBData, focusCameraOnObject, regenerateIds } from "./utils";
+import { computeParentWorldMatrix, decompose, exportGLB as exportGLBFile, exportGLBData, focusCameraOnObject, regenerateIds } from "./utils";
 import type { ExportGLBOptions } from "./utils";
 import { loadFiles } from "../dragdrop";
-import { createPrefabStore, PrefabStoreProvider, prefabStoreToPrefab } from "./prefabStore";
-import { createScene, type Scene, type SpawnOptions } from "./sceneApi";
+import { denormalizePrefab, createImageNode, createModelNode, createNode } from './prefab';
+import { createPrefabStore, PrefabStoreProvider } from "./prefabStore";
+import { createScene, type Scene, type SpawnOptions } from "./scene";
 
 export interface PrefabEditorRef {
     screenshot: () => void;
@@ -77,15 +77,7 @@ const HISTORY_DEBOUNCE_MS = 500;
 const DEFAULT_PREFAB: Prefab = {
     id: "prefab-default",
     name: "New Prefab",
-    root: {
-        id: "root",
-        components: {
-            transform: {
-                type: "Transform",
-                properties: { position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1] }
-            }
-        }
-    }
+    root: createNode('Root', {}, { id: 'root' })
 };
 
 const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath, initialPrefab, physics = true, mode: initialMode = PrefabEditorMode.Edit, onChange, showUI = true, enableWindowDrop = true, canvasProps, uiPlugins, children }, ref) => {
@@ -106,11 +98,9 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const controlsRef = useRef<any>(null);
     const onChangeRef = useRef(onChange);
-    const [injectedModels, setInjectedModels] = useState<LoadedModels>({});
-    const [injectedTextures, setInjectedTextures] = useState<LoadedTextures>({});
     const isEditMode = mode === PrefabEditorMode.Edit;
 
-    const getPrefab = useCallback(() => prefabStoreToPrefab(prefabStore.getState()), [prefabStore]);
+    const getPrefab = useCallback(() => denormalizePrefab(prefabStore.getState()), [prefabStore]);
 
     onChangeRef.current = onChange;
 
@@ -146,8 +136,6 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
 
         if (options?.resetHistory) {
             setSelectedId(null);
-            setInjectedModels({});
-            setInjectedTextures({});
             setHistory([prefab]);
             historyIndexRef.current = 0;
             setHistoryIndex(0);
@@ -171,7 +159,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
 
             lastRevision = state.revision;
 
-            const nextPrefab = prefabStoreToPrefab(state);
+            const nextPrefab = denormalizePrefab(state);
             const changeOrigin = changeOriginRef.current;
 
             if (changeOrigin !== "replace-silent") {
@@ -247,14 +235,14 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
     const addModel = useCallback((path: string, model: Object3D, options?: SpawnOptions) => {
         const node = createModelNode(path, options?.name);
         addNode(node, options);
-        setInjectedModels(prev => ({ ...prev, [path]: model }));
+        prefabRootRef.current?.addModel(path, model);
         return node;
     }, [addNode]);
 
     const addTexture = useCallback((path: string, texture: Texture, options?: SpawnOptions) => {
         const node = createImageNode(path, options?.name);
         addNode(node, options);
-        setInjectedTextures(prev => ({ ...prev, [path]: texture }));
+        prefabRootRef.current?.addTexture(path, texture);
         return node;
     }, [addNode]);
 
@@ -337,10 +325,10 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
 
     const scene = useMemo(() => createScene({
         getRootId: () => prefabStore.getState().rootId,
-        getNode: (id) => prefabStore.getState().nodesById[id] ?? null,
-        getChildIds: (id) => prefabStore.getState().childIdsById[id] ?? [],
-        getParentId: (id) => prefabStore.getState().parentIdById[id] ?? null,
-        findByName: (name) => {
+        getNode: (id: string) => prefabStore.getState().nodesById[id] ?? null,
+        getChildIds: (id: string) => prefabStore.getState().childIdsById[id] ?? [],
+        getParentId: (id: string) => prefabStore.getState().parentIdById[id] ?? null,
+        findByName: (name: string) => {
             const state = prefabStore.getState();
             const normalized = name.toLowerCase();
             for (const [id, node] of Object.entries(state.nodesById)) {
@@ -348,12 +336,12 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
             }
             return null;
         },
-        updateNode: (id, update) => prefabStore.getState().updateNode(id, update),
-        updateNodes: (updates) => prefabStore.getState().updateNodes(
+        updateNode: (id: string, update: (node: any) => any) => prefabStore.getState().updateNode(id, update),
+        updateNodes: (updates: Record<string, (node: any) => any>) => prefabStore.getState().updateNodes(
             Object.entries(updates).map(([id, update]) => ({ id, update }))
         ),
-        addNode: (node, options) => addNode(node, options).id,
-        removeNode: (id) => prefabStore.getState().deleteNode(id),
+        addNode: (node: GameObject, options?: SpawnOptions) => addNode(node, options).id,
+        removeNode: (id: string) => prefabStore.getState().deleteNode(id),
     }), [addNode, prefabStore]);
 
     const handleTransformChange = () => {
@@ -437,7 +425,6 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
 
     const content = (
         <>
-            <ambientLight intensity={1.5} />
             <gridHelper args={[10, 10]} position={[0, -1, 0]} />
             <PrefabRoot
                 ref={prefabRootRef}
@@ -445,11 +432,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
                 editMode={isEditMode}
                 selectedId={selectedId}
                 onSelect={setSelection}
-                onSelectedObjectChange={isEditMode ? setSelectedObject : undefined}
-                onFocusNode={isEditMode ? handleFocusNode : undefined}
                 basePath={basePath}
-                injectedModels={injectedModels}
-                injectedTextures={injectedTextures}
             />
             {children}
         </>

@@ -238,6 +238,61 @@
         "children": []
       },
       {
+        "id": "squishy-cube",
+        "enabled": true,
+        "visible": true,
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                0,
+                4.5
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1.2,
+                1.2,
+                1.2
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#8fd694",
+              "texture": "/textures/proto32/white.png"
+            }
+          },
+          "squish": {
+            "type": "Squish",
+            "properties": {
+              "amount": 0.32,
+              "speed": 3.5,
+              "bulge": 0.45,
+              "lift": 0.18
+            }
+          }
+        },
+        "children": []
+      },
+      {
         "id": "light",
         "enabled": true,
         "visible": true,
@@ -247,7 +302,7 @@
             "properties": {
               "position": [
                 0,
-                9,
+                8.5,
                 -1.5
               ],
               "rotation": [
@@ -270,7 +325,9 @@
               "angle": 1.05,
               "penumbra": 0.5,
               "distance": 50,
-              "castShadow": true
+              "castShadow": true,
+              "shadowBias": -0.001,
+              "shadowMapSize": 1280
             }
           }
         },

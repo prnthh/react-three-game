@@ -1,31 +1,26 @@
 import { Environment } from '@react-three/drei';
 import { Component } from './ComponentRegistry';
 import { FieldGroup, NumberField } from './Input';
-import { Object3D, Texture } from 'three';
+import { useSceneRuntime } from '../PrefabRoot';
 
 function EnvironmentView({
     properties,
     children,
-    editMode,
-    loadedTextures,
-    loadedModels,
 }: {
     properties: any;
     children?: React.ReactNode;
-    editMode?: boolean;
-    loadedTextures?: Record<string, Texture>;
-    loadedModels?: Record<string, Object3D>;
 }) {
+    const { getAssetRevision } = useSceneRuntime();
     const { intensity = 1, resolution = 256 } = properties;
-    const assetRevision = `${Object.keys(loadedTextures ?? {}).sort().join('|')}::${Object.keys(loadedModels ?? {}).sort().join('|')}`;
+    const environmentRevision = `${getAssetRevision()}::${intensity}::${resolution}`;
 
     return (
         <Environment
-            key={assetRevision}
+            key={environmentRevision}
             background={true}
             environmentIntensity={intensity}
             resolution={resolution}
-            frames={editMode ? undefined : 1}
+            frames={1}
         >
             {children}
         </Environment>

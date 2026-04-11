@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { GameObject as GameObjectType, Prefab, hasComponent } from "./types";
 import EditorTree from './EditorTree';
 import { getAllComponentDefs } from './components/ComponentRegistry';
+import { createComponentData } from './prefab';
 import { base, colors, inspector, componentCard } from './styles';
 import { usePrefabStore } from './prefabStore';
 
@@ -183,7 +184,7 @@ function NodeInspector({
                                     ...n,
                                     components: {
                                         ...n.components,
-                                        [addType.toLowerCase()]: { type: def.name, properties: def.defaultProperties }
+                                        [addType.toLowerCase()]: createComponentData(def.name)
                                     }
                                 }));
                             }

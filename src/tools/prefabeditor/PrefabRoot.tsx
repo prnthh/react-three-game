@@ -57,7 +57,7 @@ export interface PrefabRootProps {
     selectedId?: string | null;
     onSelect?: (id: string | null) => void;
     onClick?: (event: ThreeEvent<PointerEvent>, entity: GameObjectType) => void;
-    onObjectRefChange?: (id: string, obj: Object3D | null) => void;
+    onObjectRefChange?: (id: string, object: Object3D | null) => void;
     basePath?: string;
 }
 

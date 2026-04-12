@@ -245,8 +245,6 @@ function DirectionalLightView({ properties, children }: { properties: any; child
     const shadowCameraLeft = merged.shadowCameraLeft;
     const shadowCameraRight = merged.shadowCameraRight;
     const targetOffset = merged.targetOffset;
-    const lightInstanceKey = castShadow ? 'shadow-on' : 'shadow-off';
-
     const directionalLightRef = useRef<DirectionalLight>(null);
     const targetRef = useRef<Object3D>(null);
     const shadowCameraRef = useRef<OrthographicCamera>(null);
@@ -300,7 +298,6 @@ function DirectionalLightView({ properties, children }: { properties: any; child
     return (
         <>
             <directionalLight
-                key={lightInstanceKey}
                 ref={directionalLightRef}
                 color={color}
                 intensity={intensity}

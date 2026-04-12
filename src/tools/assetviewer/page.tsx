@@ -5,18 +5,6 @@ import { createPortal } from 'react-dom';
 import { TextureLoader } from "three";
 import { loadModel } from "../dragdrop/modelLoader";
 
-class ErrorBoundary extends ReactComponent<{ onError?: () => void; children: React.ReactNode }, { hasError: boolean }> {
-    constructor(props: any) {
-        super(props);
-        this.state = { hasError: false };
-    }
-    static getDerivedStateFromError() { return { hasError: true }; }
-    componentDidCatch() { this.props.onError?.(); }
-    render() { return this.state.hasError ? null : this.props.children; }
-}
-
-// view models and textures in manifest, onselect callback
-
 const styles: Record<string, any> = {
     errorIcon: { color: '#fca5a5', fontSize: 12 }, // text-red-400 text-xs
     flexFillRelative: { flex: 1, position: 'relative' },

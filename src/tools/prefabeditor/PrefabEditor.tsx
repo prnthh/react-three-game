@@ -1,6 +1,6 @@
 import { MapControls, TransformControls } from "@react-three/drei";
 import GameCanvas from "../../shared/GameCanvas";
-import { useCallback, useEffect, useMemo, useRef, useState, forwardRef, useImperativeHandle, createContext, useContext } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState, forwardRef, useImperativeHandle, createContext, useContext } from "react";
 import { Object3D, Texture } from "three";
 import { GameObject, Prefab, findComponentEntry } from "./types";
 import PrefabRoot, { PrefabRootRef } from "./PrefabRoot";
@@ -13,6 +13,18 @@ import { loadFiles } from "../dragdrop";
 import { denormalizePrefab, createImageNode, createModelNode, createNode } from './prefab';
 import { createPrefabStore, PrefabStoreProvider } from "./prefabStore";
 import { createScene, type Scene, type SpawnOptions } from "./scene";
+
+function isObjectAttachedToRoot(root: Object3D | null | undefined, object: Object3D | null | undefined) {
+    if (!root || !object) return false;
+
+    let current: Object3D | null = object;
+    while (current) {
+        if (current === root) return true;
+        current = current.parent;
+    }
+
+    return false;
+}
 
 export interface PrefabEditorRef {
     screenshot: () => void;
@@ -92,7 +104,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
     const [historyIndex, setHistoryIndex] = useState(0);
     const changeOriginRef = useRef<"replace" | "replace-silent" | "history" | null>(null);
     const historyIndexRef = useRef(0);
-    const [selectedObject, setSelectedObject] = useState<Object3D | null>(null);
+    const [, bumpSelectedObjectVersion] = useReducer((value: number) => value + 1, 0);
     const prefabRootRef = useRef<PrefabRootRef>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const controlsRef = useRef<any>(null);
@@ -102,6 +114,10 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
     const getPrefab = useCallback(() => denormalizePrefab(prefabStore.getState()), [prefabStore]);
     const getObject = useCallback((nodeId: string) => prefabRootRef.current?.getObject(nodeId) ?? null, []);
     const getRigidBody = useCallback((nodeId: string) => prefabRootRef.current?.getRigidBody(nodeId) ?? null, []);
+    const handleObjectRefChange = useCallback((nodeId: string) => {
+        if (nodeId !== selectedId) return;
+        bumpSelectedObjectVersion();
+    }, [selectedId]);
 
     onChangeRef.current = onChange;
 
@@ -117,7 +133,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
     const updateMode = useCallback((nextMode: PrefabEditorMode) => {
         setMode(prev => {
             if (prev === nextMode) return prev;
-            if (nextMode === PrefabEditorMode.Play) { setSelectedId(null); setSelectedObject(null); }
+            if (nextMode === PrefabEditorMode.Play) { setSelectedId(null); }
             return nextMode;
         });
     }, []);
@@ -133,7 +149,6 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
     const loadPrefab = useCallback((prefab: Prefab, options?: { resetHistory?: boolean; notifyChange?: boolean }) => {
         changeOriginRef.current = options?.notifyChange === false ? "replace-silent" : "replace";
         prefabStore.getState().replacePrefab(prefab);
-        setSelectedObject(null);
 
         if (options?.resetHistory) {
             setSelectedId(null);
@@ -205,28 +220,15 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
             if (state.nodesById[selectedId]) return;
 
             setSelectedId(null);
-            setSelectedObject(null);
         });
 
         return () => unsubscribe();
     }, [prefabStore, selectedId]);
 
-    useEffect(() => {
-        if (!selectedId) {
-            setSelectedObject(null);
-            return;
-        }
-
-        setSelectedObject(getObject(selectedId));
-    }, [getObject, selectedId]);
-
-    const handleObjectRefChange = useCallback((nodeId: string, obj: Object3D | null) => {
-        if (nodeId !== selectedId) {
-            return;
-        }
-
-        setSelectedObject(current => current === obj ? current : obj);
-    }, [selectedId]);
+    const selectedObject = selectedId ? getObject(selectedId) : null;
+    const transformObject = isObjectAttachedToRoot(prefabRootRef.current?.root ?? null, selectedObject)
+        ? selectedObject
+        : null;
 
     const addNode = useCallback((node: GameObject, options?: SpawnOptions) => {
         const { addChild, rootId } = prefabStore.getState();
@@ -260,7 +262,6 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
         prefabStore.getState().replacePrefab(history[index]);
         historyIndexRef.current = index;
         setHistoryIndex(index);
-        setSelectedObject(null);
         setSelectedId(prev => prev && prefabStore.getState().nodesById[prev] ? prev : null);
     };
 
@@ -484,10 +485,10 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
             {isEditMode && (
                 <>
                     <MapControls ref={controlsRef} enableDamping={false} makeDefault />
-                    {selectedObject && (
+                    {transformObject && (
                         <TransformControls
-                            key={`transform-${transformMode}-${positionSnap}-${rotationSnap}-${scaleSnap}`}
-                            object={selectedObject}
+                            key={`transform-${selectedId}-${transformMode}-${positionSnap}-${rotationSnap}-${scaleSnap}`}
+                            object={transformObject}
                             mode={transformMode}
                             space="local"
                             onObjectChange={handleTransformChange}

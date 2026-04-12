@@ -469,7 +469,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
 
             {isEditMode && (
                 <>
-                    <MapControls ref={controlsRef} makeDefault />
+                    <MapControls ref={controlsRef} enableDamping={false} makeDefault />
                     {selectedObject && (
                         <TransformControls
                             key={`transform-${transformMode}-${positionSnap}-${rotationSnap}-${scaleSnap}`}

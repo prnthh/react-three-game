@@ -57,10 +57,11 @@ export interface PrefabRootProps {
     selectedId?: string | null;
     onSelect?: (id: string | null) => void;
     onClick?: (event: ThreeEvent<PointerEvent>, entity: GameObjectType) => void;
+    onObjectRefChange?: (id: string, obj: Object3D | null) => void;
     basePath?: string;
 }
 
-export const PrefabRoot = forwardRef<PrefabRootRef, PrefabRootProps>(({ editMode, data, store, selectedId, onSelect, onClick, basePath = "" }, ref) => {
+export const PrefabRoot = forwardRef<PrefabRootRef, PrefabRootProps>(({ editMode, data, store, selectedId, onSelect, onClick, onObjectRefChange, basePath = "" }, ref) => {
 
     const [models, setModels] = useState<LoadedModels>({});
     const [textures, setTextures] = useState<LoadedTextures>({});
@@ -104,7 +105,8 @@ export const PrefabRoot = forwardRef<PrefabRootRef, PrefabRootProps>(({ editMode
 
     const registerRef = useCallback((id: string, obj: Object3D | null) => {
         objectRefs.current[id] = obj;
-    }, []);
+        onObjectRefChange?.(id, obj);
+    }, [onObjectRefChange]);
 
     const registerRigidBodyRef = useCallback((id: string, rb: any) => {
         rigidBodyRefs.current.set(id, rb);
@@ -112,15 +114,6 @@ export const PrefabRoot = forwardRef<PrefabRootRef, PrefabRootProps>(({ editMode
 
     const getRigidBody = useCallback((id: string) => {
         return rigidBodyRefs.current.get(id) ?? null;
-    }, []);
-
-    useEffect(() => {
-        const originalError = console.error;
-        console.error = (...args: any[]) => {
-            if (typeof args[0] === 'string' && args[0].includes('TransformControls') && args[0].includes('scene graph')) return;
-            originalError.apply(console, args);
-        };
-        return () => { console.error = originalError; };
     }, []);
 
     useEffect(() => {
@@ -431,6 +424,7 @@ function StandardNode({
             {renderCompositionNode(gameObject, renderCtx, childNodes)}
         </group>
     );
+    const physicsInner = editMode ? <group visible={false}>{inner}</group> : inner;
 
     return (
         <EntityRuntimeScope nodeId={nodeId} editMode={editMode} isSelected={isSelected}>
@@ -461,7 +455,7 @@ function StandardNode({
                             position={transform.position}
                             rotation={transform.rotation}
                             scale={transform.scale}
-                        >{inner}</physicsDef.View>
+                        >{physicsInner}</physicsDef.View>
                     ) : null}
                 </>
             ) : hasPhysics && physicsDef?.View ? (

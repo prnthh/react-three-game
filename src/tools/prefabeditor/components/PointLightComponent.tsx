@@ -62,6 +62,7 @@ function PointLightView({ properties, children }: { properties: any; children?: 
     const shadowAutoUpdate = merged.shadowAutoUpdate;
     const shadowCameraNear = merged.shadowCameraNear;
     const shadowCameraFar = merged.shadowCameraFar;
+    const lightInstanceKey = castShadow ? 'shadow-on' : 'shadow-off';
     const lightRef = useRef<PointLight>(null);
     useHelper(
         editMode && isSelected ? lightRef as React.RefObject<Object3D> : null,
@@ -81,6 +82,7 @@ function PointLightView({ properties, children }: { properties: any; children?: 
     return (
         <>
             <pointLight
+                key={lightInstanceKey}
                 ref={lightRef}
                 color={color}
                 intensity={intensity}

@@ -89,6 +89,7 @@ function SpotLightView({ properties, children }: { properties: any; children?: R
     const shadowCameraFar = merged.shadowCameraFar;
     const targetOffset = merged.targetOffset;
     const textureMap = merged.map ? getTexture(merged.map) ?? undefined : undefined;
+    const lightInstanceKey = castShadow ? 'shadow-on' : 'shadow-off';
 
     const spotLightRef = useRef<SpotLight>(null);
     const targetRef = useRef<any>(null);
@@ -102,7 +103,7 @@ function SpotLightView({ properties, children }: { properties: any; children?: R
         if (spotLightRef.current && targetRef.current) {
             spotLightRef.current.target = targetRef.current;
         }
-    }, []);
+    }, [castShadow]);
 
     useEffect(() => {
         const shadow = spotLightRef.current?.shadow;
@@ -121,6 +122,7 @@ function SpotLightView({ properties, children }: { properties: any; children?: R
     return (
         <>
             <spotLight
+                key={lightInstanceKey}
                 ref={spotLightRef}
                 color={color}
                 intensity={intensity}

@@ -65,7 +65,7 @@ export interface PrefabEditorProps {
     onChange?: (prefab: Prefab) => void;
     showUI?: boolean;
     enableWindowDrop?: boolean;
-    canvasProps?: Omit<React.ComponentProps<typeof GameCanvas>, 'children' | 'canvasRef'>;
+    canvasProps?: Omit<React.ComponentProps<typeof GameCanvas>, 'children'>;
     uiPlugins?: React.ReactNode[] | React.ReactNode;
     children?: React.ReactNode;
 }
@@ -219,6 +219,14 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
 
         setSelectedObject(getObject(selectedId));
     }, [getObject, selectedId]);
+
+    const handleObjectRefChange = useCallback((nodeId: string, obj: Object3D | null) => {
+        if (nodeId !== selectedId) {
+            return;
+        }
+
+        setSelectedObject(current => current === obj ? current : obj);
+    }, [selectedId]);
 
     const addNode = useCallback((node: GameObject, options?: SpawnOptions) => {
         const { addChild, rootId } = prefabStore.getState();
@@ -426,11 +434,17 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
                 editMode={isEditMode}
                 selectedId={selectedId}
                 onSelect={setSelection}
+                onObjectRefChange={handleObjectRefChange}
                 basePath={basePath}
             />
             {children}
         </>
     );
+
+    const handleCanvasCreated = useCallback((state: Parameters<NonNullable<React.ComponentProps<typeof GameCanvas>["onCreated"]>>[0]) => {
+        canvasRef.current = state.gl.domElement as HTMLCanvasElement;
+        canvasProps?.onCreated?.(state);
+    }, [canvasProps]);
 
     return <PrefabStoreProvider store={prefabStore}><EditorContext.Provider value={{
         mode,
@@ -449,8 +463,8 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
     }}>
         <GameCanvas
             camera={{ position: [0, 5, 15] }}
-            canvasRef={canvasRef}
             {...canvasProps}
+            onCreated={handleCanvasCreated}
             onPointerMissed={isEditMode
                 ? (event) => {
                     const button = event.button ?? (event as MouseEvent & { sourceEvent?: MouseEvent }).sourceEvent?.button ?? 0;

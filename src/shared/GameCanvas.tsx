@@ -14,10 +14,9 @@ export interface GameCanvasProps extends Omit<CanvasProps, 'children'> {
     loader?: boolean;
     children: React.ReactNode;
     glConfig?: WebGPURendererParameters;
-    canvasRef?: React.RefObject<HTMLCanvasElement | null>;
 }
 
-export default function GameCanvas({ loader = false, children, glConfig, canvasRef, onCreated, style, ...props }: GameCanvasProps) {
+export default function GameCanvas({ loader = false, children, glConfig, onCreated, style, ...props }: GameCanvasProps) {
     const [frameloop, setFrameloop] = useState<"never" | "always">("never");
 
     return <>

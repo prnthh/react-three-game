@@ -17,26 +17,26 @@ export interface GameCanvasProps extends Omit<CanvasProps, 'children'> {
     canvasRef?: React.RefObject<HTMLCanvasElement | null>;
 }
 
-function applyCanvasInteractionGuards(canvas: HTMLCanvasElement) {
-    canvas.style.touchAction = 'none';
-    canvas.style.userSelect = 'none';
-    canvas.style.setProperty('-webkit-touch-callout', 'none');
-    canvas.style.setProperty('-webkit-user-drag', 'none');
-    canvas.style.setProperty('-webkit-tap-highlight-color', 'transparent');
-}
-
 export default function GameCanvas({ loader = false, children, glConfig, canvasRef, onCreated, style, ...props }: GameCanvasProps) {
     const [frameloop, setFrameloop] = useState<"never" | "always">("never");
 
     return <>
         <Canvas
-            style={{ touchAction: 'none', userSelect: 'none', ...style }}
+            style={{
+                touchAction: 'none',
+                userSelect: 'none',
+                WebkitUserSelect: 'none',
+                WebkitTouchCallout: 'none',
+                WebkitTapHighlightColor: 'transparent',
+                ...style,
+            }}
             shadows={{ type: PCFShadowMap }}
             dpr={[1, 1.5]}
             frameloop={frameloop}
             gl={async ({ canvas }) => {
+                const canvasElement = canvas as HTMLCanvasElement;
                 const renderer = new WebGPURenderer({
-                    canvas: canvas as HTMLCanvasElement,
+                    canvas: canvasElement,
                     // @ts-expect-error futuristic
                     shadowMap: true,
                     antialias: true,
@@ -48,10 +48,6 @@ export default function GameCanvas({ loader = false, children, glConfig, canvasR
                 return renderer
             }}
             onCreated={(state) => {
-                applyCanvasInteractionGuards(state.gl.domElement as HTMLCanvasElement);
-                if (canvasRef) {
-                    canvasRef.current = state.gl.domElement as HTMLCanvasElement;
-                }
                 onCreated?.(state);
             }}
             {...props}

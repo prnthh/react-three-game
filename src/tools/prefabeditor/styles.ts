@@ -1,4 +1,48 @@
+import type { CSSProperties } from 'react';
+
 // Shared editor styles - single source of truth for all prefab editor UI
+
+type Style = CSSProperties;
+
+interface BaseStyles {
+    panel: Style;
+    header: Style;
+    input: Style;
+    btn: Style;
+    btnDanger: Style;
+    label: Style;
+    row: Style;
+    section: Style;
+}
+
+interface InspectorStyles {
+    panel: Style;
+    content: Style;
+}
+
+interface TreeStyles {
+    panel: Style;
+    scroll: Style;
+    row: Style;
+    selected: Style;
+    iconButton: Style;
+}
+
+interface MenuStyles {
+    container: Style;
+    item: Style;
+    danger: Style;
+}
+
+interface ToolbarStyles {
+    panel: Style;
+    divider: Style;
+    disabled: Style;
+}
+
+interface ComponentCardStyles {
+    container: Style;
+}
 
 export const colors = {
     bg: '#1e1e1e',
@@ -27,7 +71,7 @@ export const fonts = {
 };
 
 // Base component styles
-export const base = {
+export const base: BaseStyles = {
     panel: {
         background: colors.bg,
         color: colors.text,
@@ -36,7 +80,7 @@ export const base = {
         fontFamily: fonts.family,
         fontSize: fonts.size,
         boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
-    } as React.CSSProperties,
+    },
 
     header: {
         padding: '7px 10px',
@@ -51,7 +95,7 @@ export const base = {
         textTransform: 'uppercase',
         letterSpacing: 0.8,
         color: colors.text,
-    } as React.CSSProperties,
+    },
 
     input: {
         width: '100%',
@@ -62,7 +106,7 @@ export const base = {
         color: colors.text,
         fontSize: fonts.size,
         outline: 'none',
-    } as React.CSSProperties,
+    },
 
     btn: {
         background: colors.bgLight,
@@ -73,13 +117,13 @@ export const base = {
         fontSize: fonts.size,
         cursor: 'pointer',
         outline: 'none',
-    } as React.CSSProperties,
+    },
 
     btnDanger: {
         background: colors.dangerBg,
         borderColor: colors.dangerBorder,
         color: colors.danger,
-    } as React.CSSProperties,
+    },
 
     label: {
         fontSize: fonts.sizeSm,
@@ -88,24 +132,24 @@ export const base = {
         textTransform: 'uppercase',
         letterSpacing: 0.5,
         fontWeight: 500,
-    } as React.CSSProperties,
+    },
 
     row: {
         display: 'flex',
         gap: 6,
-    } as React.CSSProperties,
+    },
 
     section: {
         paddingBottom: 8,
         borderBottom: `1px solid ${colors.borderLight}`,
-    } as React.CSSProperties,
+    },
 };
 
 // Specific panel styles
-export const inspector = {
+export const inspector: InspectorStyles = {
     panel: {
         ...base.panel,
-        position: 'absolute' as const,
+        position: 'absolute',
         top: 8,
         right: 8,
         zIndex: 20,
@@ -114,31 +158,31 @@ export const inspector = {
     content: {
         padding: 8,
         maxHeight: '80vh',
-        overflowY: 'auto' as const,
-        overflowX: 'hidden' as const,
-        scrollbarWidth: 'thin' as const,
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        scrollbarWidth: 'thin',
         scrollbarColor: `${colors.bgLight} transparent`,
-        boxSizing: 'border-box' as const,
+        boxSizing: 'border-box',
         display: 'flex',
-        flexDirection: 'column' as const,
+        flexDirection: 'column',
         gap: 8,
     },
 };
 
-export const tree = {
+export const tree: TreeStyles = {
     panel: {
         ...base.panel,
         maxHeight: '85vh',
         display: 'flex',
-        flexDirection: 'column' as const,
-        userSelect: 'none' as const,
+        flexDirection: 'column',
+        userSelect: 'none',
     },
     scroll: {
-        overflowY: 'auto' as const,
+        overflowY: 'auto',
         padding: 4,
-        scrollbarWidth: 'thin' as const,
+        scrollbarWidth: 'thin',
         scrollbarColor: `${colors.bgLight} transparent`,
-    } as React.CSSProperties,
+    },
     row: {
         display: 'flex',
         alignItems: 'center',
@@ -147,9 +191,9 @@ export const tree = {
         borderBottomStyle: 'solid',
         borderBottomColor: colors.borderFaint,
         cursor: 'pointer',
-        whiteSpace: 'nowrap' as const,
+        whiteSpace: 'nowrap',
         borderRadius: 2,
-    } as React.CSSProperties,
+    },
     selected: {
         background: colors.accentBg,
         borderBottomColor: colors.accentBorder,
@@ -162,12 +206,12 @@ export const tree = {
         fontSize: 14,
         opacity: 0.7,
         color: 'inherit',
-    } as React.CSSProperties,
+    },
 };
 
-export const menu = {
+export const menu: MenuStyles = {
     container: {
-        position: 'fixed' as const,
+        position: 'fixed',
         zIndex: 50,
         minWidth: 'auto',
         width: 'max-content',
@@ -180,24 +224,24 @@ export const menu = {
     },
     item: {
         width: '100%',
-        textAlign: 'left' as const,
+        textAlign: 'left',
         padding: '7px 12px',
         background: 'transparent',
         border: 'none',
         color: colors.text,
         fontSize: fonts.size,
-        whiteSpace: 'nowrap' as const,
+        whiteSpace: 'nowrap',
         cursor: 'pointer',
         outline: 'none',
-    } as React.CSSProperties,
+    },
     danger: {
         color: colors.danger,
     },
 };
 
-export const toolbar = {
+export const toolbar: ToolbarStyles = {
     panel: {
-        position: 'absolute' as const,
+        position: 'absolute',
         top: 8,
         left: '240px',
         display: 'flex',
@@ -222,12 +266,12 @@ export const toolbar = {
 };
 
 // Reusable component card style for inspector sections
-export const componentCard = {
+export const componentCard: ComponentCardStyles = {
     container: {
         marginBottom: 8,
         backgroundColor: colors.bgSurface,
         padding: 8,
         borderRadius: 4,
         border: `1px solid ${colors.border}`,
-    } as React.CSSProperties,
+    },
 };

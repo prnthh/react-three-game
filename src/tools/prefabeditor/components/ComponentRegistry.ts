@@ -7,7 +7,7 @@ export type AssetRef = { type: "model" | "texture" | "sound"; path: string };
 export interface ComponentViewProps<P = Record<string, any>> {
     /** This component's own data from the prefab JSON. */
     properties: P;
-    /** Children to render (for wrapper / child-host components). */
+    /** Children to render for components that wrap the current subtree. */
     children?: React.ReactNode;
     /** Entity local position (passed to wrapper components like Physics). */
     position?: [number, number, number];
@@ -27,8 +27,11 @@ export interface Component {
     }>;
     defaultProperties: any;
     View?: FC<ComponentViewProps>;
-    /** When true, this component wraps child entities (e.g. Physics wraps children in RigidBody). */
-    isWrapper?: boolean;
+    /**
+     * How this component participates in the implicit node composition pipeline.
+        * Defaults to `wrap`; `sibling` renders next to the current subtree.
+     */
+    composition?: "wrap" | "sibling";
     /** Declare which asset paths this component references (for asset loading). */
     getAssetRefs?: (properties: Record<string, any>) => AssetRef[];
 }

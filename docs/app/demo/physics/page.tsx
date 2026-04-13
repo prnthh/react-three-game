@@ -171,8 +171,9 @@ const prefab = {
 };
 
 function fireProjectileFromCannon(editor: PrefabEditorRef | null, barrelEntityId = CANNON_BARREL_ID) {
-    const barrelObject = editor?.scene.find(barrelEntityId)?.object
-        ?? editor?.scene.find(CANNON_BARREL_ID)?.object;
+    const barrelEntity = editor?.scene.find(barrelEntityId)
+        ?? editor?.scene.find(CANNON_BARREL_ID);
+    const barrelObject = barrelEntity?.object;
     if (!barrelObject || !editor) return;
 
     barrelObject.updateWorldMatrix(true, false);

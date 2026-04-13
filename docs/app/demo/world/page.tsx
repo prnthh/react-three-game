@@ -62,7 +62,8 @@ function OrbAnimator({ editorRef }: { editorRef: React.RefObject<PrefabEditorRef
     const lastVelocityChange = useRef(0);
 
     useFrame((state, delta) => {
-        if (!editorRef.current) {
+        const scene = editorRef.current?.scene;
+        if (!scene) {
             return;
         }
 
@@ -81,7 +82,7 @@ function OrbAnimator({ editorRef }: { editorRef: React.RefObject<PrefabEditorRef
         }
 
         for (const orbId of ORB_IDS) {
-            const transform = editorRef.current.scene.find(orbId)?.getComponent<TransformProperties>("Transform");
+            const transform = scene.find(orbId)?.getComponent<TransformProperties>("Transform");
             if (!transform) {
                 continue;
             }

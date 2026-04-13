@@ -480,7 +480,6 @@ const PhysicsComponent: Component = {
     name: 'Physics',
     Editor: PhysicsComponentEditor,
     View: PhysicsComponentView,
-    isWrapper: true,
     defaultProperties: {
         type: 'dynamic',
         colliders: 'hull',

@@ -110,6 +110,7 @@ const CameraComponent: Component = {
     name: 'Camera',
     Editor: CameraComponentEditor,
     View: CameraComponentView,
+    composition: 'sibling',
     defaultProperties: cameraDefaults,
 };
 

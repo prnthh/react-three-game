@@ -362,6 +362,7 @@ const SoundComponent: Component = {
     name: 'Sound',
     Editor: SoundComponentEditor,
     View: SoundComponentView,
+    composition: 'sibling',
     defaultProperties: {
         eventName: '',
         clips: [],

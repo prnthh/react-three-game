@@ -409,13 +409,11 @@ function StandardNode({
     const isInstanced = findComponent(gameObject, "Model")?.properties?.instanced;
     const physicsKey = `physics_${nodeId}_${isInstanced ? 'instanced' : 'standard'}`;
     const renderCtx: RenderContext = { loadedModels, editMode, registerRef };
-    const childNodes = getChildHostComponents(gameObject).length > 0
-        ? <CompositionChildren childIds={childIds} selectedId={selectedId} ctx={renderCtx} parentMatrix={world} />
-        : <ChildNodes childIds={childIds} parentMatrix={world}
-            selectedId={selectedId} onSelect={onSelect} onClick={onClick}
-            registerRef={registerRef}
-            loadedModels={loadedModels} editMode={editMode}
-        />;
+    const childNodes = <ChildNodes childIds={childIds} parentMatrix={world}
+        selectedId={selectedId} onSelect={onSelect} onClick={onClick}
+        registerRef={registerRef}
+        loadedModels={loadedModels} editMode={editMode}
+    />;
 
     const inner = (
         <group
@@ -491,24 +489,42 @@ interface RendererProps {
     parentMatrix?: Matrix4;
 }
 
-type ChildHostComponent = { key: string; View: NonNullable<Component["View"]>; properties: any };
-
-function getChildHostComponents(gameObject: GameObjectType) {
-    return Object.entries(gameObject.components ?? {}).reduce<ChildHostComponent[]>((result, [key, comp]) => {
-        if (!comp?.type) return result;
-
-        const def = getComponentDef(comp.type);
-        if (!def?.View || def.isWrapper) return result;
-
-        result.push({ key, View: def.View, properties: comp.properties });
-        return result;
-    }, []);
-}
+type CompositionComponent = {
+    key: string;
+    View: NonNullable<Component["View"]>;
+    properties: any;
+    composition: "wrap" | "sibling";
+};
 
 interface RenderContext {
     loadedModels: LoadedModels;
     editMode?: boolean;
     registerRef: (id: string, obj: Object3D | null) => void;
+}
+
+function isRendererHandledComponent(componentType: string) {
+    return componentType === "Transform"
+        || componentType === "Geometry"
+        || componentType === "Material"
+        || componentType === "Physics"
+        || componentType === "Model";
+}
+
+function getCompositionComponents(gameObject: GameObjectType) {
+    return Object.entries(gameObject.components ?? {}).reduce<CompositionComponent[]>((result, [key, comp]) => {
+        if (!comp?.type || isRendererHandledComponent(comp.type)) return result;
+
+        const def = getComponentDef(comp.type);
+        if (!def?.View) return result;
+
+        result.push({
+            key,
+            View: def.View,
+            properties: comp.properties,
+            composition: def.composition ?? "wrap",
+        });
+        return result;
+    }, []);
 }
 
 function ChildNodes({ childIds, parentMatrix, ...props }: { childIds: string[]; parentMatrix: Matrix4 } & Omit<RendererProps, 'nodeId' | 'parentMatrix'>) {
@@ -612,118 +628,64 @@ function getNodeTransformProps(node?: GameObjectType | null) {
     };
 }
 
-function renderCompositionSubtree(
-    gameObject: GameObjectType,
-    ctx: RenderContext,
-    isSelected: boolean,
-    childIds: string[],
-    parentMatrix = IDENTITY
-): React.ReactNode {
-    if (!gameObject || gameObject.disabled) return null;
-
-    const transform = getNodeTransformProps(gameObject);
-    const world = parentMatrix.clone().multiply(compose(gameObject));
-    const childNodes = <CompositionChildren childIds={childIds} ctx={ctx} parentMatrix={world} />;
-
-    return (
-        <EntityRuntimeScope nodeId={gameObject.id} editMode={ctx.editMode} isSelected={isSelected}>
-            <group
-                key={gameObject.id}
-                position={transform.position}
-                rotation={transform.rotation}
-                scale={transform.scale}
-            >
-                {renderCompositionNode(gameObject, ctx, childNodes)}
-            </group>
-        </EntityRuntimeScope>
-    );
-}
-
-function CompositionChildren({
-    childIds,
-    selectedId,
-    ctx,
-    parentMatrix,
-}: {
-    childIds: string[];
-    selectedId?: string | null;
-    ctx: RenderContext;
-    parentMatrix: Matrix4,
-}) {
-    return childIds.map(childId => (
-        <CompositionSubtree
-            key={childId}
-            nodeId={childId}
-            selectedId={selectedId}
-            ctx={ctx}
-            parentMatrix={parentMatrix}
-        />
-    ));
-}
-
-function CompositionSubtree({
-    nodeId,
-    selectedId,
-    ctx,
-    parentMatrix,
-}: {
-    nodeId: string;
-    selectedId?: string | null;
-    ctx: RenderContext;
-    parentMatrix: Matrix4;
-}) {
-    const gameObject = usePrefabNode(nodeId);
-    const childIds = usePrefabChildIds(nodeId);
-    const isSelected = selectedId === nodeId;
-
-    if (!gameObject) return null;
-
-    return renderCompositionSubtree(gameObject, ctx, isSelected, childIds, parentMatrix);
-}
-
 function renderCompositionNode(
     gameObject: GameObjectType,
     ctx: RenderContext,
     childNodes?: React.ReactNode
 ) {
-    const ownContent = renderNodeOwnContent(gameObject);
-    return wrapWithChildHosts(gameObject, <>{ownContent}{childNodes}</>);
+    const primaryContent = renderNodePrimaryContent(gameObject, ctx);
+    return applyNodeComposition(gameObject, <>{primaryContent}{childNodes}</>);
 }
 
-function renderNodeOwnContent(gameObject: GameObjectType) {
+function renderNodePrimaryContent(gameObject: GameObjectType, ctx: RenderContext) {
     const geometry = findComponent(gameObject, "Geometry");
     const material = findComponent(gameObject, "Material");
+    const model = findComponent(gameObject, "Model");
 
     const geometryDef = geometry && getComponentDef(geometry.type);
     const materialDef = material && getComponentDef(material.type);
+    const modelDef = model && getComponentDef(model.type);
 
-    if (!geometry || !geometryDef?.View) return null;
+    if (geometry?.type && geometryDef?.View) {
+        return (
+            <mesh castShadow receiveShadow>
+                <geometryDef.View properties={geometry.properties} />
+                {material && materialDef?.View && (
+                    <materialDef.View
+                        key="material"
+                        properties={material.properties}
+                    />
+                )}
+            </mesh>
+        );
+    }
 
-    return (
-        <mesh castShadow receiveShadow>
-            <geometryDef.View properties={geometry.properties} />
-            {material && materialDef?.View && (
-                <materialDef.View
-                    key="material"
-                    properties={material.properties}
-                />
-            )}
-        </mesh>
-    );
+    if (model?.type && modelDef?.View && !model.properties?.instanced && isNodeReady(gameObject, ctx.loadedModels)) {
+        return <modelDef.View properties={model.properties} />;
+    }
+
+    return null;
 }
 
-function wrapWithChildHosts(
+function applyNodeComposition(
     gameObject: GameObjectType,
     subtree: React.ReactNode
 ) {
-    const childHosts = getChildHostComponents(gameObject);
+    const components = getCompositionComponents(gameObject);
 
-    return childHosts.reduce(
-        (acc, { key, View, properties }) => (
-            <View key={key} properties={properties}>
-                {acc}
-            </View>
-        ),
+    return components.reduce(
+        (acc, { key, View, properties, composition }) => composition === "sibling"
+            ? (
+                <>
+                    <View key={key} properties={properties} />
+                    {acc}
+                </>
+            )
+            : (
+                <View key={key} properties={properties}>
+                    {acc}
+                </View>
+            ),
         subtree
     );
 }

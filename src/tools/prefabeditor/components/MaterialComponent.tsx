@@ -321,7 +321,6 @@ const MaterialComponent: Component = {
     name: 'Material',
     Editor: MaterialComponentEditor,
     View: MaterialComponentView,
-    isWrapper: true,
     defaultProperties: {
         materialType: 'standard',
         color: '#ffffff',

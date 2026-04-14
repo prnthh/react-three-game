@@ -80,15 +80,14 @@ function CameraComponentView({ properties, children }: { properties: any; childr
     });
 
     return (
-        <>
-            <PerspectiveCamera
-                ref={cameraRef}
-                makeDefault={!editMode}
-                fov={fov}
-                near={near}
-                zoom={zoom}
-                far={far}
-            />
+        <PerspectiveCamera
+            ref={cameraRef}
+            makeDefault={!editMode}
+            fov={fov}
+            near={near}
+            zoom={zoom}
+            far={far}
+        >
             {editMode ? (
                 <group>
                     <mesh>
@@ -102,7 +101,7 @@ function CameraComponentView({ properties, children }: { properties: any; childr
                 </group>
             ) : null}
             {children}
-        </>
+        </PerspectiveCamera>
     );
 }
 
@@ -110,7 +109,7 @@ const CameraComponent: Component = {
     name: 'Camera',
     Editor: CameraComponentEditor,
     View: CameraComponentView,
-    composition: 'sibling',
+    composition: 'wrap',
     defaultProperties: cameraDefaults,
 };
 

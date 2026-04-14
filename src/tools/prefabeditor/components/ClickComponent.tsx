@@ -3,7 +3,7 @@ import { useRef } from 'react';
 import { gameEvents } from '../GameEvents';
 import { useEntityRuntime } from '../runtimeContext';
 import { Component } from './ComponentRegistry';
-import { FieldGroup, StringField } from './Input';
+import { EventField, FieldGroup } from './Input';
 import type { ComponentData } from '../types';
 
 type ClickProperties = {
@@ -16,7 +16,7 @@ function ClickComponentEditor({ component, onUpdate }: { component: ComponentDat
             <div style={{ fontSize: 12, opacity: 0.8 }}>
                 Emits a game event in play mode when this entity is clicked.
             </div>
-            <StringField
+            <EventField
                 name="eventName"
                 label="Emit Event"
                 values={component.properties}

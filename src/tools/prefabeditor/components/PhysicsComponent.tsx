@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { useRef, useEffect, useCallback } from 'react';
 import { Component } from "./ComponentRegistry";
 import { useAssetRuntime, useEntityRuntime } from "../runtimeContext";
-import { BooleanField, FieldGroup, ListEditor, NumberField, SelectField, SelectInput, StringInput, Vector3Field } from "./Input";
+import { BooleanField, EventInput, FieldGroup, ListEditor, NumberField, SelectField, SelectInput, Vector3Field } from "./Input";
 import { ComponentData } from "../types";
 import { gameEvents, getEntityIdFromRigidBody } from "../GameEvents";
 import { colors } from "../styles";
@@ -169,7 +169,7 @@ function PhysicsEventBindingsEditor({
                             ×
                         </button>
                     </div>
-                    <StringInput
+                    <EventInput
                         label="Event Name"
                         value={values[option.key] ?? option.defaultName}
                         onChange={(eventName) => updateEventName(option.key, eventName)}

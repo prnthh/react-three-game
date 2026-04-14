@@ -5,7 +5,7 @@ import { sound as soundManager } from '../../../helpers/SoundManager';
 import { gameEvents } from '../GameEvents';
 import { useAssetRuntime, useEntityRuntime } from '../runtimeContext';
 import { Component } from './ComponentRegistry';
-import { BooleanField, FieldGroup, FieldRenderer, ListEditor, NumberField, SelectField, StringField } from './Input';
+import { BooleanField, EventField, FieldGroup, FieldRenderer, ListEditor, NumberField, SelectField } from './Input';
 import { colors } from '../styles';
 import type { ComponentData } from '../types';
 import { AudioListener, PositionalAudio } from 'three';
@@ -130,7 +130,7 @@ function SoundComponentEditor({ component, onUpdate, basePath = '' }: { componen
 
     return (
         <FieldGroup>
-            <StringField
+            <EventField
                 name="eventName"
                 label="Listen Event"
                 values={component.properties}

@@ -22,12 +22,11 @@ export interface AssetRuntime {
     getTexture: (path: string) => Texture | null;
     getSound: (path: string) => AudioBuffer | null;
     getAssetRevision: () => string;
-}
-
-export interface AssetRuntimeContextValue extends AssetRuntime {
     getObject: (id: string) => Object3D | null;
     getRigidBody: (id: string) => any;
 }
+
+export interface AssetRuntimeContextValue extends AssetRuntime { }
 
 export interface EntityRuntime {
     nodeId: string;

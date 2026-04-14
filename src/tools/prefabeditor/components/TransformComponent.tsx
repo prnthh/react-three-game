@@ -143,11 +143,7 @@ function TransformComponentEditor({ component, onUpdate }: {
 const TransformComponent: Component = {
     name: 'Transform',
     Editor: TransformComponentEditor,
-    defaultProperties: {
-        position: [0, 0, 0],
-        rotation: [0, 0, 0],
-        scale: [1, 1, 1]
-    }
+    defaultProperties: {}
 };
 
 export default TransformComponent;

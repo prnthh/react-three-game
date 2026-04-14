@@ -1,6 +1,6 @@
 {
   "name": "react-three-game",
-  "version": "0.0.80",
+  "version": "0.0.81",
   "description": "high performance 3D game engine built in React",
   "main": "dist/index.js",
   "module": "dist/index.js",

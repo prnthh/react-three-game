@@ -207,12 +207,7 @@ const ModelComponent: Component = {
     name: 'Model',
     Editor: ModelComponentEditor,
     View: ModelComponentView,
-    defaultProperties: {
-        filename: '',
-        instanced: false,
-        repeat: false,
-        repeatAxes: DEFAULT_REPEAT_AXES
-    },
+    defaultProperties: {},
     getAssetRefs: (properties) => {
         if (properties.filename) return [{ type: 'model', path: properties.filename }];
         return [];

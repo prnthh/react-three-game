@@ -645,10 +645,14 @@ function renderNodePrimaryContent(gameObject: GameObjectType, ctx: RenderContext
     const geometryDef = geometry && getComponentDef(geometry.type);
     const materialDef = material && getComponentDef(material.type);
     const modelDef = model && getComponentDef(model.type);
+    const geometryProperties = geometry?.properties ?? {};
+    const meshVisible = geometryProperties.visible !== false;
+    const meshCastShadow = meshVisible && geometryProperties.castShadow !== false;
+    const meshReceiveShadow = meshVisible && geometryProperties.receiveShadow !== false;
 
     if (geometry?.type && geometryDef?.View) {
         return (
-            <mesh castShadow receiveShadow>
+            <mesh visible={meshVisible} castShadow={meshCastShadow} receiveShadow={meshReceiveShadow}>
                 <geometryDef.View properties={geometry.properties} />
                 {material && materialDef?.View && (
                     <materialDef.View

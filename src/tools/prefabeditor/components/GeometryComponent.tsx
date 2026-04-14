@@ -1,5 +1,5 @@
 import { Component } from "./ComponentRegistry";
-import { FieldGroup, NumberField, SelectField } from "./Input";
+import { BooleanField, FieldGroup, NumberField, SelectField } from "./Input";
 
 const GEOMETRY_ARGS: Record<string, {
     fields: Array<{
@@ -96,6 +96,27 @@ function GeometryComponentEditor({
                     step={field.step}
                 />
             ))}
+            <BooleanField
+                name="visible"
+                label="Visible"
+                values={component.properties}
+                onChange={handleChange}
+                fallback={true}
+            />
+            <BooleanField
+                name="castShadow"
+                label="Cast Shadow"
+                values={component.properties}
+                onChange={handleChange}
+                fallback={true}
+            />
+            <BooleanField
+                name="receiveShadow"
+                label="Receive Shadow"
+                values={component.properties}
+                onChange={handleChange}
+                fallback={true}
+            />
         </FieldGroup>
     );
 }

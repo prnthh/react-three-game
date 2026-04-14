@@ -64,7 +64,7 @@ const firstPersonPlayerFields: FieldDefinition[] = [
     { name: "friction", type: "number", label: "Friction", min: 0, step: 0.1 },
     { name: "jumpSpeed", type: "number", label: "Jump Speed", min: 0, step: 0.1 },
     { name: "groundProbeOffset", type: "number", label: "Ground Probe Offset", min: 0.01, step: 0.01 },
-    { name: "footstepEventName", type: "string", label: "Footstep Event", placeholder: DEFAULT_FOOTSTEP_EVENT },
+    { name: "footstepEventName", type: "event", label: "Footstep Event", placeholder: DEFAULT_FOOTSTEP_EVENT },
     { name: "footstepMinInterval", type: "number", label: "Step Min Interval", min: 0.05, step: 0.01 },
     { name: "footstepMaxInterval", type: "number", label: "Step Max Interval", min: 0.05, step: 0.01 },
     { name: "footstepMinSpeed", type: "number", label: "Step Min Speed", min: 0, step: 0.1 },

@@ -1,11 +1,12 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { colors } from '../styles';
+import { useOptionalPrefabStoreApi } from '../prefabStore';
 
 // ============================================================================
 // Field Definition Types
 // ============================================================================
 
-export type FieldType = 'vector3' | 'number' | 'string' | 'color' | 'boolean' | 'select';
+export type FieldType = 'vector3' | 'number' | 'string' | 'color' | 'boolean' | 'select' | 'node' | 'event';
 
 interface BaseFieldDefinition {
     name: string;
@@ -42,6 +43,17 @@ interface SelectFieldDefinition extends BaseFieldDefinition {
     options: { value: string; label: string }[];
 }
 
+interface NodeFieldDefinition extends BaseFieldDefinition {
+    type: 'node';
+    placeholder?: string;
+    includeRoot?: boolean;
+}
+
+interface EventFieldDefinition extends BaseFieldDefinition {
+    type: 'event';
+    placeholder?: string;
+}
+
 interface CustomFieldDefinition extends BaseFieldDefinition {
     type: 'custom';
     render: (props: {
@@ -59,6 +71,8 @@ export type FieldDefinition =
     | ColorFieldDefinition
     | BooleanFieldDefinition
     | SelectFieldDefinition
+    | NodeFieldDefinition
+    | EventFieldDefinition
     | CustomFieldDefinition;
 
 // ============================================================================
@@ -526,6 +540,255 @@ export function StringInput({
     );
 }
 
+type SearchOption = {
+    value: string;
+    label: string;
+    description?: string;
+    searchText: string;
+};
+
+function useOptionalPrefabSnapshot() {
+    const store = useOptionalPrefabStoreApi();
+    const [state, setState] = useState(() => store?.getState() ?? null);
+
+    useEffect(() => {
+        if (!store) {
+            setState(null);
+            return;
+        }
+
+        setState(store.getState());
+        return store.subscribe(nextState => setState(nextState));
+    }, [store]);
+
+    return state;
+}
+
+function SearchSuggestionList({
+    query,
+    options,
+    onSelect,
+    emptyMessage,
+}: {
+    query: string;
+    options: SearchOption[];
+    onSelect: (value: string) => void;
+    emptyMessage: string;
+}) {
+    const normalizedQuery = query.trim().toLowerCase();
+    const filtered = useMemo(() => {
+        if (!normalizedQuery) return options.slice(0, 8);
+        return options.filter(option => option.searchText.includes(normalizedQuery)).slice(0, 8);
+    }, [normalizedQuery, options]);
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <input
+                type="text"
+                style={{ ...styles.input, width: '100%', textAlign: 'left' }}
+                value={query}
+                onChange={() => undefined}
+                readOnly
+                aria-hidden
+                tabIndex={-1}
+                hidden
+            />
+            <div
+                style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 4,
+                    maxHeight: 160,
+                    overflowY: 'auto',
+                    border: `1px solid ${colors.border}`,
+                    borderRadius: 3,
+                    background: colors.bgSurface,
+                    padding: 4,
+                }}
+            >
+                {filtered.length === 0 ? (
+                    <div style={{ fontSize: 11, color: colors.textMuted, padding: '4px 6px' }}>{emptyMessage}</div>
+                ) : filtered.map(option => (
+                    <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => onSelect(option.value)}
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'flex-start',
+                            gap: 2,
+                            border: `1px solid ${colors.border}`,
+                            borderRadius: 3,
+                            background: colors.bgInput,
+                            color: colors.text,
+                            padding: '6px 8px',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                        }}
+                    >
+                        <span style={{ fontSize: 11, fontWeight: 500 }}>{option.label}</span>
+                        {option.description ? (
+                            <span style={{ fontSize: 10, color: colors.textMuted, fontFamily: 'monospace' }}>{option.description}</span>
+                        ) : null}
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+export function NodeInput({
+    label,
+    value,
+    onChange,
+    placeholder,
+    includeRoot = true,
+}: {
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+    placeholder?: string;
+    includeRoot?: boolean;
+}) {
+    const prefabState = useOptionalPrefabSnapshot();
+    const [query, setQuery] = useState('');
+
+    const options = useMemo<SearchOption[]>(() => {
+        const nodesById = prefabState?.nodesById ?? {};
+        const rootId = prefabState?.rootId;
+
+        return Object.values(nodesById)
+            .filter(node => includeRoot || node.id !== rootId)
+            .map(node => {
+                const nodeName = typeof node.name === 'string' && node.name.trim().length > 0 ? node.name.trim() : '(unnamed)';
+                return {
+                    value: node.id,
+                    label: nodeName,
+                    description: node.id,
+                    searchText: `${nodeName} ${node.id}`.toLowerCase(),
+                };
+            })
+            .sort((left, right) => left.label.localeCompare(right.label) || left.value.localeCompare(right.value));
+    }, [includeRoot, prefabState?.nodesById, prefabState?.rootId]);
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <StringInput
+                label={label}
+                value={value}
+                onChange={onChange}
+                placeholder={placeholder ?? 'Node id'}
+            />
+            {options.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <input
+                        type="text"
+                        style={{ ...styles.input, width: '100%', textAlign: 'left' }}
+                        value={query}
+                        onChange={e => setQuery(e.target.value)}
+                        placeholder="Search nodes by name or id"
+                    />
+                    <SearchSuggestionList
+                        query={query}
+                        options={options}
+                        onSelect={(nextValue) => {
+                            onChange(nextValue);
+                            setQuery('');
+                        }}
+                        emptyMessage="No matching nodes."
+                    />
+                </div>
+            ) : null}
+        </div>
+    );
+}
+
+const BUILT_IN_EVENT_OPTIONS: SearchOption[] = [
+    'sensor:enter',
+    'sensor:exit',
+    'collision:enter',
+    'collision:exit',
+    'click',
+].map(eventName => ({
+    value: eventName,
+    label: eventName,
+    searchText: eventName.toLowerCase(),
+}));
+
+export function EventInput({
+    label,
+    value,
+    onChange,
+    placeholder,
+}: {
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+    placeholder?: string;
+}) {
+    const prefabState = useOptionalPrefabSnapshot();
+    const [query, setQuery] = useState('');
+
+    const options = useMemo<SearchOption[]>(() => {
+        const authoredEvents = new Map<string, SearchOption>();
+
+        Object.values(prefabState?.nodesById ?? {}).forEach(node => {
+            Object.values(node.components ?? {}).forEach(component => {
+                Object.entries(component?.properties ?? {}).forEach(([key, entry]) => {
+                    if (typeof entry !== 'string') return;
+                    if (!(key === 'eventName' || key.endsWith('EventName'))) return;
+
+                    const eventName = entry.trim();
+                    if (!eventName) return;
+
+                    authoredEvents.set(eventName, {
+                        value: eventName,
+                        label: eventName,
+                        description: `${component?.type ?? 'Component'} -> ${key}`,
+                        searchText: `${eventName} ${component?.type ?? ''} ${key}`.toLowerCase(),
+                    });
+                });
+            });
+        });
+
+        const merged = new Map<string, SearchOption>();
+        BUILT_IN_EVENT_OPTIONS.forEach(option => merged.set(option.value, option));
+        authoredEvents.forEach((option, key) => merged.set(key, option));
+
+        return [...merged.values()].sort((left, right) => left.value.localeCompare(right.value));
+    }, [prefabState?.nodesById]);
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <StringInput
+                label={label}
+                value={value}
+                onChange={onChange}
+                placeholder={placeholder ?? 'Event name'}
+            />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <input
+                    type="text"
+                    style={{ ...styles.input, width: '100%', textAlign: 'left' }}
+                    value={query}
+                    onChange={e => setQuery(e.target.value)}
+                    placeholder="Search built-in and authored events"
+                />
+                <SearchSuggestionList
+                    query={query}
+                    options={options}
+                    onSelect={(nextValue) => {
+                        onChange(nextValue);
+                        setQuery('');
+                    }}
+                    emptyMessage="No matching events."
+                />
+            </div>
+        </div>
+    );
+}
+
 export function BooleanInput({
     label,
     value,
@@ -819,6 +1082,40 @@ export function SelectField({
     );
 }
 
+export function NodeField({
+    name,
+    label,
+    values,
+    onChange,
+    fallback = '',
+}: BoundStringFieldProps & { fallback?: string }) {
+    return (
+        <NodeInput
+            label={label}
+            value={values[name] ?? fallback}
+            onChange={bindFieldChange(name, onChange)}
+        />
+    );
+}
+
+export function EventField({
+    name,
+    label,
+    values,
+    onChange,
+    fallback = '',
+    placeholder,
+}: BoundStringFieldProps) {
+    return (
+        <EventInput
+            label={label}
+            value={values[name] ?? fallback}
+            onChange={bindFieldChange(name, onChange)}
+            placeholder={placeholder}
+        />
+    );
+}
+
 export function Vector3Field({
     name,
     label,
@@ -923,6 +1220,29 @@ export function FieldRenderer({ fields, values, onChange }: FieldRendererProps) 
                                 value={value ?? field.options[0]?.value ?? ''}
                                 onChange={v => updateField(field.name, v)}
                                 options={field.options}
+                            />
+                        );
+
+                    case 'node':
+                        return (
+                            <NodeInput
+                                key={field.name}
+                                label={field.label}
+                                value={value ?? ''}
+                                onChange={v => updateField(field.name, v)}
+                                placeholder={field.placeholder}
+                                includeRoot={field.includeRoot}
+                            />
+                        );
+
+                    case 'event':
+                        return (
+                            <EventInput
+                                key={field.name}
+                                label={field.label}
+                                value={value ?? ''}
+                                onChange={v => updateField(field.name, v)}
+                                placeholder={field.placeholder}
                             />
                         );
 

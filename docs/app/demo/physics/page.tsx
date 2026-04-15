@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef } from "react";
-import { PrefabEditor, PrefabEditorMode, useGameEvent } from "react-three-game";
+import { PrefabEditor, PrefabEditorMode, useClickEvent, usePhysicsEvent } from "react-three-game";
 import type { PrefabEditorRef } from "react-three-game";
 import { Quaternion, Vector3 } from "three";
 
@@ -213,8 +213,7 @@ function updateTargetColor(editor: PrefabEditorRef | null, color: string) {
 }
 
 function CannonController({ onFire }: { onFire: (barrelEntityId: string) => void }) {
-    useGameEvent(CANNON_FIRE_EVENT, (payload) => {
-        if (typeof payload.sourceEntityId !== 'string') return;
+    useClickEvent(CANNON_FIRE_EVENT, (payload) => {
         onFire(payload.sourceEntityId);
     }, [onFire]);
 
@@ -222,13 +221,13 @@ function CannonController({ onFire }: { onFire: (barrelEntityId: string) => void
 }
 
 function TargetController({ onTargetColorChange }: { onTargetColorChange: (color: string) => void }) {
-    useGameEvent(TARGET_HIT_EVENT, (payload) => {
+    usePhysicsEvent(TARGET_HIT_EVENT, (payload) => {
         if (payload.sourceEntityId !== TARGET_ID) return;
 
         onTargetColorChange(TARGET_HIT_COLOR);
     }, [onTargetColorChange]);
 
-    useGameEvent(TARGET_RESET_EVENT, (payload) => {
+    usePhysicsEvent(TARGET_RESET_EVENT, (payload) => {
         if (payload.sourceEntityId !== TARGET_ID) return;
 
         onTargetColorChange(TARGET_IDLE_COLOR);

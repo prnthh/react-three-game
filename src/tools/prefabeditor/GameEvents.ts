@@ -68,8 +68,63 @@ export type GameEventPayload<T extends string> = T extends keyof GameEventMap
 
 type EventHandler<T = unknown> = (payload: T) => void;
 
+type UnknownEventPayload = Record<string, unknown>;
+
 // Internal subscriber storage
 const subscribers = new Map<string, Set<EventHandler<any>>>();
+
+function emitGameEvent<TType extends keyof GameEventMap>(type: TType, payload: GameEventMap[TType]): void;
+function emitGameEvent(type: string, payload: UnknownEventPayload): void;
+function emitGameEvent(type: string, payload: UnknownEventPayload): void {
+    const handlers = subscribers.get(type);
+    if (handlers) {
+        handlers.forEach(handler => {
+            try {
+                handler(payload);
+            } catch (e) {
+                console.error(`Error in gameEvents handler for ${type}:`, e);
+            }
+        });
+    }
+}
+
+function onGameEvent<TType extends keyof GameEventMap>(
+    type: TType,
+    handler: EventHandler<GameEventMap[TType]>
+): () => void;
+function onGameEvent(type: string, handler: EventHandler<UnknownEventPayload>): () => void;
+function onGameEvent(type: string, handler: EventHandler<any>): () => void {
+    if (!subscribers.has(type)) {
+        subscribers.set(type, new Set());
+    }
+    subscribers.get(type)!.add(handler);
+
+    return () => {
+        subscribers.get(type)?.delete(handler);
+    };
+}
+
+function offGameEvent<TType extends keyof GameEventMap>(
+    type: TType,
+    handler: EventHandler<GameEventMap[TType]>
+): void;
+function offGameEvent(type: string, handler: EventHandler<UnknownEventPayload>): void;
+function offGameEvent(type: string, handler: EventHandler<any>): void {
+    subscribers.get(type)?.delete(handler);
+}
+
+function useTypedGameEvent(
+    type: string,
+    handler: EventHandler<any>,
+    deps: unknown[] = []
+): void {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const stableHandler = useCallback(handler, deps);
+
+    useEffect(() => {
+        return onGameEvent(type, stableHandler);
+    }, [type, stableHandler]);
+}
 
 /**
  * Game event system for all game interactions.
@@ -97,40 +152,18 @@ export const gameEvents = {
     /**
      * Emit an event to all subscribers
      */
-    emit<T extends string>(type: T, payload: GameEventPayload<T>): void {
-        const handlers = subscribers.get(type);
-        if (handlers) {
-            handlers.forEach(handler => {
-                try {
-                    handler(payload);
-                } catch (e) {
-                    console.error(`Error in gameEvents handler for ${type}:`, e);
-                }
-            });
-        }
-    },
+    emit: emitGameEvent,
 
     /**
      * Subscribe to an event type
      * @returns Unsubscribe function
      */
-    on<T extends string>(type: T, handler: EventHandler<GameEventPayload<T>>): () => void {
-        if (!subscribers.has(type)) {
-            subscribers.set(type, new Set());
-        }
-        subscribers.get(type)!.add(handler);
-
-        return () => {
-            subscribers.get(type)?.delete(handler);
-        };
-    },
+    on: onGameEvent,
 
     /**
      * Unsubscribe from an event type
      */
-    off<T extends string>(type: T, handler: EventHandler<GameEventPayload<T>>): void {
-        subscribers.get(type)?.delete(handler);
-    },
+    off: offGameEvent,
 
     /**
      * Remove all subscribers (useful for cleanup/reset)
@@ -159,20 +192,46 @@ export const gameEvents = {
  *
  * // Custom event
  * useGameEvent('player:death', (payload) => {
- *   showGameOver(payload.cause);
+ *   const cause = typeof payload.cause === 'string' ? payload.cause : 'unknown';
+ *   showGameOver(cause);
  * }, []);
  */
-export function useGameEvent<T extends string>(
-    type: T,
-    handler: EventHandler<GameEventPayload<T>>,
+export function useGameEvent<TType extends keyof GameEventMap>(
+    type: TType,
+    handler: EventHandler<GameEventMap[TType]>,
+    deps?: unknown[]
+): void;
+export function useGameEvent(type: string, handler: EventHandler<UnknownEventPayload>, deps?: unknown[]): void;
+export function useGameEvent(
+    type: string,
+    handler: EventHandler<any>,
     deps: unknown[] = []
 ): void {
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    const stableHandler = useCallback(handler, deps);
+    useTypedGameEvent(type, handler, deps);
+}
 
-    useEffect(() => {
-        return gameEvents.on(type, stableHandler);
-    }, [type, stableHandler]);
+/**
+ * React hook to subscribe to any physics event payload.
+ * Use this when the event name is dynamic but the payload comes from PhysicsComponent.
+ */
+export function usePhysicsEvent(
+    type: string,
+    handler: EventHandler<PhysicsEventPayload>,
+    deps: unknown[] = []
+): void {
+    useTypedGameEvent(type, handler, deps);
+}
+
+/**
+ * React hook to subscribe to click event payloads.
+ * Use this when the event name is dynamic but the payload comes from ClickComponent.
+ */
+export function useClickEvent(
+    type: string,
+    handler: EventHandler<ClickEventPayload>,
+    deps: unknown[] = []
+): void {
+    useTypedGameEvent(type, handler, deps);
 }
 
 // ============================================================================

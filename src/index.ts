@@ -81,7 +81,7 @@ export type { Prefab, GameObject, ComponentData } from './tools/prefabeditor/typ
 export { findComponent, findComponentEntry, hasComponent } from './tools/prefabeditor/types';
 
 // Game Events (physics + custom events)
-export { gameEvents, useGameEvent, getEntityIdFromRigidBody } from './tools/prefabeditor/GameEvents';
+export { gameEvents, useGameEvent, usePhysicsEvent, useClickEvent, getEntityIdFromRigidBody } from './tools/prefabeditor/GameEvents';
 export type { GameEventType, GameEventMap, GameEventPayload, PhysicsEventType, InteractionEventType, PhysicsEventPayload, ClickEventPayload } from './tools/prefabeditor/GameEvents';
 
 // Asset Loading
@@ -114,3 +114,4 @@ export {
   SingleTextureViewer,
   SharedCanvas,
 } from './tools/assetviewer/page';
+export type { PrefabRootRef } from './tools/prefabeditor/PrefabRoot';

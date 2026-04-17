@@ -50,6 +50,14 @@ export interface Scene {
 	};
 	add: (node: GameObject, options?: SpawnOptions) => Entity;
 	remove: (id: string) => void;
+	/**
+	 * Coalesce many entity / component updates into a single store revision.
+	 * Entity `update`/`set`, `EntityComponent` `set`/`update`, `addComponent`,
+	 * and `removeComponent` calls inside the callback are buffered and flushed
+	 * as one batched write. `add`, `remove`, and `destroy` (structural tree ops)
+	 * still commit immediately.
+	 */
+	batch: (fn: () => void) => void;
 }
 
 interface SceneAdapter {
@@ -124,6 +132,40 @@ function setValueAtPath<T>(value: T, path: PropertyPath, nextValue: unknown): T 
 }
 
 export function createScene(adapter: SceneAdapter): Scene {
+	let batchBuffer: Map<string, EntityUpdate> | null = null;
+
+	function routeUpdate(id: string, update: EntityUpdate) {
+		if (batchBuffer) {
+			const prev = batchBuffer.get(id);
+			batchBuffer.set(id, prev ? (node) => update(prev(node)) : update);
+			return;
+		}
+		adapter.updateNode(id, update);
+	}
+
+	function routeUpdates(updates: SceneUpdates) {
+		if (batchBuffer) {
+			for (const id in updates) routeUpdate(id, updates[id]);
+			return;
+		}
+		adapter.updateNodes(updates);
+	}
+
+	function batch(fn: () => void) {
+		if (batchBuffer) { fn(); return; }
+		batchBuffer = new Map();
+		try {
+			fn();
+			if (batchBuffer.size > 0) {
+				const updates: SceneUpdates = {};
+				for (const [id, update] of batchBuffer) updates[id] = update;
+				adapter.updateNodes(updates);
+			}
+		} finally {
+			batchBuffer = null;
+		}
+	}
+
 	const getNode = (id: string) => {
 		if (!adapter.getNode(id)) missingNode(id);
 		return createNode(id);
@@ -148,7 +190,7 @@ export function createScene(adapter: SceneAdapter): Scene {
 				return getValueAtPath(component.properties, path) as TValue | undefined;
 			},
 			set(path, value) {
-				adapter.updateNode(entityId, node => {
+				routeUpdate(entityId, node => {
 					const component = node.components?.[componentKey];
 					if (!component) {
 						return node;
@@ -167,7 +209,7 @@ export function createScene(adapter: SceneAdapter): Scene {
 				});
 			},
 			update(update) {
-				adapter.updateNode(entityId, node => {
+				routeUpdate(entityId, node => {
 					const component = node.components?.[componentKey];
 					if (!component) {
 						return node;
@@ -216,10 +258,10 @@ export function createScene(adapter: SceneAdapter): Scene {
 				return adapter.getRigidBody?.(id) ?? null;
 			},
 			set(data) {
-				adapter.updateNode(id, () => data);
+				routeUpdate(id, () => data);
 			},
 			update(update) {
-				adapter.updateNode(id, update);
+				routeUpdate(id, update);
 			},
 			getComponent(name) {
 				const node = adapter.getNode(id);
@@ -233,7 +275,7 @@ export function createScene(adapter: SceneAdapter): Scene {
 			},
 			addComponent(type, properties) {
 				const key = type.toLowerCase();
-				adapter.updateNode(id, node => ({
+				routeUpdate(id, node => ({
 					...node,
 					components: {
 						...node.components,
@@ -243,7 +285,7 @@ export function createScene(adapter: SceneAdapter): Scene {
 				return createComponent(id, key, type);
 			},
 			removeComponent(name) {
-				adapter.updateNode(id, node => {
+				routeUpdate(id, node => {
 					const entry = findComponentEntry(node, name);
 					if (!entry) return node;
 					const [key] = entry;
@@ -265,7 +307,7 @@ export function createScene(adapter: SceneAdapter): Scene {
 				return;
 			}
 
-			adapter.updateNode(idOrUpdates, mutate);
+			routeUpdate(idOrUpdates, mutate);
 			return;
 		}
 
@@ -273,7 +315,7 @@ export function createScene(adapter: SceneAdapter): Scene {
 			return;
 		}
 
-		adapter.updateNodes(idOrUpdates);
+		routeUpdates(idOrUpdates);
 	}
 
 	return {
@@ -295,5 +337,6 @@ export function createScene(adapter: SceneAdapter): Scene {
 		remove(id) {
 			adapter.removeNode(id);
 		},
+		batch,
 	};
 }

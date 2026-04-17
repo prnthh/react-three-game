@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useRef } from "react";
-import { PrefabEditor, PrefabEditorMode, useClickEvent, usePhysicsEvent } from "react-three-game";
+import { PrefabEditor, PrefabEditorMode, registerComponent, useClickEvent, usePhysicsEvent } from "react-three-game";
 import type { PrefabEditorRef } from "react-three-game";
 import { Quaternion, Vector3 } from "three";
+import CannonBarrelSwayComponent from "./CannonBarrelSwayComponent";
 
 const CANNON_BARREL_LENGTH = 1.8;
 const PROJECTILE_SPEED = 22;
@@ -16,6 +17,8 @@ const TARGET_HIT_SOUNDS = ["/sound/hit.mp3", "/sound/hit2.mp3"];
 const CANNON_FIRE_EVENT = "cannon:fire";
 const TARGET_HIT_EVENT = "target:hit";
 const TARGET_RESET_EVENT = "target:reset";
+
+registerComponent(CannonBarrelSwayComponent);
 
 const prefab = {
     id: "scene",
@@ -151,6 +154,14 @@ const prefab = {
                     click: {
                         type: "Click",
                         properties: { eventName: CANNON_FIRE_EVENT }
+                    },
+                    cannonBarrelSway: {
+                        type: "CannonBarrelSway",
+                        properties: {
+                            yawAmplitude: 0.22,
+                            pitchAmplitude: 0.06,
+                            speed: 1.5,
+                        }
                     },
                     sound: {
                         type: "Sound",

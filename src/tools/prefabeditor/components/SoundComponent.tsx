@@ -3,7 +3,7 @@ import { useThree } from '@react-three/fiber';
 import { SoundPicker } from '../../assetviewer/page';
 import { sound as soundManager } from '../../../helpers/SoundManager';
 import { gameEvents } from '../GameEvents';
-import { useAssetRuntime, useEntityRuntime } from '../runtimeContext';
+import { useAssetRuntime, useEntityRuntime } from '../runtime';
 import { Component } from './ComponentRegistry';
 import { BooleanField, EventField, FieldGroup, FieldRenderer, ListEditor, NumberField, SelectField } from './Input';
 import { colors } from '../styles';
@@ -362,7 +362,6 @@ const SoundComponent: Component = {
     name: 'Sound',
     Editor: SoundComponentEditor,
     View: SoundComponentView,
-    composition: 'sibling',
     defaultProperties: {
         eventName: '',
         clips: [],

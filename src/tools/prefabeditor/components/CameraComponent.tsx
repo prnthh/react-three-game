@@ -2,7 +2,7 @@ import { OrthographicCamera, PerspectiveCamera, useHelper } from '@react-three/d
 import { useRef } from 'react';
 import { CameraHelper, Object3D, OrthographicCamera as ThreeOrthographicCamera, PerspectiveCamera as ThreePerspectiveCamera } from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useEntityRuntime } from '../runtimeContext';
+import { useEntityRuntime } from '../runtime';
 import { Component } from './ComponentRegistry';
 import { FieldGroup, NumberField, SelectField } from './Input';
 
@@ -177,7 +177,6 @@ const CameraComponent: Component = {
     name: 'Camera',
     Editor: CameraComponentEditor,
     View: CameraComponentView,
-    composition: 'wrap',
     defaultProperties: cameraDefaults,
 };
 

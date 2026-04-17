@@ -110,6 +110,16 @@ That means a saved scene is just a prefab, and the same prefab can be:
 * rendered directly with `PrefabRoot`
 * loaded inside another scene as reusable content
 
+`PrefabRoot` keeps the rendering model narrow and compositional:
+
+* `Transform` is the renderer-owned outer transform
+* `Geometry` + `Material` become the primary mesh content
+* non-instanced `Model` becomes the node's primary content
+* `Physics` is a renderer-owned outer wrapper
+* every other component `View` wraps the current subtree
+
+Custom component `View`s use normal React Three Fiber composition with `children`.
+
 ## Prefab Format
 
 ```ts
@@ -131,7 +141,7 @@ interface GameObject {
 
 ## Runtime Mutation
 
-When you need to change the live world, use the `Scene` API from `PrefabEditorRef`.
+Use the `Scene` API from `PrefabEditorRef` for authored state changes that should stay in prefab data.
 
 ```tsx
 import { useEffect, useRef } from "react";
@@ -153,21 +163,59 @@ function RaiseBall() {
 }
 ```
 
+Batch related entity changes so they flush as one store revision:
+
+```tsx
+scene.batch(() => {
+  scene.find("orb1")?.getComponent("Transform")?.set("position", [1, 0, 0]);
+  scene.find("orb2")?.getComponent("Transform")?.set("position", [-1, 0, 0]);
+});
+```
+
+Define a component runtime factory with `create(ctx)` for hot runtime behavior that mutates the live Three.js object directly:
+
+```tsx
+import type { Component } from "react-three-game";
+
+const Rotator: Component = {
+  name: "Rotator",
+  Editor: () => null,
+  defaultProperties: { speed: 1 },
+  create(ctx) {
+    return {
+      update(dt) {
+        const speed = ctx.component.get<number>("speed") ?? 1;
+        ctx.object.rotation.y += dt * speed;
+      },
+    };
+  },
+};
+```
+
+`View` handles composition and rendering. `create(ctx)` handles imperative runtime behavior.
+
 ## Useful Exports
 
 * `GameCanvas`
 * `PrefabRoot`
 * `PrefabEditor`
+* `PrefabEditorMode`
 * `Prefab`
 * `GameObject`
 * `Scene`
 * `Entity`
 * `EntityComponent`
 * `registerComponent`
+* `createPrefabStore`
+* `usePrefabStoreApi`
+* `useAssetRuntime()` / `useEntityRuntime()`
+* `useEntityObjectRef()` / `useEntityRigidBodyRef()`
 * `ground(...)`
 * `loadJson()` / `saveJson()`
 * `loadModel()` / `loadTexture()`
-* `exportGLB()` / `exportGLBData()`
+* `loadSound()` / `loadFiles()`
+* `exportGLB()`
+* `computeParentWorldMatrix()`
 
 ## Development
 

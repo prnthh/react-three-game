@@ -3,7 +3,7 @@ import type { RigidBodyOptions, CollisionPayload, IntersectionEnterPayload, Inte
 import type { ReactNode } from 'react';
 import { useRef, useEffect, useCallback } from 'react';
 import { Component } from "./ComponentRegistry";
-import { useAssetRuntime, useEntityRuntime } from "../runtimeContext";
+import { useAssetRuntime, useEntityRuntime } from "../runtime";
 import { BooleanField, EventInput, FieldGroup, ListEditor, NumberField, SelectField, SelectInput, Vector3Field } from "./Input";
 import { ComponentData } from "../types";
 import { gameEvents, getEntityIdFromRigidBody } from "../GameEvents";

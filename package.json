@@ -1,6 +1,6 @@
 {
   "name": "react-three-game",
-  "version": "0.0.83",
+  "version": "0.0.84",
   "description": "high performance 3D game engine built in React",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -43,7 +43,7 @@
     "concurrently": "^9.2.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "three": "^0.182.0",
+    "three": "^0.184.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.1"
   },

@@ -2,8 +2,8 @@ import { Component } from "./ComponentRegistry";
 import { useHelper } from "@react-three/drei";
 import { useRef, useEffect, useMemo, useState } from "react";
 import { useFrame } from "@react-three/fiber";
-import { CameraHelper, DirectionalLight, Object3D, OrthographicCamera, Vector3 } from "three";
-import { useEntityRuntime } from "../runtimeContext";
+import { CameraHelper, DirectionalLight, Object3D, OrthographicCamera } from "three";
+import { useEntityRuntime } from "../runtime";
 import { BooleanField, ColorField, NumberField, NumberInput, Vector3Input } from "./Input";
 import { LightSection, ShadowBiasField, mergeWithDefaults } from "./lightUtils";
 import { colors } from "../styles";
@@ -329,15 +329,12 @@ function DirectionalLightView({ properties, children }: { properties: any; child
                     </mesh>
                     {/* Direction line */}
                     <line>
-                        <bufferGeometry
-                            onUpdate={(geo) => {
-                                const points = [
-                                    new Vector3(0, 0, 0),
-                                    new Vector3(targetOffset[0], targetOffset[1], targetOffset[2])
-                                ];
-                                geo.setFromPoints(points);
-                            }}
-                        />
+                        <bufferGeometry>
+                            <bufferAttribute
+                                attach="attributes-position"
+                                args={[new Float32Array([0, 0, 0, targetOffset[0], targetOffset[1], targetOffset[2]]), 3]}
+                            />
+                        </bufferGeometry>
                         <lineBasicMaterial color={color} opacity={0.6} transparent />
                     </line>
                 </>

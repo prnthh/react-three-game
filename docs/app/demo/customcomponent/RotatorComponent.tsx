@@ -1,5 +1,10 @@
-import { Component, FieldRenderer, FieldDefinition, useEntityObjectRef, useEntityRuntime } from "react-three-game";
-import { useFrame } from "@react-three/fiber";
+import { Component, FieldRenderer, FieldDefinition } from "react-three-game";
+
+type RotationAxis = 'x' | 'y' | 'z';
+type RotatorProperties = {
+    speed?: number;
+    axis?: RotationAxis;
+};
 
 const rotatorFields: FieldDefinition[] = [
     { name: 'speed', type: 'number', label: 'Rotation Speed', step: 0.1 },
@@ -25,28 +30,18 @@ function RotatorComponentEditor({ component, onUpdate }: { component: any; onUpd
     );
 }
 
-// The view component for Rotator mutates its own live Object3D via node-local runtime hooks.
-function RotatorView({ properties, children }: { properties: any; children?: React.ReactNode }) {
-    const { editMode } = useEntityRuntime();
-    const objectRef = useEntityObjectRef();
-    const speed = properties.speed ?? 1.0;
-    const axis = properties.axis ?? 'y';
-
-    useFrame((_, delta) => {
-        if (editMode) return;
-        const obj = objectRef.current;
-        if (obj) {
-            obj.rotation[axis as 'x' | 'y' | 'z'] += delta * speed;
-        }
-    });
-
-    return <>{children}</>;
-}
-
 const RotatorComponent: Component = {
     name: 'Rotator',
     Editor: RotatorComponentEditor,
-    View: RotatorView,
+    create(ctx) {
+        return {
+            update(dt) {
+                const speed = ctx.component.get<number>('speed') ?? 1.0;
+                const axis = ctx.component.get<RotationAxis>('axis') ?? 'y';
+                ctx.object.rotation[axis] += dt * speed;
+            },
+        };
+    },
     defaultProperties: {
         speed: 1.0,
         axis: 'y'

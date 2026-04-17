@@ -1,7 +1,7 @@
 import { useHelper } from "@react-three/drei";
 import { forwardRef, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { BoxHelper, Euler, Group, Matrix4, Object3D, Quaternion, Texture, Vector3, } from "three";
-import { ThreeEvent } from "@react-three/fiber";
+import { ThreeEvent, useFrame } from "@react-three/fiber";
 import { useStore } from "zustand";
 import { useClickValid } from "./useClickValid";
 
@@ -13,9 +13,8 @@ import { loadModel, loadSound, loadTexture, LoadedModels, LoadedSounds, LoadedTe
 import { GameInstance, GameInstanceProvider, getRepeatAxesFromModelProperties, RepeatAxisConfig, useInstanceCheck } from "./InstanceProvider";
 import { composeTransform, decompose } from "./utils";
 import { isPhysicsProps, PhysicsProps } from "./components/PhysicsComponent";
-import { denormalizePrefab } from "./prefab";
 import { createPrefabStore, PrefabStoreApi, PrefabStoreProvider, useOptionalPrefabStoreApi, usePrefabChildIds, usePrefabNode, usePrefabRootId } from "./prefabStore";
-import { AssetRuntimeContext, EntityRuntimeScope, type AssetRuntimeContextValue } from "./runtimeContext";
+import { AssetRuntimeContext, EntityRuntimeScope, createRuntimeEngine, type AssetRuntimeContextValue } from "./runtime";
 import { sound as soundManager } from "../../helpers/SoundManager";
 
 // Dynamic type to avoid requiring @react-three/rapier when not using physics
@@ -77,8 +76,12 @@ export const PrefabRoot = forwardRef<PrefabRootRef, PrefabRootProps>(({ editMode
     const rigidBodyRefs = useRef<Map<string, RapierRigidBody | null>>(new Map());
     const rootRef = useRef<Group>(null);
     const parentStore = useOptionalPrefabStoreApi();
-    const [ownedStore] = useState(() => createPrefabStore(data ?? denormalizePrefab(store?.getState() ?? parentStore?.getState() ?? missingStoreState())));
-    const resolvedStore = store ?? parentStore ?? ownedStore;
+    const [ownedStore] = useState<PrefabStoreApi | null>(() => {
+        if (data) return createPrefabStore(data);
+        if (store || parentStore) return null;
+        throw new Error("PrefabRoot requires either a `data` or `store` prop");
+    });
+    const resolvedStore = store ?? parentStore ?? ownedStore!;
     const usesOwnedStore = resolvedStore === ownedStore;
     const shouldProvideStoreContext = !parentStore || parentStore !== resolvedStore;
     const assetManifestKey = useStore(resolvedStore, state => state.assetManifestKey);
@@ -89,6 +92,10 @@ export const PrefabRoot = forwardRef<PrefabRootRef, PrefabRootProps>(({ editMode
 
     const getObject = useCallback((id: string) => {
         return objectRefs.current[id] ?? null;
+    }, []);
+
+    const getRigidBody = useCallback((id: string) => {
+        return rigidBodyRefs.current.get(id) ?? null;
     }, []);
 
     useImperativeHandle(ref, () => ({
@@ -103,18 +110,34 @@ export const PrefabRoot = forwardRef<PrefabRootRef, PrefabRootProps>(({ editMode
         },
     }), [getObject]);
 
+    const runtimeEngine = useMemo(() => createRuntimeEngine({
+        store: resolvedStore,
+        getObject,
+        getRigidBody,
+    }), [resolvedStore, getObject, getRigidBody]);
+
     const registerRef = useCallback((id: string, obj: Object3D | null) => {
         objectRefs.current[id] = obj;
+        runtimeEngine.invalidate();
         onObjectRefChange?.(id, obj);
-    }, [onObjectRefChange]);
+    }, [onObjectRefChange, runtimeEngine]);
 
     const registerRigidBodyRef = useCallback((id: string, rb: any) => {
         rigidBodyRefs.current.set(id, rb);
-    }, []);
+        runtimeEngine.invalidate();
+    }, [runtimeEngine]);
 
-    const getRigidBody = useCallback((id: string) => {
-        return rigidBodyRefs.current.get(id) ?? null;
-    }, []);
+    useEffect(() => {
+        runtimeEngine.setActive(!editMode);
+    }, [editMode, runtimeEngine]);
+
+    useEffect(() => {
+        return () => runtimeEngine.dispose();
+    }, [runtimeEngine]);
+
+    useFrame((_, dt) => {
+        runtimeEngine.tick(dt);
+    });
 
     useEffect(() => {
         if (usesOwnedStore && data) {
@@ -195,27 +218,15 @@ export const PrefabRoot = forwardRef<PrefabRootRef, PrefabRootProps>(({ editMode
         syncAssets();
     }, [resolvedStore, assetManifestKey, basePath, injectedModels, injectedSounds, injectedTextures, models, sounds, textures]);
 
-    // Keep refs current so context getters are always fresh without changing context identity
-    const availableModelsRef = useRef(availableModels);
-    availableModelsRef.current = availableModels;
-    const availableTexturesRef = useRef(availableTextures);
-    availableTexturesRef.current = availableTextures;
-    const availableSoundsRef = useRef(availableSounds);
-    availableSoundsRef.current = availableSounds;
-
     const assetRuntime = useMemo<AssetRuntimeContextValue>(() => ({
         getObject,
         getRigidBody,
         registerRigidBodyRef,
-        getModel: (path: string) => availableModelsRef.current[path] ?? null,
-        getTexture: (path: string) => availableTexturesRef.current[path] ?? null,
-        getSound: (path: string) => availableSoundsRef.current[path] ?? null,
-        getAssetRevision: () => {
-            const modelKeys = Object.keys(availableModelsRef.current).sort().join('|');
-            const textureKeys = Object.keys(availableTexturesRef.current).sort().join('|');
-            return `${textureKeys}::${modelKeys}`;
-        },
-    }), [getObject, getRigidBody, registerRigidBodyRef]);
+        getModel: (path: string) => availableModels[path] ?? null,
+        getTexture: (path: string) => availableTextures[path] ?? null,
+        getSound: (path: string) => availableSounds[path] ?? null,
+        getAssetRevision: () => `${Object.keys(availableTextures).sort().join('|')}::${Object.keys(availableModels).sort().join('|')}`,
+    }), [getObject, getRigidBody, registerRigidBodyRef, availableModels, availableTextures, availableSounds]);
 
     const content = (
         <group ref={rootRef}>
@@ -261,6 +272,7 @@ export function GameObjectRenderer(props: RendererProps) {
         if (prevInstancedRef.current !== undefined && prevInstancedRef.current !== isInstanced) {
             setIsTransitioning(true);
             const timer = setTimeout(() => setIsTransitioning(false), 100);
+            prevInstancedRef.current = isInstanced;
             return () => clearTimeout(timer);
         }
         prevInstancedRef.current = isInstanced;
@@ -296,23 +308,22 @@ function InstancedNode({ nodeId, parentMatrix = IDENTITY, editMode, registerRef,
     );
 
     const groupRef = useRef<Group>(null);
+    const handleGroupRef = useCallback((object: Group | null) => {
+        groupRef.current = object;
+        if (editMode) {
+            registerRef(nodeId, object);
+        }
+    }, [editMode, nodeId, registerRef]);
     const editClickHandlers = useClickValid(!!editMode && !isLocked, (e: any) => {
         onSelect?.(nodeId);
         onClick?.(e, gameObject);
     });
 
-    useEffect(() => {
-        if (editMode) {
-            registerRef(nodeId, groupRef.current);
-            return () => registerRef(nodeId, null);
-        }
-    }, [nodeId, registerRef, editMode]);
-
     if (editMode) {
         return (
             <>
                 <group
-                    ref={groupRef}
+                    ref={handleGroupRef}
                     position={localTransform.position}
                     rotation={localTransform.rotation}
                     scale={localTransform.scale}
@@ -375,17 +386,22 @@ function StandardNode({
     const gameObject = usePrefabNode(nodeId);
     const childIds = usePrefabChildIds(nodeId);
     const isSelected = selectedId === nodeId;
-
-    if (!gameObject) return null;
+    const isLocked = Boolean(gameObject?.locked);
+    const stillInstanced = useInstanceCheck(nodeId);
 
     const groupRef = useRef<Object3D | null>(null);
     const helperRef = useRef<Object3D | null>(null);
-    const isLocked = Boolean(gameObject.locked);
-    const stillInstanced = useInstanceCheck(nodeId);
+    const handleGroupRef = useCallback((object: Object3D | null) => {
+        groupRef.current = object;
+        registerRef(nodeId, object);
+    }, [nodeId, registerRef]);
+    const handleHelperRef = useCallback((object: Object3D | null) => {
+        helperRef.current = object;
+    }, []);
 
     const clickHandlers = useClickValid(!!editMode && !isLocked, (e: any) => {
         onSelect?.(nodeId);
-        onClick?.(e, gameObject);
+        if (gameObject) onClick?.(e, gameObject);
     });
 
     useHelper(
@@ -394,10 +410,7 @@ function StandardNode({
         "cyan"
     );
 
-    useEffect(() => {
-        registerRef(nodeId, groupRef.current);
-        return () => registerRef(nodeId, null);
-    }, [nodeId, registerRef]);
+    if (!gameObject) return null;
 
     const world = parentMatrix.clone().multiply(compose(gameObject));
 
@@ -429,7 +442,7 @@ function StandardNode({
             {editMode ? (
                 <>
                     <group
-                        ref={groupRef}
+                        ref={handleGroupRef}
                         position={transform.position}
                         rotation={transform.rotation}
                         scale={transform.scale}
@@ -439,7 +452,7 @@ function StandardNode({
                         </mesh>
                     </group>
                     <group
-                        ref={helperRef}
+                        ref={handleHelperRef}
                         position={transform.position}
                         rotation={transform.rotation}
                         scale={transform.scale}
@@ -466,7 +479,7 @@ function StandardNode({
                 >{inner}</physicsDef.View>
             ) : (
                 <group
-                    ref={groupRef}
+                    ref={handleGroupRef}
                     position={transform.position}
                     rotation={transform.rotation}
                     scale={transform.scale}
@@ -493,7 +506,6 @@ type CompositionComponent = {
     key: string;
     View: NonNullable<Component["View"]>;
     properties: any;
-    composition: "wrap" | "sibling";
 };
 
 interface RenderContext {
@@ -521,7 +533,6 @@ function getCompositionComponents(gameObject: GameObjectType) {
             key,
             View: def.View,
             properties: comp.properties,
-            composition: def.composition ?? "wrap",
         });
         return result;
     }, []);
@@ -678,24 +689,13 @@ function applyNodeComposition(
     const components = getCompositionComponents(gameObject);
 
     return components.reduce(
-        (acc, { key, View, properties, composition }) => composition === "sibling"
-            ? (
-                <>
-                    <View key={key} properties={properties} />
-                    {acc}
-                </>
-            )
-            : (
-                <View key={key} properties={properties}>
-                    {acc}
-                </View>
-            ),
+        (acc, { key, View, properties }) => (
+            <View key={key} properties={properties}>
+                {acc}
+            </View>
+        ),
         subtree
     );
 }
 
 export default PrefabRoot;
-
-function missingStoreState(): never {
-    throw new Error("PrefabRoot requires either data or store");
-}

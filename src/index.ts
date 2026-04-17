@@ -73,12 +73,23 @@ export type {
   SceneUpdates,
 } from './tools/prefabeditor/scene';
 export type { PrefabRootProps } from './tools/prefabeditor/PrefabRoot';
-export type { AssetRuntime, EntityRuntime, LiveObjectRef, LiveRigidBodyRef } from './tools/prefabeditor/runtimeContext';
-export { useAssetRuntime, useEntityRuntime, useEntityObjectRef, useEntityRigidBodyRef } from './tools/prefabeditor/runtimeContext';
+export type { AssetRuntime, EntityRuntime, LiveObjectRef, LiveRigidBodyRef } from './tools/prefabeditor/runtime';
+export { useAssetRuntime, useEntityRuntime, useEntityObjectRef, useEntityRigidBodyRef } from './tools/prefabeditor/runtime';
+export type { ComponentInstance, ComponentRuntimeContext } from './tools/prefabeditor/runtime';
 export type { Component, ComponentViewProps } from './tools/prefabeditor/components/ComponentRegistry';
 export type { FieldDefinition, FieldType } from './tools/prefabeditor/components/Input';
+export { MaterialOverridesProvider, useMaterialOverrides } from './tools/prefabeditor/components/MaterialComponent';
+export type { MaterialOverrides } from './tools/prefabeditor/components/MaterialComponent';
 export type { Prefab, GameObject, ComponentData } from './tools/prefabeditor/types';
 export { findComponent, findComponentEntry, hasComponent } from './tools/prefabeditor/types';
+export {
+  float,
+  positionLocal,
+  sin,
+  time,
+  uniform,
+  vec3,
+} from 'three/tsl';
 
 // Game Events (physics + custom events)
 export { gameEvents, useGameEvent, usePhysicsEvent, useClickEvent, getEntityIdFromRigidBody } from './tools/prefabeditor/GameEvents';

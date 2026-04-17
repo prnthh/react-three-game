@@ -1,9 +1,9 @@
+import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import { extend } from '@react-three/fiber';
 import type { ThreeElement } from '@react-three/fiber';
 import { Component } from './ComponentRegistry';
 import { FieldRenderer, FieldDefinition, Label, NumberInput } from './Input';
-import { useAssetRuntime } from '../runtimeContext';
-import { useMemo } from 'react';
+import { useAssetRuntime } from '../runtime';
 import { MeshBasicNodeMaterial, MeshStandardNodeMaterial } from 'three/webgpu';
 import { TexturePicker } from '../../assetviewer/page';
 import {
@@ -12,7 +12,6 @@ import {
     SRGBColorSpace,
     LinearSRGBColorSpace,
     Texture,
-    Vector2,
     NearestFilter,
     LinearFilter,
     NearestMipmapNearestFilter,
@@ -48,6 +47,27 @@ export interface MaterialProps extends Omit<MeshStandardMaterialProperties & Mes
     magFilter?: string;
     normalMapTexture?: string;
     normalScale?: [number, number];
+}
+
+export type MaterialOverrides = Record<string, unknown>;
+
+const EMPTY_MATERIAL_OVERRIDES: MaterialOverrides = Object.freeze({});
+const MaterialOverridesContext = createContext<MaterialOverrides>(EMPTY_MATERIAL_OVERRIDES);
+
+export function useMaterialOverrides(): MaterialOverrides {
+    return useContext(MaterialOverridesContext);
+}
+
+export function MaterialOverridesProvider({
+    overrides,
+    children,
+}: {
+    overrides: MaterialOverrides;
+    children: ReactNode;
+}) {
+    const parent = useContext(MaterialOverridesContext);
+    const merged = useMemo(() => ({ ...parent, ...overrides }), [parent, overrides]);
+    return <MaterialOverridesContext.Provider value={merged}>{children}</MaterialOverridesContext.Provider>;
 }
 
 extend({
@@ -287,32 +307,27 @@ function MaterialComponentView({ properties: rawProps }: { properties: Record<st
         return t;
     }, [normalMapTexture]);
 
-    const normalScaleVec = useMemo(() => {
-        if (!finalNormalMap) return undefined;
-        return new Vector2(normalScaleProp?.[0] ?? 1, normalScaleProp?.[1] ?? 1);
-    }, [finalNormalMap, normalScaleProp?.[0], normalScaleProp?.[1]]);
-
     if (!properties) {
         return <meshStandardNodeMaterial color="red" wireframe />;
     }
 
-    const materialKey = `${finalTexture?.uuid ?? 'no-texture'}:${materialProps.transparent ? 'transparent' : 'opaque'}`;
+    const overrides = useMaterialOverrides();
     const sharedProps = {
         map: finalTexture,
         side: resolvedSide,
         ...materialProps,
+        ...overrides,
     };
 
     if (materialType === 'basic') {
-        return <meshBasicNodeMaterial key={materialKey} {...sharedProps} />;
+        return <meshBasicNodeMaterial {...sharedProps} />;
     }
 
     return (
         <meshStandardNodeMaterial
-            key={materialKey}
             {...sharedProps}
             normalMap={finalNormalMap}
-            normalScale={normalScaleVec}
+            normalScale={finalNormalMap ? [normalScaleProp?.[0] ?? 1, normalScaleProp?.[1] ?? 1] : undefined}
         />
     );
 }

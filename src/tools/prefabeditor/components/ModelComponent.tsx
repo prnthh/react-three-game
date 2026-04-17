@@ -2,7 +2,7 @@ import { ModelPicker } from '../../assetviewer/page';
 import { useContext, useMemo } from 'react';
 import { Component } from './ComponentRegistry';
 import { BooleanField, FieldGroup, Label, ListEditor, NumberInput, SelectInput } from './Input';
-import { useAssetRuntime } from '../runtimeContext';
+import { useAssetRuntime } from '../runtime';
 import { GameObject } from '../types';
 import { EditorContext } from '../PrefabEditor';
 import { DEFAULT_REPEAT_AXES, getRepeatAxesFromModelProperties, normalizeRepeatAxes, RepeatAxisConfig } from '../InstanceProvider';

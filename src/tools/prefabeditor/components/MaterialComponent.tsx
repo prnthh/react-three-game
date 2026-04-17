@@ -1,6 +1,7 @@
-import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import { createContext, useContext, useMemo, useRef, type ReactNode } from 'react';
 import { extend } from '@react-three/fiber';
 import type { ThreeElement } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
 import { Component } from './ComponentRegistry';
 import { FieldRenderer, FieldDefinition, Label, NumberInput } from './Input';
 import { useAssetRuntime } from '../runtime';
@@ -40,13 +41,59 @@ export interface MaterialProps extends Omit<MeshStandardMaterialProperties & Mes
     thickness?: number;
     ior?: number;
     texture?: string;
+    offset?: [number, number];
     repeat?: boolean;
     repeatCount?: [number, number];
+    animateOffset?: boolean;
+    offsetSpeed?: [number, number];
     generateMipmaps?: boolean;
     minFilter?: string;
     magFilter?: string;
     normalMapTexture?: string;
     normalScale?: [number, number];
+}
+
+function Vector2Editor({
+    label,
+    value,
+    onChange,
+    min,
+    max,
+    step,
+}: {
+    label: string;
+    value: [number, number] | undefined;
+    onChange: (value: [number, number]) => void;
+    min?: number;
+    max?: number;
+    step?: number;
+}) {
+    return (
+        <div style={{ display: 'flex', gap: 2 }}>
+            <div style={{ flex: 1 }}>
+                <Label>{label} X</Label>
+                <NumberInput
+                    value={value?.[0] ?? 0}
+                    onChange={x => onChange([x, value?.[1] ?? 0])}
+                    min={min}
+                    max={max}
+                    step={step}
+                    style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
+                />
+            </div>
+            <div style={{ flex: 1 }}>
+                <Label>{label} Y</Label>
+                <NumberInput
+                    value={value?.[1] ?? 0}
+                    onChange={y => onChange([value?.[0] ?? 0, y])}
+                    min={min}
+                    max={max}
+                    step={step}
+                    style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
+                />
+            </div>
+        </div>
+    );
 }
 
 export type MaterialOverrides = Record<string, unknown>;
@@ -79,6 +126,7 @@ function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { compo
     const materialType = component.properties.materialType ?? 'standard';
     const hasTexture = !!component.properties.texture;
     const hasRepeat = component.properties.repeat;
+    const animateOffset = component.properties.animateOffset;
     const isStandardMaterial = materialType === 'standard';
 
     const fields: FieldDefinition[] = [
@@ -129,30 +177,24 @@ function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { compo
                 type: 'custom',
                 label: 'Repeat (X, Y)',
                 render: ({ value, onChange }: { value: [number, number] | undefined; onChange: (v: [number, number]) => void }) => (
-                    <div style={{ display: 'flex', gap: 2 }}>
-                        <div style={{ flex: 1 }}>
-                            <Label>X</Label>
-                            <NumberInput
-                                value={value?.[0] ?? 1}
-                                onChange={v => onChange([v, value?.[1] ?? 1])}
-                                min={0.01}
-                                max={100}
-                                step={0.1}
-                                style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
-                            />
-                        </div>
-                        <div style={{ flex: 1 }}>
-                            <Label>Y</Label>
-                            <NumberInput
-                                value={value?.[1] ?? 1}
-                                onChange={v => onChange([value?.[0] ?? 1, v])}
-                                min={0.01}
-                                max={100}
-                                step={0.1}
-                                style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
-                            />
-                        </div>
-                    </div>
+                    <Vector2Editor label="Repeat" value={value} onChange={onChange} min={0.01} max={100} step={0.1} />
+                ),
+            } as FieldDefinition] : []),
+            {
+                name: 'offset',
+                type: 'custom',
+                label: 'Offset (X, Y)',
+                render: ({ value, onChange }: { value: [number, number] | undefined; onChange: (v: [number, number]) => void }) => (
+                    <Vector2Editor label="Offset" value={value} onChange={onChange} step={0.01} />
+                ),
+            } as FieldDefinition,
+            { name: 'animateOffset', type: 'boolean', label: 'Animate Offset' } as FieldDefinition,
+            ...(animateOffset ? [{
+                name: 'offsetSpeed',
+                type: 'custom',
+                label: 'Speed (X, Y)',
+                render: ({ value, onChange }: { value: [number, number] | undefined; onChange: (v: [number, number]) => void }) => (
+                    <Vector2Editor label="Speed" value={value} onChange={onChange} step={0.01} />
                 ),
             } as FieldDefinition] : []),
             {
@@ -168,30 +210,7 @@ function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { compo
                 type: 'custom',
                 label: 'Normal Scale (X, Y)',
                 render: ({ value, onChange }: { value: [number, number] | undefined; onChange: (v: [number, number]) => void }) => (
-                    <div style={{ display: 'flex', gap: 2 }}>
-                        <div style={{ flex: 1 }}>
-                            <Label>X</Label>
-                            <NumberInput
-                                value={value?.[0] ?? 1}
-                                onChange={v => onChange([v, value?.[1] ?? 1])}
-                                min={0}
-                                max={5}
-                                step={0.01}
-                                style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
-                            />
-                        </div>
-                        <div style={{ flex: 1 }}>
-                            <Label>Y</Label>
-                            <NumberInput
-                                value={value?.[1] ?? 1}
-                                onChange={v => onChange([value?.[0] ?? 1, v])}
-                                min={0}
-                                max={5}
-                                step={0.01}
-                                style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
-                            />
-                        </div>
-                    </div>
+                    <Vector2Editor label="Normal" value={value} onChange={onChange} min={0} max={5} step={0.01} />
                 ),
             } as FieldDefinition] : []),
             { name: 'generateMipmaps', type: 'boolean', label: 'Generate Mipmaps' } as FieldDefinition,
@@ -235,8 +254,11 @@ function MaterialComponentView({ properties: rawProps }: { properties: Record<st
     const properties = rawProps as MaterialProps;
     const materialType = properties?.materialType ?? 'standard';
     const textureName = properties?.texture;
+    const offset = properties?.offset;
     const repeat = properties?.repeat;
     const repeatCount = properties?.repeatCount;
+    const animateOffset = properties?.animateOffset;
+    const offsetSpeed = properties?.offsetSpeed;
     const generateMipmaps = properties?.generateMipmaps !== false;
     const minFilter = properties?.minFilter || 'LinearMipmapLinearFilter';
     const magFilter = properties?.magFilter || 'LinearFilter';
@@ -250,8 +272,11 @@ function MaterialComponentView({ properties: rawProps }: { properties: Record<st
     // Destructure all material props and separate custom texture handling props
     const {
         texture: _texture,
+        offset: _offset,
         repeat: _repeat,
         repeatCount: _repeatCount,
+        animateOffset: _animateOffset,
+        offsetSpeed: _offsetSpeed,
         generateMipmaps: _generateMipmaps,
         minFilter: _minFilter,
         magFilter: _magFilter,
@@ -281,6 +306,8 @@ function MaterialComponentView({ properties: rawProps }: { properties: Record<st
         LinearFilter
     };
 
+    const animatedOffsetRef = useRef<[number, number]>([offset?.[0] ?? 0, offset?.[1] ?? 0]);
+
     const finalTexture = useMemo(() => {
         if (!texture) return undefined;
         const t = texture.clone();
@@ -291,13 +318,26 @@ function MaterialComponentView({ properties: rawProps }: { properties: Record<st
             t.wrapS = t.wrapT = ClampToEdgeWrapping;
             t.repeat.set(1, 1);
         }
+        t.offset.set(offset?.[0] ?? 0, offset?.[1] ?? 0);
         t.colorSpace = SRGBColorSpace;
         t.generateMipmaps = generateMipmaps;
         t.minFilter = minFilterMap[minFilter] ?? LinearMipmapLinearFilter;
         t.magFilter = magFilterMap[magFilter] ?? LinearFilter;
         t.needsUpdate = true;
         return t;
-    }, [texture, repeat, repeatCount?.[0], repeatCount?.[1], generateMipmaps, minFilter, magFilter]);
+    }, [texture, repeat, repeatCount?.[0], repeatCount?.[1], offset?.[0], offset?.[1], generateMipmaps, minFilter, magFilter]);
+
+    animatedOffsetRef.current = [offset?.[0] ?? 0, offset?.[1] ?? 0];
+
+    useFrame((_, delta) => {
+        if (!finalTexture || !animateOffset) return;
+
+        const nextX = animatedOffsetRef.current[0] + (offsetSpeed?.[0] ?? 0) * delta;
+        const nextY = animatedOffsetRef.current[1] + (offsetSpeed?.[1] ?? 0) * delta;
+
+        animatedOffsetRef.current = [nextX, nextY];
+        finalTexture.offset.set(nextX, nextY);
+    });
 
     const finalNormalMap = useMemo(() => {
         if (!normalMapTexture) return undefined;
@@ -343,6 +383,9 @@ const MaterialComponent: Component = {
         wireframe: false,
         transparent: false,
         opacity: 1,
+        offset: [0, 0],
+        animateOffset: false,
+        offsetSpeed: [0, 0],
         metalness: 0,
         roughness: 1
     },

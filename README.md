@@ -113,12 +113,34 @@ That means a saved scene is just a prefab, and the same prefab can be:
 `PrefabRoot` keeps the rendering model narrow and compositional:
 
 * `Transform` is the renderer-owned outer transform
-* `Geometry` + `Material` become the primary mesh content
+* `Geometry` or `BufferGeometry` + `Material` become the primary mesh content
 * non-instanced `Model` becomes the node's primary content
 * `Physics` is a renderer-owned outer wrapper
 * every other component `View` wraps the current subtree
 
 Custom component `View`s use normal React Three Fiber composition with `children`.
+
+For agent-authored custom meshes, use `BufferGeometry` with flat numeric arrays:
+
+```json
+{
+  "id": "triangle",
+  "components": {
+    "bufferGeometry": {
+      "type": "BufferGeometry",
+      "properties": {
+        "positions": [0, 0, 0, 1, 0, 0, 0, 1, 0],
+        "indices": [0, 1, 2],
+        "computeVertexNormals": true
+      }
+    },
+    "material": {
+      "type": "Material",
+      "properties": { "color": "#ff8844" }
+    }
+  }
+}
+```
 
 ## Prefab Format
 

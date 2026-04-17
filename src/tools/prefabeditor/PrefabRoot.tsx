@@ -516,6 +516,7 @@ interface RenderContext {
 
 function isRendererHandledComponent(componentType: string) {
     return componentType === "Transform"
+        || componentType === "BufferGeometry"
         || componentType === "Geometry"
         || componentType === "Material"
         || componentType === "Physics"
@@ -649,7 +650,7 @@ function renderCompositionNode(
 }
 
 function renderNodePrimaryContent(gameObject: GameObjectType, ctx: RenderContext) {
-    const geometry = findComponent(gameObject, "Geometry");
+    const geometry = findComponent(gameObject, "BufferGeometry") ?? findComponent(gameObject, "Geometry");
     const material = findComponent(gameObject, "Material");
     const model = findComponent(gameObject, "Model");
 

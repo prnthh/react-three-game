@@ -471,7 +471,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
                 : canvasProps?.onPointerMissed}
         >
             {physics ? (
-                <Physics debug={isEditMode} paused={isEditMode}>
+                <Physics colliders={false} debug={isEditMode} paused={isEditMode}>
                     {content}
                 </Physics>
             ) : content}

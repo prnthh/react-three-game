@@ -1,4 +1,4 @@
-import { CapsuleCollider, RigidBody, RapierRigidBody, useRapier } from "@react-three/rapier";
+import { BallCollider, CapsuleCollider, CuboidCollider, RigidBody, RapierRigidBody, useRapier } from "@react-three/rapier";
 import type { CollisionPayload, IntersectionEnterPayload, IntersectionExitPayload, RigidBodyOptions } from "@react-three/rapier";
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
@@ -6,18 +6,22 @@ import type { Object3D } from 'three';
 import { Component } from "./ComponentRegistry";
 import { useAssetRuntime, useEntityRuntime } from "../assetRuntime";
 import { gameEvents, getEntityIdFromRigidBody } from "../GameEvents";
-import { usePrefabNode } from "../prefabStore";
+import { usePrefabNode, usePrefabStore } from "../prefabStore";
 import { BooleanField, FieldGroup, NumberField, SelectField, StringField, Vector3Field } from "./Input";
-import { ComponentData, getNodeUserData } from "../types";
+import { ComponentData, findComponent, type GameObject, getNodeUserData } from "../types";
 import { colors } from "../styles";
 
 type PhysicsColliderType = NonNullable<RigidBodyOptions['colliders']> | 'capsule';
+type ManualColliderShape = 'cuboid' | 'ball' | 'capsule';
 
 export type PhysicsProps = Omit<RigidBodyOptions, 'colliders'> & {
     colliders?: PhysicsColliderType;
+    manualColliderShape?: ManualColliderShape;
     activeCollisionTypes?: 'all' | undefined;
     linearVelocity?: [number, number, number];
     angularVelocity?: [number, number, number];
+    colliderSize?: [number, number, number];
+    colliderRadius?: number;
     capsuleRadius?: number;
     capsuleHalfHeight?: number;
     emitSensorEnterEvent?: boolean;
@@ -35,8 +39,73 @@ export function isPhysicsProps(v: any): v is PhysicsProps {
 }
 
 const enabledAxesFallback: [boolean, boolean, boolean] = [true, true, true];
+const manualColliderShapeFallback: ManualColliderShape = 'cuboid';
+const colliderSizeFallback: [number, number, number] = [1, 1, 1];
+const colliderRadiusFallback = 0.5;
 const capsuleRadiusFallback = 0.35;
 const capsuleHalfHeightFallback = 0.45;
+
+function isManualColliderShape(value: unknown): value is ManualColliderShape {
+    return value === 'cuboid' || value === 'ball' || value === 'capsule';
+}
+
+function hasNodeColliderSource(node: Pick<GameObject, 'components'> | null | undefined) {
+    return Boolean(
+        findComponent(node, 'Geometry')
+        || findComponent(node, 'BufferGeometry')
+        || findComponent(node, 'Model')
+    );
+}
+
+function subtreeHasColliderSource(
+    nodeId: string | undefined,
+    nodesById: Record<string, GameObject | undefined>,
+    childIdsById: Record<string, string[] | undefined>,
+) {
+    if (!nodeId) return false;
+
+    const pending = [nodeId];
+
+    while (pending.length > 0) {
+        const currentId = pending.pop();
+        if (!currentId) continue;
+
+        const currentNode = nodesById[currentId];
+        if (hasNodeColliderSource(currentNode)) {
+            return true;
+        }
+
+        pending.push(...(childIdsById[currentId] ?? []));
+    }
+
+    return false;
+}
+
+function renderManualCollider({
+    shape,
+    sensor,
+    colliderSize,
+    colliderRadius,
+    capsuleRadius,
+    capsuleHalfHeight,
+}: {
+    shape: ManualColliderShape;
+    sensor?: boolean;
+    colliderSize: [number, number, number];
+    colliderRadius: number;
+    capsuleRadius: number;
+    capsuleHalfHeight: number;
+}) {
+    if (shape === 'ball') {
+        return <BallCollider args={[colliderRadius]} sensor={sensor} />;
+    }
+
+    if (shape === 'capsule') {
+        return <CapsuleCollider args={[capsuleHalfHeight, capsuleRadius]} sensor={sensor} />;
+    }
+
+    return <CuboidCollider args={colliderSize.map(value => value / 2) as [number, number, number]} sensor={sensor} />;
+}
 
 function LockedAxisField({
     label,
@@ -116,7 +185,13 @@ function LockedAxisField({
     );
 }
 
-function PhysicsComponentEditor({ component, onUpdate }: { component: ComponentData; onUpdate: (newComp: any) => void }) {
+function PhysicsComponentEditor({ node, component, onUpdate }: { node?: GameObject; component: ComponentData; onUpdate: (newComp: any) => void }) {
+    const nodeId = node?.id;
+    const hasAutomaticColliderSource = usePrefabStore(state => subtreeHasColliderSource(nodeId, state.nodesById, state.childIdsById));
+    const manualColliderShape = isManualColliderShape(component.properties.manualColliderShape)
+        ? component.properties.manualColliderShape
+        : manualColliderShapeFallback;
+
     return (
         <FieldGroup>
             <SelectField
@@ -131,25 +206,55 @@ function PhysicsComponentEditor({ component, onUpdate }: { component: ComponentD
                     { value: 'kinematicVelocity', label: 'Kinematic Velocity' },
                 ]}
             />
-            <SelectField
-                name="colliders"
-                label="Collider"
-                values={component.properties}
-                onChange={onUpdate}
-                options={[
-                    { value: 'hull', label: 'Hull (convex)' },
-                    { value: 'trimesh', label: 'Trimesh (exact)' },
-                    { value: 'cuboid', label: 'Cuboid (box)' },
-                    { value: 'ball', label: 'Ball (sphere)' },
-                    { value: 'capsule', label: 'Capsule' },
-                ]}
-            />
-            {component.properties.colliders === 'capsule' ? (
+            {hasAutomaticColliderSource ? (
                 <>
-                    <NumberField name="capsuleRadius" label="Capsule Radius" values={component.properties} onChange={onUpdate} fallback={capsuleRadiusFallback} min={0.01} step={0.01} />
-                    <NumberField name="capsuleHalfHeight" label="Capsule Half Height" values={component.properties} onChange={onUpdate} fallback={capsuleHalfHeightFallback} min={0.01} step={0.01} />
+                    <SelectField
+                        name="colliders"
+                        label="Collider"
+                        values={component.properties}
+                        onChange={onUpdate}
+                        options={[
+                            { value: 'hull', label: 'Hull (convex)' },
+                            { value: 'trimesh', label: 'Trimesh (exact)' },
+                            { value: 'cuboid', label: 'Cuboid (box)' },
+                            { value: 'ball', label: 'Ball (sphere)' },
+                            { value: 'capsule', label: 'Capsule' },
+                        ]}
+                    />
+                    {component.properties.colliders === 'capsule' ? (
+                        <>
+                            <NumberField name="capsuleRadius" label="Capsule Radius" values={component.properties} onChange={onUpdate} fallback={capsuleRadiusFallback} min={0.01} step={0.01} />
+                            <NumberField name="capsuleHalfHeight" label="Capsule Half Height" values={component.properties} onChange={onUpdate} fallback={capsuleHalfHeightFallback} min={0.01} step={0.01} />
+                        </>
+                    ) : null}
                 </>
-            ) : null}
+            ) : (
+                <>
+                    <SelectField
+                        name="manualColliderShape"
+                        label="Shape"
+                        values={{ ...component.properties, manualColliderShape }}
+                        onChange={onUpdate}
+                        options={[
+                            { value: 'cuboid', label: 'Cuboid (box)' },
+                            { value: 'ball', label: 'Ball (sphere)' },
+                            { value: 'capsule', label: 'Capsule' },
+                        ]}
+                    />
+                    {manualColliderShape === 'cuboid' ? (
+                        <Vector3Field name="colliderSize" label="Collider Size" values={component.properties} onChange={onUpdate} fallback={colliderSizeFallback} />
+                    ) : null}
+                    {manualColliderShape === 'ball' ? (
+                        <NumberField name="colliderRadius" label="Collider Radius" values={component.properties} onChange={onUpdate} fallback={colliderRadiusFallback} min={0.01} step={0.01} />
+                    ) : null}
+                    {manualColliderShape === 'capsule' ? (
+                        <>
+                            <NumberField name="capsuleRadius" label="Capsule Radius" values={component.properties} onChange={onUpdate} fallback={capsuleRadiusFallback} min={0.01} step={0.01} />
+                            <NumberField name="capsuleHalfHeight" label="Capsule Half Height" values={component.properties} onChange={onUpdate} fallback={capsuleHalfHeightFallback} min={0.01} step={0.01} />
+                        </>
+                    ) : null}
+                </>
+            )}
             <NumberField name="mass" label="Mass" values={component.properties} onChange={onUpdate} fallback={1} step={0.1} min={0} />
             <NumberField name="restitution" label="Restitution (Bounciness)" values={component.properties} onChange={onUpdate} fallback={0} min={0} max={1} step={0.1} />
             <NumberField name="friction" label="Friction" values={component.properties} onChange={onUpdate} fallback={0.5} min={0} step={0.1} />
@@ -203,6 +308,7 @@ function PhysicsComponentView({ properties, children, position, rotation, scale 
     const { registerRigidBodyRef } = useAssetRuntime();
     const { editMode, nodeId, getObject } = useEntityRuntime();
     const gameObject = usePrefabNode(nodeId);
+    const hasAutomaticColliderSource = usePrefabStore(state => subtreeHasColliderSource(nodeId, state.nodesById, state.childIdsById));
     const nodeName = gameObject?.name?.trim() ?? '';
     const userData = {
         prefabNodeId: gameObject?.id ?? nodeId,
@@ -213,9 +319,12 @@ function PhysicsComponentView({ properties, children, position, rotation, scale 
         type,
         colliders,
         sensor,
+        manualColliderShape = manualColliderShapeFallback,
         activeCollisionTypes,
         linearVelocity = [0, 0, 0],
         angularVelocity = [0, 0, 0],
+        colliderSize = colliderSizeFallback,
+        colliderRadius = colliderRadiusFallback,
         capsuleRadius = capsuleRadiusFallback,
         capsuleHalfHeight = capsuleHalfHeightFallback,
         emitSensorEnterEvent = false,
@@ -231,13 +340,19 @@ function PhysicsComponentView({ properties, children, position, rotation, scale 
         ...otherProps
     } = properties;
     const colliderType = colliders || (type === 'fixed' ? 'trimesh' : 'hull');
-    const usesManualCapsuleCollider = colliderType === 'capsule';
+    const resolvedManualColliderShape = isManualColliderShape(manualColliderShape)
+        ? manualColliderShape
+        : manualColliderShapeFallback;
+    const usesAutomaticColliderSource = hasAutomaticColliderSource && colliderType !== 'capsule';
+    const manualColliderShapeToRender = hasAutomaticColliderSource
+        ? 'capsule'
+        : resolvedManualColliderShape;
     const rigidBodyRef = useRef<RapierRigidBody>(null);
     const linearVelocityKey = linearVelocity.join(',');
     const angularVelocityKey = angularVelocity.join(',');
     const rbKey = editMode
-        ? `${type || 'dynamic'}_${colliderType}_${capsuleRadius}_${capsuleHalfHeight}_${position?.join(',')}_${rotation?.join(',')}`
-        : `${type || 'dynamic'}_${colliderType}_${capsuleRadius}_${capsuleHalfHeight}`;
+        ? `${type || 'dynamic'}_${colliderType}_${resolvedManualColliderShape}_${colliderSize.join(',')}_${colliderRadius}_${capsuleRadius}_${capsuleHalfHeight}_${position?.join(',')}_${rotation?.join(',')}`
+        : `${type || 'dynamic'}_${colliderType}_${resolvedManualColliderShape}_${colliderSize.join(',')}_${colliderRadius}_${capsuleRadius}_${capsuleHalfHeight}`;
     const handleRigidBodyRef = useCallback((rigidBody: RapierRigidBody | null) => {
         rigidBodyRef.current = rigidBody;
 
@@ -336,7 +451,7 @@ function PhysicsComponentView({ properties, children, position, rotation, scale 
     const rigidBodyProps = {
         ref: handleRigidBodyRef,
         type,
-        colliders: usesManualCapsuleCollider ? false : colliderType as any,
+        colliders: usesAutomaticColliderSource ? colliderType as any : false,
         position,
         rotation,
         scale,
@@ -354,7 +469,14 @@ function PhysicsComponentView({ properties, children, position, rotation, scale 
 
     return (
         <RigidBody key={rbKey} {...rigidBodyProps}>
-            {usesManualCapsuleCollider ? <CapsuleCollider args={[capsuleHalfHeight, capsuleRadius]} sensor={sensor} /> : null}
+            {!usesAutomaticColliderSource ? renderManualCollider({
+                shape: manualColliderShapeToRender,
+                sensor,
+                colliderSize,
+                colliderRadius,
+                capsuleRadius,
+                capsuleHalfHeight,
+            }) : null}
             {children}
         </RigidBody>
     );
@@ -367,6 +489,9 @@ const PhysicsComponent: Component = {
     defaultProperties: {
         type: 'dynamic',
         colliders: 'hull',
+        manualColliderShape: manualColliderShapeFallback,
+        colliderSize: colliderSizeFallback,
+        colliderRadius: colliderRadiusFallback,
         capsuleRadius: capsuleRadiusFallback,
         capsuleHalfHeight: capsuleHalfHeightFallback,
         linearVelocity: [0, 0, 0],

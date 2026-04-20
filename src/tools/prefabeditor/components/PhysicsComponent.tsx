@@ -1,7 +1,7 @@
 import { BallCollider, CapsuleCollider, CuboidCollider, RigidBody, RapierRigidBody, useRapier } from "@react-three/rapier";
 import type { CollisionPayload, IntersectionEnterPayload, IntersectionExitPayload, RigidBodyOptions } from "@react-three/rapier";
 import type { ReactNode } from 'react';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Object3D } from 'three';
 import { Component } from "./ComponentRegistry";
 import { useAssetRuntime, useEntityRuntime } from "../assetRuntime";
@@ -44,6 +44,7 @@ const colliderSizeFallback: [number, number, number] = [1, 1, 1];
 const colliderRadiusFallback = 0.5;
 const capsuleRadiusFallback = 0.35;
 const capsuleHalfHeightFallback = 0.45;
+const EDIT_MODE_DEBUG_REFRESH_THROTTLE_MS = 120;
 
 function isManualColliderShape(value: unknown): value is ManualColliderShape {
     return value === 'cuboid' || value === 'ball' || value === 'capsule';
@@ -349,11 +350,12 @@ function PhysicsComponentView({ properties, children, position, rotation, scale 
         ? 'capsule'
         : resolvedManualColliderShape;
     const rigidBodyRef = useRef<RapierRigidBody>(null);
+    const [editRefreshVersion, setEditRefreshVersion] = useState(0);
+    const lastEditRefreshAtRef = useRef(0);
     const linearVelocityKey = linearVelocity.join(',');
     const angularVelocityKey = angularVelocity.join(',');
-    const rbKey = editMode
-        ? `${type || 'dynamic'}_${colliderType}_${resolvedManualColliderShape}_${colliderSize.join(',')}_${colliderRadius}_${capsuleRadius}_${capsuleHalfHeight}_${position?.join(',')}_${rotation?.join(',')}`
-        : `${type || 'dynamic'}_${colliderType}_${resolvedManualColliderShape}_${colliderSize.join(',')}_${colliderRadius}_${capsuleRadius}_${capsuleHalfHeight}`;
+    const transformSignature = `${position?.join(',')}_${rotation?.join(',')}_${scale?.join(',')}`;
+    const rbKey = `${type || 'dynamic'}_${colliderType}_${resolvedManualColliderShape}_${colliderSize.join(',')}_${colliderRadius}_${capsuleRadius}_${capsuleHalfHeight}_${editMode ? editRefreshVersion : 0}`;
     const handleRigidBodyRef = useCallback((rigidBody: RapierRigidBody | null) => {
         rigidBodyRef.current = rigidBody;
 
@@ -386,6 +388,28 @@ function PhysicsComponentView({ properties, children, position, rotation, scale 
             }
         }
     }, [activeCollisionTypes, rapier, type, colliders]);
+
+    useEffect(() => {
+        if (!editMode) {
+            return;
+        }
+
+        const now = Date.now();
+        const delay = Math.max(0, EDIT_MODE_DEBUG_REFRESH_THROTTLE_MS - (now - lastEditRefreshAtRef.current));
+
+        if (delay === 0) {
+            lastEditRefreshAtRef.current = now;
+            setEditRefreshVersion(version => version + 1);
+            return;
+        }
+
+        const timeoutId = setTimeout(() => {
+            lastEditRefreshAtRef.current = Date.now();
+            setEditRefreshVersion(version => version + 1);
+        }, delay);
+
+        return () => clearTimeout(timeoutId);
+    }, [editMode, transformSignature]);
 
     // Seed authored velocities when the body instance changes or the authored values change.
     useEffect(() => {
@@ -449,21 +473,13 @@ function PhysicsComponentView({ properties, children, position, rotation, scale 
         dispatchPhysicsEvent(collisionExitEventName, payload);
     }, [collisionExitEventName, dispatchPhysicsEvent, emitCollisionExitEvent]);
 
-    const editModeTransformProps = editMode
-        ? {
-            position,
-            rotation,
-            scale,
-        }
-        : undefined;
-
     const rigidBodyProps = {
         ref: handleRigidBodyRef,
         type,
         colliders: usesAutomaticColliderSource ? colliderType as any : false,
-        position: editMode ? undefined : position,
-        rotation: editMode ? undefined : rotation,
-        scale: editMode ? undefined : scale,
+        position,
+        rotation,
+        scale,
         sensor,
         enabledTranslations,
         enabledRotations,
@@ -492,11 +508,7 @@ function PhysicsComponentView({ properties, children, position, rotation, scale 
 
     return (
         <RigidBody key={rbKey} {...rigidBodyProps}>
-            {editMode ? (
-                <group {...editModeTransformProps}>
-                    {rigidBodyContent}
-                </group>
-            ) : rigidBodyContent}
+            {rigidBodyContent}
         </RigidBody>
     );
 }

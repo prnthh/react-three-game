@@ -1,6 +1,5 @@
-import { useHelper } from "@react-three/drei";
 import { forwardRef, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
-import { BoxHelper, Euler, Group, Matrix4, Object3D, Quaternion, Texture, Vector3, } from "three";
+import { Euler, Group, Matrix4, Object3D, Quaternion, Texture, Vector3, } from "three";
 import { ThreeEvent } from "@react-three/fiber";
 import { useStore } from "zustand";
 import { useClickValid } from "./useClickValid";
@@ -87,11 +86,10 @@ export interface PrefabRootProps {
     selectedId?: string | null;
     onSelect?: (id: string | null) => void;
     onClick?: (event: ThreeEvent<PointerEvent>, entity: GameObjectType) => void;
-    onObjectRefChange?: (id: string, object: Object3D | null) => void;
     basePath?: string;
 }
 
-export const PrefabRoot = forwardRef<PrefabRootRef, PrefabRootProps>(({ editMode, data, store, selectedId, onSelect, onClick, onObjectRefChange, basePath = "" }, ref) => {
+export const PrefabRoot = forwardRef<PrefabRootRef, PrefabRootProps>(({ editMode, data, store, selectedId, onSelect, onClick, basePath = "" }, ref) => {
 
     const [models, setModels] = useState<LoadedModels>({});
     const [textures, setTextures] = useState<LoadedTextures>({});
@@ -143,8 +141,7 @@ export const PrefabRoot = forwardRef<PrefabRootRef, PrefabRootProps>(({ editMode
 
     const registerRef = useCallback((id: string, obj: Object3D | null) => {
         objectRefs.current[id] = obj;
-        onObjectRefChange?.(id, obj);
-    }, [onObjectRefChange]);
+    }, []);
 
     const registerRigidBodyRef = useCallback((id: string, rb: any) => {
         rigidBodyRefs.current.set(id, rb);
@@ -418,18 +415,10 @@ function StandardNode({
     const metadataProps = getNodeMetadataProps(gameObject);
 
     const groupRef = useRef<Object3D | null>(null);
-    const helperRef = useRef<Object3D | null>(null);
     const handleGroupRef = useCallback((object: Object3D | null) => {
         groupRef.current = object;
         registerRef(nodeId, object);
     }, [nodeId, registerRef]);
-    const handleHelperRef = useCallback((object: Object3D | null) => {
-        helperRef.current = object;
-    }, []);
-    const handleEditGroupRef = useCallback((object: Object3D | null) => {
-        handleGroupRef(object);
-        handleHelperRef(object);
-    }, [handleGroupRef, handleHelperRef]);
 
     const editClickHandlers = useClickValid(!!editMode && !isLocked, (event: ThreeEvent<PointerEvent>) => {
         onSelect?.(nodeId);
@@ -444,12 +433,6 @@ function StandardNode({
             },
         }
         : undefined;
-
-    useHelper(
-        editMode && isSelected ? helperRef as React.RefObject<Object3D> : null,
-        BoxHelper,
-        "cyan"
-    );
 
     const world = parentMatrix.clone().multiply(compose(gameObject));
 
@@ -484,7 +467,7 @@ function StandardNode({
     ) : null;
     const standardNode = (
         <group
-            ref={editMode ? handleEditGroupRef : handleGroupRef}
+            ref={handleGroupRef}
             {...groupProps}
             {...(editMode ? editClickHandlers : undefined)}
         >
@@ -499,7 +482,7 @@ function StandardNode({
             {...transformProps}
         >
             <group
-                ref={editMode ? handleEditGroupRef : handleGroupRef}
+                ref={handleGroupRef}
                 {...metadataProps}
                 {...(editMode ? editClickHandlers : undefined)}
             >

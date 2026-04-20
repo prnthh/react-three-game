@@ -48,7 +48,7 @@ const frustumInputStyle: React.CSSProperties = {
 const centerLockButtonStyle: React.CSSProperties = {
     width: 34,
     height: 34,
-    borderRadius: 999,
+    borderRadius: 0,
     border: `1px solid ${colors.border}`,
     background: colors.bgInput,
     color: colors.textMuted,

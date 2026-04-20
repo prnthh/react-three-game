@@ -1,7 +1,7 @@
-import { MapControls, TransformControls } from "@react-three/drei";
+import { MapControls, TransformControls, useHelper } from "@react-three/drei";
 import GameCanvas from "../../shared/GameCanvas";
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState, forwardRef, useImperativeHandle, createContext, useContext } from "react";
-import { Object3D, Texture } from "three";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, forwardRef, useImperativeHandle, createContext, useContext } from "react";
+import { BoxHelper, Object3D, Texture } from "three";
 import { GameObject, Prefab, findComponentEntry } from "./types";
 import PrefabRoot, { PrefabRootRef } from "./PrefabRoot";
 import { Physics } from "@react-three/rapier";
@@ -24,6 +24,13 @@ function isObjectAttachedToRoot(root: Object3D | null | undefined, object: Objec
     }
 
     return false;
+}
+
+function SelectionHelper({ object }: { object: Object3D | null }) {
+    const objectRef = useRef<Object3D | null>(null);
+    objectRef.current = object;
+    useHelper(object ? objectRef as React.RefObject<Object3D> : null, BoxHelper, "cyan");
+    return null;
 }
 
 export interface PrefabEditorRef {
@@ -108,10 +115,11 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
     const [historyIndex, setHistoryIndex] = useState(0);
     const changeOriginRef = useRef<"replace" | "replace-silent" | "history" | null>(null);
     const historyIndexRef = useRef(0);
-    const [, bumpSelectedObjectVersion] = useReducer((value: number) => value + 1, 0);
     const prefabRootRef = useRef<PrefabRootRef>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const controlsRef = useRef<any>(null);
+    const transformControlsRef = useRef<any>(null);
+    const transformProxyRef = useRef<Object3D | null>(null);
     const onChangeRef = useRef(onChange);
     const isEditMode = mode === PrefabEditorMode.Edit;
 
@@ -119,10 +127,6 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
     const getRootObject = useCallback(() => prefabRootRef.current?.root ?? null, []);
     const getObject = useCallback((nodeId: string) => prefabRootRef.current?.getObject(nodeId) ?? null, []);
     const getRigidBody = useCallback((nodeId: string) => prefabRootRef.current?.getRigidBody(nodeId) ?? null, []);
-    const handleObjectRefChange = useCallback((nodeId: string) => {
-        if (nodeId !== selectedId) return;
-        bumpSelectedObjectVersion();
-    }, [selectedId]);
 
     onChangeRef.current = onChange;
 
@@ -153,6 +157,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
 
     const loadPrefab = useCallback((prefab: Prefab, options?: { resetHistory?: boolean; notifyChange?: boolean }) => {
         changeOriginRef.current = options?.notifyChange === false ? "replace-silent" : "replace";
+        transformControlsRef.current?.detach();
         prefabStore.getState().replacePrefab(prefab);
 
         if (options?.resetHistory) {
@@ -230,10 +235,29 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
         return () => unsubscribe();
     }, [prefabStore, selectedId]);
 
+    const selectedNode = selectedId ? prefabStore.getState().nodesById[selectedId] ?? null : null;
     const selectedObject = selectedId ? getObject(selectedId) : null;
-    const transformObject = isObjectAttachedToRoot(getRootObject(), selectedObject)
-        ? selectedObject
+    const selectedHasPhysics = Object.values(selectedNode?.components ?? {}).some(component => component?.type === "Physics");
+    const transformObject = isEditMode && (selectedHasPhysics ? transformProxyRef.current : selectedObject)
+        && isObjectAttachedToRoot(getRootObject(), selectedObject)
+        ? (selectedHasPhysics ? transformProxyRef.current : selectedObject)
         : null;
+
+    useLayoutEffect(() => {
+        if (!isEditMode || !selectedHasPhysics || !selectedObject || !transformProxyRef.current) {
+            return;
+        }
+
+        selectedObject.updateMatrixWorld(true);
+        transformProxyRef.current.matrixAutoUpdate = true;
+        selectedObject.matrixWorld.decompose(
+            transformProxyRef.current.position,
+            transformProxyRef.current.quaternion,
+            transformProxyRef.current.scale,
+        );
+        transformProxyRef.current.updateMatrix();
+        transformProxyRef.current.updateMatrixWorld(true);
+    }, [isEditMode, selectedHasPhysics, selectedId, selectedObject]);
 
     const addNode = useCallback((node: GameObject, options?: SpawnOptions) => {
         const { addChild, rootId } = prefabStore.getState();
@@ -264,6 +288,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
 
     const applyHistory = (index: number) => {
         changeOriginRef.current = "history";
+        transformControlsRef.current?.detach();
         prefabStore.getState().replacePrefab(history[index]);
         historyIndexRef.current = index;
         setHistoryIndex(index);
@@ -341,7 +366,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
     const handleTransformChange = () => {
         if (!selectedId) return;
 
-        const object = getObject(selectedId);
+        const object = selectedHasPhysics ? transformProxyRef.current : getObject(selectedId);
         if (!object) return;
 
         const parentWorld = computeParentWorldMatrix(prefabStore.getState(), selectedId);
@@ -429,7 +454,6 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
                 editMode={isEditMode}
                 selectedId={selectedId}
                 onSelect={setSelection}
-                onObjectRefChange={handleObjectRefChange}
                 basePath={basePath}
             />
             {children}
@@ -475,12 +499,15 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
                     {content}
                 </Physics>
             ) : content}
+            <group ref={transformProxyRef} visible={false} />
+            {isEditMode ? <SelectionHelper object={transformObject} /> : null}
 
             {isEditMode && (
                 <>
                     <MapControls ref={controlsRef} enableDamping={false} makeDefault />
                     {transformObject && (
                         <TransformControls
+                            ref={transformControlsRef}
                             key={`transform-${selectedId}-${transformMode}-${positionSnap}-${rotationSnap}-${scaleSnap}`}
                             object={transformObject}
                             mode={transformMode}

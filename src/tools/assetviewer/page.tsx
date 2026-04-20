@@ -13,6 +13,47 @@ const styles: Record<string, any> = {
     iconLarge: { fontSize: 20 }
 };
 
+const assetViewerColors = {
+    panelBg: '#111827',
+    controlBg: '#1f2937',
+    text: '#f9fafb',
+    border: 'rgba(255,255,255,0.12)',
+    accentBorder: 'rgba(34, 211, 238, 0.3)',
+};
+
+const assetPickerPopupBaseStyle = {
+    background: assetViewerColors.panelBg,
+    border: `1px solid ${assetViewerColors.border}`,
+    borderRadius: 0,
+    boxShadow: '0 4px 16px rgba(0,0,0,0.6)',
+} as const;
+
+const assetPickerButtonBaseStyle = {
+    backgroundColor: assetViewerColors.controlBg,
+    color: 'inherit',
+    fontSize: 10,
+    cursor: 'pointer',
+    border: `1px solid ${assetViewerColors.border}`,
+    borderRadius: 0,
+} as const;
+
+const assetPickerWideButtonStyle = {
+    ...assetPickerButtonBaseStyle,
+    width: '100%',
+    padding: '6px 8px',
+} as const;
+
+const assetPickerSmallButtonStyle = {
+    ...assetPickerButtonBaseStyle,
+    padding: '4px 8px',
+} as const;
+
+const assetPickerEmptyPreviewStyle = {
+    backgroundColor: assetViewerColors.controlBg,
+    border: `1px dashed ${assetViewerColors.border}`,
+    borderRadius: 0,
+} as const;
+
 function getItemsInPath(files: string[], currentPath: string) {
     // Remove the leading category folder (e.g., /textures/, /models/, /sounds/)
     const filesWithoutCategory = files.map(file => {
@@ -48,8 +89,8 @@ function FolderTile({ name, onClick }: { name: string; onClick: () => void }) {
             style={{
                 maxWidth: 60,
                 aspectRatio: '1 / 1',
-                backgroundColor: '#1f2937', /* gray-800 */
-                color: '#f9fafb',
+                backgroundColor: assetViewerColors.controlBg,
+                color: assetViewerColors.text,
                 cursor: 'pointer',
                 display: 'flex',
                 flexDirection: 'column',
@@ -109,7 +150,7 @@ function AssetListViewer({ files, selected, onSelect, renderCard }: AssetListVie
                         pathParts.pop();
                         setCurrentPath(pathParts.join('/'));
                     }}
-                    style={{ marginBottom: 4, padding: '4px 8px', backgroundColor: '#1f2937', color: 'inherit', fontSize: 12, cursor: 'pointer', border: 'none' }}
+                    style={{ ...assetPickerSmallButtonStyle, marginBottom: 4, fontSize: 12, border: 'none' }}
                 >
                     ← Back
                 </button>
@@ -436,10 +477,7 @@ function AssetPicker({
                 height: PICKER_POPUP_HEIGHT,
                 overflow: 'hidden',
                 zIndex: 1000,
-                boxShadow: '0 4px 16px rgba(0,0,0,0.6)',
-                background: '#111827',
-                border: '1px solid rgba(255,255,255,0.12)',
-                borderRadius: 6,
+                ...assetPickerPopupBaseStyle,
                 ...popupStyle,
             });
         };
@@ -498,8 +536,8 @@ export function TexturePicker({ value, onChange, basePath = "" }: { value: strin
             basePath={basePath}
             manifestFolder="textures"
             rootStyle={{ maxHeight: 128, overflow: 'visible', position: 'relative', display: 'flex', alignItems: 'center' }}
-            changeButtonStyle={{ padding: '4px 8px', backgroundColor: '#1f2937', color: 'inherit', fontSize: 10, cursor: 'pointer', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 3, marginTop: 4 }}
-            clearButtonStyle={{ padding: '4px 8px', backgroundColor: '#1f2937', color: 'inherit', fontSize: 10, cursor: 'pointer', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 3, marginTop: 4, marginLeft: 4 }}
+            changeButtonStyle={{ ...assetPickerSmallButtonStyle, marginTop: 4 }}
+            clearButtonStyle={{ ...assetPickerSmallButtonStyle, marginTop: 4, marginLeft: 4 }}
             preview={<SingleTextureViewer file={value} basePath={basePath} />}
             renderList={({ files, value: selectedValue, onSelect, basePath: currentBasePath }) => (
                 <TextureListViewer
@@ -522,9 +560,9 @@ export function ModelPicker({ value, onChange, basePath = "", pickerKey }: { val
             manifestFolder="models"
             rootStyle={{ maxHeight: 160, overflow: 'visible', position: 'relative', display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}
             controlsStyle={{ display: 'flex', flexDirection: 'column', gap: 6, flex: '0 0 84px', minWidth: 84, justifyContent: 'flex-end' }}
-            changeButtonStyle={{ width: '100%', padding: '6px 8px', backgroundColor: '#1f2937', color: 'inherit', fontSize: 10, cursor: 'pointer', border: '1px solid rgba(34, 211, 238, 0.3)' }}
-            clearButtonStyle={{ width: '100%', padding: '6px 8px', backgroundColor: '#1f2937', color: 'inherit', fontSize: 10, cursor: 'pointer', border: '1px solid rgba(34, 211, 238, 0.3)' }}
-            popupStyle={{ background: 'rgba(0,0,0,0.9)', border: '1px solid rgba(34, 211, 238, 0.3)' }}
+            changeButtonStyle={{ ...assetPickerWideButtonStyle, border: `1px solid ${assetViewerColors.accentBorder}` }}
+            clearButtonStyle={{ ...assetPickerWideButtonStyle, border: `1px solid ${assetViewerColors.accentBorder}` }}
+            popupStyle={{ background: 'rgba(0,0,0,0.9)', border: `1px solid ${assetViewerColors.accentBorder}` }}
             preview={<div style={{ flex: '0 0 auto' }}><SingleModelViewer file={value ? `/${value}` : undefined} basePath={basePath} /></div>}
             renderList={({ files, value: selectedValue, onSelect, basePath: currentBasePath }) => (
                 <ModelListViewer
@@ -548,9 +586,9 @@ export function SoundPicker({ value, onChange, basePath = "" }: { value: string 
             manifestFolder="sound"
             rootStyle={{ maxHeight: 76, overflow: 'visible', position: 'relative', display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}
             controlsStyle={{ display: 'flex', flexDirection: 'column', gap: 6, flex: '0 0 84px', minWidth: 84, justifyContent: 'flex-end' }}
-            changeButtonStyle={{ width: '100%', padding: '6px 8px', backgroundColor: '#1f2937', color: 'inherit', fontSize: 10, cursor: 'pointer', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 3 }}
-            clearButtonStyle={{ width: '100%', padding: '6px 8px', backgroundColor: '#1f2937', color: 'inherit', fontSize: 10, cursor: 'pointer', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 3 }}
-            preview={<div style={{ flex: '0 0 auto', minWidth: 84 }}>{value ? <SingleSoundViewer file={value} basePath={basePath} /> : <div style={{ width: 84, height: 60, backgroundColor: '#1f2937', border: '1px dashed rgba(255,255,255,0.12)', borderRadius: 4 }} />}</div>}
+            changeButtonStyle={assetPickerWideButtonStyle}
+            clearButtonStyle={assetPickerWideButtonStyle}
+            preview={<div style={{ flex: '0 0 auto', minWidth: 84 }}>{value ? <SingleSoundViewer file={value} basePath={basePath} /> : <div style={{ width: 84, height: 60, ...assetPickerEmptyPreviewStyle }} />}</div>}
             renderList={({ files, value: selectedValue, onSelect, basePath: currentBasePath }) => (
                 <SoundListViewer
                     files={files}
@@ -565,7 +603,7 @@ export function SoundPicker({ value, onChange, basePath = "" }: { value: string 
 
 // Single Asset Viewer Components - display only one selected asset
 export function SingleTextureViewer({ file, basePath = "" }: { file?: string; basePath?: string }) {
-    if (!file) return <div style={{ width: 60, aspectRatio: '1 / 1', backgroundColor: '#1f2937', border: '1px dashed rgba(255,255,255,0.12)' }} />;
+    if (!file) return <div style={{ width: 60, aspectRatio: '1 / 1', ...assetPickerEmptyPreviewStyle }} />;
     return (
         <>
             <TextureCard file={file} basePath={basePath} onSelect={() => { }} />
@@ -575,7 +613,7 @@ export function SingleTextureViewer({ file, basePath = "" }: { file?: string; ba
 }
 
 export function SingleModelViewer({ file, basePath = "" }: { file?: string; basePath?: string }) {
-    if (!file) return <div style={{ width: 112, aspectRatio: '1 / 1', backgroundColor: '#1f2937', border: '1px dashed rgba(255,255,255,0.12)' }} />;
+    if (!file) return <div style={{ width: 112, aspectRatio: '1 / 1', ...assetPickerEmptyPreviewStyle }} />;
     return (
         <>
             <ModelCard file={file} basePath={basePath} onSelect={() => { }} size={112} />

@@ -5,7 +5,7 @@ import { useAssetRuntime, useEntityRuntime } from '../assetRuntime';
 import { gameEvents, type ClickEventPayload, type PhysicsEventPayload } from '../GameEvents';
 import { Component } from './ComponentRegistry';
 import { BooleanField, FieldGroup, FieldRenderer, ListEditor, NumberField, SelectField, StringField } from './Input';
-import { colors } from '../styles';
+import { colors, ui } from '../styles';
 import type { ComponentData } from '../types';
 import { AudioListener, PositionalAudio as ThreePositionalAudio } from 'three';
 
@@ -195,13 +195,10 @@ function SoundComponentEditor({ component, onUpdate, basePath = '' }: { componen
                     <div
                         key={`${clip}-${index}`}
                         style={{
+                            ...ui.secondaryPanel,
                             display: 'flex',
                             gap: 6,
                             alignItems: 'end',
-                            padding: 8,
-                            border: `1px solid ${colors.border}`,
-                            borderRadius: 4,
-                            background: colors.bgSurface,
                         }}
                     >
                         <div style={{ flex: 1, minWidth: 0 }}>
@@ -211,15 +208,9 @@ function SoundComponentEditor({ component, onUpdate, basePath = '' }: { componen
                             type="button"
                             onClick={() => removeClip(index)}
                             style={{
+                                ...ui.compactActionButton,
                                 height: 24,
-                                width: 28,
-                                borderRadius: 3,
-                                border: `1px solid ${colors.border}`,
                                 background: colors.bgInput,
-                                color: colors.text,
-                                cursor: 'pointer',
-                                padding: 0,
-                                flexShrink: 0,
                             }}
                             title="Remove clip"
                         >

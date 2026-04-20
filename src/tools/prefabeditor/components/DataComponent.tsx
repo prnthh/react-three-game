@@ -1,6 +1,6 @@
 import { CSSProperties, useEffect, useState } from "react";
 import { Component } from "./ComponentRegistry";
-import { colors } from "../styles";
+import { colors, ui } from "../styles";
 
 type DataComponentProperties = {
     data?: Record<string, unknown>;
@@ -12,15 +12,11 @@ const RESERVED_USER_DATA_KEYS = new Set([
 ]);
 
 const inputStyle: CSSProperties = {
+    ...ui.monoTextInput,
     width: '100%',
-    backgroundColor: colors.bgInput,
-    border: `1px solid ${colors.border}`,
-    padding: '6px 8px',
+    padding: '4px 6px',
     fontSize: '11px',
-    color: colors.text,
-    fontFamily: 'monospace',
     outline: 'none',
-    borderRadius: 3,
     boxSizing: 'border-box',
 };
 

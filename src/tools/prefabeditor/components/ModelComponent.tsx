@@ -6,7 +6,7 @@ import { useAssetRuntime } from '../assetRuntime';
 import { GameObject } from '../types';
 import { EditorContext } from '../PrefabEditor';
 import { DEFAULT_REPEAT_AXES, getRepeatAxesFromModelProperties, normalizeRepeatAxes, RepeatAxisConfig } from '../InstanceProvider';
-import { colors } from '../styles';
+import { colors, ui } from '../styles';
 
 const AXIS_OPTIONS = [
     { value: 'x', label: 'X' },
@@ -70,13 +70,10 @@ function RepeatAxisEditor({
                     <div
                         key={`${axisConfig.axis}-${index}`}
                         style={{
+                            ...ui.secondaryPanel,
                             display: 'flex',
                             flexDirection: 'column',
                             gap: 6,
-                            padding: 8,
-                            border: `1px solid ${colors.border}`,
-                            borderRadius: 4,
-                            background: colors.bgSurface,
                         }}
                     >
                         <div style={{ display: 'flex', gap: 6, alignItems: 'end' }}>
@@ -92,15 +89,9 @@ function RepeatAxisEditor({
                                 type="button"
                                 onClick={() => removeAxis(index)}
                                 style={{
+                                    ...ui.compactActionButton,
                                     height: 24,
-                                    width: 28,
-                                    borderRadius: 3,
-                                    border: `1px solid ${colors.border}`,
                                     background: colors.bgInput,
-                                    color: colors.text,
-                                    cursor: 'pointer',
-                                    padding: 0,
-                                    flexShrink: 0,
                                 }}
                                 title="Remove repeat axis"
                             >

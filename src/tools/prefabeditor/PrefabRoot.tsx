@@ -477,48 +477,41 @@ function StandardNode({
     />;
 
     const inner = renderCompositionNode(gameObject, renderCtx, primaryClickHandlers, childNodes);
-    const physicsInner = editMode ? <group visible={false}>{inner}</group> : inner;
+    const editAnchor = editMode ? (
+        <mesh visible={false}>
+            <boxGeometry args={[0.01, 0.01, 0.01]} />
+        </mesh>
+    ) : null;
+    const standardNode = (
+        <group
+            ref={editMode ? handleEditGroupRef : handleGroupRef}
+            {...groupProps}
+            {...(editMode ? editClickHandlers : undefined)}
+        >
+            {editAnchor}
+            {inner}
+        </group>
+    );
+    const physicsNode = hasPhysics && physicsDef?.View ? (
+        <physicsDef.View
+            key={physicsKey}
+            properties={physics.properties}
+            {...transformProps}
+        >
+            <group
+                ref={editMode ? handleEditGroupRef : handleGroupRef}
+                {...metadataProps}
+                {...(editMode ? editClickHandlers : undefined)}
+            >
+                {editAnchor}
+                {inner}
+            </group>
+        </physicsDef.View>
+    ) : null;
 
     return (
         <EntityRuntimeScope nodeId={nodeId} editMode={editMode} isSelected={isSelected}>
-            {editMode ? (
-                <>
-                    <group
-                        ref={handleEditGroupRef}
-                        {...groupProps}
-                        {...editClickHandlers}
-                    >
-                        <mesh visible={false}>
-                            <boxGeometry args={[0.01, 0.01, 0.01]} />
-                        </mesh>
-                        {inner}
-                    </group>
-                    {hasPhysics && physicsDef?.View ? (
-                        <physicsDef.View
-                            key={physicsKey}
-                            properties={physics.properties}
-                            {...transformProps}
-                        >{physicsInner}</physicsDef.View>
-                    ) : null}
-                </>
-            ) : hasPhysics && physicsDef?.View ? (
-                <physicsDef.View
-                    key={physicsKey}
-                    properties={physics.properties}
-                    {...transformProps}
-                >
-                    <group ref={handleGroupRef} {...metadataProps}>
-                        {inner}
-                    </group>
-                </physicsDef.View>
-            ) : (
-                <group
-                    ref={handleGroupRef}
-                    {...groupProps}
-                >
-                    {inner}
-                </group>
-            )}
+            {physicsNode ?? standardNode}
         </EntityRuntimeScope>
     );
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { colors } from '../styles';
+import { colors, ui } from '../styles';
 import { useOptionalPrefabStoreApi } from '../prefabStore';
 
 // ============================================================================
@@ -78,13 +78,13 @@ const styles = {
         width: '80px',
         backgroundColor: colors.bgInput,
         border: `1px solid ${colors.border}`,
-        padding: '3px 6px',
+        padding: '2px 4px',
         fontSize: '11px',
         color: colors.text,
         fontFamily: 'monospace',
         outline: 'none',
         textAlign: 'right',
-        borderRadius: 3,
+        borderRadius: 0,
     } as React.CSSProperties,
     label: {
         display: 'block',
@@ -410,9 +410,9 @@ export function Vector3Input({
                             gap: 4,
                             backgroundColor: colors.bgInput,
                             border: `1px solid ${colors.border}`,
-                            borderRadius: 3,
-                            padding: '4px 6px',
-                            minHeight: 28,
+                            borderRadius: 0,
+                            padding: '2px 4px',
+                            minHeight: 22,
                             cursor: 'ew-resize',
                         }}
                         onPointerDown={e => startScrub(e, index)}
@@ -486,13 +486,13 @@ export function ColorInput({
                 <input
                     type="color"
                     style={{
-                        height: 32,
+                        height: 22,
                         width: 48,
                         backgroundColor: colors.bgInput,
                         border: `1px solid ${colors.border}`,
-                        borderRadius: 3,
+                        borderRadius: 0,
                         cursor: 'pointer',
-                        padding: 2,
+                        padding: 1,
                         flexShrink: 0,
                     }}
                     value={value}
@@ -594,10 +594,10 @@ function SearchSuggestionList({
                     gap: 4,
                     maxHeight: 160,
                     overflowY: 'auto',
-                    border: `1px solid ${colors.border}`,
-                    borderRadius: 3,
+                    border: 'none',
+                    borderRadius: 0,
                     background: colors.bgSurface,
-                    padding: 4,
+                    padding: 2,
                 }}
             >
                 {filtered.length === 0 ? (
@@ -612,11 +612,11 @@ function SearchSuggestionList({
                             flexDirection: 'column',
                             alignItems: 'flex-start',
                             gap: 2,
-                            border: `1px solid ${colors.border}`,
-                            borderRadius: 3,
-                            background: colors.bgInput,
+                            border: 'none',
+                            borderRadius: 0,
+                            background: colors.bgSurface,
                             color: colors.text,
-                            padding: '6px 8px',
+                            padding: '4px 6px',
                             cursor: 'pointer',
                             textAlign: 'left',
                         }}
@@ -872,17 +872,16 @@ export function ListEditor<T>({
                         onClick={() => onAdd(resolvedAddValue)}
                         disabled={!canAddItem}
                         style={{
+                            ...ui.compactActionButton,
                             width: 22,
+                            minWidth: 22,
                             height: 22,
-                            borderRadius: 3,
                             border: `1px solid ${canAddItem ? colors.accentBorder : colors.border}`,
                             background: canAddItem ? colors.accentBg : colors.bgSurface,
                             color: canAddItem ? colors.accent : colors.textMuted,
                             cursor: canAddItem ? 'pointer' : 'not-allowed',
                             fontSize: 14,
                             lineHeight: 1,
-                            padding: 0,
-                            flexShrink: 0,
                         }}
                         title={canAddItem ? addButtonTitle : addDisabledTitle}
                     >

@@ -44,28 +44,34 @@ interface ComponentCardStyles {
     container: Style;
 }
 
+interface UtilityStyles {
+    secondaryPanel: Style;
+    compactActionButton: Style;
+    monoTextInput: Style;
+}
+
 export const colors = {
-    bg: '#1e1e1e',
-    bgSurface: '#252526',
-    bgLight: '#2d2d2d',
-    bgHover: '#2a2d2e',
-    bgInput: '#1a1a1a',
-    border: '#3c3c3c',
-    borderLight: '#333333',
-    borderFaint: '#2a2a2a',
-    text: '#cccccc',
-    textMuted: '#999999',
-    textDim: '#666666',
-    accent: '#4c9eff',
-    accentBg: 'rgba(76, 158, 255, 0.12)',
-    accentBorder: 'rgba(76, 158, 255, 0.4)',
-    danger: '#f44747',
-    dangerBg: 'rgba(244, 71, 71, 0.12)',
-    dangerBorder: 'rgba(244, 71, 71, 0.35)',
+    bg: '#f3f3f3',
+    bgSurface: '#d7d7d7',
+    bgLight: '#fafafa',
+    bgHover: '#e6e6e6',
+    bgInput: '#f5f5f5',
+    border: '#6f6f6f',
+    borderLight: '#9a9a9a',
+    borderFaint: '#b8b8b8',
+    text: '#2f2f2f',
+    textMuted: '#5f5f5f',
+    textDim: '#7f7f7f',
+    accent: '#1e6f89',
+    accentBg: '#a9dded',
+    accentBorder: '#5e5e5e',
+    danger: '#9c3232',
+    dangerBg: '#efcaca',
+    dangerBorder: '#6f6f6f',
 };
 
 export const fonts = {
-    family: 'system-ui, -apple-system, sans-serif',
+    family: 'Tahoma, Verdana, sans-serif',
     size: 11,
     sizeSm: 10,
 };
@@ -76,47 +82,51 @@ export const base: BaseStyles = {
         background: colors.bg,
         color: colors.text,
         border: `1px solid ${colors.border}`,
-        borderRadius: 4,
         fontFamily: fonts.family,
         fontSize: fonts.size,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+        borderRadius: 0,
+        boxShadow: 'none',
     },
 
     header: {
-        padding: '7px 10px',
+        padding: '3px 6px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         cursor: 'pointer',
         background: colors.bgLight,
-        borderBottom: `1px solid ${colors.borderLight}`,
+        borderBottom: `1px solid ${colors.border}`,
         fontSize: fonts.size,
-        fontWeight: 600,
-        textTransform: 'uppercase',
-        letterSpacing: 0.8,
+        fontWeight: 400,
         color: colors.text,
+        minHeight: 22,
+        boxSizing: 'border-box',
     },
 
     input: {
         width: '100%',
         background: colors.bgInput,
         border: `1px solid ${colors.border}`,
-        borderRadius: 3,
-        padding: '5px 8px',
+        borderRadius: 0,
+        padding: '2px 4px',
         color: colors.text,
         fontSize: fonts.size,
         outline: 'none',
+        minHeight: 22,
+        boxSizing: 'border-box',
     },
 
     btn: {
-        background: colors.bgLight,
+        background: colors.bgSurface,
         border: `1px solid ${colors.border}`,
-        borderRadius: 3,
-        padding: '4px 8px',
+        borderRadius: 0,
+        padding: '2px 6px',
         color: colors.text,
         fontSize: fonts.size,
         cursor: 'pointer',
         outline: 'none',
+        minHeight: 22,
+        boxSizing: 'border-box',
     },
 
     btnDanger: {
@@ -128,20 +138,17 @@ export const base: BaseStyles = {
     label: {
         fontSize: fonts.sizeSm,
         color: colors.textMuted,
-        marginBottom: 4,
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
-        fontWeight: 500,
+        marginBottom: 2,
+        fontWeight: 400,
     },
 
     row: {
         display: 'flex',
-        gap: 6,
+        gap: 4,
     },
 
     section: {
-        paddingBottom: 8,
-        borderBottom: `1px solid ${colors.borderLight}`,
+        paddingBottom: 4,
     },
 };
 
@@ -153,10 +160,10 @@ export const inspector: InspectorStyles = {
         top: 8,
         right: 8,
         zIndex: 20,
-        width: 260,
+        width: 300,
     },
     content: {
-        padding: 8,
+        padding: 6,
         maxHeight: '80vh',
         overflowY: 'auto',
         overflowX: 'hidden',
@@ -165,7 +172,7 @@ export const inspector: InspectorStyles = {
         boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
-        gap: 8,
+        gap: 4,
     },
 };
 
@@ -179,30 +186,30 @@ export const tree: TreeStyles = {
     },
     scroll: {
         overflowY: 'auto',
-        padding: 4,
+        padding: 2,
         scrollbarWidth: 'thin',
         scrollbarColor: `${colors.bgLight} transparent`,
     },
     row: {
         display: 'flex',
         alignItems: 'center',
-        padding: '3px 6px',
+        padding: '2px 4px',
         borderBottomWidth: 1,
         borderBottomStyle: 'solid',
         borderBottomColor: colors.borderFaint,
         cursor: 'pointer',
         whiteSpace: 'nowrap',
-        borderRadius: 2,
     },
     selected: {
         background: colors.accentBg,
         borderBottomColor: colors.accentBorder,
+        boxShadow: 'none',
     },
     iconButton: {
         background: 'none',
         border: 'none',
         cursor: 'pointer',
-        padding: '0 4px',
+        padding: '0 2px',
         fontSize: 14,
         opacity: 0.7,
         color: 'inherit',
@@ -217,15 +224,15 @@ export const menu: MenuStyles = {
         width: 'max-content',
         maxWidth: 'min(240px, calc(100vw - 16px))',
         background: colors.bgSurface,
-        border: `1px solid ${colors.border}`,
-        borderRadius: 4,
+        border: 'none',
         overflow: 'hidden',
-        boxShadow: '0 4px 16px rgba(0,0,0,0.6)',
+        borderRadius: 0,
+        boxShadow: 'none',
     },
     item: {
         width: '100%',
         textAlign: 'left',
-        padding: '7px 12px',
+        padding: '4px 8px',
         background: 'transparent',
         border: 'none',
         color: colors.text,
@@ -243,17 +250,17 @@ export const toolbar: ToolbarStyles = {
     panel: {
         position: 'absolute',
         top: 8,
-        left: '240px',
+        left: '232px',
         display: 'flex',
-        gap: 6,
-        padding: '4px 6px',
+        gap: 4,
+        padding: '2px 4px',
         background: colors.bg,
         border: `1px solid ${colors.border}`,
-        borderRadius: 4,
         color: colors.text,
         fontFamily: fonts.family,
         fontSize: fonts.size,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+        borderRadius: 0,
+        boxShadow: 'none',
     },
     divider: {
         width: 1,
@@ -268,10 +275,32 @@ export const toolbar: ToolbarStyles = {
 // Reusable component card style for inspector sections
 export const componentCard: ComponentCardStyles = {
     container: {
-        marginBottom: 8,
-        backgroundColor: colors.bgSurface,
-        padding: 8,
-        borderRadius: 4,
+        marginBottom: 4,
+        backgroundColor: colors.bg,
+        padding: 4,
         border: `1px solid ${colors.border}`,
+        borderRadius: 0,
+        boxShadow: 'none',
+    },
+};
+
+export const ui: UtilityStyles = {
+    secondaryPanel: {
+        background: colors.bgSurface,
+        border: `1px solid ${colors.border}`,
+        borderRadius: 0,
+        padding: 4,
+        boxSizing: 'border-box',
+    },
+    compactActionButton: {
+        ...base.btn,
+        width: 28,
+        minWidth: 28,
+        padding: 0,
+        flexShrink: 0,
+    },
+    monoTextInput: {
+        ...base.input,
+        fontFamily: 'monospace',
     },
 };

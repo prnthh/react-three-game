@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { colors } from '../styles';
+import { base, colors, ui } from '../styles';
 import { FieldGroup, FieldRow, NumberInput } from './Input';
 
 export function mergeWithDefaults<T extends Record<string, any>>(
@@ -25,13 +25,11 @@ export function LightSection({ title, children }: { title: string; children: Rea
     return (
         <div
             style={{
+                ...ui.secondaryPanel,
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 8,
-                padding: '8px 10px',
-                border: `1px solid ${colors.border}`,
-                borderRadius: 6,
-                background: colors.bgSurface,
+                padding: 6,
             }}
         >
             <div
@@ -101,13 +99,9 @@ export function ShadowBiasField({
                     value={step.toString()}
                     onChange={event => setStep(Number(event.target.value))}
                     style={{
+                        ...base.input,
                         width: 78,
-                        backgroundColor: colors.bgInput,
-                        border: `1px solid ${colors.border}`,
-                        color: colors.text,
-                        borderRadius: 3,
                         fontSize: 11,
-                        padding: '3px 6px',
                         fontFamily: 'monospace',
                     }}
                     title="Bias scrub step"

@@ -166,10 +166,11 @@ function LockedAxisField({
                             onClick={() => toggleAxisLock(index)}
                             style={{
                                 flex: 1,
+                                minHeight: 22,
                                 backgroundColor: isLocked ? colors.dangerBg : colors.bgInput,
                                 border: `1px solid ${isLocked ? colors.dangerBorder : colors.border}`,
-                                borderRadius: 3,
-                                padding: '6px 8px',
+                                borderRadius: 0,
+                                padding: '2px 6px',
                                 color: isLocked ? colors.danger : colors.textMuted,
                                 fontSize: '11px',
                                 fontFamily: 'monospace',
@@ -448,13 +449,21 @@ function PhysicsComponentView({ properties, children, position, rotation, scale 
         dispatchPhysicsEvent(collisionExitEventName, payload);
     }, [collisionExitEventName, dispatchPhysicsEvent, emitCollisionExitEvent]);
 
+    const editModeTransformProps = editMode
+        ? {
+            position,
+            rotation,
+            scale,
+        }
+        : undefined;
+
     const rigidBodyProps = {
         ref: handleRigidBodyRef,
         type,
         colliders: usesAutomaticColliderSource ? colliderType as any : false,
-        position,
-        rotation,
-        scale,
+        position: editMode ? undefined : position,
+        rotation: editMode ? undefined : rotation,
+        scale: editMode ? undefined : scale,
         sensor,
         enabledTranslations,
         enabledRotations,
@@ -467,8 +476,8 @@ function PhysicsComponentView({ properties, children, position, rotation, scale 
         ...otherProps,
     };
 
-    return (
-        <RigidBody key={rbKey} {...rigidBodyProps}>
+    const rigidBodyContent = (
+        <>
             {!usesAutomaticColliderSource ? renderManualCollider({
                 shape: manualColliderShapeToRender,
                 sensor,
@@ -478,6 +487,16 @@ function PhysicsComponentView({ properties, children, position, rotation, scale 
                 capsuleHalfHeight,
             }) : null}
             {children}
+        </>
+    );
+
+    return (
+        <RigidBody key={rbKey} {...rigidBodyProps}>
+            {editMode ? (
+                <group {...editModeTransformProps}>
+                    {rigidBodyContent}
+                </group>
+            ) : rigidBodyContent}
         </RigidBody>
     );
 }

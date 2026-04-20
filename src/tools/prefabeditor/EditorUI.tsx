@@ -98,11 +98,11 @@ function NodeInspector({
     return <div style={inspector.content}>
         {/* Node Name */}
         <div style={base.section}>
-            <div style={{ display: "flex", marginBottom: 8, alignItems: 'center', gap: 8 }}>
-                <div style={{ fontSize: 10, color: colors.textDim, wordBreak: 'break-all', border: `1px solid ${colors.border}`, padding: '2px 6px', borderRadius: 3, flex: 1, fontFamily: 'monospace' }}>
+            <div style={{ display: "flex", marginBottom: 4, alignItems: 'center', gap: 4 }}>
+                <div style={{ fontSize: 10, color: colors.textDim, wordBreak: 'break-all', background: colors.bgLight, padding: '2px 4px', flex: 1, fontFamily: 'monospace', minHeight: 18, boxSizing: 'border-box' }}>
                     {node.id}
                 </div>
-                <button style={{ ...base.btn, ...base.btnDanger }} title="Delete Node" onClick={deleteNode}>❌</button>
+                <button style={{ ...base.btn, ...base.btnDanger, minWidth: 22, padding: '2px 4px' }} title="Delete Node" onClick={deleteNode}>✕</button>
             </div>
 
             <input
@@ -117,7 +117,7 @@ function NodeInspector({
 
         {/* Components */}
         <div style={base.section}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                 <div style={base.label}>Components</div>
             </div>
 
@@ -130,10 +130,10 @@ function NodeInspector({
 
                 return (
                     <div key={key} style={componentCard.container}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
                             <div style={{ fontSize: 11, fontWeight: 500 }}>{key}</div>
                             <button
-                                style={{ ...base.btn, padding: '2px 6px' }}
+                                style={{ ...base.btn, padding: '2px 4px', minWidth: 20 }}
                                 title="Remove Component"
                                 onClick={() => updateNode(n => {
                                     const { [key]: _, ...rest } = n.components ?? {};
@@ -167,7 +167,13 @@ function NodeInspector({
             <div>
                 <div style={base.row}>
                     <select
-                        style={{ ...base.input, flex: 1 }}
+                        style={{
+                            ...base.input,
+                            flex: 1,
+                            background: colors.bgInput,
+                            border: `1px solid ${colors.border}`,
+                            minHeight: 22,
+                        }}
                         value={addType}
                         onChange={e => setAddType(e.target.value)}
                     >

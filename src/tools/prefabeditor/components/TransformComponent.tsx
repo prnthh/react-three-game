@@ -4,15 +4,16 @@ import { useEditorContext } from "../PrefabEditor";
 import { colors } from "../styles";
 
 const buttonStyle = {
-    padding: '4px 8px',
+    padding: '2px 6px',
     background: colors.bgSurface,
     color: colors.text,
     border: `1px solid ${colors.border}`,
-    borderRadius: 3,
+    borderRadius: 0,
     cursor: 'pointer',
     font: 'inherit',
     fontSize: 11,
     flex: 1,
+    minHeight: 22,
 };
 
 function TransformModeSelector({
@@ -58,7 +59,7 @@ const snapLockBtnStyle: React.CSSProperties = {
     background: 'none',
     border: 'none',
     cursor: 'pointer',
-    padding: '0 2px',
+    padding: 0,
     fontSize: 12,
     lineHeight: 1,
     color: colors.textMuted,

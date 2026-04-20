@@ -1,5 +1,6 @@
 import { Component } from "./ComponentRegistry";
 import { BooleanField, FieldGroup, StringField } from "./Input";
+import { base, ui } from "../styles";
 
 type NumericArray = number[];
 
@@ -72,7 +73,7 @@ function BufferArrayField({
 }) {
     return (
         <label style={{ display: 'grid', gap: 4 }}>
-            <span style={{ fontSize: '10px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 500 }}>
+            <span style={{ ...base.label, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {label}
             </span>
             <textarea
@@ -89,15 +90,11 @@ function BufferArrayField({
                     }
                 }}
                 style={{
+                    ...ui.monoTextInput,
                     width: '100%',
-                    backgroundColor: '#171717',
-                    border: '1px solid #333',
-                    padding: '6px 8px',
-                    fontSize: '11px',
-                    color: '#eee',
-                    fontFamily: 'monospace',
+                    minHeight: rows * 18,
+                    padding: '4px 6px',
                     outline: 'none',
-                    borderRadius: 3,
                     resize: 'vertical',
                     boxSizing: 'border-box',
                 }}

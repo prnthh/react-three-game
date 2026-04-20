@@ -6,7 +6,7 @@ import { useOptionalPrefabStoreApi } from '../prefabStore';
 // Field Definition Types
 // ============================================================================
 
-export type FieldType = 'vector3' | 'number' | 'string' | 'color' | 'boolean' | 'select' | 'node' | 'event';
+export type FieldType = 'vector3' | 'number' | 'string' | 'color' | 'boolean' | 'select' | 'node';
 
 interface BaseFieldDefinition {
     name: string;
@@ -49,11 +49,6 @@ interface NodeFieldDefinition extends BaseFieldDefinition {
     includeRoot?: boolean;
 }
 
-interface EventFieldDefinition extends BaseFieldDefinition {
-    type: 'event';
-    placeholder?: string;
-}
-
 interface CustomFieldDefinition extends BaseFieldDefinition {
     type: 'custom';
     render: (props: {
@@ -72,7 +67,6 @@ export type FieldDefinition =
     | BooleanFieldDefinition
     | SelectFieldDefinition
     | NodeFieldDefinition
-    | EventFieldDefinition
     | CustomFieldDefinition;
 
 // ============================================================================
@@ -704,91 +698,6 @@ export function NodeInput({
     );
 }
 
-const BUILT_IN_EVENT_OPTIONS: SearchOption[] = [
-    'sensor:enter',
-    'sensor:exit',
-    'collision:enter',
-    'collision:exit',
-    'click',
-].map(eventName => ({
-    value: eventName,
-    label: eventName,
-    searchText: eventName.toLowerCase(),
-}));
-
-export function EventInput({
-    label,
-    value,
-    onChange,
-    placeholder,
-}: {
-    label: string;
-    value: string;
-    onChange: (value: string) => void;
-    placeholder?: string;
-}) {
-    const prefabState = useOptionalPrefabSnapshot();
-    const [query, setQuery] = useState('');
-
-    const options = useMemo<SearchOption[]>(() => {
-        const authoredEvents = new Map<string, SearchOption>();
-
-        Object.values(prefabState?.nodesById ?? {}).forEach(node => {
-            Object.values(node.components ?? {}).forEach(component => {
-                Object.entries(component?.properties ?? {}).forEach(([key, entry]) => {
-                    if (typeof entry !== 'string') return;
-                    if (!(key === 'eventName' || key.endsWith('EventName'))) return;
-
-                    const eventName = entry.trim();
-                    if (!eventName) return;
-
-                    authoredEvents.set(eventName, {
-                        value: eventName,
-                        label: eventName,
-                        description: `${component?.type ?? 'Component'} -> ${key}`,
-                        searchText: `${eventName} ${component?.type ?? ''} ${key}`.toLowerCase(),
-                    });
-                });
-            });
-        });
-
-        const merged = new Map<string, SearchOption>();
-        BUILT_IN_EVENT_OPTIONS.forEach(option => merged.set(option.value, option));
-        authoredEvents.forEach((option, key) => merged.set(key, option));
-
-        return [...merged.values()].sort((left, right) => left.value.localeCompare(right.value));
-    }, [prefabState?.nodesById]);
-
-    return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <StringInput
-                label={label}
-                value={value}
-                onChange={onChange}
-                placeholder={placeholder ?? 'Event name'}
-            />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <input
-                    type="text"
-                    style={{ ...styles.input, width: '100%', textAlign: 'left' }}
-                    value={query}
-                    onChange={e => setQuery(e.target.value)}
-                    placeholder="Search built-in and authored events"
-                />
-                <SearchSuggestionList
-                    query={query}
-                    options={options}
-                    onSelect={(nextValue) => {
-                        onChange(nextValue);
-                        setQuery('');
-                    }}
-                    emptyMessage="No matching events."
-                />
-            </div>
-        </div>
-    );
-}
-
 export function BooleanInput({
     label,
     value,
@@ -1098,24 +1007,6 @@ export function NodeField({
     );
 }
 
-export function EventField({
-    name,
-    label,
-    values,
-    onChange,
-    fallback = '',
-    placeholder,
-}: BoundStringFieldProps) {
-    return (
-        <EventInput
-            label={label}
-            value={values[name] ?? fallback}
-            onChange={bindFieldChange(name, onChange)}
-            placeholder={placeholder}
-        />
-    );
-}
-
 export function Vector3Field({
     name,
     label,
@@ -1232,17 +1123,6 @@ export function FieldRenderer({ fields, values, onChange }: FieldRendererProps) 
                                 onChange={v => updateField(field.name, v)}
                                 placeholder={field.placeholder}
                                 includeRoot={field.includeRoot}
-                            />
-                        );
-
-                    case 'event':
-                        return (
-                            <EventInput
-                                key={field.name}
-                                label={field.label}
-                                value={value ?? ''}
-                                onChange={v => updateField(field.name, v)}
-                                placeholder={field.placeholder}
                             />
                         );
 

@@ -1,5 +1,5 @@
 import { Component } from "./ComponentRegistry";
-import { BooleanField, FieldGroup } from "./Input";
+import { BooleanField, FieldGroup, StringField } from "./Input";
 
 type NumericArray = number[];
 
@@ -170,6 +170,22 @@ function BufferGeometryComponentEditor({
                 onChange={onUpdate}
                 fallback={true}
             />
+            <BooleanField
+                name="emitClickEvent"
+                label="Emit Click Event"
+                values={properties}
+                onChange={onUpdate}
+                fallback={false}
+            />
+            {properties.emitClickEvent ? (
+                <StringField
+                    name="clickEventName"
+                    label="Click Event Name"
+                    values={properties}
+                    onChange={onUpdate}
+                    placeholder="entity:click"
+                />
+            ) : null}
         </FieldGroup>
     );
 }
@@ -215,6 +231,8 @@ const BufferGeometryComponent: Component = {
         normals: [],
         uvs: DEFAULT_TRIANGLE_UVS,
         computeVertexNormals: true,
+        emitClickEvent: false,
+        clickEventName: '',
     },
 };
 

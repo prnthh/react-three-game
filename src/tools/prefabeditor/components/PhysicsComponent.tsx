@@ -1,12 +1,13 @@
 import { CapsuleCollider, RigidBody, RapierRigidBody, useRapier } from "@react-three/rapier";
-import type { RigidBodyOptions, CollisionPayload, IntersectionEnterPayload, IntersectionExitPayload } from "@react-three/rapier";
+import type { CollisionPayload, IntersectionEnterPayload, IntersectionExitPayload, RigidBodyOptions } from "@react-three/rapier";
 import type { ReactNode } from 'react';
-import { useRef, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import type { Object3D } from 'three';
 import { Component } from "./ComponentRegistry";
-import { useAssetRuntime, useEntityRuntime } from "../runtime";
-import { BooleanField, EventInput, FieldGroup, ListEditor, NumberField, SelectField, SelectInput, Vector3Field } from "./Input";
-import { ComponentData } from "../types";
-import { gameEvents, getEntityIdFromRigidBody } from "../GameEvents";
+import { useAssetRuntime, useEntityRuntime } from "../assetRuntime";
+import { usePrefabNode } from "../prefabStore";
+import { BooleanField, FieldGroup, NumberField, SelectField, StringField, Vector3Field } from "./Input";
+import { ComponentData, getNodeUserData } from "../types";
 import { colors } from "../styles";
 
 type PhysicsColliderType = NonNullable<RigidBodyOptions['colliders']> | 'capsule';
@@ -18,9 +19,13 @@ export type PhysicsProps = Omit<RigidBodyOptions, 'colliders'> & {
     angularVelocity?: [number, number, number];
     capsuleRadius?: number;
     capsuleHalfHeight?: number;
+    emitSensorEnterEvent?: boolean;
     sensorEnterEventName?: string;
+    emitSensorExitEvent?: boolean;
     sensorExitEventName?: string;
+    emitCollisionEnterEvent?: boolean;
     collisionEnterEventName?: string;
+    emitCollisionExitEvent?: boolean;
     collisionExitEventName?: string;
 };
 
@@ -31,155 +36,6 @@ export function isPhysicsProps(v: any): v is PhysicsProps {
 const enabledAxesFallback: [boolean, boolean, boolean] = [true, true, true];
 const capsuleRadiusFallback = 0.35;
 const capsuleHalfHeightFallback = 0.45;
-
-const PHYSICS_EVENT_OPTIONS = [
-    {
-        key: 'sensorEnterEventName',
-        label: 'Sensor Enter',
-        defaultName: 'sensor:enter',
-        requiresSensor: true,
-    },
-    {
-        key: 'sensorExitEventName',
-        label: 'Sensor Exit',
-        defaultName: 'sensor:exit',
-        requiresSensor: true,
-    },
-    {
-        key: 'collisionEnterEventName',
-        label: 'Collision Enter',
-        defaultName: 'collision:enter',
-        requiresSensor: false,
-    },
-    {
-        key: 'collisionExitEventName',
-        label: 'Collision Exit',
-        defaultName: 'collision:exit',
-        requiresSensor: false,
-    },
-] as const;
-
-type PhysicsEventKey = typeof PHYSICS_EVENT_OPTIONS[number]['key'];
-
-function getPhysicsEventOption(key: PhysicsEventKey) {
-    return PHYSICS_EVENT_OPTIONS.find(option => option.key === key);
-}
-
-function getConfiguredPhysicsEvents(values: Record<string, any>) {
-    return PHYSICS_EVENT_OPTIONS.filter(option => typeof values[option.key] === 'string' && values[option.key].trim().length > 0);
-}
-
-function getAvailablePhysicsEvents(values: Record<string, any>, currentKey?: PhysicsEventKey) {
-    const configuredKeys = new Set(getConfiguredPhysicsEvents(values).map(option => option.key));
-
-    return PHYSICS_EVENT_OPTIONS
-        .filter(option => option.key === currentKey || !configuredKeys.has(option.key))
-        .map(option => ({ value: option.key, label: option.label }));
-}
-
-function PhysicsEventBindingsEditor({
-    values,
-    onChange,
-}: {
-    values: Record<string, any>;
-    onChange: (newComp: any) => void;
-}) {
-    const configuredEvents = getConfiguredPhysicsEvents(values);
-    const nextEventOptions = getAvailablePhysicsEvents(values);
-
-    const addEvent = (eventKey: string) => {
-        if (!eventKey) return;
-
-        const option = getPhysicsEventOption(eventKey as PhysicsEventKey);
-        if (!option) return;
-
-        onChange({
-            [option.key]: option.defaultName,
-            ...(option.requiresSensor ? { sensor: true } : null),
-        });
-    };
-
-    const updateEventKey = (currentKey: PhysicsEventKey, nextKey: string) => {
-        const nextOption = getPhysicsEventOption(nextKey as PhysicsEventKey);
-        if (!nextOption) return;
-
-        onChange({
-            [currentKey]: undefined,
-            [nextOption.key]: values[currentKey] || nextOption.defaultName,
-            ...(nextOption.requiresSensor ? { sensor: true } : null),
-        });
-    };
-
-    const updateEventName = (key: PhysicsEventKey, eventName: string) => {
-        onChange({ [key]: eventName });
-    };
-
-    const removeEvent = (key: PhysicsEventKey) => {
-        onChange({ [key]: undefined });
-    };
-
-    return (
-        <ListEditor
-            label="Events"
-            items={configuredEvents}
-            onAdd={addEvent}
-            addOptions={nextEventOptions}
-            canAdd={nextEventOptions.length > 0}
-            emptyMessage="No physics events configured."
-            addButtonTitle="Add physics event"
-            addDisabledTitle="All physics events already added"
-            renderItem={(option) => (
-                <div
-                    key={option.key}
-                    style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 6,
-                        padding: 8,
-                        border: `1px solid ${colors.border}`,
-                        borderRadius: 4,
-                        background: colors.bgSurface,
-                    }}
-                >
-                    <div style={{ display: 'flex', gap: 6, alignItems: 'end' }}>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                            <SelectInput
-                                label="Type"
-                                value={option.key}
-                                onChange={(nextKey) => updateEventKey(option.key, nextKey)}
-                                options={getAvailablePhysicsEvents(values, option.key)}
-                            />
-                        </div>
-                        <button
-                            type="button"
-                            onClick={() => removeEvent(option.key)}
-                            style={{
-                                height: 24,
-                                width: 28,
-                                borderRadius: 3,
-                                border: `1px solid ${colors.border}`,
-                                background: colors.bgInput,
-                                color: colors.text,
-                                cursor: 'pointer',
-                                padding: 0,
-                                flexShrink: 0,
-                            }}
-                            title="Remove physics event"
-                        >
-                            ×
-                        </button>
-                    </div>
-                    <EventInput
-                        label="Event Name"
-                        value={values[option.key] ?? option.defaultName}
-                        onChange={(eventName) => updateEventName(option.key, eventName)}
-                        placeholder={option.defaultName}
-                    />
-                </div>
-            )}
-        />
-    );
-}
 
 function LockedAxisField({
     label,
@@ -304,7 +160,22 @@ function PhysicsComponentEditor({ component, onUpdate }: { component: ComponentD
             <LockedAxisField label="Lock Movement" name="enabledTranslations" values={component.properties} onChange={onUpdate} />
             <LockedAxisField label="Lock Rotations" name="enabledRotations" values={component.properties} onChange={onUpdate} />
             <BooleanField name="sensor" label="Sensor (Trigger Only)" values={component.properties} onChange={onUpdate} fallback={false} />
-            <PhysicsEventBindingsEditor values={component.properties} onChange={onUpdate} />
+            <BooleanField name="emitCollisionEnterEvent" label="Emit Collision Enter" values={component.properties} onChange={onUpdate} fallback={false} />
+            {component.properties.emitCollisionEnterEvent ? (
+                <StringField name="collisionEnterEventName" label="Collision Enter Event" values={component.properties} onChange={onUpdate} placeholder="target:hit" />
+            ) : null}
+            <BooleanField name="emitCollisionExitEvent" label="Emit Collision Exit" values={component.properties} onChange={onUpdate} fallback={false} />
+            {component.properties.emitCollisionExitEvent ? (
+                <StringField name="collisionExitEventName" label="Collision Exit Event" values={component.properties} onChange={onUpdate} placeholder="target:reset" />
+            ) : null}
+            <BooleanField name="emitSensorEnterEvent" label="Emit Sensor Enter" values={component.properties} onChange={onUpdate} fallback={false} />
+            {component.properties.emitSensorEnterEvent ? (
+                <StringField name="sensorEnterEventName" label="Sensor Enter Event" values={component.properties} onChange={onUpdate} placeholder="sensor:enter" />
+            ) : null}
+            <BooleanField name="emitSensorExitEvent" label="Emit Sensor Exit" values={component.properties} onChange={onUpdate} fallback={false} />
+            {component.properties.emitSensorExitEvent ? (
+                <StringField name="sensorExitEventName" label="Sensor Exit Event" values={component.properties} onChange={onUpdate} placeholder="sensor:exit" />
+            ) : null}
             <SelectField
                 name="activeCollisionTypes"
                 label="Collision Detection"
@@ -327,9 +198,27 @@ interface PhysicsViewProps {
     scale?: [number, number, number];
 }
 
+function emitNativeEvent(type: string | undefined, detail: unknown) {
+    const trimmedType = type?.trim();
+    if (!trimmedType || typeof window === 'undefined') return;
+    window.dispatchEvent(new CustomEvent(trimmedType, { detail }));
+}
+
+function getEntityIdFromRigidBody(rigidBody: RapierRigidBody | null | undefined): string | null {
+    const userData = rigidBody?.userData as { entityId?: string } | undefined;
+    return typeof userData?.entityId === 'string' ? userData.entityId : null;
+}
+
 function PhysicsComponentView({ properties, children, position, rotation, scale }: PhysicsViewProps) {
     const { registerRigidBodyRef } = useAssetRuntime();
-    const { editMode, nodeId } = useEntityRuntime();
+    const { editMode, nodeId, getObject } = useEntityRuntime();
+    const gameObject = usePrefabNode(nodeId);
+    const nodeName = gameObject?.name?.trim() ?? '';
+    const userData = {
+        prefabNodeId: gameObject?.id ?? nodeId,
+        ...(nodeName ? { prefabNodeName: nodeName } : {}),
+        ...getNodeUserData(gameObject),
+    };
     const {
         type,
         colliders,
@@ -339,9 +228,13 @@ function PhysicsComponentView({ properties, children, position, rotation, scale 
         angularVelocity = [0, 0, 0],
         capsuleRadius = capsuleRadiusFallback,
         capsuleHalfHeight = capsuleHalfHeightFallback,
+        emitSensorEnterEvent = false,
         sensorEnterEventName,
+        emitSensorExitEvent = false,
         sensorExitEventName,
+        emitCollisionEnterEvent = false,
         collisionEnterEventName,
+        emitCollisionExitEvent = false,
         collisionExitEventName,
         enabledTranslations = enabledAxesFallback,
         enabledRotations = enabledAxesFallback,
@@ -355,6 +248,13 @@ function PhysicsComponentView({ properties, children, position, rotation, scale 
     const rbKey = editMode
         ? `${type || 'dynamic'}_${colliderType}_${capsuleRadius}_${capsuleHalfHeight}_${position?.join(',')}_${rotation?.join(',')}`
         : `${type || 'dynamic'}_${colliderType}_${capsuleRadius}_${capsuleHalfHeight}`;
+    const handleRigidBodyRef = useCallback((rigidBody: RapierRigidBody | null) => {
+        rigidBodyRef.current = rigidBody;
+
+        if (!nodeId) return;
+
+        registerRigidBodyRef(nodeId, rigidBody);
+    }, [nodeId, registerRigidBodyRef]);
 
     // Try to get rapier context - will be null if not inside <Physics>
     let rapier: any = null;
@@ -364,18 +264,6 @@ function PhysicsComponentView({ properties, children, position, rotation, scale 
     } catch (e) {
         // Not inside Physics context - that's ok, just won't have rapier features
     }
-
-    // Register RigidBody ref when it's available
-    useEffect(() => {
-        if (nodeId && rigidBodyRef.current) {
-            registerRigidBodyRef(nodeId, rigidBodyRef.current);
-        }
-        return () => {
-            if (nodeId) {
-                registerRigidBodyRef(nodeId, null);
-            }
-        };
-    }, [nodeId, registerRigidBodyRef]);
 
     // Configure active collision types for kinematic/sensor bodies
     useEffect(() => {
@@ -414,62 +302,61 @@ function PhysicsComponentView({ properties, children, position, rotation, scale 
         }, true);
     }, [rbKey, angularVelocityKey]);
 
-    // Event handlers for physics interactions
-    const handleIntersectionEnter = useCallback((payload: IntersectionEnterPayload) => {
-        if (!nodeId || !sensorEnterEventName) return;
-        gameEvents.emit(sensorEnterEventName, {
-            sourceEntityId: nodeId,
-            targetEntityId: getEntityIdFromRigidBody(payload.other.rigidBody),
-            targetRigidBody: payload.other.rigidBody,
+    const dispatchPhysicsEvent = useCallback((eventType: string | undefined, payload: CollisionPayload | IntersectionEnterPayload | IntersectionExitPayload) => {
+        if (!nodeId) return;
+
+        emitNativeEvent(eventType, {
+            sourceNodeId: nodeId,
+            sourceObject: getObject(),
+            sourceRigidBody: rigidBodyRef.current,
+            targetNodeId: getEntityIdFromRigidBody(payload.other.rigidBody),
+            targetObject: payload.other.rigidBodyObject ?? payload.other.colliderObject ?? null,
+            targetRigidBody: payload.other.rigidBody ?? null,
+            rapierEvent: payload,
         });
-    }, [nodeId, sensorEnterEventName]);
+    }, [getObject, nodeId]);
+
+    const handleIntersectionEnter = useCallback((payload: IntersectionEnterPayload) => {
+        if (!emitSensorEnterEvent) return;
+        dispatchPhysicsEvent(sensorEnterEventName, payload);
+    }, [dispatchPhysicsEvent, emitSensorEnterEvent, sensorEnterEventName]);
 
     const handleIntersectionExit = useCallback((payload: IntersectionExitPayload) => {
-        if (!nodeId || !sensorExitEventName) return;
-        gameEvents.emit(sensorExitEventName, {
-            sourceEntityId: nodeId,
-            targetEntityId: getEntityIdFromRigidBody(payload.other.rigidBody),
-            targetRigidBody: payload.other.rigidBody,
-        });
-    }, [nodeId, sensorExitEventName]);
+        if (!emitSensorExitEvent) return;
+        dispatchPhysicsEvent(sensorExitEventName, payload);
+    }, [dispatchPhysicsEvent, emitSensorExitEvent, sensorExitEventName]);
 
     const handleCollisionEnter = useCallback((payload: CollisionPayload) => {
-        if (!nodeId || !collisionEnterEventName) return;
-        gameEvents.emit(collisionEnterEventName, {
-            sourceEntityId: nodeId,
-            targetEntityId: getEntityIdFromRigidBody(payload.other.rigidBody),
-            targetRigidBody: payload.other.rigidBody,
-        });
-    }, [collisionEnterEventName, nodeId]);
+        if (!emitCollisionEnterEvent) return;
+        dispatchPhysicsEvent(collisionEnterEventName, payload);
+    }, [collisionEnterEventName, dispatchPhysicsEvent, emitCollisionEnterEvent]);
 
     const handleCollisionExit = useCallback((payload: CollisionPayload) => {
-        if (!nodeId || !collisionExitEventName) return;
-        gameEvents.emit(collisionExitEventName, {
-            sourceEntityId: nodeId,
-            targetEntityId: getEntityIdFromRigidBody(payload.other.rigidBody),
-            targetRigidBody: payload.other.rigidBody,
-        });
-    }, [collisionExitEventName, nodeId]);
+        if (!emitCollisionExitEvent) return;
+        dispatchPhysicsEvent(collisionExitEventName, payload);
+    }, [collisionExitEventName, dispatchPhysicsEvent, emitCollisionExitEvent]);
+
+    const rigidBodyProps = {
+        ref: handleRigidBodyRef,
+        type,
+        colliders: usesManualCapsuleCollider ? false : colliderType as any,
+        position,
+        rotation,
+        scale,
+        sensor,
+        enabledTranslations,
+        enabledRotations,
+        name: nodeName,
+        userData: { entityId: nodeId, ...userData },
+        onIntersectionEnter: emitSensorEnterEvent ? handleIntersectionEnter : undefined,
+        onIntersectionExit: emitSensorExitEvent ? handleIntersectionExit : undefined,
+        onCollisionEnter: emitCollisionEnterEvent ? handleCollisionEnter : undefined,
+        onCollisionExit: emitCollisionExitEvent ? handleCollisionExit : undefined,
+        ...otherProps,
+    };
 
     return (
-        <RigidBody
-            key={rbKey}
-            ref={rigidBodyRef}
-            type={type}
-            colliders={usesManualCapsuleCollider ? false : colliderType as any}
-            position={position}
-            rotation={rotation}
-            scale={scale}
-            sensor={sensor}
-            enabledTranslations={enabledTranslations}
-            enabledRotations={enabledRotations}
-            userData={{ entityId: nodeId }}
-            onIntersectionEnter={handleIntersectionEnter}
-            onIntersectionExit={handleIntersectionExit}
-            onCollisionEnter={handleCollisionEnter}
-            onCollisionExit={handleCollisionExit}
-            {...otherProps}
-        >
+        <RigidBody key={rbKey} {...rigidBodyProps}>
             {usesManualCapsuleCollider ? <CapsuleCollider args={[capsuleHalfHeight, capsuleRadius]} sensor={sensor} /> : null}
             {children}
         </RigidBody>
@@ -489,6 +376,14 @@ const PhysicsComponent: Component = {
         angularVelocity: [0, 0, 0],
         enabledTranslations: [true, true, true],
         enabledRotations: [true, true, true],
+        emitSensorEnterEvent: false,
+        sensorEnterEventName: '',
+        emitSensorExitEvent: false,
+        sensorExitEventName: '',
+        emitCollisionEnterEvent: false,
+        collisionEnterEventName: '',
+        emitCollisionExitEvent: false,
+        collisionExitEventName: '',
     }
 };
 

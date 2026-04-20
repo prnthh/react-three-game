@@ -11,8 +11,8 @@ import { computeParentWorldMatrix, decompose, exportGLB as exportGLBFile, export
 import type { ExportGLBOptions } from "./utils";
 import { loadFiles } from "../dragdrop";
 import { denormalizePrefab, createImageNode, createModelNode, createNode } from './prefab';
-import { createPrefabStore, PrefabStoreProvider } from "./prefabStore";
-import { createScene, type Scene, type SpawnOptions } from "./scene";
+import { createPrefabStore, type PrefabStoreApi, PrefabStoreProvider } from "./prefabStore";
+import type { SpawnOptions } from "./scene";
 
 function isObjectAttachedToRoot(root: Object3D | null | undefined, object: Object3D | null | undefined) {
     if (!root || !object) return false;
@@ -27,13 +27,17 @@ function isObjectAttachedToRoot(root: Object3D | null | undefined, object: Objec
 }
 
 export interface PrefabEditorRef {
+    root: Object3D | null;
+    store: PrefabStoreApi;
+    getObject: (nodeId: string) => Object3D | null;
+    getRigidBody: (nodeId: string) => any;
     screenshot: () => void;
     exportGLB: (options?: ExportGLBOptions) => Promise<ArrayBuffer | undefined>;
     exportGLBData: () => Promise<ArrayBuffer | undefined>;
     clearSelection: () => Promise<void>;
     save: () => Prefab;
-    scene: Scene;
     load: (prefab: Prefab, options?: { resetHistory?: boolean; notifyChange?: boolean }) => void;
+    addNode: (node: GameObject, options?: SpawnOptions) => GameObject;
     addModel: (path: string, model: Object3D, options?: SpawnOptions) => GameObject;
     addTexture: (path: string, texture: Texture, options?: SpawnOptions) => GameObject;
 }
@@ -112,6 +116,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
     const isEditMode = mode === PrefabEditorMode.Edit;
 
     const getPrefab = useCallback(() => denormalizePrefab(prefabStore.getState()), [prefabStore]);
+    const getRootObject = useCallback(() => prefabRootRef.current?.root ?? null, []);
     const getObject = useCallback((nodeId: string) => prefabRootRef.current?.getObject(nodeId) ?? null, []);
     const getRigidBody = useCallback((nodeId: string) => prefabRootRef.current?.getRigidBody(nodeId) ?? null, []);
     const handleObjectRefChange = useCallback((nodeId: string) => {
@@ -226,7 +231,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
     }, [prefabStore, selectedId]);
 
     const selectedObject = selectedId ? getObject(selectedId) : null;
-    const transformObject = isObjectAttachedToRoot(prefabRootRef.current?.root ?? null, selectedObject)
+    const transformObject = isObjectAttachedToRoot(getRootObject(), selectedObject)
         ? selectedObject
         : null;
 
@@ -305,23 +310,23 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
     const handleExportGLB = useCallback(async (options: ExportGLBOptions = {}) => {
         await clearSelection();
 
-        const rootObject = prefabRootRef.current?.root;
+        const rootObject = getRootObject();
         if (!rootObject) return;
 
         return exportGLBFile(rootObject, {
             filename: `${prefabStore.getState().prefabName || 'prefab'}.glb`,
             ...options,
         });
-    }, [clearSelection, prefabStore]);
+    }, [clearSelection, getRootObject, prefabStore]);
 
     const handleExportGLBData = useCallback(async () => {
         await clearSelection();
 
-        const rootObject = prefabRootRef.current?.root;
+        const rootObject = getRootObject();
         if (!rootObject) return;
 
         return exportGLBData(rootObject);
-    }, [clearSelection]);
+    }, [clearSelection, getRootObject]);
 
     const handleFocusNode = useCallback((nodeId: string) => {
         const object = getObject(nodeId);
@@ -332,21 +337,6 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
 
         focusCameraOnObject(object, camera, controls.target, () => controls.update?.());
     }, [getObject]);
-
-    const scene = useMemo(() => createScene({
-        getRootId: () => prefabStore.getState().rootId,
-        getNode: (id: string) => prefabStore.getState().nodesById[id] ?? null,
-        getChildIds: (id: string) => prefabStore.getState().childIdsById[id] ?? [],
-        getParentId: (id: string) => prefabStore.getState().parentIdById[id] ?? null,
-        updateNode: (id: string, update: (node: any) => any) => prefabStore.getState().updateNode(id, update),
-        updateNodes: (updates: Record<string, (node: any) => any>) => prefabStore.getState().updateNodes(
-            Object.entries(updates).map(([id, update]) => ({ id, update }))
-        ),
-        addNode: (node: GameObject, options?: SpawnOptions) => addNode(node, options).id,
-        removeNode: (id: string) => prefabStore.getState().deleteNode(id),
-        getObject,
-        getRigidBody,
-    }), [addNode, getObject, getRigidBody, prefabStore]);
 
     const handleTransformChange = () => {
         if (!selectedId) return;
@@ -415,16 +405,20 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
     }, [addModel, addTexture, isEditMode, enableWindowDrop]);
 
     useImperativeHandle(ref, () => ({
+        root: getRootObject(),
+        store: prefabStore,
+        getObject,
+        getRigidBody,
         screenshot: handleScreenshot,
         exportGLB: handleExportGLB,
         exportGLBData: handleExportGLBData,
         clearSelection,
         save: getPrefab,
-        scene,
         load: loadPrefab,
+        addNode,
         addModel,
         addTexture
-    }), [addModel, addTexture, clearSelection, getPrefab, handleExportGLB, handleExportGLBData, handleScreenshot, loadPrefab, scene]);
+    }), [addModel, addNode, addTexture, clearSelection, getObject, getPrefab, getRigidBody, getRootObject, handleExportGLB, handleExportGLBData, handleScreenshot, loadPrefab, prefabStore]);
 
     const content = (
         <>

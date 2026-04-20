@@ -1,8 +1,8 @@
 import { ModelPicker } from '../../assetviewer/page';
 import { useContext, useMemo } from 'react';
 import { Component } from './ComponentRegistry';
-import { BooleanField, FieldGroup, Label, ListEditor, NumberInput, SelectInput } from './Input';
-import { useAssetRuntime } from '../runtime';
+import { BooleanField, FieldGroup, Label, ListEditor, NumberInput, SelectInput, StringField } from './Input';
+import { useAssetRuntime } from '../assetRuntime';
 import { GameObject } from '../types';
 import { EditorContext } from '../PrefabEditor';
 import { DEFAULT_REPEAT_AXES, getRepeatAxesFromModelProperties, normalizeRepeatAxes, RepeatAxisConfig } from '../InstanceProvider';
@@ -155,6 +155,26 @@ function ModelComponentEditor({ component, node, onUpdate, basePath = "" }: { co
                 onChange={onUpdate}
                 fallback={false}
             />
+            {!component.properties.instanced ? (
+                <>
+                    <BooleanField
+                        name="emitClickEvent"
+                        label="Emit Click Event"
+                        values={component.properties}
+                        onChange={onUpdate}
+                        fallback={false}
+                    />
+                    {component.properties.emitClickEvent ? (
+                        <StringField
+                            name="clickEventName"
+                            label="Click Event Name"
+                            values={component.properties}
+                            onChange={onUpdate}
+                            placeholder="entity:click"
+                        />
+                    ) : null}
+                </>
+            ) : null}
             {component.properties.instanced && (
                 <>
                     <BooleanField

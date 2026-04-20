@@ -2,10 +2,9 @@ import { useEffect, useRef } from 'react';
 import { useThree } from '@react-three/fiber';
 import { SoundPicker } from '../../assetviewer/page';
 import { sound as soundManager } from '../../../helpers/SoundManager';
-import { gameEvents } from '../GameEvents';
-import { useAssetRuntime, useEntityRuntime } from '../runtime';
+import { useAssetRuntime, useEntityRuntime } from '../assetRuntime';
 import { Component } from './ComponentRegistry';
-import { BooleanField, EventField, FieldGroup, FieldRenderer, ListEditor, NumberField, SelectField } from './Input';
+import { BooleanField, FieldGroup, FieldRenderer, ListEditor, NumberField, SelectField, StringField } from './Input';
 import { colors } from '../styles';
 import type { ComponentData } from '../types';
 import { AudioListener, PositionalAudio } from 'three';
@@ -130,12 +129,12 @@ function SoundComponentEditor({ component, onUpdate, basePath = '' }: { componen
 
     return (
         <FieldGroup>
-            <EventField
+            <StringField
                 name="eventName"
                 label="Listen Event"
                 values={component.properties}
                 onChange={onUpdate}
-                placeholder="click"
+                placeholder="player:footstep"
             />
             <FieldRenderer
                 fields={[
@@ -235,20 +234,6 @@ function SoundComponentEditor({ component, onUpdate, basePath = '' }: { componen
     );
 }
 
-function payloadMatchesNode(nodeId: string | undefined, payload: unknown) {
-    if (!nodeId || !payload || typeof payload !== 'object') return true;
-
-    const eventPayload = payload as {
-        sourceEntityId?: unknown;
-        targetEntityId?: unknown;
-        instanceEntityId?: unknown;
-    };
-    const ids = [eventPayload.sourceEntityId, eventPayload.targetEntityId, eventPayload.instanceEntityId];
-    const hasEntityIds = ids.some(id => typeof id === 'string');
-
-    return hasEntityIds ? ids.includes(nodeId) : true;
-}
-
 function SoundComponentView({ properties, children }: { properties: SoundProperties; children?: React.ReactNode }) {
     const { getSound } = useAssetRuntime();
     const { editMode, nodeId } = useEntityRuntime();
@@ -298,13 +283,19 @@ function SoundComponentView({ properties, children }: { properties: SoundPropert
     }, [distanceModel, maxDistance, refDistance, rolloffFactor]);
 
     useEffect(() => {
-        if (editMode || paths.length === 0 || !eventName) {
+        if (editMode || paths.length === 0 || !eventName || typeof window === 'undefined') {
             return;
         }
 
-        return gameEvents.on(eventName, (payload) => {
-            if (!payloadMatchesNode(nodeId, payload)) {
-                return;
+        const handleEvent = (event: Event) => {
+            const customEvent = event as CustomEvent<{ nodeId?: string; sourceNodeId?: string; targetNodeId?: string }>;
+            const detail = customEvent.detail;
+
+            if (nodeId && detail && typeof detail === 'object') {
+                const relatedNodeIds = [detail.nodeId, detail.sourceNodeId, detail.targetNodeId].filter((value): value is string => typeof value === 'string');
+                if (relatedNodeIds.length > 0 && !relatedNodeIds.includes(nodeId)) {
+                    return;
+                }
             }
 
             const clip = pickClip(paths, mode, sequenceIndexRef);
@@ -315,7 +306,6 @@ function SoundComponentView({ properties, children }: { properties: SoundPropert
 
             if (!positional) {
                 const loadedBuffer = getSound(clip);
-
                 if (loadedBuffer && !soundManager.hasBuffer(clip)) {
                     soundManager.setBuffer(clip, loadedBuffer);
                 }
@@ -347,7 +337,12 @@ function SoundComponentView({ properties, children }: { properties: SoundPropert
             audio.setPlaybackRate(pitch);
             audio.setVolume(volume);
             audio.play();
-        });
+        };
+
+        window.addEventListener(eventName, handleEvent as EventListener);
+        return () => {
+            window.removeEventListener(eventName, handleEvent as EventListener);
+        };
     }, [editMode, eventName, getSound, mode, nodeId, paths, positional, properties]);
 
     return (

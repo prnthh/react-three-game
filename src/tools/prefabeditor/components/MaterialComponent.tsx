@@ -4,7 +4,7 @@ import type { ThreeElement } from '@react-three/fiber';
 import { useFrame } from '@react-three/fiber';
 import { Component } from './ComponentRegistry';
 import { FieldRenderer, FieldDefinition, Label, NumberInput } from './Input';
-import { useAssetRuntime } from '../runtime';
+import { useAssetRuntime } from '../assetRuntime';
 import { MeshBasicNodeMaterial, MeshStandardNodeMaterial } from 'three/webgpu';
 import { TexturePicker } from '../../assetviewer/page';
 import {

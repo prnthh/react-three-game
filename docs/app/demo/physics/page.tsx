@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useRef } from "react";
-import { PrefabEditor, PrefabEditorMode, registerComponent, useClickEvent, usePhysicsEvent } from "react-three-game";
-import type { PrefabEditorRef } from "react-three-game";
+import { useEffect, useRef } from "react";
+import { PrefabEditor, PrefabEditorMode, registerComponent, soundManager } from "react-three-game";
+import type { GameObject, PrefabEditorRef } from "react-three-game";
 import { Quaternion, Vector3 } from "three";
 import CannonBarrelSwayComponent from "./CannonBarrelSwayComponent";
 
@@ -86,28 +86,14 @@ const prefab = {
                                 type: "Material",
                                 properties: { color: "#22c55e", opacity: 0.9, transparent: true }
                             },
-                            sound: {
-                                type: "Sound",
-                                properties: {
-                                    eventName: TARGET_HIT_EVENT,
-                                    clips: TARGET_HIT_SOUNDS,
-                                    clipMode: "random",
-                                    positional: true,
-                                    refDistance: 2.2,
-                                    maxDistance: 18,
-                                    rolloffFactor: 1.2,
-                                    randomizePitch: true,
-                                    minPitch: 0.94,
-                                    maxPitch: 1.08,
-                                    volume: 0.8,
-                                }
-                            },
                             physics: {
                                 type: "Physics",
                                 properties: {
                                     type: "fixed",
                                     colliders: "cuboid",
+                                    emitCollisionEnterEvent: true,
                                     collisionEnterEventName: TARGET_HIT_EVENT,
+                                    emitCollisionExitEvent: true,
                                     collisionExitEventName: TARGET_RESET_EVENT,
                                 }
                             }
@@ -145,34 +131,23 @@ const prefab = {
                     },
                     geometry: {
                         type: "Geometry",
-                        properties: { geometryType: "cylinder", args: [0.45, 0.28, 1.8, 24] }
+                        properties: {
+                            geometryType: "cylinder",
+                            args: [0.45, 0.28, 1.8, 24],
+                            emitClickEvent: true,
+                            clickEventName: CANNON_FIRE_EVENT,
+                        }
                     },
                     material: {
                         type: "Material",
                         properties: { color: "#f97316", metalness: 0.2, roughness: 0.7 }
                     },
-                    click: {
-                        type: "Click",
-                        properties: { eventName: CANNON_FIRE_EVENT }
-                    },
                     cannonBarrelSway: {
                         type: "CannonBarrelSway",
                         properties: {
-                            yawAmplitude: 0.22,
-                            pitchAmplitude: 0.06,
-                            speed: 1.5,
-                        }
-                    },
-                    sound: {
-                        type: "Sound",
-                        properties: {
-                            clips: [CANNON_FIRE_SOUND],
-                            eventName: CANNON_FIRE_EVENT,
-                            positional: true,
-                            refDistance: 3,
-                            maxDistance: 26,
-                            rolloffFactor: 1,
-                            volume: 0.9,
+                            yawAmplitude: 0.38,
+                            pitchAmplitude: 0.14,
+                            speed: 1.8,
                         }
                     }
                 }
@@ -182,9 +157,8 @@ const prefab = {
 };
 
 function fireProjectileFromCannon(editor: PrefabEditorRef | null, barrelEntityId = CANNON_BARREL_ID) {
-    const barrelEntity = editor?.scene.find(barrelEntityId)
-        ?? editor?.scene.find(CANNON_BARREL_ID);
-    const barrelObject = barrelEntity?.object;
+    const barrelObject = editor?.getObject(barrelEntityId)
+        ?? editor?.getObject(CANNON_BARREL_ID);
     if (!barrelObject || !editor) return;
 
     barrelObject.updateWorldMatrix(true, false);
@@ -201,18 +175,22 @@ function fireProjectileFromCannon(editor: PrefabEditorRef | null, barrelEntityId
     const spawnPosition = worldPosition.clone().add(muzzleOffset);
     const launchVelocity = direction.multiplyScalar(PROJECTILE_SPEED);
 
-    editor.scene.create("projectile", {
-        transform: {
-            type: 'Transform', properties: {
-                position: [spawnPosition.x, spawnPosition.y, spawnPosition.z],
+    editor.addNode({
+        id: crypto.randomUUID(),
+        name: "projectile",
+        components: {
+            transform: {
+                type: 'Transform', properties: {
+                    position: [spawnPosition.x, spawnPosition.y, spawnPosition.z],
+                },
             },
-        },
-        geometry: { type: 'Geometry', properties: { geometryType: 'sphere', args: [0.28, 24, 24] } },
-        material: { type: 'Material', properties: { color: '#f8fafc' } },
-        physics: {
-            type: 'Physics', properties: {
-                type: 'dynamic', colliders: 'ball', restitution: 0.3, friction: 0.6,
-                linearVelocity: [launchVelocity.x, launchVelocity.y, launchVelocity.z],
+            geometry: { type: 'Geometry', properties: { geometryType: 'sphere', args: [0.28, 24, 24] } },
+            material: { type: 'Material', properties: { color: '#f8fafc' } },
+            physics: {
+                type: 'Physics', properties: {
+                    type: 'dynamic', colliders: 'ball', restitution: 0.3, friction: 0.6,
+                    linearVelocity: [launchVelocity.x, launchVelocity.y, launchVelocity.z],
+                },
             },
         },
     });
@@ -220,49 +198,65 @@ function fireProjectileFromCannon(editor: PrefabEditorRef | null, barrelEntityId
 
 function updateTargetColor(editor: PrefabEditorRef | null, color: string) {
     if (!editor) return;
-    editor.scene.find(TARGET_ID)?.getComponent("Material")?.set("color", color);
-}
 
-function CannonController({ onFire }: { onFire: (barrelEntityId: string) => void }) {
-    useClickEvent(CANNON_FIRE_EVENT, (payload) => {
-        onFire(payload.sourceEntityId);
-    }, [onFire]);
-
-    return null;
-}
-
-function TargetController({ onTargetColorChange }: { onTargetColorChange: (color: string) => void }) {
-    usePhysicsEvent(TARGET_HIT_EVENT, (payload) => {
-        if (payload.sourceEntityId !== TARGET_ID) return;
-
-        onTargetColorChange(TARGET_HIT_COLOR);
-    }, [onTargetColorChange]);
-
-    usePhysicsEvent(TARGET_RESET_EVENT, (payload) => {
-        if (payload.sourceEntityId !== TARGET_ID) return;
-
-        onTargetColorChange(TARGET_IDLE_COLOR);
-    }, [onTargetColorChange]);
-
-    return null;
+    editor.store.getState().updateNode(TARGET_ID, (node: GameObject) => ({
+        ...node,
+        components: {
+            ...node.components,
+            material: {
+                type: "Material",
+                properties: {
+                    ...node.components?.material?.properties,
+                    color,
+                },
+            },
+        },
+    }));
 }
 
 export default function PhysicsDemo() {
     const editorRef = useRef<PrefabEditorRef>(null);
 
-    const fireCannon = useCallback((barrelEntityId: string) => {
-        fireProjectileFromCannon(editorRef.current, barrelEntityId);
-    }, []);
+    useEffect(() => {
+        updateTargetColor(editorRef.current, TARGET_IDLE_COLOR);
 
-    const handleTargetColorChange = useCallback((color: string) => {
-        updateTargetColor(editorRef.current, color);
+        const handleFire = (event: Event) => {
+            const detail = (event as CustomEvent<{ nodeId?: string }>).detail;
+            const barrelEntityId = typeof detail?.nodeId === "string"
+                ? detail.nodeId
+                : CANNON_BARREL_ID;
+
+            fireProjectileFromCannon(editorRef.current, barrelEntityId);
+            void soundManager.play(CANNON_FIRE_SOUND, { volume: 0.9 });
+        };
+
+        const handleTargetHit = () => {
+            updateTargetColor(editorRef.current, TARGET_HIT_COLOR);
+            const clip = TARGET_HIT_SOUNDS[Math.floor(Math.random() * TARGET_HIT_SOUNDS.length)];
+            void soundManager.play(clip, {
+                volume: 0.8,
+                pitch: 0.94 + Math.random() * 0.14,
+            });
+        };
+
+        const handleTargetReset = () => {
+            updateTargetColor(editorRef.current, TARGET_IDLE_COLOR);
+        };
+
+        window.addEventListener(CANNON_FIRE_EVENT, handleFire);
+        window.addEventListener(TARGET_HIT_EVENT, handleTargetHit);
+        window.addEventListener(TARGET_RESET_EVENT, handleTargetReset);
+
+        return () => {
+            window.removeEventListener(CANNON_FIRE_EVENT, handleFire);
+            window.removeEventListener(TARGET_HIT_EVENT, handleTargetHit);
+            window.removeEventListener(TARGET_RESET_EVENT, handleTargetReset);
+        };
     }, []);
 
     return (
-        <main className="flex h-screen w-screen">
+        <main className="flex h-screen w-screen flex-col">
             <PrefabEditor ref={editorRef} initialPrefab={prefab} mode={PrefabEditorMode.Play}>
-                <CannonController onFire={fireCannon} />
-                <TargetController onTargetColorChange={handleTargetColorChange} />
                 <ambientLight intensity={1.5} />
             </PrefabEditor>
         </main>

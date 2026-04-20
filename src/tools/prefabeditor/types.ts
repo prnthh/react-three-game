@@ -22,6 +22,11 @@ export interface ComponentData {
 
 type ComponentHost = { components?: Record<string, { type?: string; properties?: Record<string, any> } | undefined> };
 
+const RESERVED_USER_DATA_KEYS = new Set([
+    'prefabNodeId',
+    'prefabNodeName',
+]);
+
 /** Find a component on a node by type name or key (e.g. "Model", "transform"). */
 export function findComponent(node: ComponentHost | null | undefined, name: string): ComponentData | undefined {
     return findComponentEntry(node, name)?.[1];
@@ -47,4 +52,21 @@ export function findComponentEntry(node: ComponentHost | null | undefined, name:
 /** Check if a node has a component of the given type. */
 export function hasComponent(node: ComponentHost | null | undefined, typeName: string): boolean {
     return findComponentEntry(node, typeName) !== undefined;
+}
+
+export function getNodeUserData(node: GameObject | null | undefined): Record<string, unknown> {
+    const data = findComponent(node, 'Data')?.properties?.data;
+
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+        return {};
+    }
+
+    return Object.entries(data as Record<string, unknown>).reduce<Record<string, unknown>>((result, [key, value]) => {
+        if (!key.trim() || RESERVED_USER_DATA_KEYS.has(key) || value === undefined) {
+            return result;
+        }
+
+        result[key] = value;
+        return result;
+    }, {});
 }

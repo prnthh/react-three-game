@@ -1,11 +1,11 @@
 import { useHelper } from "@react-three/drei";
 import { forwardRef, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { BoxHelper, Euler, Group, Matrix4, Object3D, Quaternion, Texture, Vector3, } from "three";
-import { ThreeEvent, useFrame } from "@react-three/fiber";
+import { ThreeEvent } from "@react-three/fiber";
 import { useStore } from "zustand";
 import { useClickValid } from "./useClickValid";
 
-import { GameObject as GameObjectType, Prefab, findComponent } from "./types";
+import { GameObject as GameObjectType, Prefab, findComponent, getNodeUserData } from "./types";
 import type { Component } from "./components/ComponentRegistry";
 import { getComponentDef, getComponentAssetRefs, registerComponent } from "./components/ComponentRegistry";
 import { builtinComponents } from "./components";
@@ -14,7 +14,7 @@ import { GameInstance, GameInstanceProvider, getRepeatAxesFromModelProperties, R
 import { composeTransform, decompose } from "./utils";
 import { isPhysicsProps, PhysicsProps } from "./components/PhysicsComponent";
 import { createPrefabStore, PrefabStoreApi, PrefabStoreProvider, useOptionalPrefabStoreApi, usePrefabChildIds, usePrefabNode, usePrefabRootId } from "./prefabStore";
-import { AssetRuntimeContext, EntityRuntimeScope, createRuntimeEngine, type AssetRuntimeContextValue } from "./runtime";
+import { AssetRuntimeContext, EntityRuntimeScope, type AssetRuntimeContextValue } from "./assetRuntime";
 import { sound as soundManager } from "../../helpers/SoundManager";
 
 // Dynamic type to avoid requiring @react-three/rapier when not using physics
@@ -38,6 +38,42 @@ function isNodeReady(node: GameObjectType, loadedModels: LoadedModels): boolean 
     const model = findComponent(node, "Model");
     if (!model?.properties?.filename) return true;
     return Boolean(loadedModels[model.properties.filename]);
+}
+
+function emitNativeEvent(type: string | undefined, detail: unknown) {
+    const trimmedType = type?.trim();
+    if (!trimmedType || typeof window === 'undefined') return;
+    window.dispatchEvent(new CustomEvent(trimmedType, { detail }));
+}
+
+function getNodeClickEventName(node: GameObjectType | null | undefined) {
+    const clickComponents = [
+        findComponent(node, 'BufferGeometry'),
+        findComponent(node, 'Geometry'),
+    ];
+
+    for (const component of clickComponents) {
+        if (!component?.properties?.emitClickEvent) continue;
+
+        const eventName = component.properties.clickEventName;
+        if (typeof eventName === 'string' && eventName.trim()) {
+            return eventName.trim();
+        }
+    }
+
+    return null;
+}
+
+function getNodeMetadataProps(node: GameObjectType) {
+    const nodeName = node.name?.trim() ?? '';
+    return {
+        name: nodeName,
+        userData: {
+            prefabNodeId: node.id,
+            ...(nodeName ? { prefabNodeName: nodeName } : {}),
+            ...getNodeUserData(node),
+        },
+    };
 }
 
 export interface PrefabRootRef {
@@ -110,34 +146,14 @@ export const PrefabRoot = forwardRef<PrefabRootRef, PrefabRootProps>(({ editMode
         },
     }), [getObject]);
 
-    const runtimeEngine = useMemo(() => createRuntimeEngine({
-        store: resolvedStore,
-        getObject,
-        getRigidBody,
-    }), [resolvedStore, getObject, getRigidBody]);
-
     const registerRef = useCallback((id: string, obj: Object3D | null) => {
         objectRefs.current[id] = obj;
-        runtimeEngine.invalidate();
         onObjectRefChange?.(id, obj);
-    }, [onObjectRefChange, runtimeEngine]);
+    }, [onObjectRefChange]);
 
     const registerRigidBodyRef = useCallback((id: string, rb: any) => {
         rigidBodyRefs.current.set(id, rb);
-        runtimeEngine.invalidate();
-    }, [runtimeEngine]);
-
-    useEffect(() => {
-        runtimeEngine.setActive(!editMode);
-    }, [editMode, runtimeEngine]);
-
-    useEffect(() => {
-        return () => runtimeEngine.dispose();
-    }, [runtimeEngine]);
-
-    useFrame((_, dt) => {
-        runtimeEngine.tick(dt);
-    });
+    }, []);
 
     useEffect(() => {
         if (usesOwnedStore && data) {
@@ -250,16 +266,40 @@ export const PrefabRoot = forwardRef<PrefabRootRef, PrefabRootProps>(({ editMode
         </group>
     );
 
+    const runtimeContent = <AssetRuntimeContext.Provider value={assetRuntime}>{content}</AssetRuntimeContext.Provider>;
+
     if (!shouldProvideStoreContext) {
-        return <AssetRuntimeContext.Provider value={assetRuntime}>{content}</AssetRuntimeContext.Provider>;
+        return runtimeContent;
     }
 
-    return <PrefabStoreProvider store={resolvedStore}><AssetRuntimeContext.Provider value={assetRuntime}>{content}</AssetRuntimeContext.Provider></PrefabStoreProvider>;
+    return <PrefabStoreProvider store={resolvedStore}>{runtimeContent}</PrefabStoreProvider>;
 });
 
 function StoreRootNode(props: Omit<RendererProps, "nodeId">) {
     const rootId = usePrefabRootId();
     return <GameObjectRenderer {...props} nodeId={rootId} />;
+}
+
+function emitNodePointerEvent(
+    eventName: string | null,
+    event: ThreeEvent<PointerEvent>,
+    nodeId: string,
+    node: GameObjectType,
+    fallbackObject: Object3D | null,
+) {
+    if (!eventName) return;
+
+    emitNativeEvent(eventName, {
+        nodeId,
+        node,
+        object: event.object ?? fallbackObject,
+        button: event.button,
+        altKey: event.nativeEvent.altKey,
+        ctrlKey: event.nativeEvent.ctrlKey,
+        metaKey: event.nativeEvent.metaKey,
+        shiftKey: event.nativeEvent.shiftKey,
+        r3fEvent: event,
+    });
 }
 
 export function GameObjectRenderer(props: RendererProps) {
@@ -293,9 +333,13 @@ function InstancedNode({ nodeId, parentMatrix = IDENTITY, editMode, registerRef,
 
     const localTransform = getNodeTransformProps(gameObject);
     const isLocked = Boolean(gameObject.locked);
-    const clickComponent = findComponent(gameObject, "Click");
-    const clickable = Boolean(clickComponent);
-    const clickEventName = clickComponent?.properties?.eventName as string | undefined;
+    const metadataProps = getNodeMetadataProps(gameObject);
+    const groupProps = {
+        ...metadataProps,
+        position: localTransform.position,
+        rotation: localTransform.rotation,
+        scale: localTransform.scale,
+    };
 
     const physicsData = findComponent(gameObject, "Physics");
     const physicsProps = isPhysicsProps(physicsData?.properties)
@@ -314,63 +358,44 @@ function InstancedNode({ nodeId, parentMatrix = IDENTITY, editMode, registerRef,
             registerRef(nodeId, object);
         }
     }, [editMode, nodeId, registerRef]);
-    const editClickHandlers = useClickValid(!!editMode && !isLocked, (e: any) => {
+
+    const editClickHandlers = useClickValid(!!editMode && !isLocked, (event: ThreeEvent<PointerEvent>) => {
         onSelect?.(nodeId);
-        onClick?.(e, gameObject);
+        onClick?.(event, gameObject);
     });
+
+    const renderedInstances = instances.map(instance => (
+        <GameInstance
+            key={instance.id}
+            id={instance.id}
+            sourceId={gameObject.id}
+            modelUrl={instance.modelUrl}
+            position={instance.position}
+            rotation={instance.rotation}
+            scale={instance.scale}
+            locked={isLocked}
+            physics={instance.physics}
+        />
+    ));
 
     if (editMode) {
         return (
             <>
                 <group
                     ref={handleGroupRef}
-                    position={localTransform.position}
-                    rotation={localTransform.rotation}
-                    scale={localTransform.scale}
+                    {...groupProps}
                     {...editClickHandlers}
                 >
                     <mesh visible={false}>
                         <boxGeometry args={[0.01, 0.01, 0.01]} />
                     </mesh>
                 </group>
-                {instances.map(instance => (
-                    <GameInstance
-                        key={instance.id}
-                        id={instance.id}
-                        sourceId={gameObject.id}
-                        clickable={clickable}
-                        clickEventName={clickEventName}
-                        modelUrl={instance.modelUrl}
-                        position={instance.position}
-                        rotation={instance.rotation}
-                        scale={instance.scale}
-                        locked={isLocked}
-                        physics={instance.physics}
-                    />
-                ))}
+                {renderedInstances}
             </>
         );
     }
 
-    return (
-        <>
-            {instances.map(instance => (
-                <GameInstance
-                    key={instance.id}
-                    id={instance.id}
-                    sourceId={gameObject.id}
-                    clickable={clickable}
-                    clickEventName={clickEventName}
-                    modelUrl={instance.modelUrl}
-                    position={instance.position}
-                    rotation={instance.rotation}
-                    scale={instance.scale}
-                    locked={isLocked}
-                    physics={instance.physics}
-                />
-            ))}
-        </>
-    );
+    return <>{renderedInstances}</>;
 }
 
 function StandardNode({
@@ -385,9 +410,13 @@ function StandardNode({
 }: RendererProps) {
     const gameObject = usePrefabNode(nodeId);
     const childIds = usePrefabChildIds(nodeId);
+    if (!gameObject) return null;
+
     const isSelected = selectedId === nodeId;
-    const isLocked = Boolean(gameObject?.locked);
+    const isLocked = Boolean(gameObject.locked);
     const stillInstanced = useInstanceCheck(nodeId);
+    const clickEventName = getNodeClickEventName(gameObject);
+    const metadataProps = getNodeMetadataProps(gameObject);
 
     const groupRef = useRef<Object3D | null>(null);
     const helperRef = useRef<Object3D | null>(null);
@@ -398,11 +427,24 @@ function StandardNode({
     const handleHelperRef = useCallback((object: Object3D | null) => {
         helperRef.current = object;
     }, []);
+    const handleEditGroupRef = useCallback((object: Object3D | null) => {
+        handleGroupRef(object);
+        handleHelperRef(object);
+    }, [handleGroupRef, handleHelperRef]);
 
-    const clickHandlers = useClickValid(!!editMode && !isLocked, (e: any) => {
+    const editClickHandlers = useClickValid(!!editMode && !isLocked, (event: ThreeEvent<PointerEvent>) => {
         onSelect?.(nodeId);
-        if (gameObject) onClick?.(e, gameObject);
+        onClick?.(event, gameObject);
     });
+    const primaryClickHandlers = !editMode && (clickEventName || onClick)
+        ? {
+            onClick: (event: ThreeEvent<PointerEvent>) => {
+                event.stopPropagation();
+                emitNodePointerEvent(clickEventName, event, nodeId, gameObject, groupRef.current);
+                onClick?.(event, gameObject);
+            },
+        }
+        : undefined;
 
     useHelper(
         editMode && isSelected ? helperRef as React.RefObject<Object3D> : null,
@@ -410,14 +452,21 @@ function StandardNode({
         "cyan"
     );
 
-    if (!gameObject) return null;
-
     const world = parentMatrix.clone().multiply(compose(gameObject));
 
     const physics = findComponent(gameObject, "Physics");
     const ready = isNodeReady(gameObject, loadedModels);
     const hasPhysics = physics && ready && !stillInstanced;
     const transform = getNodeTransformProps(gameObject);
+    const transformProps = {
+        position: transform.position,
+        rotation: transform.rotation,
+        scale: transform.scale,
+    };
+    const groupProps = {
+        ...metadataProps,
+        ...transformProps,
+    };
     const physicsDef = hasPhysics ? getComponentDef(physics.type) : null;
     const isInstanced = findComponent(gameObject, "Model")?.properties?.instanced;
     const physicsKey = `physics_${nodeId}_${isInstanced ? 'instanced' : 'standard'}`;
@@ -428,13 +477,7 @@ function StandardNode({
         loadedModels={loadedModels} editMode={editMode}
     />;
 
-    const inner = (
-        <group
-            {...clickHandlers}
-        >
-            {renderCompositionNode(gameObject, renderCtx, childNodes)}
-        </group>
-    );
+    const inner = renderCompositionNode(gameObject, renderCtx, primaryClickHandlers, childNodes);
     const physicsInner = editMode ? <group visible={false}>{inner}</group> : inner;
 
     return (
@@ -442,30 +485,20 @@ function StandardNode({
             {editMode ? (
                 <>
                     <group
-                        ref={handleGroupRef}
-                        position={transform.position}
-                        rotation={transform.rotation}
-                        scale={transform.scale}
+                        ref={handleEditGroupRef}
+                        {...groupProps}
+                        {...editClickHandlers}
                     >
                         <mesh visible={false}>
                             <boxGeometry args={[0.01, 0.01, 0.01]} />
                         </mesh>
-                    </group>
-                    <group
-                        ref={handleHelperRef}
-                        position={transform.position}
-                        rotation={transform.rotation}
-                        scale={transform.scale}
-                    >
                         {inner}
                     </group>
                     {hasPhysics && physicsDef?.View ? (
                         <physicsDef.View
                             key={physicsKey}
                             properties={physics.properties}
-                            position={transform.position}
-                            rotation={transform.rotation}
-                            scale={transform.scale}
+                            {...transformProps}
                         >{physicsInner}</physicsDef.View>
                     ) : null}
                 </>
@@ -473,16 +506,16 @@ function StandardNode({
                 <physicsDef.View
                     key={physicsKey}
                     properties={physics.properties}
-                    position={transform.position}
-                    rotation={transform.rotation}
-                    scale={transform.scale}
-                >{inner}</physicsDef.View>
+                    {...transformProps}
+                >
+                    <group ref={handleGroupRef} {...metadataProps}>
+                        {inner}
+                    </group>
+                </physicsDef.View>
             ) : (
                 <group
                     ref={handleGroupRef}
-                    position={transform.position}
-                    rotation={transform.rotation}
-                    scale={transform.scale}
+                    {...groupProps}
                 >
                     {inner}
                 </group>
@@ -643,13 +676,18 @@ function getNodeTransformProps(node?: GameObjectType | null) {
 function renderCompositionNode(
     gameObject: GameObjectType,
     ctx: RenderContext,
+    primaryClickHandlers?: { onClick?: (event: ThreeEvent<PointerEvent>) => void },
     childNodes?: React.ReactNode
 ) {
-    const primaryContent = renderNodePrimaryContent(gameObject, ctx);
+    const primaryContent = renderNodePrimaryContent(gameObject, ctx, primaryClickHandlers);
     return applyNodeComposition(gameObject, <>{primaryContent}{childNodes}</>);
 }
 
-function renderNodePrimaryContent(gameObject: GameObjectType, ctx: RenderContext) {
+function renderNodePrimaryContent(
+    gameObject: GameObjectType,
+    ctx: RenderContext,
+    primaryClickHandlers?: { onClick?: (event: ThreeEvent<PointerEvent>) => void },
+) {
     const geometry = findComponent(gameObject, "BufferGeometry") ?? findComponent(gameObject, "Geometry");
     const material = findComponent(gameObject, "Material");
     const model = findComponent(gameObject, "Model");
@@ -664,7 +702,12 @@ function renderNodePrimaryContent(gameObject: GameObjectType, ctx: RenderContext
 
     if (geometry?.type && geometryDef?.View) {
         return (
-            <mesh visible={meshVisible} castShadow={meshCastShadow} receiveShadow={meshReceiveShadow}>
+            <mesh
+                visible={meshVisible}
+                castShadow={meshCastShadow}
+                receiveShadow={meshReceiveShadow}
+                {...primaryClickHandlers}
+            >
                 <geometryDef.View properties={geometry.properties} />
                 {material && materialDef?.View && (
                     <materialDef.View

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useHelper } from '@react-three/drei';
 import { Object3D, PointLight, PointLightHelper } from 'three';
-import { useEntityRuntime } from '../runtime';
+import { useEntityRuntime } from '../assetRuntime';
 import { Component } from './ComponentRegistry';
 import { BooleanField, ColorField, NumberField } from './Input';
 import { LightSection, ShadowBiasField, mergeWithDefaults } from './lightUtils';

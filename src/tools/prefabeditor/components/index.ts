@@ -11,8 +11,8 @@ import DirectionalLightComponent from './DirectionalLightComponent';
 import AmbientLightComponent from './AmbientLightComponent';
 import EnvironmentComponent from './EnvironmentComponent';
 import CameraComponent from './CameraComponent';
-import ClickComponent from './ClickComponent';
 import SoundComponent from './SoundComponent';
+import DataComponent from './DataComponent';
 
 export const builtinComponents = [
     TransformComponent,
@@ -28,7 +28,7 @@ export const builtinComponents = [
     AmbientLightComponent,
     EnvironmentComponent,
     CameraComponent,
-    ClickComponent,
     SoundComponent,
+    DataComponent,
 ];
 

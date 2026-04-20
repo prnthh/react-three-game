@@ -4,7 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
 import { PrefabEditor, registerComponent } from "react-three-game";
 import initialWorld from "../../samples/killbox.json";
-import type { Prefab, PrefabEditorRef } from "react-three-game";
+import type { GameObject, Prefab, PrefabEditorRef } from "react-three-game";
 import FirstPersonPlayer from "./FirstPersonPlayer";
 
 const ORB_SPEED = 1.2;
@@ -53,8 +53,8 @@ function OrbAnimator({ editorRef }: { editorRef: React.RefObject<PrefabEditorRef
     const lastVelocityChange = useRef(0);
 
     useFrame((state, delta) => {
-        const scene = editorRef.current?.scene;
-        if (!scene) return;
+        const store = editorRef.current?.store;
+        if (!store) return;
 
         const time = state.clock.getElapsedTime();
         if (time - lastVelocityChange.current > 1 + Math.random()) {
@@ -65,26 +65,34 @@ function OrbAnimator({ editorRef }: { editorRef: React.RefObject<PrefabEditorRef
             };
         }
 
-        // This demo intentionally uses the authored Scene API path rather than
-        // a runtime lifecycle component so it demonstrates the two surfaces separately.
-        scene.batch(() => {
-            for (const orbId of ORB_IDS) {
-                scene.find(orbId)?.getComponent<TransformProperties>("Transform")?.update((properties) => {
-                    const position = Array.isArray(properties.position) && properties.position.length === 3
-                        ? properties.position as Position3
-                        : null;
+        store.getState().updateNodes(ORB_IDS.map((orbId) => ({
+            id: orbId,
+            update: (node: GameObject) => {
+                const transform = node.components?.transform;
+                const properties = transform?.properties as TransformProperties | undefined;
+                const position = Array.isArray(properties?.position) && properties.position.length === 3
+                    ? properties.position as Position3
+                    : null;
 
-                    if (!position) {
-                        return properties;
-                    }
+                if (!transform || !position) {
+                    return node;
+                }
 
-                    return {
-                        ...properties,
-                        position: getNextOrbPosition(position, velocities.current[orbId], delta),
-                    };
-                });
-            }
-        });
+                return {
+                    ...node,
+                    components: {
+                        ...node.components,
+                        transform: {
+                            ...transform,
+                            properties: {
+                                ...properties,
+                                position: getNextOrbPosition(position, velocities.current[orbId], delta),
+                            },
+                        },
+                    },
+                };
+            },
+        })));
     });
 
     return null;

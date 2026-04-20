@@ -1,5 +1,5 @@
 import { Component } from "./ComponentRegistry";
-import { BooleanField, FieldGroup, NumberField, SelectField } from "./Input";
+import { BooleanField, FieldGroup, NumberField, SelectField, StringField } from "./Input";
 
 const GEOMETRY_ARGS: Record<string, {
     fields: Array<{
@@ -117,6 +117,22 @@ function GeometryComponentEditor({
                 onChange={handleChange}
                 fallback={true}
             />
+            <BooleanField
+                name="emitClickEvent"
+                label="Emit Click Event"
+                values={component.properties}
+                onChange={handleChange}
+                fallback={false}
+            />
+            {component.properties.emitClickEvent ? (
+                <StringField
+                    name="clickEventName"
+                    label="Click Event Name"
+                    values={component.properties}
+                    onChange={handleChange}
+                    placeholder="cannon:fire"
+                />
+            ) : null}
         </FieldGroup>
     );
 }
@@ -147,6 +163,8 @@ const GeometryComponent: Component = {
     defaultProperties: {
         geometryType: 'box',
         args: getDefaultArgs('box'),
+        emitClickEvent: false,
+        clickEventName: '',
     }
 };
 

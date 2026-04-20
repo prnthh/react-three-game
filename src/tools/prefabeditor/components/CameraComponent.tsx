@@ -2,7 +2,7 @@ import { OrthographicCamera, PerspectiveCamera, useHelper } from '@react-three/d
 import { useRef } from 'react';
 import { CameraHelper, Object3D, OrthographicCamera as ThreeOrthographicCamera, PerspectiveCamera as ThreePerspectiveCamera } from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useEntityRuntime } from '../runtime';
+import { useEntityRuntime } from '../assetRuntime';
 import { Component } from './ComponentRegistry';
 import { FieldGroup, NumberField, SelectField } from './Input';
 

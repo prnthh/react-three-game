@@ -1,4 +1,5 @@
-import { Component, FieldRenderer, FieldDefinition } from "react-three-game";
+import { useFrame } from "@react-three/fiber";
+import { Component, FieldRenderer, FieldDefinition, useEntityObjectRef } from "react-three-game";
 
 type RotationAxis = 'x' | 'y' | 'z';
 type RotatorProperties = {
@@ -30,18 +31,25 @@ function RotatorComponentEditor({ component, onUpdate }: { component: any; onUpd
     );
 }
 
+function RotatorView({ properties, children }: { properties: RotatorProperties; children?: React.ReactNode }) {
+    const objectRef = useEntityObjectRef();
+
+    useFrame((_, delta) => {
+        const object = objectRef.current;
+        if (!object) return;
+
+        const speed = properties.speed ?? 1.0;
+        const axis = properties.axis ?? 'y';
+        object.rotation[axis] += delta * speed;
+    });
+
+    return <>{children}</>;
+}
+
 const RotatorComponent: Component = {
     name: 'Rotator',
     Editor: RotatorComponentEditor,
-    create(ctx) {
-        return {
-            update(dt) {
-                const speed = ctx.component.get<number>('speed') ?? 1.0;
-                const axis = ctx.component.get<RotationAxis>('axis') ?? 'y';
-                ctx.object.rotation[axis] += dt * speed;
-            },
-        };
-    },
+    View: RotatorView,
     defaultProperties: {
         speed: 1.0,
         axis: 'y'

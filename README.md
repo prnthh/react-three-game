@@ -2,7 +2,7 @@
 
 ![Scene Editor](assets/editor.gif)
 
-JSON-first 3D game engine for React Three Fiber.
+JSON-first scene mounting and authoring for React Three Fiber.
 
 Built on top of [three.js](https://github.com/mrdoob/three.js), [@react-three/fiber](https://github.com/pmndrs/react-three-fiber), and [@react-three/rapier](https://github.com/pmndrs/react-three-rapier).
 
@@ -10,7 +10,7 @@ Built on top of [three.js](https://github.com/mrdoob/three.js), [@react-three/fi
 * **🎬 Scene Editor** - Edit prefabs visually with hierarchy, inspector, transform gizmos, and play mode.
 * **⚛️ Physics** - Author rigid bodies directly in prefab data and run them through Rapier.
 * **🧩 Components** - Build scenes from reusable `GameObject` + component composition.
-* **🔧 Runtime Scene API** - Mutate the live world through `Scene`, `Entity`, and `EntityComponent` handles.
+* **🔧 Direct Runtime Access** - Get native `Object3D`, Rapier rigid body, and prefab store access without a parallel engine API.
 * **⚡ R3F Native** - Use normal React Three Fiber components whenever runtime behavior is clearer in code.
 
 ## Documentation
@@ -98,11 +98,9 @@ Open the hosted editor here:
 
 * https://prnth.com/react-three-game/editor
 
-## Prefabs And Scenes
+## Prefabs And Mounted Scenes
 
 `Prefab` is the serializable pure data format.
-
-`Scene` is the live runtime/editor world handle.
 
 That means a saved scene is just a prefab, and the same prefab can be:
 
@@ -163,7 +161,7 @@ interface GameObject {
 
 ## Runtime Mutation
 
-Use the `Scene` API from `PrefabEditorRef` for authored state changes that should stay in prefab data.
+Use native object access for Three.js behavior and the prefab store for authored data changes.
 
 ```tsx
 import { useEffect, useRef } from "react";
@@ -173,48 +171,105 @@ function RaiseBall() {
   const editorRef = useRef<PrefabEditorRef>(null);
 
   useEffect(() => {
-    const transform = editorRef.current
-      ?.scene
-      .find("ball")
-      ?.getComponent<{ position: [number, number, number] }>("Transform");
-
-    transform?.set("position", [0, 8, 0]);
+    editorRef.current?.store.getState().updateNode("ball", (node) => ({
+      ...node,
+      components: {
+        ...node.components,
+        transform: {
+          type: "Transform",
+          properties: {
+            ...node.components?.transform?.properties,
+            position: [0, 8, 0],
+          },
+        },
+      },
+    }));
   }, []);
 
   return <PrefabEditor ref={editorRef} initialPrefab={prefab} />;
 }
 ```
 
-Batch related entity changes so they flush as one store revision:
+For live Three.js access, use mounted objects directly:
 
 ```tsx
-scene.batch(() => {
-  scene.find("orb1")?.getComponent("Transform")?.set("position", [1, 0, 0]);
-  scene.find("orb2")?.getComponent("Transform")?.set("position", [-1, 0, 0]);
-});
+const ball = editorRef.current?.getObject("ball");
+ball?.rotateY(0.5);
 ```
 
-Define a component runtime factory with `create(ctx)` for hot runtime behavior that mutates the live Three.js object directly:
+Mounted node metadata is mirrored onto the canonical Three.js wrapper object:
+
+* `GameObject.id` -> `object.userData.prefabNodeId`
+* `GameObject.name` -> `object.name` and `object.userData.prefabNodeName`
+* `Data.properties.data` -> merged into `object.userData`
+
+That gives you a stable authored id for traversal-based integrations, while still making Three.js name lookup convenient:
 
 ```tsx
-import type { Component } from "react-three-game";
+const playerByName = editorRef.current?.root?.getObjectByName("Player");
+const playerById = editorRef.current?.root?.getObjectByProperty("userData.prefabNodeId", "player");
+```
 
-const Rotator: Component = {
-  name: "Rotator",
-  Editor: () => null,
-  defaultProperties: { speed: 1 },
-  create(ctx) {
-    return {
-      update(dt) {
-        const speed = ctx.component.get<number>("speed") ?? 1;
-        ctx.object.rotation.y += dt * speed;
+Treat names as a convenience surface, not the primary lookup key:
+
+* names are not guaranteed unique
+* `getObject(id)` is still the stable authored-node lookup
+* traversal metadata is applied to the prefab node transform object, not necessarily the inner mesh or model child
+
+You can author extra `userData` from the editor with a `Data` component:
+
+```json
+{
+  "data": {
+    "faction": "enemy",
+    "health": 100,
+    "loot": { "table": "crate" }
+  }
+}
+```
+
+For batched authored updates, write through the store once:
+
+```tsx
+editorRef.current?.store.getState().updateNodes([
+  {
+    id: "orb1",
+    update: (node) => ({
+      ...node,
+      components: {
+        ...node.components,
+        transform: {
+          ...node.components?.transform,
+          type: "Transform",
+          properties: {
+            ...node.components?.transform?.properties,
+            position: [1, 0, 0],
+          },
+        },
       },
-    };
+    }),
   },
-};
+  {
+    id: "orb2",
+    update: (node) => ({
+      ...node,
+      components: {
+        ...node.components,
+        transform: {
+          ...node.components?.transform,
+          type: "Transform",
+          properties: {
+            ...node.components?.transform?.properties,
+            position: [-1, 0, 0],
+          },
+        },
+      },
+    }),
+  },
+]);
 ```
 
-`View` handles composition and rendering. `create(ctx)` handles imperative runtime behavior.
+Custom component `View`s should use normal React and R3F behavior, such as `useFrame`, refs, and native Three.js APIs.
 
 ## Useful Exports
 
@@ -224,9 +279,6 @@ const Rotator: Component = {
 * `PrefabEditorMode`
 * `Prefab`
 * `GameObject`
-* `Scene`
-* `Entity`
-* `EntityComponent`
 * `registerComponent`
 * `createPrefabStore`
 * `usePrefabStoreApi`

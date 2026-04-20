@@ -1,6 +1,5 @@
 import { FC } from "react";
 import { ComponentData, GameObject } from "../types";
-import type { ComponentInstance, ComponentRuntimeContext } from "../runtime";
 
 export type AssetRef = { type: "model" | "texture" | "sound"; path: string };
 
@@ -28,8 +27,6 @@ export interface Component {
     }>;
     defaultProperties: any;
     View?: FC<ComponentViewProps>;
-    /** Optional runtime factory for the non-React game loop. */
-    create?: (ctx: ComponentRuntimeContext) => ComponentInstance | void;
     /** Declare which asset paths this component references (for asset loading). */
     getAssetRefs?: (properties: Record<string, any>) => AssetRef[];
 }

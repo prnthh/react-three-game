@@ -1,12 +1,11 @@
 import React, { createContext, useContext, useMemo, useRef, useState, useEffect, useCallback } from "react";
 import { Merged, useHelper } from '@react-three/drei';
 import { InstancedRigidBodies } from "@react-three/rapier";
-import type { CollisionPayload, InstancedRigidBodyProps, IntersectionEnterPayload, IntersectionExitPayload } from "@react-three/rapier";
+import type { InstancedRigidBodyProps } from "@react-three/rapier";
 import { ActiveCollisionTypes } from "@dimforge/rapier3d-compat";
 import { Mesh, Matrix4, Object3D, Group, Vector3, Quaternion, Euler, InstancedMesh, BoxHelper } from "three";
 import { PhysicsProps } from "./components/PhysicsComponent";
-import { gameEvents, getEntityIdFromRigidBody } from "./GameEvents";
-import { useClickValid } from "./useClickValid";
+import { usePointerEvents } from "./usePointerEvents";
 
 export type RepeatAxisConfig = {
     axis: 'x' | 'y' | 'z';
@@ -81,8 +80,6 @@ export function getRepeatAxesFromModelProperties(properties: Record<string, any>
 export type InstanceData = {
     id: string;
     sourceId: string;
-    clickable?: boolean;
-    clickEventName?: string;
     locked?: boolean;
     position: [number, number, number];
     rotation: [number, number, number];
@@ -128,33 +125,9 @@ function getColliderType(physics: PhysicsProps) {
     return physics.colliders || (physics.type === 'fixed' ? 'trimesh' : 'hull');
 }
 
-function emitPhysicsEvent(sourceId: string, eventName: string | undefined, payload: { other: { rigidBody?: any } }) {
-    if (!eventName) return;
-    gameEvents.emit(eventName, {
-        sourceEntityId: sourceId,
-        targetEntityId: getEntityIdFromRigidBody(payload.other.rigidBody),
-        targetRigidBody: payload.other.rigidBody,
-    });
-}
-
-function emitClick(sourceId: string, instanceId: string | undefined, eventName: string, event: any) {
-    gameEvents.emit(eventName, {
-        sourceEntityId: sourceId,
-        instanceEntityId: instanceId && instanceId !== sourceId ? instanceId : undefined,
-        point: [event.point.x, event.point.y, event.point.z],
-        button: event.button,
-        altKey: event.nativeEvent.altKey,
-        ctrlKey: event.nativeEvent.ctrlKey,
-        metaKey: event.nativeEvent.metaKey,
-        shiftKey: event.nativeEvent.shiftKey,
-    });
-}
-
 function instanceEquals(a: InstanceData, b: InstanceData): boolean {
     return a.id === b.id &&
         a.sourceId === b.sourceId &&
-        a.clickable === b.clickable &&
-        a.clickEventName === b.clickEventName &&
         a.locked === b.locked &&
         a.meshPath === b.meshPath &&
         arrayEquals(a.position, b.position) &&
@@ -376,10 +349,6 @@ function InstancedRigidGroup({
                 ...rigidBodyProps,
                 colliders: getColliderType(inst.physics) as any,
                 userData: { ...(userData as Record<string, unknown> | undefined), entityId: inst.sourceId },
-                onIntersectionEnter: (payload: IntersectionEnterPayload) => emitPhysicsEvent(inst.sourceId, inst.physics.sensorEnterEventName, payload),
-                onIntersectionExit: (payload: IntersectionExitPayload) => emitPhysicsEvent(inst.sourceId, inst.physics.sensorExitEventName, payload),
-                onCollisionEnter: (payload: CollisionPayload) => emitPhysicsEvent(inst.sourceId, inst.physics.collisionEnterEventName, payload),
-                onCollisionExit: (payload: CollisionPayload) => emitPhysicsEvent(inst.sourceId, inst.physics.collisionExitEventName, payload),
             };
         }),
         [group.instances]
@@ -459,13 +428,9 @@ function InstancedRigidGroup({
             return;
         }
 
-        if (!instance.clickable) return;
-
-        e.stopPropagation();
-        emitClick(instance.sourceId, instance.id, instance.clickEventName || 'click', e);
     };
 
-    const shouldHandleClick = editMode || group.instances.some(inst => inst.clickable);
+    const shouldHandleClick = editMode;
 
     // Add key to force remount when instance count changes significantly (helps with cleanup)
     const rigidBodyKey = `rb_${modelKey}_${group.instances.map(inst => `${inst.id}:${getPhysicsSignature(inst.physics)}`).join('|')}`;
@@ -558,14 +523,16 @@ function InstanceGroupItem({
     const isLocked = Boolean(instance.locked);
     const isSelected = selectedId === instance.id || selectedId === instance.sourceId;
     const canSelect = editMode && !isLocked;
-    const canClick = !editMode && Boolean(instance.clickable);
+    const canClick = false;
 
-    const pointerHandlers = useClickValid(canSelect || canClick, (e: any) => {
-        if (editMode) {
-            onSelect?.(instance.sourceId);
-        } else if (instance.clickable) {
-            emitClick(instance.sourceId, instance.id, instance.clickEventName || 'click', e);
-        }
+    const pointerHandlers = usePointerEvents({
+        enabled: canSelect || canClick,
+        entity: instance,
+        onClick: () => {
+            if (editMode) {
+                onSelect?.(instance.sourceId);
+            }
+        },
     });
 
     // Use BoxHelper when object is selected in edit mode
@@ -601,8 +568,6 @@ export function useInstanceCheck(id: string): boolean {
 export const GameInstance = React.forwardRef<Group, {
     id: string;
     sourceId?: string;
-    clickable?: boolean;
-    clickEventName?: string;
     modelUrl: string;
     locked?: boolean;
     position: [number, number, number];
@@ -612,8 +577,6 @@ export const GameInstance = React.forwardRef<Group, {
 }>(({
     id,
     sourceId,
-    clickable = false,
-    clickEventName,
     modelUrl,
     locked = false,
     position,
@@ -632,8 +595,6 @@ export const GameInstance = React.forwardRef<Group, {
     const instance = useMemo<InstanceData>(() => ({
         id,
         sourceId: sourceId ?? id,
-        clickable,
-        clickEventName,
         locked,
         meshPath: modelUrl,
         position,
@@ -643,8 +604,6 @@ export const GameInstance = React.forwardRef<Group, {
     }), [
         id,
         sourceId,
-        clickable,
-        clickEventName,
         locked,
         modelUrl,
         positionX,

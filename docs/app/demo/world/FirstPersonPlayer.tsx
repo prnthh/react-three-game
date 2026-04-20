@@ -6,7 +6,6 @@ import { PointerLockControls } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 import { useBeforePhysicsStep, useRapier } from "@react-three/rapier";
 import { useEffect, useRef } from "react";
-import { gameEvents } from "react-three-game";
 import { Vector3 } from "three";
 
 const DEFAULT_MAX_SPEED = 7;
@@ -64,7 +63,7 @@ const firstPersonPlayerFields: FieldDefinition[] = [
     { name: "friction", type: "number", label: "Friction", min: 0, step: 0.1 },
     { name: "jumpSpeed", type: "number", label: "Jump Speed", min: 0, step: 0.1 },
     { name: "groundProbeOffset", type: "number", label: "Ground Probe Offset", min: 0.01, step: 0.01 },
-    { name: "footstepEventName", type: "event", label: "Footstep Event", placeholder: DEFAULT_FOOTSTEP_EVENT },
+    { name: "footstepEventName", type: "string", label: "Footstep Event" },
     { name: "footstepMinInterval", type: "number", label: "Step Min Interval", min: 0.05, step: 0.01 },
     { name: "footstepMaxInterval", type: "number", label: "Step Max Interval", min: 0.05, step: 0.01 },
     { name: "footstepMinSpeed", type: "number", label: "Step Min Speed", min: 0, step: 0.1 },
@@ -202,8 +201,14 @@ function FirstPersonPlayerView({ properties, children }: { properties: FirstPers
         } else {
             footstepTimerRef.current -= delta;
 
-            if (footstepTimerRef.current <= 0) {
-                gameEvents.emit(footstepEventName, { speed });
+            if (footstepTimerRef.current <= 0 && typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent(footstepEventName, {
+                    detail: {
+                        nodeId: "player-footsteps",
+                        sourceNodeId: "player",
+                        speed,
+                    },
+                }));
 
                 const speedAlpha = Math.min(speed / maxSpeed, 1);
                 footstepTimerRef.current = footstepMaxInterval - (footstepMaxInterval - footstepMinInterval) * speedAlpha;

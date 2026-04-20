@@ -17,7 +17,6 @@ export type { EditorContextType } from './tools/prefabeditor/PrefabEditor';
 // Prefab Editor - Store & Scene API
 export { createPrefabStore, prefabStoreToPrefab, usePrefabStoreApi } from './tools/prefabeditor/prefabStore';
 export type { PrefabStoreApi, PrefabStoreState } from './tools/prefabeditor/prefabStore';
-export { createScene } from './tools/prefabeditor/scene';
 export { denormalizePrefab } from './tools/prefabeditor/prefab';
 
 // Prefab Editor - Component Registry
@@ -64,18 +63,10 @@ export type {
 } from './tools/prefabeditor/PrefabEditor';
 export type {
   SpawnOptions,
-  Scene,
-  Entity,
-  EntityComponent,
-  EntityData,
-  EntityUpdate,
-  PropertyPath,
-  SceneUpdates,
 } from './tools/prefabeditor/scene';
 export type { PrefabRootProps } from './tools/prefabeditor/PrefabRoot';
-export type { AssetRuntime, EntityRuntime, LiveObjectRef, LiveRigidBodyRef } from './tools/prefabeditor/runtime';
-export { useAssetRuntime, useEntityRuntime, useEntityObjectRef, useEntityRigidBodyRef } from './tools/prefabeditor/runtime';
-export type { ComponentInstance, ComponentRuntimeContext } from './tools/prefabeditor/runtime';
+export type { AssetRuntime, EntityRuntime, LiveObjectRef, LiveRigidBodyRef } from './tools/prefabeditor/assetRuntime';
+export { useAssetRuntime, useEntityRuntime, useEntityObjectRef, useEntityRigidBodyRef } from './tools/prefabeditor/assetRuntime';
 export type { Component, ComponentViewProps } from './tools/prefabeditor/components/ComponentRegistry';
 export type { FieldDefinition, FieldType } from './tools/prefabeditor/components/Input';
 export { MaterialOverridesProvider, useMaterialOverrides } from './tools/prefabeditor/components/MaterialComponent';
@@ -90,10 +81,6 @@ export {
   uniform,
   vec3,
 } from 'three/tsl';
-
-// Game Events (physics + custom events)
-export { gameEvents, useGameEvent, usePhysicsEvent, useClickEvent, getEntityIdFromRigidBody } from './tools/prefabeditor/GameEvents';
-export type { GameEventType, GameEventMap, GameEventPayload, PhysicsEventType, InteractionEventType, PhysicsEventPayload, ClickEventPayload } from './tools/prefabeditor/GameEvents';
 
 // Asset Loading
 export { loadFiles } from './tools/dragdrop/DragDropLoader';

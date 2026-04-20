@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { Object3D } from 'three';
 import { Component } from "./ComponentRegistry";
 import { useAssetRuntime, useEntityRuntime } from "../assetRuntime";
+import { gameEvents, getEntityIdFromRigidBody } from "../GameEvents";
 import { usePrefabNode } from "../prefabStore";
 import { BooleanField, FieldGroup, NumberField, SelectField, StringField, Vector3Field } from "./Input";
 import { ComponentData, getNodeUserData } from "../types";
@@ -198,17 +199,6 @@ interface PhysicsViewProps {
     scale?: [number, number, number];
 }
 
-function emitNativeEvent(type: string | undefined, detail: unknown) {
-    const trimmedType = type?.trim();
-    if (!trimmedType || typeof window === 'undefined') return;
-    window.dispatchEvent(new CustomEvent(trimmedType, { detail }));
-}
-
-function getEntityIdFromRigidBody(rigidBody: RapierRigidBody | null | undefined): string | null {
-    const userData = rigidBody?.userData as { entityId?: string } | undefined;
-    return typeof userData?.entityId === 'string' ? userData.entityId : null;
-}
-
 function PhysicsComponentView({ properties, children, position, rotation, scale }: PhysicsViewProps) {
     const { registerRigidBodyRef } = useAssetRuntime();
     const { editMode, nodeId, getObject } = useEntityRuntime();
@@ -305,11 +295,18 @@ function PhysicsComponentView({ properties, children, position, rotation, scale 
     const dispatchPhysicsEvent = useCallback((eventType: string | undefined, payload: CollisionPayload | IntersectionEnterPayload | IntersectionExitPayload) => {
         if (!nodeId) return;
 
-        emitNativeEvent(eventType, {
+        const trimmedEventType = eventType?.trim();
+        if (!trimmedEventType) return;
+
+        const targetEntityId = getEntityIdFromRigidBody(payload.other.rigidBody);
+
+        gameEvents.emit(trimmedEventType, {
+            sourceEntityId: nodeId,
             sourceNodeId: nodeId,
             sourceObject: getObject(),
             sourceRigidBody: rigidBodyRef.current,
-            targetNodeId: getEntityIdFromRigidBody(payload.other.rigidBody),
+            targetEntityId,
+            targetNodeId: targetEntityId,
             targetObject: payload.other.rigidBodyObject ?? payload.other.colliderObject ?? null,
             targetRigidBody: payload.other.rigidBody ?? null,
             rapierEvent: payload,

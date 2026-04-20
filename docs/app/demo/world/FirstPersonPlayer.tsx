@@ -2,6 +2,7 @@
 
 import { FieldRenderer, useEntityRigidBodyRef, useEntityRuntime } from "react-three-game";
 import type { Component, FieldDefinition } from "react-three-game";
+import { gameEvents } from "react-three-game";
 import { PointerLockControls } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 import { useBeforePhysicsStep, useRapier } from "@react-three/rapier";
@@ -201,14 +202,13 @@ function FirstPersonPlayerView({ properties, children }: { properties: FirstPers
         } else {
             footstepTimerRef.current -= delta;
 
-            if (footstepTimerRef.current <= 0 && typeof window !== "undefined") {
-                window.dispatchEvent(new CustomEvent(footstepEventName, {
-                    detail: {
-                        nodeId: "player-footsteps",
-                        sourceNodeId: "player",
-                        speed,
-                    },
-                }));
+            if (footstepTimerRef.current <= 0) {
+                gameEvents.emit(footstepEventName, {
+                    nodeId: "player-footsteps",
+                    sourceEntityId: "player",
+                    sourceNodeId: "player",
+                    speed,
+                });
 
                 const speedAlpha = Math.min(speed / maxSpeed, 1);
                 footstepTimerRef.current = footstepMaxInterval - (footstepMaxInterval - footstepMinInterval) * speedAlpha;

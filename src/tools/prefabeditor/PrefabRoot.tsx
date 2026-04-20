@@ -15,6 +15,7 @@ import { composeTransform, decompose } from "./utils";
 import { isPhysicsProps, PhysicsProps } from "./components/PhysicsComponent";
 import { createPrefabStore, PrefabStoreApi, PrefabStoreProvider, useOptionalPrefabStoreApi, usePrefabChildIds, usePrefabNode, usePrefabRootId } from "./prefabStore";
 import { AssetRuntimeContext, EntityRuntimeScope, type AssetRuntimeContextValue } from "./assetRuntime";
+import { gameEvents } from "./GameEvents";
 import { sound as soundManager } from "../../helpers/SoundManager";
 
 // Dynamic type to avoid requiring @react-three/rapier when not using physics
@@ -38,12 +39,6 @@ function isNodeReady(node: GameObjectType, loadedModels: LoadedModels): boolean 
     const model = findComponent(node, "Model");
     if (!model?.properties?.filename) return true;
     return Boolean(loadedModels[model.properties.filename]);
-}
-
-function emitNativeEvent(type: string | undefined, detail: unknown) {
-    const trimmedType = type?.trim();
-    if (!trimmedType || typeof window === 'undefined') return;
-    window.dispatchEvent(new CustomEvent(trimmedType, { detail }));
 }
 
 function getNodeClickEventName(node: GameObjectType | null | undefined) {
@@ -287,12 +282,16 @@ function emitNodePointerEvent(
     node: GameObjectType,
     fallbackObject: Object3D | null,
 ) {
-    if (!eventName) return;
+    const trimmedEventName = eventName?.trim();
+    if (!trimmedEventName) return;
 
-    emitNativeEvent(eventName, {
+    gameEvents.emit(trimmedEventName, {
+        sourceEntityId: nodeId,
+        sourceNodeId: nodeId,
         nodeId,
         node,
         object: event.object ?? fallbackObject,
+        point: [event.point.x, event.point.y, event.point.z],
         button: event.button,
         altKey: event.nativeEvent.altKey,
         ctrlKey: event.nativeEvent.ctrlKey,

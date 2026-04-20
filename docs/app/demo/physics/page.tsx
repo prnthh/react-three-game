@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { PrefabEditor, PrefabEditorMode, registerComponent, soundManager } from "react-three-game";
+import { gameEvents, PrefabEditor, PrefabEditorMode, registerComponent, soundManager } from "react-three-game";
 import type { GameObject, PrefabEditorRef } from "react-three-game";
 import { Quaternion, Vector3 } from "three";
 import CannonBarrelSwayComponent from "./CannonBarrelSwayComponent";
@@ -220,37 +220,35 @@ export default function PhysicsDemo() {
     useEffect(() => {
         updateTargetColor(editorRef.current, TARGET_IDLE_COLOR);
 
-        const handleFire = (event: Event) => {
-            const detail = (event as CustomEvent<{ nodeId?: string }>).detail;
-            const barrelEntityId = typeof detail?.nodeId === "string"
-                ? detail.nodeId
+        const stopFire = gameEvents.on(CANNON_FIRE_EVENT, (payload: { nodeId?: string; sourceEntityId?: string } | unknown) => {
+            const detail = payload as { nodeId?: string; sourceEntityId?: string };
+            const barrelEntityId = typeof detail?.sourceEntityId === "string"
+                ? detail.sourceEntityId
+                : typeof detail?.nodeId === "string"
+                    ? detail.nodeId
                 : CANNON_BARREL_ID;
 
             fireProjectileFromCannon(editorRef.current, barrelEntityId);
             void soundManager.play(CANNON_FIRE_SOUND, { volume: 0.9 });
-        };
+        });
 
-        const handleTargetHit = () => {
+        const stopTargetHit = gameEvents.on(TARGET_HIT_EVENT, () => {
             updateTargetColor(editorRef.current, TARGET_HIT_COLOR);
             const clip = TARGET_HIT_SOUNDS[Math.floor(Math.random() * TARGET_HIT_SOUNDS.length)];
             void soundManager.play(clip, {
                 volume: 0.8,
                 pitch: 0.94 + Math.random() * 0.14,
             });
-        };
+        });
 
-        const handleTargetReset = () => {
+        const stopTargetReset = gameEvents.on(TARGET_RESET_EVENT, () => {
             updateTargetColor(editorRef.current, TARGET_IDLE_COLOR);
-        };
-
-        window.addEventListener(CANNON_FIRE_EVENT, handleFire);
-        window.addEventListener(TARGET_HIT_EVENT, handleTargetHit);
-        window.addEventListener(TARGET_RESET_EVENT, handleTargetReset);
+        });
 
         return () => {
-            window.removeEventListener(CANNON_FIRE_EVENT, handleFire);
-            window.removeEventListener(TARGET_HIT_EVENT, handleTargetHit);
-            window.removeEventListener(TARGET_RESET_EVENT, handleTargetReset);
+            stopFire();
+            stopTargetHit();
+            stopTargetReset();
         };
     }, []);
 

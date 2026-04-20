@@ -18,6 +18,8 @@ export type { EditorContextType } from './tools/prefabeditor/PrefabEditor';
 export { createPrefabStore, prefabStoreToPrefab, usePrefabStoreApi } from './tools/prefabeditor/prefabStore';
 export type { PrefabStoreApi, PrefabStoreState } from './tools/prefabeditor/prefabStore';
 export { denormalizePrefab } from './tools/prefabeditor/prefab';
+export { gameEvents, getEntityIdFromRigidBody, useClickEvent, useGameEvent, usePhysicsEvent } from './tools/prefabeditor/GameEvents';
+export type { ClickEventPayload, GameEventHandler, GameEventMap, PhysicsEventPayload } from './tools/prefabeditor/GameEvents';
 
 // Prefab Editor - Component Registry
 export { registerComponent } from './tools/prefabeditor/components/ComponentRegistry';
@@ -62,6 +64,13 @@ export type {
   PrefabEditorRef,
 } from './tools/prefabeditor/PrefabEditor';
 export type {
+  Entity,
+  EntityComponent,
+  EntityData,
+  EntityUpdate,
+  PropertyPath,
+  Scene,
+  SceneUpdates,
   SpawnOptions,
 } from './tools/prefabeditor/scene';
 export type { PrefabRootProps } from './tools/prefabeditor/PrefabRoot';

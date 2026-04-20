@@ -3,6 +3,7 @@ import { useThree } from '@react-three/fiber';
 import { SoundPicker } from '../../assetviewer/page';
 import { sound as soundManager } from '../../../helpers/SoundManager';
 import { useAssetRuntime, useEntityRuntime } from '../assetRuntime';
+import { gameEvents, type ClickEventPayload, type PhysicsEventPayload } from '../GameEvents';
 import { Component } from './ComponentRegistry';
 import { BooleanField, FieldGroup, FieldRenderer, ListEditor, NumberField, SelectField, StringField } from './Input';
 import { colors } from '../styles';
@@ -99,6 +100,24 @@ function pickClip(paths: string[], mode: ClipMode, sequenceIndexRef: React.Mutab
     }
 
     return paths[Math.floor(Math.random() * paths.length)];
+}
+
+function payloadMatchesNode(nodeId: string | undefined, payload: unknown) {
+    if (!nodeId || !payload || typeof payload !== 'object') {
+        return true;
+    }
+
+    const eventPayload = payload as ClickEventPayload & PhysicsEventPayload;
+    const relatedNodeIds = [
+        eventPayload.nodeId,
+        eventPayload.sourceEntityId,
+        eventPayload.sourceNodeId,
+        eventPayload.targetEntityId,
+        eventPayload.targetNodeId,
+        eventPayload.instanceEntityId,
+    ].filter((value): value is string => typeof value === 'string');
+
+    return relatedNodeIds.length > 0 ? relatedNodeIds.includes(nodeId) : true;
 }
 
 function SoundComponentEditor({ component, onUpdate, basePath = '' }: { component: ComponentData; onUpdate: (newComp: any) => void; basePath?: string }) {
@@ -283,19 +302,13 @@ function SoundComponentView({ properties, children }: { properties: SoundPropert
     }, [distanceModel, maxDistance, refDistance, rolloffFactor]);
 
     useEffect(() => {
-        if (editMode || paths.length === 0 || !eventName || typeof window === 'undefined') {
+        if (editMode || paths.length === 0 || !eventName) {
             return;
         }
 
-        const handleEvent = (event: Event) => {
-            const customEvent = event as CustomEvent<{ nodeId?: string; sourceNodeId?: string; targetNodeId?: string }>;
-            const detail = customEvent.detail;
-
-            if (nodeId && detail && typeof detail === 'object') {
-                const relatedNodeIds = [detail.nodeId, detail.sourceNodeId, detail.targetNodeId].filter((value): value is string => typeof value === 'string');
-                if (relatedNodeIds.length > 0 && !relatedNodeIds.includes(nodeId)) {
-                    return;
-                }
+        return gameEvents.on(eventName, (payload) => {
+            if (!payloadMatchesNode(nodeId, payload)) {
+                return;
             }
 
             const clip = pickClip(paths, mode, sequenceIndexRef);
@@ -337,12 +350,7 @@ function SoundComponentView({ properties, children }: { properties: SoundPropert
             audio.setPlaybackRate(pitch);
             audio.setVolume(volume);
             audio.play();
-        };
-
-        window.addEventListener(eventName, handleEvent as EventListener);
-        return () => {
-            window.removeEventListener(eventName, handleEvent as EventListener);
-        };
+        });
     }, [editMode, eventName, getSound, mode, nodeId, paths, positional, properties]);
 
     return (

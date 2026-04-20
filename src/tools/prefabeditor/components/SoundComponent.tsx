@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useThree } from '@react-three/fiber';
 import { SoundPicker } from '../../assetviewer/page';
 import { useAssetRuntime, useEntityRuntime } from '../assetRuntime';
 import { gameEvents, type ClickEventPayload, type PhysicsEventPayload } from '../GameEvents';
@@ -272,6 +273,7 @@ function SoundComponentEditor({ component, onUpdate, basePath = '' }: { componen
 function SoundComponentView({ properties, children }: { properties: SoundProperties; children?: React.ReactNode }) {
     const { getSound } = useAssetRuntime();
     const { editMode, nodeId } = useEntityRuntime();
+    const { camera } = useThree();
     const { eventName, autoplay = false, positional = false, refDistance = 1, maxDistance = 24, rolloffFactor = 1, distanceModel = 'inverse' } = properties;
     const sequenceIndexRef = useRef(0);
     const listenerRef = useRef<AudioListener | null>(null);
@@ -281,6 +283,24 @@ function SoundComponentView({ properties, children }: { properties: SoundPropert
     if (!listenerRef.current) {
         listenerRef.current = getSharedAudioListener();
     }
+
+    useEffect(() => {
+        const listener = listenerRef.current;
+        if (!listener) {
+            return;
+        }
+
+        if (listener.parent !== camera) {
+            listener.parent?.remove(listener);
+            camera.add(listener);
+        }
+
+        return () => {
+            if (listener.parent === camera) {
+                camera.remove(listener);
+            }
+        };
+    }, [camera]);
 
     useEffect(() => {
         const audio = positionalAudioRef.current;

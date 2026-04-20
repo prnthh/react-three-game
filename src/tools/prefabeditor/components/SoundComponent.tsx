@@ -1,20 +1,20 @@
 import { useEffect, useRef } from 'react';
-import { useThree } from '@react-three/fiber';
 import { SoundPicker } from '../../assetviewer/page';
-import { sound as soundManager } from '../../../helpers/SoundManager';
 import { useAssetRuntime, useEntityRuntime } from '../assetRuntime';
 import { gameEvents, type ClickEventPayload, type PhysicsEventPayload } from '../GameEvents';
 import { Component } from './ComponentRegistry';
 import { BooleanField, FieldGroup, FieldRenderer, ListEditor, NumberField, SelectField, StringField } from './Input';
 import { colors } from '../styles';
 import type { ComponentData } from '../types';
-import { AudioListener, PositionalAudio } from 'three';
+import { AudioListener, PositionalAudio as ThreePositionalAudio } from 'three';
 
 type ClipMode = 'single' | 'random' | 'sequence';
 
 type SoundProperties = {
     clips?: string[];
     eventName?: string;
+    autoplay?: boolean;
+    loop?: boolean;
     clipMode?: ClipMode;
     positional?: boolean;
     refDistance?: number;
@@ -120,6 +120,20 @@ function payloadMatchesNode(nodeId: string | undefined, payload: unknown) {
     return relatedNodeIds.length > 0 ? relatedNodeIds.includes(nodeId) : true;
 }
 
+function playBufferedAudio(audio: ThreePositionalAudio, buffer: AudioBuffer, properties: SoundProperties) {
+    void audio.listener.context.resume();
+
+    if (audio.isPlaying) {
+        audio.stop();
+    }
+
+    audio.setBuffer(buffer);
+    audio.setLoop(Boolean(properties.loop));
+    audio.setPlaybackRate(getPitchValue(properties));
+    audio.setVolume(getVolumeValue(properties));
+    audio.play();
+}
+
 function SoundComponentEditor({ component, onUpdate, basePath = '' }: { component: ComponentData; onUpdate: (newComp: any) => void; basePath?: string }) {
     const clips = Array.isArray(component.properties.clips)
         ? component.properties.clips.map((clip: unknown) => typeof clip === 'string' ? clip : '')
@@ -155,6 +169,8 @@ function SoundComponentEditor({ component, onUpdate, basePath = '' }: { componen
                 onChange={onUpdate}
                 placeholder="player:footstep"
             />
+            <BooleanField name="autoplay" label="Autoplay" values={component.properties} onChange={onUpdate} fallback={false} />
+            <BooleanField name="loop" label="Loop" values={component.properties} onChange={onUpdate} fallback={false} />
             <FieldRenderer
                 fields={[
                     {
@@ -256,11 +272,10 @@ function SoundComponentEditor({ component, onUpdate, basePath = '' }: { componen
 function SoundComponentView({ properties, children }: { properties: SoundProperties; children?: React.ReactNode }) {
     const { getSound } = useAssetRuntime();
     const { editMode, nodeId } = useEntityRuntime();
-    const { camera } = useThree();
-    const { eventName, positional = false, refDistance = 1, maxDistance = 24, rolloffFactor = 1, distanceModel = 'inverse' } = properties;
+    const { eventName, autoplay = false, positional = false, refDistance = 1, maxDistance = 24, rolloffFactor = 1, distanceModel = 'inverse' } = properties;
     const sequenceIndexRef = useRef(0);
     const listenerRef = useRef<AudioListener | null>(null);
-    const positionalAudioRef = useRef<PositionalAudio | null>(null);
+    const positionalAudioRef = useRef<ThreePositionalAudio | null>(null);
     const { paths, mode } = resolveClipPaths(properties);
 
     if (!listenerRef.current) {
@@ -268,38 +283,16 @@ function SoundComponentView({ properties, children }: { properties: SoundPropert
     }
 
     useEffect(() => {
-        if (!positional) {
-            return;
-        }
-
-        const listener = listenerRef.current;
-        if (!listener) {
-            return;
-        }
-
-        if (listener.parent !== camera) {
-            listener.parent?.remove(listener);
-            camera.add(listener);
-        }
-
-        return () => {
-            if (listener.parent === camera) {
-                camera.remove(listener);
-            }
-        };
-    }, [camera, positional]);
-
-    useEffect(() => {
         const audio = positionalAudioRef.current;
         if (!audio) {
             return;
         }
 
-        audio.setRefDistance(refDistance);
-        audio.setMaxDistance(maxDistance);
-        audio.setRolloffFactor(rolloffFactor);
-        audio.setDistanceModel(distanceModel);
-    }, [distanceModel, maxDistance, refDistance, rolloffFactor]);
+        audio.setRefDistance(positional ? refDistance : Math.max(refDistance, 1));
+        audio.setMaxDistance(positional ? maxDistance : 1_000_000);
+        audio.setRolloffFactor(positional ? rolloffFactor : 0);
+        audio.setDistanceModel(positional ? distanceModel : 'inverse');
+    }, [distanceModel, maxDistance, positional, refDistance, rolloffFactor]);
 
     useEffect(() => {
         if (editMode || paths.length === 0 || !eventName) {
@@ -314,48 +307,44 @@ function SoundComponentView({ properties, children }: { properties: SoundPropert
             const clip = pickClip(paths, mode, sequenceIndexRef);
             if (!clip) return;
 
-            const pitch = getPitchValue(properties);
-            const volume = getVolumeValue(properties);
-
-            if (!positional) {
-                const loadedBuffer = getSound(clip);
-                if (loadedBuffer && !soundManager.hasBuffer(clip)) {
-                    soundManager.setBuffer(clip, loadedBuffer);
-                }
-
-                if (soundManager.hasBuffer(clip)) {
-                    soundManager.playSync(clip, { pitch, volume });
-                    return;
-                }
-
-                void soundManager.play(clip, { pitch, volume });
-                return;
-            }
-
             const audio = positionalAudioRef.current;
-            const listener = listenerRef.current;
             const buffer = getSound(clip);
-            if (!audio || !listener || !buffer) {
+            if (!audio || !buffer) {
                 return;
             }
 
-            void listener.context.resume();
+            playBufferedAudio(audio, buffer, properties);
+        });
+    }, [editMode, eventName, getSound, mode, nodeId, paths, properties]);
 
-            if (audio.isPlaying) {
+    useEffect(() => {
+        if (editMode || !autoplay || paths.length === 0) {
+            return;
+        }
+
+        const clip = pickClip(paths, mode, sequenceIndexRef);
+        if (!clip) {
+            return;
+        }
+
+        const audio = positionalAudioRef.current;
+        const buffer = getSound(clip);
+        if (!audio || !buffer) {
+            return;
+        }
+
+        playBufferedAudio(audio, buffer, properties);
+
+        return () => {
+            if (audio?.isPlaying) {
                 audio.stop();
             }
-
-            audio.setBuffer(buffer);
-            audio.setLoop(false);
-            audio.setPlaybackRate(pitch);
-            audio.setVolume(volume);
-            audio.play();
-        });
-    }, [editMode, eventName, getSound, mode, nodeId, paths, positional, properties]);
+        };
+    }, [autoplay, editMode, getSound, mode, paths, properties]);
 
     return (
         <>
-            {positional && listenerRef.current ? <positionalAudio ref={positionalAudioRef} args={[listenerRef.current]} /> : null}
+            {listenerRef.current ? <positionalAudio ref={positionalAudioRef} args={[listenerRef.current]} /> : null}
             {children}
         </>
     );
@@ -367,6 +356,8 @@ const SoundComponent: Component = {
     View: SoundComponentView,
     defaultProperties: {
         eventName: '',
+        autoplay: false,
+        loop: false,
         clips: [],
         clipMode: 'single',
         positional: false,

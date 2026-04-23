@@ -18,6 +18,7 @@ export default function Dropdown() {
         { label: "Physics", href: "/demo/physics" },
         { label: "Quake", href: "/demo/quake" },
         { label: "Asset Viewer", href: "/demo/assetviewer" },
+        { label: "Benchmark", href: "/demo/benchmark" },
     ];
 
     return (

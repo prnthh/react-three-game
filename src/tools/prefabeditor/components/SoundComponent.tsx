@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { useThree } from '@react-three/fiber';
 import { SoundPicker } from '../../assetviewer/page';
-import { useAssetRuntime, useEntityRuntime } from '../assetRuntime';
-import { gameEvents, type ClickEventPayload, type PhysicsEventPayload } from '../GameEvents';
+import { useAssetRuntime, useCurrentNode } from '../assetRuntime';
+import { gameEvents, type ClickEventPayload, type ContactEventPayload } from '../GameEvents';
 import { Component } from './ComponentRegistry';
 import { BooleanField, FieldGroup, FieldRenderer, ListEditor, NumberField, SelectField, StringField } from './Input';
 import { colors, ui } from '../styles';
@@ -108,7 +108,7 @@ function payloadMatchesNode(nodeId: string | undefined, payload: unknown) {
         return true;
     }
 
-    const eventPayload = payload as ClickEventPayload & PhysicsEventPayload;
+    const eventPayload = payload as ClickEventPayload & ContactEventPayload;
     const relatedNodeIds = [
         eventPayload.nodeId,
         eventPayload.sourceEntityId,
@@ -263,7 +263,7 @@ function SoundComponentEditor({ component, onUpdate, basePath = '' }: { componen
 
 function SoundComponentView({ properties, children }: { properties: SoundProperties; children?: React.ReactNode }) {
     const { getSound } = useAssetRuntime();
-    const { editMode, nodeId } = useEntityRuntime();
+    const { editMode, nodeId } = useCurrentNode();
     const { camera } = useThree();
     const { eventName, autoplay = false, positional = false, refDistance = 1, maxDistance = 24, rolloffFactor = 1, distanceModel = 'inverse' } = properties;
     const sequenceIndexRef = useRef(0);

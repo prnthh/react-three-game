@@ -8,6 +8,7 @@ export interface GameObject {
     id: string;
     name?: string;
     disabled?: boolean;
+    hidden?: boolean;
     locked?: boolean;
     children?: GameObject[];
     components?: {

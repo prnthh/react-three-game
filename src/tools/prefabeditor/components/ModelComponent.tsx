@@ -161,7 +161,7 @@ function ModelComponentEditor({ component, node, onUpdate, basePath = "" }: { co
                             label="Click Event Name"
                             values={component.properties}
                             onChange={onUpdate}
-                            placeholder="entity:click"
+                            placeholder="node:click"
                         />
                     ) : null}
                 </>

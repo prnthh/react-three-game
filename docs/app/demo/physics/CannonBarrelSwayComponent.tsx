@@ -1,6 +1,6 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
-import { Component, FieldDefinition, FieldRenderer, useEntityObjectRef } from "react-three-game";
+import { Component, FieldDefinition, FieldRenderer, useCurrentNodeObject } from "react-three-game";
 
 type CannonBarrelSwayProperties = {
     yawAmplitude?: number;
@@ -19,7 +19,7 @@ function CannonBarrelSwayEditor({ component, onUpdate }: { component: any; onUpd
 }
 
 function CannonBarrelSwayView({ properties, children }: { properties: CannonBarrelSwayProperties; children?: React.ReactNode }) {
-    const objectRef = useEntityObjectRef();
+    const objectRef = useCurrentNodeObject();
     const baseRotationRef = useRef<{ x: number; y: number; z: number } | null>(null);
     const elapsedRef = useRef(0);
 

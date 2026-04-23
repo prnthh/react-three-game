@@ -2,9 +2,10 @@
 
 import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
-import { PrefabEditor, registerComponent } from "react-three-game";
+import { PrefabEditor } from "react-three-game";
 import initialWorld from "../../samples/killbox.json";
-import type { GameObject, Prefab, PrefabEditorRef } from "react-three-game";
+import type { Prefab, PrefabEditorRef } from "react-three-game";
+import { CrashcatRuntime, type CrashcatRuntimeRef } from "../../components/CrashcatRuntime";
 import FirstPersonPlayer from "./FirstPersonPlayer";
 
 const ORB_SPEED = 1.2;
@@ -12,10 +13,7 @@ const WORLD_BOUNDARY = 8;
 
 const ORB_IDS = ["orb1", "orb2"] as const;
 
-registerComponent(FirstPersonPlayer);
-
 type Position3 = [number, number, number];
-type TransformProperties = { position?: Position3 };
 type OrbVelocity = { x: number; z: number };
 type OrbId = typeof ORB_IDS[number];
 
@@ -35,10 +33,13 @@ function getNextOrbPosition(position: Position3, velocity: OrbVelocity, delta: n
 
 export default function Home() {
     const editorRef = useRef<PrefabEditorRef>(null);
+    const runtimeRef = useRef<CrashcatRuntimeRef>(null);
 
     return (
         <main className="flex h-screen w-screen flex-col items-center justify-between bg-white dark:bg-black sm:items-start">
             <PrefabEditor ref={editorRef} initialPrefab={initialWorld as Prefab}>
+                <CrashcatRuntime ref={runtimeRef} editorRef={editorRef} debug />
+                <FirstPersonPlayer editorRef={editorRef} runtimeRef={runtimeRef} />
                 <OrbAnimator editorRef={editorRef} />
             </PrefabEditor>
         </main>
@@ -53,8 +54,8 @@ function OrbAnimator({ editorRef }: { editorRef: React.RefObject<PrefabEditorRef
     const lastVelocityChange = useRef(0);
 
     useFrame((state, delta) => {
-        const store = editorRef.current?.store;
-        if (!store) return;
+        const editor = editorRef.current;
+        if (!editor) return;
 
         const time = state.clock.getElapsedTime();
         if (time - lastVelocityChange.current > 1 + Math.random()) {
@@ -65,34 +66,15 @@ function OrbAnimator({ editorRef }: { editorRef: React.RefObject<PrefabEditorRef
             };
         }
 
-        store.getState().updateNodes(ORB_IDS.map((orbId) => ({
-            id: orbId,
-            update: (node: GameObject) => {
-                const transform = node.components?.transform;
-                const properties = transform?.properties as TransformProperties | undefined;
-                const position = Array.isArray(properties?.position) && properties.position.length === 3
-                    ? properties.position as Position3
-                    : null;
+        ORB_IDS.forEach((orbId) => {
+            const orb = editor.getNodeObject(orbId);
+            if (!orb) return;
 
-                if (!transform || !position) {
-                    return node;
-                }
-
-                return {
-                    ...node,
-                    components: {
-                        ...node.components,
-                        transform: {
-                            ...transform,
-                            properties: {
-                                ...properties,
-                                position: getNextOrbPosition(position, velocities.current[orbId], delta),
-                            },
-                        },
-                    },
-                };
-            },
-        })));
+            const position = [orb.position.x, orb.position.y, orb.position.z] as Position3;
+            const nextPosition = getNextOrbPosition(position, velocities.current[orbId], delta);
+            orb.position.set(nextPosition[0], nextPosition[1], nextPosition[2]);
+            orb.updateMatrixWorld();
+        });
     });
 
     return null;

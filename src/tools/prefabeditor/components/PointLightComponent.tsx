@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useHelper } from '@react-three/drei';
 import { Object3D, PointLight, PointLightHelper } from 'three';
-import { useEntityRuntime } from '../assetRuntime';
+import { useCurrentNode } from '../assetRuntime';
 import { Component } from './ComponentRegistry';
 import { BooleanField, ColorField, NumberField } from './Input';
 import { LightSection, ShadowBiasField, mergeWithDefaults } from './lightUtils';
@@ -49,7 +49,7 @@ function PointLightComponentEditor({ component, onUpdate }: { component: any; on
 }
 
 function PointLightView({ properties, children }: { properties: any; children?: React.ReactNode }) {
-    const { editMode, isSelected } = useEntityRuntime();
+    const { editMode, isSelected } = useCurrentNode();
     const merged = mergeWithDefaults(pointLightDefaults, properties);
     const color = merged.color;
     const intensity = merged.intensity;

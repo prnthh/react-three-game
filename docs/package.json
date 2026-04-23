@@ -12,7 +12,7 @@
   "dependencies": {
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.4.2",
-    "@react-three/rapier": "^2.2.0",
+    "crashcat": "^0.0.4",
     "next": "^16.0.10",
     "react": "19.2.0",
     "react-dom": "19.2.0",

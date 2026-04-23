@@ -23,6 +23,23 @@
             1
           ]
         }
+      },
+      "data": {
+        "type": "Data",
+        "properties": {
+          "data": {
+            "crashcat": {
+              "autoStaticColliders": true,
+              "excludeIds": [
+                "orb1",
+                "orb2",
+                "player",
+                "player-camera",
+                "player-footsteps"
+              ]
+            }
+          }
+        }
       }
     },
     "children": [
@@ -71,7 +88,7 @@
             "properties": {
               "position": [
                 0,
-                25,
+                -25,
                 0
               ],
               "rotation": [
@@ -106,7 +123,7 @@
               "opacity": 1,
               "metalness": 0,
               "roughness": 1,
-              "side": "BackSide",
+              "side": "FrontSide",
               "texture": "/textures/proto32/checkers_01.png",
               "repeat": true,
               "repeatCount": [
@@ -996,26 +1013,19 @@
               ]
             }
           },
-          "physics": {
-            "type": "Physics",
+          "data": {
+            "type": "Data",
             "properties": {
-              "type": "dynamic",
-              "colliders": "capsule",
-              "capsuleRadius": 0.35,
-              "capsuleHalfHeight": 0.45,
-              "canSleep": false,
-              "friction": 0,
-              "enabledRotations": [
-                false,
-                false,
-                false
-              ]
-            }
-          },
-          "firstpersonplayer": {
-            "type": "FirstPersonPlayer",
-            "properties": {
-              "footstepEventName": "player:footstep"
+              "data": {
+                "crashcat": {
+                  "player": {
+                    "eyeHeight": 0.54,
+                    "radius": 0.35,
+                    "halfHeightOfCylinder": 0.45,
+                    "footstepEventName": "player:footstep"
+                  }
+                }
+              }
             }
           }
         },

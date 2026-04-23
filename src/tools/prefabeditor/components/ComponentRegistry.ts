@@ -9,11 +9,11 @@ export interface ComponentViewProps<P = Record<string, any>> {
     properties: P;
     /** Children to render for components that wrap the current subtree. */
     children?: React.ReactNode;
-    /** Entity local position (passed to wrapper components like Physics). */
+    /** Current node local position for wrapper components. */
     position?: [number, number, number];
-    /** Entity local rotation in radians (passed to wrapper components like Physics). */
+    /** Current node local rotation in radians for wrapper components. */
     rotation?: [number, number, number];
-    /** Entity local scale (passed to wrapper components like Physics). */
+    /** Current node local scale for wrapper components. */
     scale?: [number, number, number];
 }
 

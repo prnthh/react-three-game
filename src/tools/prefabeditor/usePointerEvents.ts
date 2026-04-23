@@ -1,6 +1,6 @@
 import type { ThreeEvent } from "@react-three/fiber";
 
-export type PointerHandler<T> = (event: ThreeEvent<PointerEvent>, entity: T) => void;
+export type PointerHandler<T> = (event: ThreeEvent<PointerEvent>, node: T) => void;
 
 export interface PointerEventHandlers<T> {
     onClick?: PointerHandler<T>;
@@ -15,7 +15,7 @@ export interface PointerEventHandlers<T> {
 
 export interface UsePointerEventsOptions<T> extends PointerEventHandlers<T> {
     enabled: boolean;
-    entity: T | null | undefined;
+    node: T | null | undefined;
 }
 
 export function hasPointerEventHandlers<T>(handlers: PointerEventHandlers<T>) {
@@ -33,7 +33,7 @@ export function hasPointerEventHandlers<T>(handlers: PointerEventHandlers<T>) {
 
 export function usePointerEvents<T>({
     enabled,
-    entity,
+    node,
     onClick,
     onPointerDown,
     onPointerUp,
@@ -61,16 +61,16 @@ export function usePointerEvents<T>({
 
         return (event: ThreeEvent<PointerEvent>) => {
             event.stopPropagation();
-            if (!entity) return;
-            handler(event, entity);
+            if (!node) return;
+            handler(event, node);
         };
     };
 
     const forwardMove = onPointerMove
         ? (event: ThreeEvent<PointerEvent>) => {
             event.stopPropagation();
-            if (!entity) return;
-            onPointerMove(event, entity);
+            if (!node) return;
+            onPointerMove(event, node);
         }
         : undefined;
 

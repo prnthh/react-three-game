@@ -1,16 +1,15 @@
 # react-three-game
 
-![Scene Editor](assets/editor.gif)
+![Prefab Editor](assets/editor.gif)
 
-JSON-first scene mounting and authoring for React Three Fiber.
+JSON-first prefab mounting and authoring for React Three Fiber.
 
-Built on top of [three.js](https://github.com/mrdoob/three.js), [@react-three/fiber](https://github.com/pmndrs/react-three-fiber), and [@react-three/rapier](https://github.com/pmndrs/react-three-rapier).
+Built on top of [three.js](https://github.com/mrdoob/three.js), [@react-three/fiber](https://github.com/pmndrs/react-three-fiber), and [@react-three/drei](https://github.com/pmndrs/drei).
 
-* **🧱 Prefabs** - Save scenes as serializable JSON and load them on their own or inside other scenes.
-* **🎬 Scene Editor** - Edit prefabs visually with hierarchy, inspector, transform gizmos, and play mode.
-* **⚛️ Physics** - Author rigid bodies directly in prefab data and run them through Rapier.
-* **🧩 Components** - Build scenes from reusable `GameObject` + component composition.
-* **🔧 Direct Runtime Access** - Get native `Object3D`, Rapier rigid body, and prefab store access without a parallel engine API.
+* **🧱 Prefabs** - Save prefabs as serializable JSON and load them on their own or inside larger app worlds.
+* **🎬 Prefab Editor** - Edit prefabs visually with hierarchy, inspector, transform gizmos, and play mode.
+* **🧩 Components** - Build prefabs from reusable `GameObject` + component composition.
+* **🔧 Direct Runtime Access** - Get native `Object3D`, runtime handles, and authored prefab mutation APIs without a parallel engine API.
 * **⚡ R3F Native** - Use normal React Three Fiber components whenever runtime behavior is clearer in code.
 
 ## Documentation
@@ -21,7 +20,7 @@ Built on top of [three.js](https://github.com/mrdoob/three.js), [@react-three/fi
 ## Install
 
 ```bash
-npm install react-three-game @react-three/drei @react-three/fiber @react-three/rapier three
+npm install react-three-game @react-three/drei @react-three/fiber three
 ```
 
 ## Usage
@@ -29,12 +28,11 @@ npm install react-three-game @react-three/drei @react-three/fiber @react-three/r
 Here is a minimal example that renders a prefab inside a normal R3F app:
 
 ```tsx
-import { Physics } from "@react-three/rapier";
 import { GameCanvas, PrefabRoot, ground } from "react-three-game";
 
 const prefab = {
   id: "starter-scene",
-  name: "Starter Scene",
+  name: "Starter Prefab",
   root: {
     id: "root",
     children: [
@@ -58,10 +56,6 @@ const prefab = {
             type: "Material",
             properties: { color: "#f66" },
           },
-          physics: {
-            type: "Physics",
-            properties: { type: "dynamic" },
-          },
         },
       },
     ],
@@ -71,16 +65,14 @@ const prefab = {
 export default function App() {
   return (
     <GameCanvas>
-      <Physics>
-        <ambientLight intensity={0.8} />
-        <PrefabRoot data={prefab} />
-      </Physics>
+      <ambientLight intensity={0.8} />
+      <PrefabRoot data={prefab} />
     </GameCanvas>
   );
 }
 ```
 
-This example renders a falling sphere above a ground plane.
+This example renders a simple authored prefab with a ground plane and mesh content.
 
 ## Prefab Editor
 
@@ -98,22 +90,21 @@ Open the hosted editor here:
 
 * https://prnth.com/react-three-game/editor
 
-## Prefabs And Mounted Scenes
+## Prefabs And Mounted Objects
 
 `Prefab` is the serializable pure data format.
 
-That means a saved scene is just a prefab, and the same prefab can be:
+That means authored content stays as a prefab, and the same prefab can be:
 
 * edited directly in `PrefabEditor`
 * rendered directly with `PrefabRoot`
-* loaded inside another scene as reusable content
+* loaded inside another prefab or app scene as reusable content
 
 `PrefabRoot` keeps the rendering model narrow and compositional:
 
 * `Transform` is the renderer-owned outer transform
 * `Geometry` or `BufferGeometry` + `Material` become the primary mesh content
 * non-instanced `Model` becomes the node's primary content
-* `Physics` is a renderer-owned outer wrapper
 * every other component `View` wraps the current subtree
 
 Custom component `View`s use normal React Three Fiber composition with `children`.
@@ -161,7 +152,7 @@ interface GameObject {
 
 ## Runtime Mutation
 
-Use native object access for Three.js behavior and the prefab store for authored data changes.
+Use editor or root refs for scene-native object access, and use the editor mutation methods for authored data changes.
 
 ```tsx
 import { useEffect, useRef } from "react";
@@ -171,7 +162,7 @@ function RaiseBall() {
   const editorRef = useRef<PrefabEditorRef>(null);
 
   useEffect(() => {
-    editorRef.current?.store.getState().updateNode("ball", (node) => ({
+    editorRef.current?.updateNode("ball", (node) => ({
       ...node,
       components: {
         ...node.components,
@@ -193,8 +184,53 @@ function RaiseBall() {
 For live Three.js access, use mounted objects directly:
 
 ```tsx
-const ball = editorRef.current?.getObject("ball");
+const ball = editorRef.current?.getNodeObject("ball");
 ball?.rotateY(0.5);
+```
+
+For runtime integrations that need edit-time re-sync, subscribe to authored scene changes:
+
+```tsx
+const stop = editorRef.current?.onSceneChange((revision) => {
+  console.log("scene changed", revision);
+});
+
+stop?.();
+```
+
+For runtime-owned imperative state, use node-local handles instead of reaching for ad hoc globals:
+
+```tsx
+import { useEffect } from "react";
+import { useAssetRuntime, useCurrentNode, useCurrentNodeHandle } from "react-three-game";
+
+function SpinnerView({ children }: { children?: React.ReactNode }) {
+  const { nodeId } = useCurrentNode();
+  const { registerNodeHandle } = useAssetRuntime();
+
+  useEffect(() => {
+    const handle = {
+      setSpeed(next: number) {
+        console.log("speed", next);
+      },
+    };
+
+    registerNodeHandle(nodeId, "spinner", handle);
+    return () => registerNodeHandle(nodeId, "spinner", null);
+  }, [nodeId, registerNodeHandle]);
+
+  return <>{children}</>;
+}
+
+function SpinnerStatus() {
+  const spinnerRef = useCurrentNodeHandle<{ setSpeed: (next: number) => void }>("spinner");
+
+  useEffect(() => {
+    spinnerRef.current?.setSpeed(2);
+  }, [spinnerRef]);
+
+  return null;
+}
 ```
 
 Mounted node metadata is mirrored onto the canonical Three.js wrapper object:
@@ -213,7 +249,7 @@ const playerById = editorRef.current?.root?.getObjectByProperty("userData.prefab
 Treat names as a convenience surface, not the primary lookup key:
 
 * names are not guaranteed unique
-* `getObject(id)` is still the stable authored-node lookup
+* `getNodeObject(id)` is the clearest stable authored-node lookup
 * traversal metadata is applied to the prefab node transform object, not necessarily the inner mesh or model child
 
 You can author extra `userData` from the editor with a `Data` component:
@@ -231,7 +267,7 @@ You can author extra `userData` from the editor with a `Data` component:
 For batched authored updates, write through the store once:
 
 ```tsx
-editorRef.current?.store.getState().updateNodes([
+editorRef.current?.updateNodes([
   {
     id: "orb1",
     update: (node) => ({
@@ -280,11 +316,10 @@ Custom component `View`s should use normal React and R3F behavior, such as `useF
 * `Prefab`
 * `GameObject`
 * `registerComponent`
-* `createPrefabStore`
-* `usePrefabStoreApi`
-* `useAssetRuntime()` / `useEntityRuntime()`
-* `useEntityObjectRef()` / `useEntityRigidBodyRef()`
+* `useAssetRuntime()` / `useCurrentNode()`
+* `useCurrentNodeObject()` / `useCurrentNodeHandle()`
 * `ground(...)`
+* `gameEvents` / `useGameEvent()` / `useClickEvent()`
 * `loadJson()` / `saveJson()`
 * `loadModel()` / `loadTexture()`
 * `loadSound()` / `loadFiles()`

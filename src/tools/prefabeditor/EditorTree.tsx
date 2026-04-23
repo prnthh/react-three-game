@@ -152,7 +152,7 @@ export default function EditorTree({
                 <div style={base.header}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }} onClick={() => setCollapsed(!collapsed)}>
                         <span>{collapsed ? '▶' : '▼'}</span>
-                        <span>Scene</span>
+                        <span>Prefab</span>
                     </div>
                     {!collapsed && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -384,7 +384,7 @@ const TreeNode = memo(function TreeNode({
                         trigger={({ ref, toggle }) => (
                             <button
                                 ref={ref}
-                                title="Scene Actions"
+                                title="Prefab Actions"
                                 style={tree.iconButton}
                                 onClick={(e) => {
                                     e.stopPropagation();

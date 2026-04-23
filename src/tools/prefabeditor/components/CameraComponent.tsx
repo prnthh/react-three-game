@@ -2,7 +2,7 @@ import { OrthographicCamera, PerspectiveCamera, useHelper } from '@react-three/d
 import { useRef } from 'react';
 import { CameraHelper, Object3D, OrthographicCamera as ThreeOrthographicCamera, PerspectiveCamera as ThreePerspectiveCamera } from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useEntityRuntime } from '../assetRuntime';
+import { useCurrentNode } from '../assetRuntime';
 import { Component } from './ComponentRegistry';
 import { FieldGroup, NumberField, SelectField } from './Input';
 
@@ -89,7 +89,7 @@ function CameraComponentEditor({ component, onUpdate }: { component: any; onUpda
 }
 
 function CameraComponentView({ properties, children }: { properties: any; children?: React.ReactNode }) {
-    const { editMode, isSelected } = useEntityRuntime();
+    const { editMode, isSelected } = useCurrentNode();
     const { size } = useThree();
     const merged = { ...cameraDefaults, ...properties };
     const projection = merged.projection ?? cameraDefaults.projection;

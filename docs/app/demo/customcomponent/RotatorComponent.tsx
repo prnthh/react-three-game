@@ -1,5 +1,5 @@
 import { useFrame } from "@react-three/fiber";
-import { Component, FieldRenderer, FieldDefinition, useEntityObjectRef } from "react-three-game";
+import { Component, FieldRenderer, FieldDefinition, useCurrentNodeObject } from "react-three-game";
 
 type RotationAxis = 'x' | 'y' | 'z';
 type RotatorProperties = {
@@ -32,7 +32,7 @@ function RotatorComponentEditor({ component, onUpdate }: { component: any; onUpd
 }
 
 function RotatorView({ properties, children }: { properties: RotatorProperties; children?: React.ReactNode }) {
-    const objectRef = useEntityObjectRef();
+    const objectRef = useCurrentNodeObject();
 
     useFrame((_, delta) => {
         const object = objectRef.current;

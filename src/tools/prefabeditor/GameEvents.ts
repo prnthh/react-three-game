@@ -2,16 +2,14 @@ import { useCallback, useEffect } from 'react';
 
 export type GameEventHandler<TPayload = unknown> = (payload: TPayload) => void;
 
-export type PhysicsEventPayload = {
+export type ContactEventPayload = {
     sourceEntityId?: string;
     sourceNodeId?: string;
     sourceObject?: unknown;
-    sourceRigidBody?: unknown;
     targetEntityId?: string | null;
     targetNodeId?: string | null;
     targetObject?: unknown;
-    targetRigidBody?: unknown;
-    rapierEvent?: unknown;
+    event?: unknown;
 };
 
 export type ClickEventPayload = {
@@ -31,10 +29,10 @@ export type ClickEventPayload = {
 };
 
 export interface GameEventMap {
-    'sensor:enter': PhysicsEventPayload;
-    'sensor:exit': PhysicsEventPayload;
-    'collision:enter': PhysicsEventPayload;
-    'collision:exit': PhysicsEventPayload;
+    'sensor:enter': ContactEventPayload;
+    'sensor:exit': ContactEventPayload;
+    'collision:enter': ContactEventPayload;
+    'collision:exit': ContactEventPayload;
     click: ClickEventPayload;
     [eventType: string]: unknown;
 }
@@ -105,23 +103,10 @@ export function useGameEvent<TType extends string>(
     }, [type, stableHandler]);
 }
 
-export function usePhysicsEvent<TType extends string>(
-    type: TType,
-    handler: GameEventHandler<TType extends keyof GameEventMap ? GameEventMap[TType] : unknown>,
-    deps: React.DependencyList = [],
-) {
-    useGameEvent(type, handler, deps);
-}
-
 export function useClickEvent<TType extends string>(
     type: TType,
     handler: GameEventHandler<TType extends keyof GameEventMap ? GameEventMap[TType] : unknown>,
     deps: React.DependencyList = [],
 ) {
     useGameEvent(type, handler, deps);
-}
-
-export function getEntityIdFromRigidBody(rigidBody: { userData?: unknown } | null | undefined) {
-    const entityId = (rigidBody?.userData as { entityId?: unknown } | undefined)?.entityId;
-    return typeof entityId === 'string' ? entityId : null;
 }

@@ -1,10 +1,9 @@
 import React, { createContext, useContext, useMemo, useRef, useState, useEffect, useCallback } from "react";
 import { Merged, useHelper } from '@react-three/drei';
-import { InstancedRigidBodies } from "@react-three/rapier";
-import type { InstancedRigidBodyProps } from "@react-three/rapier";
-import { ActiveCollisionTypes } from "@dimforge/rapier3d-compat";
-import { Mesh, Matrix4, Object3D, Group, Vector3, Quaternion, Euler, InstancedMesh, BoxHelper } from "three";
-import { PhysicsProps } from "./components/PhysicsComponent";
+import { ThreeEvent } from '@react-three/fiber';
+import { Mesh, Matrix4, Object3D, Group, BoxHelper } from "three";
+import { useStore } from "zustand";
+import { createStore, type StoreApi } from "zustand/vanilla";
 import { usePointerEvents } from "./usePointerEvents";
 
 export type RepeatAxisConfig = {
@@ -81,11 +80,11 @@ export type InstanceData = {
     id: string;
     sourceId: string;
     locked?: boolean;
+    visible?: boolean;
     position: [number, number, number];
     rotation: [number, number, number];
     scale: [number, number, number];
     meshPath: string;
-    physics?: PhysicsProps | undefined;
 };
 
 // Helper functions for comparison
@@ -98,52 +97,83 @@ function arrayEquals(a: number[], b: number[]): boolean {
     return true;
 }
 
-function stableSerialize(value: unknown): string {
-    if (Array.isArray(value)) {
-        return `[${value.map(stableSerialize).join(',')}]`;
-    }
-
-    if (value && typeof value === 'object') {
-        const entries = Object.entries(value as Record<string, unknown>)
-            .sort(([a], [b]) => a.localeCompare(b))
-            .map(([key, entry]) => `${key}:${stableSerialize(entry)}`);
-        return `{${entries.join(',')}}`;
-    }
-
-    return JSON.stringify(value);
-}
-
-function getPhysicsSignature(physics?: PhysicsProps) {
-    return physics ? stableSerialize(physics) : 'none';
-}
-
-function hasPhysics(instance: InstanceData): instance is InstanceData & { physics: PhysicsProps } {
-    return Boolean(instance.physics);
-}
-
-function getColliderType(physics: PhysicsProps) {
-    return physics.colliders || (physics.type === 'fixed' ? 'trimesh' : 'hull');
-}
-
 function instanceEquals(a: InstanceData, b: InstanceData): boolean {
     return a.id === b.id &&
         a.sourceId === b.sourceId &&
         a.locked === b.locked &&
+        a.visible === b.visible &&
         a.meshPath === b.meshPath &&
         arrayEquals(a.position, b.position) &&
         arrayEquals(a.rotation, b.rotation) &&
-        arrayEquals(a.scale, b.scale) &&
-        getPhysicsSignature(a.physics) === getPhysicsSignature(b.physics);
+        arrayEquals(a.scale, b.scale);
 }
 
-// --- Context ---
-type GameInstanceContextType = {
+type InstanceRegistryState = {
+    instancesById: Record<string, InstanceData>;
+    sourceInstanceIdsById: Record<string, Record<string, true> | undefined>;
     addInstance: (instance: InstanceData) => void;
     removeInstance: (id: string) => void;
-    instances: InstanceData[];
+};
+
+function createInstanceRegistryStore() {
+    return createStore<InstanceRegistryState>()((set, get) => ({
+        instancesById: {},
+        sourceInstanceIdsById: {},
+        addInstance: (instance) => {
+            const previous = get().instancesById[instance.id];
+            if (previous && instanceEquals(previous, instance)) {
+                return;
+            }
+
+            set(state => {
+                const instancesById = { ...state.instancesById, [instance.id]: instance };
+                const sourceInstanceIdsById = { ...state.sourceInstanceIdsById };
+
+                if (previous && previous.sourceId !== previous.id) {
+                    const previousSourceInstances = { ...(sourceInstanceIdsById[previous.sourceId] ?? {}) };
+                    delete previousSourceInstances[previous.id];
+                    sourceInstanceIdsById[previous.sourceId] = Object.keys(previousSourceInstances).length > 0
+                        ? previousSourceInstances
+                        : undefined;
+                }
+
+                if (instance.sourceId !== instance.id) {
+                    sourceInstanceIdsById[instance.sourceId] = {
+                        ...(sourceInstanceIdsById[instance.sourceId] ?? {}),
+                        [instance.id]: true,
+                    };
+                }
+
+                return { instancesById, sourceInstanceIdsById };
+            });
+        },
+        removeInstance: (id) => {
+            const previous = get().instancesById[id];
+            if (!previous) return;
+
+            set(state => {
+                const instancesById = { ...state.instancesById };
+                const sourceInstanceIdsById = { ...state.sourceInstanceIdsById };
+                delete instancesById[id];
+
+                if (previous.sourceId !== previous.id) {
+                    const sourceInstances = { ...(sourceInstanceIdsById[previous.sourceId] ?? {}) };
+                    delete sourceInstances[id];
+                    sourceInstanceIdsById[previous.sourceId] = Object.keys(sourceInstances).length > 0
+                        ? sourceInstances
+                        : undefined;
+                }
+
+                return { instancesById, sourceInstanceIdsById };
+            });
+        },
+    }));
+}
+
+type GameInstanceContextType = {
+    store: StoreApi<InstanceRegistryState>;
     meshes: Record<string, Mesh>;
     modelParts?: Record<string, number>;
-    hasInstance: (id: string) => boolean;
 };
 const GameInstanceContext = createContext<GameInstanceContextType | null>(null);
 
@@ -151,6 +181,7 @@ export function GameInstanceProvider({
     children,
     models,
     onSelect,
+    onClick,
     registerRef,
     selectedId,
     editMode
@@ -158,39 +189,13 @@ export function GameInstanceProvider({
     children: React.ReactNode,
     models: { [filename: string]: Object3D },
     onSelect?: (id: string | null) => void,
+    onClick?: (event: ThreeEvent<PointerEvent>, nodeId: string, object: Object3D | null) => void,
     registerRef?: (id: string, obj: Object3D | null) => void,
     selectedId?: string | null,
     editMode?: boolean
 }) {
-    const [instances, setInstances] = useState<InstanceData[]>([]);
-
-    const addInstance = useCallback((instance: InstanceData) => {
-        setInstances(prev => {
-            const idx = prev.findIndex(i => i.id === instance.id);
-            if (idx !== -1) {
-                // Update existing if changed
-                if (instanceEquals(prev[idx], instance)) {
-                    return prev;
-                }
-                const copy = [...prev];
-                copy[idx] = instance;
-                return copy;
-            }
-            // Add new
-            return [...prev, instance];
-        });
-    }, []);
-
-    const removeInstance = useCallback((id: string) => {
-        setInstances(prev => {
-            if (!prev.find(i => i.id === id)) return prev;
-            return prev.filter(i => i.id !== id);
-        });
-    }, []);
-
-    const hasInstance = useCallback((id: string) => {
-        return instances.some(i => i.id === id || i.sourceId === id);
-    }, [instances]);
+    const [instanceStore] = useState(createInstanceRegistryStore);
+    const instancesById = useStore(instanceStore, state => state.instancesById);
 
     // Flatten all model meshes once (models → flat mesh parts)
     // Note: Geometry is cloned with baked transforms for instancing
@@ -227,12 +232,14 @@ export function GameInstanceProvider({
         };
     }, [flatMeshes]);
 
-    // Group instances by meshPath and physics presence for batch rendering.
+    const instances = useMemo(() => Object.values(instancesById), [instancesById]);
+
+    // Group instances by meshPath for batched rendering.
     const grouped = useMemo(() => {
-        const groups: Record<string, { hasPhysics: boolean, instances: InstanceData[] }> = {};
+        const groups: Record<string, { instances: InstanceData[] }> = {};
         for (const inst of instances) {
-            const key = `${inst.meshPath}__${inst.physics ? 'physics' : 'visual'}`;
-            if (!groups[key]) groups[key] = { hasPhysics: Boolean(inst.physics), instances: [] };
+            const key = inst.meshPath;
+            if (!groups[key]) groups[key] = { instances: [] };
             groups[key].instances.push(inst);
         }
 
@@ -243,49 +250,23 @@ export function GameInstanceProvider({
         return groups;
     }, [instances]);
 
+    const contextValue = useMemo(() => ({
+        store: instanceStore,
+        meshes: flatMeshes,
+        modelParts,
+    }), [instanceStore, flatMeshes, modelParts]);
+
     return (
         <GameInstanceContext.Provider
-            value={{
-                addInstance,
-                removeInstance,
-                instances,
-                meshes: flatMeshes,
-                modelParts,
-                hasInstance
-            }}
+            value={contextValue}
         >
-            {/* Render normal prefab hierarchy (non-instanced objects) */}
             {children}
 
-            {/* Render physics-enabled instanced groups using InstancedRigidBodies */}
             {Object.entries(grouped).map(([key, group]) => {
-                if (!group.hasPhysics) return null;
                 const modelKey = group.instances[0].meshPath;
                 const partCount = modelParts[modelKey] || 0;
                 if (partCount === 0) return null;
 
-                return (
-                    <InstancedRigidGroup
-                        key={key}
-                        group={group}
-                        modelKey={modelKey}
-                        partCount={partCount}
-                        flatMeshes={flatMeshes}
-                        onSelect={onSelect}
-                        editMode={editMode}
-                    />
-                );
-            })}
-
-            {/* Render non-physics instanced visuals using Merged (one per model type) */}
-            {Object.entries(grouped).map(([key, group]) => {
-                if (group.hasPhysics) return null;
-
-                const modelKey = group.instances[0].meshPath;
-                const partCount = modelParts[modelKey] || 0;
-                if (partCount === 0) return null;
-
-                // Create mesh subset for this specific model
                 const meshesForModel: Record<string, Mesh> = {};
                 for (let i = 0; i < partCount; i++) {
                     const partKey = `${modelKey}__${i}`;
@@ -300,12 +281,13 @@ export function GameInstanceProvider({
                         receiveShadow
                     >
                         {(instancesMap: any) => (
-                            <NonPhysicsInstancedGroup
+                            <InstancedGroup
                                 modelKey={modelKey}
                                 group={group}
                                 partCount={partCount}
                                 instancesMap={instancesMap}
                                 onSelect={onSelect}
+                                onClick={onClick}
                                 registerRef={registerRef}
                                 selectedId={selectedId}
                                 editMode={editMode}
@@ -317,183 +299,45 @@ export function GameInstanceProvider({
         </GameInstanceContext.Provider>
     );
 }
-
-// Render physics-enabled instances using InstancedRigidBodies
-function InstancedRigidGroup({
-    group,
-    modelKey,
-    partCount,
-    flatMeshes,
-    onSelect,
-    editMode
-}: {
-    group: { hasPhysics: boolean, instances: InstanceData[] },
-    modelKey: string,
-    partCount: number,
-    flatMeshes: Record<string, Mesh>,
-    onSelect?: (id: string | null) => void,
-    editMode?: boolean
-}) {
-    const meshRefs = useRef<(InstancedMesh | null)[]>([]);
-    const rigidBodiesRef = useRef<(any | null)[] | null>(null);
-
-    const instances = useMemo<InstancedRigidBodyProps[]>(
-        () => group.instances.filter(hasPhysics).map(inst => {
-            const { activeCollisionTypes: _activeCollisionTypes, colliders: _colliders, userData, ...rigidBodyProps } = inst.physics;
-
-            return {
-                key: inst.id,
-                position: inst.position,
-                rotation: inst.rotation,
-                scale: inst.scale,
-                ...rigidBodyProps,
-                colliders: getColliderType(inst.physics) as any,
-                userData: { ...(userData as Record<string, unknown> | undefined), entityId: inst.sourceId },
-            };
-        }),
-        [group.instances]
-    );
-
-    // Apply scale to visual meshes (InstancedRigidBodies only scales colliders, not visuals)
-    useEffect(() => {
-        const matrix = new Matrix4();
-        const pos = new Vector3();
-        const quat = new Quaternion();
-        const euler = new Euler();
-        const scl = new Vector3();
-
-        meshRefs.current.forEach(mesh => {
-            if (!mesh) return;
-
-            group.instances.forEach((inst, i) => {
-                pos.set(...inst.position);
-                euler.set(...inst.rotation);
-                quat.setFromEuler(euler);
-                scl.set(...inst.scale);
-                matrix.compose(pos, quat, scl);
-                mesh.setMatrixAt(i, matrix);
-            });
-            mesh.instanceMatrix.needsUpdate = true;
-        });
-
-        // Update rigid body positions when instances change
-        if (rigidBodiesRef.current) {
-            try {
-                group.instances.forEach((inst, i) => {
-                    const body = rigidBodiesRef.current?.[i];
-                    if (body && body.setTranslation && body.setRotation) {
-                        pos.set(...inst.position);
-                        euler.set(...inst.rotation);
-                        quat.setFromEuler(euler);
-                        body.setTranslation(pos, false);
-                        body.setRotation(quat, false);
-                    }
-                });
-            } catch (error) {
-                // Ignore errors when switching between instanced/non-instanced states
-                console.warn('Failed to update rigidbody positions:', error);
-            }
-        }
-    }, [group.instances]);
-
-    useEffect(() => {
-        group.instances.forEach((inst, i) => {
-            if (!inst.physics || inst.physics.activeCollisionTypes !== 'all') return;
-
-            const body = rigidBodiesRef.current?.[i];
-            if (!body || !body.numColliders || !body.collider) return;
-
-            for (let colliderIndex = 0; colliderIndex < body.numColliders(); colliderIndex++) {
-                const collider = body.collider(colliderIndex);
-                collider.setActiveCollisionTypes?.(
-                    ActiveCollisionTypes.DEFAULT |
-                    ActiveCollisionTypes.KINEMATIC_FIXED |
-                    ActiveCollisionTypes.KINEMATIC_KINEMATIC
-                );
-            }
-        });
-    }, [group.instances]);
-
-    // Handle click on instanced mesh in edit mode
-    const handleClick = (e: any) => {
-        const instanceId = e.instanceId;
-        const instance = instanceId !== undefined ? group.instances[instanceId] : undefined;
-        if (!instance) return;
-
-        if (editMode) {
-            if (!onSelect || instance.locked) return;
-
-            e.stopPropagation();
-            onSelect(instance.sourceId);
-            return;
-        }
-
-    };
-
-    const shouldHandleClick = editMode;
-
-    // Add key to force remount when instance count changes significantly (helps with cleanup)
-    const rigidBodyKey = `rb_${modelKey}_${group.instances.map(inst => `${inst.id}:${getPhysicsSignature(inst.physics)}`).join('|')}`;
-
-    return (
-        <InstancedRigidBodies
-            key={rigidBodyKey}
-            ref={rigidBodiesRef}
-            instances={instances}
-        >
-            {Array.from({ length: partCount }).map((_, i) => {
-                const mesh = flatMeshes[`${modelKey}__${i}`];
-                if (!mesh) return null;
-                return (
-                    <instancedMesh
-                        key={i}
-                        ref={el => { meshRefs.current[i] = el; }}
-                        args={[mesh.geometry, mesh.material, group.instances.length]}
-                        castShadow
-                        receiveShadow
-                        frustumCulled={false}
-                        onClick={shouldHandleClick ? handleClick : undefined}
-                    />
-                );
-            })}
-        </InstancedRigidBodies>
-    );
-}
-
-// Render non-physics instances using Merged (instancing without rigid bodies)
-function NonPhysicsInstancedGroup({
+function InstancedGroup({
     modelKey,
     group,
     partCount,
     instancesMap,
     onSelect,
+    onClick,
     registerRef,
     selectedId,
     editMode
 }: {
     modelKey: string;
-    group: { hasPhysics: boolean, instances: InstanceData[] };
+    group: { instances: InstanceData[] };
     partCount: number;
     instancesMap: Record<string, React.ComponentType<any>>;
     onSelect?: (id: string | null) => void;
+    onClick?: (event: ThreeEvent<PointerEvent>, nodeId: string, object: Object3D | null) => void;
     registerRef?: (id: string, obj: Object3D | null) => void;
     selectedId?: string | null;
     editMode?: boolean;
 }) {
-    // Pre-compute which Instance components exist for this model
     const InstanceComponents = useMemo(() =>
         Array.from({ length: partCount }, (_, i) => instancesMap[`${modelKey}__${i}`]).filter(Boolean),
         [instancesMap, modelKey, partCount]
     );
+    const visibleInstances = useMemo(
+        () => group.instances.filter(instance => instance.visible !== false),
+        [group.instances]
+    );
 
     return (
         <>
-            {group.instances.map(inst => (
+            {visibleInstances.map(inst => (
                 <InstanceGroupItem
                     key={inst.id}
                     instance={inst}
                     InstanceComponents={InstanceComponents}
                     onSelect={onSelect}
+                    onClick={onClick}
                     registerRef={registerRef}
                     selectedId={selectedId}
                     editMode={editMode}
@@ -508,6 +352,7 @@ function InstanceGroupItem({
     instance,
     InstanceComponents,
     onSelect,
+    onClick,
     registerRef,
     selectedId,
     editMode
@@ -515,6 +360,7 @@ function InstanceGroupItem({
     instance: InstanceData;
     InstanceComponents: React.ComponentType<any>[];
     onSelect?: (id: string | null) => void;
+    onClick?: (event: ThreeEvent<PointerEvent>, nodeId: string, object: Object3D | null) => void;
     registerRef?: (id: string, obj: Object3D | null) => void;
     selectedId?: string | null;
     editMode?: boolean;
@@ -523,15 +369,18 @@ function InstanceGroupItem({
     const isLocked = Boolean(instance.locked);
     const isSelected = selectedId === instance.id || selectedId === instance.sourceId;
     const canSelect = editMode && !isLocked;
-    const canClick = false;
+    const canClick = !editMode && Boolean(onClick);
 
     const pointerHandlers = usePointerEvents({
         enabled: canSelect || canClick,
-        entity: instance,
-        onClick: () => {
+        node: instance,
+        onClick: (event) => {
             if (editMode) {
                 onSelect?.(instance.sourceId);
+                return;
             }
+
+            onClick?.(event, instance.sourceId, groupRef.current);
         },
     });
 
@@ -558,13 +407,11 @@ function InstanceGroupItem({
 }
 
 
-// Hook to check if an instance exists
 export function useInstanceCheck(id: string): boolean {
     const ctx = useContext(GameInstanceContext);
-    return ctx?.hasInstance(id) ?? false;
+    return ctx ? useStore(ctx.store, state => Boolean(state.instancesById[id] || state.sourceInstanceIdsById[id])) : false;
 }
 
-// GameInstance component: registers an instance for batch rendering (renders nothing itself)
 export const GameInstance = React.forwardRef<Group, {
     id: string;
     sourceId?: string;
@@ -573,7 +420,8 @@ export const GameInstance = React.forwardRef<Group, {
     position: [number, number, number];
     rotation: [number, number, number];
     scale: [number, number, number];
-    physics?: PhysicsProps | undefined;
+    visible?: boolean;
+    onClick?: (event: ThreeEvent<PointerEvent>, nodeId: string, object: Object3D | null) => void;
 }>(({
     id,
     sourceId,
@@ -582,29 +430,28 @@ export const GameInstance = React.forwardRef<Group, {
     position,
     rotation,
     scale,
-    physics = undefined,
+    visible = true,
+    onClick: _onClick,
 }, ref) => {
     const ctx = useContext(GameInstanceContext);
-    const addInstance = ctx?.addInstance;
-    const removeInstance = ctx?.removeInstance;
     const [positionX, positionY, positionZ] = position;
     const [rotationX, rotationY, rotationZ] = rotation;
     const [scaleX, scaleY, scaleZ] = scale;
-    const physicsSignature = getPhysicsSignature(physics);
 
     const instance = useMemo<InstanceData>(() => ({
         id,
         sourceId: sourceId ?? id,
         locked,
+        visible,
         meshPath: modelUrl,
         position,
         rotation,
         scale,
-        physics,
     }), [
         id,
         sourceId,
         locked,
+        visible,
         modelUrl,
         positionX,
         positionY,
@@ -615,17 +462,17 @@ export const GameInstance = React.forwardRef<Group, {
         scaleX,
         scaleY,
         scaleZ,
-        physicsSignature,
     ]);
 
     useEffect(() => {
-        if (!addInstance || !removeInstance) return;
+        if (!ctx) return;
+        const store = ctx.store;
+        const { addInstance, removeInstance } = store.getState();
         addInstance(instance);
         return () => {
             removeInstance(instance.id);
         };
-    }, [addInstance, removeInstance, instance]);
+    }, [ctx?.store, instance]);
 
-    // No visual rendering - provider handles all instanced visuals
     return null;
 });

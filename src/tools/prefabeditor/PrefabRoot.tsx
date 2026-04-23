@@ -1,24 +1,20 @@
-import { forwardRef, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { forwardRef, type ForwardRefExoticComponent, type RefAttributes, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { Euler, Group, Matrix4, Object3D, Quaternion, Texture, Vector3, } from "three";
 import { ThreeEvent } from "@react-three/fiber";
 import { useStore } from "zustand";
 import { useClickValid } from "./useClickValid";
 
-import { GameObject as GameObjectType, Prefab, findComponent, getNodeUserData } from "./types";
+import { ComponentData, GameObject as GameObjectType, Prefab, findComponent, getNodeUserData } from "./types";
 import type { Component } from "./components/ComponentRegistry";
 import { getComponentDef, getComponentAssetRefs, registerComponent } from "./components/ComponentRegistry";
 import { builtinComponents } from "./components";
 import { loadModel, loadSound, loadTexture, LoadedModels, LoadedSounds, LoadedTextures } from "../dragdrop";
 import { GameInstance, GameInstanceProvider, getRepeatAxesFromModelProperties, RepeatAxisConfig, useInstanceCheck } from "./InstanceProvider";
 import { composeTransform, decompose } from "./utils";
-import { isPhysicsProps, PhysicsProps } from "./components/PhysicsComponent";
 import { createPrefabStore, PrefabStoreApi, PrefabStoreProvider, useOptionalPrefabStoreApi, usePrefabChildIds, usePrefabNode, usePrefabRootId } from "./prefabStore";
-import { AssetRuntimeContext, EntityRuntimeScope, type AssetRuntimeContextValue } from "./assetRuntime";
+import { AssetRuntimeContext, CurrentNodeScope, type AssetRuntimeContextValue } from "./assetRuntime";
 import { gameEvents } from "./GameEvents";
 import { sound as soundManager } from "../../helpers/SoundManager";
-
-// Dynamic type to avoid requiring @react-three/rapier when not using physics
-type RapierRigidBody = any;
 
 builtinComponents.forEach(registerComponent);
 
@@ -33,29 +29,10 @@ function resolveAssetPath(basePath: string, file: string): string {
     return file.startsWith("/") ? `${basePath}${file}` : `${basePath}/${file}`;
 }
 
-/** Check if all model assets required by a node are loaded. */
-function isNodeReady(node: GameObjectType, loadedModels: LoadedModels): boolean {
-    const model = findComponent(node, "Model");
+/** Check if a model component's assets are loaded. */
+function isNodeReady(model: ComponentData | undefined, loadedModels: LoadedModels): boolean {
     if (!model?.properties?.filename) return true;
     return Boolean(loadedModels[model.properties.filename]);
-}
-
-function getNodeClickEventName(node: GameObjectType | null | undefined) {
-    const clickComponents = [
-        findComponent(node, 'BufferGeometry'),
-        findComponent(node, 'Geometry'),
-    ];
-
-    for (const component of clickComponents) {
-        if (!component?.properties?.emitClickEvent) continue;
-
-        const eventName = component.properties.clickEventName;
-        if (typeof eventName === 'string' && eventName.trim()) {
-            return eventName.trim();
-        }
-    }
-
-    return null;
 }
 
 function getNodeMetadataProps(node: GameObjectType) {
@@ -71,9 +48,9 @@ function getNodeMetadataProps(node: GameObjectType) {
 }
 
 export interface PrefabRootRef {
-    root: Group | null;
-    getObject: (nodeId: string) => Object3D | null;
-    getRigidBody: (nodeId: string) => any;
+    root: Object3D | null;
+    getNodeObject: (nodeId: string) => Object3D | null;
+    getNodeHandle: <T = unknown>(nodeId: string, kind: string) => T | null;
     addModel: (path: string, model: Object3D) => void;
     addTexture: (path: string, texture: Texture) => void;
     addSound: (path: string, sound: AudioBuffer) => void;
@@ -82,14 +59,32 @@ export interface PrefabRootRef {
 export interface PrefabRootProps {
     editMode?: boolean;
     data?: Prefab;
-    store?: PrefabStoreApi;
     selectedId?: string | null;
     onSelect?: (id: string | null) => void;
-    onClick?: (event: ThreeEvent<PointerEvent>, entity: GameObjectType) => void;
+    onClick?: (event: ThreeEvent<PointerEvent>, node: GameObjectType) => void;
+    onEditNodeClick?: (event: ThreeEvent<PointerEvent>, node: GameObjectType) => void;
     basePath?: string;
 }
 
-export const PrefabRoot = forwardRef<PrefabRootRef, PrefabRootProps>(({ editMode, data, store, selectedId, onSelect, onClick, basePath = "" }, ref) => {
+interface PrefabRootInternalProps extends PrefabRootProps {
+    store?: PrefabStoreApi;
+}
+
+type CompositionComponent = {
+    key: string;
+    View: NonNullable<Component["View"]>;
+    properties: ComponentData["properties"];
+};
+
+type AnalyzedNodeComponents = {
+    geometry: ComponentData | undefined;
+    material: ComponentData | undefined;
+    model: ComponentData | undefined;
+    clickEventName: string | null;
+    composition: CompositionComponent[];
+};
+
+export const PrefabRootInternal = forwardRef<PrefabRootRef, PrefabRootInternalProps>(({ editMode, data, store, selectedId, onSelect, onClick, onEditNodeClick, basePath = "" }, ref) => {
 
     const [models, setModels] = useState<LoadedModels>({});
     const [textures, setTextures] = useState<LoadedTextures>({});
@@ -102,8 +97,7 @@ export const PrefabRoot = forwardRef<PrefabRootRef, PrefabRootProps>(({ editMode
     const failedTextures = useRef(new Set<string>());
     const failedSounds = useRef(new Set<string>());
     const objectRefs = useRef<Record<string, Object3D | null>>({});
-    const rigidBodyRefs = useRef<Map<string, RapierRigidBody | null>>(new Map());
-    const rootRef = useRef<Group>(null);
+    const nodeHandles = useRef<Map<string, Map<string, unknown>>>(new Map());
     const parentStore = useOptionalPrefabStoreApi();
     const [ownedStore] = useState<PrefabStoreApi | null>(() => {
         if (data) return createPrefabStore(data);
@@ -113,38 +107,57 @@ export const PrefabRoot = forwardRef<PrefabRootRef, PrefabRootProps>(({ editMode
     const resolvedStore = store ?? parentStore ?? ownedStore!;
     const usesOwnedStore = resolvedStore === ownedStore;
     const shouldProvideStoreContext = !parentStore || parentStore !== resolvedStore;
+    const rootId = useStore(resolvedStore, state => state.rootId);
     const assetManifestKey = useStore(resolvedStore, state => state.assetManifestKey);
 
     const availableModels = useMemo(() => ({ ...models, ...injectedModels }), [models, injectedModels]);
     const availableTextures = useMemo(() => ({ ...textures, ...injectedTextures }), [textures, injectedTextures]);
     const availableSounds = useMemo(() => ({ ...sounds, ...injectedSounds }), [sounds, injectedSounds]);
 
-    const getObject = useCallback((id: string) => {
+    const getNodeObject = useCallback((id: string) => {
         return objectRefs.current[id] ?? null;
     }, []);
 
-    const getRigidBody = useCallback((id: string) => {
-        return rigidBodyRefs.current.get(id) ?? null;
+    const getNodeHandle = useCallback(<T = unknown,>(id: string, kind: string) => {
+        return (nodeHandles.current.get(id)?.get(kind) as T | undefined) ?? null;
+    }, []);
+
+    const registerNodeHandle = useCallback((id: string, kind: string, handle: unknown) => {
+        const current = nodeHandles.current.get(id);
+
+        if (handle == null) {
+            if (!current) return;
+            current.delete(kind);
+            if (current.size === 0) {
+                nodeHandles.current.delete(id);
+            }
+            return;
+        }
+
+        if (current) {
+            current.set(kind, handle);
+            return;
+        }
+
+        nodeHandles.current.set(id, new Map([[kind, handle]]));
     }, []);
 
     useImperativeHandle(ref, () => ({
-        root: rootRef.current,
-        getObject,
-        getRigidBody: (nodeId: string) => rigidBodyRefs.current.get(nodeId) ?? null,
+        get root() {
+            return objectRefs.current[rootId] ?? null;
+        },
+        getNodeObject,
+        getNodeHandle,
         addModel: (path: string, model: Object3D) => setInjectedModels(prev => ({ ...prev, [path]: model })),
         addTexture: (path: string, texture: Texture) => setInjectedTextures(prev => ({ ...prev, [path]: texture })),
         addSound: (path: string, sound: AudioBuffer) => {
             soundManager.setBuffer(path, sound);
             setInjectedSounds(prev => ({ ...prev, [path]: sound }));
         },
-    }), [getObject]);
+    }), [getNodeHandle, getNodeObject, rootId]);
 
     const registerRef = useCallback((id: string, obj: Object3D | null) => {
         objectRefs.current[id] = obj;
-    }, []);
-
-    const registerRigidBodyRef = useCallback((id: string, rb: any) => {
-        rigidBodyRefs.current.set(id, rb);
     }, []);
 
     useEffect(() => {
@@ -227,35 +240,44 @@ export const PrefabRoot = forwardRef<PrefabRootRef, PrefabRootProps>(({ editMode
     }, [resolvedStore, assetManifestKey, basePath, injectedModels, injectedSounds, injectedTextures, models, sounds, textures]);
 
     const assetRuntime = useMemo<AssetRuntimeContextValue>(() => ({
-        getObject,
-        getRigidBody,
-        registerRigidBodyRef,
+        registerNodeHandle,
+        getNodeHandle,
+        getNodeObject,
         getModel: (path: string) => availableModels[path] ?? null,
         getTexture: (path: string) => availableTextures[path] ?? null,
         getSound: (path: string) => availableSounds[path] ?? null,
         getAssetRevision: () => `${Object.keys(availableTextures).sort().join('|')}::${Object.keys(availableModels).sort().join('|')}`,
-    }), [getObject, getRigidBody, registerRigidBodyRef, availableModels, availableTextures, availableSounds]);
+    }), [registerNodeHandle, getNodeHandle, getNodeObject, availableModels, availableTextures, availableSounds]);
+
+    const handleNodeClick = useCallback((event: ThreeEvent<PointerEvent>, nodeId: string, fallbackObject: Object3D | null) => {
+        const node = resolvedStore.getState().nodesById[nodeId];
+        if (!node) return;
+
+        const { clickEventName } = analyzeNodeComponents(node);
+        emitNodePointerEvent(clickEventName, event, nodeId, node, fallbackObject);
+        onClick?.(event, node);
+    }, [onClick, resolvedStore]);
 
     const content = (
-        <group ref={rootRef}>
-            <GameInstanceProvider
-                models={availableModels}
+        <GameInstanceProvider
+            models={availableModels}
+            selectedId={selectedId}
+            editMode={editMode}
+            onSelect={editMode ? onSelect : undefined}
+            onClick={editMode ? undefined : handleNodeClick}
+            registerRef={registerRef}
+        >
+            <StoreRootNode
                 selectedId={selectedId}
-                editMode={editMode}
                 onSelect={editMode ? onSelect : undefined}
+                onClick={editMode ? undefined : handleNodeClick}
+                onEditNodeClick={editMode ? onEditNodeClick : undefined}
                 registerRef={registerRef}
-            >
-                <StoreRootNode
-                    selectedId={selectedId}
-                    onSelect={editMode ? onSelect : undefined}
-                    onClick={onClick}
-                    registerRef={registerRef}
-                    loadedModels={availableModels}
-                    editMode={editMode}
-                    parentMatrix={IDENTITY}
-                />
-            </GameInstanceProvider>
-        </group>
+                loadedModels={availableModels}
+                editMode={editMode}
+                parentMatrix={IDENTITY}
+            />
+        </GameInstanceProvider>
     );
 
     const runtimeContent = <AssetRuntimeContext.Provider value={assetRuntime}>{content}</AssetRuntimeContext.Provider>;
@@ -267,9 +289,66 @@ export const PrefabRoot = forwardRef<PrefabRootRef, PrefabRootProps>(({ editMode
     return <PrefabStoreProvider store={resolvedStore}>{runtimeContent}</PrefabStoreProvider>;
 });
 
+export const PrefabRoot = PrefabRootInternal as unknown as ForwardRefExoticComponent<PrefabRootProps & RefAttributes<PrefabRootRef>>;
+
 function StoreRootNode(props: Omit<RendererProps, "nodeId">) {
     const rootId = usePrefabRootId();
     return <GameObjectRenderer {...props} nodeId={rootId} />;
+}
+
+function getClickEventName(component: ComponentData | undefined) {
+    if (!component?.properties?.emitClickEvent) return null;
+
+    const eventName = component.properties.clickEventName;
+    return typeof eventName === 'string' && eventName.trim() ? eventName.trim() : null;
+}
+
+function analyzeNodeComponents(node: GameObjectType): AnalyzedNodeComponents {
+    let bufferGeometry: ComponentData | undefined;
+    let geometry: ComponentData | undefined;
+    let material: ComponentData | undefined;
+    let model: ComponentData | undefined;
+    const composition: CompositionComponent[] = [];
+
+    for (const [key, component] of Object.entries(node.components ?? {})) {
+        if (!component?.type) continue;
+
+        switch (component.type) {
+            case "Transform":
+                break;
+            case "BufferGeometry":
+                bufferGeometry = component;
+                break;
+            case "Geometry":
+                geometry = component;
+                break;
+            case "Material":
+                material = component;
+                break;
+            case "Model":
+                model = component;
+                break;
+            default: {
+                const def = getComponentDef(component.type);
+                if (!def?.View) break;
+
+                composition.push({
+                    key,
+                    View: def.View,
+                    properties: component.properties,
+                });
+                break;
+            }
+        }
+    }
+
+    return {
+        geometry: bufferGeometry ?? geometry,
+        material,
+        model,
+        clickEventName: getClickEventName(bufferGeometry) ?? getClickEventName(geometry) ?? getClickEventName(model),
+        composition,
+    };
 }
 
 function emitNodePointerEvent(
@@ -323,28 +402,27 @@ export function GameObjectRenderer(props: RendererProps) {
 }
 
 
-function InstancedNode({ nodeId, parentMatrix = IDENTITY, editMode, registerRef, onSelect, onClick }: RendererProps) {
+function InstancedNode({ nodeId, parentMatrix = IDENTITY, editMode, registerRef, onSelect, onEditNodeClick, onClick, isVisible = true }: RendererProps) {
     const gameObject = usePrefabNode(nodeId);
     if (!gameObject) return null;
 
+    const analyzedComponents = useMemo(() => analyzeNodeComponents(gameObject), [gameObject]);
     const localTransform = getNodeTransformProps(gameObject);
     const isLocked = Boolean(gameObject.locked);
+    const nodeVisible = isVisible && !gameObject.hidden;
     const metadataProps = getNodeMetadataProps(gameObject);
     const groupProps = {
         ...metadataProps,
+        visible: nodeVisible,
         position: localTransform.position,
         rotation: localTransform.rotation,
         scale: localTransform.scale,
     };
 
-    const physicsData = findComponent(gameObject, "Physics");
-    const physicsProps = isPhysicsProps(physicsData?.properties)
-        ? physicsData?.properties
-        : undefined;
-    const modelUrl = findComponent(gameObject, "Model")?.properties?.filename;
+    const modelUrl = analyzedComponents.model?.properties?.filename;
     const instances = useMemo(
-        () => buildRepeatedInstances(gameObject, parentMatrix, modelUrl, physicsProps),
-        [gameObject, modelUrl, parentMatrix, physicsProps]
+        () => buildRepeatedInstances(gameObject, parentMatrix, modelUrl),
+        [gameObject, modelUrl, parentMatrix]
     );
 
     const groupRef = useRef<Group>(null);
@@ -357,7 +435,7 @@ function InstancedNode({ nodeId, parentMatrix = IDENTITY, editMode, registerRef,
 
     const editClickHandlers = useClickValid(!!editMode && !isLocked, (event: ThreeEvent<PointerEvent>) => {
         onSelect?.(nodeId);
-        onClick?.(event, gameObject);
+        onEditNodeClick?.(event, gameObject);
     });
 
     const renderedInstances = instances.map(instance => (
@@ -369,8 +447,9 @@ function InstancedNode({ nodeId, parentMatrix = IDENTITY, editMode, registerRef,
             position={instance.position}
             rotation={instance.rotation}
             scale={instance.scale}
+            visible={nodeVisible}
             locked={isLocked}
-            physics={instance.physics}
+            onClick={onClick}
         />
     ));
 
@@ -399,19 +478,22 @@ function StandardNode({
     selectedId,
     onSelect,
     onClick,
+    onEditNodeClick,
     registerRef,
     loadedModels,
     editMode,
     parentMatrix = IDENTITY,
+    isVisible = true,
 }: RendererProps) {
     const gameObject = usePrefabNode(nodeId);
     const childIds = usePrefabChildIds(nodeId);
     if (!gameObject) return null;
 
+    const analyzedComponents = useMemo(() => analyzeNodeComponents(gameObject), [gameObject]);
     const isSelected = selectedId === nodeId;
     const isLocked = Boolean(gameObject.locked);
+    const nodeVisible = isVisible && !gameObject.hidden;
     const stillInstanced = useInstanceCheck(nodeId);
-    const clickEventName = getNodeClickEventName(gameObject);
     const metadataProps = getNodeMetadataProps(gameObject);
 
     const groupRef = useRef<Object3D | null>(null);
@@ -422,23 +504,20 @@ function StandardNode({
 
     const editClickHandlers = useClickValid(!!editMode && !isLocked, (event: ThreeEvent<PointerEvent>) => {
         onSelect?.(nodeId);
-        onClick?.(event, gameObject);
+        onEditNodeClick?.(event, gameObject);
     });
-    const primaryClickHandlers = !editMode && (clickEventName || onClick)
+    const primaryClickHandlers = !editMode && onClick
         ? {
             onClick: (event: ThreeEvent<PointerEvent>) => {
                 event.stopPropagation();
-                emitNodePointerEvent(clickEventName, event, nodeId, gameObject, groupRef.current);
-                onClick?.(event, gameObject);
+                onClick(event, nodeId, groupRef.current);
             },
         }
         : undefined;
 
     const world = parentMatrix.clone().multiply(compose(gameObject));
 
-    const physics = findComponent(gameObject, "Physics");
-    const ready = isNodeReady(gameObject, loadedModels);
-    const hasPhysics = physics && ready && !stillInstanced;
+    const ready = isNodeReady(analyzedComponents.model, loadedModels);
     const transform = getNodeTransformProps(gameObject);
     const transformProps = {
         position: transform.position,
@@ -449,17 +528,14 @@ function StandardNode({
         ...metadataProps,
         ...transformProps,
     };
-    const physicsDef = hasPhysics ? getComponentDef(physics.type) : null;
-    const isInstanced = findComponent(gameObject, "Model")?.properties?.instanced;
-    const physicsKey = `physics_${nodeId}_${isInstanced ? 'instanced' : 'standard'}`;
-    const renderCtx: RenderContext = { loadedModels, editMode, registerRef };
     const childNodes = <ChildNodes childIds={childIds} parentMatrix={world}
-        selectedId={selectedId} onSelect={onSelect} onClick={onClick}
+        selectedId={selectedId} onSelect={onSelect} onClick={onClick} onEditNodeClick={onEditNodeClick}
         registerRef={registerRef}
         loadedModels={loadedModels} editMode={editMode}
+        isVisible={nodeVisible}
     />;
 
-    const inner = renderCompositionNode(gameObject, renderCtx, primaryClickHandlers, childNodes);
+    const inner = renderNodeContent(analyzedComponents, loadedModels, primaryClickHandlers, childNodes);
     const editAnchor = editMode ? (
         <mesh visible={false}>
             <boxGeometry args={[0.01, 0.01, 0.01]} />
@@ -469,33 +545,18 @@ function StandardNode({
         <group
             ref={handleGroupRef}
             {...groupProps}
+            visible={nodeVisible}
             {...(editMode ? editClickHandlers : undefined)}
         >
             {editAnchor}
             {inner}
         </group>
     );
-    const physicsNode = hasPhysics && physicsDef?.View ? (
-        <physicsDef.View
-            key={physicsKey}
-            properties={physics.properties}
-            {...transformProps}
-        >
-            <group
-                ref={handleGroupRef}
-                {...metadataProps}
-                {...(editMode ? editClickHandlers : undefined)}
-            >
-                {editAnchor}
-                {inner}
-            </group>
-        </physicsDef.View>
-    ) : null;
 
     return (
-        <EntityRuntimeScope nodeId={nodeId} editMode={editMode} isSelected={isSelected}>
-            {physicsNode ?? standardNode}
-        </EntityRuntimeScope>
+        <CurrentNodeScope nodeId={nodeId} editMode={editMode} isSelected={isSelected}>
+            {standardNode}
+        </CurrentNodeScope>
     );
 }
 
@@ -503,48 +564,13 @@ interface RendererProps {
     nodeId: string;
     selectedId?: string | null;
     onSelect?: (id: string) => void;
-    onClick?: (event: ThreeEvent<PointerEvent>, entity: GameObjectType) => void;
+    onClick?: (event: ThreeEvent<PointerEvent>, nodeId: string, object: Object3D | null) => void;
+    onEditNodeClick?: (event: ThreeEvent<PointerEvent>, node: GameObjectType) => void;
     registerRef: (id: string, obj: Object3D | null) => void;
     loadedModels: LoadedModels;
     editMode?: boolean;
     parentMatrix?: Matrix4;
-}
-
-type CompositionComponent = {
-    key: string;
-    View: NonNullable<Component["View"]>;
-    properties: any;
-};
-
-interface RenderContext {
-    loadedModels: LoadedModels;
-    editMode?: boolean;
-    registerRef: (id: string, obj: Object3D | null) => void;
-}
-
-function isRendererHandledComponent(componentType: string) {
-    return componentType === "Transform"
-        || componentType === "BufferGeometry"
-        || componentType === "Geometry"
-        || componentType === "Material"
-        || componentType === "Physics"
-        || componentType === "Model";
-}
-
-function getCompositionComponents(gameObject: GameObjectType) {
-    return Object.entries(gameObject.components ?? {}).reduce<CompositionComponent[]>((result, [key, comp]) => {
-        if (!comp?.type || isRendererHandledComponent(comp.type)) return result;
-
-        const def = getComponentDef(comp.type);
-        if (!def?.View) return result;
-
-        result.push({
-            key,
-            View: def.View,
-            properties: comp.properties,
-        });
-        return result;
-    }, []);
+    isVisible?: boolean;
 }
 
 function ChildNodes({ childIds, parentMatrix, ...props }: { childIds: string[]; parentMatrix: Matrix4 } & Omit<RendererProps, 'nodeId' | 'parentMatrix'>) {
@@ -575,7 +601,6 @@ function buildRepeatedInstances(
     gameObject: GameObjectType,
     parentMatrix: Matrix4,
     modelUrl: string | undefined,
-    physics: PhysicsProps | undefined,
 ) {
     if (!modelUrl) return [];
 
@@ -603,7 +628,6 @@ function buildRepeatedInstances(
         position: [number, number, number];
         rotation: [number, number, number];
         scale: [number, number, number];
-        physics: PhysicsProps | undefined;
     }> = [];
 
     for (let x = 0; x < counts[0]; x++) {
@@ -630,7 +654,6 @@ function buildRepeatedInstances(
                     position,
                     rotation,
                     scale,
-                    physics,
                 });
             }
         }
@@ -648,73 +671,64 @@ function getNodeTransformProps(node?: GameObjectType | null) {
     };
 }
 
-function renderCompositionNode(
-    gameObject: GameObjectType,
-    ctx: RenderContext,
+function renderNodeContent(
+    analyzedComponents: AnalyzedNodeComponents,
+    loadedModels: LoadedModels,
     primaryClickHandlers?: { onClick?: (event: ThreeEvent<PointerEvent>) => void },
     childNodes?: React.ReactNode
 ) {
-    const primaryContent = renderNodePrimaryContent(gameObject, ctx, primaryClickHandlers);
-    return applyNodeComposition(gameObject, <>{primaryContent}{childNodes}</>);
-}
-
-function renderNodePrimaryContent(
-    gameObject: GameObjectType,
-    ctx: RenderContext,
-    primaryClickHandlers?: { onClick?: (event: ThreeEvent<PointerEvent>) => void },
-) {
-    const geometry = findComponent(gameObject, "BufferGeometry") ?? findComponent(gameObject, "Geometry");
-    const material = findComponent(gameObject, "Material");
-    const model = findComponent(gameObject, "Model");
-
-    const geometryDef = geometry && getComponentDef(geometry.type);
-    const materialDef = material && getComponentDef(material.type);
-    const modelDef = model && getComponentDef(model.type);
+    const geometry = analyzedComponents.geometry;
+    const geometryDef = analyzedComponents.geometry && getComponentDef(analyzedComponents.geometry.type);
+    const materialDef = analyzedComponents.material && getComponentDef(analyzedComponents.material.type);
+    const modelDef = analyzedComponents.model && getComponentDef(analyzedComponents.model.type);
     const geometryProperties = geometry?.properties ?? {};
     const meshVisible = geometryProperties.visible !== false;
     const meshCastShadow = meshVisible && geometryProperties.castShadow !== false;
     const meshReceiveShadow = meshVisible && geometryProperties.receiveShadow !== false;
+    let primaryContent: React.ReactNode = null;
 
-    if (geometry?.type && geometryDef?.View) {
-        return (
+    if (analyzedComponents.geometry?.type && geometryDef?.View) {
+        primaryContent = (
             <mesh
                 visible={meshVisible}
                 castShadow={meshCastShadow}
                 receiveShadow={meshReceiveShadow}
                 {...primaryClickHandlers}
             >
-                <geometryDef.View properties={geometry.properties} />
-                {material && materialDef?.View && (
+                <geometryDef.View properties={analyzedComponents.geometry.properties} />
+                {analyzedComponents.material && materialDef?.View && (
                     <materialDef.View
                         key="material"
-                        properties={material.properties}
+                        properties={analyzedComponents.material.properties}
                     />
                 )}
             </mesh>
         );
+    } else if (
+        analyzedComponents.model?.type
+        && modelDef?.View
+        && !analyzedComponents.model.properties?.instanced
+        && isNodeReady(analyzedComponents.model, loadedModels)
+    ) {
+        primaryContent = primaryClickHandlers ? (
+            <group {...primaryClickHandlers}>
+                <modelDef.View properties={analyzedComponents.model.properties} />
+            </group>
+        ) : (
+            <modelDef.View properties={analyzedComponents.model.properties} />
+        );
     }
 
-    if (model?.type && modelDef?.View && !model.properties?.instanced && isNodeReady(gameObject, ctx.loadedModels)) {
-        return <modelDef.View properties={model.properties} />;
-    }
-
-    return null;
-}
-
-function applyNodeComposition(
-    gameObject: GameObjectType,
-    subtree: React.ReactNode
-) {
-    const components = getCompositionComponents(gameObject);
-
-    return components.reduce(
-        (acc, { key, View, properties }) => (
+    let content = <>{primaryContent}{childNodes}</>;
+    for (const { key, View, properties } of analyzedComponents.composition) {
+        content = (
             <View key={key} properties={properties}>
-                {acc}
+                {content}
             </View>
-        ),
-        subtree
-    );
+        );
+    }
+
+    return content;
 }
 
 export default PrefabRoot;

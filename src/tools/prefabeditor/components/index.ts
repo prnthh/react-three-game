@@ -4,7 +4,6 @@ import BufferGeometryComponent from './BufferGeometryComponent';
 import ModelComponent from './ModelComponent';
 import TextComponent from './TextComponent';
 import MaterialComponent from './MaterialComponent';
-import PhysicsComponent from './PhysicsComponent';
 import SpotLightComponent from './SpotLightComponent';
 import PointLightComponent from './PointLightComponent';
 import DirectionalLightComponent from './DirectionalLightComponent';
@@ -21,7 +20,6 @@ export const builtinComponents = [
     ModelComponent,
     TextComponent,
     MaterialComponent,
-    PhysicsComponent,
     SpotLightComponent,
     PointLightComponent,
     DirectionalLightComponent,

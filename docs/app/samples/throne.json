@@ -3,7 +3,7 @@
   "name": "Throne Room",
   "root": {
     "id": "86f34bf6-b195-4261-81d5-3eee5e0a7487",
-    "name": "Scene",
+    "name": "Prefab Root",
     "components": {
       "transform": {
         "type": "Transform",

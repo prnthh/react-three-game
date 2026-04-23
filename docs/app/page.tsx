@@ -55,7 +55,7 @@ function Features2() {
         </li>
         <li className="flex items-start gap-2">
           <span className="text-green-500">▸</span>
-          <span>Built-in physics with Rapier</span>
+          <span>Pure renderer core with userland runtime hooks</span>
         </li>
         <li className="flex items-start gap-2">
           <span className="text-green-500">▸</span>

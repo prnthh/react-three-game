@@ -180,7 +180,7 @@ function BufferGeometryComponentEditor({
                     label="Click Event Name"
                     values={properties}
                     onChange={onUpdate}
-                    placeholder="entity:click"
+                    placeholder="node:click"
                 />
             ) : null}
         </FieldGroup>

@@ -22,9 +22,6 @@ export interface GroundOptions {
 	/** Texture repeat counts when repeat=true. Defaults to [25,25]. */
 	repeatCount?: [number, number];
 
-	/** Physics body type. Defaults to "fixed". */
-	physicsType?: "fixed" | "dynamic" | "kinematic";
-
 	/** Set true to disable the node. */
 	disabled?: boolean;
 }
@@ -36,7 +33,6 @@ export interface GroundOptions {
  * - Transform (rotated to lie flat)
  * - Geometry (plane)
  * - Material (optional texture + repeat)
- * - Physics (fixed by default)
  */
 export function ground(options: GroundOptions = {}): GameObject {
 	const {
@@ -49,7 +45,6 @@ export function ground(options: GroundOptions = {}): GameObject {
 		texture,
 		repeat = texture ? true : false,
 		repeatCount = [25, 25],
-		physicsType = "fixed",
 		disabled = false,
 	} = options;
 
@@ -78,12 +73,6 @@ export function ground(options: GroundOptions = {}): GameObject {
 					color,
 					...(texture ? { texture } : {}),
 					...(repeat ? { repeat: true, repeatCount } : {}),
-				},
-			},
-			physics: {
-				type: "Physics",
-				properties: {
-					type: physicsType,
 				},
 			},
 		},

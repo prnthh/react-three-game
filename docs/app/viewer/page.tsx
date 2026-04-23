@@ -1,6 +1,5 @@
 "use client";
 
-import { Physics } from "@react-three/rapier";
 import { GameCanvas, PrefabRoot } from "react-three-game";
 import { useState } from "react";
 import { Toolbar } from "../editor/page";
@@ -12,11 +11,9 @@ export default function Home() {
     return (
         <main className="flex h-screen w-screen flex-col items-center justify-between bg-white dark:bg-black sm:items-start">
             <GameCanvas camera={{ position: [0, 1, 10] }}>
-                <Physics>
-                    <ambientLight intensity={0.8} />
-                    <PrefabRoot
-                        data={selectedScene} />
-                </Physics>
+                <ambientLight intensity={0.8} />
+                <PrefabRoot
+                    data={selectedScene} />
                 <OrbitControls />
             </GameCanvas>
 

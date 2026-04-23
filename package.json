@@ -1,6 +1,6 @@
 {
   "name": "react-three-game",
-  "version": "0.0.92",
+  "version": "0.0.93",
   "description": "high performance 3D game engine built in React",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -27,7 +27,6 @@
   "peerDependencies": {
     "@react-three/drei": ">=10.0.0",
     "@react-three/fiber": ">=9.0.0",
-    "@react-three/rapier": ">=2.0.0",
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0",
     "three": ">=0.182.0",
@@ -36,7 +35,6 @@
   "devDependencies": {
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
-    "@react-three/rapier": "^2.2.0",
     "@types/react": "^19.2.9",
     "@types/react-dom": "^19.2.3",
     "@types/three": "^0.182.0",

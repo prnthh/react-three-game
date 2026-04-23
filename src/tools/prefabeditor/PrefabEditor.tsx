@@ -3,8 +3,7 @@ import GameCanvas from "../../shared/GameCanvas";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, forwardRef, useImperativeHandle, createContext, useContext } from "react";
 import { BoxHelper, Object3D, Texture } from "three";
 import { GameObject, Prefab, findComponentEntry } from "./types";
-import PrefabRoot, { PrefabRootRef } from "./PrefabRoot";
-import { Physics } from "@react-three/rapier";
+import { PrefabRootInternal, type PrefabRootRef } from "./PrefabRoot";
 import EditorUI from "./EditorUI";
 import { base, toolbar } from "./styles";
 import { computeParentWorldMatrix, decompose, exportGLB as exportGLBFile, exportGLBData, focusCameraOnObject, regenerateIds } from "./utils";
@@ -12,7 +11,6 @@ import type { ExportGLBOptions } from "./utils";
 import { loadFiles } from "../dragdrop";
 import { denormalizePrefab, createImageNode, createModelNode, createNode } from './prefab';
 import { createPrefabStore, type PrefabStoreApi, PrefabStoreProvider } from "./prefabStore";
-import type { SpawnOptions } from "./scene";
 
 function isObjectAttachedToRoot(root: Object3D | null | undefined, object: Object3D | null | undefined) {
     if (!root || !object) return false;
@@ -35,19 +33,33 @@ function SelectionHelper({ object }: { object: Object3D | null }) {
 
 export interface PrefabEditorRef {
     root: Object3D | null;
-    store: PrefabStoreApi;
-    getObject: (nodeId: string) => Object3D | null;
-    getRigidBody: (nodeId: string) => any;
+    getNode: (nodeId: string) => PrefabNode | null;
+    getNodeObject: (nodeId: string) => Object3D | null;
+    getNodeHandle: <T = unknown>(nodeId: string, kind: string) => T | null;
+    onSceneChange: (listener: (revision: number) => void) => () => void;
     screenshot: () => void;
     exportGLB: (options?: ExportGLBOptions) => Promise<ArrayBuffer | undefined>;
     exportGLBData: () => Promise<ArrayBuffer | undefined>;
     clearSelection: () => Promise<void>;
     save: () => Prefab;
     load: (prefab: Prefab, options?: { resetHistory?: boolean; notifyChange?: boolean }) => void;
+    updateNode: (nodeId: string, update: (node: PrefabNode) => PrefabNode) => void;
+    updateNodes: (updates: Array<{ id: string; update: (node: PrefabNode) => PrefabNode }>) => void;
+    deleteNode: (nodeId: string) => void;
+    duplicateNode: (nodeId: string) => string | null;
+    moveNode: (draggedId: string, targetId: string, position: "before" | "inside") => void;
     addNode: (node: GameObject, options?: SpawnOptions) => GameObject;
     addModel: (path: string, model: Object3D, options?: SpawnOptions) => GameObject;
     addTexture: (path: string, texture: Texture, options?: SpawnOptions) => GameObject;
 }
+
+export interface SpawnOptions {
+    name?: string;
+    parentId?: string;
+    select?: boolean;
+}
+
+export type PrefabNode = Omit<GameObject, "children">;
 
 export enum PrefabEditorMode {
     Edit = "edit",
@@ -83,7 +95,6 @@ export function useEditorContext() {
 export interface PrefabEditorProps {
     basePath?: string;
     initialPrefab?: Prefab;
-    physics?: boolean;
     mode?: PrefabEditorMode;
     onChange?: (prefab: Prefab) => void;
     showUI?: boolean;
@@ -102,7 +113,7 @@ const DEFAULT_PREFAB: Prefab = {
     root: createNode('Root', {}, { id: 'root' })
 };
 
-const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath, initialPrefab, physics = true, mode: initialMode = PrefabEditorMode.Edit, onChange, showUI = true, enableWindowDrop = true, canvasProps, uiPlugins, children }, ref) => {
+const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath, initialPrefab, mode: initialMode = PrefabEditorMode.Edit, onChange, showUI = true, enableWindowDrop = true, canvasProps, uiPlugins, children }, ref) => {
     const [mode, setMode] = useState<PrefabEditorMode>(initialMode);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [transformMode, setTransformMode] = useState<"translate" | "rotate" | "scale">("translate");
@@ -119,14 +130,30 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const controlsRef = useRef<any>(null);
     const transformControlsRef = useRef<any>(null);
-    const transformProxyRef = useRef<Object3D | null>(null);
     const onChangeRef = useRef(onChange);
+    const sceneChangeListenersRef = useRef(new Set<(revision: number) => void>());
     const isEditMode = mode === PrefabEditorMode.Edit;
 
     const getPrefab = useCallback(() => denormalizePrefab(prefabStore.getState()), [prefabStore]);
-    const getRootObject = useCallback(() => prefabRootRef.current?.root ?? null, []);
-    const getObject = useCallback((nodeId: string) => prefabRootRef.current?.getObject(nodeId) ?? null, []);
-    const getRigidBody = useCallback((nodeId: string) => prefabRootRef.current?.getRigidBody(nodeId) ?? null, []);
+    const getNode = useCallback((nodeId: string) => prefabStore.getState().nodesById[nodeId] ?? null, [prefabStore]);
+    const getSceneRootObject = useCallback(() => prefabRootRef.current?.root ?? null, []);
+    const getNodeObject = useCallback((nodeId: string) => prefabRootRef.current?.getNodeObject(nodeId) ?? null, []);
+    const getNodeHandle = useCallback(<T = unknown,>(nodeId: string, kind: string) => prefabRootRef.current?.getNodeHandle<T>(nodeId, kind) ?? null, []);
+    const updateNode = useCallback((nodeId: string, update: (node: PrefabNode) => PrefabNode) => {
+        prefabStore.getState().updateNode(nodeId, update);
+    }, [prefabStore]);
+    const updateNodes = useCallback((updates: Array<{ id: string; update: (node: PrefabNode) => PrefabNode }>) => {
+        prefabStore.getState().updateNodes(updates);
+    }, [prefabStore]);
+    const deleteNode = useCallback((nodeId: string) => {
+        prefabStore.getState().deleteNode(nodeId);
+    }, [prefabStore]);
+    const duplicateNode = useCallback((nodeId: string) => {
+        return prefabStore.getState().duplicateNode(nodeId);
+    }, [prefabStore]);
+    const moveNode = useCallback((draggedId: string, targetId: string, position: "before" | "inside") => {
+        prefabStore.getState().moveNode(draggedId, targetId, position);
+    }, [prefabStore]);
 
     onChangeRef.current = onChange;
 
@@ -184,6 +211,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
             }
 
             lastRevision = state.revision;
+            sceneChangeListenersRef.current.forEach(listener => listener(state.revision));
 
             const nextPrefab = denormalizePrefab(state);
             const changeOrigin = changeOriginRef.current;
@@ -235,29 +263,11 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
         return () => unsubscribe();
     }, [prefabStore, selectedId]);
 
-    const selectedNode = selectedId ? prefabStore.getState().nodesById[selectedId] ?? null : null;
-    const selectedObject = selectedId ? getObject(selectedId) : null;
-    const selectedHasPhysics = Object.values(selectedNode?.components ?? {}).some(component => component?.type === "Physics");
-    const transformObject = isEditMode && (selectedHasPhysics ? transformProxyRef.current : selectedObject)
-        && isObjectAttachedToRoot(getRootObject(), selectedObject)
-        ? (selectedHasPhysics ? transformProxyRef.current : selectedObject)
+    const selectedObject = selectedId ? getNodeObject(selectedId) : null;
+    const transformObject = isEditMode && selectedObject
+        && isObjectAttachedToRoot(getSceneRootObject(), selectedObject)
+        ? selectedObject
         : null;
-
-    useLayoutEffect(() => {
-        if (!isEditMode || !selectedHasPhysics || !selectedObject || !transformProxyRef.current) {
-            return;
-        }
-
-        selectedObject.updateMatrixWorld(true);
-        transformProxyRef.current.matrixAutoUpdate = true;
-        selectedObject.matrixWorld.decompose(
-            transformProxyRef.current.position,
-            transformProxyRef.current.quaternion,
-            transformProxyRef.current.scale,
-        );
-        transformProxyRef.current.updateMatrix();
-        transformProxyRef.current.updateMatrixWorld(true);
-    }, [isEditMode, selectedHasPhysics, selectedId, selectedObject]);
 
     const addNode = useCallback((node: GameObject, options?: SpawnOptions) => {
         const { addChild, rootId } = prefabStore.getState();
@@ -335,38 +345,38 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
     const handleExportGLB = useCallback(async (options: ExportGLBOptions = {}) => {
         await clearSelection();
 
-        const rootObject = getRootObject();
+        const rootObject = getSceneRootObject();
         if (!rootObject) return;
 
         return exportGLBFile(rootObject, {
             filename: `${prefabStore.getState().prefabName || 'prefab'}.glb`,
             ...options,
         });
-    }, [clearSelection, getRootObject, prefabStore]);
+    }, [clearSelection, getSceneRootObject, prefabStore]);
 
     const handleExportGLBData = useCallback(async () => {
         await clearSelection();
 
-        const rootObject = getRootObject();
+        const rootObject = getSceneRootObject();
         if (!rootObject) return;
 
         return exportGLBData(rootObject);
-    }, [clearSelection, getRootObject]);
+    }, [clearSelection, getSceneRootObject]);
 
     const handleFocusNode = useCallback((nodeId: string) => {
-        const object = getObject(nodeId);
+        const object = getNodeObject(nodeId);
         const controls = controlsRef.current;
         const camera = controls?.object;
 
         if (!object || !controls || !camera) return;
 
         focusCameraOnObject(object, camera, controls.target, () => controls.update?.());
-    }, [getObject]);
+    }, [getNodeObject]);
 
     const handleTransformChange = () => {
         if (!selectedId) return;
 
-        const object = selectedHasPhysics ? transformProxyRef.current : getObject(selectedId);
+        const object = getNodeObject(selectedId);
         if (!object) return;
 
         const parentWorld = computeParentWorldMatrix(prefabStore.getState(), selectedId);
@@ -430,25 +440,38 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
     }, [addModel, addTexture, isEditMode, enableWindowDrop]);
 
     useImperativeHandle(ref, () => ({
-        root: getRootObject(),
-        store: prefabStore,
-        getObject,
-        getRigidBody,
+        get root() {
+            return getSceneRootObject();
+        },
+        getNode,
+        getNodeObject,
+        getNodeHandle,
+        onSceneChange: (listener: (revision: number) => void) => {
+            sceneChangeListenersRef.current.add(listener);
+            return () => {
+                sceneChangeListenersRef.current.delete(listener);
+            };
+        },
         screenshot: handleScreenshot,
         exportGLB: handleExportGLB,
         exportGLBData: handleExportGLBData,
         clearSelection,
         save: getPrefab,
         load: loadPrefab,
+        updateNode,
+        updateNodes,
+        deleteNode,
+        duplicateNode,
+        moveNode,
         addNode,
         addModel,
         addTexture
-    }), [addModel, addNode, addTexture, clearSelection, getObject, getPrefab, getRigidBody, getRootObject, handleExportGLB, handleExportGLBData, handleScreenshot, loadPrefab, prefabStore]);
+    }), [addModel, addNode, addTexture, clearSelection, deleteNode, duplicateNode, getNode, getNodeHandle, getNodeObject, getPrefab, getSceneRootObject, handleExportGLB, handleExportGLBData, handleScreenshot, loadPrefab, moveNode, updateNode, updateNodes]);
 
     const content = (
         <>
             {isEditMode ? <gridHelper args={[10, 10]} position={[0, -1, 0]} /> : null}
-            <PrefabRoot
+            <PrefabRootInternal
                 ref={prefabRootRef}
                 store={prefabStore}
                 editMode={isEditMode}
@@ -494,12 +517,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
                 }
                 : canvasProps?.onPointerMissed}
         >
-            {physics ? (
-                <Physics colliders={false} debug={isEditMode} paused={isEditMode}>
-                    {content}
-                </Physics>
-            ) : content}
-            <group ref={transformProxyRef} visible={false} />
+            {content}
             {isEditMode ? <SelectionHelper object={transformObject} /> : null}
 
             {isEditMode && (

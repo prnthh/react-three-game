@@ -14,12 +14,10 @@ export { default as PrefabRoot } from './tools/prefabeditor/PrefabRoot';
 export { useEditorContext } from './tools/prefabeditor/PrefabEditor';
 export type { EditorContextType } from './tools/prefabeditor/PrefabEditor';
 
-// Prefab Editor - Store & Scene API
-export { createPrefabStore, prefabStoreToPrefab, usePrefabStoreApi } from './tools/prefabeditor/prefabStore';
-export type { PrefabStoreApi, PrefabStoreState } from './tools/prefabeditor/prefabStore';
+// Prefab Editor - Data API
 export { denormalizePrefab } from './tools/prefabeditor/prefab';
-export { gameEvents, getEntityIdFromRigidBody, useClickEvent, useGameEvent, usePhysicsEvent } from './tools/prefabeditor/GameEvents';
-export type { ClickEventPayload, GameEventHandler, GameEventMap, PhysicsEventPayload } from './tools/prefabeditor/GameEvents';
+export { gameEvents, useClickEvent, useGameEvent } from './tools/prefabeditor/GameEvents';
+export type { ClickEventPayload, ContactEventPayload, GameEventHandler, GameEventMap } from './tools/prefabeditor/GameEvents';
 
 // Prefab Editor - Component Registry
 export { registerComponent } from './tools/prefabeditor/components/ComponentRegistry';
@@ -61,21 +59,13 @@ export {
 // Prefab Editor - Types
 export type {
   PrefabEditorProps,
+  PrefabNode,
   PrefabEditorRef,
-} from './tools/prefabeditor/PrefabEditor';
-export type {
-  Entity,
-  EntityComponent,
-  EntityData,
-  EntityUpdate,
-  PropertyPath,
-  Scene,
-  SceneUpdates,
   SpawnOptions,
-} from './tools/prefabeditor/scene';
+} from './tools/prefabeditor/PrefabEditor';
 export type { PrefabRootProps } from './tools/prefabeditor/PrefabRoot';
-export type { AssetRuntime, EntityRuntime, LiveObjectRef, LiveRigidBodyRef } from './tools/prefabeditor/assetRuntime';
-export { useAssetRuntime, useEntityRuntime, useEntityObjectRef, useEntityRigidBodyRef } from './tools/prefabeditor/assetRuntime';
+export type { AssetRuntime, CurrentNodeRuntime, LiveHandleRef, LiveObjectRef, CurrentNodeHandleRef, CurrentNodeObjectRef } from './tools/prefabeditor/assetRuntime';
+export { useAssetRuntime, useCurrentNode, useCurrentNodeHandle, useCurrentNodeObject } from './tools/prefabeditor/assetRuntime';
 export type { Component, ComponentViewProps } from './tools/prefabeditor/components/ComponentRegistry';
 export type { FieldDefinition, FieldType } from './tools/prefabeditor/components/Input';
 export { MaterialOverridesProvider, useMaterialOverrides } from './tools/prefabeditor/components/MaterialComponent';

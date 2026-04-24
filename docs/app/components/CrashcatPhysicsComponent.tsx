@@ -1,7 +1,7 @@
 import { BooleanField, Component, FieldDefinition, FieldRenderer, StringField, Vector3Field } from "react-three-game";
 
 type CrashcatPhysicsProperties = {
-    shape?: "autoBox" | "box" | "sphere";
+    shape?: "autoBox" | "box" | "sphere" | "trimesh";
     motionType?: "static" | "dynamic" | "kinematic";
     motionQuality?: "discrete" | "linearCast";
     sensor?: boolean;
@@ -22,6 +22,7 @@ const crashcatPhysicsFields: FieldDefinition[] = [
             { value: "autoBox", label: "Auto Box" },
             { value: "box", label: "Box" },
             { value: "sphere", label: "Sphere" },
+            { value: "trimesh", label: "Triangle Mesh" },
         ],
     },
     {

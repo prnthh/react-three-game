@@ -14,6 +14,7 @@ import {
     registerAll,
     rigidBody,
     sphere,
+    triangleMesh,
     type Filter,
     type Listener,
     type RigidBody,
@@ -33,6 +34,7 @@ const boundsCenter = new Vector3();
 const bodyQuaternion = new Quaternion();
 const inverseWorldMatrix = new Matrix4();
 const childToLocalMatrix = new Matrix4();
+const scratchVertex = new Vector3();
 
 let didRegisterCrashcat = false;
 
@@ -48,7 +50,7 @@ type CrashcatEventConfig = {
 };
 
 type CrashcatColliderConfig = false | {
-    shape?: "autoBox" | "box" | "sphere";
+    shape?: "autoBox" | "box" | "sphere" | "trimesh";
     motionType?: "static" | "dynamic" | "kinematic";
     motionQuality?: "discrete" | "linearCast";
     sensor?: boolean;
@@ -172,6 +174,60 @@ function getLocalBounds(object: Object3D) {
     return localBounds.isEmpty() ? null : localBounds;
 }
 
+function collectGeometryData(object: Object3D) {
+    const positions: number[] = [];
+    const indices: number[] = [];
+    let vertexOffset = 0;
+
+    inverseWorldMatrix.copy(object.matrixWorld).invert();
+
+    object.traverse((child) => {
+        const geometry = (child as Object3D & {
+            geometry?: {
+                attributes?: {
+                    position?: {
+                        count: number;
+                        getX: (index: number) => number;
+                        getY: (index: number) => number;
+                        getZ: (index: number) => number;
+                    };
+                };
+                index?: { count: number; getX: (index: number) => number } | null;
+            };
+        }).geometry;
+        const positionAttribute = geometry?.attributes?.position;
+
+        if (!positionAttribute) return;
+
+        childToLocalMatrix.multiplyMatrices(inverseWorldMatrix, child.matrixWorld);
+
+        for (let index = 0; index < positionAttribute.count; index += 1) {
+            scratchVertex
+                .set(positionAttribute.getX(index), positionAttribute.getY(index), positionAttribute.getZ(index))
+                .applyMatrix4(childToLocalMatrix);
+            positions.push(scratchVertex.x, scratchVertex.y, scratchVertex.z);
+        }
+
+        if (geometry.index) {
+            for (let index = 0; index < geometry.index.count; index += 1) {
+                indices.push(vertexOffset + geometry.index.getX(index));
+            }
+        } else {
+            for (let index = 0; index < positionAttribute.count; index += 1) {
+                indices.push(vertexOffset + index);
+            }
+        }
+
+        vertexOffset += positionAttribute.count;
+    });
+
+    if (positions.length === 0 || indices.length < 3) {
+        return null;
+    }
+
+    return { positions, indices };
+}
+
 function getBodyPosition(object: Object3D, objectBounds: Box3) {
     objectBounds.getCenter(boundsCenter).applyMatrix4(object.matrixWorld);
     return [boundsCenter.x, boundsCenter.y, boundsCenter.z] as [number, number, number];
@@ -182,7 +238,12 @@ function getBodyQuaternion(object: Object3D) {
     return [bodyQuaternion.x, bodyQuaternion.y, bodyQuaternion.z, bodyQuaternion.w] as [number, number, number, number];
 }
 
-function createShapeForObject(objectBounds: Box3, collider: Exclude<CrashcatColliderConfig, false>) {
+function createShapeForObject(object: Object3D, objectBounds: Box3, collider: Exclude<CrashcatColliderConfig, false>) {
+    if (collider.shape === "trimesh") {
+        const geometry = collectGeometryData(object);
+        return geometry ? triangleMesh.create(geometry) : null;
+    }
+
     objectBounds.getSize(boundsSize);
 
     if (collider.shape === "sphere") {
@@ -366,7 +427,7 @@ export const CrashcatRuntime = forwardRef<CrashcatRuntimeRef, {
                 return;
             }
 
-            const shape = createShapeForObject(objectBounds, collider);
+            const shape = createShapeForObject(object, objectBounds, collider);
             const position = getBodyPosition(object, objectBounds);
             const quaternion = getBodyQuaternion(object);
             if (!shape || !position) {

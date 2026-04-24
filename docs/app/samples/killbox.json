@@ -71,7 +71,7 @@
             "properties": {
               "position": [
                 0,
-                -25,
+                25,
                 0
               ],
               "rotation": [
@@ -106,7 +106,7 @@
               "opacity": 1,
               "metalness": 0,
               "roughness": 1,
-              "side": "FrontSide",
+              "side": "BackSide",
               "texture": "/textures/proto32/checkers_01.png",
               "repeat": true,
               "repeatCount": [
@@ -118,7 +118,7 @@
           "crashcatPhysics": {
             "type": "CrashcatPhysics",
             "properties": {
-              "shape": "autoBox",
+              "shape": "trimesh",
               "motionType": "static"
             }
           }

@@ -2,16 +2,19 @@
 
 import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
-import { PrefabEditor } from "react-three-game";
+import { PrefabEditor, registerComponent } from "react-three-game";
 import initialWorld from "../../samples/killbox.json";
 import type { Prefab, PrefabEditorRef } from "react-three-game";
 import { CrashcatRuntime, type CrashcatRuntimeRef } from "../../components/CrashcatRuntime";
+import CrashcatPhysicsComponent from "./CrashcatPhysicsComponent";
 import FirstPersonPlayer from "./FirstPersonPlayer";
 
 const ORB_SPEED = 1.2;
 const WORLD_BOUNDARY = 8;
 
 const ORB_IDS = ["orb1", "orb2"] as const;
+
+registerComponent(CrashcatPhysicsComponent);
 
 type Position3 = [number, number, number];
 type OrbVelocity = { x: number; z: number };

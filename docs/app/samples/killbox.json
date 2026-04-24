@@ -23,23 +23,6 @@
             1
           ]
         }
-      },
-      "data": {
-        "type": "Data",
-        "properties": {
-          "data": {
-            "crashcat": {
-              "autoStaticColliders": true,
-              "excludeIds": [
-                "orb1",
-                "orb2",
-                "player",
-                "player-camera",
-                "player-footsteps"
-              ]
-            }
-          }
-        }
       }
     },
     "children": [
@@ -132,11 +115,11 @@
               ]
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
-              "type": "fixed",
-              "colliders": "trimesh"
+              "shape": "autoBox",
+              "motionType": "static"
             }
           }
         },
@@ -284,33 +267,11 @@
               ]
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
-              "type": "fixed",
-              "colliders": "cuboid",
-              "capsuleRadius": 0.35,
-              "capsuleHalfHeight": 0.45,
-              "linearVelocity": [
-                0,
-                0,
-                0
-              ],
-              "angularVelocity": [
-                0,
-                0,
-                0
-              ],
-              "enabledTranslations": [
-                true,
-                true,
-                true
-              ],
-              "enabledRotations": [
-                true,
-                true,
-                true
-              ]
+              "shape": "autoBox",
+              "motionType": "static"
             }
           }
         },
@@ -370,33 +331,11 @@
               ]
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
-              "type": "fixed",
-              "colliders": "cuboid",
-              "capsuleRadius": 0.35,
-              "capsuleHalfHeight": 0.45,
-              "linearVelocity": [
-                0,
-                0,
-                0
-              ],
-              "angularVelocity": [
-                0,
-                0,
-                0
-              ],
-              "enabledTranslations": [
-                true,
-                true,
-                true
-              ],
-              "enabledRotations": [
-                true,
-                true,
-                true
-              ]
+              "shape": "autoBox",
+              "motionType": "static"
             }
           }
         },
@@ -456,33 +395,11 @@
               ]
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
-              "type": "fixed",
-              "colliders": "cuboid",
-              "capsuleRadius": 0.35,
-              "capsuleHalfHeight": 0.45,
-              "linearVelocity": [
-                0,
-                0,
-                0
-              ],
-              "angularVelocity": [
-                0,
-                0,
-                0
-              ],
-              "enabledTranslations": [
-                true,
-                true,
-                true
-              ],
-              "enabledRotations": [
-                true,
-                true,
-                true
-              ]
+              "shape": "autoBox",
+              "motionType": "static"
             }
           }
         },
@@ -542,33 +459,11 @@
               ]
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
-              "type": "fixed",
-              "colliders": "cuboid",
-              "capsuleRadius": 0.35,
-              "capsuleHalfHeight": 0.45,
-              "linearVelocity": [
-                0,
-                0,
-                0
-              ],
-              "angularVelocity": [
-                0,
-                0,
-                0
-              ],
-              "enabledTranslations": [
-                true,
-                true,
-                true
-              ],
-              "enabledRotations": [
-                true,
-                true,
-                true
-              ]
+              "shape": "autoBox",
+              "motionType": "static"
             }
           }
         },
@@ -628,33 +523,11 @@
               ]
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
-              "type": "fixed",
-              "colliders": "cuboid",
-              "capsuleRadius": 0.35,
-              "capsuleHalfHeight": 0.45,
-              "linearVelocity": [
-                0,
-                0,
-                0
-              ],
-              "angularVelocity": [
-                0,
-                0,
-                0
-              ],
-              "enabledTranslations": [
-                true,
-                true,
-                true
-              ],
-              "enabledRotations": [
-                true,
-                true,
-                true
-              ]
+              "shape": "autoBox",
+              "motionType": "static"
             }
           }
         },
@@ -786,33 +659,11 @@
                   "roughness": 1
                 }
               },
-              "physics": {
-                "type": "Physics",
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
                 "properties": {
-                  "type": "fixed",
-                  "colliders": "cuboid",
-                  "capsuleRadius": 0.35,
-                  "capsuleHalfHeight": 0.45,
-                  "linearVelocity": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "angularVelocity": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "enabledTranslations": [
-                    true,
-                    true,
-                    true
-                  ],
-                  "enabledRotations": [
-                    true,
-                    true,
-                    true
-                  ]
+                  "shape": "autoBox",
+                  "motionType": "static"
                 }
               }
             },
@@ -866,33 +717,11 @@
                   "roughness": 1
                 }
               },
-              "physics": {
-                "type": "Physics",
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
                 "properties": {
-                  "type": "fixed",
-                  "colliders": "cuboid",
-                  "capsuleRadius": 0.35,
-                  "capsuleHalfHeight": 0.45,
-                  "linearVelocity": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "angularVelocity": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "enabledTranslations": [
-                    true,
-                    true,
-                    true
-                  ],
-                  "enabledRotations": [
-                    true,
-                    true,
-                    true
-                  ]
+                  "shape": "autoBox",
+                  "motionType": "static"
                 }
               }
             },

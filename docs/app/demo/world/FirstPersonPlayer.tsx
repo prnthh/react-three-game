@@ -4,7 +4,7 @@ import { PointerLockControls } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { capsule, kcc } from "crashcat";
 import { useEffect, useRef } from "react";
-import { gameEvents, PrefabEditorMode, useEditorContext, type PrefabEditorRef } from "react-three-game";
+import { gameEvents, PrefabEditorMode, useEditorContext } from "react-three-game";
 import type { CrashcatRuntimeRef } from "../../components/CrashcatRuntime";
 import type { Object3D } from "three";
 import { Vector3 } from "three";
@@ -80,14 +80,26 @@ function hasPressedKey(pressedKeys: Set<string>, keys: Set<string>) {
     return false;
 }
 
+function getPrefabNodeId(object: Object3D | null | undefined) {
+    return typeof object?.userData?.prefabNodeId === "string" ? object.userData.prefabNodeId : null;
+}
+
+function findPlayerRoot(root: Object3D | null | undefined) {
+    if (!root) return null;
+
+    let playerObject: Object3D | null = null;
+    root.traverse((candidate) => {
+        if (playerObject || getPrefabNodeId(candidate) !== "player") return;
+        playerObject = candidate;
+    });
+
+    return playerObject;
+}
+
 export default function FirstPersonPlayer({
-    editorRef,
     runtimeRef,
-    playerId = "player",
 }: {
-    editorRef: React.RefObject<PrefabEditorRef | null>;
     runtimeRef: React.RefObject<CrashcatRuntimeRef | null>;
-    playerId?: string;
 }) {
     const { mode } = useEditorContext();
     const planarVelocityRef = useRef(new Vector3());
@@ -96,7 +108,8 @@ export default function FirstPersonPlayer({
     const updateSettingsRef = useRef(kcc.createDefaultUpdateSettings());
     const pressedKeysRef = useRef(new Set<string>());
     const jumpQueuedRef = useRef(false);
-    const { camera } = useThree();
+    const playerObjectRef = useRef<Object3D | null>(null);
+    const { camera, scene } = useThree();
 
     useEffect(() => {
         const setKey = (pressed: boolean) => (event: KeyboardEvent) => {
@@ -142,14 +155,16 @@ export default function FirstPersonPlayer({
     useFrame((_, delta) => {
         if (mode !== PrefabEditorMode.Play) return;
 
-        const editor = editorRef.current;
         const runtime = runtimeRef.current;
         const world = runtime?.world;
         const queryFilter = runtime?.queryFilter;
-        if (!editor || !world || !queryFilter) return;
+        if (!world || !queryFilter) return;
 
-        const playerObject = editor.getNodeObject(playerId);
+        const playerObject = playerObjectRef.current && playerObjectRef.current.parent
+            ? playerObjectRef.current
+            : findPlayerRoot(scene);
         if (!playerObject) return;
+        playerObjectRef.current = playerObject;
 
         const settings = readPlayerSettings(playerObject);
         playerObject.getWorldPosition(worldPosition);
@@ -237,8 +252,8 @@ export default function FirstPersonPlayer({
             if (footstepTimerRef.current <= 0) {
                 gameEvents.emit(settings.footstepEventName, {
                     nodeId: "player-footsteps",
-                    sourceEntityId: playerId,
-                    sourceNodeId: playerId,
+                    sourceEntityId: "player",
+                    sourceNodeId: "player",
                     speed,
                 });
 

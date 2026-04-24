@@ -5,8 +5,8 @@ import { useRef } from "react";
 import { PrefabEditor, registerComponent } from "react-three-game";
 import initialWorld from "../../samples/killbox.json";
 import type { Prefab, PrefabEditorRef } from "react-three-game";
-import { CrashcatRuntime, type CrashcatRuntimeRef } from "../../components/CrashcatRuntime";
-import CrashcatPhysicsComponent from "./CrashcatPhysicsComponent";
+import { CrashcatRuntime, type CrashcatRuntimeRef } from "@/app/components/CrashcatRuntime";
+import CrashcatPhysicsComponent from "@/app/components/CrashcatPhysicsComponent";
 import FirstPersonPlayer from "./FirstPersonPlayer";
 
 const ORB_SPEED = 1.2;
@@ -42,7 +42,7 @@ export default function Home() {
         <main className="flex h-screen w-screen flex-col items-center justify-between bg-white dark:bg-black sm:items-start">
             <PrefabEditor ref={editorRef} initialPrefab={initialWorld as Prefab}>
                 <CrashcatRuntime ref={runtimeRef} editorRef={editorRef} debug />
-                <FirstPersonPlayer editorRef={editorRef} runtimeRef={runtimeRef} />
+                <FirstPersonPlayer runtimeRef={runtimeRef} />
                 <OrbAnimator editorRef={editorRef} />
             </PrefabEditor>
         </main>

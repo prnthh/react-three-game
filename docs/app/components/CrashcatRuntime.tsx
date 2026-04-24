@@ -22,7 +22,7 @@ import {
 } from "crashcat";
 import { debugRenderer } from "crashcat/three";
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, type RefObject } from "react";
-import { gameEvents, PrefabEditorMode, useEditorContext, type PrefabEditorRef } from "react-three-game";
+import { findComponent, gameEvents, PrefabEditorMode, useEditorContext, type GameObject, type PrefabEditorRef } from "react-three-game";
 import { Box3, Matrix4, Object3D, Quaternion, Vector3 } from "three";
 
 const bounds = new Box3();
@@ -92,9 +92,44 @@ function isRecord(value: unknown): value is Record<string, unknown> {
     return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
-function readCrashcatConfig(object: Object3D | null | undefined): CrashcatNodeConfig | null {
-    const crashcat = object?.userData?.crashcat;
-    return isRecord(crashcat) ? (crashcat as CrashcatNodeConfig) : null;
+function pickDefined<T extends Record<string, unknown>>(value: T) {
+    return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined && entry !== ""));
+}
+
+function resolveCrashcatConfig(node: GameObject | null | undefined): CrashcatNodeConfig | null {
+    const dataCrashcat = findComponent(node, "Data")?.properties?.data?.crashcat;
+    const physics = findComponent(node, "CrashcatPhysics")?.properties;
+
+    const config: CrashcatNodeConfig = {
+        ...(isRecord(dataCrashcat) ? dataCrashcat as CrashcatNodeConfig : {}),
+        ...(isRecord(physics)
+            ? {
+                collider: pickDefined({
+                    shape: physics.shape,
+                    motionType: physics.motionType,
+                    motionQuality: physics.motionQuality,
+                    sensor: physics.sensor,
+                    radius: physics.radius,
+                    restitution: physics.restitution,
+                    friction: physics.friction,
+                    linearVelocity: physics.linearVelocity,
+                }) as Exclude<CrashcatColliderConfig, false>,
+                events: pickDefined({
+                    collisionEnter: typeof physics.collisionEnter === "string" ? physics.collisionEnter : undefined,
+                    collisionExit: typeof physics.collisionExit === "string" ? physics.collisionExit : undefined,
+                }) as CrashcatEventConfig,
+            }
+            : {}),
+    };
+
+    if (config.collider && !isRecord(config.collider)) {
+        delete config.collider;
+    }
+    if (config.events && Object.keys(config.events).length === 0) {
+        delete config.events;
+    }
+
+    return Object.keys(config).length > 0 ? config : null;
 }
 
 function getPrefabNodeId(object: Object3D | null | undefined) {
@@ -294,7 +329,8 @@ export const CrashcatRuntime = forwardRef<CrashcatRuntimeRef, {
             editBodiesDirtyRef.current = false;
         }
 
-        const rootConfig = readCrashcatConfig(root);
+        const rootNode = editor.getNode(getPrefabNodeId(root) ?? "");
+        const rootConfig = resolveCrashcatConfig(rootNode);
         const rootNodeId = getPrefabNodeId(root);
         const autoStaticColliders = Boolean(rootConfig?.autoStaticColliders);
         const excludedIds = new Set(rootConfig?.excludeIds ?? []);
@@ -306,7 +342,8 @@ export const CrashcatRuntime = forwardRef<CrashcatRuntimeRef, {
             seenNodeIds.add(nodeId);
 
             const object = editor.getNodeObject(nodeId) ?? candidate;
-            const config = readCrashcatConfig(object);
+            const node = editor.getNode(nodeId);
+            const config = resolveCrashcatConfig(node);
             const explicitCollider = config?.collider;
             const allowAutoCollider = autoStaticColliders
                 && !excludedIds.has(nodeId)

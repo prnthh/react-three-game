@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { gameEvents, PrefabEditor, PrefabEditorMode, registerComponent, soundManager } from "react-three-game";
 import type { PrefabEditorRef } from "react-three-game";
 import { Quaternion, Vector3 } from "three";
+import CrashcatPhysicsComponent from "@/app/components/CrashcatPhysicsComponent";
 import { CrashcatRuntime } from "../../components/CrashcatRuntime";
 import CannonBarrelSwayComponent from "./CannonBarrelSwayComponent";
 
@@ -20,6 +21,7 @@ const TARGET_HIT_EVENT = "target:hit";
 const TARGET_RESET_EVENT = "target:reset";
 
 registerComponent(CannonBarrelSwayComponent);
+registerComponent(CrashcatPhysicsComponent);
 
 const prefab = {
     id: "scene",
@@ -28,16 +30,6 @@ const prefab = {
         id: "root",
         components: {
             transform: { type: "Transform", properties: { position: [0, 0, 0] } },
-            data: {
-                type: "Data",
-                properties: {
-                    data: {
-                        crashcat: {
-                            autoStaticColliders: true,
-                        },
-                    },
-                },
-            },
         },
         children: [
             {
@@ -54,6 +46,10 @@ const prefab = {
                     material: {
                         type: "Material",
                         properties: { color: "#444444" }
+                    },
+                    crashcatPhysics: {
+                        type: "CrashcatPhysics",
+                        properties: { shape: "autoBox", motionType: "static" }
                     }
                 }
             },
@@ -71,6 +67,10 @@ const prefab = {
                     material: {
                         type: "Material",
                         properties: { color: "#7c3aed" }
+                    },
+                    crashcatPhysics: {
+                        type: "CrashcatPhysics",
+                        properties: { shape: "autoBox", motionType: "static" }
                     }
                 },
                 children: [
@@ -89,22 +89,14 @@ const prefab = {
                                 type: "Material",
                                 properties: { color: "#22c55e", opacity: 0.9, transparent: true }
                             },
-                            data: {
-                                type: "Data",
+                            crashcatPhysics: {
+                                type: "CrashcatPhysics",
                                 properties: {
-                                    data: {
-                                        crashcat: {
-                                            collider: {
-                                                shape: "autoBox",
-                                                motionType: "static",
-                                                sensor: true,
-                                            },
-                                            events: {
-                                                collisionEnter: TARGET_HIT_EVENT,
-                                                collisionExit: TARGET_RESET_EVENT,
-                                            },
-                                        },
-                                    },
+                                    shape: "autoBox",
+                                    motionType: "static",
+                                    sensor: true,
+                                    collisionEnter: TARGET_HIT_EVENT,
+                                    collisionExit: TARGET_RESET_EVENT,
                                 }
                             }
                         }
@@ -179,22 +171,16 @@ function createProjectileNode(spawnPosition: Vector3, launchVelocity: Vector3) {
             },
             geometry: { type: "Geometry", properties: { geometryType: "sphere", args: [0.28, 24, 24] } },
             material: { type: "Material", properties: { color: "#f8fafc" } },
-            data: {
-                type: "Data",
+            crashcatPhysics: {
+                type: "CrashcatPhysics",
                 properties: {
-                    data: {
-                        crashcat: {
-                            collider: {
-                                shape: "sphere",
-                                motionType: "dynamic",
-                                motionQuality: "linearCast",
-                                radius: 0.28,
-                                restitution: 0.3,
-                                friction: 0.6,
-                                linearVelocity: [launchVelocity.x, launchVelocity.y, launchVelocity.z],
-                            },
-                        },
-                    },
+                    shape: "sphere",
+                    motionType: "dynamic",
+                    motionQuality: "linearCast",
+                    radius: 0.28,
+                    restitution: 0.3,
+                    friction: 0.6,
+                    linearVelocity: [launchVelocity.x, launchVelocity.y, launchVelocity.z],
                 },
             },
         },

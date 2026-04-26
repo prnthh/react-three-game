@@ -130,21 +130,6 @@ function CameraComponentView({ properties, children }: ComponentViewProps<Camera
         CameraHelper
     );
 
-    useFrame(() => {
-        if (!editMode || !isSelected) return;
-
-        if (projection === 'orthographic' && orthographicCameraRef.current) {
-            orthographicCameraRef.current.updateProjectionMatrix();
-            orthographicCameraRef.current.updateMatrixWorld();
-            return;
-        }
-
-        if (perspectiveCameraRef.current) {
-            perspectiveCameraRef.current.updateProjectionMatrix();
-            perspectiveCameraRef.current.updateMatrixWorld();
-        }
-    });
-
     const helperContent = editMode ? (
         <group>
             <mesh>

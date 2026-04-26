@@ -1,7 +1,6 @@
 import type { Component, ComponentViewProps } from "./ComponentRegistry";
 import { useHelper } from "@react-three/drei";
 import { useRef, useEffect, useState } from "react";
-import { useFrame } from "@react-three/fiber";
 import { CameraHelper } from "three";
 import type { Object3D } from "three";
 import type { DirectionalLight, OrthographicCamera } from "three";
@@ -251,7 +250,7 @@ function DirectionalLightView({ properties, children }: ComponentViewProps) {
     const shadowCameraRight = merged.shadowCameraRight;
     const targetOffset = merged.targetOffset;
     const directionalLightRef = useRef<DirectionalLight>(null);
-    const targetRef = useRef<Object3D>(null);
+    const targetRef = useRef<Object3D | null>(null);
     const shadowCameraRef = useRef<OrthographicCamera>(null);
     const [shadowCamera, setShadowCamera] = useState<OrthographicCamera | null>(null);
     const helperTarget = editMode && isSelected && castShadow && shadowCameraRef.current
@@ -265,31 +264,19 @@ function DirectionalLightView({ properties, children }: ComponentViewProps) {
     // Use a local target object so node transforms rotate the light direction naturally.
     useEffect(() => {
         if (directionalLightRef.current && targetRef.current) {
-            directionalLightRef.current.target = targetRef.current;
             const nextShadowCamera = directionalLightRef.current.shadow.camera;
             shadowCameraRef.current = nextShadowCamera;
             setShadowCamera(castShadow ? nextShadowCamera : null);
         }
     });
 
+    // Update shadow camera matrices when parameters or castShadow change
     useEffect(() => {
-        const shadow = directionalLightRef.current?.shadow;
-        if (!shadow) return;
-
-        shadow.needsUpdate = true;
-        shadow.camera.updateProjectionMatrix();
-    });
-
-    useFrame(() => {
-        if (!directionalLightRef.current || !targetRef.current) return;
-
-        directionalLightRef.current.target.updateMatrixWorld();
-
         if (shadowCamera && castShadow) {
             shadowCamera.updateProjectionMatrix();
             shadowCamera.updateMatrixWorld();
         }
-    });
+    }, [shadowCamera, castShadow]);
 
     return (
         <>
@@ -310,7 +297,7 @@ function DirectionalLightView({ properties, children }: ComponentViewProps) {
                 shadow-normalBias={shadowNormalBias}
                 shadow-autoUpdate={shadowAutoUpdate}
             />
-            <object3D ref={targetRef} position={targetOffset as [number, number, number]} />
+            <object3D ref={targetRef} attach={"target"} position={targetOffset as [number, number, number]} />
             {editMode && isSelected && (
                 <>
                     {/* Light source indicator */}

@@ -79,88 +79,80 @@ function SpotLightComponentEditor({ component, onUpdate, basePath = "" }: { comp
 function SpotLightView({ properties, children }: ComponentViewProps) {
     const { getTexture } = useAssetRuntime();
     const { editMode, isSelected } = useNode();
+
     const merged = mergeWithDefaults(spotLightDefaults, properties) as SpotLightProperties;
-    const color = merged.color;
-    const intensity = merged.intensity;
-    const angle = merged.angle;
-    const penumbra = merged.penumbra;
-    const distance = merged.distance;
-    const decay = merged.decay;
-    const castShadow = merged.castShadow;
-    const shadowMapSize = merged.shadowMapSize;
-    const shadowBias = merged.shadowBias;
-    const shadowNormalBias = merged.shadowNormalBias;
-    const shadowAutoUpdate = merged.shadowAutoUpdate;
-    const shadowCameraNear = merged.shadowCameraNear;
-    const shadowCameraFar = merged.shadowCameraFar;
-    const targetOffset = merged.targetOffset;
-    const textureMap = merged.map ? getTexture(merged.map) ?? undefined : undefined;
+
+    const textureMap = merged.map
+        ? getTexture(merged.map) ?? undefined
+        : undefined;
+
+    const lightProps = {
+        color: merged.color,
+        intensity: merged.intensity,
+        angle: merged.angle,
+        penumbra: merged.penumbra,
+        distance: merged.distance,
+        decay: merged.decay,
+        castShadow: merged.castShadow,
+        map: textureMap,
+
+        // mapped props
+        "shadow-mapSize-width": merged.shadowMapSize,
+        "shadow-mapSize-height": merged.shadowMapSize,
+        "shadow-bias": merged.shadowBias,
+        "shadow-normalBias": merged.shadowNormalBias,
+        "shadow-autoUpdate": merged.shadowAutoUpdate,
+        "shadow-camera-near": merged.shadowCameraNear,
+        "shadow-camera-far": merged.shadowCameraFar,
+    };
+
     const spotLightRef = useRef<SpotLight>(null);
     const targetRef = useRef<Object3D | null>(null);
-    const helperTarget = editMode && isSelected && spotLightRef.current
+
+    const showHelper = editMode && isSelected;
+    const helperTarget = showHelper && spotLightRef.current
         ? { current: spotLightRef.current }
         : null;
     useHelper(
         helperTarget,
         SpotLightHelper,
-        color
+        merged.color
     );
 
-    useEffect(() => {
-        if (spotLightRef.current && targetRef.current) {
-            spotLightRef.current.target = targetRef.current;
-        }
-    });
-
-    useEffect(() => {
-        const shadow = spotLightRef.current?.shadow;
-        if (!shadow) return;
-
-        shadow.needsUpdate = true;
-        shadow.camera.updateProjectionMatrix();
-    });
-
-    useFrame(() => {
-        if (spotLightRef.current?.target) {
-            spotLightRef.current.target.updateMatrixWorld();
-        }
-    });
-
     return (
-        <>
+        <group>
             <spotLight
                 ref={spotLightRef}
-                color={color}
-                intensity={intensity}
-                angle={angle}
-                penumbra={penumbra}
-                distance={distance}
-                decay={decay}
-                map={textureMap}
-                castShadow={castShadow}
-                shadow-mapSize-width={shadowMapSize}
-                shadow-mapSize-height={shadowMapSize}
-                shadow-bias={shadowBias}
-                shadow-normalBias={shadowNormalBias}
-                shadow-autoUpdate={shadowAutoUpdate}
-                shadow-camera-near={shadowCameraNear}
-                shadow-camera-far={shadowCameraFar}
+                {...lightProps}
+                target={targetRef.current ?? undefined}
+            >
+                {showHelper && (
+                    <>
+                        <mesh>
+                            <sphereGeometry args={[0.2, 8, 6]} />
+                            <meshBasicMaterial color={merged.color} wireframe />
+                        </mesh>
+
+                        <mesh position={merged.targetOffset}>
+                            <sphereGeometry args={[0.15, 8, 6]} />
+                            <meshBasicMaterial
+                                color={merged.color}
+                                wireframe
+                                opacity={0.5}
+                                transparent
+                            />
+                        </mesh>
+                    </>
+                )}
+
+                {children}
+            </spotLight>
+
+            <object3D
+                ref={targetRef}
+                position={merged.targetOffset}
             />
-            <object3D ref={targetRef} position={targetOffset as [number, number, number]} />
-            {editMode && isSelected && (
-                <>
-                    <mesh>
-                        <sphereGeometry args={[0.2, 8, 6]} />
-                        <meshBasicMaterial color={color} wireframe />
-                    </mesh>
-                    <mesh position={targetOffset as [number, number, number]}>
-                        <sphereGeometry args={[0.15, 8, 6]} />
-                        <meshBasicMaterial color={color} wireframe opacity={0.5} transparent />
-                    </mesh>
-                </>
-            )}
-            {children}
-        </>
+        </group>
     );
 }
 

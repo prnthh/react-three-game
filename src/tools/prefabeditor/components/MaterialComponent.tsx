@@ -5,7 +5,7 @@ import { useFrame } from '@react-three/fiber';
 import { Component } from './ComponentRegistry';
 import { FieldRenderer, FieldDefinition, Label, NumberInput } from './Input';
 import { useAssetRuntime } from '../assetRuntime';
-import { MeshBasicNodeMaterial, MeshStandardNodeMaterial } from 'three/webgpu';
+import { MeshBasicNodeMaterial, MeshStandardNodeMaterial, SpriteNodeMaterial } from 'three/webgpu';
 import { TexturePicker } from '../../assetviewer/page';
 import {
     RepeatWrapping,
@@ -32,14 +32,17 @@ declare module '@react-three/fiber' {
     interface ThreeElements {
         meshBasicNodeMaterial: ThreeElement<typeof MeshBasicNodeMaterial>;
         meshStandardNodeMaterial: ThreeElement<typeof MeshStandardNodeMaterial>;
+        spriteNodeMaterial: ThreeElement<typeof SpriteNodeMaterial>;
     }
 }
 
 export interface MaterialProps extends Omit<MeshStandardMaterialProperties & MeshBasicMaterialProperties, 'args' | 'normalScale'> {
-    materialType?: 'standard' | 'basic';
+    materialType?: 'standard' | 'basic' | 'sprite';
     transmission?: number;
     thickness?: number;
     ior?: number;
+    rotation?: number;
+    sizeAttenuation?: boolean;
     texture?: string;
     offset?: [number, number];
     repeat?: boolean;
@@ -120,6 +123,7 @@ export function MaterialOverridesProvider({
 extend({
     MeshBasicNodeMaterial,
     MeshStandardNodeMaterial,
+    SpriteNodeMaterial,
 });
 
 function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { component: any; onUpdate: (newComp: any) => void; basePath?: string }) {
@@ -128,6 +132,7 @@ function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { compo
     const hasRepeat = component.properties.repeat;
     const animateOffset = component.properties.animateOffset;
     const isStandardMaterial = materialType === 'standard';
+    const isSpriteMaterial = materialType === 'sprite';
 
     const fields: FieldDefinition[] = [
         {
@@ -137,13 +142,22 @@ function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { compo
             options: [
                 { value: 'standard', label: 'Standard' },
                 { value: 'basic', label: 'Basic' },
+                { value: 'sprite', label: 'Sprite' },
             ],
         },
         { name: 'color', type: 'color', label: 'Color' },
         { name: 'toneMapped', type: 'boolean', label: 'Tone Mapped' },
-        { name: 'wireframe', type: 'boolean', label: 'Wireframe' },
+        ...(!isSpriteMaterial ? [
+            { name: 'wireframe', type: 'boolean', label: 'Wireframe' } as FieldDefinition,
+        ] : []),
         { name: 'transparent', type: 'boolean', label: 'Transparent' },
         { name: 'opacity', type: 'number', label: 'Opacity', min: 0, max: 1, step: 0.01 },
+        ...(isSpriteMaterial ? [
+            { name: 'rotation', type: 'number', label: 'Rotation', step: 0.01 } as FieldDefinition,
+            { name: 'sizeAttenuation', type: 'boolean', label: 'Size Attenuation' } as FieldDefinition,
+            { name: 'depthTest', type: 'boolean', label: 'Depth Test' } as FieldDefinition,
+            { name: 'depthWrite', type: 'boolean', label: 'Depth Write' } as FieldDefinition,
+        ] : []),
         ...(isStandardMaterial ? [
             { name: 'metalness', type: 'number', label: 'Metalness', min: 0, max: 1, step: 0.01 },
             { name: 'roughness', type: 'number', label: 'Roughness', min: 0, max: 1, step: 0.01 },
@@ -151,7 +165,7 @@ function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { compo
             { name: 'thickness', type: 'number', label: 'Thickness', min: 0, step: 0.1 },
             { name: 'ior', type: 'number', label: 'IOR (Index of Refraction)', min: 1, max: 2.333, step: 0.01 },
         ] as FieldDefinition[] : []),
-        {
+        ...(!isSpriteMaterial ? [{
             name: 'side',
             type: 'select',
             label: 'Side',
@@ -160,7 +174,7 @@ function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { compo
                 { value: 'BackSide', label: 'Back' },
                 { value: 'DoubleSide', label: 'Double' },
             ],
-        } as FieldDefinition,
+        } as FieldDefinition] : []),
         {
             name: 'texture',
             type: 'custom',
@@ -197,15 +211,15 @@ function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { compo
                     <Vector2Editor label="Speed" value={value} onChange={onChange} step={0.01} />
                 ),
             } as FieldDefinition] : []),
-            {
+            ...(!isSpriteMaterial ? [{
                 name: 'normalMapTexture',
                 type: 'custom',
                 label: 'Normal Map',
                 render: ({ value, onChange }) => (
                     <TexturePicker value={value} onChange={onChange} basePath={basePath} />
                 ),
-            } as FieldDefinition,
-            ...(component.properties.normalMapTexture ? [{
+            } as FieldDefinition] : []),
+            ...(!isSpriteMaterial && component.properties.normalMapTexture ? [{
                 name: 'normalScale',
                 type: 'custom',
                 label: 'Normal Scale (X, Y)',
@@ -285,6 +299,8 @@ function MaterialComponentView({ properties: rawProps }: { properties: Record<st
         normalMapTexture: _normalMapTexture,
         normalScale: _normalScale,
         normalMap: _normalMap,
+        rotation,
+        sizeAttenuation,
         side: sideProp,
         ...materialProps
     } = materialSource;
@@ -348,7 +364,7 @@ function MaterialComponentView({ properties: rawProps }: { properties: Record<st
     }, [normalMapTexture]);
 
     if (!properties) {
-        return <meshStandardNodeMaterial color="red" wireframe />;
+        return <meshStandardNodeMaterial attach="material" color="red" wireframe />;
     }
 
     const overrides = useMaterialOverrides();
@@ -360,11 +376,33 @@ function MaterialComponentView({ properties: rawProps }: { properties: Record<st
     };
 
     if (materialType === 'basic') {
-        return <meshBasicNodeMaterial {...sharedProps} />;
+        return <meshBasicNodeMaterial attach="material" {...sharedProps} />;
+    }
+
+    if (materialType === 'sprite') {
+        const spriteTransparent = properties.transparent !== false;
+
+        return (
+            <spriteNodeMaterial
+                attach="material"
+                map={finalTexture}
+                color={properties.color ?? '#ffffff'}
+                opacity={properties.opacity ?? 1}
+                transparent={spriteTransparent}
+                alphaTest={properties.alphaTest ?? 0}
+                depthTest={properties.depthTest ?? false}
+                depthWrite={properties.depthWrite ?? false}
+                toneMapped={properties.toneMapped ?? true}
+                {...overrides}
+                rotation={rotation ?? 0}
+                sizeAttenuation={sizeAttenuation ?? true}
+            />
+        );
     }
 
     return (
         <meshStandardNodeMaterial
+            attach="material"
             {...sharedProps}
             normalMap={finalNormalMap}
             normalScale={finalNormalMap ? [normalScaleProp?.[0] ?? 1, normalScaleProp?.[1] ?? 1] : undefined}
@@ -383,6 +421,7 @@ const MaterialComponent: Component = {
         wireframe: false,
         transparent: false,
         opacity: 1,
+        sizeAttenuation: true,
         offset: [0, 0],
         animateOffset: false,
         offsetSpeed: [0, 0],

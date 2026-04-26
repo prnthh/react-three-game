@@ -18,12 +18,6 @@ type BenchmarkResult = {
     durationMs: number;
 };
 
-type BenchmarkSummary = {
-    results: BenchmarkResult[];
-    totalDurationMs: number;
-    error: string | null;
-};
-
 type BenchmarkDefinition = {
     id: string;
     label: string;
@@ -289,11 +283,6 @@ export default function BenchmarkPage() {
         () => results.reduce((sum, result) => sum + result.durationMs, 0),
         [results],
     );
-    const summary = useMemo<BenchmarkSummary>(() => ({
-        results,
-        totalDurationMs: totalTimeMs,
-        error,
-    }), [error, results, totalTimeMs]);
 
     const runBenchmarks = useCallback(async () => {
         const editor = editorRef.current;
@@ -394,10 +383,10 @@ export default function BenchmarkPage() {
                 <directionalLight intensity={2.2} position={[8, 12, 6]} castShadow />
             </PrefabEditor>
 
-            <section className="absolute bottom-6 left-6 w-[min(28rem,calc(100vw-3rem))] rounded-3xl border border-white/10 bg-black/55 p-5 shadow-[0_20px_80px_rgba(0,0,0,0.45)] backdrop-blur-md">
-                <p className="text-xs uppercase tracking-[0.28em] text-cyan-300/80">PrefabEditor Benchmark</p>
-                <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white">Mutation profiling</h1>
-                <p className="mt-2 text-sm leading-6 text-slate-300">
+            <section className="absolute bottom-6 left-6 w-[min(26rem,calc(100vw-3rem))] bg-black/70 p-2 text-sm text-white">
+                <p className="text-[11px] text-slate-400">PrefabEditor Benchmark</p>
+                <h1 className="mt-1 text-base font-medium text-white">Mutation profiling</h1>
+                <p className="mt-1 text-xs leading-5 text-slate-300">
                     Runs editor-ref scene mutations against a blank prefab and measures total wall-clock time after the scene settles.
                 </p>
 
@@ -405,18 +394,18 @@ export default function BenchmarkPage() {
                     type="button"
                     onClick={runBenchmarks}
                     disabled={isRunning}
-                    className="mt-5 inline-flex items-center rounded-full bg-cyan-300 px-4 py-2 text-sm font-medium text-slate-950 transition hover:bg-cyan-200 disabled:cursor-wait disabled:bg-slate-500"
+                    className="mt-3 inline-flex items-center border border-white/20 px-2 py-1 text-xs text-white disabled:cursor-wait disabled:opacity-50"
                 >
                     {isRunning ? "Running…" : "Start"}
                 </button>
 
-                <div className="mt-5 space-y-3 text-sm text-slate-200">
+                <div className="mt-3 space-y-1.5 text-xs text-slate-200">
                     {benchmarkDefinitions.map((benchmark) => {
                         const result = results.find(entry => entry.id === benchmark.id);
                         return (
-                            <div key={benchmark.id} className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3">
-                                <div className="font-medium text-white">{benchmark.label}</div>
-                                <div className="mt-1 text-slate-300">
+                            <div key={benchmark.id} className="border-t border-white/10 pt-1.5">
+                                <div>{benchmark.label}</div>
+                                <div className="text-slate-400">
                                     {result ? `${result.durationMs.toFixed(2)} ms` : "Pending"}
                                 </div>
                             </div>
@@ -424,24 +413,14 @@ export default function BenchmarkPage() {
                     })}
                 </div>
 
-                <div className="mt-5 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 px-4 py-3">
-                    <div className="text-xs uppercase tracking-[0.22em] text-cyan-200/80">Total time</div>
-                    <div className="mt-1 text-2xl font-semibold text-white">
+                <div className="mt-3 border-t border-white/10 pt-1.5">
+                    <div className="text-[11px] text-slate-400">Total time</div>
+                    <div className="text-base text-white">
                         {results.length > 0 ? `${totalTimeMs.toFixed(2)} ms` : "--"}
                     </div>
                 </div>
 
-                {error ? <p className="mt-4 text-sm text-rose-300">{error}</p> : null}
-
-                <div className="mt-4 rounded-2xl border border-white/8 bg-slate-950/70 p-3">
-                    <div className="text-xs uppercase tracking-[0.22em] text-slate-400">Queryable log</div>
-                    <pre
-                        data-testid="benchmark-log"
-                        className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words text-xs leading-5 text-slate-200"
-                    >
-                        {JSON.stringify(summary, null, 2)}
-                    </pre>
-                </div>
+                {error ? <p className="mt-3 text-xs text-rose-300">{error}</p> : null}
             </section>
         </main>
     );

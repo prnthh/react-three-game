@@ -106,6 +106,7 @@ type AnalyzedNodeComponents = {
     geometry: ComponentData | undefined;
     material: ComponentData | undefined;
     model: ComponentData | undefined;
+    sprite: ComponentData | undefined;
     clickEventName: string | null;
     composition: CompositionComponent[];
 };
@@ -340,6 +341,7 @@ function analyzeNodeComponents(node: GameObjectType): AnalyzedNodeComponents {
     let geometry: ComponentData | undefined;
     let material: ComponentData | undefined;
     let model: ComponentData | undefined;
+    let sprite: ComponentData | undefined;
     const composition: CompositionComponent[] = [];
 
     for (const [key, component] of Object.entries(node.components ?? {})) {
@@ -360,6 +362,9 @@ function analyzeNodeComponents(node: GameObjectType): AnalyzedNodeComponents {
             case "Model":
                 model = component;
                 break;
+            case "Sprite":
+                sprite = component;
+                break;
             default: {
                 const def = getComponentDef(component.type);
                 if (!def?.View) break;
@@ -378,7 +383,8 @@ function analyzeNodeComponents(node: GameObjectType): AnalyzedNodeComponents {
         geometry: bufferGeometry ?? geometry,
         material,
         model,
-        clickEventName: getClickEventName(bufferGeometry) ?? getClickEventName(geometry) ?? getClickEventName(model),
+        sprite,
+        clickEventName: getClickEventName(bufferGeometry) ?? getClickEventName(geometry) ?? getClickEventName(model) ?? getClickEventName(sprite),
         composition,
     };
 }
@@ -605,6 +611,8 @@ interface RendererProps {
     isVisible?: boolean;
 }
 
+type PrimaryClickHandlers = { onClick?: (event: ThreeEvent<PointerEvent>) => void };
+
 function ChildNodes({ childIds, parentMatrix, ...props }: { childIds: string[]; parentMatrix: Matrix4 } & Omit<RendererProps, 'nodeId' | 'parentMatrix'>) {
     return childIds.map(childId =>
         <GameObjectRenderer
@@ -706,52 +714,96 @@ function getNodeTransformProps(node?: GameObjectType | null) {
 function renderNodeContent(
     analyzedComponents: AnalyzedNodeComponents,
     loadedModels: LoadedModels,
-    primaryClickHandlers?: { onClick?: (event: ThreeEvent<PointerEvent>) => void },
+    primaryClickHandlers?: PrimaryClickHandlers,
     childNodes?: React.ReactNode
 ) {
     const geometry = analyzedComponents.geometry;
-    const geometryDef = analyzedComponents.geometry && getComponentDef(analyzedComponents.geometry.type);
-    const materialDef = analyzedComponents.material && getComponentDef(analyzedComponents.material.type);
-    const modelDef = analyzedComponents.model && getComponentDef(analyzedComponents.model.type);
-    const geometryProperties = geometry?.properties ?? {};
-    const meshVisible = geometryProperties.visible !== false;
-    const meshCastShadow = meshVisible && geometryProperties.castShadow !== false;
-    const meshReceiveShadow = meshVisible && geometryProperties.receiveShadow !== false;
-    let primaryContent: React.ReactNode = null;
+    const model = analyzedComponents.model;
+    const material = analyzedComponents.material;
+    const sprite = analyzedComponents.sprite;
+    const shapeKind = sprite?.type ? 'sprite' : geometry?.type ? 'mesh' : model?.type ? 'model' : 'none';
+    let materialContent: React.ReactNode = null;
 
-    if (analyzedComponents.geometry?.type && geometryDef?.View) {
-        primaryContent = (
-            <mesh
-                visible={meshVisible}
-                castShadow={meshCastShadow}
-                receiveShadow={meshReceiveShadow}
-                {...primaryClickHandlers}
-            >
-                <geometryDef.View properties={analyzedComponents.geometry.properties} />
-                {analyzedComponents.material && materialDef?.View && (
+    switch (shapeKind) {
+        case 'sprite': {
+            const materialDef = material?.type ? getComponentDef(material.type) : undefined;
+            if (material?.properties && materialDef?.View) {
+                const materialIsSprite = material.properties.materialType === 'sprite';
+                materialContent = (
                     <materialDef.View
                         key="material"
-                        properties={analyzedComponents.material.properties}
+                        properties={{
+                            ...material.properties,
+                            materialType: 'sprite',
+                            transparent: materialIsSprite ? material.properties.transparent : true,
+                            depthTest: materialIsSprite ? material.properties.depthTest : false,
+                            depthWrite: materialIsSprite ? material.properties.depthWrite : false,
+                        }}
                     />
-                )}
-            </mesh>
-        );
-    } else if (
-        analyzedComponents.model?.type
-        && modelDef?.View
-        && !analyzedComponents.model.properties?.instanced
-        && isNodeReady(analyzedComponents.model, loadedModels)
-    ) {
-        primaryContent = primaryClickHandlers ? (
-            <group {...primaryClickHandlers}>
-                <modelDef.View properties={analyzedComponents.model.properties} />
-            </group>
-        ) : (
-            <modelDef.View properties={analyzedComponents.model.properties} />
-        );
+                );
+            }
+            break;
+        }
+        case 'mesh': {
+            const materialDef = material?.type ? getComponentDef(material.type) : undefined;
+            if (material?.properties && materialDef?.View) {
+                materialContent = <materialDef.View key="material" properties={material.properties} />;
+            }
+            break;
+        }
     }
 
-    let content = <>{primaryContent}{childNodes}</>;
+    let primaryContent: React.ReactNode = null;
+    let contentChildren = childNodes;
+
+    switch (shapeKind) {
+        case 'sprite': {
+            primaryContent = (
+                <sprite
+                    center={sprite?.properties?.center ?? [0.5, 0.5]}
+                    {...primaryClickHandlers}
+                >
+                    {materialContent}
+                    {childNodes}
+                </sprite>
+            );
+            contentChildren = null;
+            break;
+        }
+        case 'mesh': {
+            const geometryDef = geometry?.type ? getComponentDef(geometry.type) : undefined;
+            if (!geometry?.properties || !geometryDef?.View) break;
+
+            const GeometryView = geometryDef.View;
+            const geometryProperties = geometry.properties ?? {};
+            const visible = geometryProperties.visible !== false;
+
+            primaryContent = (
+                <mesh
+                    visible={visible}
+                    castShadow={visible && geometryProperties.castShadow !== false}
+                    receiveShadow={visible && geometryProperties.receiveShadow !== false}
+                    {...primaryClickHandlers}
+                >
+                    <GeometryView properties={geometry.properties} />
+                    {materialContent}
+                </mesh>
+            );
+            break;
+        }
+        case 'model': {
+            if (!model?.type || model.properties?.instanced || !isNodeReady(model, loadedModels)) break;
+
+            const modelDef = getComponentDef(model.type);
+            if (!modelDef?.View) break;
+
+            const modelContent = <modelDef.View properties={model.properties} />;
+            primaryContent = primaryClickHandlers ? <group {...primaryClickHandlers}>{modelContent}</group> : modelContent;
+            break;
+        }
+    }
+
+    let content = <>{primaryContent}{contentChildren}</>;
     for (const { key, View, properties } of analyzedComponents.composition) {
         content = (
             <View key={key} properties={properties}>

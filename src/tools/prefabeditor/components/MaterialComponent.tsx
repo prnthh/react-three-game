@@ -13,8 +13,8 @@ import type { ComponentData } from '../types';
 import {
     RepeatWrapping,
     ClampToEdgeWrapping,
+    NoColorSpace,
     SRGBColorSpace,
-    LinearSRGBColorSpace,
     NearestFilter,
     LinearFilter,
     NearestMipmapNearestFilter,
@@ -137,7 +137,7 @@ function cloneConfiguredTexture({
     repeat?: boolean;
     repeatCount?: [number, number];
     offset?: [number, number];
-    colorSpace: typeof SRGBColorSpace | typeof LinearSRGBColorSpace;
+    colorSpace: typeof NoColorSpace | typeof SRGBColorSpace;
     generateMipmaps: boolean;
     minFilter: MinificationTextureFilter;
     magFilter: MagnificationTextureFilter;
@@ -399,7 +399,7 @@ function MaterialComponentView({ properties: rawProps }: ComponentViewProps<Reco
             repeat,
             repeatCount,
             offset,
-            colorSpace: LinearSRGBColorSpace,
+            colorSpace: NoColorSpace,
             generateMipmaps,
             minFilter: resolvedMinFilter,
             magFilter: resolvedMagFilter,
@@ -425,7 +425,13 @@ function MaterialComponentView({ properties: rawProps }: ComponentViewProps<Reco
         return <meshStandardNodeMaterial attach="material" color="red" wireframe />;
     }
 
-    const materialKey = `${materialType}:${textureName ?? 'none'}:${normalMapTextureName ?? 'none'}`;
+    const materialKey = [
+        materialType,
+        textureName ?? 'none',
+        texture?.uuid ?? 'texture-pending',
+        normalMapTextureName ?? 'none',
+        normalMapTexture?.uuid ?? 'normal-pending',
+    ].join(':');
 
     const sharedProps = {
         map: finalTexture,

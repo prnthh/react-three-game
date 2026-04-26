@@ -13,28 +13,26 @@ import {
 } from "crashcat";
 import {
     BooleanField,
-    Component,
-    ComponentViewProps,
-    FieldDefinition,
     FieldRenderer,
     StringField,
     Vector3Field,
     useNode,
 } from "react-three-game";
-import { Box3, Matrix4, Object3D, Quaternion, Vector3 } from "three";
+import type { Component, ComponentViewProps, FieldDefinition } from "react-three-game";
+import { Box3, Matrix4, Quaternion, Vector3 } from "three";
+import type { Object3D } from "three";
 import { useCrashcat } from "./CrashcatRuntime";
 
 type CrashcatPhysicsProperties = {
-    shape?: "autoBox" | "box" | "sphere" | "trimesh" | "hull" | "capsule";
-    motionType?: "static" | "dynamic" | "kinematic";
+    type?: "fixed" | "dynamic" | "kinematic";
+    colliders?: "autoBox" | "ball" | "capsule" | "hull" | "trimesh";
     motionQuality?: "discrete" | "linearCast";
     sensor?: boolean;
     friction?: number;
     restitution?: number;
     radius?: number;
-    halfHeightOfCylinder?: number;
+    capsuleHalfHeight?: number;
     linearVelocity?: [number, number, number];
-    angularVelocity?: [number, number, number];
     collisionEnter?: string;
     collisionExit?: string;
     sensorEnter?: string;
@@ -98,30 +96,30 @@ function collectGeometryData(object: Object3D) {
     return { positions, indices };
 }
 
-function createShape(object: Object3D, bounds: Box3, props: CrashcatPhysicsProperties) {
-    if (props.shape === "trimesh") {
+function createShape(object: Object3D, bounds: Box3, colliders: CrashcatPhysicsProperties["colliders"], radius?: number, capsuleHalfHeight?: number) {
+    if (colliders === "trimesh") {
         const geo = collectGeometryData(object);
         return geo ? triangleMesh.create(geo) : null;
     }
-    if (props.shape === "hull") {
+    if (colliders === "hull") {
         const geo = collectGeometryData(object);
         return geo ? convexHull.create({ positions: geo.positions }) : null;
     }
-    if (props.shape === "capsule") {
+    if (colliders === "capsule") {
         return capsule.create({
-            radius: Math.max(props.radius ?? 0.35, 0.01),
-            halfHeightOfCylinder: Math.max(props.halfHeightOfCylinder ?? 0.45, 0.01),
+            radius: Math.max(radius ?? 0.35, 0.01),
+            halfHeightOfCylinder: Math.max(capsuleHalfHeight ?? 0.45, 0.01),
         });
     }
     object.getWorldScale(scratchScale);
     bounds.getSize(boundsSize);
-    if (props.shape === "sphere") {
-        const radius = props.radius ?? Math.max(
+    if (colliders === "ball") {
+        const ballRadius = radius ?? Math.max(
             boundsSize.x * scratchScale.x,
             boundsSize.y * scratchScale.y,
             boundsSize.z * scratchScale.z,
         ) * 0.5;
-        return sphere.create({ radius: Math.max(radius, 0.01) });
+        return sphere.create({ radius: Math.max(ballRadius, 0.01) });
     }
     return box.create({
         halfExtents: [
@@ -132,7 +130,7 @@ function createShape(object: Object3D, bounds: Box3, props: CrashcatPhysicsPrope
     });
 }
 
-function toMotionType(value?: string): MotionType {
+function toMotionType(value: CrashcatPhysicsProperties["type"]): MotionType {
     if (value === "dynamic") return MotionType.DYNAMIC;
     if (value === "kinematic") return MotionType.KINEMATIC;
     return MotionType.STATIC;
@@ -158,15 +156,15 @@ function CrashcatPhysicsView({ properties, children }: ComponentViewProps<Crashc
         const bounds = getLocalBounds(object);
         if (!bounds) return;
 
-        const shape = createShape(object, bounds, properties);
-        if (!shape) return;
+        const collider = createShape(object, bounds, properties.colliders ?? "autoBox", properties.radius, properties.capsuleHalfHeight);
+        if (!collider) return;
 
         bounds.getCenter(boundsCenter).applyMatrix4(object.matrixWorld);
         object.getWorldQuaternion(tmpQuat);
 
-        const motionType = toMotionType(properties.motionType);
+        const motionType = toMotionType(properties.type ?? "fixed");
         const body = rigidBody.create(crashcat.world, {
-            shape,
+            shape: collider,
             motionType,
             motionQuality: toMotionQuality(properties.motionQuality),
             objectLayer: motionType === MotionType.STATIC ? crashcat.staticObjectLayer : crashcat.movingObjectLayer,
@@ -180,9 +178,8 @@ function CrashcatPhysicsView({ properties, children }: ComponentViewProps<Crashc
         });
 
         if (properties.linearVelocity) rigidBody.setLinearVelocity(crashcat.world, body, properties.linearVelocity);
-        if (properties.angularVelocity) rigidBody.setAngularVelocity(crashcat.world, body, properties.angularVelocity);
 
-        crashcat.register(nodeId, body, {
+        crashcat.register(nodeId, body, object, {
             motionType,
             sensor: Boolean(properties.sensor),
             events: {
@@ -203,28 +200,32 @@ function CrashcatPhysicsView({ properties, children }: ComponentViewProps<Crashc
 
 const crashcatPhysicsFields: FieldDefinition[] = [
     {
-        name: "shape", type: "select", label: "Shape", options: [
+        name: "colliders", type: "select", label: "Collider", options: [
             { value: "autoBox", label: "Auto Box" },
-            { value: "box", label: "Box" },
-            { value: "sphere", label: "Sphere" },
+            { value: "ball", label: "Ball" },
             { value: "capsule", label: "Capsule" },
-            { value: "trimesh", label: "Triangle Mesh" },
-            { value: "hull", label: "Convex Hull" },
+            { value: "trimesh", label: "Tri Mesh" },
+            { value: "hull", label: "Hull" },
         ],
     },
     {
-        name: "motionType", type: "select", label: "Motion Type", options: [
-            { value: "static", label: "Static" },
+        name: "type", type: "select", label: "Motion Type", options: [
+            { value: "fixed", label: "Fixed" },
             { value: "dynamic", label: "Dynamic" },
             { value: "kinematic", label: "Kinematic" },
         ],
     },
     { name: "friction", type: "number", label: "Friction", step: 0.05 },
     { name: "restitution", type: "number", label: "Restitution", step: 0.05 },
-    { name: "radius", type: "number", label: "Sphere/Capsule Radius", step: 0.05 },
+    { name: "radius", type: "number", label: "Ball/Capsule Radius", step: 0.05 },
 ];
 
-function CrashcatPhysicsEditor({ component, onUpdate }: { component: any; onUpdate: (newComp: any) => void }) {
+type CrashcatPhysicsEditorProps = {
+    component: { properties: CrashcatPhysicsProperties };
+    onUpdate: (values: CrashcatPhysicsProperties) => void;
+};
+
+function CrashcatPhysicsEditor({ component, onUpdate }: CrashcatPhysicsEditorProps) {
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <FieldRenderer fields={crashcatPhysicsFields} values={component.properties} onChange={onUpdate} />
@@ -240,8 +241,6 @@ function CrashcatPhysicsEditor({ component, onUpdate }: { component: any; onUpda
                 onChange={onUpdate}
             />
             <Vector3Field name="linearVelocity" label="Linear Velocity" values={component.properties} onChange={onUpdate} fallback={[0, 0, 0]} />
-            <StringField name="collisionEnter" label="Collision Enter" values={component.properties} onChange={onUpdate} fallback="" />
-            <StringField name="collisionExit" label="Collision Exit" values={component.properties} onChange={onUpdate} fallback="" />
             <StringField name="sensorEnter" label="Sensor Enter" values={component.properties} onChange={onUpdate} fallback="" />
             <StringField name="sensorExit" label="Sensor Exit" values={component.properties} onChange={onUpdate} fallback="" />
         </div>
@@ -252,12 +251,7 @@ const CrashcatPhysicsComponent: Component = {
     name: "CrashcatPhysics",
     Editor: CrashcatPhysicsEditor,
     View: CrashcatPhysicsView,
-    defaultProperties: {
-        shape: "autoBox",
-        motionType: "static",
-        sensor: false,
-        motionQuality: "discrete",
-    },
+    defaultProperties: {},
 };
 
 export default CrashcatPhysicsComponent;

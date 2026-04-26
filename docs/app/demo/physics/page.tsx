@@ -49,7 +49,7 @@ const prefab = {
                     },
                     crashcatPhysics: {
                         type: "CrashcatPhysics",
-                        properties: { shape: "autoBox", motionType: "static" }
+                        properties: {}
                     }
                 }
             },
@@ -70,7 +70,7 @@ const prefab = {
                     },
                     crashcatPhysics: {
                         type: "CrashcatPhysics",
-                        properties: { shape: "autoBox", motionType: "static" }
+                        properties: {}
                     }
                 },
                 children: [
@@ -92,8 +92,6 @@ const prefab = {
                             crashcatPhysics: {
                                 type: "CrashcatPhysics",
                                 properties: {
-                                    shape: "autoBox",
-                                    motionType: "static",
                                     sensor: true,
                                     sensorEnter: TARGET_HIT_EVENT,
                                     sensorExit: TARGET_RESET_EVENT,
@@ -174,8 +172,8 @@ function createProjectileNode(spawnPosition: Vector3, launchVelocity: Vector3) {
             crashcatPhysics: {
                 type: "CrashcatPhysics",
                 properties: {
-                    shape: "sphere",
-                    motionType: "dynamic",
+                    colliders: "ball",
+                    type: "dynamic",
                     motionQuality: "linearCast",
                     radius: 0.28,
                     restitution: 0.3,

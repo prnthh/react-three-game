@@ -77,8 +77,6 @@ function createCrashcatFloorNode(): GameObject {
             crashcatPhysics: {
                 type: "CrashcatPhysics",
                 properties: {
-                    shape: "autoBox",
-                    motionType: "static",
                     friction: 0.9,
                 },
             },
@@ -177,10 +175,7 @@ function createStaticCrashcatNode(index: number): GameObject {
             },
             crashcatPhysics: {
                 type: "CrashcatPhysics",
-                properties: {
-                    shape: "autoBox",
-                    motionType: "static",
-                },
+                properties: {},
             },
         },
     };
@@ -213,8 +208,7 @@ function createDynamicCrashcatNode(index: number): GameObject {
             crashcatPhysics: {
                 type: "CrashcatPhysics",
                 properties: {
-                    shape: "autoBox",
-                    motionType: "dynamic",
+                    type: "dynamic",
                     motionQuality: "linearCast",
                     restitution: 0.1,
                     friction: 0.8,

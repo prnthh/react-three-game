@@ -425,23 +425,18 @@ function MaterialComponentView({ properties: rawProps }: ComponentViewProps<Reco
         return <meshStandardNodeMaterial attach="material" color="red" wireframe />;
     }
 
-    const materialKey = [
-        materialType,
-        textureName ?? 'none',
-        texture?.uuid ?? 'texture-pending',
-        normalMapTextureName ?? 'none',
-        normalMapTexture?.uuid ?? 'normal-pending',
-    ].join(':');
-
     const sharedProps = {
-        map: finalTexture,
+        map: finalTexture ?? null,
         side: resolvedSide,
+        onUpdate: (material: MeshBasicNodeMaterial | MeshStandardNodeMaterial) => {
+            material.needsUpdate = true;
+        },
         ...materialProps,
         ...overrides,
     };
 
     if (materialType === 'basic') {
-        return <meshBasicNodeMaterial key={materialKey} attach="material" {...sharedProps} />;
+        return <meshBasicNodeMaterial attach="material" {...sharedProps} />;
     }
 
     if (materialType === 'sprite') {
@@ -449,9 +444,8 @@ function MaterialComponentView({ properties: rawProps }: ComponentViewProps<Reco
 
         return (
             <spriteNodeMaterial
-                key={materialKey}
                 attach="material"
-                map={finalTexture}
+                map={finalTexture ?? null}
                 color={materialSource.color ?? '#ffffff'}
                 opacity={materialSource.opacity ?? 1}
                 transparent={spriteTransparent}
@@ -459,6 +453,9 @@ function MaterialComponentView({ properties: rawProps }: ComponentViewProps<Reco
                 depthTest={materialSource.depthTest ?? false}
                 depthWrite={materialSource.depthWrite ?? false}
                 toneMapped={materialSource.toneMapped ?? true}
+                onUpdate={material => {
+                    material.needsUpdate = true;
+                }}
                 {...overrides}
                 rotation={rotation ?? 0}
                 sizeAttenuation={sizeAttenuation ?? true}
@@ -468,10 +465,9 @@ function MaterialComponentView({ properties: rawProps }: ComponentViewProps<Reco
 
     return (
         <meshStandardNodeMaterial
-            key={materialKey}
             attach="material"
             {...sharedProps}
-            normalMap={finalNormalMap}
+            normalMap={finalNormalMap ?? null}
             normalScale={finalNormalMap ? [normalScaleProp?.[0] ?? 1, normalScaleProp?.[1] ?? 1] : undefined}
         />
     );

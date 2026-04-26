@@ -3,6 +3,7 @@ import { GameObject as GameObjectType, Prefab, hasComponent } from "./types";
 import EditorTree from './EditorTree';
 import { getAllComponentDefs } from './components/ComponentRegistry';
 import { createComponentData } from './prefab';
+import { useEditorRef } from './PrefabEditor';
 import { base, colors, inspector, componentCard } from './styles';
 import { usePrefabStore } from './prefabStore';
 
@@ -32,17 +33,16 @@ function EditorUI({
     const [collapsed, setCollapsed] = useState(false);
     const rootId = usePrefabStore(state => state.rootId);
     const selectedNode = usePrefabStore(state => selectedId ? state.nodesById[selectedId] ?? null : null);
-    const updateNode = usePrefabStore(state => state.updateNode);
-    const deleteNode = usePrefabStore(state => state.deleteNode);
+    const editor = useEditorRef();
 
     const updateNodeHandler = (update: (n: GameObjectType) => GameObjectType) => {
         if (!selectedId) return;
-        updateNode(selectedId, update);
+        editor.update(selectedId, update);
     };
 
     const deleteNodeHandler = () => {
         if (!selectedId || selectedId === rootId) return;
-        deleteNode(selectedId);
+        editor.remove(selectedId);
         setSelectedId(null);
     };
 

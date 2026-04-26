@@ -1,51 +1,51 @@
 {
-  "name": "react-three-game",
-  "version": "0.0.93",
-  "description": "high performance 3D game engine built in React",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
-  "scripts": {
-    "clean": "rm -rf dist",
-    "watch": "npm run clean && tsc --watch",
-    "dev": "concurrently \"npm run watch\" \"cd docs && npm run dev\"",
-    "build": "npm run clean && tsc",
-    "release": "npm run build && npm publish --access public"
-  },
-  "keywords": [],
-  "author": "prnth",
-  "license": "VPL",
-  "type": "module",
-  "workspaces": [
-    "docs"
-  ],
-  "peerDependencies": {
-    "@react-three/drei": ">=10.0.0",
-    "@react-three/fiber": ">=9.0.0",
-    "react": ">=18.0.0",
-    "react-dom": ">=18.0.0",
-    "three": ">=0.182.0",
-    "three-text": ">=0.4.4"
-  },
-  "devDependencies": {
-    "@react-three/drei": "^10.7.7",
-    "@react-three/fiber": "^9.5.0",
-    "@types/react": "^19.2.9",
-    "@types/react-dom": "^19.2.3",
-    "@types/three": "^0.182.0",
-    "concurrently": "^9.2.1",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "three": "^0.184.0",
-    "typescript": "^5.9.3",
-    "vite": "^7.3.1"
-  },
-  "dependencies": {
-    "zustand": "^5.0.12"
-  }
+	"name": "react-three-game",
+	"version": "0.0.94",
+	"description": "high performance 3D game engine built in React",
+	"main": "dist/index.js",
+	"module": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"files": [
+		"dist",
+		"README.md",
+		"LICENSE"
+	],
+	"scripts": {
+		"clean": "rm -rf dist",
+		"watch": "npm run clean && tsc --watch",
+		"dev": "concurrently \"npm run watch\" \"cd docs && npm run dev\"",
+		"build": "npm run clean && tsc",
+		"release": "npm run build && npm publish --access public"
+	},
+	"keywords": [],
+	"author": "prnth",
+	"license": "VPL",
+	"type": "module",
+	"workspaces": [
+		"docs"
+	],
+	"peerDependencies": {
+		"@react-three/drei": ">=10.0.0",
+		"@react-three/fiber": ">=9.0.0",
+		"react": ">=18.0.0",
+		"react-dom": ">=18.0.0",
+		"three": ">=0.182.0",
+		"three-text": ">=0.4.4"
+	},
+	"devDependencies": {
+		"@react-three/drei": "^10.7.7",
+		"@react-three/fiber": "^9.5.0",
+		"@types/react": "^19.2.9",
+		"@types/react-dom": "^19.2.3",
+		"@types/three": "^0.182.0",
+		"concurrently": "^9.2.1",
+		"react": "^19.2.4",
+		"react-dom": "^19.2.4",
+		"three": "^0.184.0",
+		"typescript": "^5.9.3",
+		"vite": "^7.3.1"
+	},
+	"dependencies": {
+		"zustand": "^5.0.12"
+	}
 }

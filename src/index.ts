@@ -9,10 +9,12 @@ export { sound as soundManager } from './helpers/SoundManager';
 
 // Prefab Editor
 export { default as PrefabEditor } from './tools/prefabeditor/PrefabEditor';
-export { PrefabEditorMode } from './tools/prefabeditor/PrefabEditor';
+export { PrefabEditorMode } from './tools/prefabeditor/PrefabRoot';
 export { default as PrefabRoot } from './tools/prefabeditor/PrefabRoot';
-export { useEditorContext } from './tools/prefabeditor/PrefabEditor';
+export { useEditorContext, useEditorRef } from './tools/prefabeditor/PrefabEditor';
 export type { EditorContextType } from './tools/prefabeditor/PrefabEditor';
+export { usePrefabStore, usePrefabStoreApi } from './tools/prefabeditor/prefabStore';
+export type { PrefabStoreApi, PrefabStoreState } from './tools/prefabeditor/prefabStore';
 
 // Prefab Editor - Data API
 export { denormalizePrefab } from './tools/prefabeditor/prefab';
@@ -61,11 +63,12 @@ export type {
   PrefabEditorProps,
   PrefabNode,
   PrefabEditorRef,
-  SpawnOptions,
 } from './tools/prefabeditor/PrefabEditor';
 export type { PrefabRootProps } from './tools/prefabeditor/PrefabRoot';
-export type { AssetRuntime, CurrentNodeRuntime, LiveHandleRef, LiveObjectRef, CurrentNodeHandleRef, CurrentNodeObjectRef } from './tools/prefabeditor/assetRuntime';
-export { useAssetRuntime, useCurrentNode, useCurrentNodeHandle, useCurrentNodeObject } from './tools/prefabeditor/assetRuntime';
+export type { AssetRuntime, NodeApi, LiveRef } from './tools/prefabeditor/assetRuntime';
+export { useAssetRuntime, useNode, useNodeHandle, useNodeObject } from './tools/prefabeditor/assetRuntime';
+export type { Scene } from './tools/prefabeditor/PrefabRoot';
+export { useScene } from './tools/prefabeditor/PrefabRoot';
 export type { Component, ComponentViewProps } from './tools/prefabeditor/components/ComponentRegistry';
 export type { FieldDefinition, FieldType } from './tools/prefabeditor/components/Input';
 export { MaterialOverridesProvider, useMaterialOverrides } from './tools/prefabeditor/components/MaterialComponent';
@@ -111,4 +114,3 @@ export {
   SingleTextureViewer,
   SharedCanvas,
 } from './tools/assetviewer/page';
-export type { PrefabRootRef } from './tools/prefabeditor/PrefabRoot';

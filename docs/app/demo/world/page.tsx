@@ -2,10 +2,10 @@
 
 import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
-import { PrefabEditor, registerComponent } from "react-three-game";
+import { PrefabEditor, registerComponent, useScene } from "react-three-game";
 import initialWorld from "../../samples/killbox.json";
 import type { Prefab, PrefabEditorRef } from "react-three-game";
-import { CrashcatRuntime, type CrashcatRuntimeRef } from "@/app/components/CrashcatRuntime";
+import { CrashcatRuntime } from "@/app/components/CrashcatRuntime";
 import CrashcatPhysicsComponent from "@/app/components/CrashcatPhysicsComponent";
 import FirstPersonPlayer from "./FirstPersonPlayer";
 
@@ -36,20 +36,21 @@ function getNextOrbPosition(position: Position3, velocity: OrbVelocity, delta: n
 
 export default function Home() {
     const editorRef = useRef<PrefabEditorRef>(null);
-    const runtimeRef = useRef<CrashcatRuntimeRef>(null);
 
     return (
         <main className="flex h-screen w-screen flex-col items-center justify-between bg-white dark:bg-black sm:items-start">
             <PrefabEditor ref={editorRef} initialPrefab={initialWorld as Prefab}>
-                <CrashcatRuntime ref={runtimeRef} editorRef={editorRef} debug />
-                <FirstPersonPlayer runtimeRef={runtimeRef} />
-                <OrbAnimator editorRef={editorRef} />
+                <CrashcatRuntime debug>
+                    <FirstPersonPlayer nodeId="player" />
+                    <OrbAnimator />
+                </CrashcatRuntime>
             </PrefabEditor>
         </main>
     );
 }
 
-function OrbAnimator({ editorRef }: { editorRef: React.RefObject<PrefabEditorRef | null> }) {
+function OrbAnimator() {
+    const scene = useScene();
     const velocities = useRef<Record<OrbId, OrbVelocity>>({
         orb1: { x: 0, z: 0 },
         orb2: { x: 0, z: 0 },
@@ -57,9 +58,6 @@ function OrbAnimator({ editorRef }: { editorRef: React.RefObject<PrefabEditorRef
     const lastVelocityChange = useRef(0);
 
     useFrame((state, delta) => {
-        const editor = editorRef.current;
-        if (!editor) return;
-
         const time = state.clock.getElapsedTime();
         if (time - lastVelocityChange.current > 1 + Math.random()) {
             lastVelocityChange.current = time;
@@ -70,7 +68,7 @@ function OrbAnimator({ editorRef }: { editorRef: React.RefObject<PrefabEditorRef
         }
 
         ORB_IDS.forEach((orbId) => {
-            const orb = editor.getNodeObject(orbId);
+            const orb = scene.getObject(orbId);
             if (!orb) return;
 
             const position = [orb.position.x, orb.position.y, orb.position.z] as Position3;

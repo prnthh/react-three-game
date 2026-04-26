@@ -841,21 +841,6 @@
                 1
               ]
             }
-          },
-          "data": {
-            "type": "Data",
-            "properties": {
-              "data": {
-                "crashcat": {
-                  "player": {
-                    "eyeHeight": 0.54,
-                    "radius": 0.35,
-                    "halfHeightOfCylinder": 0.45,
-                    "footstepEventName": "player:footstep"
-                  }
-                }
-              }
-            }
           }
         },
         "children": [

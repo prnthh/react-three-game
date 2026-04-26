@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useThree } from '@react-three/fiber';
 import { SoundPicker } from '../../assetviewer/page';
-import { useAssetRuntime, useCurrentNode } from '../assetRuntime';
+import { useAssetRuntime, useNode } from '../assetRuntime';
 import { gameEvents, type ClickEventPayload, type ContactEventPayload } from '../GameEvents';
 import { Component } from './ComponentRegistry';
 import { BooleanField, FieldGroup, FieldRenderer, ListEditor, NumberField, SelectField, StringField } from './Input';
@@ -263,7 +263,7 @@ function SoundComponentEditor({ component, onUpdate, basePath = '' }: { componen
 
 function SoundComponentView({ properties, children }: { properties: SoundProperties; children?: React.ReactNode }) {
     const { getSound } = useAssetRuntime();
-    const { editMode, nodeId } = useCurrentNode();
+    const { editMode, nodeId } = useNode();
     const { camera } = useThree();
     const { eventName, autoplay = false, positional = false, refDistance = 1, maxDistance = 24, rolloffFactor = 1, distanceModel = 'inverse' } = properties;
     const sequenceIndexRef = useRef(0);

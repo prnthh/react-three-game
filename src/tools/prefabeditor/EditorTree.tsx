@@ -1,7 +1,7 @@
 import { memo, MouseEvent, useCallback, useState } from 'react';
 import { Prefab } from "./types";
 import { base, colors, tree } from './styles';
-import { useEditorContext } from './PrefabEditor';
+import { useEditorContext, useEditorRef } from './PrefabEditor';
 import { Dropdown } from './Dropdown';
 import { FileMenu, TreeContextMenu, TreeContextMenuState, TreeNodeMenu } from './EditorTreeMenus';
 import { createEmptyNode } from './prefab';
@@ -31,13 +31,9 @@ export default function EditorTree({
     canRedo?: boolean;
 }) {
     const { onFocusNode } = useEditorContext();
+    const editor = useEditorRef();
     const rootId = usePrefabRootId();
     const store = usePrefabStoreApi();
-    const addChild = usePrefabStore(state => state.addChild);
-    const duplicateNode = usePrefabStore(state => state.duplicateNode);
-    const deleteNode = usePrefabStore(state => state.deleteNode);
-    const toggleNodeFlag = usePrefabStore(state => state.toggleNodeFlag);
-    const moveNode = usePrefabStore(state => state.moveNode);
     const [draggedId, setDraggedId] = useState<string | null>(null);
     const [dropTarget, setDropTarget] = useState<{ id: string; position: DropPosition } | null>(null);
     const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
@@ -57,29 +53,29 @@ export default function EditorTree({
     const handleAddChild = (parentId: string) => {
         const newNode = createEmptyNode();
 
-        addChild(parentId, newNode);
+        editor.add(newNode, parentId);
         setSelectedId(newNode.id);
     };
 
     const handleDuplicate = (nodeId: string) => {
         if (nodeId === rootId) return;
-        const duplicatedId = duplicateNode(nodeId);
+        const duplicatedId = editor.duplicate(nodeId);
         if (duplicatedId) setSelectedId(duplicatedId);
     };
 
     const handleDelete = (nodeId: string) => {
         if (nodeId === rootId) return;
-        deleteNode(nodeId);
+        editor.remove(nodeId);
         if (selectedId === nodeId) setSelectedId(null);
     };
 
     const handleToggleDisabled = (nodeId: string) => {
-        toggleNodeFlag(nodeId, 'disabled');
+        editor.update(nodeId, n => ({ ...n, disabled: !n.disabled }));
     };
 
     const handleToggleLocked = (nodeId: string) => {
         const willLock = !store.getState().nodesById[nodeId]?.locked;
-        toggleNodeFlag(nodeId, 'locked');
+        editor.update(nodeId, n => ({ ...n, locked: !n.locked }));
         if (willLock && selectedId === nodeId) setSelectedId(null);
     };
 
@@ -136,7 +132,7 @@ export default function EditorTree({
     const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetId: string, isRoot: boolean) => {
         if (!draggedId || draggedId === targetId) return;
         e.preventDefault();
-        moveNode(draggedId, targetId, getDropPosition(e, isRoot));
+        editor.move(draggedId, targetId, getDropPosition(e, isRoot));
         setDraggedId(null);
         setDropTarget(null);
     };

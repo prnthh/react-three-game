@@ -1,12 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { PrefabEditor, PrefabEditorMode } from "react-three-game";
+import { PrefabEditor, PrefabEditorMode, registerComponent } from "react-three-game";
 import type { GameObject, Prefab, PrefabEditorRef } from "react-three-game";
 import { CrashcatRuntime } from "../../components/CrashcatRuntime";
+import CrashcatPhysicsComponent from "../../components/CrashcatPhysicsComponent";
+
+registerComponent(CrashcatPhysicsComponent);
 
 const TEST_COUNT = 100;
 const ROOT_ID = "benchmark-root";
+const BENCH_DELAY_MS = 2000;
 
 type BenchmarkResult = {
     id: string;
@@ -70,18 +74,12 @@ function createCrashcatFloorNode(): GameObject {
                     roughness: 0.95,
                 },
             },
-            data: {
-                type: "Data",
+            crashcatPhysics: {
+                type: "CrashcatPhysics",
                 properties: {
-                    data: {
-                        crashcat: {
-                            collider: {
-                                shape: "autoBox",
-                                motionType: "static",
-                                friction: 0.9,
-                            },
-                        },
-                    },
+                    shape: "autoBox",
+                    motionType: "static",
+                    friction: 0.9,
                 },
             },
         },
@@ -177,17 +175,11 @@ function createStaticCrashcatNode(index: number): GameObject {
                     roughness: 0.8,
                 },
             },
-            data: {
-                type: "Data",
+            crashcatPhysics: {
+                type: "CrashcatPhysics",
                 properties: {
-                    data: {
-                        crashcat: {
-                            collider: {
-                                shape: "autoBox",
-                                motionType: "static",
-                            },
-                        },
-                    },
+                    shape: "autoBox",
+                    motionType: "static",
                 },
             },
         },
@@ -218,20 +210,14 @@ function createDynamicCrashcatNode(index: number): GameObject {
                     roughness: 0.7,
                 },
             },
-            data: {
-                type: "Data",
+            crashcatPhysics: {
+                type: "CrashcatPhysics",
                 properties: {
-                    data: {
-                        crashcat: {
-                            collider: {
-                                shape: "autoBox",
-                                motionType: "dynamic",
-                                motionQuality: "linearCast",
-                                restitution: 0.1,
-                                friction: 0.8,
-                            },
-                        },
-                    },
+                    shape: "autoBox",
+                    motionType: "dynamic",
+                    motionQuality: "linearCast",
+                    restitution: 0.1,
+                    friction: 0.8,
                 },
             },
         },
@@ -270,7 +256,7 @@ export default function BenchmarkPage() {
             label: "Add 100 geometry + material nodes",
             run: async (editor) => {
                 for (let index = 0; index < TEST_COUNT; index += 1) {
-                    editor.addNode(createGeometryMaterialNode(index), { parentId: ROOT_ID, select: false });
+                    editor.add(createGeometryMaterialNode(index), ROOT_ID);
                 }
             },
         },
@@ -279,7 +265,7 @@ export default function BenchmarkPage() {
             label: "Add 100 instanced objects",
             run: async (editor) => {
                 for (let index = 0; index < TEST_COUNT; index += 1) {
-                    editor.addNode(createInstancedNode(index), { parentId: ROOT_ID, select: false });
+                    editor.add(createInstancedNode(index), ROOT_ID);
                 }
             },
         },
@@ -288,7 +274,7 @@ export default function BenchmarkPage() {
             label: "Add 100 static Crashcat bodies",
             run: async (editor) => {
                 for (let index = 0; index < TEST_COUNT; index += 1) {
-                    editor.addNode(createStaticCrashcatNode(index), { parentId: ROOT_ID, select: false });
+                    editor.add(createStaticCrashcatNode(index), ROOT_ID);
                 }
             },
         },
@@ -299,7 +285,7 @@ export default function BenchmarkPage() {
             settleFrames: 8,
             run: async (editor) => {
                 for (let index = 0; index < TEST_COUNT; index += 1) {
-                    editor.addNode(createDynamicCrashcatNode(index), { parentId: ROOT_ID, select: false });
+                    editor.add(createDynamicCrashcatNode(index), ROOT_ID);
                 }
             },
         },
@@ -328,7 +314,11 @@ export default function BenchmarkPage() {
         try {
             const nextResults: BenchmarkResult[] = [];
 
-            for (const benchmark of benchmarkDefinitions) {
+            for (let benchIndex = 0; benchIndex < benchmarkDefinitions.length; benchIndex += 1) {
+                const benchmark = benchmarkDefinitions[benchIndex];
+                if (benchIndex > 0) {
+                    await new Promise<void>((resolve) => setTimeout(resolve, BENCH_DELAY_MS));
+                }
                 editor.load((benchmark.createPrefab ?? createEmptyPrefab)(), { resetHistory: true, notifyChange: false });
                 await waitForFrames();
 
@@ -399,13 +389,13 @@ export default function BenchmarkPage() {
             <PrefabEditor
                 ref={editorRef}
                 initialPrefab={initialPrefab}
-                mode={PrefabEditorMode.Edit}
+                mode={PrefabEditorMode.Play}
                 enableWindowDrop={false}
                 canvasProps={{
                     camera: { position: [10, 12, 18], fov: 45 },
                 }}
             >
-                <CrashcatRuntime editorRef={editorRef} debug />
+                <CrashcatRuntime debug />
                 <ambientLight intensity={1.8} />
                 <directionalLight intensity={2.2} position={[8, 12, 6]} castShadow />
             </PrefabEditor>

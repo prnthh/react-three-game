@@ -4,7 +4,7 @@ import { Component } from './ComponentRegistry';
 import { BooleanField, FieldGroup, Label, ListEditor, NumberInput, SelectInput, StringField } from './Input';
 import { useAssetRuntime } from '../assetRuntime';
 import { GameObject } from '../types';
-import { EditorContext } from '../PrefabEditor';
+import { useEditorContext } from '../PrefabEditor';
 import { DEFAULT_REPEAT_AXES, getRepeatAxesFromModelProperties, normalizeRepeatAxes, RepeatAxisConfig } from '../InstanceProvider';
 import { colors, ui } from '../styles';
 
@@ -127,8 +127,7 @@ function RepeatAxisEditor({
 }
 
 function ModelComponentEditor({ component, node, onUpdate, basePath = "" }: { component: any; node?: GameObject; onUpdate: (newComp: any) => void; basePath?: string }) {
-    const editorContext = useContext(EditorContext);
-    const positionSnap = editorContext?.positionSnap ?? 0.5;
+    const { positionSnap } = useEditorContext();
     const repeatAxes = getRepeatAxesFromModelProperties(component.properties);
 
     return (

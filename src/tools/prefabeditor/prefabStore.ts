@@ -22,11 +22,9 @@ import {
 export interface PrefabStoreState extends PrefabState {
     replacePrefab: (prefab: Prefab) => void;
     updateNode: (id: string, update: (node: PrefabNodeRecord) => PrefabNodeRecord) => void;
-    updateNodes: (updates: Array<{ id: string; update: (node: PrefabNodeRecord) => PrefabNodeRecord }>) => void;
     addChild: (parentId: string, node: GameObject) => void;
     deleteNode: (id: string) => void;
     duplicateNode: (id: string) => string | null;
-    toggleNodeFlag: (id: string, key: "disabled" | "locked") => void;
     moveNode: (draggedId: string, targetId: string, position: "before" | "inside") => void;
 }
 
@@ -53,10 +51,6 @@ export function usePrefabStoreApi() {
     return store;
 }
 
-export function useOptionalPrefabStoreApi() {
-    return useContext(PrefabStoreContext);
-}
-
 export function usePrefabStore<T>(selector: (state: PrefabStoreState) => T) {
     return useStore(usePrefabStoreApi(), selector);
 }
@@ -77,7 +71,7 @@ export function createPrefabStore(prefab: Prefab): PrefabStoreApi {
     return createStore<PrefabStoreState>()(subscribeWithSelector((set, get) => ({
         ...normalizePrefab(prefab),
         replacePrefab: (nextPrefab) => {
-            set(normalizePrefab(nextPrefab, get().revision + 1));
+            set(normalizePrefab(nextPrefab));
         },
         updateNode: (id, update) => {
             const state = get();
@@ -92,29 +86,6 @@ export function createPrefabStore(prefab: Prefab): PrefabStoreApi {
             set(createPrefabPatch(state, {
                 nodesById: { ...state.nodesById, [id]: nextNode },
             }, nextAssetRefCounts));
-        },
-        updateNodes: (updates) => {
-            if (updates.length === 0) return;
-
-            const state = get();
-            let nextNodesById: Record<string, PrefabNodeRecord> | null = null;
-            let nextAssetRefCounts = state.assetRefCounts;
-
-            for (const { id, update } of updates) {
-                const currentNode = (nextNodesById ?? state.nodesById)[id];
-                if (!currentNode) continue;
-
-                const nextNode = update(currentNode);
-                if (nextNode === currentNode) continue;
-
-                nextNodesById ??= { ...state.nodesById };
-                nextNodesById[id] = nextNode;
-                nextAssetRefCounts = updateAssetRefsForNodeChange(nextAssetRefCounts, currentNode, nextNode);
-            }
-
-            if (!nextNodesById) return;
-
-            set(createPrefabPatch(state, { nodesById: nextNodesById }, nextAssetRefCounts));
         },
         addChild: (parentId, node) => {
             const state = get();
@@ -209,16 +180,6 @@ export function createPrefabStore(prefab: Prefab): PrefabStoreApi {
             }, nextAssetRefCounts));
 
             return duplicatedRootId;
-        },
-        toggleNodeFlag: (id, key) => {
-            const state = get();
-            const node = state.nodesById[id];
-            if (!node) return;
-
-            const nextNode = { ...node, [key]: !node[key] };
-            set(createPrefabPatch(state, {
-                nodesById: { ...state.nodesById, [id]: nextNode },
-            }));
         },
         moveNode: (draggedId, targetId, position) => {
             const state = get();

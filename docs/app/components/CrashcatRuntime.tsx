@@ -4,17 +4,13 @@ import { useFrame } from "@react-three/fiber";
 import {
     addBroadphaseLayer,
     addObjectLayer,
-    box,
     createWorld,
     createWorldSettings,
     enableCollision,
     filter,
-    MotionQuality,
     MotionType,
     registerAll,
     rigidBody,
-    sphere,
-    triangleMesh,
     type Filter,
     type Listener,
     type RigidBody,
@@ -22,270 +18,106 @@ import {
     updateWorld,
 } from "crashcat";
 import { debugRenderer } from "crashcat/three";
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, type RefObject } from "react";
-import { findComponent, gameEvents, PrefabEditorMode, useEditorContext, type GameObject, type PrefabEditorRef } from "react-three-game";
-import { Box3, Matrix4, Object3D, Quaternion, Vector3 } from "three";
+import { useEffect, useMemo, useRef, useSyncExternalStore } from "react";
+import { gameEvents, PrefabEditorMode, useScene } from "react-three-game";
+import { Object3D, Quaternion, Vector3 } from "three";
 
-const bounds = new Box3();
-const localBounds = new Box3();
-const childBounds = new Box3();
-const boundsSize = new Vector3();
-const boundsCenter = new Vector3();
-const bodyQuaternion = new Quaternion();
-const inverseWorldMatrix = new Matrix4();
-const childToLocalMatrix = new Matrix4();
-const scratchVertex = new Vector3();
+const SLEEP_TIME_BEFORE_REST = 0.1;
+const SLEEP_POINT_VELOCITY_THRESHOLD = 0.06;
+
+const scratchPosition = new Vector3();
+const worldQuaternion = new Quaternion();
+const parentWorldQuaternion = new Quaternion();
+const localQuaternion = new Quaternion();
 
 let didRegisterCrashcat = false;
-
 function ensureCrashcatRegistered() {
     if (didRegisterCrashcat) return;
     registerAll();
     didRegisterCrashcat = true;
 }
 
-type CrashcatEventConfig = {
+export type CrashcatEventConfig = {
     collisionEnter?: string;
     collisionExit?: string;
+    sensorEnter?: string;
+    sensorExit?: string;
 };
 
-type CrashcatColliderConfig = false | {
-    shape?: "autoBox" | "box" | "sphere" | "trimesh";
-    motionType?: "static" | "dynamic" | "kinematic";
-    motionQuality?: "discrete" | "linearCast";
-    sensor?: boolean;
-    radius?: number;
-    restitution?: number;
-    friction?: number;
-    linearVelocity?: [number, number, number];
-};
-
-type CrashcatNodeConfig = {
-    autoStaticColliders?: boolean;
-    excludeIds?: string[];
-    collider?: CrashcatColliderConfig;
-    events?: CrashcatEventConfig;
-    player?: {
-        eyeHeight?: number;
-        radius?: number;
-        halfHeightOfCylinder?: number;
-        maxSpeed?: number;
-        groundAccel?: number;
-        airAccel?: number;
-        friction?: number;
-        jumpSpeed?: number;
-    };
-};
-
-type BodyMeta = {
+export type BodyMeta = {
     nodeId: string;
     motionType: MotionType;
+    sensor: boolean;
     events?: CrashcatEventConfig;
 };
 
-export interface CrashcatRuntimeRef {
-    world: World | null;
-    queryFilter: Filter | null;
+export interface CrashcatApi {
+    world: World;
+    queryFilter: Filter;
     staticObjectLayer: number;
     movingObjectLayer: number;
+    register: (nodeId: string, body: RigidBody, meta: Omit<BodyMeta, "nodeId">) => void;
+    unregister: (nodeId: string) => void;
+    getBody: (nodeId: string) => RigidBody | null;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-    return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+const CRASHCAT_API_LISTENERS = new Set<() => void>();
+let CRASHCAT_API: CrashcatApi | null = null;
+
+function setCrashcatApi(next: CrashcatApi | null) {
+    CRASHCAT_API = next;
+    CRASHCAT_API_LISTENERS.forEach((l) => l());
 }
 
-function pickDefined<T extends Record<string, unknown>>(value: T) {
-    return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined && entry !== ""));
+function subscribeCrashcat(listener: () => void) {
+    CRASHCAT_API_LISTENERS.add(listener);
+    return () => CRASHCAT_API_LISTENERS.delete(listener);
 }
 
-function resolveCrashcatConfig(node: GameObject | null | undefined): CrashcatNodeConfig | null {
-    const dataCrashcat = findComponent(node, "Data")?.properties?.data?.crashcat;
-    const physics = findComponent(node, "CrashcatPhysics")?.properties;
-
-    const config: CrashcatNodeConfig = {
-        ...(isRecord(dataCrashcat) ? dataCrashcat as CrashcatNodeConfig : {}),
-        ...(isRecord(physics)
-            ? {
-                collider: pickDefined({
-                    shape: physics.shape,
-                    motionType: physics.motionType,
-                    motionQuality: physics.motionQuality,
-                    sensor: physics.sensor,
-                    radius: physics.radius,
-                    restitution: physics.restitution,
-                    friction: physics.friction,
-                    linearVelocity: physics.linearVelocity,
-                }) as Exclude<CrashcatColliderConfig, false>,
-                events: pickDefined({
-                    collisionEnter: typeof physics.collisionEnter === "string" ? physics.collisionEnter : undefined,
-                    collisionExit: typeof physics.collisionExit === "string" ? physics.collisionExit : undefined,
-                }) as CrashcatEventConfig,
-            }
-            : {}),
-    };
-
-    if (config.collider && !isRecord(config.collider)) {
-        delete config.collider;
-    }
-    if (config.events && Object.keys(config.events).length === 0) {
-        delete config.events;
-    }
-
-    return Object.keys(config).length > 0 ? config : null;
+function getCrashcatSnapshot() {
+    return CRASHCAT_API;
 }
 
-function getPrefabNodeId(object: Object3D | null | undefined) {
-    return typeof object?.userData?.prefabNodeId === "string" ? object.userData.prefabNodeId : null;
+export function useCrashcat(): CrashcatApi | null {
+    return useSyncExternalStore(subscribeCrashcat, getCrashcatSnapshot, getCrashcatSnapshot);
 }
 
-function toMotionType(value: CrashcatColliderConfig extends infer T ? T : never): MotionType {
-    const motionType = isRecord(value) ? value.motionType : undefined;
-    if (motionType === "dynamic") return MotionType.DYNAMIC;
-    if (motionType === "kinematic") return MotionType.KINEMATIC;
-    return MotionType.STATIC;
-}
-
-function toMotionQuality(value: CrashcatColliderConfig extends infer T ? T : never): MotionQuality | undefined {
-    const motionQuality = isRecord(value) ? value.motionQuality : undefined;
-    if (motionQuality === "linearCast") return MotionQuality.LINEAR_CAST;
-    if (motionQuality === "discrete") return MotionQuality.DISCRETE;
-    return undefined;
-}
-
-function getLocalBounds(object: Object3D) {
-    inverseWorldMatrix.copy(object.matrixWorld).invert();
-    localBounds.makeEmpty();
-
-    object.traverse((child) => {
-        const geometry = (child as Object3D & { geometry?: { boundingBox?: Box3 | null; computeBoundingBox?: () => void } }).geometry;
-        if (!geometry) return;
-
-        if (!geometry.boundingBox) {
-            geometry.computeBoundingBox?.();
-        }
-
-        if (!geometry.boundingBox) return;
-
-        childToLocalMatrix.multiplyMatrices(inverseWorldMatrix, child.matrixWorld);
-        childBounds.copy(geometry.boundingBox).applyMatrix4(childToLocalMatrix);
-        localBounds.union(childBounds);
-    });
-
-    return localBounds.isEmpty() ? null : localBounds;
-}
-
-function collectGeometryData(object: Object3D) {
-    const positions: number[] = [];
-    const indices: number[] = [];
-    let vertexOffset = 0;
-
-    inverseWorldMatrix.copy(object.matrixWorld).invert();
-
-    object.traverse((child) => {
-        const geometry = (child as Object3D & {
-            geometry?: {
-                attributes?: {
-                    position?: {
-                        count: number;
-                        getX: (index: number) => number;
-                        getY: (index: number) => number;
-                        getZ: (index: number) => number;
-                    };
-                };
-                index?: { count: number; getX: (index: number) => number } | null;
-            };
-        }).geometry;
-        const positionAttribute = geometry?.attributes?.position;
-
-        if (!positionAttribute) return;
-
-        childToLocalMatrix.multiplyMatrices(inverseWorldMatrix, child.matrixWorld);
-
-        for (let index = 0; index < positionAttribute.count; index += 1) {
-            scratchVertex
-                .set(positionAttribute.getX(index), positionAttribute.getY(index), positionAttribute.getZ(index))
-                .applyMatrix4(childToLocalMatrix);
-            positions.push(scratchVertex.x, scratchVertex.y, scratchVertex.z);
-        }
-
-        if (geometry.index) {
-            for (let index = 0; index < geometry.index.count; index += 1) {
-                indices.push(vertexOffset + geometry.index.getX(index));
-            }
-        } else {
-            for (let index = 0; index < positionAttribute.count; index += 1) {
-                indices.push(vertexOffset + index);
-            }
-        }
-
-        vertexOffset += positionAttribute.count;
-    });
-
-    if (positions.length === 0 || indices.length < 3) {
-        return null;
-    }
-
-    return { positions, indices };
-}
-
-function getBodyPosition(object: Object3D, objectBounds: Box3) {
-    objectBounds.getCenter(boundsCenter).applyMatrix4(object.matrixWorld);
-    return [boundsCenter.x, boundsCenter.y, boundsCenter.z] as [number, number, number];
-}
-
-function getBodyQuaternion(object: Object3D) {
-    object.getWorldQuaternion(bodyQuaternion);
-    return [bodyQuaternion.x, bodyQuaternion.y, bodyQuaternion.z, bodyQuaternion.w] as [number, number, number, number];
-}
-
-function createShapeForObject(object: Object3D, objectBounds: Box3, collider: Exclude<CrashcatColliderConfig, false>) {
-    if (collider.shape === "trimesh") {
-        const geometry = collectGeometryData(object);
-        return geometry ? triangleMesh.create(geometry) : null;
-    }
-
-    objectBounds.getSize(boundsSize);
-
-    if (collider.shape === "sphere") {
-        const radius = collider.radius ?? Math.max(boundsSize.x, boundsSize.y, boundsSize.z) * 0.5;
-        return sphere.create({ radius: Math.max(radius, 0.01) });
-    }
-
-    return box.create({
-        halfExtents: [
-            Math.max(boundsSize.x * 0.5, 0.01),
-            Math.max(boundsSize.y * 0.5, 0.01),
-            Math.max(boundsSize.z * 0.5, 0.01),
-        ],
-    });
-}
-
-function emitConfiguredEvent(eventName: string | undefined, sourceNodeId: string, targetNodeId: string | null) {
+function emitConfiguredEvent(eventName: string | undefined, sourceNodeId: string, targetNodeId: string | null, collisionNormal?: [number, number, number]) {
     const trimmed = eventName?.trim();
     if (!trimmed) return;
-
     gameEvents.emit(trimmed, {
         sourceEntityId: sourceNodeId,
         sourceNodeId,
         targetEntityId: targetNodeId,
-        targetNodeId: targetNodeId,
+        targetNodeId,
+        ...(collisionNormal ? { collisionNormal } : {}),
     });
 }
 
-export const CrashcatRuntime = forwardRef<CrashcatRuntimeRef, {
-    editorRef: RefObject<PrefabEditorRef | null>;
-    debug?: boolean;
-}>(({ editorRef, debug = false }, ref) => {
-    const { mode } = useEditorContext();
-    const worldRef = useRef<World | null>(null);
-    const queryFilterRef = useRef<Filter | null>(null);
-    const staticObjectLayerRef = useRef(-1);
-    const movingObjectLayerRef = useRef(-1);
-    const bodyIdByNodeIdRef = useRef(new Map<string, number>());
-    const bodyMetaByIdRef = useRef(new Map<number, BodyMeta>());
+function setObjectWorldTransform(object: Object3D, position: [number, number, number], quaternion: [number, number, number, number]) {
+    if (!object.parent) {
+        object.position.set(position[0], position[1], position[2]);
+        object.quaternion.set(quaternion[0], quaternion[1], quaternion[2], quaternion[3]);
+        object.updateMatrixWorld(true);
+        return;
+    }
+    scratchPosition.set(position[0], position[1], position[2]);
+    object.parent.worldToLocal(scratchPosition);
+    object.position.copy(scratchPosition);
+    object.parent.getWorldQuaternion(parentWorldQuaternion);
+    worldQuaternion.set(quaternion[0], quaternion[1], quaternion[2], quaternion[3]);
+    localQuaternion.copy(parentWorldQuaternion).invert().multiply(worldQuaternion);
+    object.quaternion.copy(localQuaternion);
+    object.updateMatrixWorld(true);
+}
+
+export function CrashcatRuntime({ debug = false, children }: { debug?: boolean; children?: React.ReactNode }) {
+    const scene = useScene();
+    const mode = scene.mode;
+    const bodiesRef = useRef(new Map<string, { body: RigidBody; meta: BodyMeta }>());
+    const bodyByIdRef = useRef(new Map<number, BodyMeta>());
+    const api = useSyncExternalStore(subscribeCrashcat, getCrashcatSnapshot, getCrashcatSnapshot);
     const debugStateRef = useRef<ReturnType<typeof debugRenderer.init> | null>(null);
-    const editBodiesDirtyRef = useRef(false);
-    const lastModeRef = useRef(mode);
 
     if (debug && !debugStateRef.current) {
         const options = debugRenderer.createDefaultOptions();
@@ -299,17 +131,20 @@ export const CrashcatRuntime = forwardRef<CrashcatRuntimeRef, {
     }
 
     const listener = useMemo<Listener>(() => ({
-        onContactAdded: (bodyA, bodyB) => {
-            const metaA = bodyMetaByIdRef.current.get(Number(bodyA.id));
-            const metaB = bodyMetaByIdRef.current.get(Number(bodyB.id));
-            if (metaA?.events) emitConfiguredEvent(metaA.events.collisionEnter, metaA.nodeId, metaB?.nodeId ?? null);
-            if (metaB?.events) emitConfiguredEvent(metaB.events.collisionEnter, metaB.nodeId, metaA?.nodeId ?? null);
+        onContactAdded: (bodyA, bodyB, manifold) => {
+            const metaA = bodyByIdRef.current.get(Number(bodyA.id));
+            const metaB = bodyByIdRef.current.get(Number(bodyB.id));
+            const n = manifold?.worldSpaceNormal;
+            const nA = n ? [n[0], n[1], n[2]] as [number, number, number] : undefined;
+            const nB = n ? [-n[0], -n[1], -n[2]] as [number, number, number] : undefined;
+            if (metaA?.events) emitConfiguredEvent(metaA.sensor ? metaA.events.sensorEnter : metaA.events.collisionEnter, metaA.nodeId, metaB?.nodeId ?? null, nA);
+            if (metaB?.events) emitConfiguredEvent(metaB.sensor ? metaB.events.sensorEnter : metaB.events.collisionEnter, metaB.nodeId, metaA?.nodeId ?? null, nB);
         },
-        onContactRemoved: (bodyIdA, bodyIdB) => {
-            const metaA = bodyMetaByIdRef.current.get(Number(bodyIdA));
-            const metaB = bodyMetaByIdRef.current.get(Number(bodyIdB));
-            if (metaA?.events) emitConfiguredEvent(metaA.events.collisionExit, metaA.nodeId, metaB?.nodeId ?? null);
-            if (metaB?.events) emitConfiguredEvent(metaB.events.collisionExit, metaB.nodeId, metaA?.nodeId ?? null);
+        onContactRemoved: (idA, idB) => {
+            const metaA = bodyByIdRef.current.get(Number(idA));
+            const metaB = bodyByIdRef.current.get(Number(idB));
+            if (metaA?.events) emitConfiguredEvent(metaA.sensor ? metaA.events.sensorExit : metaA.events.collisionExit, metaA.nodeId, metaB?.nodeId ?? null);
+            if (metaB?.events) emitConfiguredEvent(metaB.sensor ? metaB.events.sensorExit : metaB.events.collisionExit, metaB.nodeId, metaA?.nodeId ?? null);
         },
     }), []);
 
@@ -317,187 +152,100 @@ export const CrashcatRuntime = forwardRef<CrashcatRuntimeRef, {
         ensureCrashcatRegistered();
 
         const settings = createWorldSettings();
-        const movingBroadphaseLayer = addBroadphaseLayer(settings);
-        const staticBroadphaseLayer = addBroadphaseLayer(settings);
-        movingObjectLayerRef.current = addObjectLayer(settings, movingBroadphaseLayer);
-        staticObjectLayerRef.current = addObjectLayer(settings, staticBroadphaseLayer);
-        enableCollision(settings, movingObjectLayerRef.current, staticObjectLayerRef.current);
-        enableCollision(settings, movingObjectLayerRef.current, movingObjectLayerRef.current);
+        settings.narrowphase.collideWithBackfaces = true;
+        settings.sleeping.timeBeforeSleep = SLEEP_TIME_BEFORE_REST;
+        settings.sleeping.pointVelocitySleepThreshold = SLEEP_POINT_VELOCITY_THRESHOLD;
+        const movingBroadphase = addBroadphaseLayer(settings);
+        const staticBroadphase = addBroadphaseLayer(settings);
+        const movingObjectLayer = addObjectLayer(settings, movingBroadphase);
+        const staticObjectLayer = addObjectLayer(settings, staticBroadphase);
+        enableCollision(settings, movingObjectLayer, staticObjectLayer);
+        enableCollision(settings, movingObjectLayer, movingObjectLayer);
 
         const world = createWorld(settings);
-        worldRef.current = world;
-        queryFilterRef.current = filter.forWorld(world);
+        const queryFilter = filter.forWorld(world);
+        const bodies = bodiesRef.current;
+        const bodyById = bodyByIdRef.current;
+
+        setCrashcatApi({
+            world,
+            queryFilter,
+            staticObjectLayer,
+            movingObjectLayer,
+            register: (nodeId, body, meta) => {
+                const full: BodyMeta = { nodeId, ...meta };
+                bodies.set(nodeId, { body, meta: full });
+                bodyById.set(Number(body.id), full);
+            },
+            unregister: (nodeId) => {
+                const entry = bodies.get(nodeId);
+                if (!entry) return;
+                bodyById.delete(Number(entry.body.id));
+                rigidBody.remove(world, entry.body);
+                bodies.delete(nodeId);
+            },
+            getBody: (nodeId) => bodies.get(nodeId)?.body ?? null,
+        });
 
         return () => {
+            setCrashcatApi(null);
+            bodies.clear();
+            bodyById.clear();
             if (debugStateRef.current) {
                 debugRenderer.dispose(debugStateRef.current);
                 debugStateRef.current = null;
             }
-            worldRef.current = null;
-            queryFilterRef.current = null;
-            bodyIdByNodeIdRef.current.clear();
-            bodyMetaByIdRef.current.clear();
         };
     }, []);
 
-    useImperativeHandle(ref, () => ({
-        get world() {
-            return worldRef.current;
-        },
-        get queryFilter() {
-            return queryFilterRef.current;
-        },
-        get staticObjectLayer() {
-            return staticObjectLayerRef.current;
-        },
-        get movingObjectLayer() {
-            return movingObjectLayerRef.current;
-        },
-    }), []);
-
-    useEffect(() => {
-        const editor = editorRef.current;
-        if (!editor) return;
-
-        return editor.onSceneChange(() => {
-            if (lastModeRef.current === PrefabEditorMode.Edit) {
-                editBodiesDirtyRef.current = true;
-            }
-        });
-    }, [editorRef]);
-
     useFrame((_, delta) => {
-        const editor = editorRef.current;
-        const world = worldRef.current;
-        const queryFilter = queryFilterRef.current;
-        const root = editor?.root;
-        if (!editor || !world || !queryFilter || !root) return;
+        if (!api) return;
+        const { world } = api;
 
-        if (mode !== lastModeRef.current) {
-            if (lastModeRef.current === PrefabEditorMode.Edit) {
-                editBodiesDirtyRef.current = true;
+        if (mode === PrefabEditorMode.Edit) {
+            // Mirror authored transforms onto the bodies so debug boxes follow live edits.
+            for (const [nodeId, entry] of bodiesRef.current) {
+                const object = scene.getObject(nodeId);
+                if (!object) continue;
+                object.getWorldPosition(scratchPosition);
+                object.getWorldQuaternion(worldQuaternion);
+                rigidBody.setPosition(world, entry.body, [scratchPosition.x, scratchPosition.y, scratchPosition.z], false);
+                rigidBody.setQuaternion(world, entry.body, [worldQuaternion.x, worldQuaternion.y, worldQuaternion.z, worldQuaternion.w], false);
             }
-            lastModeRef.current = mode;
-        }
-
-        if (editBodiesDirtyRef.current) {
-            for (const bodyId of bodyIdByNodeIdRef.current.values()) {
-                const body = rigidBody.get(world, bodyId);
-                if (body) rigidBody.remove(world, body);
+        } else {
+            for (const [nodeId, entry] of bodiesRef.current) {
+                if (entry.meta.motionType !== MotionType.KINEMATIC) continue;
+                const object = scene.getObject(nodeId);
+                if (!object) continue;
+                object.getWorldPosition(scratchPosition);
+                object.getWorldQuaternion(worldQuaternion);
+                rigidBody.moveKinematic(
+                    entry.body,
+                    [scratchPosition.x, scratchPosition.y, scratchPosition.z],
+                    [worldQuaternion.x, worldQuaternion.y, worldQuaternion.z, worldQuaternion.w],
+                    delta,
+                );
             }
-            bodyIdByNodeIdRef.current.clear();
-            bodyMetaByIdRef.current.clear();
-            editBodiesDirtyRef.current = false;
-        }
+            updateWorld(world, listener, delta);
 
-        const rootNode = editor.getNode(getPrefabNodeId(root) ?? "");
-        const rootConfig = resolveCrashcatConfig(rootNode);
-        const rootNodeId = getPrefabNodeId(root);
-        const autoStaticColliders = Boolean(rootConfig?.autoStaticColliders);
-        const excludedIds = new Set(rootConfig?.excludeIds ?? []);
-        const seenNodeIds = new Set<string>();
-
-        root.traverse((candidate) => {
-            const nodeId = getPrefabNodeId(candidate);
-            if (!nodeId || seenNodeIds.has(nodeId)) return;
-            seenNodeIds.add(nodeId);
-
-            const object = editor.getNodeObject(nodeId) ?? candidate;
-            const node = editor.getNode(nodeId);
-            const config = resolveCrashcatConfig(node);
-            const explicitCollider = config?.collider;
-            const allowAutoCollider = autoStaticColliders
-                && !excludedIds.has(nodeId)
-                && nodeId !== rootNodeId;
-            const collider = explicitCollider === false
-                ? null
-                : explicitCollider && isRecord(explicitCollider)
-                    ? explicitCollider as Exclude<CrashcatColliderConfig, false>
-                    : allowAutoCollider
-                        ? ({ motionType: "static", shape: "autoBox" } satisfies Exclude<CrashcatColliderConfig, false>)
-                        : null;
-
-            if (!collider || bodyIdByNodeIdRef.current.has(nodeId)) {
-                return;
-            }
-
-            object.updateWorldMatrix(true, true);
-            const objectBounds = getLocalBounds(object);
-            if (!objectBounds) {
-                return;
-            }
-
-            const shape = createShapeForObject(object, objectBounds, collider);
-            const position = getBodyPosition(object, objectBounds);
-            const quaternion = getBodyQuaternion(object);
-            if (!shape || !position) {
-                return;
-            }
-
-            const motionType = toMotionType(collider);
-            const body = rigidBody.create(world, {
-                shape,
-                motionType,
-                motionQuality: toMotionQuality(collider),
-                objectLayer: motionType === MotionType.STATIC ? staticObjectLayerRef.current : movingObjectLayerRef.current,
-                position,
-                quaternion,
-                sensor: Boolean(collider.sensor),
-                friction: collider.friction,
-                restitution: collider.restitution,
-                userData: { nodeId },
-            });
-
-            if (collider.linearVelocity) {
-                rigidBody.setLinearVelocity(world, body, collider.linearVelocity);
-            }
-
-            bodyIdByNodeIdRef.current.set(nodeId, Number(body.id));
-            bodyMetaByIdRef.current.set(Number(body.id), {
-                nodeId,
-                motionType,
-                events: config?.events,
-            });
-        });
-
-        for (const [nodeId, bodyId] of bodyIdByNodeIdRef.current) {
-            if (seenNodeIds.has(nodeId)) continue;
-
-            const body = rigidBody.get(world, bodyId);
-            if (body) rigidBody.remove(world, body);
-            bodyIdByNodeIdRef.current.delete(nodeId);
-            bodyMetaByIdRef.current.delete(bodyId);
-        }
-
-        updateWorld(world, listener, Math.min(delta, 1 / 30));
-        if (debugStateRef.current) {
-            debugRenderer.update(debugStateRef.current, world);
-        }
-
-        for (const [nodeId, bodyId] of bodyIdByNodeIdRef.current) {
-            const body = rigidBody.get(world, bodyId);
-            const meta = bodyMetaByIdRef.current.get(bodyId);
-            const object = editor.getNodeObject(nodeId);
-            if (!body || !meta || !object) continue;
-
-            if (meta.motionType === MotionType.STATIC) continue;
-
-            object.position.set(body.position[0], body.position[1], body.position[2]);
-            object.quaternion.set(body.quaternion[0], body.quaternion[1], body.quaternion[2], body.quaternion[3]);
-            object.updateMatrixWorld();
-
-            if (body.position[1] < -40) {
-                rigidBody.remove(world, body);
-                bodyIdByNodeIdRef.current.delete(nodeId);
-                bodyMetaByIdRef.current.delete(bodyId);
-                editor.deleteNode(nodeId);
+            for (const [nodeId, entry] of bodiesRef.current) {
+                if (entry.meta.motionType !== MotionType.DYNAMIC) continue;
+                const object = scene.getObject(nodeId);
+                if (!object) continue;
+                setObjectWorldTransform(object, entry.body.position, entry.body.quaternion);
+                if (entry.body.position[1] < -40) api.unregister(nodeId);
             }
         }
+
+        if (debugStateRef.current) debugRenderer.update(debugStateRef.current, world);
     });
 
-    return debug && mode === PrefabEditorMode.Edit && debugStateRef.current
-        ? <primitive object={debugStateRef.current.object3d} />
-        : null;
-});
-
-CrashcatRuntime.displayName = "CrashcatRuntime";
+    return (
+        <>
+            {children}
+            {debug && mode === PrefabEditorMode.Edit && debugStateRef.current
+                ? <primitive object={debugStateRef.current.object3d} />
+                : null}
+        </>
+    );
+}

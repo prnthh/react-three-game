@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { colors, ui } from '../styles';
-import { useOptionalPrefabStoreApi } from '../prefabStore';
+import { usePrefabStoreApi } from '../prefabStore';
 
 // ============================================================================
 // Field Definition Types
@@ -541,16 +541,11 @@ type SearchOption = {
     searchText: string;
 };
 
-function useOptionalPrefabSnapshot() {
-    const store = useOptionalPrefabStoreApi();
-    const [state, setState] = useState(() => store?.getState() ?? null);
+function usePrefabSnapshot() {
+    const store = usePrefabStoreApi();
+    const [state, setState] = useState(() => store.getState());
 
     useEffect(() => {
-        if (!store) {
-            setState(null);
-            return;
-        }
-
         setState(store.getState());
         return store.subscribe(nextState => setState(nextState));
     }, [store]);
@@ -645,7 +640,7 @@ export function NodeInput({
     placeholder?: string;
     includeRoot?: boolean;
 }) {
-    const prefabState = useOptionalPrefabSnapshot();
+    const prefabState = usePrefabSnapshot();
     const [query, setQuery] = useState('');
 
     const options = useMemo<SearchOption[]>(() => {

@@ -11,7 +11,6 @@ export interface PrefabState {
     nodesById: Record<string, PrefabNodeRecord>;
     childIdsById: Record<string, string[]>;
     parentIdById: Record<string, string | null>;
-    revision: number;
     assetManifestKey: string;
     assetRefCounts: PrefabAssetRefCounts;
 }
@@ -172,7 +171,7 @@ export function createImageNode(texturePath: string, name?: string): GameObject 
     });
 }
 
-export function normalizePrefab(prefab: Prefab, revision = 0): PrefabState {
+export function normalizePrefab(prefab: Prefab): PrefabState {
     const nodesById: Record<string, PrefabNodeRecord> = {};
     const childIdsById: Record<string, string[]> = {};
     const parentIdById: Record<string, string | null> = {};
@@ -188,7 +187,6 @@ export function normalizePrefab(prefab: Prefab, revision = 0): PrefabState {
         nodesById,
         childIdsById,
         parentIdById,
-        revision,
         assetManifestKey: getAssetManifestKey(assetRefCounts),
         assetRefCounts,
     };
@@ -203,7 +201,6 @@ export function createPrefabPatch(
 
     return {
         ...patch,
-        revision: state.revision + 1,
         ...(assetRefsChanged ? {
             assetRefCounts: nextAssetRefCounts,
             assetManifestKey: getAssetManifestKey(nextAssetRefCounts),

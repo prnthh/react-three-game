@@ -1,4 +1,4 @@
-import { forwardRef, type ForwardRefExoticComponent, type RefAttributes, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { createContext, forwardRef, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { Euler, Group, Matrix4, Object3D, Quaternion, Texture, Vector3, } from "three";
 import { ThreeEvent } from "@react-three/fiber";
 import { useStore } from "zustand";
@@ -11,8 +11,8 @@ import { builtinComponents } from "./components";
 import { loadModel, loadSound, loadTexture, LoadedModels, LoadedSounds, LoadedTextures } from "../dragdrop";
 import { GameInstance, GameInstanceProvider, getRepeatAxesFromModelProperties, RepeatAxisConfig, useInstanceCheck } from "./InstanceProvider";
 import { composeTransform, decompose } from "./utils";
-import { createPrefabStore, PrefabStoreApi, PrefabStoreProvider, useOptionalPrefabStoreApi, usePrefabChildIds, usePrefabNode, usePrefabRootId } from "./prefabStore";
-import { AssetRuntimeContext, CurrentNodeScope, type AssetRuntimeContextValue } from "./assetRuntime";
+import { createPrefabStore, PrefabStoreApi, PrefabStoreProvider, usePrefabChildIds, usePrefabNode, usePrefabRootId } from "./prefabStore";
+import { AssetRuntimeContext, NodeScope, type AssetRuntime } from "./assetRuntime";
 import { gameEvents } from "./GameEvents";
 import { sound as soundManager } from "../../helpers/SoundManager";
 
@@ -47,27 +47,53 @@ function getNodeMetadataProps(node: GameObjectType) {
     };
 }
 
-export interface PrefabRootRef {
+export enum PrefabEditorMode {
+    Edit = "edit",
+    Play = "play",
+}
+
+export type PrefabNode = Omit<GameObjectType, "children">;
+
+export interface Scene {
+    // Reads
     root: Object3D | null;
-    getNodeObject: (nodeId: string) => Object3D | null;
-    getNodeHandle: <T = unknown>(nodeId: string, kind: string) => T | null;
-    addModel: (path: string, model: Object3D) => void;
-    addTexture: (path: string, texture: Texture) => void;
-    addSound: (path: string, sound: AudioBuffer) => void;
+    mode: PrefabEditorMode;
+    get(id: string): GameObjectType | null;
+    getObject(id: string): Object3D | null;
+    getHandle<T = unknown>(id: string, kind: string): T | null;
+    // Mutations
+    add(node: GameObjectType, parentId?: string): GameObjectType;
+    update(id: string, fn: (node: PrefabNode) => PrefabNode): void;
+    remove(id: string): void;
+    duplicate(id: string): string | null;
+    move(draggedId: string, targetId: string, position: "before" | "inside"): void;
+    replace(prefab: Prefab): void;
+    // Asset injection (for runtime-loaded assets)
+    addModel(path: string, model: Object3D): void;
+    addTexture(path: string, texture: Texture): void;
+    addSound(path: string, sound: AudioBuffer): void;
+}
+
+export const SceneContext = createContext<Scene | null>(null);
+
+export function useScene() {
+    const scene = useContext(SceneContext);
+    if (!scene) {
+        throw new Error("useScene must be used within a PrefabRoot or PrefabEditor scene provider");
+    }
+    return scene;
 }
 
 export interface PrefabRootProps {
     editMode?: boolean;
     data?: Prefab;
+    store?: PrefabStoreApi;
     selectedId?: string | null;
     onSelect?: (id: string | null) => void;
     onClick?: (event: ThreeEvent<PointerEvent>, node: GameObjectType) => void;
     onEditNodeClick?: (event: ThreeEvent<PointerEvent>, node: GameObjectType) => void;
     basePath?: string;
-}
-
-interface PrefabRootInternalProps extends PrefabRootProps {
-    store?: PrefabStoreApi;
+    children?: React.ReactNode;
 }
 
 type CompositionComponent = {
@@ -84,7 +110,7 @@ type AnalyzedNodeComponents = {
     composition: CompositionComponent[];
 };
 
-export const PrefabRootInternal = forwardRef<PrefabRootRef, PrefabRootInternalProps>(({ editMode, data, store, selectedId, onSelect, onClick, onEditNodeClick, basePath = "" }, ref) => {
+export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, store, selectedId, onSelect, onClick, onEditNodeClick, basePath = "", children }, ref) => {
 
     const [models, setModels] = useState<LoadedModels>({});
     const [textures, setTextures] = useState<LoadedTextures>({});
@@ -98,15 +124,13 @@ export const PrefabRootInternal = forwardRef<PrefabRootRef, PrefabRootInternalPr
     const failedSounds = useRef(new Set<string>());
     const objectRefs = useRef<Record<string, Object3D | null>>({});
     const nodeHandles = useRef<Map<string, Map<string, unknown>>>(new Map());
-    const parentStore = useOptionalPrefabStoreApi();
     const [ownedStore] = useState<PrefabStoreApi | null>(() => {
+        if (store) return null;
         if (data) return createPrefabStore(data);
-        if (store || parentStore) return null;
         throw new Error("PrefabRoot requires either a `data` or `store` prop");
     });
-    const resolvedStore = store ?? parentStore ?? ownedStore!;
+    const resolvedStore = store ?? ownedStore!;
     const usesOwnedStore = resolvedStore === ownedStore;
-    const shouldProvideStoreContext = !parentStore || parentStore !== resolvedStore;
     const rootId = useStore(resolvedStore, state => state.rootId);
     const assetManifestKey = useStore(resolvedStore, state => state.assetManifestKey);
 
@@ -114,15 +138,19 @@ export const PrefabRootInternal = forwardRef<PrefabRootRef, PrefabRootInternalPr
     const availableTextures = useMemo(() => ({ ...textures, ...injectedTextures }), [textures, injectedTextures]);
     const availableSounds = useMemo(() => ({ ...sounds, ...injectedSounds }), [sounds, injectedSounds]);
 
-    const getNodeObject = useCallback((id: string) => {
+    const getObject = useCallback((id: string) => {
         return objectRefs.current[id] ?? null;
     }, []);
 
-    const getNodeHandle = useCallback(<T = unknown,>(id: string, kind: string) => {
+    const getHandle = useCallback(<T = unknown,>(id: string, kind: string) => {
         return (nodeHandles.current.get(id)?.get(kind) as T | undefined) ?? null;
     }, []);
 
-    const registerNodeHandle = useCallback((id: string, kind: string, handle: unknown) => {
+    const getNode = useCallback((nodeId: string) => {
+        return resolvedStore.getState().nodesById[nodeId] ?? null;
+    }, [resolvedStore]);
+
+    const registerHandle = useCallback((id: string, kind: string, handle: unknown) => {
         const current = nodeHandles.current.get(id);
 
         if (handle == null) {
@@ -142,19 +170,33 @@ export const PrefabRootInternal = forwardRef<PrefabRootRef, PrefabRootInternalPr
         nodeHandles.current.set(id, new Map([[kind, handle]]));
     }, []);
 
-    useImperativeHandle(ref, () => ({
+    const sceneValue = useMemo<Scene>(() => ({
         get root() {
             return objectRefs.current[rootId] ?? null;
         },
-        getNodeObject,
-        getNodeHandle,
-        addModel: (path: string, model: Object3D) => setInjectedModels(prev => ({ ...prev, [path]: model })),
-        addTexture: (path: string, texture: Texture) => setInjectedTextures(prev => ({ ...prev, [path]: texture })),
-        addSound: (path: string, sound: AudioBuffer) => {
+        mode: editMode ? PrefabEditorMode.Edit : PrefabEditorMode.Play,
+        get: getNode,
+        getObject,
+        getHandle,
+        add: (node, parentId) => {
+            const state = resolvedStore.getState();
+            state.addChild(parentId ?? state.rootId, node);
+            return node;
+        },
+        update: (id, fn) => resolvedStore.getState().updateNode(id, fn),
+        remove: (id) => resolvedStore.getState().deleteNode(id),
+        duplicate: (id) => resolvedStore.getState().duplicateNode(id),
+        move: (draggedId, targetId, position) => resolvedStore.getState().moveNode(draggedId, targetId, position),
+        replace: (prefab) => resolvedStore.getState().replacePrefab(prefab),
+        addModel: (path, model) => setInjectedModels(prev => ({ ...prev, [path]: model })),
+        addTexture: (path, texture) => setInjectedTextures(prev => ({ ...prev, [path]: texture })),
+        addSound: (path, sound) => {
             soundManager.setBuffer(path, sound);
             setInjectedSounds(prev => ({ ...prev, [path]: sound }));
         },
-    }), [getNodeHandle, getNodeObject, rootId]);
+    }), [editMode, getHandle, getNode, getObject, resolvedStore, rootId]);
+
+    useImperativeHandle(ref, () => sceneValue, [sceneValue]);
 
     const registerRef = useCallback((id: string, obj: Object3D | null) => {
         objectRefs.current[id] = obj;
@@ -194,42 +236,33 @@ export const PrefabRootInternal = forwardRef<PrefabRootRef, PrefabRootInternalPr
                 if (loaded[file] || injected[file] || loading.current.has(file) || failed.has(file)) return;
                 loading.current.add(file);
                 void loader(resolveAssetPath(basePath, file)).then(result => {
+                    loading.current.delete(file);
                     if (!result.success) {
                         console.warn(`Failed to load asset: ${file}`, result.error);
-                        loading.current.delete(file);
                         failed.add(file);
                     }
                 });
             };
 
-            modelsToLoad.forEach(file => loadAsset(
-                file, models, injectedModels, failedModels.current,
-                (path) => loadModel(path).then(result => {
-                    const model = result.model;
-                    if (result.success && model) {
-                        setModels(m => ({ ...m, [file]: model }));
-                    }
+            modelsToLoad.forEach(file => loadAsset(file, models, injectedModels, failedModels.current, path =>
+                loadModel(path).then(result => {
+                    if (result.success && result.model) setModels(m => ({ ...m, [file]: result.model! }));
                     return result;
                 }),
             ));
 
-            texturesToLoad.forEach(file => loadAsset(
-                file, textures, injectedTextures, failedTextures.current,
-                (path) => loadTexture(path).then(result => {
-                    if (result.success && result.texture) {
-                        setTextures(t => ({ ...t, [file]: result.texture! }));
-                    }
+            texturesToLoad.forEach(file => loadAsset(file, textures, injectedTextures, failedTextures.current, path =>
+                loadTexture(path).then(result => {
+                    if (result.success && result.texture) setTextures(t => ({ ...t, [file]: result.texture! }));
                     return result;
                 }),
             ));
 
-            soundsToLoad.forEach(file => loadAsset(
-                file, sounds, injectedSounds, failedSounds.current,
-                (path) => loadSound(path).then(result => {
+            soundsToLoad.forEach(file => loadAsset(file, sounds, injectedSounds, failedSounds.current, path =>
+                loadSound(path).then(result => {
                     if (result.success && result.sound) {
                         soundManager.setBuffer(file, result.sound);
-                        setSounds(current => ({ ...current, [file]: result.sound! }));
-                        loading.current.delete(file);
+                        setSounds(s => ({ ...s, [file]: result.sound! }));
                     }
                     return result;
                 }),
@@ -239,15 +272,15 @@ export const PrefabRootInternal = forwardRef<PrefabRootRef, PrefabRootInternalPr
         syncAssets();
     }, [resolvedStore, assetManifestKey, basePath, injectedModels, injectedSounds, injectedTextures, models, sounds, textures]);
 
-    const assetRuntime = useMemo<AssetRuntimeContextValue>(() => ({
-        registerNodeHandle,
-        getNodeHandle,
-        getNodeObject,
+    const assetRuntime = useMemo<AssetRuntime>(() => ({
+        registerHandle,
+        getHandle,
+        getObject,
         getModel: (path: string) => availableModels[path] ?? null,
         getTexture: (path: string) => availableTextures[path] ?? null,
         getSound: (path: string) => availableSounds[path] ?? null,
         getAssetRevision: () => `${Object.keys(availableTextures).sort().join('|')}::${Object.keys(availableModels).sort().join('|')}`,
-    }), [registerNodeHandle, getNodeHandle, getNodeObject, availableModels, availableTextures, availableSounds]);
+    }), [registerHandle, getHandle, getObject, availableModels, availableTextures, availableSounds]);
 
     const handleNodeClick = useCallback((event: ThreeEvent<PointerEvent>, nodeId: string, fallbackObject: Object3D | null) => {
         const node = resolvedStore.getState().nodesById[nodeId];
@@ -277,19 +310,18 @@ export const PrefabRootInternal = forwardRef<PrefabRootRef, PrefabRootInternalPr
                 editMode={editMode}
                 parentMatrix={IDENTITY}
             />
+            {children}
         </GameInstanceProvider>
     );
 
-    const runtimeContent = <AssetRuntimeContext.Provider value={assetRuntime}>{content}</AssetRuntimeContext.Provider>;
-
-    if (!shouldProvideStoreContext) {
-        return runtimeContent;
-    }
+    const runtimeContent = (
+        <SceneContext.Provider value={sceneValue}>
+            <AssetRuntimeContext.Provider value={assetRuntime}>{content}</AssetRuntimeContext.Provider>
+        </SceneContext.Provider>
+    );
 
     return <PrefabStoreProvider store={resolvedStore}>{runtimeContent}</PrefabStoreProvider>;
 });
-
-export const PrefabRoot = PrefabRootInternal as unknown as ForwardRefExoticComponent<PrefabRootProps & RefAttributes<PrefabRootRef>>;
 
 function StoreRootNode(props: Omit<RendererProps, "nodeId">) {
     const rootId = usePrefabRootId();
@@ -554,9 +586,9 @@ function StandardNode({
     );
 
     return (
-        <CurrentNodeScope nodeId={nodeId} editMode={editMode} isSelected={isSelected}>
+        <NodeScope nodeId={nodeId} editMode={editMode} isSelected={isSelected}>
             {standardNode}
-        </CurrentNodeScope>
+        </NodeScope>
     );
 }
 

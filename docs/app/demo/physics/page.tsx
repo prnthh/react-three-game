@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { gameEvents, PrefabEditor, PrefabEditorMode, registerComponent, soundManager } from "react-three-game";
-import type { PrefabEditorRef } from "react-three-game";
+import { gameEvents, PrefabEditor, PrefabEditorMode, registerComponent, soundManager, useEditorRef, useScene } from "react-three-game";
+import type { PrefabEditorRef, Scene } from "react-three-game";
 import { Quaternion, Vector3 } from "three";
 import CrashcatPhysicsComponent from "@/app/components/CrashcatPhysicsComponent";
 import { CrashcatRuntime } from "../../components/CrashcatRuntime";
@@ -95,8 +95,8 @@ const prefab = {
                                     shape: "autoBox",
                                     motionType: "static",
                                     sensor: true,
-                                    collisionEnter: TARGET_HIT_EVENT,
-                                    collisionExit: TARGET_RESET_EVENT,
+                                    sensorEnter: TARGET_HIT_EVENT,
+                                    sensorExit: TARGET_RESET_EVENT,
                                 }
                             }
                         }
@@ -187,9 +187,13 @@ function createProjectileNode(spawnPosition: Vector3, launchVelocity: Vector3) {
     };
 }
 
-function fireProjectileFromCannon(editor: PrefabEditorRef | null, barrelEntityId = CANNON_BARREL_ID) {
-    const barrelObject = editor?.getNodeObject(barrelEntityId);
-    if (!barrelObject || !editor) return;
+function fireProjectileFromCannon(
+    add: Scene["add"],
+    getObject: Scene["getObject"],
+    barrelEntityId = CANNON_BARREL_ID,
+) {
+    const barrelObject = getObject(barrelEntityId);
+    if (!barrelObject) return;
 
     barrelObject.updateWorldMatrix(true, false);
 
@@ -205,17 +209,17 @@ function fireProjectileFromCannon(editor: PrefabEditorRef | null, barrelEntityId
     const spawnPosition = worldPosition.clone().add(muzzleOffset);
     const launchVelocity = direction.multiplyScalar(PROJECTILE_SPEED);
 
-    editor.addNode(createProjectileNode(spawnPosition, launchVelocity));
+    add(createProjectileNode(spawnPosition, launchVelocity));
 }
 
-export default function PhysicsDemo() {
-    const editorRef = useRef<PrefabEditorRef>(null);
+function PhysicsRuntimeBindings() {
+    const editor = useEditorRef();
+    const scene = useScene();
 
     useEffect(() => {
         const setTargetColor = (color: string) => {
-            const material = (editorRef.current?.getNodeObject(TARGET_ID) as any)?.material;
-            if (!material?.color) return;
-            material.color.set(color);
+            const material = (scene.getObject(TARGET_ID) as { material?: { color?: { set: (value: string) => void } } } | null)?.material;
+            material?.color?.set(color);
         };
 
         setTargetColor(TARGET_IDLE_COLOR);
@@ -227,7 +231,7 @@ export default function PhysicsDemo() {
                 : typeof detail?.nodeId === "string"
                     ? detail.nodeId
                     : CANNON_BARREL_ID;
-            fireProjectileFromCannon(editorRef.current, barrelId);
+            fireProjectileFromCannon(editor.add, scene.getObject, barrelId);
             void soundManager.play(CANNON_FIRE_SOUND, { volume: 0.9 });
         });
 
@@ -249,12 +253,19 @@ export default function PhysicsDemo() {
             stopTargetHit();
             stopTargetReset();
         };
-    }, []);
+    }, [editor, scene]);
+
+    return null;
+}
+
+export default function PhysicsDemo() {
+    const editorRef = useRef<PrefabEditorRef>(null);
 
     return (
         <main className="flex h-screen w-screen flex-col">
             <PrefabEditor ref={editorRef} initialPrefab={prefab} mode={PrefabEditorMode.Play}>
-                <CrashcatRuntime editorRef={editorRef} debug />
+                <CrashcatRuntime debug />
+                <PhysicsRuntimeBindings />
                 <ambientLight intensity={1.5} />
             </PrefabEditor>
         </main>

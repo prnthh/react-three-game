@@ -3,7 +3,7 @@ import { useHelper } from "@react-three/drei";
 import { useRef, useEffect } from "react";
 import { BooleanField, ColorField, Label, NumberField, Vector3Input } from "./Input";
 import { Object3D, SpotLight, SpotLightHelper } from "three";
-import { useAssetRuntime, useCurrentNode } from "../assetRuntime";
+import { useAssetRuntime, useNode } from "../assetRuntime";
 import { useFrame } from "@react-three/fiber";
 import { TexturePicker } from "../../assetviewer/page";
 import { LightSection, ShadowBiasField, mergeWithDefaults } from "./lightUtils";
@@ -72,7 +72,7 @@ function SpotLightComponentEditor({ component, onUpdate, basePath = "" }: { comp
 
 function SpotLightView({ properties, children }: { properties: any; children?: React.ReactNode }) {
     const { getTexture } = useAssetRuntime();
-    const { editMode, isSelected } = useCurrentNode();
+    const { editMode, isSelected } = useNode();
     const merged = mergeWithDefaults(spotLightDefaults, properties);
     const color = merged.color;
     const intensity = merged.intensity;

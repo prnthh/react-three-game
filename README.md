@@ -152,7 +152,7 @@ interface GameObject {
 
 ## Runtime Mutation
 
-Use editor or root refs for scene-native object access, and use the editor mutation methods for authored data changes.
+Use the editor or root ref for scene-native object access, and the `Scene` mutation methods for authored data changes.
 
 ```tsx
 import { useEffect, useRef } from "react";
@@ -162,7 +162,7 @@ function RaiseBall() {
   const editorRef = useRef<PrefabEditorRef>(null);
 
   useEffect(() => {
-    editorRef.current?.updateNode("ball", (node) => ({
+    editorRef.current?.update("ball", (node) => ({
       ...node,
       components: {
         ...node.components,
@@ -184,29 +184,33 @@ function RaiseBall() {
 For live Three.js access, use mounted objects directly:
 
 ```tsx
-const ball = editorRef.current?.getNodeObject("ball");
+const ball = editorRef.current?.getObject("ball");
 ball?.rotateY(0.5);
 ```
 
-For runtime integrations that need edit-time re-sync, subscribe to authored scene changes:
+For runtime integrations that need to react to authored scene changes, subscribe through the prefab store:
 
 ```tsx
-const stop = editorRef.current?.onSceneChange((revision) => {
-  console.log("scene changed", revision);
-});
+import { usePrefabStoreApi } from "react-three-game";
 
-stop?.();
+const store = usePrefabStoreApi();
+const stop = store.subscribe(
+  (s) => s.nodesById,
+  (next, prev) => console.log("scene changed", next, prev),
+);
+
+stop();
 ```
 
-For runtime-owned imperative state, use node-local handles instead of reaching for ad hoc globals:
+For runtime-owned imperative state, register node-local handles instead of reaching for ad hoc globals:
 
 ```tsx
 import { useEffect } from "react";
-import { useAssetRuntime, useCurrentNode, useCurrentNodeHandle } from "react-three-game";
+import { useAssetRuntime, useNode, useNodeHandle } from "react-three-game";
 
 function SpinnerView({ children }: { children?: React.ReactNode }) {
-  const { nodeId } = useCurrentNode();
-  const { registerNodeHandle } = useAssetRuntime();
+  const { nodeId } = useNode();
+  const { registerHandle } = useAssetRuntime();
 
   useEffect(() => {
     const handle = {
@@ -215,15 +219,15 @@ function SpinnerView({ children }: { children?: React.ReactNode }) {
       },
     };
 
-    registerNodeHandle(nodeId, "spinner", handle);
-    return () => registerNodeHandle(nodeId, "spinner", null);
-  }, [nodeId, registerNodeHandle]);
+    registerHandle(nodeId, "spinner", handle);
+    return () => registerHandle(nodeId, "spinner", null);
+  }, [nodeId, registerHandle]);
 
   return <>{children}</>;
 }
 
 function SpinnerStatus() {
-  const spinnerRef = useCurrentNodeHandle<{ setSpeed: (next: number) => void }>("spinner");
+  const spinnerRef = useNodeHandle<{ setSpeed: (next: number) => void }>("spinner");
 
   useEffect(() => {
     spinnerRef.current?.setSpeed(2);
@@ -246,11 +250,11 @@ const playerByName = editorRef.current?.root?.getObjectByName("Player");
 const playerById = editorRef.current?.root?.getObjectByProperty("userData.prefabNodeId", "player");
 ```
 
-Treat names as a convenience surface, not the primary lookup key:
+Treat names as a convenience surface, with stable ids as the primary lookup key:
 
+* `editorRef.current?.getObject(id)` is the clearest stable authored-node lookup
 * names are not guaranteed unique
-* `getNodeObject(id)` is the clearest stable authored-node lookup
-* traversal metadata is applied to the prefab node transform object, not necessarily the inner mesh or model child
+* traversal metadata is applied to the prefab node transform object — the inner mesh or model child is one level deeper
 
 You can author extra `userData` from the editor with a `Data` component:
 
@@ -264,67 +268,21 @@ You can author extra `userData` from the editor with a `Data` component:
 }
 ```
 
-For batched authored updates, write through the store once:
-
-```tsx
-editorRef.current?.updateNodes([
-  {
-    id: "orb1",
-    update: (node) => ({
-      ...node,
-      components: {
-        ...node.components,
-        transform: {
-          ...node.components?.transform,
-          type: "Transform",
-          properties: {
-            ...node.components?.transform?.properties,
-            position: [1, 0, 0],
-          },
-        },
-      },
-    }),
-  },
-  {
-    id: "orb2",
-    update: (node) => ({
-      ...node,
-      components: {
-        ...node.components,
-        transform: {
-          ...node.components?.transform,
-          type: "Transform",
-          properties: {
-            ...node.components?.transform?.properties,
-            position: [-1, 0, 0],
-          },
-        },
-      },
-    }),
-  },
-]);
-```
-
-Custom component `View`s should use normal React and R3F behavior, such as `useFrame`, refs, and native Three.js APIs.
+Custom component `View`s use normal React and R3F behavior — `useFrame`, refs, and native Three.js APIs.
 
 ## Useful Exports
 
-* `GameCanvas`
-* `PrefabRoot`
-* `PrefabEditor`
-* `PrefabEditorMode`
-* `Prefab`
-* `GameObject`
-* `registerComponent`
-* `useAssetRuntime()` / `useCurrentNode()`
-* `useCurrentNodeObject()` / `useCurrentNodeHandle()`
-* `ground(...)`
-* `gameEvents` / `useGameEvent()` / `useClickEvent()`
-* `loadJson()` / `saveJson()`
-* `loadModel()` / `loadTexture()`
-* `loadSound()` / `loadFiles()`
-* `exportGLB()`
-* `computeParentWorldMatrix()`
+* `GameCanvas`, `PrefabRoot`, `PrefabEditor`, `PrefabEditorMode`
+* `Prefab`, `GameObject`, `ComponentData`, `PrefabNode`, `PrefabEditorRef`, `Scene`
+* `registerComponent`, `Component`, `ComponentViewProps`, `FieldDefinition`
+* `useScene`, `useEditorRef`, `useEditorContext`
+* `useNode`, `useNodeObject`, `useNodeHandle`, `useAssetRuntime`
+* `usePrefabStore`, `usePrefabStoreApi`
+* `gameEvents`, `useGameEvent`, `useClickEvent`
+* `loadJson`, `saveJson`, `loadFiles`, `loadModel`, `loadTexture`, `loadSound`
+* `exportGLB`, `exportGLBData`, `regenerateIds`, `computeParentWorldMatrix`
+* `ground`, `soundManager`
+* `FieldRenderer`, `Vector3Field`, `NumberField`, `StringField`, `BooleanField`, `SelectField`, `ColorField`
 
 ## Development
 

@@ -1,12 +1,15 @@
-import { Component } from "./ComponentRegistry";
+import type { Component, ComponentViewProps } from "./ComponentRegistry";
 import { useHelper } from "@react-three/drei";
-import { useRef, useEffect, useMemo, useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useFrame } from "@react-three/fiber";
-import { CameraHelper, DirectionalLight, Object3D, OrthographicCamera } from "three";
+import { CameraHelper } from "three";
+import type { Object3D } from "three";
+import type { DirectionalLight, OrthographicCamera } from "three";
 import { useNode } from "../assetRuntime";
 import { BooleanField, ColorField, NumberField, NumberInput, Vector3Input } from "./Input";
 import { LightSection, ShadowBiasField, mergeWithDefaults } from "./lightUtils";
 import { colors } from "../styles";
+import type { ComponentData } from "../types";
 
 const directionalLightDefaults = {
     color: '#ffffff',
@@ -24,6 +27,8 @@ const directionalLightDefaults = {
     shadowCameraRight: 5,
     targetOffset: [0, -5, 0] as [number, number, number],
 };
+
+type DirectionalLightProperties = typeof directionalLightDefaults & Record<string, unknown>;
 
 const frustumLabelStyle: React.CSSProperties = {
     fontSize: 10,
@@ -70,7 +75,7 @@ function ShadowFrustumField({
     values,
     onChange,
 }: {
-    values: typeof directionalLightDefaults;
+    values: DirectionalLightProperties;
     onChange: (values: Record<string, number>) => void;
 }) {
     const [locked, setLocked] = useState(() => areFrustumSidesLocked(values));
@@ -195,8 +200,8 @@ function ShadowFrustumField({
     );
 }
 
-function DirectionalLightComponentEditor({ component, onUpdate }: { component: any; onUpdate: (newComp: any) => void }) {
-    const values = mergeWithDefaults(directionalLightDefaults, component.properties);
+function DirectionalLightComponentEditor({ component, onUpdate }: { component: ComponentData; onUpdate: (newComp: Record<string, unknown>) => void }) {
+    const values = mergeWithDefaults(directionalLightDefaults, component.properties) as DirectionalLightProperties;
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -228,9 +233,9 @@ function DirectionalLightComponentEditor({ component, onUpdate }: { component: a
     );
 }
 
-function DirectionalLightView({ properties, children }: { properties: any; children?: React.ReactNode }) {
+function DirectionalLightView({ properties, children }: ComponentViewProps) {
     const { editMode, isSelected } = useNode();
-    const merged = mergeWithDefaults(directionalLightDefaults, properties);
+    const merged = mergeWithDefaults(directionalLightDefaults, properties) as DirectionalLightProperties;
     const color = merged.color;
     const intensity = merged.intensity;
     const castShadow = merged.castShadow;
@@ -249,8 +254,11 @@ function DirectionalLightView({ properties, children }: { properties: any; child
     const targetRef = useRef<Object3D>(null);
     const shadowCameraRef = useRef<OrthographicCamera>(null);
     const [shadowCamera, setShadowCamera] = useState<OrthographicCamera | null>(null);
+    const helperTarget = editMode && isSelected && castShadow && shadowCameraRef.current
+        ? { current: shadowCameraRef.current }
+        : null;
     useHelper(
-        editMode && isSelected && castShadow ? shadowCameraRef as React.RefObject<Object3D> : null,
+        helperTarget,
         CameraHelper
     );
 
@@ -262,7 +270,7 @@ function DirectionalLightView({ properties, children }: { properties: any; child
             shadowCameraRef.current = nextShadowCamera;
             setShadowCamera(castShadow ? nextShadowCamera : null);
         }
-    }, [castShadow]);
+    });
 
     useEffect(() => {
         const shadow = directionalLightRef.current?.shadow;
@@ -270,19 +278,7 @@ function DirectionalLightView({ properties, children }: { properties: any; child
 
         shadow.needsUpdate = true;
         shadow.camera.updateProjectionMatrix();
-    }, [
-        castShadow,
-        shadowMapSize,
-        shadowBias,
-        shadowNormalBias,
-        shadowAutoUpdate,
-        shadowCameraNear,
-        shadowCameraFar,
-        shadowCameraTop,
-        shadowCameraBottom,
-        shadowCameraLeft,
-        shadowCameraRight,
-    ]);
+    });
 
     useFrame(() => {
         if (!directionalLightRef.current || !targetRef.current) return;

@@ -1,11 +1,14 @@
 import { ModelPicker } from '../../assetviewer/page';
-import { useContext, useMemo } from 'react';
-import { Component } from './ComponentRegistry';
+import { useMemo } from 'react';
+import { Mesh } from 'three';
+import { assetRef, assetRefs } from './ComponentRegistry';
+import type { Component, ComponentViewProps } from './ComponentRegistry';
 import { BooleanField, FieldGroup, Label, ListEditor, NumberInput, SelectInput, StringField } from './Input';
 import { useAssetRuntime } from '../assetRuntime';
-import { GameObject } from '../types';
+import type { ComponentData, GameObject } from '../types';
 import { useEditorContext } from '../PrefabEditor';
-import { DEFAULT_REPEAT_AXES, getRepeatAxesFromModelProperties, normalizeRepeatAxes, RepeatAxisConfig } from '../InstanceProvider';
+import { getRepeatAxesFromModelProperties, normalizeRepeatAxes } from '../InstanceProvider';
+import type { RepeatAxisConfig } from '../InstanceProvider';
 import { colors, ui } from '../styles';
 
 const AXIS_OPTIONS = [
@@ -18,6 +21,26 @@ type RepeatAxis = {
     axis: RepeatAxisConfig['axis'];
     count: number;
     offset: number;
+};
+
+type ModelProperties = {
+    filename?: string;
+    instanced?: boolean;
+    emitClickEvent?: boolean;
+    clickEventName?: string;
+    repeat?: boolean;
+    repeatAxes?: RepeatAxisConfig[];
+} & Record<string, unknown>;
+
+type ModelComponentData = ComponentData & {
+    properties: ModelProperties;
+};
+
+type ModelComponentEditorProps = {
+    component: ModelComponentData;
+    node?: GameObject;
+    onUpdate: (newComp: Partial<ModelProperties>) => void;
+    basePath?: string;
 };
 
 function quantize(value: number, step: number) {
@@ -126,7 +149,7 @@ function RepeatAxisEditor({
     );
 }
 
-function ModelComponentEditor({ component, node, onUpdate, basePath = "" }: { component: any; node?: GameObject; onUpdate: (newComp: any) => void; basePath?: string }) {
+function ModelComponentEditor({ component, node, onUpdate, basePath = "" }: ModelComponentEditorProps) {
     const { positionSnap } = useEditorContext();
     const repeatAxes = getRepeatAxesFromModelProperties(component.properties);
 
@@ -188,25 +211,22 @@ function ModelComponentEditor({ component, node, onUpdate, basePath = "" }: { co
 }
 
 // View for Model component
-function ModelComponentView({ properties, children }: { properties: any, children?: React.ReactNode }) {
+function ModelComponentView({ properties, children }: ComponentViewProps<ModelProperties>) {
     const { getModel } = useAssetRuntime();
-    // Instanced models are handled elsewhere (GameInstance), so only render non-instanced here
-    if (!properties.filename || properties.instanced) return <>{children}</>;
-
-    const sourceModel = getModel(properties.filename);
+    const sourceModel = properties.filename ? getModel(properties.filename) : null;
 
     // Clone model once and set up shadows - memoized to avoid cloning on every render
     const clonedModel = useMemo(() => {
-        if (!sourceModel) return null;
+        if (!sourceModel || !properties.filename || properties.instanced) return null;
         const clone = sourceModel.clone();
-        clone.traverse((obj: any) => {
-            if (obj.isMesh) {
+        clone.traverse((obj) => {
+            if (obj instanceof Mesh) {
                 obj.castShadow = true;
                 obj.receiveShadow = true;
             }
         });
         return clone;
-    }, [sourceModel]);
+    }, [properties.filename, properties.instanced, sourceModel]);
 
     if (!clonedModel) return <>{children}</>;
 
@@ -218,10 +238,7 @@ const ModelComponent: Component = {
     Editor: ModelComponentEditor,
     View: ModelComponentView,
     defaultProperties: {},
-    getAssetRefs: (properties) => {
-        if (properties.filename) return [{ type: 'model', path: properties.filename }];
-        return [];
-    },
+    getAssetRefs: (properties) => assetRefs(assetRef('model', properties.filename)),
 };
 
 export default ModelComponent;

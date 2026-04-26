@@ -1,10 +1,12 @@
 import { OrthographicCamera, PerspectiveCamera, useHelper } from '@react-three/drei';
 import { useRef } from 'react';
-import { CameraHelper, Object3D, OrthographicCamera as ThreeOrthographicCamera, PerspectiveCamera as ThreePerspectiveCamera } from 'three';
+import { CameraHelper } from 'three';
+import type { OrthographicCamera as ThreeOrthographicCamera, PerspectiveCamera as ThreePerspectiveCamera } from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useNode } from '../assetRuntime';
-import { Component } from './ComponentRegistry';
+import type { Component, ComponentViewProps } from './ComponentRegistry';
 import { FieldGroup, NumberField, SelectField } from './Input';
+import type { ComponentData } from '../types';
 
 const CAMERA_PROJECTION_OPTIONS = [
     { value: 'perspective', label: 'Perspective' },
@@ -20,7 +22,21 @@ const cameraDefaults = {
     orthographicSize: 10,
 };
 
-function CameraComponentEditor({ component, onUpdate }: { component: any; onUpdate: (newComp: any) => void }) {
+type CameraProjection = typeof CAMERA_PROJECTION_OPTIONS[number]['value'];
+type CameraProperties = {
+    projection?: CameraProjection;
+    fov?: number;
+    near?: number;
+    zoom?: number;
+    far?: number;
+    orthographicSize?: number;
+} & Record<string, unknown>;
+
+type CameraComponentData = ComponentData & {
+    properties: CameraProperties;
+};
+
+function CameraComponentEditor({ component, onUpdate }: { component: CameraComponentData; onUpdate: (newComp: Partial<CameraProperties>) => void }) {
     const values = { ...cameraDefaults, ...component.properties };
     const projection = values.projection ?? cameraDefaults.projection;
 
@@ -88,7 +104,7 @@ function CameraComponentEditor({ component, onUpdate }: { component: any; onUpda
     );
 }
 
-function CameraComponentView({ properties, children }: { properties: any; children?: React.ReactNode }) {
+function CameraComponentView({ properties, children }: ComponentViewProps<CameraProperties>) {
     const { editMode, isSelected } = useNode();
     const { size } = useThree();
     const merged = { ...cameraDefaults, ...properties };
@@ -103,11 +119,14 @@ function CameraComponentView({ properties, children }: { properties: any; childr
     const halfWidth = halfHeight * aspect;
     const perspectiveCameraRef = useRef<ThreePerspectiveCamera>(null);
     const orthographicCameraRef = useRef<ThreeOrthographicCamera>(null);
-    const activeCameraRef = projection === 'orthographic'
-        ? orthographicCameraRef as React.RefObject<Object3D>
-        : perspectiveCameraRef as React.RefObject<Object3D>;
+    const activeCamera = projection === 'orthographic'
+        ? orthographicCameraRef.current
+        : perspectiveCameraRef.current;
+    const helperTarget = editMode && isSelected && activeCamera
+        ? { current: activeCamera }
+        : null;
     useHelper(
-        editMode && isSelected ? activeCameraRef : null,
+        helperTarget,
         CameraHelper
     );
 

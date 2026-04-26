@@ -1,12 +1,16 @@
-import { Component } from "./ComponentRegistry";
+import { assetRef, assetRefs } from "./ComponentRegistry";
+import type { Component, ComponentViewProps } from "./ComponentRegistry";
 import { useHelper } from "@react-three/drei";
 import { useRef, useEffect } from "react";
 import { BooleanField, ColorField, Label, NumberField, Vector3Input } from "./Input";
-import { Object3D, SpotLight, SpotLightHelper } from "three";
+import { SpotLightHelper } from "three";
+import type { Object3D } from "three";
+import type { SpotLight } from "three";
 import { useAssetRuntime, useNode } from "../assetRuntime";
 import { useFrame } from "@react-three/fiber";
 import { TexturePicker } from "../../assetviewer/page";
 import { LightSection, ShadowBiasField, mergeWithDefaults } from "./lightUtils";
+import type { ComponentData } from "../types";
 
 const spotLightDefaults = {
     color: '#ffffff',
@@ -26,8 +30,10 @@ const spotLightDefaults = {
     map: undefined as string | undefined,
 };
 
-function SpotLightComponentEditor({ component, onUpdate, basePath = "" }: { component: any; onUpdate: (newComp: any) => void; basePath?: string }) {
-    const values = mergeWithDefaults(spotLightDefaults, component.properties);
+type SpotLightProperties = typeof spotLightDefaults & Record<string, unknown>;
+
+function SpotLightComponentEditor({ component, onUpdate, basePath = "" }: { component: ComponentData; onUpdate: (newComp: Record<string, unknown>) => void; basePath?: string }) {
+    const values = mergeWithDefaults(spotLightDefaults, component.properties) as SpotLightProperties;
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -70,10 +76,10 @@ function SpotLightComponentEditor({ component, onUpdate, basePath = "" }: { comp
     );
 }
 
-function SpotLightView({ properties, children }: { properties: any; children?: React.ReactNode }) {
+function SpotLightView({ properties, children }: ComponentViewProps) {
     const { getTexture } = useAssetRuntime();
     const { editMode, isSelected } = useNode();
-    const merged = mergeWithDefaults(spotLightDefaults, properties);
+    const merged = mergeWithDefaults(spotLightDefaults, properties) as SpotLightProperties;
     const color = merged.color;
     const intensity = merged.intensity;
     const angle = merged.angle;
@@ -90,9 +96,12 @@ function SpotLightView({ properties, children }: { properties: any; children?: R
     const targetOffset = merged.targetOffset;
     const textureMap = merged.map ? getTexture(merged.map) ?? undefined : undefined;
     const spotLightRef = useRef<SpotLight>(null);
-    const targetRef = useRef<any>(null);
+    const targetRef = useRef<Object3D | null>(null);
+    const helperTarget = editMode && isSelected && spotLightRef.current
+        ? { current: spotLightRef.current }
+        : null;
     useHelper(
-        editMode && isSelected ? spotLightRef as React.RefObject<Object3D> : null,
+        helperTarget,
         SpotLightHelper,
         color
     );
@@ -101,7 +110,7 @@ function SpotLightView({ properties, children }: { properties: any; children?: R
         if (spotLightRef.current && targetRef.current) {
             spotLightRef.current.target = targetRef.current;
         }
-    }, [castShadow]);
+    });
 
     useEffect(() => {
         const shadow = spotLightRef.current?.shadow;
@@ -109,7 +118,7 @@ function SpotLightView({ properties, children }: { properties: any; children?: R
 
         shadow.needsUpdate = true;
         shadow.camera.updateProjectionMatrix();
-    }, [castShadow, shadowMapSize, shadowBias, shadowNormalBias, shadowAutoUpdate, shadowCameraNear, shadowCameraFar]);
+    });
 
     useFrame(() => {
         if (spotLightRef.current?.target) {
@@ -160,10 +169,7 @@ const SpotLightComponent: Component = {
     Editor: SpotLightComponentEditor,
     View: SpotLightView,
     defaultProperties: {},
-    getAssetRefs: (properties) => {
-        if (properties.map) return [{ type: 'texture', path: properties.map }];
-        return [];
-    },
+    getAssetRefs: (properties) => assetRefs(assetRef('texture', properties.map)),
 };
 
 export default SpotLightComponent;

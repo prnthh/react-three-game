@@ -1,10 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { useHelper } from '@react-three/drei';
-import { Object3D, PointLight, PointLightHelper } from 'three';
+import { PointLightHelper } from 'three';
+import type { PointLight } from 'three';
 import { useNode } from '../assetRuntime';
-import { Component } from './ComponentRegistry';
+import type { Component, ComponentViewProps } from './ComponentRegistry';
 import { BooleanField, ColorField, NumberField } from './Input';
 import { LightSection, ShadowBiasField, mergeWithDefaults } from './lightUtils';
+import type { ComponentData } from '../types';
 
 const pointLightDefaults = {
     color: '#ffffff',
@@ -20,8 +22,10 @@ const pointLightDefaults = {
     shadowCameraFar: 500,
 };
 
-function PointLightComponentEditor({ component, onUpdate }: { component: any; onUpdate: (newComp: any) => void }) {
-    const values = mergeWithDefaults(pointLightDefaults, component.properties);
+type PointLightProperties = typeof pointLightDefaults & Record<string, unknown>;
+
+function PointLightComponentEditor({ component, onUpdate }: { component: ComponentData; onUpdate: (newComp: Record<string, unknown>) => void }) {
+    const values = mergeWithDefaults(pointLightDefaults, component.properties) as PointLightProperties;
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -48,9 +52,9 @@ function PointLightComponentEditor({ component, onUpdate }: { component: any; on
     );
 }
 
-function PointLightView({ properties, children }: { properties: any; children?: React.ReactNode }) {
+function PointLightView({ properties, children }: ComponentViewProps) {
     const { editMode, isSelected } = useNode();
-    const merged = mergeWithDefaults(pointLightDefaults, properties);
+    const merged = mergeWithDefaults(pointLightDefaults, properties) as PointLightProperties;
     const color = merged.color;
     const intensity = merged.intensity;
     const distance = merged.distance;
@@ -63,8 +67,11 @@ function PointLightView({ properties, children }: { properties: any; children?: 
     const shadowCameraNear = merged.shadowCameraNear;
     const shadowCameraFar = merged.shadowCameraFar;
     const lightRef = useRef<PointLight>(null);
+    const helperTarget = editMode && isSelected && lightRef.current
+        ? { current: lightRef.current }
+        : null;
     useHelper(
-        editMode && isSelected ? lightRef as React.RefObject<Object3D> : null,
+        helperTarget,
         PointLightHelper,
         0.5,
         color
@@ -76,7 +83,7 @@ function PointLightView({ properties, children }: { properties: any; children?: 
 
         shadow.needsUpdate = true;
         shadow.camera.updateProjectionMatrix();
-    }, [castShadow, shadowMapSize, shadowBias, shadowNormalBias, shadowAutoUpdate, shadowCameraNear, shadowCameraFar]);
+    });
 
     return (
         <>

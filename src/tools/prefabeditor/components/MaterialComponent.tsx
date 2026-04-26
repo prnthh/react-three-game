@@ -2,30 +2,35 @@ import { createContext, useContext, useMemo, useRef, type ReactNode } from 'reac
 import { extend } from '@react-three/fiber';
 import type { ThreeElement } from '@react-three/fiber';
 import { useFrame } from '@react-three/fiber';
-import { Component } from './ComponentRegistry';
-import { FieldRenderer, FieldDefinition, Label, NumberInput } from './Input';
+import { assetRef, assetRefs } from './ComponentRegistry';
+import type { Component, ComponentViewProps } from './ComponentRegistry';
+import { FieldRenderer, Label, NumberInput } from './Input';
+import type { FieldDefinition } from './Input';
 import { useAssetRuntime } from '../assetRuntime';
 import { MeshBasicNodeMaterial, MeshStandardNodeMaterial, SpriteNodeMaterial } from 'three/webgpu';
 import { TexturePicker } from '../../assetviewer/page';
+import type { ComponentData } from '../types';
 import {
     RepeatWrapping,
     ClampToEdgeWrapping,
     SRGBColorSpace,
     LinearSRGBColorSpace,
-    Texture,
     NearestFilter,
     LinearFilter,
     NearestMipmapNearestFilter,
     NearestMipmapLinearFilter,
     LinearMipmapNearestFilter,
     LinearMipmapLinearFilter,
+    FrontSide,
+    BackSide,
+    DoubleSide,
+} from 'three';
+import type {
     MinificationTextureFilter,
     MagnificationTextureFilter,
     MeshBasicMaterialProperties,
     MeshStandardMaterialProperties,
-    FrontSide,
-    BackSide,
-    DoubleSide,
+    Texture,
 } from 'three';
 
 declare module '@react-three/fiber' {
@@ -36,7 +41,7 @@ declare module '@react-three/fiber' {
     }
 }
 
-export interface MaterialProps extends Omit<MeshStandardMaterialProperties & MeshBasicMaterialProperties, 'args' | 'normalScale'> {
+export interface MaterialProps extends Omit<MeshStandardMaterialProperties & MeshBasicMaterialProperties, 'args' | 'normalScale' | 'side'> {
     materialType?: 'standard' | 'basic' | 'sprite';
     transmission?: number;
     thickness?: number;
@@ -54,6 +59,7 @@ export interface MaterialProps extends Omit<MeshStandardMaterialProperties & Mes
     magFilter?: string;
     normalMapTexture?: string;
     normalScale?: [number, number];
+    side?: keyof typeof SIDE_MAP;
 }
 
 function Vector2Editor({
@@ -103,6 +109,58 @@ export type MaterialOverrides = Record<string, unknown>;
 
 const EMPTY_MATERIAL_OVERRIDES: MaterialOverrides = Object.freeze({});
 const MaterialOverridesContext = createContext<MaterialOverrides>(EMPTY_MATERIAL_OVERRIDES);
+const SIDE_MAP = { FrontSide, BackSide, DoubleSide } as const;
+const MIN_FILTER_MAP: Record<string, MinificationTextureFilter> = {
+    NearestFilter,
+    LinearFilter,
+    NearestMipmapNearestFilter,
+    NearestMipmapLinearFilter,
+    LinearMipmapNearestFilter,
+    LinearMipmapLinearFilter,
+};
+const MAG_FILTER_MAP: Record<string, MagnificationTextureFilter> = {
+    NearestFilter,
+    LinearFilter,
+};
+
+function cloneConfiguredTexture({
+    texture,
+    repeat,
+    repeatCount,
+    offset,
+    colorSpace,
+    generateMipmaps,
+    minFilter,
+    magFilter,
+}: {
+    texture: Texture;
+    repeat?: boolean;
+    repeatCount?: [number, number];
+    offset?: [number, number];
+    colorSpace: typeof SRGBColorSpace | typeof LinearSRGBColorSpace;
+    generateMipmaps: boolean;
+    minFilter: MinificationTextureFilter;
+    magFilter: MagnificationTextureFilter;
+}) {
+    const clonedTexture = texture.clone();
+
+    if (repeat) {
+        clonedTexture.wrapS = clonedTexture.wrapT = RepeatWrapping;
+        if (repeatCount) clonedTexture.repeat.set(repeatCount[0], repeatCount[1]);
+    } else {
+        clonedTexture.wrapS = clonedTexture.wrapT = ClampToEdgeWrapping;
+        clonedTexture.repeat.set(1, 1);
+    }
+
+    clonedTexture.offset.set(offset?.[0] ?? 0, offset?.[1] ?? 0);
+    clonedTexture.colorSpace = colorSpace;
+    clonedTexture.generateMipmaps = generateMipmaps;
+    clonedTexture.minFilter = minFilter;
+    clonedTexture.magFilter = magFilter;
+    clonedTexture.needsUpdate = true;
+
+    return clonedTexture;
+}
 
 export function useMaterialOverrides(): MaterialOverrides {
     return useContext(MaterialOverridesContext);
@@ -126,7 +184,15 @@ extend({
     SpriteNodeMaterial,
 });
 
-function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { component: any; onUpdate: (newComp: any) => void; basePath?: string }) {
+function MaterialComponentEditor({
+    component,
+    onUpdate,
+    basePath = "",
+}: {
+    component: ComponentData;
+    onUpdate: (newProps: Record<string, unknown>) => void;
+    basePath?: string;
+}) {
     const materialType = component.properties.materialType ?? 'standard';
     const hasTexture = !!component.properties.texture;
     const hasRepeat = component.properties.repeat;
@@ -263,25 +329,25 @@ function MaterialComponentEditor({ component, onUpdate, basePath = "" }: { compo
 }
 
 // View for Material component
-function MaterialComponentView({ properties: rawProps }: { properties: Record<string, any> }) {
+function MaterialComponentView({ properties: rawProps }: ComponentViewProps<Record<string, unknown>>) {
     const { getTexture } = useAssetRuntime();
-    const properties = rawProps as MaterialProps;
-    const materialType = properties?.materialType ?? 'standard';
-    const textureName = properties?.texture;
-    const offset = properties?.offset;
-    const repeat = properties?.repeat;
-    const repeatCount = properties?.repeatCount;
-    const animateOffset = properties?.animateOffset;
-    const offsetSpeed = properties?.offsetSpeed;
-    const generateMipmaps = properties?.generateMipmaps !== false;
-    const minFilter = properties?.minFilter || 'LinearMipmapLinearFilter';
-    const magFilter = properties?.magFilter || 'LinearFilter';
-    const texture = textureName ? getTexture(textureName) ?? undefined : undefined;
+    const properties = rawProps as unknown as MaterialProps | undefined;
+    const materialSource = properties ?? {} as MaterialProps;
 
-    const normalMapTextureName = properties?.normalMapTexture;
-    const normalScaleProp = properties?.normalScale;
-    const normalMapTexture = normalMapTextureName ? getTexture(normalMapTextureName) ?? undefined : undefined;
-    const materialSource: MaterialProps = properties ?? {};
+    const materialType = materialSource.materialType ?? 'standard';
+    const textureName = materialSource.texture;
+    const normalMapTextureName = materialSource.normalMapTexture;
+    const offset = materialSource.offset;
+    const repeat = materialSource.repeat;
+    const repeatCount = materialSource.repeatCount;
+    const animateOffset = materialSource.animateOffset;
+    const offsetSpeed = materialSource.offsetSpeed;
+    const generateMipmaps = materialSource.generateMipmaps !== false;
+    const minFilter = materialSource.minFilter ?? 'LinearMipmapLinearFilter';
+    const magFilter = materialSource.magFilter ?? 'LinearFilter';
+    const texture = textureName ? getTexture(textureName) : undefined;
+    const normalScaleProp = materialSource.normalScale;
+    const normalMapTexture = normalMapTextureName ? getTexture(normalMapTextureName) : undefined;
 
     // Destructure all material props and separate custom texture handling props
     const {
@@ -305,69 +371,62 @@ function MaterialComponentView({ properties: rawProps }: { properties: Record<st
         ...materialProps
     } = materialSource;
 
-    const sideMap: Record<string, any> = { FrontSide, BackSide, DoubleSide };
-    const resolvedSide = sideProp ? (sideMap[sideProp as unknown as string] ?? FrontSide) : FrontSide;
-
-    const minFilterMap: Record<string, MinificationTextureFilter> = {
-        NearestFilter,
-        LinearFilter,
-        NearestMipmapNearestFilter,
-        NearestMipmapLinearFilter,
-        LinearMipmapNearestFilter,
-        LinearMipmapLinearFilter
-    };
-
-    const magFilterMap: Record<string, MagnificationTextureFilter> = {
-        NearestFilter,
-        LinearFilter
-    };
-
+    const resolvedSide = sideProp ? SIDE_MAP[sideProp] ?? FrontSide : FrontSide;
+    const resolvedMinFilter = MIN_FILTER_MAP[minFilter] ?? LinearMipmapLinearFilter;
+    const resolvedMagFilter = MAG_FILTER_MAP[magFilter] ?? LinearFilter;
     const animatedOffsetRef = useRef<[number, number]>([offset?.[0] ?? 0, offset?.[1] ?? 0]);
 
     const finalTexture = useMemo(() => {
         if (!texture) return undefined;
-        const t = texture.clone();
-        if (repeat) {
-            t.wrapS = t.wrapT = RepeatWrapping;
-            if (repeatCount) t.repeat.set(repeatCount[0], repeatCount[1]);
-        } else {
-            t.wrapS = t.wrapT = ClampToEdgeWrapping;
-            t.repeat.set(1, 1);
-        }
-        t.offset.set(offset?.[0] ?? 0, offset?.[1] ?? 0);
-        t.colorSpace = SRGBColorSpace;
-        t.generateMipmaps = generateMipmaps;
-        t.minFilter = minFilterMap[minFilter] ?? LinearMipmapLinearFilter;
-        t.magFilter = magFilterMap[magFilter] ?? LinearFilter;
-        t.needsUpdate = true;
-        return t;
-    }, [texture, repeat, repeatCount?.[0], repeatCount?.[1], offset?.[0], offset?.[1], generateMipmaps, minFilter, magFilter]);
+
+        return cloneConfiguredTexture({
+            texture,
+            repeat,
+            repeatCount,
+            offset,
+            colorSpace: SRGBColorSpace,
+            generateMipmaps,
+            minFilter: resolvedMinFilter,
+            magFilter: resolvedMagFilter,
+        });
+    }, [texture, repeat, repeatCount?.[0], repeatCount?.[1], offset?.[0], offset?.[1], generateMipmaps, resolvedMinFilter, resolvedMagFilter]);
+
+    const finalNormalMap = useMemo(() => {
+        if (!normalMapTexture) return undefined;
+
+        return cloneConfiguredTexture({
+            texture: normalMapTexture,
+            repeat,
+            repeatCount,
+            offset,
+            colorSpace: LinearSRGBColorSpace,
+            generateMipmaps,
+            minFilter: resolvedMinFilter,
+            magFilter: resolvedMagFilter,
+        });
+    }, [normalMapTexture, repeat, repeatCount?.[0], repeatCount?.[1], offset?.[0], offset?.[1], generateMipmaps, resolvedMinFilter, resolvedMagFilter]);
 
     animatedOffsetRef.current = [offset?.[0] ?? 0, offset?.[1] ?? 0];
 
     useFrame((_, delta) => {
-        if (!finalTexture || !animateOffset) return;
+        if ((!finalTexture && !finalNormalMap) || !animateOffset) return;
 
         const nextX = animatedOffsetRef.current[0] + (offsetSpeed?.[0] ?? 0) * delta;
         const nextY = animatedOffsetRef.current[1] + (offsetSpeed?.[1] ?? 0) * delta;
 
         animatedOffsetRef.current = [nextX, nextY];
-        finalTexture.offset.set(nextX, nextY);
+        finalTexture?.offset.set(nextX, nextY);
+        finalNormalMap?.offset.set(nextX, nextY);
     });
 
-    const finalNormalMap = useMemo(() => {
-        if (!normalMapTexture) return undefined;
-        const t = normalMapTexture.clone();
-        t.colorSpace = LinearSRGBColorSpace;
-        t.needsUpdate = true;
-        return t;
-    }, [normalMapTexture]);
+    const overrides = useMaterialOverrides();
 
     if (!properties) {
         return <meshStandardNodeMaterial attach="material" color="red" wireframe />;
     }
 
-    const overrides = useMaterialOverrides();
+    const materialKey = `${materialType}:${textureName ?? 'none'}:${normalMapTextureName ?? 'none'}`;
+
     const sharedProps = {
         map: finalTexture,
         side: resolvedSide,
@@ -376,23 +435,24 @@ function MaterialComponentView({ properties: rawProps }: { properties: Record<st
     };
 
     if (materialType === 'basic') {
-        return <meshBasicNodeMaterial attach="material" {...sharedProps} />;
+        return <meshBasicNodeMaterial key={materialKey} attach="material" {...sharedProps} />;
     }
 
     if (materialType === 'sprite') {
-        const spriteTransparent = properties.transparent !== false;
+        const spriteTransparent = materialSource.transparent !== false;
 
         return (
             <spriteNodeMaterial
+                key={materialKey}
                 attach="material"
                 map={finalTexture}
-                color={properties.color ?? '#ffffff'}
-                opacity={properties.opacity ?? 1}
+                color={materialSource.color ?? '#ffffff'}
+                opacity={materialSource.opacity ?? 1}
                 transparent={spriteTransparent}
-                alphaTest={properties.alphaTest ?? 0}
-                depthTest={properties.depthTest ?? false}
-                depthWrite={properties.depthWrite ?? false}
-                toneMapped={properties.toneMapped ?? true}
+                alphaTest={materialSource.alphaTest ?? 0}
+                depthTest={materialSource.depthTest ?? false}
+                depthWrite={materialSource.depthWrite ?? false}
+                toneMapped={materialSource.toneMapped ?? true}
                 {...overrides}
                 rotation={rotation ?? 0}
                 sizeAttenuation={sizeAttenuation ?? true}
@@ -402,6 +462,7 @@ function MaterialComponentView({ properties: rawProps }: { properties: Record<st
 
     return (
         <meshStandardNodeMaterial
+            key={materialKey}
             attach="material"
             {...sharedProps}
             normalMap={finalNormalMap}
@@ -428,12 +489,10 @@ const MaterialComponent: Component = {
         metalness: 0,
         roughness: 1
     },
-    getAssetRefs: (properties) => {
-        const refs: { type: 'texture'; path: string }[] = [];
-        if (properties.texture) refs.push({ type: 'texture', path: properties.texture });
-        if (properties.normalMapTexture) refs.push({ type: 'texture', path: properties.normalMapTexture });
-        return refs;
-    },
+    getAssetRefs: (properties) => assetRefs(
+        assetRef('texture', properties.texture),
+        assetRef('texture', properties.normalMapTexture),
+    ),
 };
 
 export default MaterialComponent;

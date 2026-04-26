@@ -1,18 +1,23 @@
 import { createContext, forwardRef, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
-import { Euler, Group, Matrix4, Object3D, Quaternion, Texture, Vector3, } from "three";
-import { ThreeEvent } from "@react-three/fiber";
+import { Euler, Matrix4 } from "three";
+import type { Group, Object3D, Texture } from "three";
+import type { ThreeEvent } from "@react-three/fiber";
 import { useStore } from "zustand";
 import { useClickValid } from "./useClickValid";
 
-import { ComponentData, GameObject as GameObjectType, Prefab, findComponent, getNodeUserData } from "./types";
+import { findComponent, getNodeUserData } from "./types";
+import type { ComponentData, GameObject as GameObjectType, Prefab } from "./types";
 import type { Component } from "./components/ComponentRegistry";
 import { getComponentDef, getComponentAssetRefs, registerComponent } from "./components/ComponentRegistry";
 import { builtinComponents } from "./components";
-import { loadModel, loadSound, loadTexture, LoadedModels, LoadedSounds, LoadedTextures } from "../dragdrop";
-import { GameInstance, GameInstanceProvider, getRepeatAxesFromModelProperties, RepeatAxisConfig, useInstanceCheck } from "./InstanceProvider";
+import { loadModel, loadSound, loadTexture } from "../dragdrop";
+import type { LoadedModels, LoadedSounds, LoadedTextures } from "../dragdrop";
+import { GameInstance, GameInstanceProvider, getRepeatAxesFromModelProperties } from "./InstanceProvider";
 import { composeTransform, decompose } from "./utils";
-import { createPrefabStore, PrefabStoreApi, PrefabStoreProvider, usePrefabChildIds, usePrefabNode, usePrefabRootId } from "./prefabStore";
-import { AssetRuntimeContext, NodeScope, type AssetRuntime } from "./assetRuntime";
+import { createPrefabStore, PrefabStoreProvider, usePrefabChildIds, usePrefabNode, usePrefabRootId } from "./prefabStore";
+import type { PrefabStoreApi } from "./prefabStore";
+import { AssetRuntimeContext, NodeScope } from "./assetRuntime";
+import type { AssetRuntime } from "./assetRuntime";
 import { gameEvents } from "./GameEvents";
 import { sound as soundManager } from "../../helpers/SoundManager";
 
@@ -22,6 +27,14 @@ const IDENTITY = new Matrix4();
 const EMPTY_MODELS: LoadedModels = {};
 const EMPTY_TEXTURES: LoadedTextures = {};
 const EMPTY_SOUNDS: LoadedSounds = {};
+const EMPTY_NODE_COMPONENTS: AnalyzedNodeComponents = {
+    geometry: undefined,
+    material: undefined,
+    model: undefined,
+    sprite: undefined,
+    clickEventName: null,
+    composition: [],
+};
 
 /** Resolve a relative or absolute asset file path against a base path. */
 function resolveAssetPath(basePath: string, file: string): string {
@@ -130,7 +143,10 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, 
         if (data) return createPrefabStore(data);
         throw new Error("PrefabRoot requires either a `data` or `store` prop");
     });
-    const resolvedStore = store ?? ownedStore!;
+    const resolvedStore = store ?? ownedStore;
+    if (!resolvedStore) {
+        throw new Error("PrefabRoot requires either a `data` or `store` prop");
+    }
     const usesOwnedStore = resolvedStore === ownedStore;
     const rootId = useStore(resolvedStore, state => state.rootId);
     const assetManifestKey = useStore(resolvedStore, state => state.assetManifestKey);
@@ -210,6 +226,8 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, 
     }, [data, resolvedStore, usesOwnedStore]);
 
     useEffect(() => {
+        void assetManifestKey;
+
         const syncAssets = (snapshot = resolvedStore.getState()) => {
             const modelsToLoad = new Set<string>();
             const texturesToLoad = new Set<string>();
@@ -245,29 +263,42 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, 
                 });
             };
 
-            modelsToLoad.forEach(file => loadAsset(file, models, injectedModels, failedModels.current, path =>
-                loadModel(path).then(result => {
-                    if (result.success && result.model) setModels(m => ({ ...m, [file]: result.model! }));
-                    return result;
-                }),
-            ));
+            modelsToLoad.forEach(file => {
+                loadAsset(file, models, injectedModels, failedModels.current, path =>
+                    loadModel(path).then(result => {
+                        const loadedModel = result.model;
+                        if (result.success && loadedModel) {
+                            setModels(currentModels => ({ ...currentModels, [file]: loadedModel }));
+                        }
+                        return result;
+                    }),
+                );
+            });
 
-            texturesToLoad.forEach(file => loadAsset(file, textures, injectedTextures, failedTextures.current, path =>
-                loadTexture(path).then(result => {
-                    if (result.success && result.texture) setTextures(t => ({ ...t, [file]: result.texture! }));
-                    return result;
-                }),
-            ));
+            texturesToLoad.forEach(file => {
+                loadAsset(file, textures, injectedTextures, failedTextures.current, path =>
+                    loadTexture(path).then(result => {
+                        const loadedTexture = result.texture;
+                        if (result.success && loadedTexture) {
+                            setTextures(currentTextures => ({ ...currentTextures, [file]: loadedTexture }));
+                        }
+                        return result;
+                    }),
+                );
+            });
 
-            soundsToLoad.forEach(file => loadAsset(file, sounds, injectedSounds, failedSounds.current, path =>
-                loadSound(path).then(result => {
-                    if (result.success && result.sound) {
-                        soundManager.setBuffer(file, result.sound);
-                        setSounds(s => ({ ...s, [file]: result.sound! }));
-                    }
-                    return result;
-                }),
-            ));
+            soundsToLoad.forEach(file => {
+                loadAsset(file, sounds, injectedSounds, failedSounds.current, path =>
+                    loadSound(path).then(result => {
+                        const loadedSound = result.sound;
+                        if (result.success && loadedSound) {
+                            soundManager.setBuffer(file, loadedSound);
+                            setSounds(currentSounds => ({ ...currentSounds, [file]: loadedSound }));
+                        }
+                        return result;
+                    }),
+                );
+            });
         };
 
         syncAssets();
@@ -442,20 +473,12 @@ export function GameObjectRenderer(props: RendererProps) {
 
 function InstancedNode({ nodeId, parentMatrix = IDENTITY, editMode, registerRef, onSelect, onEditNodeClick, onClick, isVisible = true }: RendererProps) {
     const gameObject = usePrefabNode(nodeId);
-    if (!gameObject) return null;
-
-    const analyzedComponents = useMemo(() => analyzeNodeComponents(gameObject), [gameObject]);
+    const analyzedComponents = useMemo(
+        () => gameObject ? analyzeNodeComponents(gameObject) : EMPTY_NODE_COMPONENTS,
+        [gameObject],
+    );
     const localTransform = getNodeTransformProps(gameObject);
-    const isLocked = Boolean(gameObject.locked);
-    const nodeVisible = isVisible && !gameObject.hidden;
-    const metadataProps = getNodeMetadataProps(gameObject);
-    const groupProps = {
-        ...metadataProps,
-        visible: nodeVisible,
-        position: localTransform.position,
-        rotation: localTransform.rotation,
-        scale: localTransform.scale,
-    };
+    const isLocked = Boolean(gameObject?.locked);
 
     const modelUrl = analyzedComponents.model?.properties?.filename;
     const instances = useMemo(
@@ -472,9 +495,21 @@ function InstancedNode({ nodeId, parentMatrix = IDENTITY, editMode, registerRef,
     }, [editMode, nodeId, registerRef]);
 
     const editClickHandlers = useClickValid(!!editMode && !isLocked, (event: ThreeEvent<PointerEvent>) => {
+        if (!gameObject) return;
         onSelect?.(nodeId);
         onEditNodeClick?.(event, gameObject);
     });
+
+    if (!gameObject) return null;
+
+    const nodeVisible = isVisible && !gameObject.hidden;
+    const groupProps = {
+        ...getNodeMetadataProps(gameObject),
+        visible: nodeVisible,
+        position: localTransform.position,
+        rotation: localTransform.rotation,
+        scale: localTransform.scale,
+    };
 
     const renderedInstances = instances.map(instance => (
         <GameInstance
@@ -525,14 +560,12 @@ function StandardNode({
 }: RendererProps) {
     const gameObject = usePrefabNode(nodeId);
     const childIds = usePrefabChildIds(nodeId);
-    if (!gameObject) return null;
-
-    const analyzedComponents = useMemo(() => analyzeNodeComponents(gameObject), [gameObject]);
+    const analyzedComponents = useMemo(
+        () => gameObject ? analyzeNodeComponents(gameObject) : EMPTY_NODE_COMPONENTS,
+        [gameObject],
+    );
     const isSelected = selectedId === nodeId;
-    const isLocked = Boolean(gameObject.locked);
-    const nodeVisible = isVisible && !gameObject.hidden;
-    const stillInstanced = useInstanceCheck(nodeId);
-    const metadataProps = getNodeMetadataProps(gameObject);
+    const isLocked = Boolean(gameObject?.locked);
 
     const groupRef = useRef<Object3D | null>(null);
     const handleGroupRef = useCallback((object: Object3D | null) => {
@@ -541,6 +574,7 @@ function StandardNode({
     }, [nodeId, registerRef]);
 
     const editClickHandlers = useClickValid(!!editMode && !isLocked, (event: ThreeEvent<PointerEvent>) => {
+        if (!gameObject) return;
         onSelect?.(nodeId);
         onEditNodeClick?.(event, gameObject);
     });
@@ -555,7 +589,11 @@ function StandardNode({
 
     const world = parentMatrix.clone().multiply(compose(gameObject));
 
-    const ready = isNodeReady(analyzedComponents.model, loadedModels);
+    if (!gameObject) return null;
+
+    const nodeVisible = isVisible && !gameObject.hidden;
+    const metadataProps = getNodeMetadataProps(gameObject);
+
     const transform = getNodeTransformProps(gameObject);
     const transformProps = {
         position: transform.position,
@@ -638,11 +676,11 @@ function getModelRepeatSettings(node?: GameObjectType | null) {
 }
 
 function buildRepeatedInstances(
-    gameObject: GameObjectType,
+    gameObject: GameObjectType | null,
     parentMatrix: Matrix4,
     modelUrl: string | undefined,
 ) {
-    if (!modelUrl) return [];
+    if (!gameObject || !modelUrl) return [];
 
     const transform = getNodeTransformProps(gameObject);
     const repeat = getModelRepeatSettings(gameObject);

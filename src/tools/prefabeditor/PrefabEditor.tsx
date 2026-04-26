@@ -1,8 +1,10 @@
 import { MapControls, TransformControls, useHelper } from "@react-three/drei";
 import GameCanvas from "../../shared/GameCanvas";
 import { useCallback, useEffect, useMemo, useRef, useState, forwardRef, useImperativeHandle, createContext, useContext } from "react";
-import { BoxHelper, Object3D } from "three";
-import { GameObject, Prefab, findComponentEntry } from "./types";
+import { BoxHelper } from "three";
+import type { Object3D } from "three";
+import { findComponentEntry } from "./types";
+import type { GameObject, Prefab } from "./types";
 import { PrefabEditorMode, PrefabRoot, type PrefabNode, type Scene } from "./PrefabRoot";
 import EditorUI from "./EditorUI";
 import { base, toolbar } from "./styles";
@@ -11,6 +13,7 @@ import type { ExportGLBOptions } from "./utils";
 import { loadFiles } from "../dragdrop";
 import { denormalizePrefab, createImageNode, createModelNode, createNode } from './prefab';
 import { createPrefabStore, type PrefabStoreState, PrefabStoreProvider } from "./prefabStore";
+import type { MapControls as MapControlsImpl, TransformControls as TransformControlsImpl } from 'three-stdlib';
 
 function isObjectAttachedToRoot(root: Object3D | null | undefined, object: Object3D | null | undefined) {
     if (!root || !object) return false;
@@ -27,7 +30,10 @@ function isObjectAttachedToRoot(root: Object3D | null | undefined, object: Objec
 function SelectionHelper({ object }: { object: Object3D | null }) {
     const objectRef = useRef<Object3D | null>(null);
     objectRef.current = object;
-    useHelper(object ? objectRef as React.RefObject<Object3D> : null, BoxHelper, "cyan");
+    const helperTarget = objectRef.current
+        ? { current: objectRef.current }
+        : null;
+    useHelper(helperTarget, BoxHelper, "cyan");
     return null;
 }
 
@@ -115,16 +121,20 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
     const historyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const prefabRootRef = useRef<Scene>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
-    const controlsRef = useRef<any>(null);
-    const transformControlsRef = useRef<any>(null);
+    const controlsRef = useRef<MapControlsImpl | null>(null);
+    const transformControlsRef = useRef<TransformControlsImpl | null>(null);
     const onChangeRef = useRef(onChange);
     const isEditMode = mode === PrefabEditorMode.Edit;
+    const detachTransformControls = useCallback(() => {
+        transformControlsRef.current?.detach();
+    }, []);
 
     const getPrefab = useCallback(() => denormalizePrefab(prefabStore.getState()), [prefabStore]);
     const getNode = useCallback((nodeId: string) => prefabStore.getState().nodesById[nodeId] ?? null, [prefabStore]);
     const getRoot = useCallback(() => prefabRootRef.current?.root ?? null, []);
     const getObject = useCallback((nodeId: string) => prefabRootRef.current?.getObject(nodeId) ?? null, []);
     const getHandle = useCallback(<T = unknown,>(nodeId: string, kind: string) => prefabRootRef.current?.getHandle<T>(nodeId, kind) ?? null, []);
+
     const scheduleHistory = useCallback((nextPrefab: Prefab) => {
         if (historyTimeoutRef.current) {
             clearTimeout(historyTimeoutRef.current);
@@ -204,7 +214,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
     }, [initialMode, updateMode]);
 
     const loadPrefab = useCallback((prefab: Prefab, options?: { resetHistory?: boolean; notifyChange?: boolean }) => {
-        transformControlsRef.current?.detach();
+        detachTransformControls();
         const before = prefabStore.getState();
         prefabStore.getState().replacePrefab(prefab);
         const after = prefabStore.getState();
@@ -220,7 +230,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
         } else {
             setSelectedId(prev => prev && prefabStore.getState().nodesById[prev] ? prev : null);
         }
-    }, [prefabStore]);
+    }, [detachTransformControls, prefabStore]);
 
     useEffect(() => {
         if (initialPrefab) loadPrefab(initialPrefab, { resetHistory: true, notifyChange: false });
@@ -256,17 +266,25 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
         add(regenerateIds(prefab.root));
     }, [add]);
 
-    const applyHistory = (index: number) => {
-        transformControlsRef.current?.detach();
+    const applyHistory = useCallback((index: number) => {
+        detachTransformControls();
         prefabStore.getState().replacePrefab(history[index]);
         onChangeRef.current?.(history[index]);
         historyIndexRef.current = index;
         setHistoryIndex(index);
         setSelectedId(prev => prev && prefabStore.getState().nodesById[prev] ? prev : null);
-    };
+    }, [detachTransformControls, history, prefabStore]);
 
-    const undo = () => historyIndex > 0 && applyHistory(historyIndex - 1);
-    const redo = () => historyIndex < history.length - 1 && applyHistory(historyIndex + 1);
+    const undo = useCallback(() => {
+        if (historyIndex > 0) {
+            applyHistory(historyIndex - 1);
+        }
+    }, [applyHistory, historyIndex]);
+    const redo = useCallback(() => {
+        if (historyIndex < history.length - 1) {
+            applyHistory(historyIndex + 1);
+        }
+    }, [applyHistory, history.length, historyIndex]);
 
     useEffect(() => {
         if (!isEditMode) return;
@@ -278,7 +296,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isEditMode, historyIndex, history]);
+    }, [isEditMode, redo, undo]);
 
     const handleScreenshot = useCallback(() => {
         const canvas = canvasRef.current;
@@ -497,7 +515,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
                                     key={`transform-${selectedId}-${transformMode}-${positionSnap}-${rotationSnap}-${scaleSnap}`}
                                     object={transformObject}
                                     mode={transformMode}
-                                    space="local"
+                                    space={transformMode === "translate" ? "world" : "local"}
                                     onObjectChange={handleTransformChange}
                                     translationSnap={positionSnap > 0 ? positionSnap : undefined}
                                     rotationSnap={rotationSnap > 0 ? rotationSnap : undefined}
@@ -511,7 +529,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
                 {showUI && (
                     <>
                         <div style={toolbar.panel}>
-                            <button style={base.btn} onClick={toggleMode}>
+                            <button type="button" style={base.btn} onClick={toggleMode}>
                                 {isEditMode ? "▶" : "⏸"}
                             </button>
                             {uiPlugins}

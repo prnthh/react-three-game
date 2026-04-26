@@ -1,7 +1,9 @@
-import React, { createContext, useContext, useMemo, useRef, useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useMemo, useRef, useState, useEffect } from "react";
+import type { ComponentType, ReactNode } from "react";
 import { Merged, useHelper } from '@react-three/drei';
-import { ThreeEvent } from '@react-three/fiber';
-import { Mesh, Matrix4, Object3D, Group, BoxHelper } from "three";
+import type { ThreeEvent } from '@react-three/fiber';
+import { Mesh, Matrix4, BoxHelper } from "three";
+import type { Group, Object3D } from "three";
 import { useStore } from "zustand";
 import { createStore, type StoreApi } from "zustand/vanilla";
 import { usePointerEvents } from "./usePointerEvents";
@@ -13,6 +15,7 @@ export type RepeatAxisConfig = {
 };
 
 export const DEFAULT_REPEAT_AXES: RepeatAxisConfig[] = [{ axis: 'x', count: 1, offset: 1 }];
+const EMPTY_INSTANCE_STORE = createInstanceRegistryStore();
 
 export function normalizeRepeatAxes(value: unknown): RepeatAxisConfig[] {
     if (!Array.isArray(value)) {
@@ -22,14 +25,15 @@ export function normalizeRepeatAxes(value: unknown): RepeatAxisConfig[] {
     const seen = new Set<string>();
     const normalized = value.reduce<RepeatAxisConfig[]>((result, entry) => {
         if (!entry || typeof entry !== 'object') return result;
+        const record = entry as Partial<Record<'axis' | 'count' | 'offset', unknown>>;
 
-        const axisValue = (entry as any).axis;
+        const axisValue = record.axis;
         if (axisValue !== 'x' && axisValue !== 'y' && axisValue !== 'z') return result;
         if (seen.has(axisValue)) return result;
         seen.add(axisValue);
 
-        const countValue = Number((entry as any).count);
-        const offsetValue = Number((entry as any).offset);
+        const countValue = Number(record.count);
+        const offsetValue = Number(record.offset);
 
         result.push({
             axis: axisValue,
@@ -42,37 +46,12 @@ export function normalizeRepeatAxes(value: unknown): RepeatAxisConfig[] {
     return normalized.length > 0 ? normalized : DEFAULT_REPEAT_AXES;
 }
 
-function toVector3Tuple(value: unknown, fallback: [number, number, number]): [number, number, number] {
-    if (!Array.isArray(value) || value.length !== 3) return fallback;
-
-    return value.map((entry, index) => {
-        const next = typeof entry === 'number' ? entry : Number(entry);
-        return Number.isFinite(next) ? next : fallback[index];
-    }) as [number, number, number];
-}
-
-export function getRepeatAxesFromModelProperties(properties: Record<string, any>): RepeatAxisConfig[] {
+export function getRepeatAxesFromModelProperties(properties: Record<string, unknown>): RepeatAxisConfig[] {
     if (Array.isArray(properties.repeatAxes)) {
         return normalizeRepeatAxes(properties.repeatAxes);
     }
 
-    const repeatCount = toVector3Tuple(properties.repeatCount, [1, 1, 1]).map(value => Math.max(1, Math.floor(value))) as [number, number, number];
-    const repeatOffset = toVector3Tuple(properties.repeatOffset, [1, 1, 1]);
-    const legacyAxes: RepeatAxisConfig[] = [];
-
-    if (properties.repeatX ?? true) {
-        legacyAxes.push({ axis: 'x', count: repeatCount[0], offset: repeatOffset[0] });
-    }
-
-    if (properties.repeatY) {
-        legacyAxes.push({ axis: 'y', count: repeatCount[1], offset: repeatOffset[1] });
-    }
-
-    if (properties.repeatZ) {
-        legacyAxes.push({ axis: 'z', count: repeatCount[2], offset: repeatOffset[2] });
-    }
-
-    return legacyAxes.length > 0 ? legacyAxes : DEFAULT_REPEAT_AXES;
+    return DEFAULT_REPEAT_AXES;
 }
 
 // --- Types ---
@@ -186,7 +165,7 @@ export function GameInstanceProvider({
     selectedId,
     editMode
 }: {
-    children: React.ReactNode,
+    children: ReactNode,
     models: { [filename: string]: Object3D },
     onSelect?: (id: string | null) => void,
     onClick?: (event: ThreeEvent<PointerEvent>, nodeId: string, object: Object3D | null) => void,
@@ -208,8 +187,8 @@ export function GameInstanceProvider({
             const rootInverse = new Matrix4().copy(model.matrixWorld).invert();
 
             let partIndex = 0;
-            model.traverse((obj: any) => {
-                if (obj.isMesh) {
+            model.traverse((obj) => {
+                if (obj instanceof Mesh) {
                     // Clone geometry and bake relative transform
                     const geom = obj.geometry.clone();
                     geom.applyMatrix4(obj.matrixWorld.clone().premultiply(rootInverse));
@@ -228,7 +207,9 @@ export function GameInstanceProvider({
     // Cleanup geometries when models change
     useEffect(() => {
         return () => {
-            Object.values(flatMeshes).forEach(mesh => mesh.geometry.dispose());
+            Object.values(flatMeshes).forEach(mesh => {
+                mesh.geometry.dispose();
+            });
         };
     }, [flatMeshes]);
 
@@ -280,7 +261,7 @@ export function GameInstanceProvider({
                         castShadow
                         receiveShadow
                     >
-                        {(instancesMap: any) => (
+                        {(instancesMap: Record<string, ComponentType<object>>) => (
                             <InstancedGroup
                                 modelKey={modelKey}
                                 group={group}
@@ -313,15 +294,19 @@ function InstancedGroup({
     modelKey: string;
     group: { instances: InstanceData[] };
     partCount: number;
-    instancesMap: Record<string, React.ComponentType<any>>;
+    instancesMap: Record<string, ComponentType<object>>;
     onSelect?: (id: string | null) => void;
     onClick?: (event: ThreeEvent<PointerEvent>, nodeId: string, object: Object3D | null) => void;
     registerRef?: (id: string, obj: Object3D | null) => void;
     selectedId?: string | null;
     editMode?: boolean;
 }) {
-    const InstanceComponents = useMemo(() =>
-        Array.from({ length: partCount }, (_, i) => instancesMap[`${modelKey}__${i}`]).filter(Boolean),
+    const instanceEntries = useMemo(() =>
+        Array.from({ length: partCount }, (_, i) => {
+            const partKey = `${modelKey}__${i}`;
+            const Component = instancesMap[partKey];
+            return Component ? { partKey, Component } : null;
+        }).filter((entry): entry is { partKey: string; Component: ComponentType<object> } => Boolean(entry)),
         [instancesMap, modelKey, partCount]
     );
     const visibleInstances = useMemo(
@@ -335,7 +320,7 @@ function InstancedGroup({
                 <InstanceGroupItem
                     key={inst.id}
                     instance={inst}
-                    InstanceComponents={InstanceComponents}
+                    instanceEntries={instanceEntries}
                     onSelect={onSelect}
                     onClick={onClick}
                     registerRef={registerRef}
@@ -350,7 +335,7 @@ function InstancedGroup({
 // Individual instance item with its own click state
 function InstanceGroupItem({
     instance,
-    InstanceComponents,
+    instanceEntries,
     onSelect,
     onClick,
     registerRef,
@@ -358,14 +343,14 @@ function InstanceGroupItem({
     editMode
 }: {
     instance: InstanceData;
-    InstanceComponents: React.ComponentType<any>[];
+    instanceEntries: Array<{ partKey: string; Component: ComponentType<object> }>;
     onSelect?: (id: string | null) => void;
     onClick?: (event: ThreeEvent<PointerEvent>, nodeId: string, object: Object3D | null) => void;
     registerRef?: (id: string, obj: Object3D | null) => void;
     selectedId?: string | null;
     editMode?: boolean;
 }) {
-    const groupRef = useRef<Group>(null!);
+    const groupRef = useRef<Group | null>(null);
     const isLocked = Boolean(instance.locked);
     const isSelected = selectedId === instance.id || selectedId === instance.sourceId;
     const canSelect = editMode && !isLocked;
@@ -385,7 +370,10 @@ function InstanceGroupItem({
     });
 
     // Use BoxHelper when object is selected in edit mode
-    useHelper(editMode && isSelected ? groupRef : null, BoxHelper, 'cyan');
+    const helperTarget = editMode && isSelected && groupRef.current
+        ? { current: groupRef.current }
+        : null;
+    useHelper(helperTarget, BoxHelper, 'cyan');
 
     useEffect(() => {
         if (editMode) return;
@@ -401,7 +389,7 @@ function InstanceGroupItem({
             scale={instance.scale}
             {...pointerHandlers}
         >
-            {InstanceComponents.map((Instance, i) => <Instance key={i} />)}
+            {instanceEntries.map(({ partKey, Component }) => <Component key={partKey} />)}
         </group>
     );
 }
@@ -409,20 +397,11 @@ function InstanceGroupItem({
 
 export function useInstanceCheck(id: string): boolean {
     const ctx = useContext(GameInstanceContext);
-    return ctx ? useStore(ctx.store, state => Boolean(state.instancesById[id] || state.sourceInstanceIdsById[id])) : false;
+    const store = ctx?.store ?? EMPTY_INSTANCE_STORE;
+    return useStore(store, state => Boolean(state.instancesById[id] || state.sourceInstanceIdsById[id]));
 }
 
-export const GameInstance = React.forwardRef<Group, {
-    id: string;
-    sourceId?: string;
-    modelUrl: string;
-    locked?: boolean;
-    position: [number, number, number];
-    rotation: [number, number, number];
-    scale: [number, number, number];
-    visible?: boolean;
-    onClick?: (event: ThreeEvent<PointerEvent>, nodeId: string, object: Object3D | null) => void;
-}>(({
+export function GameInstance({
     id,
     sourceId,
     modelUrl,
@@ -432,11 +411,18 @@ export const GameInstance = React.forwardRef<Group, {
     scale,
     visible = true,
     onClick: _onClick,
-}, ref) => {
+}: {
+    id: string;
+    sourceId?: string;
+    modelUrl: string;
+    locked?: boolean;
+    position: [number, number, number];
+    rotation: [number, number, number];
+    scale: [number, number, number];
+    visible?: boolean;
+    onClick?: (event: ThreeEvent<PointerEvent>, nodeId: string, object: Object3D | null) => void;
+}) {
     const ctx = useContext(GameInstanceContext);
-    const [positionX, positionY, positionZ] = position;
-    const [rotationX, rotationY, rotationZ] = rotation;
-    const [scaleX, scaleY, scaleZ] = scale;
 
     const instance = useMemo<InstanceData>(() => ({
         id,
@@ -447,22 +433,7 @@ export const GameInstance = React.forwardRef<Group, {
         position,
         rotation,
         scale,
-    }), [
-        id,
-        sourceId,
-        locked,
-        visible,
-        modelUrl,
-        positionX,
-        positionY,
-        positionZ,
-        rotationX,
-        rotationY,
-        rotationZ,
-        scaleX,
-        scaleY,
-        scaleZ,
-    ]);
+    }), [id, sourceId, locked, visible, modelUrl, position, rotation, scale]);
 
     useEffect(() => {
         if (!ctx) return;
@@ -472,7 +443,7 @@ export const GameInstance = React.forwardRef<Group, {
         return () => {
             removeInstance(instance.id);
         };
-    }, [ctx?.store, instance]);
+    }, [ctx, instance]);
 
     return null;
-});
+}

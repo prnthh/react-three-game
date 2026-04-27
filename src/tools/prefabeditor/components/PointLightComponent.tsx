@@ -72,8 +72,8 @@ function PointLightView({ properties, children }: ComponentViewProps) {
     };
     const lightRef = useRef<PointLight>(null);
     const showHelper = editMode && isSelected && lightRef.current;
-    const helperTarget = showHelper ? { current: lightRef.current } : null;
-    useHelper(helperTarget, PointLightHelper, 0.5, merged.color);
+    const helperTarget = showHelper && lightRef.current ? { current: lightRef.current } : null;
+    useHelper(helperTarget, PointLightHelper, 0.5);
 
     return (
         <group>

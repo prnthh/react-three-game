@@ -137,23 +137,6 @@ function DirectionalLightView({ properties, children }: ComponentViewProps) {
         }
     }, []);
 
-    useEffect(() => {
-        const light = directionalLightRef.current;
-        if (!light) return;
-
-        const cam = light.shadow.camera;
-        cam.updateProjectionMatrix();
-
-        light.shadow.needsUpdate = true;
-    }, [
-        merged.shadowCameraTop,
-        merged.shadowCameraBottom,
-        merged.shadowCameraLeft,
-        merged.shadowCameraRight,
-        merged.shadowCameraNear,
-        merged.shadowCameraFar,
-    ]);
-
     return (
         <group>
             <directionalLight

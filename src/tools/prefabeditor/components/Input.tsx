@@ -150,6 +150,7 @@ interface InputProps {
     min?: number;
     max?: number;
     style?: React.CSSProperties;
+    label?: string;
 }
 
 export function NumberInput({ value, onChange, step, min, max, style }: InputProps) {

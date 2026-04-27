@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { useHelper } from '@react-three/drei';
 import { PointLightHelper } from 'three';
 import type { PointLight } from 'three';

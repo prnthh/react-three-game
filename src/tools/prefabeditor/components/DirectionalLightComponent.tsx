@@ -1,6 +1,6 @@
 import type { Component, ComponentViewProps } from "./ComponentRegistry";
 import { useHelper } from "@react-three/drei";
-import { useRef, useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { CameraHelper } from "three";
 import type { Object3D } from "three";
 import type { DirectionalLight, OrthographicCamera } from "three";
@@ -29,179 +29,49 @@ const directionalLightDefaults = {
 
 type DirectionalLightProperties = typeof directionalLightDefaults & Record<string, unknown>;
 
-const frustumLabelStyle: React.CSSProperties = {
-    fontSize: 10,
-    textTransform: 'uppercase',
-    letterSpacing: '0.06em',
-    color: colors.textMuted,
-    textAlign: 'center',
-};
 
-const frustumCellStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-};
-
-const frustumInputStyle: React.CSSProperties = {
-    width: 62,
-    minWidth: 62,
-    textAlign: 'center',
-};
-
-const centerLockButtonStyle: React.CSSProperties = {
-    width: 34,
-    height: 34,
-    borderRadius: 0,
-    border: `1px solid ${colors.border}`,
-    background: colors.bgInput,
-    color: colors.textMuted,
-    cursor: 'pointer',
-    fontSize: 14,
-    lineHeight: 1,
-    padding: 0,
-};
-
-function areFrustumSidesLocked(values: typeof directionalLightDefaults) {
-    const top = Math.abs(values.shadowCameraTop);
-    const bottom = Math.abs(values.shadowCameraBottom);
-    const left = Math.abs(values.shadowCameraLeft);
-    const right = Math.abs(values.shadowCameraRight);
-    return top === bottom && top === left && top === right;
-}
-
-function ShadowFrustumField({
-    values,
-    onChange,
-}: {
-    values: DirectionalLightProperties;
-    onChange: (values: Record<string, number>) => void;
-}) {
-    const [locked, setLocked] = useState(() => areFrustumSidesLocked(values));
-
-    const updateSide = (side: 'shadowCameraTop' | 'shadowCameraBottom' | 'shadowCameraLeft' | 'shadowCameraRight', nextValue: number) => {
-        if (!locked) {
-            onChange({ [side]: nextValue });
-            return;
-        }
-
-        const magnitude = Math.abs(nextValue);
-        onChange({
-            shadowCameraTop: magnitude,
-            shadowCameraBottom: -magnitude,
-            shadowCameraLeft: -magnitude,
-            shadowCameraRight: magnitude,
-        });
-    };
-
-    const toggleLocked = () => {
-        setLocked(current => {
-            const nextLocked = !current;
-            if (nextLocked) {
-                const magnitude = Math.max(
-                    Math.abs(values.shadowCameraTop),
-                    Math.abs(values.shadowCameraBottom),
-                    Math.abs(values.shadowCameraLeft),
-                    Math.abs(values.shadowCameraRight),
-                );
-                onChange({
-                    shadowCameraTop: magnitude,
-                    shadowCameraBottom: -magnitude,
-                    shadowCameraLeft: -magnitude,
-                    shadowCameraRight: magnitude,
-                });
-            }
-            return nextLocked;
-        });
-    };
-
+function ShadowFrustumField({ values, onChange }: { values: DirectionalLightProperties; onChange: (values: Record<string, number>) => void }) {
+    // Minimal, no lock UI for simplicity (can add back if needed)
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <div style={{ ...frustumLabelStyle, textAlign: 'left' }}>Shadow Frustum</div>
-            <div
-                style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr auto 1fr',
-                    gridTemplateRows: 'auto auto auto',
-                    gap: 8,
-                    alignItems: 'center',
-                }}
-            >
-                <div />
-                <div style={frustumCellStyle}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}>
-                        <div style={frustumLabelStyle}>Top</div>
-                        <NumberInput
-                            value={values.shadowCameraTop}
-                            onChange={nextValue => updateSide('shadowCameraTop', nextValue)}
-                            step={0.5}
-                            style={frustumInputStyle}
-                        />
-                    </div>
-                </div>
-                <div />
-
-                <div style={frustumCellStyle}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}>
-                        <div style={frustumLabelStyle}>Left</div>
-                        <NumberInput
-                            value={values.shadowCameraLeft}
-                            onChange={nextValue => updateSide('shadowCameraLeft', nextValue)}
-                            step={0.5}
-                            style={frustumInputStyle}
-                        />
-                    </div>
-                </div>
-
-                <div style={frustumCellStyle}>
-                    <button
-                        type="button"
-                        onClick={toggleLocked}
-                        style={{
-                            ...centerLockButtonStyle,
-                            color: locked ? colors.accent : colors.textMuted,
-                            borderColor: locked ? colors.accentBorder : colors.border,
-                            background: locked ? colors.accentBg : colors.bgInput,
-                        }}
-                        title={locked ? 'Frustum sides locked' : 'Frustum sides unlocked'}
-                    >
-                        {locked ? '🔒' : '🔓'}
-                    </button>
-                </div>
-
-                <div style={frustumCellStyle}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}>
-                        <div style={frustumLabelStyle}>Right</div>
-                        <NumberInput
-                            value={values.shadowCameraRight}
-                            onChange={nextValue => updateSide('shadowCameraRight', nextValue)}
-                            step={0.5}
-                            style={frustumInputStyle}
-                        />
-                    </div>
-                </div>
-
-                <div />
-                <div style={frustumCellStyle}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}>
-                        <div style={frustumLabelStyle}>Bottom</div>
-                        <NumberInput
-                            value={values.shadowCameraBottom}
-                            onChange={nextValue => updateSide('shadowCameraBottom', nextValue)}
-                            step={0.5}
-                            style={frustumInputStyle}
-                        />
-                    </div>
-                </div>
-                <div />
+            <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: colors.textMuted, textAlign: 'left' }}>Shadow Frustum</div>
+            <div style={{ display: 'flex', gap: 8 }}>
+                <NumberInput
+                    value={values.shadowCameraTop}
+                    onChange={v => onChange({ shadowCameraTop: v })}
+                    step={0.5}
+                    style={{ width: 62, minWidth: 62, textAlign: 'center' }}
+                    label="Top"
+                />
+                <NumberInput
+                    value={values.shadowCameraBottom}
+                    onChange={v => onChange({ shadowCameraBottom: v })}
+                    step={0.5}
+                    style={{ width: 62, minWidth: 62, textAlign: 'center' }}
+                    label="Bottom"
+                />
+                <NumberInput
+                    value={values.shadowCameraLeft}
+                    onChange={v => onChange({ shadowCameraLeft: v })}
+                    step={0.5}
+                    style={{ width: 62, minWidth: 62, textAlign: 'center' }}
+                    label="Left"
+                />
+                <NumberInput
+                    value={values.shadowCameraRight}
+                    onChange={v => onChange({ shadowCameraRight: v })}
+                    step={0.5}
+                    style={{ width: 62, minWidth: 62, textAlign: 'center' }}
+                    label="Right"
+                />
             </div>
         </div>
     );
 }
 
+
 function DirectionalLightComponentEditor({ component, onUpdate }: { component: ComponentData; onUpdate: (newComp: Record<string, unknown>) => void }) {
     const values = mergeWithDefaults(directionalLightDefaults, component.properties) as DirectionalLightProperties;
-
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <LightSection title="Light">
@@ -232,106 +102,105 @@ function DirectionalLightComponentEditor({ component, onUpdate }: { component: C
     );
 }
 
+
 function DirectionalLightView({ properties, children }: ComponentViewProps) {
     const { editMode, isSelected } = useNode();
     const merged = mergeWithDefaults(directionalLightDefaults, properties) as DirectionalLightProperties;
-    const color = merged.color;
-    const intensity = merged.intensity;
-    const castShadow = merged.castShadow;
-    const shadowMapSize = merged.shadowMapSize;
-    const shadowBias = merged.shadowBias;
-    const shadowNormalBias = merged.shadowNormalBias;
-    const shadowAutoUpdate = merged.shadowAutoUpdate;
-    const shadowCameraNear = merged.shadowCameraNear;
-    const shadowCameraFar = merged.shadowCameraFar;
-    const shadowCameraTop = merged.shadowCameraTop;
-    const shadowCameraBottom = merged.shadowCameraBottom;
-    const shadowCameraLeft = merged.shadowCameraLeft;
-    const shadowCameraRight = merged.shadowCameraRight;
-    const targetOffset = merged.targetOffset;
+    const lightProps = {
+        color: merged.color,
+        intensity: merged.intensity,
+        castShadow: merged.castShadow,
+        "shadow-mapSize-width": merged.shadowMapSize,
+        "shadow-mapSize-height": merged.shadowMapSize,
+        "shadow-bias": merged.shadowBias,
+        "shadow-normalBias": merged.shadowNormalBias,
+        "shadow-autoUpdate": merged.shadowAutoUpdate,
+        "shadow-camera-near": merged.shadowCameraNear,
+        "shadow-camera-far": merged.shadowCameraFar,
+        "shadow-camera-top": merged.shadowCameraTop,
+        "shadow-camera-bottom": merged.shadowCameraBottom,
+        "shadow-camera-left": merged.shadowCameraLeft,
+        "shadow-camera-right": merged.shadowCameraRight,
+    };
     const directionalLightRef = useRef<DirectionalLight>(null);
     const targetRef = useRef<Object3D | null>(null);
     const shadowCameraRef = useRef<OrthographicCamera>(null);
-    const [shadowCamera, setShadowCamera] = useState<OrthographicCamera | null>(null);
-    const helperTarget = editMode && isSelected && castShadow && shadowCameraRef.current
-        ? { current: shadowCameraRef.current }
-        : null;
-    useHelper(
-        helperTarget,
-        CameraHelper
-    );
 
-    // Use a local target object so node transforms rotate the light direction naturally.
-    useEffect(() => {
-        if (directionalLightRef.current && targetRef.current) {
-            const nextShadowCamera = directionalLightRef.current.shadow.camera;
-            shadowCameraRef.current = nextShadowCamera;
-            setShadowCamera(castShadow ? nextShadowCamera : null);
-        }
-    });
+    // Show CameraHelper only in edit mode, selected, and castShadow
+    const showHelper = editMode && isSelected && merged.castShadow;
+    const helperTarget = showHelper && shadowCameraRef.current ? { current: shadowCameraRef.current } : null;
+    useHelper(helperTarget, CameraHelper);
 
-    // Update shadow camera matrices when parameters or castShadow change
     useEffect(() => {
-        if (shadowCamera && castShadow) {
-            shadowCamera.updateProjectionMatrix();
-            shadowCamera.updateMatrixWorld();
+        if (directionalLightRef.current) {
+            shadowCameraRef.current = directionalLightRef.current.shadow.camera;
         }
-    }, [shadowCamera, castShadow]);
+    }, []);
+
+    useEffect(() => {
+        const light = directionalLightRef.current;
+        if (!light) return;
+
+        const cam = light.shadow.camera;
+        cam.updateProjectionMatrix();
+
+        light.shadow.needsUpdate = true;
+    }, [
+        merged.shadowCameraTop,
+        merged.shadowCameraBottom,
+        merged.shadowCameraLeft,
+        merged.shadowCameraRight,
+        merged.shadowCameraNear,
+        merged.shadowCameraFar,
+    ]);
 
     return (
-        <>
+        <group>
             <directionalLight
                 ref={directionalLightRef}
-                color={color}
-                intensity={intensity}
-                castShadow={castShadow}
-                shadow-mapSize-width={shadowMapSize}
-                shadow-mapSize-height={shadowMapSize}
-                shadow-camera-near={shadowCameraNear}
-                shadow-camera-far={shadowCameraFar}
-                shadow-camera-top={shadowCameraTop}
-                shadow-camera-bottom={shadowCameraBottom}
-                shadow-camera-left={shadowCameraLeft}
-                shadow-camera-right={shadowCameraRight}
-                shadow-bias={shadowBias}
-                shadow-normalBias={shadowNormalBias}
-                shadow-autoUpdate={shadowAutoUpdate}
-            />
-            <object3D ref={targetRef} attach={"target"} position={targetOffset as [number, number, number]} />
-            {editMode && isSelected && (
-                <>
-                    {/* Light source indicator */}
-                    <mesh>
-                        <sphereGeometry args={[0.3, 8, 6]} />
-                        <meshBasicMaterial color={color} wireframe />
-                    </mesh>
-                    {/* Target indicator */}
-                    <mesh position={targetOffset as [number, number, number]}>
-                        <sphereGeometry args={[0.2, 8, 6]} />
-                        <meshBasicMaterial color={color} wireframe opacity={0.5} transparent />
-                    </mesh>
-                    {/* Direction line */}
-                    <line>
-                        <bufferGeometry>
-                            <bufferAttribute
-                                attach="attributes-position"
-                                args={[new Float32Array([0, 0, 0, targetOffset[0], targetOffset[1], targetOffset[2]]), 3]}
-                            />
-                        </bufferGeometry>
-                        <lineBasicMaterial color={color} opacity={0.6} transparent />
-                    </line>
-                </>
-            )}
-            {children}
-        </>
+                {...lightProps}
+                // Attach the target object
+                target={targetRef.current ?? undefined}
+            >
+                {children}
+                {editMode && isSelected && (
+                    <>
+                        {/* Light source indicator */}
+                        <mesh>
+                            <sphereGeometry args={[0.3, 8, 6]} />
+                            <meshBasicMaterial color={merged.color} wireframe />
+                        </mesh>
+                        {/* Target indicator */}
+                        <mesh position={merged.targetOffset}>
+                            <sphereGeometry args={[0.2, 8, 6]} />
+                            <meshBasicMaterial color={merged.color} wireframe opacity={0.5} transparent />
+                        </mesh>
+                        {/* Direction line */}
+                        <line>
+                            <bufferGeometry>
+                                <bufferAttribute
+                                    attach="attributes-position"
+                                    args={[new Float32Array([0, 0, 0, merged.targetOffset[0], merged.targetOffset[1], merged.targetOffset[2]]), 3]}
+                                />
+                            </bufferGeometry>
+                            <lineBasicMaterial color={merged.color} opacity={0.6} transparent />
+                        </line>
+                    </>
+                )}
+            </directionalLight>
+
+            <object3D ref={targetRef} position={merged.targetOffset} />
+
+        </group>
     );
 }
+
 
 const DirectionalLightComponent: Component = {
     name: 'DirectionalLight',
     Editor: DirectionalLightComponentEditor,
     View: DirectionalLightView,
-    defaultProperties: {}
+    defaultProperties: {},
 };
 
 export default DirectionalLightComponent;

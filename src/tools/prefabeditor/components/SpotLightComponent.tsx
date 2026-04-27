@@ -1,13 +1,12 @@
 import { assetRef, assetRefs } from "./ComponentRegistry";
 import type { Component, ComponentViewProps } from "./ComponentRegistry";
 import { useHelper } from "@react-three/drei";
-import { useRef, useEffect } from "react";
+import { useRef } from "react";
 import { BooleanField, ColorField, Label, NumberField, Vector3Input } from "./Input";
 import { SpotLightHelper } from "three";
 import type { Object3D } from "three";
 import type { SpotLight } from "three";
 import { useAssetRuntime, useNode } from "../assetRuntime";
-import { useFrame } from "@react-three/fiber";
 import { TexturePicker } from "../../assetviewer/page";
 import { LightSection, ShadowBiasField, mergeWithDefaults } from "./lightUtils";
 import type { ComponentData } from "../types";
@@ -110,14 +109,8 @@ function SpotLightView({ properties, children }: ComponentViewProps) {
     const targetRef = useRef<Object3D | null>(null);
 
     const showHelper = editMode && isSelected;
-    const helperTarget = showHelper && spotLightRef.current
-        ? { current: spotLightRef.current }
-        : null;
-    useHelper(
-        helperTarget,
-        SpotLightHelper,
-        merged.color
-    );
+    const helperTarget = showHelper && spotLightRef.current ? { current: spotLightRef.current } : null;
+    useHelper(helperTarget, SpotLightHelper);
 
     return (
         <group>

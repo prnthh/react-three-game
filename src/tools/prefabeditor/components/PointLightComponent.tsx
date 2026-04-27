@@ -24,9 +24,9 @@ const pointLightDefaults = {
 
 type PointLightProperties = typeof pointLightDefaults & Record<string, unknown>;
 
+
 function PointLightComponentEditor({ component, onUpdate }: { component: ComponentData; onUpdate: (newComp: Record<string, unknown>) => void }) {
     const values = mergeWithDefaults(pointLightDefaults, component.properties) as PointLightProperties;
-
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <LightSection title="Light">
@@ -52,66 +52,44 @@ function PointLightComponentEditor({ component, onUpdate }: { component: Compone
     );
 }
 
+
 function PointLightView({ properties, children }: ComponentViewProps) {
     const { editMode, isSelected } = useNode();
     const merged = mergeWithDefaults(pointLightDefaults, properties) as PointLightProperties;
-    const color = merged.color;
-    const intensity = merged.intensity;
-    const distance = merged.distance;
-    const decay = merged.decay;
-    const castShadow = merged.castShadow;
-    const shadowMapSize = merged.shadowMapSize;
-    const shadowBias = merged.shadowBias;
-    const shadowNormalBias = merged.shadowNormalBias;
-    const shadowAutoUpdate = merged.shadowAutoUpdate;
-    const shadowCameraNear = merged.shadowCameraNear;
-    const shadowCameraFar = merged.shadowCameraFar;
+    const lightProps = {
+        color: merged.color,
+        intensity: merged.intensity,
+        distance: merged.distance,
+        decay: merged.decay,
+        castShadow: merged.castShadow,
+        "shadow-mapSize-width": merged.shadowMapSize,
+        "shadow-mapSize-height": merged.shadowMapSize,
+        "shadow-bias": merged.shadowBias,
+        "shadow-normalBias": merged.shadowNormalBias,
+        "shadow-autoUpdate": merged.shadowAutoUpdate,
+        "shadow-camera-near": merged.shadowCameraNear,
+        "shadow-camera-far": merged.shadowCameraFar,
+    };
     const lightRef = useRef<PointLight>(null);
-    const helperTarget = editMode && isSelected && lightRef.current
-        ? { current: lightRef.current }
-        : null;
-    useHelper(
-        helperTarget,
-        PointLightHelper,
-        0.5,
-        color
-    );
-
-    useEffect(() => {
-        const shadow = lightRef.current?.shadow;
-        if (!shadow) return;
-
-        shadow.needsUpdate = true;
-        shadow.camera.updateProjectionMatrix();
-    });
+    const showHelper = editMode && isSelected && lightRef.current;
+    const helperTarget = showHelper ? { current: lightRef.current } : null;
+    useHelper(helperTarget, PointLightHelper, 0.5, merged.color);
 
     return (
-        <>
-            <pointLight
-                ref={lightRef}
-                color={color}
-                intensity={intensity}
-                distance={distance}
-                decay={decay}
-                castShadow={castShadow}
-                shadow-mapSize-width={shadowMapSize}
-                shadow-mapSize-height={shadowMapSize}
-                shadow-bias={shadowBias}
-                shadow-normalBias={shadowNormalBias}
-                shadow-autoUpdate={shadowAutoUpdate}
-                shadow-camera-near={shadowCameraNear}
-                shadow-camera-far={shadowCameraFar}
-            />
-            {editMode && isSelected ? (
-                <mesh>
-                    <sphereGeometry args={[0.2, 10, 8]} />
-                    <meshBasicMaterial color={color} wireframe />
-                </mesh>
-            ) : null}
-            {children}
-        </>
+        <group>
+            <pointLight ref={lightRef} {...lightProps}>
+                {children}
+                {editMode && isSelected && (
+                    <mesh>
+                        <sphereGeometry args={[0.2, 10, 8]} />
+                        <meshBasicMaterial color={merged.color} wireframe />
+                    </mesh>
+                )}
+            </pointLight>
+        </group>
     );
 }
+
 
 const PointLightComponent: Component = {
     name: 'PointLight',

@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useRef, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { extend } from '@react-three/fiber';
 import type { ThreeElement } from '@react-three/fiber';
 import { useFrame } from '@react-three/fiber';
@@ -122,45 +122,6 @@ const MAG_FILTER_MAP: Record<string, MagnificationTextureFilter> = {
     NearestFilter,
     LinearFilter,
 };
-
-function cloneConfiguredTexture({
-    texture,
-    repeat,
-    repeatCount,
-    offset,
-    colorSpace,
-    generateMipmaps,
-    minFilter,
-    magFilter,
-}: {
-    texture: Texture;
-    repeat?: boolean;
-    repeatCount?: [number, number];
-    offset?: [number, number];
-    colorSpace: typeof NoColorSpace | typeof SRGBColorSpace;
-    generateMipmaps: boolean;
-    minFilter: MinificationTextureFilter;
-    magFilter: MagnificationTextureFilter;
-}) {
-    const clonedTexture = texture.clone();
-
-    if (repeat) {
-        clonedTexture.wrapS = clonedTexture.wrapT = RepeatWrapping;
-        if (repeatCount) clonedTexture.repeat.set(repeatCount[0], repeatCount[1]);
-    } else {
-        clonedTexture.wrapS = clonedTexture.wrapT = ClampToEdgeWrapping;
-        clonedTexture.repeat.set(1, 1);
-    }
-
-    clonedTexture.offset.set(offset?.[0] ?? 0, offset?.[1] ?? 0);
-    clonedTexture.colorSpace = colorSpace;
-    clonedTexture.generateMipmaps = generateMipmaps;
-    clonedTexture.minFilter = minFilter;
-    clonedTexture.magFilter = magFilter;
-    clonedTexture.needsUpdate = true;
-
-    return clonedTexture;
-}
 
 export function useMaterialOverrides(): MaterialOverrides {
     return useContext(MaterialOverridesContext);
@@ -377,34 +338,77 @@ function MaterialComponentView({ properties: rawProps }: ComponentViewProps<Reco
     const animatedOffsetRef = useRef<[number, number]>([offset?.[0] ?? 0, offset?.[1] ?? 0]);
 
     const finalTexture = useMemo(() => {
-        if (!texture) return undefined;
+        return texture ? texture.clone() : undefined;
+    }, [texture]);
 
-        return cloneConfiguredTexture({
-            texture,
-            repeat,
-            repeatCount,
-            offset,
-            colorSpace: SRGBColorSpace,
-            generateMipmaps,
-            minFilter: resolvedMinFilter,
-            magFilter: resolvedMagFilter,
-        });
-    }, [texture, repeat, repeatCount?.[0], repeatCount?.[1], offset?.[0], offset?.[1], generateMipmaps, resolvedMinFilter, resolvedMagFilter]);
+
+    useEffect(() => {
+        if (!finalTexture) return;
+
+        if (repeat) {
+            finalTexture.wrapS = finalTexture.wrapT = RepeatWrapping;
+            if (repeatCount) {
+                finalTexture.repeat.set(repeatCount[0], repeatCount[1]);
+            }
+        } else {
+            finalTexture.wrapS = finalTexture.wrapT = ClampToEdgeWrapping;
+            finalTexture.repeat.set(1, 1);
+        }
+
+        finalTexture.offset.set(offset?.[0] ?? 0, offset?.[1] ?? 0);
+        finalTexture.colorSpace = SRGBColorSpace;
+        finalTexture.generateMipmaps = generateMipmaps;
+        finalTexture.minFilter = resolvedMinFilter;
+        finalTexture.magFilter = resolvedMagFilter;
+
+        finalTexture.needsUpdate = true;
+    }, [
+        finalTexture,
+        repeat,
+        repeatCount?.[0],
+        repeatCount?.[1],
+        offset?.[0],
+        offset?.[1],
+        generateMipmaps,
+        resolvedMinFilter,
+        resolvedMagFilter
+    ]);
 
     const finalNormalMap = useMemo(() => {
-        if (!normalMapTexture) return undefined;
+        return normalMapTexture ? normalMapTexture.clone() : undefined;
+    }, [normalMapTexture]);
 
-        return cloneConfiguredTexture({
-            texture: normalMapTexture,
-            repeat,
-            repeatCount,
-            offset,
-            colorSpace: NoColorSpace,
-            generateMipmaps,
-            minFilter: resolvedMinFilter,
-            magFilter: resolvedMagFilter,
-        });
-    }, [normalMapTexture, repeat, repeatCount?.[0], repeatCount?.[1], offset?.[0], offset?.[1], generateMipmaps, resolvedMinFilter, resolvedMagFilter]);
+    useEffect(() => {
+        if (!finalNormalMap) return;
+
+        if (repeat) {
+            finalNormalMap.wrapS = finalNormalMap.wrapT = RepeatWrapping;
+            if (repeatCount) {
+                finalNormalMap.repeat.set(repeatCount[0], repeatCount[1]);
+            }
+        } else {
+            finalNormalMap.wrapS = finalNormalMap.wrapT = ClampToEdgeWrapping;
+            finalNormalMap.repeat.set(1, 1);
+        }
+
+        finalNormalMap.offset.set(offset?.[0] ?? 0, offset?.[1] ?? 0);
+        finalNormalMap.colorSpace = NoColorSpace;
+        finalNormalMap.generateMipmaps = generateMipmaps;
+        finalNormalMap.minFilter = resolvedMinFilter;
+        finalNormalMap.magFilter = resolvedMagFilter;
+
+        finalNormalMap.needsUpdate = true;
+    }, [
+        finalNormalMap,
+        repeat,
+        repeatCount?.[0],
+        repeatCount?.[1],
+        offset?.[0],
+        offset?.[1],
+        generateMipmaps,
+        resolvedMinFilter,
+        resolvedMagFilter
+    ]);
 
     animatedOffsetRef.current = [offset?.[0] ?? 0, offset?.[1] ?? 0];
 
@@ -435,8 +439,15 @@ function MaterialComponentView({ properties: rawProps }: ComponentViewProps<Reco
         ...overrides,
     };
 
+    const materialKey = [
+        materialType,
+        textureName ?? 'no-texture',
+        normalMapTextureName ?? 'no-normal',
+    ].join('|');
+
+
     if (materialType === 'basic') {
-        return <meshBasicNodeMaterial attach="material" {...sharedProps} />;
+        return <meshBasicNodeMaterial attach="material" key={materialKey} {...sharedProps} />;
     }
 
     if (materialType === 'sprite') {
@@ -445,6 +456,7 @@ function MaterialComponentView({ properties: rawProps }: ComponentViewProps<Reco
         return (
             <spriteNodeMaterial
                 attach="material"
+                key={materialKey}
                 map={finalTexture ?? null}
                 color={materialSource.color ?? '#ffffff'}
                 opacity={materialSource.opacity ?? 1}
@@ -466,6 +478,7 @@ function MaterialComponentView({ properties: rawProps }: ComponentViewProps<Reco
     return (
         <meshStandardNodeMaterial
             attach="material"
+            key={materialKey}
             {...sharedProps}
             normalMap={finalNormalMap ?? null}
             normalScale={finalNormalMap ? [normalScaleProp?.[0] ?? 1, normalScaleProp?.[1] ?? 1] : undefined}

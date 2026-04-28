@@ -16,6 +16,7 @@ Built on top of [three.js](https://github.com/mrdoob/three.js), [@react-three/fi
 
 * Website: https://prnth.com/react-three-game
 * Editor: https://prnth.com/react-three-game/editor
+* Starter template: https://github.com/prnthh/react-three-game-starter
 
 ## Install
 
@@ -294,4 +295,4 @@ npm run release
 
 ## License
 
-VPL
+PFYL / VPL

@@ -57,6 +57,8 @@ export {
   createModelNode,
   createImageNode,
 } from './tools/prefabeditor/prefab';
+export { decomposeModelToPrefabNodes } from './tools/prefabeditor/modelPrefab';
+export type { DecomposeModelOptions } from './tools/prefabeditor/modelPrefab';
 
 // Prefab Editor - Types
 export type {

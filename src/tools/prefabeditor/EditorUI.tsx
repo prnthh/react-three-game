@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { GameObject as GameObjectType, Prefab, hasComponent } from "./types";
 import EditorTree from './EditorTree';
-import { getAllComponentDefs } from './components/ComponentRegistry';
+import { canAddComponentToNode, getAllComponentDefs, getNextComponentKey } from './components/ComponentRegistry';
 import { createComponentData } from './prefab';
 import { useEditorRef } from './PrefabEditor';
 import { base, colors, inspector, componentCard } from './styles';
@@ -48,10 +48,10 @@ function EditorUI({
 
     return <>
         <div style={inspector.panel}>
-            <div style={base.header} onClick={() => setCollapsed(!collapsed)}>
+            <button type="button" style={base.header} onClick={() => setCollapsed(!collapsed)}>
                 <span>Inspector</span>
                 <span>{collapsed ? '◀' : '▼'}</span>
-            </div>
+            </button>
             {!collapsed && selectedNode && (
                 <NodeInspector
                     node={selectedNode}
@@ -91,7 +91,7 @@ function NodeInspector({
 }) {
     const ALL_COMPONENTS = getAllComponentDefs();
     const allKeys = Object.keys(ALL_COMPONENTS);
-    const available = allKeys.filter(k => !hasComponent(node, k));
+    const available = allKeys.filter(k => canAddComponentToNode(node, ALL_COMPONENTS[k], ALL_COMPONENTS));
     const [preferredAddType, setAddType] = useState(available[0] || "");
     const addType = available.includes(preferredAddType) ? preferredAddType : (available[0] || "");
 
@@ -102,7 +102,11 @@ function NodeInspector({
                 <div style={{ fontSize: 10, color: colors.textDim, wordBreak: 'break-all', background: colors.bgLight, padding: '2px 4px', flex: 1, fontFamily: 'monospace', minHeight: 18, boxSizing: 'border-box' }}>
                     {node.id}
                 </div>
-                <button style={{ ...base.btn, ...base.btnDanger, minWidth: 22, padding: '2px 4px' }} title="Delete Node" onClick={deleteNode}>✕</button>
+                <button style={{ ...base.btn, ...base.btnDanger, minWidth: 22, padding: '2px 4px' }}
+                    type="button"
+                    title="Delete Node" onClick={deleteNode}>
+                    ✕
+                </button>
             </div>
 
             <input
@@ -133,6 +137,7 @@ function NodeInspector({
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
                             <div style={{ fontSize: 11, fontWeight: 500 }}>{key}</div>
                             <button
+                                type="button"
                                 style={{ ...base.btn, padding: '2px 4px', minWidth: 20 }}
                                 title="Remove Component"
                                 onClick={() => updateNode(n => {
@@ -180,6 +185,7 @@ function NodeInspector({
                         {available.map(k => <option key={k} value={k}>{k}</option>)}
                     </select>
                     <button
+                        type="button"
                         style={base.btn}
                         disabled={!addType}
                         onClick={() => {
@@ -190,7 +196,7 @@ function NodeInspector({
                                     ...n,
                                     components: {
                                         ...n.components,
-                                        [addType.toLowerCase()]: createComponentData(def.name)
+                                        [getNextComponentKey(n, def.name)]: createComponentData(def.name)
                                     }
                                 }));
                             }

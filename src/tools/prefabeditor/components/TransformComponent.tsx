@@ -143,6 +143,7 @@ function TransformComponentEditor({ component, onUpdate }: {
 
 const TransformComponent: Component = {
     name: 'Transform',
+    disableSiblingComposition: true,
     Editor: TransformComponentEditor,
     defaultProperties: {}
 };

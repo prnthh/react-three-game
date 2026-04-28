@@ -42,6 +42,7 @@ declare module '@react-three/fiber' {
 }
 
 export interface MaterialProps extends Omit<MeshStandardMaterialProperties & MeshBasicMaterialProperties, 'args' | 'normalScale' | 'side'> {
+    attach?: string;
     materialType?: 'standard' | 'basic' | 'sprite';
     transmission?: number;
     thickness?: number;
@@ -162,6 +163,11 @@ function MaterialComponentEditor({
     const isSpriteMaterial = materialType === 'sprite';
 
     const fields: FieldDefinition[] = [
+        {
+            name: 'attach',
+            type: 'string',
+            label: 'Attach',
+        },
         {
             name: 'materialType',
             type: 'select',
@@ -323,6 +329,7 @@ function MaterialComponentView({ properties: rawProps }: ComponentViewProps<Reco
         magFilter: _magFilter,
         map: _map,
         materialType: _materialType,
+        attach,
         normalMapTexture: _normalMapTexture,
         normalScale: _normalScale,
         normalMap: _normalMap,
@@ -341,6 +348,9 @@ function MaterialComponentView({ properties: rawProps }: ComponentViewProps<Reco
         return texture ? texture.clone() : undefined;
     }, [texture]);
 
+    useEffect(() => {
+        return () => finalTexture?.dispose();
+    }, [finalTexture]);
 
     useEffect(() => {
         if (!finalTexture) return;
@@ -377,6 +387,10 @@ function MaterialComponentView({ properties: rawProps }: ComponentViewProps<Reco
     const finalNormalMap = useMemo(() => {
         return normalMapTexture ? normalMapTexture.clone() : undefined;
     }, [normalMapTexture]);
+
+    useEffect(() => {
+        return () => finalNormalMap?.dispose();
+    }, [finalNormalMap]);
 
     useEffect(() => {
         if (!finalNormalMap) return;
@@ -447,7 +461,7 @@ function MaterialComponentView({ properties: rawProps }: ComponentViewProps<Reco
 
 
     if (materialType === 'basic') {
-        return <meshBasicNodeMaterial attach="material" key={materialKey} {...sharedProps} />;
+        return <meshBasicNodeMaterial attach={attach ?? 'material'} key={materialKey} {...sharedProps} />;
     }
 
     if (materialType === 'sprite') {
@@ -455,7 +469,7 @@ function MaterialComponentView({ properties: rawProps }: ComponentViewProps<Reco
 
         return (
             <spriteNodeMaterial
-                attach="material"
+                attach={attach ?? 'material'}
                 key={materialKey}
                 map={finalTexture ?? null}
                 color={materialSource.color ?? '#ffffff'}
@@ -477,7 +491,7 @@ function MaterialComponentView({ properties: rawProps }: ComponentViewProps<Reco
 
     return (
         <meshStandardNodeMaterial
-            attach="material"
+            attach={attach ?? 'material'}
             key={materialKey}
             {...sharedProps}
             normalMap={finalNormalMap ?? null}
@@ -491,6 +505,7 @@ const MaterialComponent: Component = {
     Editor: MaterialComponentEditor,
     View: MaterialComponentView,
     defaultProperties: {
+        attach: 'material',
         materialType: 'standard',
         color: '#ffffff',
         toneMapped: true,

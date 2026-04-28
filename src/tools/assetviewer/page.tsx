@@ -1,40 +1,48 @@
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useLoader } from "@react-three/fiber";
 import { OrbitControls, Stage, View, PerspectiveCamera } from "@react-three/drei";
-import { Component as ReactComponent, Suspense, useEffect, useLayoutEffect, useState, useRef } from "react";
+import { Suspense, useEffect, useLayoutEffect, useState, useRef } from "react";
 import { createPortal } from 'react-dom';
-import { TextureLoader } from "three";
+import { Material, Mesh, TextureLoader } from "three";
+import type { Object3D } from "three";
 import { loadModel } from "../dragdrop/modelLoader";
+import { resolvePrefabAssetPath } from "../prefabeditor/PrefabEditor";
+import { base, colors, fonts } from "../prefabeditor/styles";
 
 const styles: Record<string, any> = {
-    errorIcon: { color: '#fca5a5', fontSize: 12 }, // text-red-400 text-xs
+    errorIcon: { color: colors.danger, fontSize: 12 },
     flexFillRelative: { flex: 1, position: 'relative' },
-    bottomLabel: { backgroundColor: 'rgba(0,0,0,0.6)', color: '#f9fafb', fontSize: 10, padding: '0 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' },
-    textLight: { color: '#f9fafb' },
+    bottomLabel: { backgroundColor: colors.bgLight, color: colors.text, fontSize: fonts.sizeSm, padding: '1px 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center', borderTop: `1px solid ${colors.borderFaint}` },
+    textLight: { color: colors.text, fontFamily: fonts.family, fontSize: fonts.size },
     iconLarge: { fontSize: 20 }
 };
 
 const assetViewerColors = {
-    panelBg: '#111827',
-    controlBg: '#1f2937',
-    text: '#f9fafb',
-    border: 'rgba(255,255,255,0.12)',
-    accentBorder: 'rgba(34, 211, 238, 0.3)',
+    panelBg: colors.bg,
+    controlBg: colors.bgSurface,
+    previewBg: colors.bgLight,
+    text: colors.text,
+    border: colors.border,
+    borderFaint: colors.borderFaint,
+    accentBorder: colors.accentBorder,
+    errorBg: colors.dangerBg,
 };
 
 const assetPickerPopupBaseStyle = {
     background: assetViewerColors.panelBg,
     border: `1px solid ${assetViewerColors.border}`,
     borderRadius: 0,
-    boxShadow: '0 4px 16px rgba(0,0,0,0.6)',
+    boxShadow: 'none',
+    color: colors.text,
+    fontFamily: fonts.family,
+    fontSize: fonts.size,
 } as const;
 
 const assetPickerButtonBaseStyle = {
-    backgroundColor: assetViewerColors.controlBg,
-    color: 'inherit',
-    fontSize: 10,
+    ...base.btn,
+    background: assetViewerColors.controlBg,
+    color: colors.text,
+    fontSize: fonts.size,
     cursor: 'pointer',
-    border: `1px solid ${assetViewerColors.border}`,
-    borderRadius: 0,
 } as const;
 
 const assetPickerWideButtonStyle = {
@@ -43,15 +51,42 @@ const assetPickerWideButtonStyle = {
     padding: '6px 8px',
 } as const;
 
+function disposeMaterial(material: Material | Material[]) {
+    if (Array.isArray(material)) {
+        material.forEach(entry => entry.dispose());
+        return;
+    }
+
+    material.dispose();
+}
+
+function disposeObject3D(object: Object3D) {
+    object.traverse(child => {
+        if (!(child instanceof Mesh)) return;
+        child.geometry?.dispose();
+        disposeMaterial(child.material);
+    });
+}
+
 const assetPickerSmallButtonStyle = {
     ...assetPickerButtonBaseStyle,
     padding: '4px 8px',
 } as const;
 
 const assetPickerEmptyPreviewStyle = {
-    backgroundColor: assetViewerColors.controlBg,
+    backgroundColor: assetViewerColors.previewBg,
     border: `1px dashed ${assetViewerColors.border}`,
     borderRadius: 0,
+} as const;
+
+const assetTileStyle = {
+    backgroundColor: assetViewerColors.previewBg,
+    color: assetViewerColors.text,
+    border: `1px solid ${assetViewerColors.borderFaint}`,
+    cursor: 'pointer',
+    display: 'flex',
+    flexDirection: 'column',
+    boxSizing: 'border-box',
 } as const;
 
 function getItemsInPath(files: string[], currentPath: string) {
@@ -89,9 +124,7 @@ function FolderTile({ name, onClick }: { name: string; onClick: () => void }) {
             style={{
                 maxWidth: 60,
                 aspectRatio: '1 / 1',
-                backgroundColor: assetViewerColors.controlBg,
-                color: assetViewerColors.text,
-                cursor: 'pointer',
+                ...assetTileStyle,
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
@@ -150,7 +183,7 @@ function AssetListViewer({ files, selected, onSelect, renderCard }: AssetListVie
                         pathParts.pop();
                         setCurrentPath(pathParts.join('/'));
                     }}
-                    style={{ ...assetPickerSmallButtonStyle, marginBottom: 4, fontSize: 12, border: 'none' }}
+                    style={{ ...assetPickerSmallButtonStyle, marginBottom: 4 }}
                 >
                     ← Back
                 </button>
@@ -199,27 +232,14 @@ export function TextureListViewer({ files, selected, onSelect, basePath = "" }: 
 }
 
 function TextureCard({ file, onSelect, basePath = "" }: { file: string; onSelect: (file: string) => void; basePath?: string }) {
-    const [error, setError] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
     const { ref, isInView } = useInView();
-    const fullPath = basePath ? `/${basePath}${file}` : file;
-
-    if (error) {
-        return (
-            <div
-                ref={ref}
-                style={{ aspectRatio: '1 / 1', backgroundColor: '#c30000', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                onClick={() => onSelect(file)}
-            >
-                <div style={styles.errorIcon}>✗</div>
-            </div>
-        );
-    }
+    const fullPath = resolvePrefabAssetPath(basePath, file);
 
     return (
         <div
             ref={ref}
-            style={{ maxWidth: 60, aspectRatio: '1 / 1', backgroundColor: '#aeaeae', color: '#f9fafb', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
+            style={{ maxWidth: 60, aspectRatio: '1 / 1', ...assetTileStyle }}
             onClick={() => onSelect(file)}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
@@ -230,7 +250,7 @@ function TextureCard({ file, onSelect, basePath = "" }: { file: string; onSelect
                         <PerspectiveCamera makeDefault position={[0, 0, 2.5]} fov={50} />
                         <ambientLight intensity={0.8} />
                         <pointLight position={[5, 5, 5]} intensity={0.5} />
-                        <TextureSphere url={fullPath} onError={() => setError(true)} />
+                        <TextureSphere url={fullPath} />
                         <OrbitControls
                             enableZoom={false}
                             enablePan={false}
@@ -247,24 +267,9 @@ function TextureCard({ file, onSelect, basePath = "" }: { file: string; onSelect
     );
 }
 
-function TextureSphere({ url, onError }: { url: string; onError?: () => void }) {
-    const [texture, setTexture] = useState<any>(null);
+function TextureSphere({ url }: { url: string }) {
+    const texture = useLoader(TextureLoader, url);
 
-    useEffect(() => {
-        setTexture(null);
-        const loader = new TextureLoader();
-        loader.load(
-            url,
-            (tex) => setTexture(tex),
-            undefined,
-            (err) => {
-                console.warn('Failed to load texture:', url, err);
-                onError?.();
-            }
-        );
-    }, [url]);
-
-    if (!texture) return null;
     return (
         <mesh position={[0, 0, 0]}>
             <sphereGeometry args={[1, 32, 32]} />
@@ -311,13 +316,13 @@ function ModelCard({
 }) {
     const [error, setError] = useState(false);
     const { ref, isInView } = useInView();
-    const fullPath = basePath ? `/${basePath}${file}` : file;
+    const fullPath = resolvePrefabAssetPath(basePath, file);
 
     if (error) {
         return (
             <div
                 ref={ref}
-                style={{ aspectRatio: '1 / 1', backgroundColor: '#c30000', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                style={{ aspectRatio: '1 / 1', backgroundColor: assetViewerColors.errorBg, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${colors.dangerBorder}` }}
                 onClick={() => onSelect(file)}
             >
                 <div style={styles.errorIcon}>✗</div>
@@ -328,7 +333,7 @@ function ModelCard({
     return (
         <div
             ref={ref}
-            style={{ width: size, aspectRatio: '1 / 1', backgroundColor: '#aeaeae', color: '#f9fafb', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
+            style={{ width: size, aspectRatio: '1 / 1', ...assetTileStyle }}
             onClick={() => onSelect(file)}
         >
             <div style={styles.flexFillRelative}>
@@ -352,24 +357,35 @@ function ModelCard({
 }
 
 function ModelPreview({ url, onError }: { url: string; onError?: () => void }) {
-    const [model, setModel] = useState<any>(null);
+    const [model, setModel] = useState<Object3D | null>(null);
+    const modelRef = useRef<Object3D | null>(null);
     const onErrorRef = useRef(onError);
     onErrorRef.current = onError;
 
     useEffect(() => {
         let cancelled = false;
+        modelRef.current && disposeObject3D(modelRef.current);
+        modelRef.current = null;
         setModel(null);
 
         loadModel(url).then((result) => {
-            if (cancelled) return;
+            if (cancelled) {
+                result.model && disposeObject3D(result.model);
+                return;
+            }
             if (result.success && result.model) {
+                modelRef.current = result.model;
                 setModel(result.model);
             } else {
                 onErrorRef.current?.();
             }
         });
 
-        return () => { cancelled = true; };
+        return () => {
+            cancelled = true;
+            modelRef.current && disposeObject3D(modelRef.current);
+            modelRef.current = null;
+        };
     }, [url]);
 
     if (!model) return null;
@@ -398,14 +414,14 @@ export function SoundListViewer({ files, selected, onSelect, basePath = "" }: So
 
 function SoundCard({ file, onSelect, basePath = "" }: { file: string; onSelect: (file: string) => void; basePath?: string }) {
     const fileName = file.split('/').pop() || '';
-    const fullPath = basePath ? `/${basePath}${file}` : file;
+    const fullPath = resolvePrefabAssetPath(basePath, file);
     return (
         <div
             onClick={() => onSelect(file)}
-            style={{ aspectRatio: '1 / 1', backgroundColor: '#374151', color: '#f9fafb', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
+            style={{ aspectRatio: '1 / 1', ...assetTileStyle, alignItems: 'center', justifyContent: 'center' }}
         >
             <div style={styles.iconLarge}>🔊</div>
-            <div style={{ color: '#f9fafb', fontSize: 12, padding: '0 4px', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center', width: '100%' }}>{fileName}</div>
+            <div style={{ color: colors.text, fontSize: fonts.size, padding: '0 4px', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center', width: '100%' }}>{fileName}</div>
         </div>
     );
 }
@@ -562,8 +578,8 @@ export function ModelPicker({ value, onChange, basePath = "", pickerKey }: { val
             controlsStyle={{ display: 'flex', flexDirection: 'column', gap: 6, flex: '0 0 84px', minWidth: 84, justifyContent: 'flex-end' }}
             changeButtonStyle={{ ...assetPickerWideButtonStyle, border: `1px solid ${assetViewerColors.accentBorder}` }}
             clearButtonStyle={{ ...assetPickerWideButtonStyle, border: `1px solid ${assetViewerColors.accentBorder}` }}
-            popupStyle={{ background: 'rgba(0,0,0,0.9)', border: `1px solid ${assetViewerColors.accentBorder}` }}
-            preview={<div style={{ flex: '0 0 auto' }}><SingleModelViewer file={value ? `/${value}` : undefined} basePath={basePath} /></div>}
+            popupStyle={{ border: `1px solid ${assetViewerColors.accentBorder}` }}
+            preview={<div style={{ flex: '0 0 auto' }}><SingleModelViewer file={value} basePath={basePath} /></div>}
             renderList={({ files, value: selectedValue, onSelect, basePath: currentBasePath }) => (
                 <ModelListViewer
                     key={pickerKey}

@@ -29,8 +29,8 @@ const EMPTY_TEXTURES: LoadedTextures = {};
 const EMPTY_SOUNDS: LoadedSounds = {};
 const EMPTY_NODE_COMPONENTS: AnalyzedNodeComponents = {
     geometry: undefined,
-    material: undefined,
-    model: undefined,
+    materials: [],
+    models: [],
     sprite: undefined,
     clickEventName: null,
     composition: [],
@@ -38,6 +38,7 @@ const EMPTY_NODE_COMPONENTS: AnalyzedNodeComponents = {
 
 /** Resolve a relative or absolute asset file path against a base path. */
 function resolveAssetPath(basePath: string, file: string): string {
+    if (file.startsWith("data:")) return file;
     if (file.startsWith("http://") || file.startsWith("https://")) return file;
     return file.startsWith("/") ? `${basePath}${file}` : `${basePath}/${file}`;
 }
@@ -74,9 +75,11 @@ export interface Scene {
     get(id: string): GameObjectType | null;
     getObject(id: string): Object3D | null;
     getHandle<T = unknown>(id: string, kind: string): T | null;
+    getModel(path: string): Object3D | null;
     // Mutations
     add(node: GameObjectType, parentId?: string): GameObjectType;
     update(id: string, fn: (node: PrefabNode) => PrefabNode): void;
+    replaceNode(id: string, node: GameObjectType): void;
     remove(id: string): void;
     duplicate(id: string): string | null;
     move(draggedId: string, targetId: string, position: "before" | "inside"): void;
@@ -117,8 +120,8 @@ type CompositionComponent = {
 
 type AnalyzedNodeComponents = {
     geometry: ComponentData | undefined;
-    material: ComponentData | undefined;
-    model: ComponentData | undefined;
+    materials: Array<{ key: string; component: ComponentData }>;
+    models: Array<{ key: string; component: ComponentData }>;
     sprite: ComponentData | undefined;
     clickEventName: string | null;
     composition: CompositionComponent[];
@@ -154,6 +157,9 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, 
     const availableModels = useMemo(() => ({ ...models, ...injectedModels }), [models, injectedModels]);
     const availableTextures = useMemo(() => ({ ...textures, ...injectedTextures }), [textures, injectedTextures]);
     const availableSounds = useMemo(() => ({ ...sounds, ...injectedSounds }), [sounds, injectedSounds]);
+    const getModel = useCallback((path: string) => availableModels[path] ?? null, [availableModels]);
+    const getTexture = useCallback((path: string) => availableTextures[path] ?? null, [availableTextures]);
+    const getSound = useCallback((path: string) => availableSounds[path] ?? null, [availableSounds]);
 
     const getObject = useCallback((id: string) => {
         return objectRefs.current[id] ?? null;
@@ -195,12 +201,14 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, 
         get: getNode,
         getObject,
         getHandle,
+        getModel,
         add: (node, parentId) => {
             const state = resolvedStore.getState();
             state.addChild(parentId ?? state.rootId, node);
             return node;
         },
         update: (id, fn) => resolvedStore.getState().updateNode(id, fn),
+        replaceNode: (id, node) => resolvedStore.getState().replaceNode(id, node),
         remove: (id) => resolvedStore.getState().deleteNode(id),
         duplicate: (id) => resolvedStore.getState().duplicateNode(id),
         move: (draggedId, targetId, position) => resolvedStore.getState().moveNode(draggedId, targetId, position),
@@ -211,7 +219,7 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, 
             soundManager.setBuffer(path, sound);
             setInjectedSounds(prev => ({ ...prev, [path]: sound }));
         },
-    }), [editMode, getHandle, getNode, getObject, resolvedStore, rootId]);
+    }), [editMode, getHandle, getModel, getNode, getObject, resolvedStore, rootId]);
 
     useImperativeHandle(ref, () => sceneValue, [sceneValue]);
 
@@ -308,11 +316,11 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, 
         registerHandle,
         getHandle,
         getObject,
-        getModel: (path: string) => availableModels[path] ?? null,
-        getTexture: (path: string) => availableTextures[path] ?? null,
-        getSound: (path: string) => availableSounds[path] ?? null,
+        getModel,
+        getTexture,
+        getSound,
         getAssetRevision: () => `${Object.keys(availableTextures).sort().join('|')}::${Object.keys(availableModels).sort().join('|')}`,
-    }), [registerHandle, getHandle, getObject, availableModels, availableTextures, availableSounds]);
+    }), [registerHandle, getHandle, getObject, getModel, getTexture, getSound, availableModels, availableTextures]);
 
     const handleNodeClick = useCallback((event: ThreeEvent<PointerEvent>, nodeId: string, fallbackObject: Object3D | null) => {
         const node = resolvedStore.getState().nodesById[nodeId];
@@ -370,8 +378,8 @@ function getClickEventName(component: ComponentData | undefined) {
 function analyzeNodeComponents(node: GameObjectType): AnalyzedNodeComponents {
     let bufferGeometry: ComponentData | undefined;
     let geometry: ComponentData | undefined;
-    let material: ComponentData | undefined;
-    let model: ComponentData | undefined;
+    const materials: Array<{ key: string; component: ComponentData }> = [];
+    const models: Array<{ key: string; component: ComponentData }> = [];
     let sprite: ComponentData | undefined;
     const composition: CompositionComponent[] = [];
 
@@ -388,10 +396,10 @@ function analyzeNodeComponents(node: GameObjectType): AnalyzedNodeComponents {
                 geometry = component;
                 break;
             case "Material":
-                material = component;
+                materials.push({ key, component });
                 break;
             case "Model":
-                model = component;
+                models.push({ key, component });
                 break;
             case "Sprite":
                 sprite = component;
@@ -412,10 +420,10 @@ function analyzeNodeComponents(node: GameObjectType): AnalyzedNodeComponents {
 
     return {
         geometry: bufferGeometry ?? geometry,
-        material,
-        model,
+        materials,
+        models,
         sprite,
-        clickEventName: getClickEventName(bufferGeometry) ?? getClickEventName(geometry) ?? getClickEventName(model) ?? getClickEventName(sprite),
+        clickEventName: getClickEventName(bufferGeometry) ?? getClickEventName(geometry) ?? models.map(({ component }) => getClickEventName(component)).find(Boolean) ?? getClickEventName(sprite),
         composition,
     };
 }
@@ -480,7 +488,7 @@ function InstancedNode({ nodeId, parentMatrix = IDENTITY, editMode, registerRef,
     const localTransform = getNodeTransformProps(gameObject);
     const isLocked = Boolean(gameObject?.locked);
 
-    const modelUrl = analyzedComponents.model?.properties?.filename;
+    const modelUrl = analyzedComponents.models[0]?.component.properties?.filename;
     const instances = useMemo(
         () => buildRepeatedInstances(gameObject, parentMatrix, modelUrl),
         [gameObject, modelUrl, parentMatrix]
@@ -756,26 +764,28 @@ function renderNodeContent(
     childNodes?: React.ReactNode
 ) {
     const geometry = analyzedComponents.geometry;
-    const model = analyzedComponents.model;
-    const material = analyzedComponents.material;
+    const models = analyzedComponents.models;
+    const materials = analyzedComponents.materials;
+    const primaryMaterial = materials[0]?.component;
     const sprite = analyzedComponents.sprite;
-    const shapeKind = sprite?.type ? 'sprite' : geometry?.type ? 'mesh' : model?.type ? 'model' : 'none';
+    const shapeKind = sprite?.type ? 'sprite' : geometry?.type ? 'mesh' : models.length > 0 ? 'model' : 'none';
     let materialContent: React.ReactNode = null;
 
     switch (shapeKind) {
         case 'sprite': {
-            const materialDef = material?.type ? getComponentDef(material.type) : undefined;
-            if (material?.properties && materialDef?.View) {
-                const materialIsSprite = material.properties.materialType === 'sprite';
+            const materialDef = primaryMaterial?.type ? getComponentDef(primaryMaterial.type) : undefined;
+            if (primaryMaterial?.properties && materialDef?.View) {
+                const materialIsSprite = primaryMaterial.properties.materialType === 'sprite';
                 materialContent = (
                     <materialDef.View
-                        key="material"
+                        key={materials[0]?.key ?? 'material'}
                         properties={{
-                            ...material.properties,
+                            ...primaryMaterial.properties,
                             materialType: 'sprite',
-                            transparent: materialIsSprite ? material.properties.transparent : true,
-                            depthTest: materialIsSprite ? material.properties.depthTest : false,
-                            depthWrite: materialIsSprite ? material.properties.depthWrite : false,
+                            attach: 'material',
+                            transparent: materialIsSprite ? primaryMaterial.properties.transparent : true,
+                            depthTest: materialIsSprite ? primaryMaterial.properties.depthTest : false,
+                            depthWrite: materialIsSprite ? primaryMaterial.properties.depthWrite : false,
                         }}
                     />
                 );
@@ -783,16 +793,25 @@ function renderNodeContent(
             break;
         }
         case 'mesh': {
-            const materialDef = material?.type ? getComponentDef(material.type) : undefined;
-            if (material?.properties && materialDef?.View) {
-                materialContent = <materialDef.View key="material" properties={material.properties} />;
-            }
+            materialContent = materials.map(({ key, component }) => {
+                const materialDef = component.type ? getComponentDef(component.type) : undefined;
+                if (!component.properties || !materialDef?.View) return null;
+                return <materialDef.View key={key} properties={component.properties} />;
+            });
             break;
         }
     }
 
     let primaryContent: React.ReactNode = null;
     let contentChildren = childNodes;
+    const modelContent = models.map(({ key, component }) => {
+        if (!component.type || component.properties?.instanced || !isNodeReady(component, loadedModels)) return null;
+
+        const modelDef = getComponentDef(component.type);
+        if (!modelDef?.View) return null;
+
+        return <modelDef.View key={key} properties={component.properties} />;
+    });
 
     switch (shapeKind) {
         case 'sprite': {
@@ -830,15 +849,13 @@ function renderNodeContent(
             break;
         }
         case 'model': {
-            if (!model?.type || model.properties?.instanced || !isNodeReady(model, loadedModels)) break;
-
-            const modelDef = getComponentDef(model.type);
-            if (!modelDef?.View) break;
-
-            const modelContent = <modelDef.View properties={model.properties} />;
             primaryContent = primaryClickHandlers ? <group {...primaryClickHandlers}>{modelContent}</group> : modelContent;
             break;
         }
+    }
+
+    if (shapeKind !== 'model' && modelContent.some(Boolean)) {
+        primaryContent = <>{primaryContent}{modelContent}</>;
     }
 
     let content = <>{primaryContent}{contentChildren}</>;

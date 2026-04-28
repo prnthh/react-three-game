@@ -32,6 +32,8 @@ export interface ComponentViewProps<P = Record<string, unknown>> {
 
 export interface Component {
 	name: string;
+	/** Set when this component occupies a single slot on a node. Use a string to share a slot across component types. */
+	disableSiblingComposition?: boolean | string;
 	Editor: FC<{
 		node?: GameObject;
 		component: ComponentData;
@@ -56,6 +58,38 @@ export function getComponentDef(name: string): Component | undefined {
 
 export function getAllComponentDefs(): Record<string, Component> {
 	return { ...REGISTRY };
+}
+
+export function getSiblingCompositionSlot(componentName: string, disableSiblingComposition: boolean | string | undefined) {
+	if (!disableSiblingComposition) return null;
+	return typeof disableSiblingComposition === "string" ? disableSiblingComposition : componentName;
+}
+
+export function canAddComponentToNode(node: GameObject, component: Component | undefined, allComponents = REGISTRY) {
+	if (!component) return false;
+
+	const slot = getSiblingCompositionSlot(component.name, component.disableSiblingComposition);
+	if (!slot) return true;
+
+	return !Object.values(node.components ?? {}).some(entry => {
+		if (!entry?.type) return false;
+		const sibling = allComponents[entry.type];
+		return getSiblingCompositionSlot(entry.type, sibling?.disableSiblingComposition) === slot;
+	});
+}
+
+export function getNextComponentKey(node: GameObject, componentName: string) {
+	const baseKey = componentName.toLowerCase();
+	const existingKeys = new Set(Object.keys(node.components ?? {}));
+	let nextKey = baseKey;
+	let index = 1;
+
+	while (existingKeys.has(nextKey)) {
+		nextKey = `${baseKey}_${index}`;
+		index += 1;
+	}
+
+	return nextKey;
 }
 
 export function getComponentAssetRefs(

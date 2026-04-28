@@ -10,7 +10,7 @@ import EditorUI from "./EditorUI";
 import { base, toolbar } from "./styles";
 import { computeParentWorldMatrix, decompose, exportGLB as exportGLBFile, exportGLBData, focusCameraOnObject, regenerateIds } from "./utils";
 import type { ExportGLBOptions } from "./utils";
-import { loadFiles } from "../dragdrop";
+import { loadDroppedAssets } from "../dragdrop";
 import { denormalizePrefab, createImageNode, createModelNode, createNode } from './prefab';
 import { createPrefabStore, type PrefabStoreState, PrefabStoreProvider } from "./prefabStore";
 import type { MapControls as MapControlsImpl, TransformControls as TransformControlsImpl } from 'three-stdlib';
@@ -25,6 +25,23 @@ function isObjectAttachedToRoot(root: Object3D | null | undefined, object: Objec
     }
 
     return false;
+}
+
+export function isAbsoluteAssetPath(path: string) {
+    return (
+        path.startsWith("data:") ||
+        path.startsWith("http://") ||
+        path.startsWith("https://")
+    );
+}
+
+export function resolvePrefabAssetPath(basePath: string, file: string) {
+    if (isAbsoluteAssetPath(file)) return file;
+    return file.startsWith("/") ? `${basePath}${file}` : `${basePath}/${file}`;
+}
+
+export function getPrefabAssetRef(assetRef: string, folder: "models" | "textures" | "sound") {
+    return isAbsoluteAssetPath(assetRef) ? assetRef : `${folder}/${assetRef}`;
 }
 
 function SelectionHelper({ object }: { object: Object3D | null }) {
@@ -134,6 +151,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
     const getRoot = useCallback(() => prefabRootRef.current?.root ?? null, []);
     const getObject = useCallback((nodeId: string) => prefabRootRef.current?.getObject(nodeId) ?? null, []);
     const getHandle = useCallback(<T = unknown,>(nodeId: string, kind: string) => prefabRootRef.current?.getHandle<T>(nodeId, kind) ?? null, []);
+    const getModel = useCallback((path: string) => prefabRootRef.current?.getModel(path) ?? null, []);
 
     const scheduleHistory = useCallback((nextPrefab: Prefab) => {
         if (historyTimeoutRef.current) {
@@ -168,6 +186,9 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
 
     const update = useCallback((id: string, fn: (node: PrefabNode) => PrefabNode) => {
         mutate(s => s.updateNode(id, fn));
+    }, [mutate]);
+    const replaceNode = useCallback((id: string, node: GameObject) => {
+        mutate(s => s.replaceNode(id, node));
     }, [mutate]);
     const remove = useCallback((id: string) => {
         mutate(s => s.deleteNode(id));
@@ -390,19 +411,18 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
             e.preventDefault();
             e.stopPropagation();
 
-            const files = e.dataTransfer?.files ? Array.from(e.dataTransfer.files) : [];
             const scene = prefabRootRef.current;
 
-            void loadFiles(files, {
-                onModelLoaded: (model, filename) => {
-                    const path = `models/${filename}`;
+            void loadDroppedAssets(e.dataTransfer, {
+                onModelLoaded: (model, filename, file) => {
+                    const path = getPrefabAssetRef(filename, 'models');
                     scene?.addModel(path, model);
-                    add(createModelNode(path, filename.replace(/\.[^.]+$/, '')));
+                    add(createModelNode(path, file.name.replace(/\.[^.]+$/, '')));
                 },
-                onTextureLoaded: (texture, filename) => {
-                    const path = `textures/${filename}`;
+                onTextureLoaded: (texture, filename, file) => {
+                    const path = getPrefabAssetRef(filename, 'textures');
                     scene?.addTexture(path, texture);
-                    add(createImageNode(path, filename.replace(/\.[^.]+$/, '')));
+                    add(createImageNode(path, file.name.replace(/\.[^.]+$/, '')));
                 },
                 onLoadError: error => {
                     console.error('Drop asset error:', error);
@@ -426,8 +446,10 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
         get: getNode,
         getObject,
         getHandle,
+        getModel,
         add,
         update,
+        replaceNode,
         remove,
         duplicate,
         move,
@@ -435,7 +457,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
         addModel: (path, model) => prefabRootRef.current?.addModel(path, model),
         addTexture: (path, texture) => prefabRootRef.current?.addTexture(path, texture),
         addSound: (path, sound) => prefabRootRef.current?.addSound(path, sound),
-    }), [add, duplicate, getHandle, getNode, getObject, getRoot, mode, move, remove, replace, update]);
+    }), [add, duplicate, getHandle, getModel, getNode, getObject, getRoot, mode, move, remove, replace, replaceNode, update]);
 
     const editorRefValue = useMemo<PrefabEditorRef>(() => ({
         ...sceneValue,

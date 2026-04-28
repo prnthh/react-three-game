@@ -1,15 +1,16 @@
 import { ModelPicker } from '../../assetviewer/page';
 import { useMemo } from 'react';
-import { Mesh } from 'three';
+import { Mesh, Texture } from 'three';
 import { assetRef, assetRefs } from './ComponentRegistry';
 import type { Component, ComponentViewProps } from './ComponentRegistry';
 import { BooleanField, FieldGroup, Label, ListEditor, NumberInput, SelectInput, StringField } from './Input';
 import { useAssetRuntime } from '../assetRuntime';
 import type { ComponentData, GameObject } from '../types';
-import { useEditorContext } from '../PrefabEditor';
+import { useEditorContext, useEditorRef } from '../PrefabEditor';
 import { getRepeatAxesFromModelProperties, normalizeRepeatAxes } from '../InstanceProvider';
 import type { RepeatAxisConfig } from '../InstanceProvider';
-import { colors, ui } from '../styles';
+import { base, colors, ui } from '../styles';
+import { decomposeModelToPrefabNodes } from '../modelPrefab';
 
 const AXIS_OPTIONS = [
     { value: 'x', label: 'X' },
@@ -151,16 +152,75 @@ function RepeatAxisEditor({
 
 function ModelComponentEditor({ component, node, onUpdate, basePath = "" }: ModelComponentEditorProps) {
     const { positionSnap } = useEditorContext();
+    const editor = useEditorRef();
     const repeatAxes = getRepeatAxesFromModelProperties(component.properties);
+    const filename = component.properties.filename;
+    const canDecompose = Boolean(node && filename);
+
+    const handleDecompose = () => {
+        if (!node || !filename) return;
+
+        const model = editor.getModel(filename);
+        if (!model) {
+            console.warn(`Model is not loaded yet: ${filename}`);
+            return;
+        }
+
+        const textureRefs = new Map<string, Texture>();
+        const decomposed = decomposeModelToPrefabNodes(model, {
+            idPrefix: node.id,
+            getTexturePath: (texture, usage) => {
+                const key = `embedded/${node.id}/${usage}/${texture.uuid}`;
+                textureRefs.set(key, texture);
+                return key;
+            },
+        });
+        textureRefs.forEach((texture, path) => {
+            editor.addTexture(path, texture);
+        });
+        const preservedComponents = Object.entries(node.components ?? {}).reduce<Record<string, ComponentData>>((result, [key, entry]) => {
+            if (!entry?.type) return result;
+            if (entry.type === 'Model' || entry.type === 'Geometry' || entry.type === 'BufferGeometry' || entry.type === 'Material') {
+                return result;
+            }
+
+            result[key] = entry;
+            return result;
+        }, {});
+        const decomposedComponents = Object.entries(decomposed.components ?? {}).reduce<Record<string, ComponentData>>((result, [key, entry]) => {
+            if (!entry?.type || entry.type === 'Transform') return result;
+            result[key] = entry;
+            return result;
+        }, {});
+
+        editor.replaceNode(node.id, {
+            ...node,
+            name: node.name ?? decomposed.name,
+            components: {
+                ...preservedComponents,
+                ...decomposedComponents,
+            },
+            children: decomposed.children ?? [],
+        });
+    };
 
     return (
         <FieldGroup>
             <ModelPicker
-                value={component.properties.filename}
+                value={filename}
                 onChange={(filename) => onUpdate({ filename })}
                 basePath={basePath}
                 pickerKey={node?.id}
             />
+            <button
+                type="button"
+                style={{ ...base.btn, width: '100%' }}
+                onClick={handleDecompose}
+                disabled={!canDecompose}
+                title={canDecompose ? 'Replace this model node with editable geometry and material nodes' : 'Choose a model before decomposing'}
+            >
+                Decompose Model
+            </button>
             <BooleanField
                 name="instanced"
                 label="Instanced"

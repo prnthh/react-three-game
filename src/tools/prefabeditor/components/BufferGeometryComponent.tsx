@@ -3,12 +3,14 @@ import { BooleanField, FieldGroup, StringField } from "./Input";
 import { base, ui } from "../styles";
 
 type NumericArray = number[];
+type GeometryGroup = { start: number; count: number; materialIndex?: number };
 
 interface BufferGeometryProperties {
     positions?: NumericArray;
     indices?: NumericArray;
     normals?: NumericArray;
     uvs?: NumericArray;
+    groups?: GeometryGroup[];
     computeVertexNormals?: boolean;
     visible?: boolean;
     castShadow?: boolean;
@@ -30,6 +32,18 @@ const DEFAULT_TRIANGLE_UVS = [
 
 function isFiniteNumberArray(value: unknown): value is NumericArray {
     return Array.isArray(value) && value.every(entry => typeof entry === 'number' && Number.isFinite(entry));
+}
+
+function isGeometryGroupArray(value: unknown): value is GeometryGroup[] {
+    return Array.isArray(value) && value.every(group => {
+        if (!group || typeof group !== 'object' || Array.isArray(group)) return false;
+        const entry = group as Record<string, unknown>;
+        return typeof entry.start === 'number'
+            && Number.isFinite(entry.start)
+            && typeof entry.count === 'number'
+            && Number.isFinite(entry.count)
+            && (entry.materialIndex === undefined || typeof entry.materialIndex === 'number');
+    });
 }
 
 function normalizeNumberArray(value: unknown, fallback: NumericArray) {
@@ -195,9 +209,14 @@ function BufferGeometryComponentView({ properties }: { properties: BufferGeometr
     const indexArray = getIndexArray(indices);
     const hasNormals = normals.length >= 3 && normals.length % 3 === 0;
     const hasUvs = uvs.length >= 2 && uvs.length % 2 === 0;
+    const groups = isGeometryGroupArray(properties.groups) ? properties.groups : [];
 
     return (
         <bufferGeometry onUpdate={(geometry) => {
+            geometry.clearGroups();
+            groups.forEach(group => {
+                geometry.addGroup(group.start, group.count, group.materialIndex ?? 0);
+            });
             if (properties.computeVertexNormals !== false && !hasNormals) {
                 geometry.computeVertexNormals();
             }
@@ -220,6 +239,7 @@ function BufferGeometryComponentView({ properties }: { properties: BufferGeometr
 
 const BufferGeometryComponent: Component = {
     name: 'BufferGeometry',
+    disableSiblingComposition: 'geometry',
     Editor: BufferGeometryComponentEditor,
     View: BufferGeometryComponentView,
     defaultProperties: {
@@ -227,6 +247,7 @@ const BufferGeometryComponent: Component = {
         indices: DEFAULT_TRIANGLE_INDICES,
         normals: [],
         uvs: DEFAULT_TRIANGLE_UVS,
+        groups: [],
         computeVertexNormals: true,
         emitClickEvent: false,
         clickEventName: '',

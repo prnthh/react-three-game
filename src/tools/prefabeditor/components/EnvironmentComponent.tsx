@@ -29,6 +29,7 @@ function EnvironmentView({
 
 const EnvironmentComponent: Component = {
     name: 'Environment',
+    disableSiblingComposition: true,
     Editor: ({ component, onUpdate }) => (
         <FieldGroup>
             <NumberField name="intensity" label="Intensity" values={component.properties} onChange={onUpdate} min={0} step={0.1} fallback={1} />

@@ -15,6 +15,7 @@ import {
     isDescendant,
     normalizePrefab,
     PrefabState,
+    PrefabAssetRefCounts,
     PrefabNodeRecord,
     updateAssetRefsForNodeChange,
 } from "./prefab";
@@ -22,6 +23,7 @@ import {
 export interface PrefabStoreState extends PrefabState {
     replacePrefab: (prefab: Prefab) => void;
     updateNode: (id: string, update: (node: PrefabNodeRecord) => PrefabNodeRecord) => void;
+    replaceNode: (id: string, node: GameObject) => void;
     addChild: (parentId: string, node: GameObject) => void;
     deleteNode: (id: string) => void;
     duplicateNode: (id: string) => string | null;
@@ -32,6 +34,60 @@ export type PrefabStoreApi = StoreApi<PrefabStoreState>;
 
 const PrefabStoreContext = createContext<PrefabStoreApi | null>(null);
 const EMPTY_CHILD_IDS: string[] = [];
+
+function addAssetRefs(assetRefCounts: PrefabAssetRefCounts, refs: string[]) {
+    refs.forEach(ref => {
+        assetRefCounts[ref] = (assetRefCounts[ref] ?? 0) + 1;
+    });
+}
+
+function removeAssetRefs(assetRefCounts: PrefabAssetRefCounts, refs: string[]) {
+    refs.forEach(ref => {
+        const nextCount = (assetRefCounts[ref] ?? 0) - 1;
+        if (nextCount > 0) {
+            assetRefCounts[ref] = nextCount;
+            return;
+        }
+
+        delete assetRefCounts[ref];
+    });
+}
+
+function cloneGraphState(state: PrefabStoreState) {
+    return {
+        nodesById: { ...state.nodesById },
+        childIdsById: { ...state.childIdsById },
+        parentIdById: { ...state.parentIdById },
+        assetRefCounts: { ...state.assetRefCounts },
+    };
+}
+
+function removeSubtreeFromGraph(
+    id: string,
+    state: PrefabStoreState,
+    next: ReturnType<typeof cloneGraphState>,
+) {
+    const ids = collectSubtreeIds(id, state.childIdsById);
+
+    removeAssetRefs(next.assetRefCounts, collectAssetRefsForIds(ids, state.nodesById));
+
+    ids.forEach(nodeId => {
+        delete next.nodesById[nodeId];
+        delete next.childIdsById[nodeId];
+        delete next.parentIdById[nodeId];
+    });
+
+    return ids;
+}
+
+function insertSubtreeIntoGraph(
+    node: GameObject,
+    parentId: string | null,
+    next: ReturnType<typeof cloneGraphState>,
+) {
+    insertSubtree(node, parentId, next.nodesById, next.childIdsById, next.parentIdById);
+    addAssetRefs(next.assetRefCounts, collectSubtreeAssetRefs(node));
+}
 
 export function PrefabStoreProvider({
     store,
@@ -87,26 +143,44 @@ export function createPrefabStore(prefab: Prefab): PrefabStoreApi {
                 nodesById: { ...state.nodesById, [id]: nextNode },
             }, nextAssetRefCounts));
         },
+        replaceNode: (id, node) => {
+            const state = get();
+            if (!state.nodesById[id]) return;
+
+            const parentId = state.parentIdById[id];
+            const next = cloneGraphState(state);
+
+            removeSubtreeFromGraph(id, state, next);
+            insertSubtreeIntoGraph(node, parentId, next);
+
+            const patch: Partial<PrefabState> = {
+                nodesById: next.nodesById,
+                childIdsById: next.childIdsById,
+                parentIdById: next.parentIdById,
+            };
+
+            if (id === state.rootId) {
+                patch.rootId = node.id;
+            } else if (parentId) {
+                next.childIdsById[parentId] = (next.childIdsById[parentId] ?? []).map(childId => childId === id ? node.id : childId);
+            }
+
+            set(createPrefabPatch(state, patch, next.assetRefCounts));
+        },
         addChild: (parentId, node) => {
             const state = get();
             if (!state.nodesById[parentId]) return;
 
-            const nextNodesById = { ...state.nodesById };
-            const nextChildIdsById = { ...state.childIdsById };
-            const nextParentIdById = { ...state.parentIdById };
-            const nextAssetRefCounts = { ...state.assetRefCounts };
+            const next = cloneGraphState(state);
 
-            insertSubtree(node, parentId, nextNodesById, nextChildIdsById, nextParentIdById);
-            nextChildIdsById[parentId] = [...(nextChildIdsById[parentId] ?? []), node.id];
-            collectSubtreeAssetRefs(node).forEach(ref => {
-                nextAssetRefCounts[ref] = (nextAssetRefCounts[ref] ?? 0) + 1;
-            });
+            insertSubtreeIntoGraph(node, parentId, next);
+            next.childIdsById[parentId] = [...(next.childIdsById[parentId] ?? []), node.id];
 
             set(createPrefabPatch(state, {
-                nodesById: nextNodesById,
-                childIdsById: nextChildIdsById,
-                parentIdById: nextParentIdById,
-            }, nextAssetRefCounts));
+                nodesById: next.nodesById,
+                childIdsById: next.childIdsById,
+                parentIdById: next.parentIdById,
+            }, next.assetRefCounts));
         },
         deleteNode: (id) => {
             const state = get();
@@ -115,35 +189,16 @@ export function createPrefabStore(prefab: Prefab): PrefabStoreApi {
             const parentId = state.parentIdById[id];
             if (!parentId) return;
 
-            const idsToDelete = collectSubtreeIds(id, state.childIdsById);
-            const nextNodesById = { ...state.nodesById };
-            const nextChildIdsById = { ...state.childIdsById };
-            const nextParentIdById = { ...state.parentIdById };
-            const nextAssetRefCounts = { ...state.assetRefCounts };
+            const next = cloneGraphState(state);
 
-            collectAssetRefsForIds(idsToDelete, state.nodesById).forEach(ref => {
-                const nextCount = (nextAssetRefCounts[ref] ?? 0) - 1;
-                if (nextCount > 0) {
-                    nextAssetRefCounts[ref] = nextCount;
-                    return;
-                }
-
-                delete nextAssetRefCounts[ref];
-            });
-
-            idsToDelete.forEach(nodeId => {
-                delete nextNodesById[nodeId];
-                delete nextChildIdsById[nodeId];
-                delete nextParentIdById[nodeId];
-            });
-
-            nextChildIdsById[parentId] = (nextChildIdsById[parentId] ?? []).filter(childId => childId !== id);
+            removeSubtreeFromGraph(id, state, next);
+            next.childIdsById[parentId] = (next.childIdsById[parentId] ?? []).filter(childId => childId !== id);
 
             set(createPrefabPatch(state, {
-                nodesById: nextNodesById,
-                childIdsById: nextChildIdsById,
-                parentIdById: nextParentIdById,
-            }, nextAssetRefCounts));
+                nodesById: next.nodesById,
+                childIdsById: next.childIdsById,
+                parentIdById: next.parentIdById,
+            }, next.assetRefCounts));
         },
         duplicateNode: (id) => {
             const state = get();
@@ -169,9 +224,7 @@ export function createPrefabStore(prefab: Prefab): PrefabStoreApi {
             nextChildIdsById[parentId] = siblings;
 
             const nextAssetRefCounts = { ...state.assetRefCounts };
-            collectAssetRefsForIds(collectSubtreeIds(id, state.childIdsById), state.nodesById).forEach(ref => {
-                nextAssetRefCounts[ref] = (nextAssetRefCounts[ref] ?? 0) + 1;
-            });
+            addAssetRefs(nextAssetRefCounts, collectAssetRefsForIds(collectSubtreeIds(id, state.childIdsById), state.nodesById));
 
             set(createPrefabPatch(state, {
                 nodesById: nextNodesById,

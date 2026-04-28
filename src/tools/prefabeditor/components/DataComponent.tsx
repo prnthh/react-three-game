@@ -116,6 +116,7 @@ function DataComponentEditor({ component, onUpdate }: {
 
 const DataComponent: Component = {
     name: 'Data',
+    disableSiblingComposition: true,
     Editor: DataComponentEditor,
     defaultProperties: {
         data: {},

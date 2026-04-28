@@ -89,6 +89,7 @@ function SpriteComponentEditor({
 
 const SpriteComponent: Component = {
     name: 'Sprite',
+    disableSiblingComposition: true,
     Editor: SpriteComponentEditor,
     defaultProperties: {
         center: [0.5, 0.5],

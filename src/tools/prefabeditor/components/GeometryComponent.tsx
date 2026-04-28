@@ -158,6 +158,7 @@ function GeometryComponentView({ properties, children }: { properties: any, chil
 
 const GeometryComponent: Component = {
     name: 'Geometry',
+    disableSiblingComposition: 'geometry',
     Editor: GeometryComponentEditor,
     View: GeometryComponentView,
     defaultProperties: {

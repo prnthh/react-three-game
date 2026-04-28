@@ -86,6 +86,8 @@ export function canParseModelFile(file: File | string) {
 
 export function canParseTextureFile(file: File | string) {
     const filename = typeof file === "string" ? file : file.name;
+    if (filename.startsWith("data:image/")) return true;
+
     const normalizedName = normalizeModelPath(filename);
 
     return TEXTURE_FILE_EXTENSIONS.some(extension => normalizedName.endsWith(extension));

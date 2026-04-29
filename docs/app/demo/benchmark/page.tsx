@@ -203,7 +203,6 @@ function createDynamicCrashcatNode(index: number): GameObject {
                 type: "CrashcatPhysics",
                 properties: {
                     type: "dynamic",
-                    motionQuality: "linearCast",
                     restitution: 0.1,
                     friction: 0.8,
                 },

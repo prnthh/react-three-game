@@ -93,8 +93,8 @@ const prefab = {
                                 type: "CrashcatPhysics",
                                 properties: {
                                     sensor: true,
-                                    sensorEnter: TARGET_HIT_EVENT,
-                                    sensorExit: TARGET_RESET_EVENT,
+                                    sensorEnterEventName: TARGET_HIT_EVENT,
+                                    sensorExitEventName: TARGET_RESET_EVENT,
                                 }
                             }
                         }
@@ -174,8 +174,6 @@ function createProjectileNode(spawnPosition: Vector3, launchVelocity: Vector3) {
                 properties: {
                     colliders: "ball",
                     type: "dynamic",
-                    motionQuality: "linearCast",
-                    radius: 0.28,
                     restitution: 0.3,
                     friction: 0.6,
                     linearVelocity: [launchVelocity.x, launchVelocity.y, launchVelocity.z],

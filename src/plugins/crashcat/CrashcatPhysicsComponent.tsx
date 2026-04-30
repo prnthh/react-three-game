@@ -7,15 +7,15 @@ import {
     FieldRenderer,
     StringField,
     Vector3Field,
-    useAssetRuntime,
-    useNode,
-    usePrefabStoreApi,
-    useScene,
-    PrefabEditorMode,
+    type FieldDefinition,
+} from "../../tools/prefabeditor/components/Input";
+import {
     type Component,
     type ComponentViewProps,
-    type FieldDefinition,
-} from "react-three-game";
+} from "../../tools/prefabeditor/components/ComponentRegistry";
+import { useAssetRuntime, useNode } from "../../tools/prefabeditor/assetRuntime";
+import { usePrefabStoreApi } from "../../tools/prefabeditor/prefabStore";
+import { PrefabEditorMode, useScene } from "../../tools/prefabeditor/PrefabRoot";
 import {
     box,
     capsule,
@@ -30,7 +30,7 @@ import {
 } from "crashcat";
 import { Matrix4, Quaternion, Vector3 } from "three";
 import type { Object3D } from "three";
-import { useCrashcat, type CrashcatApi } from "../components/CrashcatRuntime";
+import { useCrashcat, type CrashcatApi } from "./CrashcatRuntime";
 
 const MAX_PHYSICS_DELTA = 1 / 30;
 

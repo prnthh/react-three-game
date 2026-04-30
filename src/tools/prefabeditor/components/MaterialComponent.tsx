@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from 'react';
 import { extend } from '@react-three/fiber';
 import type { ThreeElement } from '@react-three/fiber';
 import { useFrame } from '@react-three/fiber';
@@ -32,6 +32,16 @@ import type {
     MeshStandardMaterialProperties,
     Texture,
 } from 'three';
+
+type TextureConfig = {
+    colorSpace: Texture['colorSpace'];
+    repeat?: boolean;
+    repeatCount?: [number, number];
+    offset?: [number, number];
+    generateMipmaps: boolean;
+    minFilter: MinificationTextureFilter;
+    magFilter: MagnificationTextureFilter;
+};
 
 declare module '@react-three/fiber' {
     interface ThreeElements {
@@ -124,6 +134,64 @@ const MAG_FILTER_MAP: Record<string, MagnificationTextureFilter> = {
     LinearFilter,
 };
 
+function configureTexture(
+    texture: Texture | null | undefined,
+    options: TextureConfig,
+) {
+    if (!texture) return;
+
+    if (options.repeat) {
+        texture.wrapS = texture.wrapT = RepeatWrapping;
+        texture.repeat.set(options.repeatCount?.[0] ?? 1, options.repeatCount?.[1] ?? 1);
+    } else {
+        texture.wrapS = texture.wrapT = ClampToEdgeWrapping;
+        texture.repeat.set(1, 1);
+    }
+
+    texture.offset.set(options.offset?.[0] ?? 0, options.offset?.[1] ?? 0);
+    texture.colorSpace = options.colorSpace;
+    texture.generateMipmaps = options.generateMipmaps;
+    texture.minFilter = options.minFilter;
+    texture.magFilter = options.magFilter;
+    texture.needsUpdate = true;
+}
+
+function cloneConfiguredTexture(
+    texture: Texture | null | undefined,
+    options: TextureConfig,
+) {
+    if (!texture) return undefined;
+
+    const nextTexture = texture.clone();
+    configureTexture(nextTexture, options);
+    return nextTexture;
+}
+
+function useConfiguredTexture(texture: Texture | null | undefined, options: TextureConfig) {
+    const configuredTexture = useMemo(() => cloneConfiguredTexture(texture, options), [texture]);
+
+    useEffect(() => {
+        return () => configuredTexture?.dispose();
+    }, [configuredTexture]);
+
+    useLayoutEffect(() => {
+        configureTexture(configuredTexture, options);
+    }, [
+        configuredTexture,
+        options.colorSpace,
+        options.repeat,
+        options.repeatCount?.[0],
+        options.repeatCount?.[1],
+        options.offset?.[0],
+        options.offset?.[1],
+        options.generateMipmaps,
+        options.minFilter,
+        options.magFilter,
+    ]);
+
+    return configuredTexture;
+}
+
 export function useMaterialOverrides(): MaterialOverrides {
     return useContext(MaterialOverridesContext);
 }
@@ -161,6 +229,12 @@ function MaterialComponentEditor({
     const animateOffset = component.properties.animateOffset;
     const isStandardMaterial = materialType === 'standard';
     const isSpriteMaterial = materialType === 'sprite';
+    const editorValues = {
+        ...component.properties,
+        generateMipmaps: component.properties.generateMipmaps ?? true,
+        minFilter: component.properties.minFilter ?? 'LinearMipmapLinearFilter',
+        magFilter: component.properties.magFilter ?? 'LinearFilter',
+    };
 
     const fields: FieldDefinition[] = [
         {
@@ -266,12 +340,12 @@ function MaterialComponentEditor({
                 type: 'select',
                 label: 'Min Filter',
                 options: [
+                    { value: 'LinearMipmapLinearFilter', label: 'Linear Mipmap Linear (Default)' },
+                    { value: 'LinearFilter', label: 'Linear' },
+                    { value: 'LinearMipmapNearestFilter', label: 'Linear Mipmap Nearest' },
                     { value: 'NearestFilter', label: 'Nearest' },
                     { value: 'NearestMipmapNearestFilter', label: 'Nearest Mipmap Nearest' },
                     { value: 'NearestMipmapLinearFilter', label: 'Nearest Mipmap Linear' },
-                    { value: 'LinearFilter', label: 'Linear' },
-                    { value: 'LinearMipmapNearestFilter', label: 'Linear Mipmap Nearest' },
-                    { value: 'LinearMipmapLinearFilter', label: 'Linear Mipmap Linear (Default)' },
                 ],
             } as FieldDefinition,
             {
@@ -279,8 +353,8 @@ function MaterialComponentEditor({
                 type: 'select',
                 label: 'Mag Filter',
                 options: [
-                    { value: 'NearestFilter', label: 'Nearest' },
                     { value: 'LinearFilter', label: 'Linear (Default)' },
+                    { value: 'NearestFilter', label: 'Nearest' },
                 ],
             } as FieldDefinition,
         ] : []),
@@ -289,7 +363,7 @@ function MaterialComponentEditor({
     return (
         <FieldRenderer
             fields={fields}
-            values={component.properties}
+            values={editorValues}
             onChange={onUpdate}
         />
     );
@@ -344,85 +418,16 @@ function MaterialComponentView({ properties: rawProps }: ComponentViewProps<Reco
     const resolvedMagFilter = MAG_FILTER_MAP[magFilter] ?? LinearFilter;
     const animatedOffsetRef = useRef<[number, number]>([offset?.[0] ?? 0, offset?.[1] ?? 0]);
 
-    const finalTexture = useMemo(() => {
-        return texture ? texture.clone() : undefined;
-    }, [texture]);
-
-    useEffect(() => {
-        return () => finalTexture?.dispose();
-    }, [finalTexture]);
-
-    useEffect(() => {
-        if (!finalTexture) return;
-
-        if (repeat) {
-            finalTexture.wrapS = finalTexture.wrapT = RepeatWrapping;
-            if (repeatCount) {
-                finalTexture.repeat.set(repeatCount[0], repeatCount[1]);
-            }
-        } else {
-            finalTexture.wrapS = finalTexture.wrapT = ClampToEdgeWrapping;
-            finalTexture.repeat.set(1, 1);
-        }
-
-        finalTexture.offset.set(offset?.[0] ?? 0, offset?.[1] ?? 0);
-        finalTexture.colorSpace = SRGBColorSpace;
-        finalTexture.generateMipmaps = generateMipmaps;
-        finalTexture.minFilter = resolvedMinFilter;
-        finalTexture.magFilter = resolvedMagFilter;
-
-        finalTexture.needsUpdate = true;
-    }, [
-        finalTexture,
+    const textureConfig = {
         repeat,
-        repeatCount?.[0],
-        repeatCount?.[1],
-        offset?.[0],
-        offset?.[1],
+        repeatCount,
+        offset,
         generateMipmaps,
-        resolvedMinFilter,
-        resolvedMagFilter
-    ]);
-
-    const finalNormalMap = useMemo(() => {
-        return normalMapTexture ? normalMapTexture.clone() : undefined;
-    }, [normalMapTexture]);
-
-    useEffect(() => {
-        return () => finalNormalMap?.dispose();
-    }, [finalNormalMap]);
-
-    useEffect(() => {
-        if (!finalNormalMap) return;
-
-        if (repeat) {
-            finalNormalMap.wrapS = finalNormalMap.wrapT = RepeatWrapping;
-            if (repeatCount) {
-                finalNormalMap.repeat.set(repeatCount[0], repeatCount[1]);
-            }
-        } else {
-            finalNormalMap.wrapS = finalNormalMap.wrapT = ClampToEdgeWrapping;
-            finalNormalMap.repeat.set(1, 1);
-        }
-
-        finalNormalMap.offset.set(offset?.[0] ?? 0, offset?.[1] ?? 0);
-        finalNormalMap.colorSpace = NoColorSpace;
-        finalNormalMap.generateMipmaps = generateMipmaps;
-        finalNormalMap.minFilter = resolvedMinFilter;
-        finalNormalMap.magFilter = resolvedMagFilter;
-
-        finalNormalMap.needsUpdate = true;
-    }, [
-        finalNormalMap,
-        repeat,
-        repeatCount?.[0],
-        repeatCount?.[1],
-        offset?.[0],
-        offset?.[1],
-        generateMipmaps,
-        resolvedMinFilter,
-        resolvedMagFilter
-    ]);
+        minFilter: resolvedMinFilter,
+        magFilter: resolvedMagFilter,
+    };
+    const finalTexture = useConfiguredTexture(texture, { ...textureConfig, colorSpace: SRGBColorSpace });
+    const finalNormalMap = useConfiguredTexture(normalMapTexture, { ...textureConfig, colorSpace: NoColorSpace });
 
     animatedOffsetRef.current = [offset?.[0] ?? 0, offset?.[1] ?? 0];
 
@@ -457,6 +462,12 @@ function MaterialComponentView({ properties: rawProps }: ComponentViewProps<Reco
         materialType,
         textureName ?? 'no-texture',
         normalMapTextureName ?? 'no-normal',
+        repeat ? 'repeat' : 'clamp',
+        repeatCount?.[0] ?? 1,
+        repeatCount?.[1] ?? 1,
+        generateMipmaps ? 'mips' : 'no-mips',
+        minFilter,
+        magFilter,
     ].join('|');
 
 

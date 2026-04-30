@@ -14,7 +14,8 @@ export default function Dropdown() {
     const options: DemoOption[] = [
         { label: "Viewer Mode", href: "/viewer" },
         { label: "Custom Component", href: "/demo/customcomponent" },
-        { label: "ECS World", href: "/demo/world" },
+        { label: "World", href: "/demo/world" },
+        { label: "Killbox", href: "/demo/killbox" },
         { label: "Physics", href: "/demo/physics" },
         { label: "Quake", href: "/demo/quake" },
         { label: "Asset Viewer", href: "/demo/assetviewer" },

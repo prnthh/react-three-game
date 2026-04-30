@@ -1,8 +1,8 @@
-import { Canvas, useLoader } from "@react-three/fiber";
+import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Stage, View, PerspectiveCamera } from "@react-three/drei";
 import { Suspense, useEffect, useLayoutEffect, useState, useRef } from "react";
 import { createPortal } from 'react-dom';
-import { Material, Mesh, TextureLoader } from "three";
+import { Material, Mesh, Texture, TextureLoader } from "three";
 import type { Object3D } from "three";
 import { loadModel } from "../dragdrop/modelLoader";
 import { resolvePrefabAssetPath } from "../prefabeditor/PrefabEditor";
@@ -233,8 +233,28 @@ export function TextureListViewer({ files, selected, onSelect, basePath = "" }: 
 
 function TextureCard({ file, onSelect, basePath = "" }: { file: string; onSelect: (file: string) => void; basePath?: string }) {
     const [isHovered, setIsHovered] = useState(false);
+    const [error, setError] = useState(false);
     const { ref, isInView } = useInView();
     const fullPath = resolvePrefabAssetPath(basePath, file);
+    const fileName = file.split('/').pop();
+
+    if (error) {
+        return (
+            <div
+                ref={ref}
+                style={{ maxWidth: 60, aspectRatio: '1 / 1', ...assetTileStyle, backgroundColor: assetViewerColors.errorBg }}
+                onClick={() => onSelect(file)}
+                title={`Could not load ${file}`}
+            >
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={styles.errorIcon}>✗</div>
+                </div>
+                <div style={styles.bottomLabel}>
+                    {fileName}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div
@@ -250,7 +270,7 @@ function TextureCard({ file, onSelect, basePath = "" }: { file: string; onSelect
                         <PerspectiveCamera makeDefault position={[0, 0, 2.5]} fov={50} />
                         <ambientLight intensity={0.8} />
                         <pointLight position={[5, 5, 5]} intensity={0.5} />
-                        <TextureSphere url={fullPath} />
+                        <TextureSphere url={fullPath} onError={() => setError(true)} />
                         <OrbitControls
                             enableZoom={false}
                             enablePan={false}
@@ -261,14 +281,52 @@ function TextureCard({ file, onSelect, basePath = "" }: { file: string; onSelect
                 ) : null}
             </div>
             <div style={styles.bottomLabel}>
-                {file.split('/').pop()}
+                {fileName}
             </div>
         </div>
     );
 }
 
-function TextureSphere({ url }: { url: string }) {
-    const texture = useLoader(TextureLoader, url);
+function TextureSphere({ url, onError }: { url: string; onError?: () => void }) {
+    const [texture, setTexture] = useState<Texture | null>(null);
+    const textureRef = useRef<Texture | null>(null);
+    const onErrorRef = useRef(onError);
+    onErrorRef.current = onError;
+
+    useEffect(() => {
+        let cancelled = false;
+        textureRef.current?.dispose();
+        textureRef.current = null;
+        setTexture(null);
+
+        const loader = new TextureLoader();
+        loader.load(
+            url,
+            loadedTexture => {
+                if (cancelled) {
+                    loadedTexture.dispose();
+                    return;
+                }
+
+                textureRef.current = loadedTexture;
+                setTexture(loadedTexture);
+            },
+            undefined,
+            () => {
+                if (!cancelled) {
+                    onErrorRef.current?.();
+                }
+            },
+        );
+
+        return () => {
+            cancelled = true;
+            textureRef.current?.dispose();
+            textureRef.current = null;
+        };
+    }, [url]);
+
+    if (!texture) return null;
 
     return (
         <mesh position={[0, 0, 0]}>

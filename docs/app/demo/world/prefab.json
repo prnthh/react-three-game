@@ -1,0 +1,373 @@
+{
+  "id": "19fa9c61-a92c-4af1-8dff-cce67a0eadb8",
+  "name": "New Prefab",
+  "root": {
+    "id": "2831ddef-dd06-471c-83ab-0eeb85324222",
+    "name": "Root",
+    "components": {
+      "transform": {
+        "type": "Transform",
+        "properties": {}
+      }
+    },
+    "children": [
+      {
+        "id": "39172e69-a78c-4072-86dd-fc0601b5d125",
+        "name": "floor",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                0,
+                0
+              ],
+              "rotation": [
+                -1.5707963267948966,
+                0,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "plane",
+              "args": [
+                50,
+                50
+              ],
+              "emitClickEvent": false,
+              "clickEventName": ""
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "attach": "material",
+              "materialType": "standard",
+              "color": "#ffffff",
+              "toneMapped": true,
+              "wireframe": false,
+              "transparent": false,
+              "opacity": 1,
+              "sizeAttenuation": true,
+              "offset": [
+                0,
+                0
+              ],
+              "animateOffset": false,
+              "offsetSpeed": [
+                0,
+                0
+              ],
+              "metalness": 0,
+              "roughness": 1,
+              "texture": "/textures/floor/terrain/dirt-512.jpg"
+            }
+          },
+          "crashcatphysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "cuboid",
+              "sensor": false
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "0097f87f-ae6b-49c8-809f-71cee5fdf697",
+        "name": "light",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {}
+          },
+          "ambientlight": {
+            "type": "AmbientLight",
+            "properties": {}
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "55e10b35-f7ba-4feb-aa67-4b367a58d8e5",
+        "name": "ball",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                5,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                0.3,
+                16,
+                16
+              ],
+              "emitClickEvent": false,
+              "clickEventName": "",
+              "visible": true
+            }
+          },
+          "crashcatphysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "dynamic",
+              "colliders": "ball",
+              "sensor": false,
+              "restitution": 0.8,
+              "collisionEnterEventName": "bounce"
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "attach": "material",
+              "materialType": "standard",
+              "color": "#ffffff",
+              "toneMapped": true,
+              "wireframe": false,
+              "transparent": false,
+              "opacity": 1,
+              "sizeAttenuation": true,
+              "offset": [
+                0,
+                0
+              ],
+              "animateOffset": false,
+              "offsetSpeed": [
+                0,
+                0
+              ],
+              "metalness": 0,
+              "roughness": 1,
+              "texture": "/textures/proto32/yellow.png"
+            }
+          },
+          "sound": {
+            "type": "Sound",
+            "properties": {
+              "eventName": "bounce",
+              "autoplay": false,
+              "loop": false,
+              "clips": [
+                "/sound/explode.mp3"
+              ],
+              "clipMode": "single",
+              "positional": false,
+              "refDistance": 1,
+              "maxDistance": 24,
+              "rolloffFactor": 1,
+              "distanceModel": "inverse",
+              "pitch": 1,
+              "randomizePitch": false,
+              "minPitch": 0.96,
+              "maxPitch": 1.04,
+              "volume": 1,
+              "randomizeVolume": false,
+              "minVolume": 0.9,
+              "maxVolume": 1
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "a2b2328d-fd53-4233-be93-5a15ca6cfe1b",
+        "name": "env",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {}
+          },
+          "environment": {
+            "type": "Environment",
+            "properties": {}
+          }
+        },
+        "children": [
+          {
+            "id": "7403c0ab-27bc-423c-b573-badd8d906d47",
+            "name": "sphere",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "sphere",
+                  "args": [
+                    200,
+                    32,
+                    16
+                  ],
+                  "emitClickEvent": false,
+                  "clickEventName": ""
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "attach": "material",
+                  "materialType": "basic",
+                  "color": "#ffffff",
+                  "toneMapped": true,
+                  "wireframe": false,
+                  "transparent": false,
+                  "opacity": 1,
+                  "sizeAttenuation": true,
+                  "offset": [
+                    0,
+                    0
+                  ],
+                  "animateOffset": false,
+                  "offsetSpeed": [
+                    0,
+                    0
+                  ],
+                  "metalness": 0,
+                  "roughness": 1,
+                  "texture": "/textures/skybox/skybox3.jpg",
+                  "side": "BackSide",
+                  "minFilter": "NearestFilter",
+                  "magFilter": "NearestFilter"
+                }
+              }
+            },
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "4ed239c0-e38c-4dca-a6c3-88bb3dd5dc2a",
+        "name": "sun",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -20,
+                57.5,
+                14
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "directionallight": {
+            "type": "DirectionalLight",
+            "properties": {
+              "targetOffset": [
+                2.5,
+                -5,
+                -2
+              ],
+              "castShadow": true,
+              "intensity": 1.1,
+              "shadowCameraTop": 39,
+              "shadowCameraBottom": -30,
+              "shadowCameraLeft": -30,
+              "shadowCameraRight": 30
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "21c7a911-6326-4e99-b6aa-c9ebf5c877ea",
+        "name": "pitch",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                0.03786465047027088,
+                0
+              ],
+              "rotation": [
+                -1.5707963267948963,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "attach": "material",
+              "materialType": "standard",
+              "color": "#448d9c",
+              "toneMapped": true,
+              "wireframe": false,
+              "transparent": false,
+              "opacity": 1,
+              "sizeAttenuation": true,
+              "offset": [
+                0,
+                0
+              ],
+              "animateOffset": false,
+              "offsetSpeed": [
+                0,
+                0
+              ],
+              "metalness": 0,
+              "roughness": 1
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "plane",
+              "args": [
+                10,
+                17
+              ],
+              "emitClickEvent": false,
+              "clickEventName": ""
+            }
+          }
+        },
+        "children": []
+      }
+    ]
+  }
+}

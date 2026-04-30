@@ -19,7 +19,8 @@ import {
 } from "crashcat";
 import { debugRenderer } from "crashcat/three";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { gameEvents, PrefabEditorMode, useScene } from "react-three-game";
+import { gameEvents } from "../../tools/prefabeditor/GameEvents";
+import { PrefabEditorMode, useScene } from "../../tools/prefabeditor/PrefabRoot";
 
 const SLEEP_TIME_BEFORE_REST = 0.1;
 const SLEEP_POINT_VELOCITY_THRESHOLD = 0.06;
@@ -100,6 +101,20 @@ function createDebugState() {
     return debugRenderer.init(options);
 }
 
+function getBodyMeta(bodyById: Map<number, BodyMeta>, body: RigidBody): BodyMeta | null {
+    const registered = bodyById.get(Number(body.id));
+    if (registered) return registered;
+
+    const nodeId = (body.userData as { nodeId?: unknown } | null)?.nodeId;
+    if (typeof nodeId !== "string") return null;
+
+    return {
+        nodeId,
+        motionType: body.motionType,
+        sensor: body.sensor,
+    };
+}
+
 export function CrashcatRuntime({ debug = false, children }: { debug?: boolean; children?: React.ReactNode }) {
     const { mode } = useScene();
     const bodiesRef = useRef(new Map<string, BodyEntry>());
@@ -109,8 +124,8 @@ export function CrashcatRuntime({ debug = false, children }: { debug?: boolean; 
 
     const listener = useMemo<Listener>(() => ({
         onContactAdded: (bodyA, bodyB, manifold) => {
-            const metaA = bodyByIdRef.current.get(Number(bodyA.id));
-            const metaB = bodyByIdRef.current.get(Number(bodyB.id));
+            const metaA = getBodyMeta(bodyByIdRef.current, bodyA);
+            const metaB = getBodyMeta(bodyByIdRef.current, bodyB);
             const n = manifold?.worldSpaceNormal;
             const nA = n ? [n[0], n[1], n[2]] as [number, number, number] : undefined;
             const nB = n ? [-n[0], -n[1], -n[2]] as [number, number, number] : undefined;

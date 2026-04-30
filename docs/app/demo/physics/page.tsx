@@ -2,10 +2,9 @@
 
 import { useEffect, useRef } from "react";
 import { gameEvents, PrefabEditor, PrefabEditorMode, registerComponent, soundManager, useEditorRef, useScene } from "react-three-game";
+import { CrashcatPhysicsComponent, CrashcatRuntime } from "react-three-game/plugins/crashcat";
 import type { PrefabEditorRef, Scene } from "react-three-game";
 import { Quaternion, Vector3 } from "three";
-import CrashcatPhysicsComponent from "@/app/components/CrashcatPhysicsComponent";
-import { CrashcatRuntime } from "../../components/CrashcatRuntime";
 import CannonBarrelSwayComponent from "./CannonBarrelSwayComponent";
 
 const CANNON_BARREL_LENGTH = 1.8;

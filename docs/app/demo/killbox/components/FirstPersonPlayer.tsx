@@ -4,7 +4,7 @@ import { PerspectiveCamera, PointerLockControls, useGLTF } from "@react-three/dr
 import { useFrame, useThree } from "@react-three/fiber";
 import { CastRayStatus, capsule, castRay, createClosestCastRayCollector, createDefaultCastRaySettings, filter, kcc, rigidBody, MotionQuality, MotionType, type Filter, type RigidBody, type World } from "crashcat";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from "react";
-import { gameEvents, PrefabEditorMode, useScene } from "react-three-game";
+import { gameEvents, PrefabEditorMode, soundManager, useScene } from "react-three-game";
 import { useCrashcat } from "react-three-game/plugins/crashcat";
 import { MathUtils, Quaternion, Raycaster, Vector2, Vector3 } from "three";
 import type { Camera, Group, Object3D } from "three";
@@ -166,7 +166,6 @@ const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProp
     const playerBodyRef = useRef<RigidBody | null>(null);
     const lastSupportBodyIdRef = useRef<number | null>(null);
     const lastSupportQuaternionRef = useRef(new Quaternion());
-    const footstepAudioRefs = useRef<HTMLAudioElement[]>([]);
     const nextFootstepAudioRef = useRef(0);
 
     useImperativeHandle(ref, () => ({
@@ -229,35 +228,22 @@ const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProp
     }, [mode]);
 
     useEffect(() => {
-        footstepAudioRefs.current = FOOTSTEP_CLIPS.map((clip) => {
-            const audio = new Audio(clip);
-            audio.preload = "auto";
-            return audio;
+        FOOTSTEP_CLIPS.forEach((clip) => {
+            void soundManager.load(clip, clip).catch(() => { });
         });
-
-        return () => {
-            footstepAudioRefs.current.forEach((audio) => {
-                audio.pause();
-                audio.removeAttribute("src");
-                audio.load();
-            });
-            footstepAudioRefs.current = [];
-        };
     }, []);
 
     const playFootstepSound = () => {
-        const clips = footstepAudioRefs.current;
-        if (clips.length === 0) {
+        const clip = FOOTSTEP_CLIPS[nextFootstepAudioRef.current % FOOTSTEP_CLIPS.length];
+        nextFootstepAudioRef.current += 1;
+        if (!soundManager.hasBuffer(clip)) {
             return;
         }
 
-        const audio = clips[nextFootstepAudioRef.current % clips.length];
-        nextFootstepAudioRef.current += 1;
-        audio.pause();
-        audio.currentTime = 0;
-        audio.volume = 0.1 + Math.random() * 0.05;
-        audio.playbackRate = 0.9 + Math.random() * 0.14;
-        void audio.play().catch(() => { });
+        soundManager.playSync(clip, {
+            volume: 0.1 + Math.random() * 0.05,
+            pitch: 0.9 + Math.random() * 0.14,
+        });
     };
 
     useEffect(() => {

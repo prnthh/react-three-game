@@ -24,9 +24,8 @@ import { PrefabEditorMode, useScene } from "../../tools/prefabeditor/PrefabRoot"
 
 const SLEEP_TIME_BEFORE_REST = 0.1;
 const SLEEP_POINT_VELOCITY_THRESHOLD = 0.06;
-const FIXED_PHYSICS_STEP_DELTA = 1 / 60;
+const MAX_PHYSICS_STEP_DELTA = 1 / 60;
 const MAX_PHYSICS_CATCH_UP_DELTA = 1 / 10;
-const MAX_PHYSICS_STEPS_PER_FRAME = 4;
 
 let didRegisterCrashcat = false;
 function ensureCrashcatRegistered() {
@@ -129,7 +128,6 @@ export function CrashcatRuntime({ debug = false, children }: { debug?: boolean; 
     const bodiesRef = useRef(new Map<string, BodyEntry>());
     const bodyByIdRef = useRef(new Map<number, BodyMeta>());
     const apiRef = useRef<CrashcatApi | null>(null);
-    const accumulatedDeltaRef = useRef(0);
     const [debugState] = useState(() => debug ? createDebugState() : null);
 
     const listener = useMemo<Listener>(() => ({
@@ -193,11 +191,9 @@ export function CrashcatRuntime({ debug = false, children }: { debug?: boolean; 
         };
 
         apiRef.current = runtimeApi;
-        accumulatedDeltaRef.current = 0;
         setCrashcatApi(runtimeApi);
 
         return () => {
-            accumulatedDeltaRef.current = 0;
             for (const entry of bodies.values()) {
                 rigidBody.remove(world, entry.body);
             }
@@ -216,26 +212,12 @@ export function CrashcatRuntime({ debug = false, children }: { debug?: boolean; 
         const frameDelta = Math.min(delta, MAX_PHYSICS_CATCH_UP_DELTA);
 
         if (mode === PrefabEditorMode.Play) {
-            accumulatedDeltaRef.current += frameDelta;
+            const stepCount = Math.max(1, Math.ceil(frameDelta / MAX_PHYSICS_STEP_DELTA));
+            const stepDelta = frameDelta / stepCount;
 
-            let stepCount = 0;
-            while (
-                accumulatedDeltaRef.current >= FIXED_PHYSICS_STEP_DELTA &&
-                stepCount < MAX_PHYSICS_STEPS_PER_FRAME
-            ) {
-                updateWorld(world, listener, FIXED_PHYSICS_STEP_DELTA);
-                accumulatedDeltaRef.current -= FIXED_PHYSICS_STEP_DELTA;
-                stepCount += 1;
+            for (let stepIndex = 0; stepIndex < stepCount; stepIndex += 1) {
+                updateWorld(world, listener, stepDelta);
             }
-
-            if (stepCount === MAX_PHYSICS_STEPS_PER_FRAME) {
-                accumulatedDeltaRef.current = Math.min(
-                    accumulatedDeltaRef.current,
-                    FIXED_PHYSICS_STEP_DELTA,
-                );
-            }
-        } else {
-            accumulatedDeltaRef.current = 0;
         }
 
         if (debugState) debugRenderer.update(debugState, world);

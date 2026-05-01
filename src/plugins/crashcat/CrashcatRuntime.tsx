@@ -24,7 +24,8 @@ import { PrefabEditorMode, useScene } from "../../tools/prefabeditor/PrefabRoot"
 
 const SLEEP_TIME_BEFORE_REST = 0.1;
 const SLEEP_POINT_VELOCITY_THRESHOLD = 0.06;
-const MAX_PHYSICS_DELTA = 1 / 30;
+const MAX_PHYSICS_STEP_DELTA = 1 / 60;
+const MAX_PHYSICS_CATCH_UP_DELTA = 1 / 10;
 
 let didRegisterCrashcat = false;
 function ensureCrashcatRegistered() {
@@ -67,7 +68,12 @@ let crashcatApi: CrashcatApi | null = null;
 
 export function useCrashcat(): CrashcatApi | null {
     return useSyncExternalStore(
-        (listener) => (crashcatListeners.add(listener), () => crashcatListeners.delete(listener)),
+        (listener) => {
+            crashcatListeners.add(listener);
+            return () => {
+                crashcatListeners.delete(listener);
+            };
+        },
         () => crashcatApi,
         () => crashcatApi,
     );
@@ -75,7 +81,9 @@ export function useCrashcat(): CrashcatApi | null {
 
 function setCrashcatApi(api: CrashcatApi | null) {
     crashcatApi = api;
-    crashcatListeners.forEach((listener) => listener());
+    crashcatListeners.forEach((listener) => {
+        listener();
+    });
 }
 
 function emitConfiguredEvent(eventName: string | undefined, sourceNodeId: string, targetNodeId: string | null, collisionNormal?: [number, number, number]) {
@@ -201,9 +209,16 @@ export function CrashcatRuntime({ debug = false, children }: { debug?: boolean; 
         const runtimeApi = apiRef.current;
         if (!runtimeApi) return;
         const { world } = runtimeApi;
-        const stepDelta = Math.min(delta, MAX_PHYSICS_DELTA);
+        const frameDelta = Math.min(delta, MAX_PHYSICS_CATCH_UP_DELTA);
 
-        if (mode === PrefabEditorMode.Play) updateWorld(world, listener, stepDelta);
+        if (mode === PrefabEditorMode.Play) {
+            const stepCount = Math.max(1, Math.ceil(frameDelta / MAX_PHYSICS_STEP_DELTA));
+            const stepDelta = frameDelta / stepCount;
+            for (let stepIndex = 0; stepIndex < stepCount; stepIndex += 1) {
+                updateWorld(world, listener, stepDelta);
+            }
+        }
+
         if (debugState) debugRenderer.update(debugState, world);
     }, -1);
 

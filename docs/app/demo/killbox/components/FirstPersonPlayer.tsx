@@ -2,7 +2,7 @@
 
 import { PerspectiveCamera, PointerLockControls, useGLTF } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
-import { capsule, filter, kcc, rigidBody, MotionQuality, MotionType, type Filter, type RigidBody, type World } from "crashcat";
+import { CastRayStatus, capsule, castRay, createClosestCastRayCollector, createDefaultCastRaySettings, filter, kcc, rigidBody, MotionQuality, MotionType, type Filter, type RigidBody, type World } from "crashcat";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from "react";
 import { gameEvents, PrefabEditorMode, useScene } from "react-three-game";
 import { useCrashcat } from "react-three-game/plugins/crashcat";
@@ -18,6 +18,10 @@ const DEFAULT_LAUNCH_SPEED = 18;
 const CAMERA_SWAY_AMOUNT = 0.045;
 const CAMERA_SWAY_LERP = 10;
 const GRAVITY: [number, number, number] = [0, -9.81, 0];
+const MAX_PLAYER_STEP_DELTA = 1 / 60;
+const MAX_PLAYER_CATCH_UP_DELTA = 1 / 10;
+const SUPPORT_RAY_EXTRA_DISTANCE = 0.2;
+const SUPPORT_RAY_DIRECTION: [number, number, number] = [0, -1, 0];
 const PLAYER_ID = "player";
 const HAND_MODEL_URL = "/models/environment/picocad/hand1.glb";
 
@@ -35,6 +39,10 @@ const grabBodyPosition = new Vector3();
 const grabVelocity = new Vector3();
 const grabQuaternion = new Quaternion();
 const cameraWorldQuaternion = new Quaternion();
+const supportRayCollector = createClosestCastRayCollector();
+const supportRaySettings = createDefaultCastRaySettings();
+const supportRayOrigin: [number, number, number] = [0, 0, 0];
+const supportVelocity: [number, number, number] = [0, 0, 0];
 const playerBodyPosition: [number, number, number] = [0, 0, 0];
 const playerBodyQuaternion: [number, number, number, number] = [0, 0, 0, 1];
 const playerBodyVelocity: [number, number, number] = [0, 0, 0];
@@ -88,6 +96,37 @@ function getPrefabNodeId(object: Object3D | null | undefined) {
 function pressed(keys: Set<string>, group: Set<string>) {
     for (const k of group) if (keys.has(k)) return true;
     return false;
+}
+
+function getSupportVelocity(world: World, queryFilter: Filter, character: ReturnType<typeof kcc.create>, grounded: boolean, halfHeightOfCylinder: number, radius: number) {
+    supportVelocity[0] = 0;
+    supportVelocity[1] = 0;
+    supportVelocity[2] = 0;
+
+    if (!grounded) {
+        return supportVelocity;
+    }
+
+    supportRayOrigin[0] = character.position[0];
+    supportRayOrigin[1] = character.position[1];
+    supportRayOrigin[2] = character.position[2];
+
+    supportRayCollector.reset();
+    castRay(world, supportRayCollector, supportRaySettings, supportRayOrigin, SUPPORT_RAY_DIRECTION, halfHeightOfCylinder + radius + SUPPORT_RAY_EXTRA_DISTANCE, queryFilter);
+
+    if (supportRayCollector.hit.status !== CastRayStatus.COLLIDING) {
+        return supportVelocity;
+    }
+
+    const body = rigidBody.get(world, supportRayCollector.hit.bodyIdB);
+    if (!body || body.motionType !== MotionType.KINEMATIC) {
+        return supportVelocity;
+    }
+
+    supportVelocity[0] = body.motionProperties.linearVelocity[0];
+    supportVelocity[1] = body.motionProperties.linearVelocity[1];
+    supportVelocity[2] = body.motionProperties.linearVelocity[2];
+    return supportVelocity;
 }
 
 const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProps>(function FirstPersonPlayer({
@@ -250,6 +289,8 @@ const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProp
             return;
         }
 
+        const frameDelta = Math.min(delta, MAX_PLAYER_CATCH_UP_DELTA);
+
         const keys = pressedKeysRef.current;
         const forwardInput = Number(pressed(keys, forwardKeys)) - Number(pressed(keys, backwardKeys));
         const rightInput = Number(pressed(keys, rightKeys)) - Number(pressed(keys, leftKeys));
@@ -257,7 +298,7 @@ const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProp
         const cameraSway = cameraSwayRef.current;
         if (cameraSway) {
             const targetSway = -rightInput * CAMERA_SWAY_AMOUNT;
-            cameraSway.rotation.z = MathUtils.lerp(cameraSway.rotation.z, targetSway, Math.min(1, CAMERA_SWAY_LERP * delta));
+            cameraSway.rotation.z = MathUtils.lerp(cameraSway.rotation.z, targetSway, Math.min(1, CAMERA_SWAY_LERP * frameDelta));
         }
 
         state.camera.updateMatrixWorld();
@@ -306,42 +347,51 @@ const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProp
             .multiplyScalar(forwardInput)
             .addScaledVector(rightVector, rightInput);
 
-        const stepDelta = Math.min(delta, 1 / 30);
-        kcc.refreshContacts(world, character, characterFilter);
-        const grounded = kcc.isSupported(character);
         const planarVelocity = planarVelocityRef.current;
-        const currentVelocityY = character.linearVelocity[1];
 
         const desiredPlanarSpeed = wishVector.lengthSq() > 0
             ? wishVector.normalize().multiplyScalar(maxSpeed)
             : wishVector.set(0, 0, 0);
 
-        const accel = grounded ? groundAccel : airAccel;
-        const maxDelta = accel * delta;
-        planarVelocity.set(
-            moveToward(planarVelocity.x, desiredPlanarSpeed.x, maxDelta),
-            0,
-            moveToward(planarVelocity.z, desiredPlanarSpeed.z, maxDelta),
-        );
+        let grounded = false;
+        const stepCount = Math.max(1, Math.ceil(frameDelta / MAX_PLAYER_STEP_DELTA));
+        const stepDelta = frameDelta / stepCount;
+        for (let stepIndex = 0; stepIndex < stepCount; stepIndex += 1) {
+            kcc.refreshContacts(world, character, characterFilter);
+            grounded = kcc.isSupported(character);
+            const currentSupportVelocity = getSupportVelocity(world, characterFilter, character, grounded, halfHeightOfCylinder, radius);
 
-        if (grounded && planarVelocity.lengthSq() > 0 && desiredPlanarSpeed.lengthSq() === 0) {
-            const damping = Math.max(0, 1 - friction * delta * 0.1);
-            planarVelocity.multiplyScalar(damping);
+            const accel = grounded ? groundAccel : airAccel;
+            const maxDelta = accel * stepDelta;
+            planarVelocity.set(
+                moveToward(planarVelocity.x, desiredPlanarSpeed.x, maxDelta),
+                0,
+                moveToward(planarVelocity.z, desiredPlanarSpeed.z, maxDelta),
+            );
+
+            if (grounded && planarVelocity.lengthSq() > 0 && desiredPlanarSpeed.lengthSq() === 0) {
+                const damping = Math.max(0, 1 - friction * stepDelta * 0.1);
+                planarVelocity.multiplyScalar(damping);
+            }
+
+            const currentVelocityY = character.linearVelocity[1];
+            if (grounded && jumpQueuedRef.current) {
+                character.linearVelocity[1] = currentSupportVelocity[1] + jumpSpeed;
+                jumpQueuedRef.current = false;
+            } else {
+                character.linearVelocity[1] = grounded
+                    ? currentSupportVelocity[1] + (currentVelocityY < currentSupportVelocity[1] ? 0 : currentVelocityY - currentSupportVelocity[1])
+                    : currentVelocityY + GRAVITY[1] * stepDelta;
+            }
+
+            character.linearVelocity[0] = planarVelocity.x + currentSupportVelocity[0];
+            character.linearVelocity[2] = planarVelocity.z + currentSupportVelocity[2];
+
+            kcc.update(world, character, stepDelta, GRAVITY, updateSettingsRef.current, undefined, characterFilter);
         }
 
-        if (grounded && jumpQueuedRef.current) {
-            character.linearVelocity[1] = jumpSpeed;
-            jumpQueuedRef.current = false;
-        } else {
-            character.linearVelocity[1] = grounded
-                ? (currentVelocityY < 0 ? 0 : currentVelocityY)
-                : currentVelocityY + GRAVITY[1] * stepDelta;
-        }
-
-        character.linearVelocity[0] = planarVelocity.x;
-        character.linearVelocity[2] = planarVelocity.z;
-
-        kcc.update(world, character, stepDelta, GRAVITY, updateSettingsRef.current, undefined, characterFilter);
+        kcc.refreshContacts(world, character, characterFilter);
+        grounded = kcc.isSupported(character);
 
         const speed = planarVelocity.length();
         const moving = grounded && desiredPlanarSpeed.lengthSq() > 0 && speed > footstepMinSpeed;
@@ -351,7 +401,7 @@ const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProp
                 footstepTimerRef.current = 0;
             }
         } else {
-            footstepTimerRef.current -= delta;
+            footstepTimerRef.current -= frameDelta;
 
             if (footstepTimerRef.current <= 0) {
                 gameEvents.emit(footstepEventName, {

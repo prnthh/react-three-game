@@ -8,7 +8,7 @@ import { useClickValid } from "./useClickValid";
 import { findComponent, getNodeUserData } from "./types";
 import type { ComponentData, GameObject as GameObjectType, Prefab } from "./types";
 import type { Component } from "./components/ComponentRegistry";
-import { getComponentDef, getComponentAssetRefs, registerComponent } from "./components/ComponentRegistry";
+import { getComponentDef, registerComponent } from "./components/ComponentRegistry";
 import { builtinComponents } from "./components";
 import { loadModel, loadSound, loadTexture } from "../dragdrop";
 import type { LoadedModels, LoadedSounds, LoadedTextures } from "../dragdrop";
@@ -152,14 +152,16 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, 
     }
     const usesOwnedStore = resolvedStore === ownedStore;
     const rootId = useStore(resolvedStore, state => state.rootId);
-    const assetManifestKey = useStore(resolvedStore, state => state.assetManifestKey);
+    const assetRefCounts = useStore(resolvedStore, state => state.assetRefCounts);
 
     const availableModels = useMemo(() => ({ ...models, ...injectedModels }), [models, injectedModels]);
-    const availableTextures = useMemo(() => ({ ...textures, ...injectedTextures }), [textures, injectedTextures]);
-    const availableSounds = useMemo(() => ({ ...sounds, ...injectedSounds }), [sounds, injectedSounds]);
     const getModel = useCallback((path: string) => availableModels[path] ?? null, [availableModels]);
-    const getTexture = useCallback((path: string) => availableTextures[path] ?? null, [availableTextures]);
-    const getSound = useCallback((path: string) => availableSounds[path] ?? null, [availableSounds]);
+    const getTexture = useCallback((path: string) => injectedTextures[path] ?? textures[path] ?? null, [injectedTextures, textures]);
+    const getSound = useCallback((path: string) => injectedSounds[path] ?? sounds[path] ?? null, [injectedSounds, sounds]);
+    const assetRevision = useMemo(
+        () => `${Object.keys(textures).concat(Object.keys(injectedTextures)).sort().join('|')}::${Object.keys(availableModels).sort().join('|')}`,
+        [availableModels, injectedTextures, textures],
+    );
 
     const getObject = useCallback((id: string) => {
         return objectRefs.current[id] ?? null;
@@ -234,44 +236,30 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, 
     }, [data, resolvedStore, usesOwnedStore]);
 
     useEffect(() => {
-        void assetManifestKey;
-
-        const syncAssets = (snapshot = resolvedStore.getState()) => {
-            const modelsToLoad = new Set<string>();
-            const texturesToLoad = new Set<string>();
-            const soundsToLoad = new Set<string>();
-
-            Object.values(snapshot.nodesById).forEach(node => {
-                Object.values(node.components ?? {}).forEach(component => {
-                    if (!component?.type) return;
-
-                    for (const ref of getComponentAssetRefs(component.type, component.properties ?? {})) {
-                        if (ref.type === 'model') modelsToLoad.add(ref.path);
-                        else if (ref.type === 'texture') texturesToLoad.add(ref.path);
-                        else if (ref.type === 'sound') soundsToLoad.add(ref.path);
-                    }
-                });
+        const loadAsset = <T,>(
+            file: string,
+            loaded: Record<string, T>,
+            injected: Record<string, T>,
+            failed: Set<string>,
+            loader: (path: string) => Promise<{ success: boolean; error?: unknown }>,
+        ) => {
+            if (loaded[file] || injected[file] || loading.current.has(file) || failed.has(file)) return;
+            loading.current.add(file);
+            void loader(resolveAssetPath(basePath, file)).then(result => {
+                loading.current.delete(file);
+                if (!result.success) {
+                    console.warn(`Failed to load asset: ${file}`, result.error);
+                    failed.add(file);
+                }
             });
+        };
 
-            const loadAsset = <T,>(
-                file: string,
-                loaded: Record<string, T>,
-                injected: Record<string, T>,
-                failed: Set<string>,
-                loader: (path: string) => Promise<{ success: boolean; error?: unknown }>,
-            ) => {
-                if (loaded[file] || injected[file] || loading.current.has(file) || failed.has(file)) return;
-                loading.current.add(file);
-                void loader(resolveAssetPath(basePath, file)).then(result => {
-                    loading.current.delete(file);
-                    if (!result.success) {
-                        console.warn(`Failed to load asset: ${file}`, result.error);
-                        failed.add(file);
-                    }
-                });
-            };
+        Object.keys(assetRefCounts).forEach(entry => {
+            const separator = entry.indexOf(':');
+            const type = entry.slice(0, separator);
+            const file = entry.slice(separator + 1);
 
-            modelsToLoad.forEach(file => {
+            if (type === 'model') {
                 loadAsset(file, models, injectedModels, failedModels.current, path =>
                     loadModel(path).then(result => {
                         const loadedModel = result.model;
@@ -281,9 +269,7 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, 
                         return result;
                     }),
                 );
-            });
-
-            texturesToLoad.forEach(file => {
+            } else if (type === 'texture') {
                 loadAsset(file, textures, injectedTextures, failedTextures.current, path =>
                     loadTexture(path).then(result => {
                         const loadedTexture = result.texture;
@@ -293,9 +279,7 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, 
                         return result;
                     }),
                 );
-            });
-
-            soundsToLoad.forEach(file => {
+            } else if (type === 'sound') {
                 loadAsset(file, sounds, injectedSounds, failedSounds.current, path =>
                     loadSound(path).then(result => {
                         const loadedSound = result.sound;
@@ -306,11 +290,9 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, 
                         return result;
                     }),
                 );
-            });
-        };
-
-        syncAssets();
-    }, [resolvedStore, assetManifestKey, basePath, injectedModels, injectedSounds, injectedTextures, models, sounds, textures]);
+            }
+        });
+    }, [assetRefCounts, basePath, injectedModels, injectedSounds, injectedTextures, models, sounds, textures]);
 
     const assetRuntime = useMemo<AssetRuntime>(() => ({
         registerHandle,
@@ -319,8 +301,8 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, 
         getModel,
         getTexture,
         getSound,
-        getAssetRevision: () => `${Object.keys(availableTextures).sort().join('|')}::${Object.keys(availableModels).sort().join('|')}`,
-    }), [registerHandle, getHandle, getObject, getModel, getTexture, getSound, availableModels, availableTextures]);
+        getAssetRevision: () => assetRevision,
+    }), [registerHandle, getHandle, getObject, getModel, getTexture, getSound, assetRevision]);
 
     const handleNodeClick = useCallback((event: ThreeEvent<PointerEvent>, nodeId: string, fallbackObject: Object3D | null) => {
         const node = resolvedStore.getState().nodesById[nodeId];

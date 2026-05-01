@@ -257,6 +257,7 @@ export function cloneSubtree(
     const clonedId = crypto.randomUUID();
     const clonedNode: PrefabNodeRecord = {
         ...originalNode,
+        components: clonePrefabValue(originalNode.components),
         id: clonedId,
         name: `${originalNode.name ?? originalNode.id} Copy`,
     };

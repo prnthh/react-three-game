@@ -141,18 +141,20 @@ function GeometryComponentEditor({
 // View for Geometry component
 function GeometryComponentView({ properties, children }: { properties: any, children?: React.ReactNode }) {
     const { geometryType, args = [] } = properties;
+    const geometryKey = `${geometryType ?? 'box'}:${JSON.stringify(args)}`;
+
     // Only return the geometry node, do not wrap in mesh or group
     switch (geometryType) {
         case "box":
-            return <boxGeometry args={args as [number, number, number]} />;
+            return <boxGeometry key={geometryKey} args={args as [number, number, number]} />;
         case "sphere":
-            return <sphereGeometry args={args as [number, number?, number?]} />;
+            return <sphereGeometry key={geometryKey} args={args as [number, number?, number?]} />;
         case "plane":
-            return <planeGeometry args={args as [number, number]} />;
+            return <planeGeometry key={geometryKey} args={args as [number, number]} />;
         case "cylinder":
-            return <cylinderGeometry args={args as [number, number, number, number?]} />;
+            return <cylinderGeometry key={geometryKey} args={args as [number, number, number, number?]} />;
         default:
-            return <boxGeometry args={[1, 1, 1]} />;
+            return <boxGeometry key="box:[1,1,1]" args={[1, 1, 1]} />;
     }
 }
 

@@ -295,7 +295,6 @@ function TextureSphere({ url, onError }: { url: string; onError?: () => void }) 
 
     useEffect(() => {
         let cancelled = false;
-        textureRef.current?.dispose();
         textureRef.current = null;
         setTexture(null);
 
@@ -304,7 +303,6 @@ function TextureSphere({ url, onError }: { url: string; onError?: () => void }) 
             url,
             loadedTexture => {
                 if (cancelled) {
-                    loadedTexture.dispose();
                     return;
                 }
 
@@ -321,7 +319,6 @@ function TextureSphere({ url, onError }: { url: string; onError?: () => void }) 
 
         return () => {
             cancelled = true;
-            textureRef.current?.dispose();
             textureRef.current = null;
         };
     }, [url]);

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from 'react';
+import { createContext, useContext, useLayoutEffect, useMemo, useRef, type ReactNode } from 'react';
 import { extend } from '@react-three/fiber';
 import type { ThreeElement } from '@react-three/fiber';
 import { useFrame } from '@react-three/fiber';
@@ -156,37 +156,37 @@ function configureTexture(
     texture.needsUpdate = true;
 }
 
-function cloneConfiguredTexture(
-    texture: Texture | null | undefined,
-    options: TextureConfig,
-) {
-    if (!texture) return undefined;
-
-    const nextTexture = texture.clone();
-    configureTexture(nextTexture, options);
-    return nextTexture;
-}
-
 function useConfiguredTexture(texture: Texture | null | undefined, options: TextureConfig) {
-    const configuredTexture = useMemo(() => cloneConfiguredTexture(texture, options), [texture]);
-
-    useEffect(() => {
-        return () => configuredTexture?.dispose();
-    }, [configuredTexture]);
+    const {
+        colorSpace,
+        repeat,
+        repeatCount,
+        offset,
+        generateMipmaps,
+        minFilter,
+        magFilter,
+    } = options;
+    const configuredTexture = useMemo(() => texture?.clone(), [texture]);
 
     useLayoutEffect(() => {
-        configureTexture(configuredTexture, options);
+        configureTexture(configuredTexture, {
+            colorSpace,
+            repeat,
+            repeatCount,
+            offset,
+            generateMipmaps,
+            minFilter,
+            magFilter,
+        });
     }, [
         configuredTexture,
-        options.colorSpace,
-        options.repeat,
-        options.repeatCount?.[0],
-        options.repeatCount?.[1],
-        options.offset?.[0],
-        options.offset?.[1],
-        options.generateMipmaps,
-        options.minFilter,
-        options.magFilter,
+        colorSpace,
+        repeat,
+        repeatCount,
+        offset,
+        generateMipmaps,
+        minFilter,
+        magFilter,
     ]);
 
     return configuredTexture;

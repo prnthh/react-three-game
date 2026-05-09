@@ -32,5 +32,22 @@ else
 fi
 echo "✓ Created $PUBLIC_DIR/sound/manifest.json"
 
+# Generate prefabs manifest
+echo "Generating prefabs manifest..."
+if [ -d "$PUBLIC_DIR/prefabs" ]; then
+  PREFABS=$(find "$PUBLIC_DIR/prefabs" -type f -iname "*.json" ! -name "manifest.json" | sed "s|$PUBLIC_DIR||" | sed 's/^/  "/' | sed 's/$/",/' | sed '$ s/,$//')
+  if [ -z "$PREFABS" ]; then
+    echo "[]" > "$PUBLIC_DIR/prefabs/manifest.json"
+  else
+    echo "[" > "$PUBLIC_DIR/prefabs/manifest.json"
+    echo "$PREFABS" >> "$PUBLIC_DIR/prefabs/manifest.json"
+    echo "]" >> "$PUBLIC_DIR/prefabs/manifest.json"
+  fi
+else
+  mkdir -p "$PUBLIC_DIR/prefabs"
+  echo "[]" > "$PUBLIC_DIR/prefabs/manifest.json"
+fi
+echo "✓ Created $PUBLIC_DIR/prefabs/manifest.json"
+
 echo ""
 echo "All manifests generated successfully!"

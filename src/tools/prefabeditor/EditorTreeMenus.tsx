@@ -4,7 +4,7 @@ import { Prefab } from './types';
 import { createEmptyPrefab } from './prefab';
 import { menu } from './styles';
 import { useEditorContext } from './PrefabEditor';
-import { loadJson, saveJson } from './utils';
+import { loadJson, loadJsonFile, saveJson } from './utils';
 
 export type TreeContextMenuState = { nodeId: string; x: number; y: number } | null;
 
@@ -201,11 +201,13 @@ export function FileMenu({
     getPrefab,
     onReplacePrefab,
     onImportPrefab,
+    onImportPackedPrefab,
     onClose
 }: {
     getPrefab: () => Prefab;
     onReplacePrefab: (prefab: Prefab) => void;
     onImportPrefab: (prefab: Prefab) => void;
+    onImportPackedPrefab: (url: string) => void;
     onClose: () => void;
 }) {
     const { onScreenshot, onExportGLB } = useEditorContext();
@@ -228,10 +230,24 @@ export function FileMenu({
     };
 
     const handleImport = async () => {
-        const loaded = await loadJson();
+        const loaded = await loadJsonFile();
         if (!loaded) return;
 
-        onImportPrefab(loaded);
+        try {
+            const manifest: string[] = await fetch('/prefabs/manifest.json').then(r => r.json());
+            const matched = manifest.find(entry =>
+                entry.endsWith(`/${loaded.filename}`) || entry === `/${loaded.filename}`
+            );
+            if (matched) {
+                onImportPackedPrefab(matched);
+                onClose();
+                return;
+            }
+        } catch {
+            // manifest not available, fall through to full import
+        }
+
+        onImportPrefab(loaded.prefab);
         onClose();
     };
 

@@ -1,5 +1,6 @@
 // biome-ignore assist/source/organizeImports: <in order of display in the editor>
 import TransformComponent from "./TransformComponent";
+import PrefabRefComponent from "./PrefabRefComponent";
 import GeometryComponent from "./GeometryComponent";
 import BufferGeometryComponent from "./BufferGeometryComponent";
 import ModelComponent from "./ModelComponent";
@@ -40,4 +41,5 @@ export const builtinComponents = [
 	CameraComponent,
 	SoundComponent,
 	DataComponent,
+	PrefabRefComponent,
 ];

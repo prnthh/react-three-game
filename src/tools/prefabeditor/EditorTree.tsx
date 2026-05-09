@@ -4,7 +4,7 @@ import { base, colors, tree } from './styles';
 import { useEditorContext, useEditorRef } from './PrefabEditor';
 import { Dropdown } from './Dropdown';
 import { FileMenu, TreeContextMenu, TreeContextMenuState, TreeNodeMenu } from './EditorTreeMenus';
-import { createEmptyNode } from './prefab';
+import { createEmptyNode, createPackedPrefabNode } from './prefab';
 import { PrefabStoreState, usePrefabChildIds, usePrefabNode, usePrefabRootId, usePrefabStore, usePrefabStoreApi } from './prefabStore';
 
 type DropPosition = 'before' | 'inside';
@@ -55,6 +55,10 @@ export default function EditorTree({
 
         editor.add(newNode, parentId);
         setSelectedId(newNode.id);
+    };
+
+    const handleImportPackedPrefab = (url: string) => {
+        editor.add(createPackedPrefabNode(url), rootId);
     };
 
     const handleDuplicate = (nodeId: string) => {
@@ -189,6 +193,7 @@ export default function EditorTree({
                                         getPrefab={getPrefab}
                                         onReplacePrefab={onReplacePrefab}
                                         onImportPrefab={onImportPrefab}
+                                        onImportPackedPrefab={handleImportPackedPrefab}
                                         onClose={close}
                                     />
                                 )}

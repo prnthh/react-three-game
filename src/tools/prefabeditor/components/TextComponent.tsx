@@ -1,11 +1,9 @@
 import { Component } from "./ComponentRegistry";
 import { ColorField, FieldGroup, NumberField, SelectField, StringField } from "./Input";
 import { Text } from 'three-text/three/react';
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import { BufferGeometry, Mesh } from "three";
-
-// Initialize HarfBuzz path for font shaping
-Text.setHarfBuzzPath('/fonts/hb.wasm');
+import { withBasePath } from "../utils";
 
 function TextComponentEditor({
     component,
@@ -75,11 +73,16 @@ function TextComponentEditor({
     );
 }
 
-function TextComponentView({ properties, children }: { properties: any; children?: React.ReactNode }) {
+function TextComponentView({ properties, children, basePath = "" }: { properties: any; children?: React.ReactNode; basePath?: string }) {
     const { text = '', font, size, depth, width, align, color } = properties;
     const textContent = String(text || '');
+    const resolvedFont = font ? withBasePath(basePath, font) : font;
     const meshRef = useRef<Mesh>(null);
     const [offset, setOffset] = useState<[number, number, number]>([0, 0, 0]);
+
+    useEffect(() => {
+        Text.setHarfBuzzPath(withBasePath(basePath, '/fonts/hb.wasm'));
+    }, [basePath]);
 
     const handleLoad = useCallback((_geometry: BufferGeometry, info: any) => {
         if (info?.planeBounds) {
@@ -105,7 +108,7 @@ function TextComponentView({ properties, children }: { properties: any; children
         <group position={offset}>
             <Text
                 ref={meshRef}
-                font={font}
+                font={resolvedFont}
                 size={size}
                 depth={depth}
                 layout={{ align, width }}

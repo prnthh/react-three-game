@@ -6,6 +6,7 @@ import { CrashcatPhysicsComponent, CrashcatRuntime } from "react-three-game/plug
 import type { PrefabEditorRef, Scene } from "react-three-game";
 import { Quaternion, Vector3 } from "three";
 import CannonBarrelSwayComponent from "./CannonBarrelSwayComponent";
+import { withBasePath, BASE_PATH } from "../../basePath";
 
 const CANNON_BARREL_LENGTH = 1.8;
 const PROJECTILE_SPEED = 22;
@@ -227,13 +228,13 @@ function PhysicsRuntimeBindings() {
                     ? detail.nodeId
                     : CANNON_BARREL_ID;
             fireProjectileFromCannon(editor.add, scene.getObject, barrelId);
-            void soundManager.play(CANNON_FIRE_SOUND, { volume: 0.9 });
+            void soundManager.play(withBasePath(CANNON_FIRE_SOUND), { volume: 0.9 });
         });
 
         const stopTargetHit = gameEvents.on(TARGET_HIT_EVENT, () => {
             setTargetColor(TARGET_HIT_COLOR);
             const clip = TARGET_HIT_SOUNDS[Math.floor(Math.random() * TARGET_HIT_SOUNDS.length)];
-            void soundManager.play(clip, {
+            void soundManager.play(withBasePath(clip), {
                 volume: 0.8,
                 pitch: 0.94 + Math.random() * 0.14,
             });
@@ -258,7 +259,7 @@ export default function PhysicsDemo() {
 
     return (
         <main className="flex h-screen w-screen flex-col">
-            <PrefabEditor ref={editorRef} initialPrefab={prefab} mode={PrefabEditorMode.Play}>
+            <PrefabEditor ref={editorRef} basePath={BASE_PATH} initialPrefab={prefab} mode={PrefabEditorMode.Play}>
                 <CrashcatRuntime debug />
                 <PhysicsRuntimeBindings />
                 <ambientLight intensity={1.5} />

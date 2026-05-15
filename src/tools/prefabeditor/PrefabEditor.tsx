@@ -8,7 +8,7 @@ import type { GameObject, Prefab } from "./types";
 import { PrefabEditorMode, PrefabRoot, type PrefabNode, type Scene } from "./PrefabRoot";
 import EditorUI from "./EditorUI";
 import { base, toolbar } from "./styles";
-import { computeParentWorldMatrix, decompose, exportGLB as exportGLBFile, exportGLBData, focusCameraOnObject, regenerateIds } from "./utils";
+import { computeParentWorldMatrix, decompose, exportGLB as exportGLBFile, exportGLBData, focusCameraOnObject, isExternalPath, regenerateIds, withBasePath } from "./utils";
 import type { ExportGLBOptions } from "./utils";
 import { loadDroppedAssets } from "../dragdrop";
 import { denormalizePrefab, createImageNode, createModelNode, createNode } from './prefab';
@@ -27,21 +27,14 @@ function isObjectAttachedToRoot(root: Object3D | null | undefined, object: Objec
     return false;
 }
 
-export function isAbsoluteAssetPath(path: string) {
-    return (
-        path.startsWith("data:") ||
-        path.startsWith("http://") ||
-        path.startsWith("https://")
-    );
-}
+export { isExternalPath as isAbsoluteAssetPath } from "./utils";
 
 export function resolvePrefabAssetPath(basePath: string, file: string) {
-    if (isAbsoluteAssetPath(file)) return file;
-    return file.startsWith("/") ? `${basePath}${file}` : `${basePath}/${file}`;
+    return withBasePath(basePath, file);
 }
 
 export function getPrefabAssetRef(assetRef: string, folder: "models" | "textures" | "sound") {
-    return isAbsoluteAssetPath(assetRef) ? assetRef : `${folder}/${assetRef}`;
+    return isExternalPath(assetRef) ? assetRef : `${folder}/${assetRef}`;
 }
 
 function SelectionHelper({ object }: { object: Object3D | null }) {
@@ -69,6 +62,7 @@ export type { PrefabNode } from "./PrefabRoot";
 
 export interface EditorContextType {
     mode: PrefabEditorMode;
+    basePath: string;
     setMode: (mode: PrefabEditorMode) => void;
     transformMode: "translate" | "rotate" | "scale";
     setTransformMode: (mode: "translate" | "rotate" | "scale") => void;
@@ -123,7 +117,7 @@ const DEFAULT_PREFAB: Prefab = {
     root: createNode('Root', {}, { id: 'root' })
 };
 
-const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath, initialPrefab, mode: initialMode = PrefabEditorMode.Edit, onChange, showUI = true, enableWindowDrop = true, canvasProps, uiPlugins, children }, ref) => {
+const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath = "", initialPrefab, mode: initialMode = PrefabEditorMode.Edit, onChange, showUI = true, enableWindowDrop = true, canvasProps, uiPlugins, children }, ref) => {
     const [mode, setMode] = useState<PrefabEditorMode>(initialMode);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [transformMode, setTransformMode] = useState<"translate" | "rotate" | "scale">("translate");
@@ -443,6 +437,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
             return getRoot();
         },
         mode,
+        basePath,
         get: getNode,
         getObject,
         getHandle,
@@ -457,7 +452,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
         addModel: (path, model) => prefabRootRef.current?.addModel(path, model),
         addTexture: (path, texture) => prefabRootRef.current?.addTexture(path, texture),
         addSound: (path, sound) => prefabRootRef.current?.addSound(path, sound),
-    }), [add, duplicate, getHandle, getModel, getNode, getObject, getRoot, mode, move, remove, replace, replaceNode, update]);
+    }), [add, basePath, duplicate, getHandle, getModel, getNode, getObject, getRoot, mode, move, remove, replace, replaceNode, update]);
 
     const editorRefValue = useMemo<PrefabEditorRef>(() => ({
         ...sceneValue,
@@ -498,6 +493,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath,
         <EditorRefContext.Provider value={editorRefValue}>
             <EditorContext.Provider value={{
                 mode,
+                basePath,
                 setMode: updateMode,
                 transformMode,
                 setTransformMode,

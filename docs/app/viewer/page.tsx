@@ -4,6 +4,7 @@ import { GameCanvas, PrefabRoot } from "react-three-game";
 import { useState } from "react";
 import { Toolbar } from "../editor/page";
 import { OrbitControls } from "@react-three/drei";
+import { BASE_PATH } from "../basePath";
 
 export default function Home() {
     const [selectedScene, setSelectedScene] = useState<any>(inlinePrefab);
@@ -13,6 +14,7 @@ export default function Home() {
             <GameCanvas camera={{ position: [0, 1, 10] }}>
                 <ambientLight intensity={0.8} />
                 <PrefabRoot
+                    basePath={BASE_PATH}
                     data={selectedScene} />
                 <OrbitControls />
             </GameCanvas>

@@ -3,6 +3,7 @@ import type { Component, ComponentViewProps } from './ComponentRegistry';
 import type { GameObject, Prefab } from '../types';
 import PrefabRoot from '../PrefabRoot';
 import { useEditorRef } from '../PrefabEditor';
+import { withBasePath } from '../utils';
 import { base, colors } from '../styles';
 import { FieldGroup, Label } from './Input';
 
@@ -10,24 +11,25 @@ type PrefabRefProperties = {
     url?: string;
 };
 
-function PrefabRefView({ properties, children }: ComponentViewProps<PrefabRefProperties>) {
+function PrefabRefView({ properties, children, basePath = '' }: ComponentViewProps<PrefabRefProperties>) {
     const [loadedPrefab, setLoadedPrefab] = useState<Prefab | null>(null);
 
     const url = properties.url ?? '';
+    const resolvedUrl = url ? withBasePath(basePath, url) : '';
 
     useEffect(() => {
-        if (!url) return;
+        if (!resolvedUrl) return;
         let cancelled = false;
-        fetch(url)
+        fetch(resolvedUrl)
             .then(r => r.json())
             .then(data => { if (!cancelled) setLoadedPrefab(data as Prefab); })
-            .catch(err => console.warn('[PrefabRef] Failed to load:', url, err));
+            .catch(err => console.warn('[PrefabRef] Failed to load:', resolvedUrl, err));
         return () => { cancelled = true; };
-    }, [url]);
+    }, [resolvedUrl]);
 
     return (
         <>
-            {loadedPrefab && <PrefabRoot data={loadedPrefab} editMode={false} />}
+            {loadedPrefab && <PrefabRoot data={loadedPrefab} editMode={false} basePath={basePath} />}
             {children}
         </>
     );
@@ -37,10 +39,12 @@ function PrefabRefEditor({
     node,
     component,
     onUpdate,
+    basePath = '',
 }: {
     node?: GameObject;
     component: { properties?: PrefabRefProperties };
     onUpdate: (newProps: Record<string, unknown>) => void;
+    basePath?: string;
 }) {
     const url = component.properties?.url ?? '';
     const [manifest, setManifest] = useState<string[]>([]);
@@ -48,7 +52,7 @@ function PrefabRefEditor({
     const editor = useEditorRef();
 
     useEffect(() => {
-        fetch('/prefabs/manifest.json')
+        fetch(withBasePath(basePath, '/prefabs/manifest.json'))
             .then(r => r.json())
             .then(data => setManifest(data))
             .catch(() => setManifest([]));
@@ -58,7 +62,7 @@ function PrefabRefEditor({
         if (!node || !url) return;
         setUnpacking(true);
         try {
-            const prefab = await fetch(url).then(r => r.json()) as Prefab;
+            const prefab = await fetch(withBasePath(basePath, url)).then(r => r.json()) as Prefab;
             editor.replaceNode(node.id, prefab.root);
         } catch (err) {
             console.error('[PrefabRef] Unpack failed:', err);

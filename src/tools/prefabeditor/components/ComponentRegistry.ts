@@ -28,6 +28,8 @@ export interface ComponentViewProps<P = Record<string, unknown>> {
 	rotation?: [number, number, number];
 	/** Current node local scale for wrapper components. */
 	scale?: [number, number, number];
+	/** Public asset URL prefix, such as a Next.js basePath. */
+	basePath?: string;
 }
 
 export interface Component {

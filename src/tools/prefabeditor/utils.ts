@@ -10,6 +10,22 @@ import {
 	Vector3,
 } from "three";
 
+export function isExternalPath(path: string) {
+	return (
+		path.startsWith("data:") ||
+		path.startsWith("http://") ||
+		path.startsWith("https://")
+	);
+}
+
+export function withBasePath(basePath: string | undefined, path: string) {
+	if (!path) return (basePath ?? "").replace(/\/$/, "");
+	if (isExternalPath(path)) return path;
+
+	const normalizedBasePath = (basePath ?? "").replace(/\/$/, "");
+	return path.startsWith("/") ? `${normalizedBasePath}${path}` : `${normalizedBasePath}/${path}`;
+}
+
 export interface ExportGLBOptions {
 	filename?: string;
 }

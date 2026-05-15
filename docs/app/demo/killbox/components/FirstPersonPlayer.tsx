@@ -8,6 +8,7 @@ import { gameEvents, PrefabEditorMode, soundManager, useScene } from "react-thre
 import { useCrashcat } from "react-three-game/plugins/crashcat";
 import { MathUtils, Quaternion, Raycaster, Vector2, Vector3 } from "three";
 import type { Camera, Group, Object3D } from "three";
+import { withBasePath } from "../../../basePath";
 
 const FOOTSTEP_CLIPS = ["/sound/hit.mp3", "/sound/hit2.mp3"] as const;
 const DEFAULT_GRAB_DISTANCE = 2.75;
@@ -229,7 +230,7 @@ const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProp
 
     useEffect(() => {
         FOOTSTEP_CLIPS.forEach((clip) => {
-            void soundManager.load(clip, clip).catch(() => { });
+            void soundManager.load(clip, withBasePath(clip)).catch(() => { });
         });
     }, []);
 

@@ -9,10 +9,11 @@ import type { Prefab, PrefabEditorRef } from "react-three-game";
 import FirstPersonPlayer, { type FirstPersonPlayerRef } from "../killbox/components/FirstPersonPlayer";
 import AnimationMixer from "./components/AnimationMixer";
 import SkinnedMesh, { type SkinnedMeshRef } from "./components/SkinnedMesh";
+import { withBasePath, BASE_PATH } from "../../basePath";
 
 registerComponent(CrashcatPhysicsComponent);
 
-const ONIMILIO_MODEL = "/models/human/onimilio.glb";
+const ONIMILIO_MODEL = withBasePath("/models/human/onimilio.glb");
 
 export default function Home() {
     const editorRef = useRef<PrefabEditorRef>(null);
@@ -21,7 +22,7 @@ export default function Home() {
 
     return (
         <main className="flex h-screen w-screen flex-col items-center justify-between bg-white dark:bg-black sm:items-start">
-            <PrefabEditor ref={editorRef} initialPrefab={initialWorld as Prefab}>
+            <PrefabEditor ref={editorRef} basePath={BASE_PATH} initialPrefab={initialWorld as Prefab}>
                 <CrashcatRuntime>
                     <FirstPersonPlayer ref={playerRef} />
 

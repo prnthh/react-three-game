@@ -5,6 +5,7 @@ import { PrefabEditor, registerComponent } from "react-three-game";
 import type { Prefab } from "react-three-game";
 import { parseQuakeMap, quakeMapToPrefab } from "./quakeMapParser";
 import QuakeBrushComponent from "./QuakeBrushComponent";
+import { withBasePath, BASE_PATH } from "../../basePath";
 
 registerComponent(QuakeBrushComponent);
 
@@ -14,7 +15,7 @@ export default function QuakeMapDemo() {
 
     // Load and parse DM1 map
     useEffect(() => {
-        fetch("/maps/dm1.map")
+        fetch(withBasePath("/maps/dm1.map"))
             .then((res) => res.text())
             .then((mapText) => {
                 const entities = parseQuakeMap(mapText);
@@ -61,7 +62,7 @@ export default function QuakeMapDemo() {
             <div className="h-screen w-screen">
 
                 {/* Map in editor mode */}
-                <PrefabEditor initialPrefab={mapPrefab} />
+                <PrefabEditor basePath={BASE_PATH} initialPrefab={mapPrefab} />
             </div>
         </>
     );

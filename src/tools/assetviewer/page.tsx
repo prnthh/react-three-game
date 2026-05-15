@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { Material, Mesh, Texture, TextureLoader } from "three";
 import type { Object3D } from "three";
 import { loadModel } from "../dragdrop/modelLoader";
-import { resolvePrefabAssetPath } from "../prefabeditor/PrefabEditor";
+import { withBasePath } from "../prefabeditor/utils";
 import { base, colors, fonts } from "../prefabeditor/styles";
 
 const styles: Record<string, any> = {
@@ -235,7 +235,7 @@ function TextureCard({ file, onSelect, basePath = "" }: { file: string; onSelect
     const [isHovered, setIsHovered] = useState(false);
     const [error, setError] = useState(false);
     const { ref, isInView } = useInView();
-    const fullPath = resolvePrefabAssetPath(basePath, file);
+    const fullPath = withBasePath(basePath, file);
     const fileName = file.split('/').pop();
 
     if (error) {
@@ -371,7 +371,7 @@ function ModelCard({
 }) {
     const [error, setError] = useState(false);
     const { ref, isInView } = useInView();
-    const fullPath = resolvePrefabAssetPath(basePath, file);
+    const fullPath = withBasePath(basePath, file);
 
     if (error) {
         return (
@@ -469,7 +469,7 @@ export function SoundListViewer({ files, selected, onSelect, basePath = "" }: So
 
 function SoundCard({ file, onSelect, basePath = "" }: { file: string; onSelect: (file: string) => void; basePath?: string }) {
     const fileName = file.split('/').pop() || '';
-    const fullPath = resolvePrefabAssetPath(basePath, file);
+    const fullPath = withBasePath(basePath, file);
     return (
         <div
             onClick={() => onSelect(file)}

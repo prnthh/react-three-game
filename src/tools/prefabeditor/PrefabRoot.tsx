@@ -13,7 +13,7 @@ import { builtinComponents } from "./components";
 import { loadModel, loadSound, loadTexture } from "../dragdrop";
 import type { LoadedModels, LoadedSounds, LoadedTextures } from "../dragdrop";
 import { GameInstance, GameInstanceProvider, getRepeatAxesFromModelProperties } from "./InstanceProvider";
-import { composeTransform, decompose } from "./utils";
+import { composeTransform, decompose, withBasePath } from "./utils";
 import { createPrefabStore, PrefabStoreProvider, usePrefabChildIds, usePrefabNode, usePrefabRootId } from "./prefabStore";
 import type { PrefabStoreApi } from "./prefabStore";
 import { AssetRuntimeContext, NodeScope } from "./assetRuntime";
@@ -35,13 +35,6 @@ const EMPTY_NODE_COMPONENTS: AnalyzedNodeComponents = {
     clickEventName: null,
     composition: [],
 };
-
-/** Resolve a relative or absolute asset file path against a base path. */
-function resolveAssetPath(basePath: string, file: string): string {
-    if (file.startsWith("data:")) return file;
-    if (file.startsWith("http://") || file.startsWith("https://")) return file;
-    return file.startsWith("/") ? `${basePath}${file}` : `${basePath}/${file}`;
-}
 
 /** Check if a model component's assets are loaded. */
 function isNodeReady(model: ComponentData | undefined, loadedModels: LoadedModels): boolean {
@@ -72,6 +65,7 @@ export interface Scene {
     // Reads
     root: Object3D | null;
     mode: PrefabEditorMode;
+    basePath: string;
     get(id: string): GameObjectType | null;
     getObject(id: string): Object3D | null;
     getHandle<T = unknown>(id: string, kind: string): T | null;
@@ -200,6 +194,7 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, 
             return objectRefs.current[rootId] ?? null;
         },
         mode: editMode ? PrefabEditorMode.Edit : PrefabEditorMode.Play,
+        basePath,
         get: getNode,
         getObject,
         getHandle,
@@ -221,7 +216,7 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, 
             soundManager.setBuffer(path, sound);
             setInjectedSounds(prev => ({ ...prev, [path]: sound }));
         },
-    }), [editMode, getHandle, getModel, getNode, getObject, resolvedStore, rootId]);
+    }), [basePath, editMode, getHandle, getModel, getNode, getObject, resolvedStore, rootId]);
 
     useImperativeHandle(ref, () => sceneValue, [sceneValue]);
 
@@ -245,7 +240,7 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, 
         ) => {
             if (loaded[file] || injected[file] || loading.current.has(file) || failed.has(file)) return;
             loading.current.add(file);
-            void loader(resolveAssetPath(basePath, file)).then(result => {
+            void loader(withBasePath(basePath, file)).then(result => {
                 loading.current.delete(file);
                 if (!result.success) {
                     console.warn(`Failed to load asset: ${file}`, result.error);
@@ -331,6 +326,7 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, 
                 loadedModels={availableModels}
                 editMode={editMode}
                 parentMatrix={IDENTITY}
+                basePath={basePath}
             />
             {children}
         </GameInstanceProvider>
@@ -547,6 +543,7 @@ function StandardNode({
     editMode,
     parentMatrix = IDENTITY,
     isVisible = true,
+    basePath = "",
 }: RendererProps) {
     const gameObject = usePrefabNode(nodeId);
     const childIds = usePrefabChildIds(nodeId);
@@ -599,9 +596,10 @@ function StandardNode({
         registerRef={registerRef}
         loadedModels={loadedModels} editMode={editMode}
         isVisible={nodeVisible}
+        basePath={basePath}
     />;
 
-    const inner = renderNodeContent(analyzedComponents, loadedModels, primaryClickHandlers, childNodes);
+    const inner = renderNodeContent(analyzedComponents, loadedModels, primaryClickHandlers, childNodes, basePath);
     const editAnchor = editMode ? (
         <mesh visible={false}>
             <boxGeometry args={[0.01, 0.01, 0.01]} />
@@ -637,6 +635,7 @@ interface RendererProps {
     editMode?: boolean;
     parentMatrix?: Matrix4;
     isVisible?: boolean;
+    basePath?: string;
 }
 
 type PrimaryClickHandlers = { onClick?: (event: ThreeEvent<PointerEvent>) => void };
@@ -743,7 +742,8 @@ function renderNodeContent(
     analyzedComponents: AnalyzedNodeComponents,
     loadedModels: LoadedModels,
     primaryClickHandlers?: PrimaryClickHandlers,
-    childNodes?: React.ReactNode
+    childNodes?: React.ReactNode,
+    basePath = "",
 ) {
     const geometry = analyzedComponents.geometry;
     const models = analyzedComponents.models;
@@ -843,7 +843,7 @@ function renderNodeContent(
     let content = <>{primaryContent}{contentChildren}</>;
     for (const { key, View, properties } of analyzedComponents.composition) {
         content = (
-            <View key={key} properties={properties}>
+            <View key={key} properties={properties} basePath={basePath}>
                 {content}
             </View>
         );

@@ -4,7 +4,7 @@ import { Prefab } from './types';
 import { createEmptyPrefab } from './prefab';
 import { menu } from './styles';
 import { useEditorContext } from './PrefabEditor';
-import { loadJson, loadJsonFile, saveJson } from './utils';
+import { loadJson, loadJsonFile, saveJson, withBasePath } from './utils';
 
 export type TreeContextMenuState = { nodeId: string; x: number; y: number } | null;
 
@@ -210,7 +210,7 @@ export function FileMenu({
     onImportPackedPrefab: (url: string) => void;
     onClose: () => void;
 }) {
-    const { onScreenshot, onExportGLB } = useEditorContext();
+    const { basePath, onScreenshot, onExportGLB } = useEditorContext();
 
     const handleNew = () => {
         onReplacePrefab(createEmptyPrefab());
@@ -234,7 +234,7 @@ export function FileMenu({
         if (!loaded) return;
 
         try {
-            const manifest: string[] = await fetch('/prefabs/manifest.json').then(r => r.json());
+            const manifest: string[] = await fetch(withBasePath(basePath, '/prefabs/manifest.json')).then(r => r.json());
             const matched = manifest.find(entry =>
                 entry.endsWith(`/${loaded.filename}`) || entry === `/${loaded.filename}`
             );

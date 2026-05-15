@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PrefabEditor, PrefabEditorMode, registerComponent } from "react-three-game";
 import { CrashcatPhysicsComponent, CrashcatRuntime } from "react-three-game/plugins/crashcat";
 import type { GameObject, Prefab, PrefabEditorRef } from "react-three-game";
+import { BASE_PATH } from "../../basePath";
 
 registerComponent(CrashcatPhysicsComponent);
 
@@ -369,6 +370,7 @@ export default function BenchmarkPage() {
         <main className="relative h-screen w-screen overflow-hidden bg-[radial-gradient(circle_at_top,_#202f45_0%,_#0b1017_52%,_#04070b_100%)] text-white">
             <PrefabEditor
                 ref={editorRef}
+                basePath={BASE_PATH}
                 initialPrefab={initialPrefab}
                 mode={PrefabEditorMode.Play}
                 enableWindowDrop={false}

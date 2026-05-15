@@ -9,6 +9,7 @@ import type { Prefab, PrefabEditorRef } from "react-three-game";
 import FirstPersonPlayer from "./components/FirstPersonPlayer";
 import ElevatorMover from "./components/ElevatorMover";
 import OrbMover from "./components/OrbMover";
+import { BASE_PATH } from "../../basePath";
 
 registerComponent(CrashcatPhysicsComponent);
 registerComponent(ElevatorMover);
@@ -19,7 +20,7 @@ export default function Home() {
 
     return (
         <main className="flex h-screen w-screen flex-col items-center justify-between bg-white dark:bg-black sm:items-start">
-            <PrefabEditor ref={editorRef} initialPrefab={initialWorld as Prefab}>
+            <PrefabEditor ref={editorRef} basePath={BASE_PATH} initialPrefab={initialWorld as Prefab}>
                 <CrashcatRuntime>
                     <FirstPersonPlayer />
                 </CrashcatRuntime>

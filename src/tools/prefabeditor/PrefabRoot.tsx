@@ -1,7 +1,7 @@
 import { createContext, forwardRef, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { Euler, Matrix4 } from "three";
-import type { Group, Object3D, Texture } from "three";
-import type { ThreeEvent } from "@react-three/fiber";
+import type { Camera, Group, Object3D, Texture, WebGLRenderer } from "three";
+import { useThree, type ThreeEvent } from "@react-three/fiber";
 import { useStore } from "zustand";
 import { useClickValid } from "./useClickValid";
 
@@ -35,6 +35,19 @@ const EMPTY_NODE_COMPONENTS: AnalyzedNodeComponents = {
     clickEventName: null,
     composition: [],
 };
+
+async function precompileModel(model: Object3D, renderer: WebGLRenderer, camera: Camera) {
+    try {
+        if (typeof renderer.compileAsync === "function") {
+            await renderer.compileAsync(model, camera);
+            return;
+        }
+
+        renderer.compile(model, camera);
+    } catch (error) {
+        console.warn("Failed to precompile model before adding it to the scene", error);
+    }
+}
 
 /** Check if a model component's assets are loaded. */
 function isNodeReady(model: ComponentData | undefined, loadedModels: LoadedModels): boolean {
@@ -123,6 +136,8 @@ type AnalyzedNodeComponents = {
 
 export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, store, selectedId, onSelect, onClick, onEditNodeClick, basePath = "", children }, ref) => {
 
+    const renderer = useThree(state => state.gl);
+    const camera = useThree(state => state.camera);
     const [models, setModels] = useState<LoadedModels>({});
     const [textures, setTextures] = useState<LoadedTextures>({});
     const [sounds, setSounds] = useState<LoadedSounds>({});
@@ -133,6 +148,7 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, 
     const failedModels = useRef(new Set<string>());
     const failedTextures = useRef(new Set<string>());
     const failedSounds = useRef(new Set<string>());
+    const injectedModelVersions = useRef<Record<string, number>>({});
     const objectRefs = useRef<Record<string, Object3D | null>>({});
     const nodeHandles = useRef<Map<string, Map<string, unknown>>>(new Map());
     const [ownedStore] = useState<PrefabStoreApi | null>(() => {
@@ -210,13 +226,20 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, 
         duplicate: (id) => resolvedStore.getState().duplicateNode(id),
         move: (draggedId, targetId, position) => resolvedStore.getState().moveNode(draggedId, targetId, position),
         replace: (prefab) => resolvedStore.getState().replacePrefab(prefab),
-        addModel: (path, model) => setInjectedModels(prev => ({ ...prev, [path]: model })),
+        addModel: (path, model) => {
+            const version = (injectedModelVersions.current[path] ?? 0) + 1;
+            injectedModelVersions.current[path] = version;
+            void precompileModel(model, renderer, camera).then(() => {
+                if (injectedModelVersions.current[path] !== version) return;
+                setInjectedModels(prev => ({ ...prev, [path]: model }));
+            });
+        },
         addTexture: (path, texture) => setInjectedTextures(prev => ({ ...prev, [path]: texture })),
         addSound: (path, sound) => {
             soundManager.setBuffer(path, sound);
             setInjectedSounds(prev => ({ ...prev, [path]: sound }));
         },
-    }), [basePath, editMode, getHandle, getModel, getNode, getObject, resolvedStore, rootId]);
+    }), [basePath, camera, editMode, getHandle, getModel, getNode, getObject, renderer, resolvedStore, rootId]);
 
     useImperativeHandle(ref, () => sceneValue, [sceneValue]);
 
@@ -256,9 +279,10 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, 
 
             if (type === 'model') {
                 loadAsset(file, models, injectedModels, failedModels.current, path =>
-                    loadModel(path).then(result => {
+                    loadModel(path).then(async result => {
                         const loadedModel = result.model;
                         if (result.success && loadedModel) {
+                            await precompileModel(loadedModel, renderer, camera);
                             setModels(currentModels => ({ ...currentModels, [file]: loadedModel }));
                         }
                         return result;
@@ -287,7 +311,7 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, 
                 );
             }
         });
-    }, [assetRefCounts, basePath, injectedModels, injectedSounds, injectedTextures, models, sounds, textures]);
+    }, [assetRefCounts, basePath, camera, injectedModels, injectedSounds, injectedTextures, models, renderer, sounds, textures]);
 
     const assetRuntime = useMemo<AssetRuntime>(() => ({
         registerHandle,

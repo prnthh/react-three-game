@@ -270,6 +270,60 @@ function getRegisteredBody(api: CrashcatApi | null, nodeId: string, body: RigidB
     return api && body && api.getBody(nodeId) === body ? body : null;
 }
 
+function createAndRegisterBody(
+    api: CrashcatApi,
+    nodeId: string,
+    object: Object3D,
+    physics: CrashcatPhysicsProperties,
+) {
+    const shape = createShapeForObject(object, physics);
+    if (!shape) return null;
+
+    object.updateWorldMatrix(true, true);
+    object.getWorldPosition(scratchPosition);
+    const wq = new Quaternion();
+    object.getWorldQuaternion(wq);
+
+    const motionType = toMotionType(physics);
+    const motionQuality = toMotionQuality(physics);
+    const isKinematic = motionType === MotionType.KINEMATIC;
+    const isStatic = motionType === MotionType.STATIC;
+
+    const body = rigidBody.create(api.world, {
+        shape,
+        motionType,
+        motionQuality,
+        objectLayer: isStatic ? api.staticObjectLayer : api.movingObjectLayer,
+        position: [scratchPosition.x, scratchPosition.y, scratchPosition.z],
+        quaternion: [wq.x, wq.y, wq.z, wq.w],
+        sensor: Boolean(physics.sensor),
+        collideKinematicVsNonDynamic: isKinematic,
+        friction: physics.friction,
+        restitution: physics.restitution,
+        userData: { nodeId },
+    });
+
+    if (physics.linearVelocity) {
+        rigidBody.setLinearVelocity(api.world, body, physics.linearVelocity);
+    }
+    if (physics.angularVelocity) {
+        rigidBody.setAngularVelocity(api.world, body, physics.angularVelocity);
+    }
+
+    api.register(nodeId, body, {
+        motionType,
+        sensor: Boolean(physics.sensor),
+        events: {
+            collisionEnter: physics.collisionEnterEventName,
+            collisionExit: physics.collisionExitEventName,
+            sensorEnter: physics.sensorEnterEventName,
+            sensorExit: physics.sensorExitEventName,
+        },
+    });
+
+    return { body, motionType };
+}
+
 function CrashcatPhysicsView({ properties, children }: ComponentViewProps<CrashcatPhysicsProperties>) {
     const { nodeId, getObject } = useNode();
     const scene = useScene();
@@ -279,6 +333,7 @@ function CrashcatPhysicsView({ properties, children }: ComponentViewProps<Crashc
     const revision = getAssetRevision();
     const bodyRef = useRef<RigidBody | null>(null);
     const motionTypeRef = useRef(MotionType.STATIC);
+    const needsRegistrationRef = useRef(false);
     const syncPositionRef = useRef<[number, number, number]>([0, 0, 0]);
     const syncQuaternionRef = useRef<[number, number, number, number]>([0, 0, 0, 1]);
     const lastPositionRef = useRef<[number, number, number] | null>(null);
@@ -328,66 +383,45 @@ function CrashcatPhysicsView({ properties, children }: ComponentViewProps<Crashc
         type,
     ]);
 
+    const tryRegisterBody = () => {
+        if (!api || getRegisteredBody(api, nodeId, bodyRef.current)) {
+            needsRegistrationRef.current = false;
+            return;
+        }
+
+        const object = getObject();
+        if (!object) {
+            needsRegistrationRef.current = true;
+            return;
+        }
+
+        const registration = createAndRegisterBody(api, nodeId, object, physics);
+        if (!registration) {
+            needsRegistrationRef.current = true;
+            return;
+        }
+
+        bodyRef.current = registration.body;
+        motionTypeRef.current = registration.motionType;
+        needsRegistrationRef.current = false;
+        lastPositionRef.current = null;
+        lastQuaternionRef.current = null;
+    };
+
     useEffect(() => {
         // Rebuild mesh-derived colliders when referenced assets finish loading.
         void revision;
-        if (!api) return;
-        const object = getObject();
-        if (!object) return;
-
-        const shape = createShapeForObject(object, physics);
-        if (!shape) return;
-
-        object.updateWorldMatrix(true, true);
-        object.getWorldPosition(scratchPosition);
-        const wq = new Quaternion();
-        object.getWorldQuaternion(wq);
-
-        const motionType = toMotionType(physics);
-        const motionQuality = toMotionQuality(physics);
-        const isKinematic = motionType === MotionType.KINEMATIC;
-        const isStatic = motionType === MotionType.STATIC;
-
-        const body = rigidBody.create(api.world, {
-            shape,
-            motionType,
-            motionQuality,
-            objectLayer: isStatic ? api.staticObjectLayer : api.movingObjectLayer,
-            position: [scratchPosition.x, scratchPosition.y, scratchPosition.z],
-            quaternion: [wq.x, wq.y, wq.z, wq.w],
-            sensor: Boolean(physics.sensor),
-            collideKinematicVsNonDynamic: isKinematic,
-            friction: physics.friction,
-            restitution: physics.restitution,
-            userData: { nodeId },
-        });
-
-        if (physics.linearVelocity) {
-            rigidBody.setLinearVelocity(api.world, body, physics.linearVelocity);
+        needsRegistrationRef.current = true;
+        if (api) {
+            api.unregister(nodeId);
         }
-        if (physics.angularVelocity) {
-            rigidBody.setAngularVelocity(api.world, body, physics.angularVelocity);
-        }
-
-        bodyRef.current = body;
-        motionTypeRef.current = motionType;
-        lastPositionRef.current = null;
-        lastQuaternionRef.current = null;
-
-        api.register(nodeId, body, {
-            motionType,
-            sensor: Boolean(physics.sensor),
-            events: {
-                collisionEnter: physics.collisionEnterEventName,
-                collisionExit: physics.collisionExitEventName,
-                sensorEnter: physics.sensorEnterEventName,
-                sensorExit: physics.sensorExitEventName,
-            },
-        });
+        bodyRef.current = null;
+        tryRegisterBody();
 
         return () => {
             bodyRef.current = null;
-            api.unregister(nodeId);
+            needsRegistrationRef.current = false;
+            api?.unregister(nodeId);
         };
     }, [
         api,
@@ -396,6 +430,12 @@ function CrashcatPhysicsView({ properties, children }: ComponentViewProps<Crashc
         physics,
         revision,
     ]);
+
+    useFrame(() => {
+        if (needsRegistrationRef.current) {
+            tryRegisterBody();
+        }
+    }, -3);
 
     useEffect(() => {
         const syncEditBody = () => {

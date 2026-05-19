@@ -30,7 +30,6 @@
 	],
 	"scripts": {
 		"clean": "rm -rf dist",
-		"prepare": "npm run build",
 		"watch": "npm run clean && tsc --watch",
 		"dev": "concurrently \"npm run watch\" \"cd docs && npm run dev\"",
 		"build": "npm run clean && tsc",

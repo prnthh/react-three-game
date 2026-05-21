@@ -17,9 +17,16 @@ export interface DecomposeModelOptions {
     idPrefix?: string;
     /** Include invisible Three objects in the generated prefab tree. */
     includeInvisible?: boolean;
+    /** Create CrashcatPhysics components from Blender-style mesh name suffixes. */
+    inferCollisionMeshes?: boolean;
     /** Return a serializable texture ref for embedded or externally loaded textures. */
     getTexturePath?: (texture: Texture, usage: 'map' | 'normalMap') => string | null | undefined;
 }
+
+type CollisionMeshConvention = {
+    displayName: string;
+    renderMesh: boolean;
+};
 
 function createId(prefix: string) {
     return `${prefix}-${crypto.randomUUID()}`;
@@ -74,6 +81,30 @@ function serializeGeometry(geometry: BufferGeometry) {
         groups,
         computeVertexNormals: normals.length === 0,
     };
+}
+
+function getCollisionMeshConvention(name: string, enabled: boolean): CollisionMeshConvention | null {
+    if (!enabled) return null;
+
+    const match = name.match(/^(.*)_(colonly|col)(?:\.\d+)?$/i);
+    if (!match) return null;
+
+    const [, baseName, suffix] = match;
+    return {
+        displayName: baseName || name,
+        renderMesh: suffix.toLowerCase() === 'col',
+    };
+}
+
+export function hasCollisionMeshConventions(object: Object3D, enabled = true) {
+    let hasConvention = false;
+
+    object.traverse(child => {
+        if (hasConvention) return;
+        hasConvention = child instanceof Mesh && getCollisionMeshConvention(child.name, enabled) != null;
+    });
+
+    return hasConvention;
 }
 
 function getSideName(side: Material['side']) {
@@ -191,11 +222,17 @@ function createTransformComponent(object: Object3D): ComponentData {
     };
 }
 
-function createNode(object: Object3D, idPrefix: string, children: GameObject[] = [], components: Record<string, ComponentData> = {}): GameObject {
+function createNode(
+    object: Object3D,
+    idPrefix: string,
+    children: GameObject[] = [],
+    components: Record<string, ComponentData> = {},
+    options: { name?: string; hidden?: boolean } = {},
+): GameObject {
     return {
         id: createId(idPrefix),
-        name: object.name || object.type,
-        hidden: object.visible === false ? true : undefined,
+        name: (options.name ?? object.name) || object.type,
+        hidden: options.hidden ?? (object.visible === false ? true : undefined),
         components: {
             transform: createTransformComponent(object),
             ...components,
@@ -205,7 +242,8 @@ function createNode(object: Object3D, idPrefix: string, children: GameObject[] =
 }
 
 function decomposeObject(object: Object3D, options: Required<DecomposeModelOptions>): GameObject | null {
-    if (!options.includeInvisible && !object.visible) return null;
+    const collisionMesh = getCollisionMeshConvention(object.name, options.inferCollisionMeshes);
+    if (!options.includeInvisible && !object.visible && !collisionMesh) return null;
 
     const childNodes = object.children
         .map(child => decomposeObject(child, options))
@@ -226,13 +264,23 @@ function decomposeObject(object: Object3D, options: Required<DecomposeModelOptio
             type: 'BufferGeometry',
             properties: {
                 ...serializeGeometry(object.geometry),
-                visible: object.visible,
+                visible: collisionMesh ? collisionMesh.renderMesh : object.visible,
                 castShadow: object.castShadow,
                 receiveShadow: object.receiveShadow,
             },
         },
         ...materialComponents,
-    });
+        ...(collisionMesh ? {
+            crashcatPhysics: {
+                type: 'CrashcatPhysics',
+                properties: {
+                    type: 'fixed',
+                    colliders: 'trimesh',
+                    sensor: false,
+                },
+            },
+        } : null),
+    }, collisionMesh ? { name: collisionMesh.displayName, hidden: false } : undefined);
 }
 
 /**
@@ -246,6 +294,7 @@ export function decomposeModelToPrefabNodes(
     return decomposeObject(object, {
         idPrefix: options.idPrefix ?? 'model',
         includeInvisible: options.includeInvisible ?? false,
+        inferCollisionMeshes: options.inferCollisionMeshes ?? true,
         getTexturePath: options.getTexturePath ?? (() => undefined),
     }) ?? createNode(object, options.idPrefix ?? 'model');
 }

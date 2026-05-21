@@ -2,7 +2,7 @@ import { MapControls, TransformControls, useHelper } from "@react-three/drei";
 import GameCanvas from "../../shared/GameCanvas";
 import { useCallback, useEffect, useMemo, useRef, useState, forwardRef, useImperativeHandle, createContext, useContext } from "react";
 import { BoxHelper } from "three";
-import type { Object3D } from "three";
+import type { Object3D, Texture } from "three";
 import { findComponentEntry } from "./types";
 import type { GameObject, Prefab } from "./types";
 import { PrefabEditorMode, PrefabRoot, type PrefabNode, type Scene } from "./PrefabRoot";
@@ -14,6 +14,7 @@ import { loadDroppedAssets } from "../dragdrop";
 import { denormalizePrefab, createImageNode, createModelNode, createNode } from './prefab';
 import { createPrefabStore, type PrefabStoreState, PrefabStoreProvider } from "./prefabStore";
 import type { MapControls as MapControlsImpl, TransformControls as TransformControlsImpl } from 'three-stdlib';
+import { decomposeModelToPrefabNodes, hasCollisionMeshConventions } from "./modelPrefab";
 
 function isObjectAttachedToRoot(root: Object3D | null | undefined, object: Object3D | null | undefined) {
     if (!root || !object) return false;
@@ -411,7 +412,28 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
                 onModelLoaded: (model, filename, file) => {
                     const path = getPrefabAssetRef(filename, 'models');
                     scene?.addModel(path, model);
-                    add(createModelNode(path, file.name.replace(/\.[^.]+$/, '')));
+                    const modelName = file.name.replace(/\.[^.]+$/, '');
+                    const modelIdPrefix = modelName.replace(/[^\w-]+/g, '-') || 'model';
+
+                    if (hasCollisionMeshConventions(model)) {
+                        const textureRefs = new Map<string, Texture>();
+                        const decomposed = decomposeModelToPrefabNodes(model, {
+                            idPrefix: modelIdPrefix,
+                            getTexturePath: (texture, usage) => {
+                                const key = `embedded/${modelIdPrefix}/${usage}/${texture.uuid}`;
+                                textureRefs.set(key, texture);
+                                return key;
+                            },
+                        });
+                        textureRefs.forEach((texture, path) => scene?.addTexture(path, texture));
+                        add({
+                            ...decomposed,
+                            name: modelName || decomposed.name,
+                        });
+                        return;
+                    }
+
+                    add(createModelNode(path, modelName));
                 },
                 onTextureLoaded: (texture, filename, file) => {
                     const path = getPrefabAssetRef(filename, 'textures');

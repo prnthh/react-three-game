@@ -110,6 +110,13 @@ That means authored content stays as a prefab, and the same prefab can be:
 
 Custom component `View`s use normal React Three Fiber composition with `children`.
 
+When you import or decompose a `.glb` or `.gltf` model, mesh names can opt into imported Crashcat colliders:
+
+* `MeshName_col` keeps the mesh visible and adds a fixed `CrashcatPhysics` `trimesh` collider.
+* `MeshName_colonly` adds the same collider but hides the decomposed mesh render.
+
+This mirrors the common Blender authoring workflow: export helper collision meshes in the GLB, then edit the generated `CrashcatPhysics` properties if that body needs a different motion type or collider shape.
+
 For agent-authored custom meshes, use `BufferGeometry` with flat numeric arrays:
 
 ```json

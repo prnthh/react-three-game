@@ -7,7 +7,7 @@ import { useClickValid } from "./useClickValid";
 
 import { findComponent, getNodeUserData } from "./types";
 import type { ComponentData, GameObject as GameObjectType, Prefab } from "./types";
-import type { Component } from "./components/ComponentRegistry";
+import type { Component, ComponentViewProps } from "./components/ComponentRegistry";
 import { getComponentDef, registerComponent } from "./components/ComponentRegistry";
 import { builtinComponents } from "./components";
 import { loadModel, loadSound, loadTexture } from "../dragdrop";
@@ -437,23 +437,27 @@ function emitNodePointerEvent(
     node: GameObjectType,
     fallbackObject: Object3D | null,
 ) {
-    const trimmedEventName = eventName?.trim();
-    if (!trimmedEventName) return;
-
-    gameEvents.emit(trimmedEventName, {
+    const payload = {
         sourceEntityId: nodeId,
         sourceNodeId: nodeId,
         nodeId,
         node,
         object: event.object ?? fallbackObject,
-        point: [event.point.x, event.point.y, event.point.z],
+        point: [event.point.x, event.point.y, event.point.z] as [number, number, number],
         button: event.button,
         altKey: event.nativeEvent.altKey,
         ctrlKey: event.nativeEvent.ctrlKey,
         metaKey: event.nativeEvent.metaKey,
         shiftKey: event.nativeEvent.shiftKey,
         r3fEvent: event,
-    });
+    };
+
+    gameEvents.emit('click', payload);
+
+    const trimmedEventName = eventName?.trim();
+    if (!trimmedEventName) return;
+
+    gameEvents.emit(trimmedEventName, payload);
 }
 
 export function GameObjectRenderer(props: RendererProps) {
@@ -611,6 +615,7 @@ function StandardNode({
         rotation: transform.rotation,
         scale: transform.scale,
     };
+    const worldTransform = decompose(world);
     const groupProps = {
         ...metadataProps,
         ...transformProps,
@@ -623,7 +628,21 @@ function StandardNode({
         basePath={basePath}
     />;
 
-    const inner = renderNodeContent(analyzedComponents, loadedModels, primaryClickHandlers, childNodes, basePath);
+    const nodeInteractionHandlers = editMode ? editClickHandlers : primaryClickHandlers;
+    const componentRuntimeProps: ComponentRuntimeProps = {
+        editMode,
+        nodeInteractionHandlers,
+        ...transformProps,
+        worldPosition: worldTransform.position,
+    };
+    const inner = renderNodeContent(
+        analyzedComponents,
+        loadedModels,
+        primaryClickHandlers,
+        childNodes,
+        basePath,
+        componentRuntimeProps,
+    );
     const editAnchor = editMode ? (
         <mesh visible={false}>
             <boxGeometry args={[0.01, 0.01, 0.01]} />
@@ -663,6 +682,7 @@ interface RendererProps {
 }
 
 type PrimaryClickHandlers = { onClick?: (event: ThreeEvent<PointerEvent>) => void };
+type ComponentRuntimeProps = Pick<ComponentViewProps, "editMode" | "nodeInteractionHandlers" | "position" | "rotation" | "scale" | "worldPosition">;
 
 function ChildNodes({ childIds, parentMatrix, ...props }: { childIds: string[]; parentMatrix: Matrix4 } & Omit<RendererProps, 'nodeId' | 'parentMatrix'>) {
     return childIds.map(childId =>
@@ -768,6 +788,7 @@ function renderNodeContent(
     primaryClickHandlers?: PrimaryClickHandlers,
     childNodes?: React.ReactNode,
     basePath = "",
+    componentRuntimeProps?: ComponentRuntimeProps,
 ) {
     const geometry = analyzedComponents.geometry;
     const models = analyzedComponents.models;
@@ -867,7 +888,12 @@ function renderNodeContent(
     let content = <>{primaryContent}{contentChildren}</>;
     for (const { key, View, properties } of analyzedComponents.composition) {
         content = (
-            <View key={key} properties={properties} basePath={basePath}>
+            <View
+                key={key}
+                properties={properties}
+                basePath={basePath}
+                {...componentRuntimeProps}
+            >
                 {content}
             </View>
         );

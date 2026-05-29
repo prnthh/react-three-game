@@ -1,4 +1,5 @@
 import type { FC } from "react";
+import type { ThreeEvent } from "@react-three/fiber";
 import type { ComponentData, GameObject } from "../types";
 
 export type AssetRef = { type: "model" | "texture" | "sound"; path: string };
@@ -22,15 +23,28 @@ export interface ComponentViewProps<P = Record<string, unknown>> {
 	properties: P;
 	/** Children to render for components that wrap the current subtree. */
 	children?: React.ReactNode;
+	/** Whether this node is currently rendered in editor mode. */
+	editMode?: boolean;
+	/** Node-level pointer/click handlers for custom components that render their own pickable objects. */
+	nodeInteractionHandlers?: NodeInteractionHandlers;
 	/** Current node local position for wrapper components. */
 	position?: [number, number, number];
 	/** Current node local rotation in radians for wrapper components. */
 	rotation?: [number, number, number];
 	/** Current node local scale for wrapper components. */
 	scale?: [number, number, number];
+	/** Current node world position. Components that create world-space resources should prefer this. */
+	worldPosition?: [number, number, number];
 	/** Public asset URL prefix, such as a Next.js basePath. */
 	basePath?: string;
 }
+
+export type NodeInteractionHandlers = {
+	onClick?: (event: ThreeEvent<PointerEvent>) => void;
+	onPointerDown?: (event: ThreeEvent<PointerEvent>) => void;
+	onPointerMove?: (event: ThreeEvent<PointerEvent>) => void;
+	onPointerUp?: (event: ThreeEvent<PointerEvent>) => void;
+};
 
 export interface Component {
 	name: string;

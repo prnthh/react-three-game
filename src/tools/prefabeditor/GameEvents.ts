@@ -9,6 +9,7 @@ export type ContactEventPayload = {
     targetEntityId?: string | null;
     targetNodeId?: string | null;
     targetObject?: unknown;
+    collisionNormal?: [number, number, number];
     event?: unknown;
 };
 

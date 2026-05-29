@@ -9,3 +9,12 @@ export {
     default as CrashcatPhysicsComponent,
     default,
 } from "./CrashcatPhysicsComponent";
+export {
+    CrashcatRagdoll,
+    default as CrashcatRagdollComponent,
+    RagdollBodyPart,
+    createRagdollSettings,
+    createStaticBoxBody,
+    type CrashcatRagdollProps,
+    type RagdollSettings,
+} from "./CrashcatRagdoll";

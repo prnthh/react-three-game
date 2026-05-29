@@ -20,6 +20,7 @@ import {
 import { debugRenderer } from "crashcat/three";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { gameEvents } from "../../tools/prefabeditor/GameEvents";
+import type { ContactEventPayload } from "../../tools/prefabeditor/GameEvents";
 import { PrefabEditorMode, useScene } from "../../tools/prefabeditor/PrefabRoot";
 
 const SLEEP_TIME_BEFORE_REST = 0.1;
@@ -86,16 +87,26 @@ function setCrashcatApi(api: CrashcatApi | null) {
     });
 }
 
-function emitConfiguredEvent(eventName: string | undefined, sourceNodeId: string, targetNodeId: string | null, collisionNormal?: [number, number, number]) {
-    const trimmed = eventName?.trim();
-    if (!trimmed) return;
-    gameEvents.emit(trimmed, {
+function emitPhysicsEvent(
+    eventType: "collision:enter" | "collision:exit" | "sensor:enter" | "sensor:exit",
+    eventName: string | undefined,
+    sourceNodeId: string,
+    targetNodeId: string | null,
+    collisionNormal?: [number, number, number],
+) {
+    const alias = eventName?.trim();
+    if (!gameEvents.hasListeners(eventType) && (!alias || !gameEvents.hasListeners(alias))) return;
+
+    const payload: ContactEventPayload = {
         sourceEntityId: sourceNodeId,
         sourceNodeId,
         targetEntityId: targetNodeId,
         targetNodeId,
         ...(collisionNormal ? { collisionNormal } : {}),
-    });
+    };
+
+    gameEvents.emit(eventType, payload);
+    if (alias) gameEvents.emit(alias, payload);
 }
 
 function createDebugState() {
@@ -137,15 +148,16 @@ export function CrashcatRuntime({ debug = false, children }: { debug?: boolean; 
             const n = manifold?.worldSpaceNormal;
             const nA = n ? [n[0], n[1], n[2]] as [number, number, number] : undefined;
             const nB = n ? [-n[0], -n[1], -n[2]] as [number, number, number] : undefined;
-            if (metaA?.events) emitConfiguredEvent(metaA.sensor ? metaA.events.sensorEnter : metaA.events.collisionEnter, metaA.nodeId, metaB?.nodeId ?? null, nA);
-            if (metaB?.events) emitConfiguredEvent(metaB.sensor ? metaB.events.sensorEnter : metaB.events.collisionEnter, metaB.nodeId, metaA?.nodeId ?? null, nB);
+            if (metaA) emitPhysicsEvent(metaA.sensor ? "sensor:enter" : "collision:enter", metaA.sensor ? metaA.events?.sensorEnter : metaA.events?.collisionEnter, metaA.nodeId, metaB?.nodeId ?? null, nA);
+            if (metaB) emitPhysicsEvent(metaB.sensor ? "sensor:enter" : "collision:enter", metaB.sensor ? metaB.events?.sensorEnter : metaB.events?.collisionEnter, metaB.nodeId, metaA?.nodeId ?? null, nB);
         },
         onContactRemoved: (idA, idB) => {
             const metaA = bodyByIdRef.current.get(Number(idA));
             const metaB = bodyByIdRef.current.get(Number(idB));
-            if (metaA?.events) emitConfiguredEvent(metaA.sensor ? metaA.events.sensorExit : metaA.events.collisionExit, metaA.nodeId, metaB?.nodeId ?? null);
-            if (metaB?.events) emitConfiguredEvent(metaB.sensor ? metaB.events.sensorExit : metaB.events.collisionExit, metaB.nodeId, metaA?.nodeId ?? null);
+            if (metaA) emitPhysicsEvent(metaA.sensor ? "sensor:exit" : "collision:exit", metaA.sensor ? metaA.events?.sensorExit : metaA.events?.collisionExit, metaA.nodeId, metaB?.nodeId ?? null);
+            if (metaB) emitPhysicsEvent(metaB.sensor ? "sensor:exit" : "collision:exit", metaB.sensor ? metaB.events?.sensorExit : metaB.events?.collisionExit, metaB.nodeId, metaA?.nodeId ?? null);
         },
+        onBodyPairValidate: (bodyA, bodyB) => !rigidBody.bodiesShareConstraint(bodyA, bodyB),
     }), []);
 
     useEffect(() => {

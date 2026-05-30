@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import type { Component, ComponentViewProps } from './ComponentRegistry';
 import type { GameObject, Prefab } from '../types';
-import PrefabRoot from '../PrefabRoot';
-import { useEditorRef } from '../PrefabEditor';
+import { useEditorRef } from '../EditorContext';
 import { withBasePath } from '../utils';
 import { base, colors } from '../styles';
 import { FieldGroup, Label } from './Input';
+
+const PrefabRoot = lazy(() => import('../PrefabRoot'));
 
 type PrefabRefProperties = {
     url?: string;
@@ -29,7 +30,11 @@ function PrefabRefView({ properties, children, basePath = '' }: ComponentViewPro
 
     return (
         <>
-            {loadedPrefab && <PrefabRoot data={loadedPrefab} editMode={false} basePath={basePath} />}
+            {loadedPrefab && (
+                <Suspense fallback={null}>
+                    <PrefabRoot data={loadedPrefab} editMode={false} basePath={basePath} />
+                </Suspense>
+            )}
             {children}
         </>
     );

@@ -1,6 +1,5 @@
 "use client";
 
-import { PerspectiveCamera } from "@react-three/drei";
 import { useEffect } from "react";
 import { PrefabEditor, PrefabEditorMode, registerComponent } from "react-three-game";
 import type { Prefab } from "react-three-game";
@@ -161,7 +160,6 @@ export default function RagdollDemo() {
             <PrefabEditor basePath={BASE_PATH} initialPrefab={ragdollDemoPrefab} mode={PrefabEditorMode.Play}>
                 <CrashcatRuntime debug />
                 <DemoBindings />
-                <PerspectiveCamera makeDefault position={[0, 4.2, 10]} fov={48} />
                 <ambientLight intensity={0.65} />
                 <directionalLight
                     castShadow

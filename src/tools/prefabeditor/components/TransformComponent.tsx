@@ -1,6 +1,6 @@
 import { Component } from "./ComponentRegistry";
 import { Label, Vector3Input } from "./Input";
-import { useEditorContext } from "../PrefabEditor";
+import { useEditorContext } from "../EditorContext";
 import { colors } from "../styles";
 
 const buttonStyle = {

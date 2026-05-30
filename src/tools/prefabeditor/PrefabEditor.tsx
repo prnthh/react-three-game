@@ -1,6 +1,6 @@
 import { MapControls, TransformControls, useHelper } from "@react-three/drei";
 import GameCanvas from "../../shared/GameCanvas";
-import { useCallback, useEffect, useMemo, useRef, useState, forwardRef, useImperativeHandle, createContext, useContext } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, forwardRef, useImperativeHandle } from "react";
 import { BoxHelper } from "three";
 import type { Object3D, Texture } from "three";
 import { findComponentEntry } from "./types";
@@ -15,6 +15,7 @@ import { denormalizePrefab, createImageNode, createModelNode, createNode } from 
 import { createPrefabStore, type PrefabStoreState, PrefabStoreProvider } from "./prefabStore";
 import type { MapControls as MapControlsImpl, TransformControls as TransformControlsImpl } from 'three-stdlib';
 import { decomposeModelToPrefabNodes, hasCollisionMeshConventions } from "./modelPrefab";
+import { EditorContext, EditorRefContext, type PrefabEditorRef } from "./EditorContext";
 
 function isObjectAttachedToRoot(root: Object3D | null | undefined, object: Object3D | null | undefined) {
     if (!root || !object) return false;
@@ -48,54 +49,9 @@ function SelectionHelper({ object }: { object: Object3D | null }) {
     return null;
 }
 
-export interface PrefabEditorRef extends Scene {
-    save: () => Prefab;
-    load: (prefab: Prefab, options?: { resetHistory?: boolean; notifyChange?: boolean }) => void;
-    undo: () => void;
-    redo: () => void;
-    screenshot: () => void;
-    exportGLB: (options?: ExportGLBOptions) => Promise<ArrayBuffer | undefined>;
-    exportGLBData: () => Promise<ArrayBuffer | undefined>;
-    clearSelection: () => Promise<void>;
-}
-
 export type { PrefabNode } from "./PrefabRoot";
-
-export interface EditorContextType {
-    mode: PrefabEditorMode;
-    basePath: string;
-    setMode: (mode: PrefabEditorMode) => void;
-    transformMode: "translate" | "rotate" | "scale";
-    setTransformMode: (mode: "translate" | "rotate" | "scale") => void;
-    scaleSnap: number;
-    setScaleSnap: (resolution: number) => void;
-    positionSnap: number;
-    setPositionSnap: (resolution: number) => void;
-    rotationSnap: number;
-    setRotationSnap: (resolution: number) => void;
-    onFocusNode?: (nodeId: string) => void;
-    onScreenshot?: () => void;
-    onExportGLB?: () => void;
-}
-
-export const EditorContext = createContext<EditorContextType | null>(null);
-export const EditorRefContext = createContext<PrefabEditorRef | null>(null);
-
-export function useEditorContext() {
-    const context = useContext(EditorContext);
-    if (!context) {
-        throw new Error("useEditorContext must be used within EditorContext.Provider");
-    }
-    return context;
-}
-
-export function useEditorRef() {
-    const editorRef = useContext(EditorRefContext);
-    if (!editorRef) {
-        throw new Error("useEditorRef must be used within PrefabEditor");
-    }
-    return editorRef;
-}
+export type { EditorContextType, PrefabEditorRef } from "./EditorContext";
+export { EditorContext, EditorRefContext, useEditorContext, useEditorRef } from "./EditorContext";
 
 export interface PrefabEditorProps {
     basePath?: string;

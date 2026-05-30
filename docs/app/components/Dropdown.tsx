@@ -17,6 +17,7 @@ export default function Dropdown() {
         { label: "World", href: "/demo/world" },
         { label: "Killbox", href: "/demo/killbox" },
         { label: "Physics", href: "/demo/physics" },
+        { label: "Ragdoll", href: "/demo/ragdoll" },
         { label: "Quake", href: "/demo/quake" },
         { label: "Asset Viewer", href: "/demo/assetviewer" },
         { label: "Benchmark", href: "/demo/benchmark" },

@@ -11,8 +11,8 @@ export { sound as soundManager } from './helpers/SoundManager';
 export { default as PrefabEditor } from './tools/prefabeditor/PrefabEditor';
 export { PrefabEditorMode } from './tools/prefabeditor/PrefabRoot';
 export { default as PrefabRoot } from './tools/prefabeditor/PrefabRoot';
-export { useEditorContext, useEditorRef } from './tools/prefabeditor/PrefabEditor';
-export type { EditorContextType } from './tools/prefabeditor/PrefabEditor';
+export { useEditorContext, useEditorRef } from './tools/prefabeditor/EditorContext';
+export type { EditorContextType } from './tools/prefabeditor/EditorContext';
 export { usePrefabStore, usePrefabStoreApi } from './tools/prefabeditor/prefabStore';
 export type { PrefabStoreApi, PrefabStoreState } from './tools/prefabeditor/prefabStore';
 

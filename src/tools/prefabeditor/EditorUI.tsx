@@ -3,7 +3,7 @@ import { GameObject as GameObjectType, Prefab, hasComponent } from "./types";
 import EditorTree from './EditorTree';
 import { canAddComponentToNode, getAllComponentDefs, getNextComponentKey } from './components/ComponentRegistry';
 import { createComponentData } from './prefab';
-import { useEditorRef } from './PrefabEditor';
+import { useEditorRef } from './EditorContext';
 import { base, colors, inspector, componentCard } from './styles';
 import { usePrefabStore } from './prefabStore';
 

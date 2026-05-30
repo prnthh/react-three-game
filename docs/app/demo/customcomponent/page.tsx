@@ -1,6 +1,6 @@
 "use client";
 
-import { PrefabEditor, registerComponent } from "react-three-game";
+import { PrefabEditor, registerComponent } from "react-three-game/editor";
 import RotatorComponent from "./RotatorComponent";
 import SquishComponent from "./SquishComponent";
 import rotatorDemo from "./rotator-demo.json";

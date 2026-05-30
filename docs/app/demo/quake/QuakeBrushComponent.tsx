@@ -1,6 +1,6 @@
 "use client";
 
-import { Component, loadTexture } from "react-three-game";
+import { Component, loadTexture } from "react-three-game/editor";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
     BufferAttribute,

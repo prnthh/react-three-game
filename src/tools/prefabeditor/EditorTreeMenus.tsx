@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Prefab } from './types';
 import { createEmptyPrefab } from './prefab';
 import { menu } from './styles';
-import { useEditorContext } from './PrefabEditor';
+import { useEditorContext } from './EditorContext';
 import { loadJson, loadJsonFile, saveJson, withBasePath } from './utils';
 
 export type TreeContextMenuState = { nodeId: string; x: number; y: number } | null;

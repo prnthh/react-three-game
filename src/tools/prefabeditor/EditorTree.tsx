@@ -1,7 +1,7 @@
 import { memo, MouseEvent, useCallback, useState } from 'react';
 import { Prefab } from "./types";
 import { base, colors, tree } from './styles';
-import { useEditorContext, useEditorRef } from './PrefabEditor';
+import { useEditorContext, useEditorRef } from './EditorContext';
 import { Dropdown } from './Dropdown';
 import { FileMenu, TreeContextMenu, TreeContextMenuState, TreeNodeMenu } from './EditorTreeMenus';
 import { createEmptyNode, createPackedPrefabNode } from './prefab';

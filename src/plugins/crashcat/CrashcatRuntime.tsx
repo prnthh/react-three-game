@@ -21,7 +21,7 @@ import { debugRenderer } from "crashcat/three";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { gameEvents } from "../../tools/prefabeditor/GameEvents";
 import type { ContactEventPayload } from "../../tools/prefabeditor/GameEvents";
-import { PrefabEditorMode, useScene } from "../../tools/prefabeditor/PrefabRoot";
+import { PrefabEditorMode, useScene } from "../../tools/prefabeditor/SceneContext";
 
 const SLEEP_TIME_BEFORE_REST = 0.1;
 const SLEEP_POINT_VELOCITY_THRESHOLD = 0.06;

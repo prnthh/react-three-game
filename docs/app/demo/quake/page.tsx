@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { PrefabEditor, registerComponent } from "react-three-game";
-import type { Prefab } from "react-three-game";
+import { PrefabEditor, registerComponent } from "react-three-game/editor";
+import type { Prefab } from "react-three-game/editor";
 import { parseQuakeMap, quakeMapToPrefab } from "./quakeMapParser";
 import QuakeBrushComponent from "./QuakeBrushComponent";
 import { withBasePath, BASE_PATH } from "../../basePath";

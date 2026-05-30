@@ -50,7 +50,7 @@ export interface Component {
 	name: string;
 	/** Set when this component occupies a single slot on a node. Use a string to share a slot across component types. */
 	disableSiblingComposition?: boolean | string;
-	Editor: FC<{
+	Editor?: FC<{
 		node?: GameObject;
 		component: ComponentData;
 		onUpdate: (newComp: Record<string, unknown>) => void;

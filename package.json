@@ -2,14 +2,16 @@
 	"name": "react-three-game",
 	"version": "0.0.108",
 	"description": "high performance 3D game engine built in React",
-	"main": "dist/index.js",
-	"module": "dist/index.js",
-	"types": "dist/index.d.ts",
 	"exports": {
-		".": {
-			"types": "./dist/index.d.ts",
-			"import": "./dist/index.js",
-			"default": "./dist/index.js"
+		"./viewer": {
+			"types": "./dist/viewer.d.ts",
+			"import": "./dist/viewer.js",
+			"default": "./dist/viewer.js"
+		},
+		"./editor": {
+			"types": "./dist/editor.d.ts",
+			"import": "./dist/editor.js",
+			"default": "./dist/editor.js"
 		},
 		"./plugins": {
 			"types": "./dist/plugins/index.d.ts",

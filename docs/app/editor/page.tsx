@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { PrefabEditor } from "react-three-game";
-import type { Prefab } from "react-three-game";
+import { PrefabEditor } from "react-three-game/editor";
+import type { Prefab } from "react-three-game/editor";
 import { withBasePath, BASE_PATH } from "../basePath";
 
 export default function Home() {

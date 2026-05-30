@@ -2,7 +2,11 @@ import { createContext, useContext, useMemo, type ReactNode } from "react";
 import type { Object3D, Texture } from "three";
 
 export interface AssetRuntime {
+    registerObject: (id: string, object: Object3D | null) => void;
     registerHandle: (id: string, kind: string, handle: unknown) => void;
+    registerModel: (path: string, model: Object3D) => void;
+    registerTexture: (path: string, texture: Texture) => void;
+    registerSound: (path: string, sound: AudioBuffer) => void;
     getHandle: <T = unknown>(id: string, kind: string) => T | null;
     getModel: (path: string) => Object3D | null;
     getTexture: (path: string) => Texture | null;

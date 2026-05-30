@@ -1,10 +1,10 @@
 "use client";
 
 import { useRef } from "react";
-import { PrefabEditor, registerComponent } from "react-three-game";
+import { PrefabEditor, registerComponent } from "react-three-game/editor";
 import { CrashcatPhysicsComponent, CrashcatRuntime } from "react-three-game/plugins/crashcat";
 import initialWorld from "./prefab.json";
-import type { Prefab, PrefabEditorRef } from "react-three-game";
+import type { Prefab, PrefabEditorRef } from "react-three-game/editor";
 
 import FirstPersonPlayer, { type FirstPersonPlayerRef } from "../killbox/components/FirstPersonPlayer";
 import AnimationMixer from "./components/AnimationMixer";

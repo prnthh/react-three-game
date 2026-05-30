@@ -6,7 +6,7 @@ import type { Component, ComponentViewProps } from './ComponentRegistry';
 import { BooleanField, FieldGroup, Label, ListEditor, NumberInput, SelectInput, StringField } from './Input';
 import { useAssetRuntime } from '../assetRuntime';
 import type { ComponentData, GameObject } from '../types';
-import { useEditorContext, useEditorRef } from '../PrefabEditor';
+import { useEditorContext, useEditorRef } from '../EditorContext';
 import { getRepeatAxesFromModelProperties, normalizeRepeatAxes } from '../InstanceProvider';
 import type { RepeatAxisConfig } from '../InstanceProvider';
 import { base, colors, ui } from '../styles';

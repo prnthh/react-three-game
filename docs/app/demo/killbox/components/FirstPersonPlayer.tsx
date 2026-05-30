@@ -4,7 +4,7 @@ import { PerspectiveCamera, PointerLockControls, useGLTF } from "@react-three/dr
 import { useFrame, useThree } from "@react-three/fiber";
 import { CastRayStatus, capsule, castRay, createClosestCastRayCollector, createDefaultCastRaySettings, filter, kcc, rigidBody, MotionQuality, MotionType, type Filter, type RigidBody, type World } from "crashcat";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from "react";
-import { gameEvents, PrefabEditorMode, soundManager, useScene } from "react-three-game";
+import { gameEvents, PrefabEditorMode, soundManager, useScene } from "react-three-game/editor";
 import { useCrashcat } from "react-three-game/plugins/crashcat";
 import { MathUtils, Quaternion, Raycaster, Vector2, Vector3 } from "three";
 import type { Camera, Group, Object3D } from "three";

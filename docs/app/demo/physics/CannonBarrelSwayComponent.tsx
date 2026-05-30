@@ -1,6 +1,6 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
-import { Component, FieldDefinition, FieldRenderer, useNodeObject } from "react-three-game";
+import { Component, FieldDefinition, FieldRenderer, useNodeObject } from "react-three-game/editor";
 
 type CannonBarrelSwayProperties = {
     yawAmplitude?: number;

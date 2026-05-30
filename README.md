@@ -29,7 +29,7 @@ npm install react-three-game @react-three/drei @react-three/fiber three
 Here is a minimal example that renders a prefab inside a normal R3F app:
 
 ```tsx
-import { GameCanvas, PrefabRoot, ground } from "react-three-game";
+import { GameCanvas, PrefabRoot, ground } from "react-three-game/viewer";
 
 const prefab = {
   id: "starter-scene",
@@ -80,7 +80,7 @@ This example renders a simple authored prefab with a ground plane and mesh conte
 In addition to the runtime renderer, there is a visual editor for authoring prefabs.
 
 ```tsx
-import { PrefabEditor } from "react-three-game";
+import { PrefabEditor } from "react-three-game/editor";
 
 export default function App() {
   return <PrefabEditor initialPrefab={prefab} onChange={console.log} />;
@@ -164,7 +164,7 @@ Use the editor or root ref for scene-native object access, and the `Scene` mutat
 
 ```tsx
 import { useEffect, useRef } from "react";
-import { PrefabEditor, type PrefabEditorRef } from "react-three-game";
+import { PrefabEditor, type PrefabEditorRef } from "react-three-game/editor";
 
 function RaiseBall() {
   const editorRef = useRef<PrefabEditorRef>(null);
@@ -199,7 +199,7 @@ ball?.rotateY(0.5);
 For runtime integrations that need to react to authored scene changes, subscribe through the prefab store:
 
 ```tsx
-import { usePrefabStoreApi } from "react-three-game";
+import { usePrefabStoreApi } from "react-three-game/editor";
 
 const store = usePrefabStoreApi();
 const stop = store.subscribe(
@@ -214,7 +214,7 @@ For runtime-owned imperative state, register node-local handles instead of reach
 
 ```tsx
 import { useEffect } from "react";
-import { useAssetRuntime, useNode, useNodeHandle } from "react-three-game";
+import { useAssetRuntime, useNode, useNodeHandle } from "react-three-game/viewer";
 
 function SpinnerView({ children }: { children?: React.ReactNode }) {
   const { nodeId } = useNode();

@@ -15,6 +15,7 @@ import EnvironmentComponent from "./EnvironmentComponent";
 import CameraComponent from "./CameraComponent";
 import SoundComponent from "./SoundComponent";
 import DataComponent from "./DataComponent";
+import { registerComponent } from "./ComponentRegistry";
 
 // this controls the order of components in the editor, and also which components are available to add
 export const builtinComponents = [
@@ -43,3 +44,11 @@ export const builtinComponents = [
 	DataComponent,
 	PrefabRefComponent,
 ];
+
+let didRegisterBuiltinComponents = false;
+
+export function registerBuiltinComponents() {
+	if (didRegisterBuiltinComponents) return;
+	builtinComponents.forEach(registerComponent);
+	didRegisterBuiltinComponents = true;
+}

@@ -1,4 +1,4 @@
-import { createContext, createElement, type ReactNode, useContext } from "react";
+import { Fragment, createContext, createElement, type ReactNode, useContext } from "react";
 import { subscribeWithSelector } from "zustand/middleware";
 import { useStore } from "zustand";
 import { createStore, type StoreApi } from "zustand/vanilla";
@@ -96,6 +96,11 @@ export function PrefabStoreProvider({
     store: PrefabStoreApi;
     children: ReactNode;
 }) {
+    const parentStore = useContext(PrefabStoreContext);
+    if (parentStore === store) {
+        return createElement(Fragment, null, children);
+    }
+
     return createElement(PrefabStoreContext.Provider, { value: store }, children);
 }
 

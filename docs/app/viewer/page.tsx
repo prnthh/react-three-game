@@ -1,10 +1,10 @@
 "use client";
 
-import { GameCanvas, PrefabRoot } from "react-three-game";
+import { GameCanvas, PrefabRoot } from "react-three-game/viewer";
 import { useState } from "react";
-import { Toolbar } from "../editor/page";
 import { OrbitControls } from "@react-three/drei";
-import { BASE_PATH } from "../basePath";
+import { BASE_PATH, withBasePath } from "../basePath";
+import type { Prefab } from "react-three-game/viewer";
 
 export default function Home() {
     const [selectedScene, setSelectedScene] = useState<any>(inlinePrefab);
@@ -20,9 +20,23 @@ export default function Home() {
             </GameCanvas>
 
             <div className="fixed top-2 left-1/2 -translate-x-1/2 z-2">
-                <Toolbar setSelectedPrefab={setSelectedScene} />
+                <ViewerToolbar setSelectedPrefab={setSelectedScene} />
             </div>
         </main>
+    );
+}
+
+function ViewerToolbar({ setSelectedPrefab }: { setSelectedPrefab: (prefab: Prefab) => void }) {
+    return (
+        <select className="bg-white text-black" onChange={(event) => {
+            if (!event.target.value) return;
+            fetch(withBasePath(`/prefabs/${event.target.value}.json`)).then(response => response.json()).then(setSelectedPrefab);
+        }}>
+            <option value="">— select prefab —</option>
+            {["throne", "game-level", "prefab"].map((prefabName) => (
+                <option key={prefabName} value={prefabName}>{prefabName}</option>
+            ))}
+        </select>
     );
 }
 

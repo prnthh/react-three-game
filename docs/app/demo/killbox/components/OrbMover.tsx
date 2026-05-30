@@ -2,8 +2,8 @@
 
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
-import { FieldRenderer, useNode, useScene, useGameEvent } from "react-three-game";
-import type { Component, ComponentViewProps, ContactEventPayload, FieldDefinition } from "react-three-game";
+import { FieldRenderer, useNode, useScene, useGameEvent } from "react-three-game/editor";
+import type { Component, ComponentViewProps, ContactEventPayload, FieldDefinition } from "react-three-game/editor";
 
 const DEFAULT_SPEED = 1.2;
 const COLLISION_EVENT_NAME = "orb:collision";

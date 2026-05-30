@@ -1,5 +1,5 @@
 import { useFrame } from "@react-three/fiber";
-import { Component, FieldRenderer, FieldDefinition, useNodeObject } from "react-three-game";
+import { Component, FieldRenderer, FieldDefinition, useNodeObject } from "react-three-game/editor";
 
 type RotationAxis = 'x' | 'y' | 'z';
 type RotatorProperties = {

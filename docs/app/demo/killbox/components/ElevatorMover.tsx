@@ -1,8 +1,8 @@
 "use client";
 
 import { useRef } from "react";
-import { FieldRenderer, useNode, useScene, useGameEvent } from "react-three-game";
-import type { Component, ComponentViewProps, ContactEventPayload, FieldDefinition } from "react-three-game";
+import { FieldRenderer, useNode, useScene, useGameEvent } from "react-three-game/editor";
+import type { Component, ComponentViewProps, ContactEventPayload, FieldDefinition } from "react-three-game/editor";
 import { useFrame } from "@react-three/fiber";
 
 const DEFAULT_CONTACT_EVENT_NAME = "elevator:contact";

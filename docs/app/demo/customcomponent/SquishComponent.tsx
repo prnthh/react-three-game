@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { Component, FieldDefinition, FieldRenderer, MaterialOverridesProvider, float, positionLocal, sin, time, uniform, vec3 } from "react-three-game";
+import { Component, FieldDefinition, FieldRenderer, MaterialOverridesProvider, float, positionLocal, sin, time, uniform, vec3 } from "react-three-game/editor";
 
 const DEFAULT_AMOUNT = 0.3;
 const DEFAULT_SPEED = 3.5;

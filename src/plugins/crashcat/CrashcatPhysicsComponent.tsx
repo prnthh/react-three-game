@@ -15,7 +15,7 @@ import {
 } from "../../tools/prefabeditor/components/ComponentRegistry";
 import { useAssetRuntime, useNode } from "../../tools/prefabeditor/assetRuntime";
 import { usePrefabStoreApi } from "../../tools/prefabeditor/prefabStore";
-import { PrefabEditorMode, useScene } from "../../tools/prefabeditor/PrefabRoot";
+import { PrefabEditorMode, useScene } from "../../tools/prefabeditor/SceneContext";
 import {
     box,
     capsule,

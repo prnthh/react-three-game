@@ -1,17 +1,17 @@
 import { MapControls, TransformControls, useHelper } from "@react-three/drei";
-import GameCanvas from "../../shared/GameCanvas";
 import { useCallback, useEffect, useMemo, useRef, useState, forwardRef, useImperativeHandle } from "react";
 import { BoxHelper } from "three";
 import type { Object3D, Texture } from "three";
 import { findComponentEntry } from "./types";
 import type { GameObject, Prefab } from "./types";
-import { PrefabEditorMode, PrefabRoot, type PrefabNode, type Scene } from "./PrefabRoot";
+import { GameCanvas, PrefabRoot, PrefabEditorMode, SceneContext, createImageNode, createModelNode, denormalizePrefab } from "../../viewer";
+import type { PrefabNode, Scene } from "../../viewer";
 import EditorUI from "./EditorUI";
 import { base, toolbar } from "./styles";
 import { computeParentWorldMatrix, decompose, exportGLB as exportGLBFile, exportGLBData, focusCameraOnObject, isExternalPath, regenerateIds, withBasePath } from "./utils";
 import type { ExportGLBOptions } from "./utils";
 import { loadDroppedAssets } from "../dragdrop";
-import { denormalizePrefab, createImageNode, createModelNode, createNode } from './prefab';
+import { createNode } from './prefab';
 import { createPrefabStore, type PrefabStoreState, PrefabStoreProvider } from "./prefabStore";
 import type { MapControls as MapControlsImpl, TransformControls as TransformControlsImpl } from 'three-stdlib';
 import { decomposeModelToPrefabNodes, hasCollisionMeshConventions } from "./modelPrefab";
@@ -49,7 +49,6 @@ function SelectionHelper({ object }: { object: Object3D | null }) {
     return null;
 }
 
-export type { PrefabNode } from "./PrefabRoot";
 export type { EditorContextType, PrefabEditorRef } from "./EditorContext";
 export { EditorContext, EditorRefContext, useEditorContext, useEditorRef } from "./EditorContext";
 
@@ -485,67 +484,69 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
                 onScreenshot: handleScreenshot,
                 onExportGLB: handleExportGLB
             }}>
-                <GameCanvas
-                    camera={{ position: [0, 5, 15] }}
-                    {...canvasProps}
-                    onCreated={handleCanvasCreated}
-                    onPointerMissed={isEditMode
-                        ? (event) => {
-                            const button = event.button ?? (event as MouseEvent & { sourceEvent?: MouseEvent }).sourceEvent?.button ?? 0;
-                            if (button === 0 && selectedId) {
-                                setSelection(null);
+                <SceneContext.Provider value={sceneValue}>
+                    <GameCanvas
+                        camera={{ position: [0, 5, 15] }}
+                        {...canvasProps}
+                        onCreated={handleCanvasCreated}
+                        onPointerMissed={isEditMode
+                            ? (event) => {
+                                const button = event.button ?? (event as MouseEvent & { sourceEvent?: MouseEvent }).sourceEvent?.button ?? 0;
+                                if (button === 0 && selectedId) {
+                                    setSelection(null);
+                                }
+                                canvasProps?.onPointerMissed?.(event);
                             }
-                            canvasProps?.onPointerMissed?.(event);
-                        }
-                        : canvasProps?.onPointerMissed}
-                >
-                    {content}
-                    {isEditMode ? <SelectionHelper object={transformObject} /> : null}
+                            : canvasProps?.onPointerMissed}
+                    >
+                        {content}
+                        {isEditMode ? <SelectionHelper object={transformObject} /> : null}
 
-                    {isEditMode && (
+                        {isEditMode && (
+                            <>
+                                <MapControls ref={controlsRef} enableDamping={false} makeDefault />
+                                {transformObject && (
+                                    <TransformControls
+                                        ref={transformControlsRef}
+                                        key={`transform-${selectedId}-${transformMode}-${positionSnap}-${rotationSnap}-${scaleSnap}`}
+                                        object={transformObject}
+                                        mode={transformMode}
+                                        space={transformMode === "translate" ? "world" : "local"}
+                                        onObjectChange={handleTransformChange}
+                                        translationSnap={positionSnap > 0 ? positionSnap : undefined}
+                                        rotationSnap={rotationSnap > 0 ? rotationSnap : undefined}
+                                        scaleSnap={scaleSnap > 0 ? scaleSnap : undefined}
+                                    />
+                                )}
+                            </>
+                        )}
+                    </GameCanvas>
+
+                    {showUI && (
                         <>
-                            <MapControls ref={controlsRef} enableDamping={false} makeDefault />
-                            {transformObject && (
-                                <TransformControls
-                                    ref={transformControlsRef}
-                                    key={`transform-${selectedId}-${transformMode}-${positionSnap}-${rotationSnap}-${scaleSnap}`}
-                                    object={transformObject}
-                                    mode={transformMode}
-                                    space={transformMode === "translate" ? "world" : "local"}
-                                    onObjectChange={handleTransformChange}
-                                    translationSnap={positionSnap > 0 ? positionSnap : undefined}
-                                    rotationSnap={rotationSnap > 0 ? rotationSnap : undefined}
-                                    scaleSnap={scaleSnap > 0 ? scaleSnap : undefined}
+                            <div style={toolbar.panel}>
+                                <button type="button" style={base.btn} onClick={toggleMode}>
+                                    {isEditMode ? "▶" : "⏸"}
+                                </button>
+                                {uiPlugins}
+                            </div>
+                            {isEditMode && (
+                                <EditorUI
+                                    selectedId={selectedId}
+                                    setSelectedId={setSelection}
+                                    getPrefab={getPrefab}
+                                    onReplacePrefab={(prefab: Prefab) => loadPrefab(prefab, { resetHistory: true })}
+                                    onImportPrefab={importPrefab}
+                                    basePath={basePath}
+                                    onUndo={undo}
+                                    onRedo={redo}
+                                    canUndo={historyIndex > 0}
+                                    canRedo={historyIndex < history.length - 1}
                                 />
                             )}
                         </>
                     )}
-                </GameCanvas>
-
-                {showUI && (
-                    <>
-                        <div style={toolbar.panel}>
-                            <button type="button" style={base.btn} onClick={toggleMode}>
-                                {isEditMode ? "▶" : "⏸"}
-                            </button>
-                            {uiPlugins}
-                        </div>
-                        {isEditMode && (
-                            <EditorUI
-                                selectedId={selectedId}
-                                setSelectedId={setSelection}
-                                getPrefab={getPrefab}
-                                onReplacePrefab={(prefab: Prefab) => loadPrefab(prefab, { resetHistory: true })}
-                                onImportPrefab={importPrefab}
-                                basePath={basePath}
-                                onUndo={undo}
-                                onRedo={redo}
-                                canUndo={historyIndex > 0}
-                                canRedo={historyIndex < history.length - 1}
-                            />
-                        )}
-                    </>
-                )}
+                </SceneContext.Provider>
             </EditorContext.Provider>
         </EditorRefContext.Provider>
     </PrefabStoreProvider>

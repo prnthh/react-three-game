@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import type { PrefabEditorMode, Scene } from "./PrefabRoot";
+import type { PrefabEditorMode, Scene } from "./SceneContext";
 import type { Prefab } from "./types";
 import type { ExportGLBOptions } from "./utils";
 

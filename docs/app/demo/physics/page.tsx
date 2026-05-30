@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { gameEvents, PrefabEditor, PrefabEditorMode, registerComponent, soundManager, useEditorRef, useScene } from "react-three-game";
+import { gameEvents, PrefabEditor, PrefabEditorMode, registerComponent, soundManager, useEditorRef, useScene } from "react-three-game/editor";
 import { CrashcatPhysicsComponent, CrashcatRuntime } from "react-three-game/plugins/crashcat";
-import type { PrefabEditorRef, Scene } from "react-three-game";
+import type { PrefabEditorRef, Scene } from "react-three-game/editor";
 import { Quaternion, Vector3 } from "three";
 import CannonBarrelSwayComponent from "./CannonBarrelSwayComponent";
 import { withBasePath, BASE_PATH } from "../../basePath";

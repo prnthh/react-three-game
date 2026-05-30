@@ -1,4 +1,4 @@
-import { createContext, forwardRef, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { forwardRef, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { Euler, Matrix4 } from "three";
 import type { Camera, Group, Object3D, Texture, WebGLRenderer } from "three";
 import { useThree, type ThreeEvent } from "@react-three/fiber";
@@ -8,25 +8,20 @@ import { useClickValid } from "./useClickValid";
 import { findComponent, getNodeUserData } from "./types";
 import type { ComponentData, GameObject as GameObjectType, Prefab } from "./types";
 import type { Component, ComponentViewProps } from "./components/ComponentRegistry";
-import { getComponentDef, registerComponent } from "./components/ComponentRegistry";
-import { builtinComponents } from "./components";
+import { getComponentDef } from "./components/ComponentRegistry";
 import { loadModel, loadSound, loadTexture } from "../dragdrop";
 import type { LoadedModels, LoadedSounds, LoadedTextures } from "../dragdrop";
 import { GameInstance, GameInstanceProvider, getRepeatAxesFromModelProperties } from "./InstanceProvider";
-import { composeTransform, decompose, withBasePath } from "./utils";
+import { composeTransform, decompose, withBasePath } from "./runtimeUtils";
 import { createPrefabStore, PrefabStoreProvider, usePrefabChildIds, usePrefabNode, usePrefabRootId } from "./prefabStore";
 import type { PrefabStoreApi } from "./prefabStore";
 import { AssetRuntimeContext, NodeScope } from "./assetRuntime";
 import type { AssetRuntime } from "./assetRuntime";
 import { gameEvents } from "./GameEvents";
 import { sound as soundManager } from "../../helpers/SoundManager";
-
-builtinComponents.forEach(registerComponent);
+import { PrefabEditorMode, SceneContext, type Scene } from "./SceneContext";
 
 const IDENTITY = new Matrix4();
-const EMPTY_MODELS: LoadedModels = {};
-const EMPTY_TEXTURES: LoadedTextures = {};
-const EMPTY_SOUNDS: LoadedSounds = {};
 const EMPTY_NODE_COMPONENTS: AnalyzedNodeComponents = {
     geometry: undefined,
     materials: [],
@@ -67,45 +62,7 @@ function getNodeMetadataProps(node: GameObjectType) {
     };
 }
 
-export enum PrefabEditorMode {
-    Edit = "edit",
-    Play = "play",
-}
-
-export type PrefabNode = Omit<GameObjectType, "children">;
-
-export interface Scene {
-    // Reads
-    root: Object3D | null;
-    mode: PrefabEditorMode;
-    basePath: string;
-    get(id: string): GameObjectType | null;
-    getObject(id: string): Object3D | null;
-    getHandle<T = unknown>(id: string, kind: string): T | null;
-    getModel(path: string): Object3D | null;
-    // Mutations
-    add(node: GameObjectType, parentId?: string): GameObjectType;
-    update(id: string, fn: (node: PrefabNode) => PrefabNode): void;
-    replaceNode(id: string, node: GameObjectType): void;
-    remove(id: string): void;
-    duplicate(id: string): string | null;
-    move(draggedId: string, targetId: string, position: "before" | "inside"): void;
-    replace(prefab: Prefab): void;
-    // Asset injection (for runtime-loaded assets)
-    addModel(path: string, model: Object3D): void;
-    addTexture(path: string, texture: Texture): void;
-    addSound(path: string, sound: AudioBuffer): void;
-}
-
-export const SceneContext = createContext<Scene | null>(null);
-
-export function useScene() {
-    const scene = useContext(SceneContext);
-    if (!scene) {
-        throw new Error("useScene must be used within a PrefabRoot or PrefabEditor scene provider");
-    }
-    return scene;
-}
+export type { Scene };
 
 export interface PrefabRootProps {
     editMode?: boolean;
@@ -136,14 +93,13 @@ type AnalyzedNodeComponents = {
 
 export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, store, selectedId, onSelect, onClick, onEditNodeClick, basePath = "", children }, ref) => {
 
+    const parentScene = useContext(SceneContext);
+    const parentAssetRuntime = useContext(AssetRuntimeContext);
     const renderer = useThree(state => state.gl);
     const camera = useThree(state => state.camera);
     const [models, setModels] = useState<LoadedModels>({});
     const [textures, setTextures] = useState<LoadedTextures>({});
     const [sounds, setSounds] = useState<LoadedSounds>({});
-    const [injectedModels, setInjectedModels] = useState<LoadedModels>(EMPTY_MODELS);
-    const [injectedTextures, setInjectedTextures] = useState<LoadedTextures>(EMPTY_TEXTURES);
-    const [injectedSounds, setInjectedSounds] = useState<LoadedSounds>(EMPTY_SOUNDS);
     const loading = useRef(new Set<string>());
     const failedModels = useRef(new Set<string>());
     const failedTextures = useRef(new Set<string>());
@@ -164,22 +120,21 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, 
     const rootId = useStore(resolvedStore, state => state.rootId);
     const assetRefCounts = useStore(resolvedStore, state => state.assetRefCounts);
 
-    const availableModels = useMemo(() => ({ ...models, ...injectedModels }), [models, injectedModels]);
-    const getModel = useCallback((path: string) => availableModels[path] ?? null, [availableModels]);
-    const getTexture = useCallback((path: string) => injectedTextures[path] ?? textures[path] ?? null, [injectedTextures, textures]);
-    const getSound = useCallback((path: string) => injectedSounds[path] ?? sounds[path] ?? null, [injectedSounds, sounds]);
+    const getModel = useCallback((path: string) => models[path] ?? parentAssetRuntime?.getModel(path) ?? null, [models, parentAssetRuntime]);
+    const getTexture = useCallback((path: string) => textures[path] ?? parentAssetRuntime?.getTexture(path) ?? null, [parentAssetRuntime, textures]);
+    const getSound = useCallback((path: string) => sounds[path] ?? parentAssetRuntime?.getSound(path) ?? null, [parentAssetRuntime, sounds]);
     const assetRevision = useMemo(
-        () => `${Object.keys(textures).concat(Object.keys(injectedTextures)).sort().join('|')}::${Object.keys(availableModels).sort().join('|')}`,
-        [availableModels, injectedTextures, textures],
+        () => `${parentAssetRuntime?.getAssetRevision() ?? ""}::${Object.keys(textures).sort().join('|')}::${Object.keys(models).sort().join('|')}`,
+        [models, parentAssetRuntime, textures],
     );
 
     const getObject = useCallback((id: string) => {
-        return objectRefs.current[id] ?? null;
-    }, []);
+        return objectRefs.current[id] ?? parentAssetRuntime?.getObject(id) ?? null;
+    }, [parentAssetRuntime]);
 
     const getHandle = useCallback(<T = unknown,>(id: string, kind: string) => {
-        return (nodeHandles.current.get(id)?.get(kind) as T | undefined) ?? null;
-    }, []);
+        return (nodeHandles.current.get(id)?.get(kind) as T | undefined) ?? parentAssetRuntime?.getHandle<T>(id, kind) ?? null;
+    }, [parentAssetRuntime]);
 
     const getNode = useCallback((nodeId: string) => {
         return resolvedStore.getState().nodesById[nodeId] ?? null;
@@ -189,6 +144,7 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, 
         const current = nodeHandles.current.get(id);
 
         if (handle == null) {
+            parentAssetRuntime?.registerHandle(id, kind, null);
             if (!current) return;
             current.delete(kind);
             if (current.size === 0) {
@@ -199,11 +155,38 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, 
 
         if (current) {
             current.set(kind, handle);
+            parentAssetRuntime?.registerHandle(id, kind, handle);
             return;
         }
 
         nodeHandles.current.set(id, new Map([[kind, handle]]));
-    }, []);
+        parentAssetRuntime?.registerHandle(id, kind, handle);
+    }, [parentAssetRuntime]);
+
+    const registerObject = useCallback((id: string, obj: Object3D | null) => {
+        if (obj) {
+            objectRefs.current[id] = obj;
+        } else {
+            delete objectRefs.current[id];
+        }
+        parentAssetRuntime?.registerObject(id, obj);
+    }, [parentAssetRuntime]);
+
+    const registerModel = useCallback((path: string, model: Object3D) => {
+        parentAssetRuntime?.registerModel(path, model);
+        setModels(prev => prev[path] === model ? prev : { ...prev, [path]: model });
+    }, [parentAssetRuntime]);
+
+    const registerTexture = useCallback((path: string, texture: Texture) => {
+        parentAssetRuntime?.registerTexture(path, texture);
+        setTextures(prev => prev[path] === texture ? prev : { ...prev, [path]: texture });
+    }, [parentAssetRuntime]);
+
+    const registerSound = useCallback((path: string, sound: AudioBuffer) => {
+        parentAssetRuntime?.registerSound(path, sound);
+        soundManager.setBuffer(path, sound);
+        setSounds(prev => prev[path] === sound ? prev : { ...prev, [path]: sound });
+    }, [parentAssetRuntime]);
 
     const sceneValue = useMemo<Scene>(() => ({
         get root() {
@@ -231,21 +214,14 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, 
             injectedModelVersions.current[path] = version;
             void precompileModel(model, renderer, camera).then(() => {
                 if (injectedModelVersions.current[path] !== version) return;
-                setInjectedModels(prev => ({ ...prev, [path]: model }));
+                registerModel(path, model);
             });
         },
-        addTexture: (path, texture) => setInjectedTextures(prev => ({ ...prev, [path]: texture })),
-        addSound: (path, sound) => {
-            soundManager.setBuffer(path, sound);
-            setInjectedSounds(prev => ({ ...prev, [path]: sound }));
-        },
-    }), [basePath, camera, editMode, getHandle, getModel, getNode, getObject, renderer, resolvedStore, rootId]);
+        addTexture: registerTexture,
+        addSound: registerSound,
+    }), [basePath, camera, editMode, getHandle, getModel, getNode, getObject, registerModel, registerSound, registerTexture, renderer, resolvedStore, rootId]);
 
     useImperativeHandle(ref, () => sceneValue, [sceneValue]);
-
-    const registerRef = useCallback((id: string, obj: Object3D | null) => {
-        objectRefs.current[id] = obj;
-    }, []);
 
     useEffect(() => {
         if (usesOwnedStore && data) {
@@ -257,11 +233,10 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, 
         const loadAsset = <T,>(
             file: string,
             loaded: Record<string, T>,
-            injected: Record<string, T>,
             failed: Set<string>,
             loader: (path: string) => Promise<{ success: boolean; error?: unknown }>,
         ) => {
-            if (loaded[file] || injected[file] || loading.current.has(file) || failed.has(file)) return;
+            if (loaded[file] || loading.current.has(file) || failed.has(file)) return;
             loading.current.add(file);
             void loader(withBasePath(basePath, file)).then(result => {
                 loading.current.delete(file);
@@ -278,50 +253,71 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, 
             const file = entry.slice(separator + 1);
 
             if (type === 'model') {
-                loadAsset(file, models, injectedModels, failedModels.current, path =>
+                const inheritedModel = models[file] ? null : parentAssetRuntime?.getModel(file);
+                if (inheritedModel) {
+                    registerModel(file, inheritedModel);
+                    return;
+                }
+
+                loadAsset(file, models, failedModels.current, path =>
                     loadModel(path).then(async result => {
                         const loadedModel = result.model;
                         if (result.success && loadedModel) {
                             await precompileModel(loadedModel, renderer, camera);
-                            setModels(currentModels => ({ ...currentModels, [file]: loadedModel }));
+                            registerModel(file, loadedModel);
                         }
                         return result;
                     }),
                 );
             } else if (type === 'texture') {
-                loadAsset(file, textures, injectedTextures, failedTextures.current, path =>
+                const inheritedTexture = textures[file] ? null : parentAssetRuntime?.getTexture(file);
+                if (inheritedTexture) {
+                    registerTexture(file, inheritedTexture);
+                    return;
+                }
+
+                loadAsset(file, textures, failedTextures.current, path =>
                     loadTexture(path).then(result => {
                         const loadedTexture = result.texture;
                         if (result.success && loadedTexture) {
-                            setTextures(currentTextures => ({ ...currentTextures, [file]: loadedTexture }));
+                            registerTexture(file, loadedTexture);
                         }
                         return result;
                     }),
                 );
             } else if (type === 'sound') {
-                loadAsset(file, sounds, injectedSounds, failedSounds.current, path =>
+                const inheritedSound = sounds[file] ? null : parentAssetRuntime?.getSound(file);
+                if (inheritedSound) {
+                    registerSound(file, inheritedSound);
+                    return;
+                }
+
+                loadAsset(file, sounds, failedSounds.current, path =>
                     loadSound(path).then(result => {
                         const loadedSound = result.sound;
                         if (result.success && loadedSound) {
-                            soundManager.setBuffer(file, loadedSound);
-                            setSounds(currentSounds => ({ ...currentSounds, [file]: loadedSound }));
+                            registerSound(file, loadedSound);
                         }
                         return result;
                     }),
                 );
             }
         });
-    }, [assetRefCounts, basePath, camera, injectedModels, injectedSounds, injectedTextures, models, renderer, sounds, textures]);
+    }, [assetRefCounts, basePath, camera, models, parentAssetRuntime, registerModel, registerSound, registerTexture, renderer, sounds, textures]);
 
     const assetRuntime = useMemo<AssetRuntime>(() => ({
+        registerObject,
         registerHandle,
+        registerModel,
+        registerTexture,
+        registerSound,
         getHandle,
         getObject,
         getModel,
         getTexture,
         getSound,
         getAssetRevision: () => assetRevision,
-    }), [registerHandle, getHandle, getObject, getModel, getTexture, getSound, assetRevision]);
+    }), [registerObject, registerHandle, registerModel, registerTexture, registerSound, getHandle, getObject, getModel, getTexture, getSound, assetRevision]);
 
     const handleNodeClick = useCallback((event: ThreeEvent<PointerEvent>, nodeId: string, fallbackObject: Object3D | null) => {
         const node = resolvedStore.getState().nodesById[nodeId];
@@ -334,20 +330,20 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, 
 
     const content = (
         <GameInstanceProvider
-            models={availableModels}
+            models={models}
             selectedId={selectedId}
             editMode={editMode}
             onSelect={editMode ? onSelect : undefined}
             onClick={editMode ? undefined : handleNodeClick}
-            registerRef={registerRef}
+            registerRef={registerObject}
         >
             <StoreRootNode
                 selectedId={selectedId}
                 onSelect={editMode ? onSelect : undefined}
                 onClick={editMode ? undefined : handleNodeClick}
                 onEditNodeClick={editMode ? onEditNodeClick : undefined}
-                registerRef={registerRef}
-                loadedModels={availableModels}
+                registerRef={registerObject}
+                loadedModels={models}
                 editMode={editMode}
                 parentMatrix={IDENTITY}
                 basePath={basePath}
@@ -356,13 +352,15 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ editMode, data, 
         </GameInstanceProvider>
     );
 
-    const runtimeContent = (
-        <SceneContext.Provider value={sceneValue}>
-            <AssetRuntimeContext.Provider value={assetRuntime}>{content}</AssetRuntimeContext.Provider>
-        </SceneContext.Provider>
+    const runtimeContent = parentAssetRuntime ? content : (
+        <AssetRuntimeContext.Provider value={assetRuntime}>{content}</AssetRuntimeContext.Provider>
     );
 
-    return <PrefabStoreProvider store={resolvedStore}>{runtimeContent}</PrefabStoreProvider>;
+    const sceneContent = parentScene ? runtimeContent : (
+        <SceneContext.Provider value={sceneValue}>{runtimeContent}</SceneContext.Provider>
+    );
+
+    return <PrefabStoreProvider store={resolvedStore}>{sceneContent}</PrefabStoreProvider>;
 });
 
 function StoreRootNode(props: Omit<RendererProps, "nodeId">) {

@@ -1,6 +1,6 @@
 {
 	"name": "react-three-game",
-	"version": "0.0.108",
+	"version": "0.0.109",
 	"description": "high performance 3D game engine built in React",
 	"exports": {
 		"./viewer": {

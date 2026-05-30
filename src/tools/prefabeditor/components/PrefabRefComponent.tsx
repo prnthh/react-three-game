@@ -12,19 +12,36 @@ type PrefabRefProperties = {
     url?: string;
 };
 
+async function fetchJson<T>(url: string): Promise<T> {
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`Request failed (${response.status}) for ${url}`);
+    }
+    return response.json() as Promise<T>;
+}
+
 function PrefabRefView({ properties, children, basePath = '' }: ComponentViewProps<PrefabRefProperties>) {
     const [loadedPrefab, setLoadedPrefab] = useState<Prefab | null>(null);
 
-    const url = properties.url ?? '';
-    const resolvedUrl = url ? withBasePath(basePath, url) : '';
+    const resolvedUrl = properties.url ? withBasePath(basePath, properties.url) : '';
 
     useEffect(() => {
-        if (!resolvedUrl) return;
+        if (!resolvedUrl) {
+            setLoadedPrefab(null);
+            return;
+        }
+
         let cancelled = false;
-        fetch(resolvedUrl)
-            .then(r => r.json())
-            .then(data => { if (!cancelled) setLoadedPrefab(data as Prefab); })
-            .catch(err => console.warn('[PrefabRef] Failed to load:', resolvedUrl, err));
+
+        void fetchJson<Prefab>(resolvedUrl)
+            .then((data) => {
+                if (!cancelled) setLoadedPrefab(data);
+            })
+            .catch((err) => {
+                if (!cancelled) setLoadedPrefab(null);
+                console.warn('[PrefabRef] Failed to load:', resolvedUrl, err);
+            });
+
         return () => { cancelled = true; };
     }, [resolvedUrl]);
 
@@ -57,17 +74,27 @@ function PrefabRefEditor({
     const editor = useEditorRef();
 
     useEffect(() => {
-        fetch(withBasePath(basePath, '/prefabs/manifest.json'))
-            .then(r => r.json())
-            .then(data => setManifest(data))
-            .catch(() => setManifest([]));
-    }, []);
+        let cancelled = false;
+
+        void fetchJson<unknown>(withBasePath(basePath, '/prefabs/manifest.json'))
+            .then((data) => {
+                if (cancelled) return;
+                setManifest(Array.isArray(data) ? data.filter((entry): entry is string => typeof entry === 'string') : []);
+            })
+            .catch(() => {
+                if (!cancelled) setManifest([]);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [basePath]);
 
     const handleUnpack = async () => {
         if (!node || !url) return;
         setUnpacking(true);
         try {
-            const prefab = await fetch(withBasePath(basePath, url)).then(r => r.json()) as Prefab;
+            const prefab = await fetchJson<Prefab>(withBasePath(basePath, url));
             editor.replaceNode(node.id, prefab.root);
         } catch (err) {
             console.error('[PrefabRef] Unpack failed:', err);

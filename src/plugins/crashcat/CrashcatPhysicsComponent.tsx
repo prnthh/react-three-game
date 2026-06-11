@@ -1,7 +1,8 @@
 "use client";
 
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useStore } from "zustand";
 import {
     BooleanField,
     FieldRenderer,
@@ -13,7 +14,7 @@ import {
     type Component,
     type ComponentViewProps,
 } from "../../tools/prefabeditor/components/ComponentRegistry";
-import { useAssetRuntime, useNode } from "../../tools/prefabeditor/assetRuntime";
+import { useModelAsset, useNode } from "../../tools/prefabeditor/assetRuntime";
 import { usePrefabStoreApi } from "../../tools/prefabeditor/prefabStore";
 import { PrefabEditorMode, useScene } from "../../tools/prefabeditor/SceneContext";
 import {
@@ -112,7 +113,25 @@ const localQuaternion = new Quaternion();
 
 type GeometryData = { positions: number[]; indices: number[] };
 
+// Extracted collider geometry is keyed by the sequence of geometry UUIDs in the
+// object's subtree. Clones of the same model share geometry instances and have
+// identical model-internal transforms, and the extraction is expressed in
+// object-local space (the object's own world transform is divided out), so the
+// result is identical across every instance/body of that model. Extracting once
+// avoids re-walking thousands of vertices per rigid body.
+const geometryDataCache = new Map<string, GeometryData>();
+
 function collectGeometryData(object: Object3D): GeometryData | null {
+    let cacheKey = "";
+    object.traverse((child) => {
+        const geometry = (child as Object3D & { geometry?: { uuid?: string; attributes?: { position?: unknown } } }).geometry;
+        if (geometry?.attributes?.position && geometry.uuid) cacheKey += `${geometry.uuid};`;
+    });
+    if (cacheKey) {
+        const cached = geometryDataCache.get(cacheKey);
+        if (cached) return cached;
+    }
+
     const positions: number[] = [];
     const indices: number[] = [];
     let vertexOffset = 0;
@@ -152,7 +171,9 @@ function collectGeometryData(object: Object3D): GeometryData | null {
     });
 
     if (positions.length === 0 || indices.length < 3) return null;
-    return { positions, indices };
+    const result = { positions, indices };
+    if (cacheKey) geometryDataCache.set(cacheKey, result);
+    return result;
 }
 
 function createShapeForObject(object: Object3D, physics: CrashcatPhysicsProperties) {
@@ -329,8 +350,21 @@ function CrashcatPhysicsView({ properties, children }: ComponentViewProps<Crashc
     const scene = useScene();
     const store = usePrefabStoreApi();
     const api: CrashcatApi | null = useCrashcat();
-    const { getAssetRevision } = useAssetRuntime();
-    const revision = getAssetRevision();
+    // Subscribe only to this node's Model filename (not its full node, which would
+    // re-render on every transform edit), then to that one model's loaded asset.
+    // Colliders rebuild when *this* node's mesh loads, not when any asset loads.
+    const modelPath = useStore(store, useCallback((s) => {
+        const node = s.nodesById[nodeId];
+        if (!node) return null;
+        for (const key in node.components) {
+            const component = node.components[key];
+            if (component?.type === "Model") {
+                return (component.properties?.filename as string | undefined) ?? null;
+            }
+        }
+        return null;
+    }, [nodeId]));
+    const loadedModel = useModelAsset(modelPath);
     const bodyRef = useRef<RigidBody | null>(null);
     const motionTypeRef = useRef(MotionType.STATIC);
     const needsRegistrationRef = useRef(false);
@@ -409,8 +443,8 @@ function CrashcatPhysicsView({ properties, children }: ComponentViewProps<Crashc
     };
 
     useEffect(() => {
-        // Rebuild mesh-derived colliders when referenced assets finish loading.
-        void revision;
+        // Rebuild mesh-derived colliders when this node's referenced model finishes loading.
+        void loadedModel;
         needsRegistrationRef.current = true;
         if (api) {
             api.unregister(nodeId);
@@ -428,7 +462,7 @@ function CrashcatPhysicsView({ properties, children }: ComponentViewProps<Crashc
         getObject,
         nodeId,
         physics,
-        revision,
+        loadedModel,
     ]);
 
     useFrame(() => {

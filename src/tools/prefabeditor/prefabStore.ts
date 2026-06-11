@@ -22,6 +22,7 @@ import {
 
 export interface PrefabStoreState extends PrefabState {
     replacePrefab: (prefab: Prefab) => void;
+    restoreState: (snapshot: PrefabState) => void;
     updateNode: (id: string, update: (node: PrefabNodeRecord) => PrefabNodeRecord) => void;
     replaceNode: (id: string, node: GameObject) => void;
     addChild: (parentId: string, node: GameObject) => void;
@@ -133,6 +134,18 @@ export function createPrefabStore(prefab: Prefab): PrefabStoreApi {
         ...normalizePrefab(prefab),
         replacePrefab: (nextPrefab) => {
             set(normalizePrefab(nextPrefab));
+        },
+        restoreState: (snapshot) => {
+            set({
+                prefabId: snapshot.prefabId,
+                prefabName: snapshot.prefabName,
+                rootId: snapshot.rootId,
+                nodesById: snapshot.nodesById,
+                childIdsById: snapshot.childIdsById,
+                parentIdById: snapshot.parentIdById,
+                assetManifestKey: snapshot.assetManifestKey,
+                assetRefCounts: snapshot.assetRefCounts,
+            });
         },
         updateNode: (id, update) => {
             const state = get();

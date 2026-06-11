@@ -4,7 +4,7 @@ import { Mesh, Texture } from 'three';
 import { assetRef, assetRefs } from './ComponentRegistry';
 import type { Component, ComponentViewProps } from './ComponentRegistry';
 import { BooleanField, FieldGroup, Label, ListEditor, NumberInput, SelectInput, StringField } from './Input';
-import { useAssetRuntime } from '../assetRuntime';
+import { useModelAsset } from '../assetRuntime';
 import type { ComponentData, GameObject } from '../types';
 import { useEditorContext, useEditorRef } from '../EditorContext';
 import { getRepeatAxesFromModelProperties, normalizeRepeatAxes } from '../InstanceProvider';
@@ -272,8 +272,7 @@ function ModelComponentEditor({ component, node, onUpdate, basePath = "" }: Mode
 
 // View for Model component
 function ModelComponentView({ properties, children }: ComponentViewProps<ModelProperties>) {
-    const { getModel } = useAssetRuntime();
-    const sourceModel = properties.filename ? getModel(properties.filename) : null;
+    const sourceModel = useModelAsset(properties.filename);
 
     // Clone model once and set up shadows - memoized to avoid cloning on every render
     const clonedModel = useMemo(() => {

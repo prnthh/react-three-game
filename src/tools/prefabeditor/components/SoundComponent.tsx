@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useThree } from '@react-three/fiber';
 import { SoundPicker } from '../../assetviewer/page';
-import { useAssetRuntime, useNode } from '../assetRuntime';
+import { useAssetRevision, useAssetRuntime, useNode } from '../assetRuntime';
 import { gameEvents, type ClickEventPayload, type ContactEventPayload } from '../GameEvents';
 import { Component } from './ComponentRegistry';
 import { BooleanField, FieldGroup, FieldRenderer, ListEditor, NumberField, SelectField, StringField } from './Input';
@@ -263,6 +263,7 @@ function SoundComponentEditor({ component, onUpdate, basePath = '' }: { componen
 
 function SoundComponentView({ properties, children }: { properties: SoundProperties; children?: React.ReactNode }) {
     const { getSound } = useAssetRuntime();
+    const assetRevision = useAssetRevision();
     const { editMode, nodeId } = useNode();
     const { camera } = useThree();
     const { eventName, autoplay = false, positional = false, refDistance = 1, maxDistance = 24, rolloffFactor = 1, distanceModel = 'inverse' } = properties;
@@ -329,6 +330,9 @@ function SoundComponentView({ properties, children }: { properties: SoundPropert
     }, [editMode, eventName, getSound, mode, nodeId, paths, properties]);
 
     useEffect(() => {
+        // Re-run when assets load so autoplay can start once the buffer is ready
+        // (the asset runtime context is now stable and no longer re-renders on load).
+        void assetRevision;
         if (editMode || !autoplay || paths.length === 0) {
             return;
         }
@@ -351,7 +355,7 @@ function SoundComponentView({ properties, children }: { properties: SoundPropert
                 audio.stop();
             }
         };
-    }, [autoplay, editMode, getSound, mode, paths, properties]);
+    }, [autoplay, editMode, getSound, mode, paths, properties, assetRevision]);
 
     return (
         <>

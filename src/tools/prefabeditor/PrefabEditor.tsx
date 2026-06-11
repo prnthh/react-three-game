@@ -13,6 +13,7 @@ import type { ExportGLBOptions } from "./utils";
 import { loadDroppedAssets } from "../dragdrop";
 import { createNode } from './prefab';
 import { createPrefabStore, type PrefabStoreState, PrefabStoreProvider } from "./prefabStore";
+import type { PrefabState } from "./prefab";
 import type { MapControls as MapControlsImpl, TransformControls as TransformControlsImpl } from 'three-stdlib';
 import { decomposeModelToPrefabNodes, hasCollisionMeshConventions } from "./modelPrefab";
 import { EditorContext, EditorRefContext, type PrefabEditorRef } from "./EditorContext";
@@ -82,10 +83,11 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
     const [rotationSnap, setRotationSnap] = useState(Math.PI / 4);
     const startingPrefab = initialPrefab ?? DEFAULT_PREFAB;
     const [prefabStore] = useState(() => createPrefabStore(startingPrefab));
-    const [history, setHistory] = useState<Prefab[]>([startingPrefab]);
+    const [history, setHistory] = useState<PrefabState[]>(() => [prefabStore.getState()]);
     const [historyIndex, setHistoryIndex] = useState(0);
     const historyIndexRef = useRef(0);
     const historyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const notifyRafRef = useRef<number | null>(null);
     const runtimeRef = useRef<AssetRuntime | null>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const controlsRef = useRef<MapControlsImpl | null>(null);
@@ -103,7 +105,10 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
     const getHandle = useCallback(<T = unknown,>(nodeId: string, kind: string) => runtimeRef.current?.getHandle<T>(nodeId, kind) ?? null, []);
     const getModel = useCallback((path: string) => runtimeRef.current?.getModel(path) ?? null, []);
 
-    const scheduleHistory = useCallback((nextPrefab: Prefab) => {
+    // History stores normalized state snapshots. Because store mutations use
+    // structural sharing (unchanged nodes keep their references), capturing a
+    // snapshot is O(1) instead of deep-cloning the whole prefab tree.
+    const scheduleHistory = useCallback((snapshot: PrefabState) => {
         if (historyTimeoutRef.current) {
             clearTimeout(historyTimeoutRef.current);
             historyTimeoutRef.current = null;
@@ -112,7 +117,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
         historyTimeoutRef.current = setTimeout(() => {
             const currentHistoryIndex = historyIndexRef.current;
             setHistory(prev => {
-                const nextHistory = [...prev.slice(0, currentHistoryIndex + 1), nextPrefab];
+                const nextHistory = [...prev.slice(0, currentHistoryIndex + 1), snapshot];
                 return nextHistory.length > MAX_HISTORY_LENGTH ? nextHistory.slice(1) : nextHistory;
             });
             const nextHistoryIndex = Math.min(currentHistoryIndex + 1, MAX_HISTORY_LENGTH - 1);
@@ -122,17 +127,27 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
         }, HISTORY_DEBOUNCE_MS);
     }, []);
 
+    // Coalesce onChange notifications to once per frame. denormalizePrefab walks
+    // the entire tree, so calling it on every mutation (e.g. per-frame gizmo
+    // drags) does not scale. We only pay that cost once, with the latest state.
+    const scheduleChange = useCallback(() => {
+        if (!onChangeRef.current || notifyRafRef.current != null) return;
+        notifyRafRef.current = requestAnimationFrame(() => {
+            notifyRafRef.current = null;
+            onChangeRef.current?.(denormalizePrefab(prefabStore.getState()));
+        });
+    }, [prefabStore]);
+
     const mutate = useCallback(<R,>(run: (s: PrefabStoreState) => R, pushHistory: boolean = isEditMode): R => {
         const before = prefabStore.getState();
         const result = run(before);
         const after = prefabStore.getState();
         if (after === before) return result;
 
-        const prefab = denormalizePrefab(after);
-        onChangeRef.current?.(prefab);
-        if (pushHistory) scheduleHistory(prefab);
+        scheduleChange();
+        if (pushHistory) scheduleHistory(after);
         return result;
-    }, [isEditMode, prefabStore, scheduleHistory]);
+    }, [isEditMode, prefabStore, scheduleChange, scheduleHistory]);
 
     const update = useCallback((id: string, fn: (node: PrefabNode) => PrefabNode) => {
         mutate(s => s.updateNode(id, fn));
@@ -195,7 +210,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
 
         if (options?.resetHistory) {
             setSelectedId(null);
-            setHistory([prefab]);
+            setHistory([prefabStore.getState()]);
             historyIndexRef.current = 0;
             setHistoryIndex(0);
         } else {
@@ -211,6 +226,9 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
         return () => {
             if (historyTimeoutRef.current) {
                 clearTimeout(historyTimeoutRef.current);
+            }
+            if (notifyRafRef.current != null) {
+                cancelAnimationFrame(notifyRafRef.current);
             }
         };
     }, []);
@@ -239,12 +257,12 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
 
     const applyHistory = useCallback((index: number) => {
         detachTransformControls();
-        prefabStore.getState().replacePrefab(history[index]);
-        onChangeRef.current?.(history[index]);
+        prefabStore.getState().restoreState(history[index]);
+        scheduleChange();
         historyIndexRef.current = index;
         setHistoryIndex(index);
         setSelectedId(prev => prev && prefabStore.getState().nodesById[prev] ? prev : null);
-    }, [detachTransformControls, history, prefabStore]);
+    }, [detachTransformControls, history, prefabStore, scheduleChange]);
 
     const undo = useCallback(() => {
         if (historyIndex > 0) {

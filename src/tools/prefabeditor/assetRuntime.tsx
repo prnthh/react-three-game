@@ -1,4 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
+import { useStore } from "zustand";
+import { createStore, type StoreApi } from "zustand/vanilla";
 import type { Object3D, Texture } from "three";
 import type { LoadedModels, LoadedSounds, LoadedTextures } from "../dragdrop";
 import { sound as soundManager } from "../../helpers/SoundManager";
@@ -16,7 +18,7 @@ export interface AssetRuntime {
     getModel: (path: string) => Object3D | null;
     getTexture: (path: string) => Texture | null;
     getSound: (path: string) => AudioBuffer | null;
-    getAssetRevision: () => string;
+    getAssetRevision: () => number;
     getObject: (id: string) => Object3D | null;
 }
 
@@ -37,6 +39,59 @@ export interface AssetRuntimeProviderProps {
 
 export const AssetRuntimeContext = createContext<AssetRuntime | null>(null);
 const NodeContext = createContext<NodeApi | null>(null);
+
+/**
+ * Reactive backing store for loaded assets. Components subscribe to the single
+ * asset slot they care about via the selector hooks below, so loading one asset
+ * only re-renders the handful of nodes that reference it — not every consumer of
+ * the runtime. `version` is a monotonic counter for the rare consumer that needs
+ * a coarse "something loaded" signal (e.g. baked environment maps).
+ */
+interface AssetStoreState {
+    models: LoadedModels;
+    textures: LoadedTextures;
+    sounds: LoadedSounds;
+    version: number;
+}
+
+type AssetStoreApi = StoreApi<AssetStoreState>;
+
+function createAssetStore(): AssetStoreApi {
+    return createStore<AssetStoreState>(() => ({ models: {}, textures: {}, sounds: {}, version: 0 }));
+}
+
+const AssetStoreContext = createContext<AssetStoreApi | null>(null);
+
+function useAssetStore(): AssetStoreApi {
+    const store = useContext(AssetStoreContext);
+    if (!store) throw new Error("Asset hooks must be used inside <PrefabRoot>");
+    return store;
+}
+
+/** Subscribe to a single loaded model; re-renders only when that model changes. */
+export function useModelAsset(path?: string | null): Object3D | null {
+    return useStore(useAssetStore(), s => (path ? s.models[path] ?? null : null));
+}
+
+/** Subscribe to a single loaded texture; re-renders only when that texture changes. */
+export function useTextureAsset(path?: string | null): Texture | null {
+    return useStore(useAssetStore(), s => (path ? s.textures[path] ?? null : null));
+}
+
+/** Subscribe to a single loaded sound; re-renders only when that sound changes. */
+export function useSoundAsset(path?: string | null): AudioBuffer | null {
+    return useStore(useAssetStore(), s => (path ? s.sounds[path] ?? null : null));
+}
+
+/** Subscribe to the full model map (only needed by the instancing root). */
+export function useAllModels(): LoadedModels {
+    return useStore(useAssetStore(), s => s.models);
+}
+
+/** Coarse "an asset was (un)registered" signal. */
+export function useAssetRevision(): number {
+    return useStore(useAssetStore(), s => s.version);
+}
 
 export function useAssetRuntime(): AssetRuntime {
     const ctx = useContext(AssetRuntimeContext);
@@ -99,9 +154,7 @@ export function AssetRuntimeProvider({ children, runtimeRef }: AssetRuntimeProvi
 }
 
 function AssetRuntimeOwner({ children, runtimeRef }: AssetRuntimeProviderProps) {
-    const [models, setModels] = useState<LoadedModels>({});
-    const [textures, setTextures] = useState<LoadedTextures>({});
-    const [sounds, setSounds] = useState<LoadedSounds>({});
+    const [assetStore] = useState(createAssetStore);
     const objectRefs = useRef<Record<string, Object3D | null>>({});
     const nodeHandles = useRef<Map<string, Map<string, unknown>>>(new Map());
 
@@ -123,42 +176,49 @@ function AssetRuntimeOwner({ children, runtimeRef }: AssetRuntimeProviderProps) 
     }, []);
 
     const registerModel = useCallback((path: string, model: Object3D) => {
-        setModels(prev => prev[path] === model ? prev : { ...prev, [path]: model });
-    }, []);
+        if (assetStore.getState().models[path] === model) return;
+        assetStore.setState(s => ({ models: { ...s.models, [path]: model }, version: s.version + 1 }));
+    }, [assetStore]);
     const registerTexture = useCallback((path: string, texture: Texture) => {
-        setTextures(prev => prev[path] === texture ? prev : { ...prev, [path]: texture });
-    }, []);
+        if (assetStore.getState().textures[path] === texture) return;
+        assetStore.setState(s => ({ textures: { ...s.textures, [path]: texture }, version: s.version + 1 }));
+    }, [assetStore]);
     const registerSound = useCallback((path: string, sound: AudioBuffer) => {
         soundManager.setBuffer(path, sound);
-        setSounds(prev => prev[path] === sound ? prev : { ...prev, [path]: sound });
-    }, []);
+        if (assetStore.getState().sounds[path] === sound) return;
+        assetStore.setState(s => ({ sounds: { ...s.sounds, [path]: sound }, version: s.version + 1 }));
+    }, [assetStore]);
 
     const getObject = useCallback((id: string) => objectRefs.current[id] ?? null, []);
     const getHandle = useCallback(<T = unknown,>(id: string, kind: string) => {
         return (nodeHandles.current.get(id)?.get(kind) as T | undefined) ?? null;
     }, []);
-    const getModel = useCallback((path: string) => models[path] ?? null, [models]);
-    const getTexture = useCallback((path: string) => textures[path] ?? null, [textures]);
-    const getSound = useCallback((path: string) => sounds[path] ?? null, [sounds]);
+    const getModel = useCallback((path: string) => assetStore.getState().models[path] ?? null, [assetStore]);
+    const getTexture = useCallback((path: string) => assetStore.getState().textures[path] ?? null, [assetStore]);
+    const getSound = useCallback((path: string) => assetStore.getState().sounds[path] ?? null, [assetStore]);
+    const getAssetRevision = useCallback(() => assetStore.getState().version, [assetStore]);
 
-    const assetRevision = useMemo(
-        () => `${Object.keys(textures).sort().join('|')}::${Object.keys(models).sort().join('|')}`,
-        [models, textures],
-    );
-
+    // Stable runtime: all members have stable identity, so consumers that only
+    // use imperative getters/registrars never re-render on asset loads. The
+    // live maps are exposed as snapshot getters for imperative readers; reactive
+    // consumers use the selector hooks (useModelAsset, useAllModels, ...).
     const runtime = useMemo<AssetRuntime>(() => ({
-        models, textures, sounds,
+        get models() { return assetStore.getState().models; },
+        get textures() { return assetStore.getState().textures; },
+        get sounds() { return assetStore.getState().sounds; },
         registerObject, registerHandle,
         registerModel, registerTexture, registerSound,
         getObject, getHandle, getModel, getTexture, getSound,
-        getAssetRevision: () => assetRevision,
-    }), [models, textures, sounds, registerObject, registerHandle, registerModel, registerTexture, registerSound, getObject, getHandle, getModel, getTexture, getSound, assetRevision]);
+        getAssetRevision,
+    }), [assetStore, registerObject, registerHandle, registerModel, registerTexture, registerSound, getObject, getHandle, getModel, getTexture, getSound, getAssetRevision]);
 
     if (runtimeRef) runtimeRef.current = runtime;
 
     return (
-        <AssetRuntimeContext.Provider value={runtime}>
-            {children}
-        </AssetRuntimeContext.Provider>
+        <AssetStoreContext.Provider value={assetStore}>
+            <AssetRuntimeContext.Provider value={runtime}>
+                {children}
+            </AssetRuntimeContext.Provider>
+        </AssetStoreContext.Provider>
     );
 }

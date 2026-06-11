@@ -16,12 +16,23 @@ import { GameInstance, GameInstanceProvider, getRepeatAxesFromModelProperties } 
 import { composeTransform, decompose, withBasePath } from "./runtimeUtils";
 import { createPrefabStore, PrefabStoreProvider, usePrefabChildIds, usePrefabNode, usePrefabRootId, usePrefabStoreApi } from "./prefabStore";
 import type { PrefabStoreApi } from "./prefabStore";
-import { AssetRuntimeProvider, NodeScope, useAssetRuntime } from "./assetRuntime";
+import { AssetRuntimeProvider, NodeScope, useAllModels, useAssetRuntime } from "./assetRuntime";
 import { gameEvents } from "./GameEvents";
 import { useScene, type Scene } from "./SceneContext";
 import { SceneProvider } from "./SceneProvider";
 
 const IDENTITY = new Matrix4();
+
+// Reusable scratch objects for buildRepeatedInstances. The matrices are pure
+// intermediates (their results are read out into plain arrays per instance),
+// so they can be shared across calls instead of allocating fresh Matrix4s in
+// nested loops for every repeated instance.
+const _scratchTranslation = new Matrix4();
+const _scratchRotation = new Matrix4();
+const _scratchScale = new Matrix4();
+const _scratchOffset = new Matrix4();
+const _scratchWorld = new Matrix4();
+const _scratchEuler = new Euler();
 
 builtinComponents.forEach((component) => {
     if (!getComponentDef(component.name)) registerComponent(component);
@@ -111,6 +122,7 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>((props, ref) => {
 const PrefabRootBody = forwardRef<Scene, PrefabRootProps>(({ editMode, selectedId, onSelect, onClick, onEditNodeClick, basePath = "", children }, ref) => {
     const scene = useScene();
     const runtime = useAssetRuntime();
+    const models = useAllModels();
     const storeApi = usePrefabStoreApi();
     const assetRefCounts = useStore(storeApi, state => state.assetRefCounts);
     useImperativeHandle(ref, () => scene, [scene]);
@@ -169,7 +181,7 @@ const PrefabRootBody = forwardRef<Scene, PrefabRootProps>(({ editMode, selectedI
 
     return (
         <GameInstanceProvider
-            models={runtime.models}
+            models={models}
             selectedId={selectedId}
             editMode={editMode}
             onSelect={editMode ? onSelect : undefined}
@@ -182,7 +194,7 @@ const PrefabRootBody = forwardRef<Scene, PrefabRootProps>(({ editMode, selectedI
                 onClick={editMode ? undefined : handleNodeClick}
                 onEditNodeClick={editMode ? onEditNodeClick : undefined}
                 registerRef={runtime.registerObject}
-                loadedModels={runtime.models}
+                loadedModels={models}
                 editMode={editMode}
                 parentMatrix={IDENTITY}
                 basePath={basePath}
@@ -555,11 +567,11 @@ function buildRepeatedInstances(
         }
     }
 
-    const baseTranslation = new Matrix4().makeTranslation(transform.position[0], transform.position[1], transform.position[2]);
-    const baseRotation = new Matrix4().makeRotationFromEuler(new Euler(...transform.rotation));
-    const baseScale = new Matrix4().makeScale(transform.scale[0], transform.scale[1], transform.scale[2]);
-    const offsetMatrix = new Matrix4();
-    const worldMatrix = new Matrix4();
+    const baseTranslation = _scratchTranslation.makeTranslation(transform.position[0], transform.position[1], transform.position[2]);
+    const baseRotation = _scratchRotation.makeRotationFromEuler(_scratchEuler.set(transform.rotation[0], transform.rotation[1], transform.rotation[2]));
+    const baseScale = _scratchScale.makeScale(transform.scale[0], transform.scale[1], transform.scale[2]);
+    const offsetMatrix = _scratchOffset;
+    const worldMatrix = _scratchWorld;
     const instances: Array<{
         id: string;
         modelUrl: string;

@@ -6,7 +6,7 @@ import { assetRef, assetRefs } from './ComponentRegistry';
 import type { Component, ComponentViewProps } from './ComponentRegistry';
 import { FieldRenderer, Label, NumberInput } from './Input';
 import type { FieldDefinition } from './Input';
-import { useAssetRuntime } from '../assetRuntime';
+import { useTextureAsset } from '../assetRuntime';
 import { MeshBasicNodeMaterial, MeshStandardNodeMaterial, SpriteNodeMaterial } from 'three/webgpu';
 import { TexturePicker } from '../../assetviewer/page';
 import type { ComponentData } from '../types';
@@ -371,7 +371,6 @@ function MaterialComponentEditor({
 
 // View for Material component
 function MaterialComponentView({ properties: rawProps }: ComponentViewProps<Record<string, unknown>>) {
-    const { getTexture } = useAssetRuntime();
     const properties = rawProps as unknown as MaterialProps | undefined;
     const materialSource = properties ?? {} as MaterialProps;
 
@@ -386,9 +385,9 @@ function MaterialComponentView({ properties: rawProps }: ComponentViewProps<Reco
     const generateMipmaps = materialSource.generateMipmaps !== false;
     const minFilter = materialSource.minFilter ?? 'LinearMipmapLinearFilter';
     const magFilter = materialSource.magFilter ?? 'LinearFilter';
-    const texture = textureName ? getTexture(textureName) : undefined;
+    const texture = useTextureAsset(textureName) ?? undefined;
     const normalScaleProp = materialSource.normalScale;
-    const normalMapTexture = normalMapTextureName ? getTexture(normalMapTextureName) : undefined;
+    const normalMapTexture = useTextureAsset(normalMapTextureName) ?? undefined;
 
     // Destructure all material props and separate custom texture handling props
     const {

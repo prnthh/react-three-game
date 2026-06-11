@@ -6,7 +6,7 @@ import { BooleanField, ColorField, Label, NumberField, Vector3Input } from "./In
 import { SpotLightHelper } from "three";
 import type { Object3D } from "three";
 import type { SpotLight } from "three";
-import { useAssetRuntime, useNode } from "../assetRuntime";
+import { useTextureAsset, useNode } from "../assetRuntime";
 import { TexturePicker } from "../../assetviewer/page";
 import { LightSection, ShadowBiasField, mergeWithDefaults } from "./lightUtils";
 import type { ComponentData } from "../types";
@@ -76,14 +76,11 @@ function SpotLightComponentEditor({ component, onUpdate, basePath = "" }: { comp
 }
 
 function SpotLightView({ properties, children }: ComponentViewProps) {
-    const { getTexture } = useAssetRuntime();
     const { editMode, isSelected } = useNode();
 
     const merged = mergeWithDefaults(spotLightDefaults, properties) as SpotLightProperties;
 
-    const textureMap = merged.map
-        ? getTexture(merged.map) ?? undefined
-        : undefined;
+    const textureMap = useTextureAsset(merged.map) ?? undefined;
 
     const lightProps = {
         color: merged.color,

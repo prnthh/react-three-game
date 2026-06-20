@@ -1,12 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { PrefabEditor } from "react-three-game/editor";
 import type { Prefab } from "react-three-game/editor";
-import { withBasePath, BASE_PATH } from "../basePath";
+
+import { BASE_PATH, withBasePath } from "../basePath";
+import PrefabSelector from "../components/PrefabSelector";
 
 export default function Home() {
   const [selectedPrefab, setSelectedPrefab] = useState<Prefab | null>(null);
+  const [selectedPrefabName, setSelectedPrefabName] = useState("game-level");
 
   useEffect(() => {
     fetch(withBasePath('/prefabs/game-level.json')).then(r => r.json()).then(setSelectedPrefab);
@@ -14,7 +17,15 @@ export default function Home() {
 
   return (
     <main className="flex h-screen w-screen flex-col items-center justify-between bg-white dark:bg-black sm:items-start">
-      {selectedPrefab && <PrefabEditor basePath={BASE_PATH} initialPrefab={selectedPrefab} uiPlugins={<Toolbar setSelectedPrefab={setSelectedPrefab} />} />}
+      {selectedPrefab && <PrefabEditor basePath={BASE_PATH} initialPrefab={selectedPrefab}
+        uiPlugins={<PrefabSelector
+          selectedName={selectedPrefabName}
+          onSelect={(prefab: Prefab, prefabName) => {
+            setSelectedPrefab(prefab);
+            setSelectedPrefabName(prefabName);
+          }}
+        />}
+      />}
       {/* <div className="fixed bottom-4 right-4 z-2">
         <AgenticEditor
           prefab={selectedPrefab}
@@ -25,18 +36,4 @@ export default function Home() {
     </main>
 
   );
-}
-
-export const Toolbar = ({ setSelectedPrefab }: { setSelectedPrefab: (p: Prefab) => void }) => {
-  return <>
-    <select className="bg-white text-black" onChange={(e) => {
-      if (!e.target.value) return;
-      fetch(withBasePath(`/prefabs/${e.target.value}.json`)).then(r => r.json()).then(setSelectedPrefab);
-    }}>
-      <option value="">— select prefab —</option>
-      {['game-level', 'prefab'].map((prefabName) => (
-        <option key={prefabName} value={prefabName}>{prefabName}</option>
-      ))}
-    </select>
-  </>
 }

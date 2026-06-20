@@ -11,6 +11,7 @@ import {
     type Object3DEventMap,
 } from "three";
 import { FBXLoader } from "three/examples/jsm/Addons.js";
+
 import type { SkinnedMeshRef } from "./SkinnedMesh";
 
 const REVERSE_ANIMATION_MAP: Record<string, string> = {

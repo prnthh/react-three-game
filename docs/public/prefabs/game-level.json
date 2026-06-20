@@ -10,7 +10,7 @@
           "position": [
             0,
             -4,
-            0
+            -15
           ],
           "rotation": [
             0,
@@ -1966,6 +1966,72 @@
           }
         },
         "children": []
+      },
+      {
+        "id": "e69b978f-feda-46cf-bec8-a02cda4bc3b6",
+        "name": "environment",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {}
+          },
+          "environment": {
+            "type": "Environment",
+            "properties": {}
+          }
+        },
+        "children": [
+          {
+            "id": "e8560f1d-bda8-40b8-98ae-3738bef325d1",
+            "name": "spheremap",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "sphere",
+                  "args": [
+                    1,
+                    32,
+                    16
+                  ],
+                  "emitClickEvent": false,
+                  "clickEventName": ""
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "attach": "material",
+                  "materialType": "basic",
+                  "color": "#ff0a0a",
+                  "toneMapped": true,
+                  "wireframe": false,
+                  "transparent": false,
+                  "opacity": 1,
+                  "sizeAttenuation": true,
+                  "offset": [
+                    0,
+                    0
+                  ],
+                  "animateOffset": false,
+                  "offsetSpeed": [
+                    0,
+                    0
+                  ],
+                  "metalness": 0,
+                  "roughness": 1,
+                  "side": "BackSide",
+                  "texture": "/textures/water1.png"
+                }
+              }
+            },
+            "children": []
+          }
+        ]
       }
     ]
   }

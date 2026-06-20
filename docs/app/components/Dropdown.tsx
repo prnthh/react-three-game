@@ -14,7 +14,6 @@ export default function Dropdown() {
     const options: DemoOption[] = [
         { label: "Viewer Mode", href: "/viewer" },
         { label: "Custom Component", href: "/demo/customcomponent" },
-        { label: "World", href: "/demo/world" },
         { label: "Killbox", href: "/demo/killbox" },
         { label: "Physics", href: "/demo/physics" },
         { label: "Ragdoll", href: "/demo/ragdoll" },
@@ -24,17 +23,15 @@ export default function Dropdown() {
     ];
 
     return (
-        <div
-            className="relative"
-            onKeyDown={(e) => {
-                if (e.key === "Escape") setOpen(false);
-            }}
-        >
+        <div className="relative">
             <button
                 type="button"
                 aria-haspopup="menu"
                 aria-expanded={open}
                 onClick={() => setOpen(!open)}
+                onKeyDown={(e) => {
+                    if (e.key === "Escape") setOpen(false);
+                }}
                 className="border border-zinc-400 px-6 py-3 font-mono text-sm uppercase hover:bg-zinc-200 inline-flex items-center gap-2"
             >
                 Examples
@@ -52,6 +49,9 @@ export default function Dropdown() {
                     <div
                         role="menu"
                         aria-label="Demo options"
+                        onKeyDown={(e) => {
+                            if (e.key === "Escape") setOpen(false);
+                        }}
                         onMouseLeave={() => setOpen(false)}
                         className="absolute left-0 top-full z-20 mt-2 w-48 max-w-[calc(100vw-2rem)] overflow-hidden border border-zinc-300 bg-white shadow-xl shadow-zinc-200/40"
                     >

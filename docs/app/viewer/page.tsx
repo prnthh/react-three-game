@@ -35,7 +35,7 @@ export default function Home() {
             <div className="fixed top-2 left-1/2 -translate-x-1/2 z-2">
                 <PrefabSelector
                     selectedName={selectedPrefabName}
-                    onSelect={(prefab, prefabName) => {
+                    onSelect={(prefab: Prefab, prefabName) => {
                         setSelectedScene(prefab);
                         setSelectedPrefabName(prefabName);
                     }}

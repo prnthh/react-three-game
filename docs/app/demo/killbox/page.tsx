@@ -30,7 +30,7 @@ export default function Home() {
                 uiPlugins={(
                     <PrefabSelector
                         selectedName={selectedPrefabName}
-                        onSelect={(prefab, prefabName) => {
+                        onSelect={(prefab: Prefab, prefabName) => {
                             setSelectedPrefab(prefab);
                             setSelectedPrefabName(prefabName);
                         }}

@@ -19,3 +19,59 @@
     --foreground: #ededed;
   }
 }
+
+.metal-title {
+  position: relative;
+  display: inline-block;
+  max-width: min(90vw, 860px);
+  font-family: "Arial Black", Impact, Haettenschweiler, var(--font-sans);
+  font-size: clamp(1.9rem, 5.2vw, 4.35rem);
+  font-weight: 900;
+  line-height: 0.86;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  transform: skewX(-5deg);
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: clamp(1px, 0.12vw, 1.5px) #151515;
+  background:
+    linear-gradient(
+      180deg,
+      #ffffff 0%,
+      #e8ebef 8%,
+      #9da4ad 18%,
+      #3c424a 34%,
+      #15181d 46%,
+      #d9dde2 53%,
+      #737b85 62%,
+      #b8bec6 76%,
+      #343a42 100%
+    );
+  background-clip: text;
+  -webkit-background-clip: text;
+  filter: drop-shadow(0 2px 0 #060606) drop-shadow(0 5px 6px rgba(0, 0, 0, 0.38));
+  text-shadow:
+    0 0 1px rgba(255, 255, 255, 0.45),
+    1px 2px 0 #080808;
+}
+
+.metal-subtitle {
+  font-family: var(--font-mono);
+  font-size: clamp(0.68rem, 1.15vw, 0.86rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: #d7dbe0;
+  text-shadow:
+    0 1px 0 #111111,
+    0 0 6px rgba(255, 255, 255, 0.45),
+    0 4px 8px rgba(0, 0, 0, 0.35);
+}
+
+@media (max-width: 640px) {
+  .metal-title {
+    font-size: clamp(1.65rem, 7.5vw, 2.2rem);
+    transform: skewX(-3deg);
+  }
+}

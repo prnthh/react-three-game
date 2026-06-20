@@ -88,10 +88,10 @@ export default function Home() {
     <main className="relative flex min-h-screen w-full flex-col items-center justify-center gap-4 text-zinc-900">
 
       <div className="text-center font-bold">
-        <h1 className="text-4xl mb-2 text-shadow-[0_0_5px_rgba(255,255,255,1)]">
+        <h1 className="metal-title mb-2">
           REACT-THREE-GAME
         </h1>
-        <div className="mb-4 opacity-80 tracking-tight leading-tight text-shadow-[0_0_3px_rgba(255,255,255,1)]">
+        <div className="metal-subtitle mb-4">
           high performance 3D game engine built in React
         </div>
       </div>

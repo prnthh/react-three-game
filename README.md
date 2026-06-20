@@ -153,6 +153,7 @@ interface GameObject {
   name?: string;
   disabled?: boolean;
   locked?: boolean;
+  hidden?: boolean;
   components?: Record<string, { type: string; properties: any }>;
   children?: GameObject[];
 }
@@ -280,17 +281,9 @@ Custom component `View`s use normal React and R3F behavior — `useFrame`, refs,
 
 ## Useful Exports
 
-* `GameCanvas`, `PrefabRoot`, `PrefabEditor`, `PrefabEditorMode`
-* `Prefab`, `GameObject`, `ComponentData`, `PrefabNode`, `PrefabEditorRef`, `Scene`
-* `registerComponent`, `Component`, `ComponentViewProps`, `FieldDefinition`
-* `useScene`, `useEditorRef`, `useEditorContext`
-* `useNode`, `useNodeObject`, `useNodeHandle`, `useAssetRuntime`
-* `usePrefabStore`, `usePrefabStoreApi`
-* `gameEvents`, `useGameEvent`, `useClickEvent`
-* `loadJson`, `saveJson`, `loadFiles`, `loadModel`, `loadTexture`, `loadSound`
-* `exportGLB`, `exportGLBData`, `regenerateIds`, `computeParentWorldMatrix`
-* `ground`, `soundManager`
-* `FieldRenderer`, `Vector3Field`, `NumberField`, `StringField`, `BooleanField`, `SelectField`, `ColorField`
+* `react-three-game/viewer`: `GameCanvas`, `PrefabRoot`, `PrefabEditorMode`, `registerComponent`, scene hooks, event hooks, asset/runtime hooks, prefab types, loaders, `ground`, and `soundManager`
+* `react-three-game/editor`: everything from `/viewer`, plus `PrefabEditor`, editor refs/context, prefab store hooks, inspector field components, JSON import/export helpers, GLB export helpers, material overrides, model decomposition, asset viewer components, and `three/tsl` helpers
+* `react-three-game/plugins/crashcat`: `CrashcatRuntime`, `CrashcatPhysicsComponent`, `CrashcatRagdollComponent`, ragdoll helpers, static body helpers, and `useCrashcat`
 
 ## Development
 

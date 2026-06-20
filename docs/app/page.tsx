@@ -80,15 +80,17 @@ export const viewport: Viewport = {
 
 export default function Home() {
   return <>
-    <main className="relative flex h-screen w-full flex-col items-center px-4 text-zinc-900">
-      <div className="relative z-10 mt-[clamp(4rem,15vh,9rem)] flex flex-col items-center text-center font-bold">
-        <h1 className="metal-title mb-2">REACT-THREE-GAME</h1>
-        <div className="metal-subtitle mb-4">
-          high performance 3D game engine built in React
+    <main className="relative flex h-screen w-full flex-col items-center justify-center px-4 text-zinc-900">
+      <div className="relative z-10 flex flex-col items-center">
+        <div className="text-center font-bold">
+          <h1 className="metal-title mb-2">REACT-THREE-GAME</h1>
+          <div className="metal-subtitle mt-1">
+            high performance 3D game engine built in React
+          </div>
         </div>
-      </div>
 
-      <div className="relative z-10 flex flex-1 items-center justify-center pb-[clamp(2rem,8vh,6rem)]">
+        <div className="h-[clamp(2rem,7vh,5rem)]" />
+
         <div className="flex flex-col items-center gap-4">
           <Section className="metal-panel-top z-20">
             <div className="flex flex-wrap justify-center gap-3">

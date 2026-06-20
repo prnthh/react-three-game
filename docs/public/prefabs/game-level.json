@@ -1934,40 +1934,6 @@
         "children": []
       },
       {
-        "id": "brutalist-sky-environment",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                0,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "environment": {
-            "type": "Environment",
-            "properties": {
-              "preset": "city",
-              "intensity": 0.42,
-              "resolution": 128
-            }
-          }
-        },
-        "children": []
-      },
-      {
         "id": "e69b978f-feda-46cf-bec8-a02cda4bc3b6",
         "name": "environment",
         "components": {

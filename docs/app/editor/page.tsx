@@ -9,7 +9,7 @@ export default function Home() {
   const [selectedPrefab, setSelectedPrefab] = useState<Prefab | null>(null);
 
   useEffect(() => {
-    fetch(withBasePath('/prefabs/throne.json')).then(r => r.json()).then(setSelectedPrefab);
+    fetch(withBasePath('/prefabs/game-level.json')).then(r => r.json()).then(setSelectedPrefab);
   }, []);
 
   return (
@@ -34,7 +34,7 @@ export const Toolbar = ({ setSelectedPrefab }: { setSelectedPrefab: (p: Prefab) 
       fetch(withBasePath(`/prefabs/${e.target.value}.json`)).then(r => r.json()).then(setSelectedPrefab);
     }}>
       <option value="">— select prefab —</option>
-      {['throne', 'game-level', 'prefab'].map((prefabName) => (
+      {['game-level', 'prefab'].map((prefabName) => (
         <option key={prefabName} value={prefabName}>{prefabName}</option>
       ))}
     </select>

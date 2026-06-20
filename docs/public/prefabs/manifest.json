@@ -1,5 +1,8 @@
 [
   "/prefabs/game-level.json",
-  "/prefabs/throne.json",
-  "/prefabs/prefab.json"
+  "/prefabs/prefab.json",
+  "/prefabs/brutalist-cube-building.json",
+  "/prefabs/brutalist-enterable-cube.json",
+  "/prefabs/brutalist-cylinder-tower.json",
+  "/prefabs/brutalist-viaduct-span.json"
 ]

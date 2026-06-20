@@ -1,0 +1,389 @@
+{
+  "id": "brutalist-cylinder-tower",
+  "name": "Brutalist Cylinder Tower",
+  "root": {
+    "id": "brutalist-cylinder-tower-root",
+    "components": {
+      "transform": {
+        "type": "Transform",
+        "properties": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      }
+    },
+    "children": [
+      {
+        "id": "cylinder-tower-shaft",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                15,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                5.2,
+                5.2,
+                30,
+                32
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#a8aaa4",
+              "texture": "/textures/proto32/grey.png",
+              "repeat": true,
+              "repeatCount": [
+                6,
+                10
+              ],
+              "minFilter": "NearestFilter",
+              "magFilter": "NearestFilter",
+              "roughness": 0.94,
+              "metalness": 0.02
+            }
+          },
+          "physics": {
+            "type": "Physics",
+            "properties": {
+              "type": "fixed",
+              "shape": "cylinder"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "cylinder-tower-crown",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                30.9,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                6.2,
+                6.2,
+                1.8,
+                32
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#777a74",
+              "texture": "/textures/proto32/grey_dark.png",
+              "repeat": true,
+              "repeatCount": [
+                6,
+                1
+              ],
+              "minFilter": "NearestFilter",
+              "magFilter": "NearestFilter",
+              "roughness": 0.94,
+              "metalness": 0.02
+            }
+          },
+          "physics": {
+            "type": "Physics",
+            "properties": {
+              "type": "fixed",
+              "shape": "cylinder"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "cylinder-tower-base",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                1,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                6.4,
+                6.4,
+                2,
+                32
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#888b84",
+              "texture": "/textures/proto32/grey_dark.png",
+              "repeat": true,
+              "repeatCount": [
+                6,
+                1
+              ],
+              "minFilter": "NearestFilter",
+              "magFilter": "NearestFilter",
+              "roughness": 0.94,
+              "metalness": 0.02
+            }
+          },
+          "physics": {
+            "type": "Physics",
+            "properties": {
+              "type": "fixed",
+              "shape": "cylinder"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "cylinder-tower-entry-block",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                2.2,
+                5.3
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                4.5,
+                4.4,
+                2.6
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#91948d",
+              "texture": "/textures/proto32/grey_dark.png",
+              "repeat": true,
+              "repeatCount": [
+                2,
+                2
+              ],
+              "minFilter": "NearestFilter",
+              "magFilter": "NearestFilter",
+              "roughness": 0.94,
+              "metalness": 0.02
+            }
+          },
+          "physics": {
+            "type": "Physics",
+            "properties": {
+              "type": "fixed"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "cylinder-tower-window-slit-a",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                12,
+                5.22
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                12,
+                0.12
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#686c66",
+              "texture": "/textures/proto32/grey_dark.png",
+              "repeat": true,
+              "repeatCount": [
+                1,
+                5
+              ],
+              "minFilter": "NearestFilter",
+              "magFilter": "NearestFilter",
+              "roughness": 0.86
+            }
+          },
+          "physics": {
+            "type": "Physics",
+            "properties": {
+              "type": "fixed"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "cylinder-tower-window-slit-b",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                5.22,
+                18,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.12,
+                12,
+                1
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#686c66",
+              "texture": "/textures/proto32/grey_dark.png",
+              "repeat": true,
+              "repeatCount": [
+                1,
+                5
+              ],
+              "minFilter": "NearestFilter",
+              "magFilter": "NearestFilter",
+              "roughness": 0.86
+            }
+          },
+          "physics": {
+            "type": "Physics",
+            "properties": {
+              "type": "fixed"
+            }
+          }
+        },
+        "children": []
+      }
+    ]
+  }
+}

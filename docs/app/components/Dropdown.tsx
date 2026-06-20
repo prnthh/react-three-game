@@ -23,7 +23,7 @@ export default function Dropdown() {
     ];
 
     return (
-        <div className="relative">
+        <div className={`relative ${open ? "z-50" : "z-10"}`}>
             <button
                 type="button"
                 aria-haspopup="menu"
@@ -32,7 +32,7 @@ export default function Dropdown() {
                 onKeyDown={(e) => {
                     if (e.key === "Escape") setOpen(false);
                 }}
-                className="border border-zinc-400 px-6 py-3 font-mono text-sm uppercase hover:bg-zinc-200 inline-flex items-center gap-2"
+                className="metal-button gap-2 px-6 py-3"
             >
                 Examples
                 <span className="text-xs">▾</span>
@@ -43,7 +43,7 @@ export default function Dropdown() {
                     <button
                         type="button"
                         aria-label="Close demo menu"
-                        className="fixed inset-0 z-10 cursor-default"
+                        className="fixed inset-0 z-40 cursor-default"
                         onClick={() => setOpen(false)}
                     />
                     <div
@@ -53,7 +53,7 @@ export default function Dropdown() {
                             if (e.key === "Escape") setOpen(false);
                         }}
                         onMouseLeave={() => setOpen(false)}
-                        className="absolute left-0 top-full z-20 mt-2 w-48 max-w-[calc(100vw-2rem)] overflow-hidden border border-zinc-300 bg-white shadow-xl shadow-zinc-200/40"
+                        className="metal-menu left-0 top-full z-50 mt-2 w-48 max-w-[calc(100vw-2rem)]"
                     >
                         {options.map((opt) => (
                             <Link
@@ -61,7 +61,7 @@ export default function Dropdown() {
                                 role="menuitem"
                                 href={opt.href}
                                 onClick={() => setOpen(false)}
-                                className="block px-4 py-2.5 font-mono text-xs uppercase tracking-wide text-zinc-700 hover:bg-zinc-100"
+                                className="metal-menu-item px-4 py-2.5"
                             >
                                 {opt.label}
                             </Link>

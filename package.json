@@ -1,6 +1,6 @@
 {
 	"name": "react-three-game",
-	"version": "0.0.109",
+	"version": "0.0.110",
 	"description": "high performance 3D game engine built in React",
 	"exports": {
 		"./viewer": {
@@ -60,19 +60,19 @@
 	},
 	"devDependencies": {
 		"@react-three/drei": ">=10.7.7",
-		"@react-three/fiber": ">=9.6.0",
-		"@types/react": ">=19.2.9",
+		"@react-three/fiber": ">=9.6.1",
+		"@types/react": ">=19.2.17",
 		"@types/react-dom": ">=19.2.3",
-		"@types/three": ">=0.184.0",
-		"concurrently": ">=9.2.1",
+		"@types/three": ">=0.184.1",
+		"concurrently": ">=10.0.3",
 		"crashcat": ">=0.0.4",
-		"react": ">=19.2.5",
-		"react-dom": ">=19.2.5",
+		"react": ">=19.2.7",
+		"react-dom": ">=19.2.7",
 		"three": ">=0.184.0",
 		"typescript": ">=6.0.3",
-		"vite": ">=8.0.10"
+		"vite": ">=8.0.16"
 	},
 	"dependencies": {
-		"zustand": "^5.0.12"
+		"zustand": ">=5.0.14"
 	}
 }

@@ -1,501 +1,345 @@
 {
-  "id": "brutalist-cube-building",
-  "name": "Brutalist Cube Building",
-  "root": {
-    "id": "brutalist-cube-building-root",
-    "components": {
-      "transform": {
-        "type": "Transform",
-        "properties": {
-          "position": [
-            0,
-            0,
-            0
-          ],
-          "rotation": [
-            0,
-            0,
-            0
-          ],
-          "scale": [
-            1,
-            1,
-            1
-          ]
-        }
-      }
-    },
-    "children": [
-      {
-        "id": "cube-building-core",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                8,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                18,
-                16,
-                20
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "color": "#aaaCA6",
-              "texture": "/textures/proto32/grey.png",
-              "repeat": true,
-              "repeatCount": [
-                8,
-                8
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
-            }
-          },
-          "physics": {
-            "type": "Physics",
-            "properties": {
-              "type": "fixed"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-building-roof-parapet-n",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                16.9,
-                -9.6
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                19,
-                1.4,
-                0.8
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "color": "#81837d",
-              "texture": "/textures/proto32/grey_dark.png",
-              "repeat": true,
-              "repeatCount": [
-                8,
-                1
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
-            }
-          },
-          "physics": {
-            "type": "Physics",
-            "properties": {
-              "type": "fixed"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-building-roof-parapet-s",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                16.9,
-                9.6
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                19,
-                1.4,
-                0.8
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "color": "#81837d",
-              "texture": "/textures/proto32/grey_dark.png",
-              "repeat": true,
-              "repeatCount": [
-                8,
-                1
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
-            }
-          },
-          "physics": {
-            "type": "Physics",
-            "properties": {
-              "type": "fixed"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-building-roof-parapet-e",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                8.6,
-                16.9,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                0.8,
-                1.4,
-                20
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "color": "#777a74",
-              "texture": "/textures/proto32/grey_dark.png",
-              "repeat": true,
-              "repeatCount": [
-                8,
-                1
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
-            }
-          },
-          "physics": {
-            "type": "Physics",
-            "properties": {
-              "type": "fixed"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-building-roof-parapet-w",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -8.6,
-                16.9,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                0.8,
-                1.4,
-                20
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "color": "#777a74",
-              "texture": "/textures/proto32/grey_dark.png",
-              "repeat": true,
-              "repeatCount": [
-                8,
-                1
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
-            }
-          },
-          "physics": {
-            "type": "Physics",
-            "properties": {
-              "type": "fixed"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-building-window-band-a",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                6,
-                10.08
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                15,
-                1.1,
-                0.12
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "color": "#6f736d",
-              "texture": "/textures/proto32/grey_dark.png",
-              "repeat": true,
-              "repeatCount": [
-                8,
-                1
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.86
-            }
-          },
-          "physics": {
-            "type": "Physics",
-            "properties": {
-              "type": "fixed"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-building-window-band-b",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                11,
-                10.1
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                15,
-                1.1,
-                0.12
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "color": "#6f736d",
-              "texture": "/textures/proto32/grey_dark.png",
-              "repeat": true,
-              "repeatCount": [
-                8,
-                1
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.86
-            }
-          },
-          "physics": {
-            "type": "Physics",
-            "properties": {
-              "type": "fixed"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-building-service-plinth",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                0.6,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                21,
-                1.2,
-                23
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "color": "#8d8f88",
-              "texture": "/textures/proto32/grey_dark.png",
-              "repeat": true,
-              "repeatCount": [
-                9,
-                9
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
-            }
-          },
-          "physics": {
-            "type": "Physics",
-            "properties": {
-              "type": "fixed"
-            }
-          }
-        },
-        "children": []
-      }
-    ]
-  }
+	"id": "brutalist-cube-building",
+	"name": "Brutalist Cube Building",
+	"root": {
+		"id": "brutalist-cube-building-root",
+		"components": {
+			"transform": {
+				"type": "Transform",
+				"properties": {
+					"position": [0, 0, 0],
+					"rotation": [0, 0, 0],
+					"scale": [1, 1, 1]
+				}
+			}
+		},
+		"children": [
+			{
+				"id": "cube-building-core",
+				"components": {
+					"transform": {
+						"type": "Transform",
+						"properties": {
+							"position": [0, 8, 0],
+							"rotation": [0, 0, 0],
+							"scale": [1, 1, 1]
+						}
+					},
+					"geometry": {
+						"type": "Geometry",
+						"properties": {
+							"geometryType": "box",
+							"args": [18, 16, 20]
+						}
+					},
+					"material": {
+						"type": "Material",
+						"properties": {
+							"color": "#aaaCA6",
+							"texture": "/textures/floor/terrain/snow-512.jpg",
+							"repeat": true,
+							"repeatCount": [8, 8],
+							"minFilter": "NearestFilter",
+							"magFilter": "NearestFilter",
+							"roughness": 0.94,
+							"metalness": 0.02
+						}
+					},
+					"crashcatPhysics": {
+						"type": "CrashcatPhysics",
+						"properties": {
+							"type": "fixed",
+							"colliders": "cuboid"
+						}
+					}
+				},
+				"children": []
+			},
+			{
+				"id": "cube-building-roof-parapet-n",
+				"components": {
+					"transform": {
+						"type": "Transform",
+						"properties": {
+							"position": [0, 16.9, -9.6],
+							"rotation": [0, 0, 0],
+							"scale": [1, 1, 1]
+						}
+					},
+					"geometry": {
+						"type": "Geometry",
+						"properties": {
+							"geometryType": "box",
+							"args": [19, 1.4, 0.8]
+						}
+					},
+					"material": {
+						"type": "Material",
+						"properties": {
+							"color": "#81837d",
+							"texture": "/textures/floor/terrain/snow-512.jpg",
+							"repeat": true,
+							"repeatCount": [8, 1],
+							"minFilter": "NearestFilter",
+							"magFilter": "NearestFilter",
+							"roughness": 0.94,
+							"metalness": 0.02
+						}
+					},
+					"crashcatPhysics": {
+						"type": "CrashcatPhysics",
+						"properties": {
+							"type": "fixed",
+							"colliders": "cuboid"
+						}
+					}
+				},
+				"children": []
+			},
+			{
+				"id": "cube-building-roof-parapet-s",
+				"components": {
+					"transform": {
+						"type": "Transform",
+						"properties": {
+							"position": [0, 16.9, 9.6],
+							"rotation": [0, 0, 0],
+							"scale": [1, 1, 1]
+						}
+					},
+					"geometry": {
+						"type": "Geometry",
+						"properties": {
+							"geometryType": "box",
+							"args": [19, 1.4, 0.8]
+						}
+					},
+					"material": {
+						"type": "Material",
+						"properties": {
+							"color": "#81837d",
+							"texture": "/textures/floor/terrain/snow-512.jpg",
+							"repeat": true,
+							"repeatCount": [8, 1],
+							"minFilter": "NearestFilter",
+							"magFilter": "NearestFilter",
+							"roughness": 0.94,
+							"metalness": 0.02
+						}
+					},
+					"crashcatPhysics": {
+						"type": "CrashcatPhysics",
+						"properties": {
+							"type": "fixed",
+							"colliders": "cuboid"
+						}
+					}
+				},
+				"children": []
+			},
+			{
+				"id": "cube-building-roof-parapet-e",
+				"components": {
+					"transform": {
+						"type": "Transform",
+						"properties": {
+							"position": [8.6, 16.9, 0],
+							"rotation": [0, 0, 0],
+							"scale": [1, 1, 1]
+						}
+					},
+					"geometry": {
+						"type": "Geometry",
+						"properties": {
+							"geometryType": "box",
+							"args": [0.8, 1.4, 20]
+						}
+					},
+					"material": {
+						"type": "Material",
+						"properties": {
+							"color": "#777a74",
+							"texture": "/textures/floor/terrain/snow-512.jpg",
+							"repeat": true,
+							"repeatCount": [8, 1],
+							"minFilter": "NearestFilter",
+							"magFilter": "NearestFilter",
+							"roughness": 0.94,
+							"metalness": 0.02
+						}
+					},
+					"crashcatPhysics": {
+						"type": "CrashcatPhysics",
+						"properties": {
+							"type": "fixed",
+							"colliders": "cuboid"
+						}
+					}
+				},
+				"children": []
+			},
+			{
+				"id": "cube-building-roof-parapet-w",
+				"components": {
+					"transform": {
+						"type": "Transform",
+						"properties": {
+							"position": [-8.6, 16.9, 0],
+							"rotation": [0, 0, 0],
+							"scale": [1, 1, 1]
+						}
+					},
+					"geometry": {
+						"type": "Geometry",
+						"properties": {
+							"geometryType": "box",
+							"args": [0.8, 1.4, 20]
+						}
+					},
+					"material": {
+						"type": "Material",
+						"properties": {
+							"color": "#777a74",
+							"texture": "/textures/floor/terrain/snow-512.jpg",
+							"repeat": true,
+							"repeatCount": [8, 1],
+							"minFilter": "NearestFilter",
+							"magFilter": "NearestFilter",
+							"roughness": 0.94,
+							"metalness": 0.02
+						}
+					},
+					"crashcatPhysics": {
+						"type": "CrashcatPhysics",
+						"properties": {
+							"type": "fixed",
+							"colliders": "cuboid"
+						}
+					}
+				},
+				"children": []
+			},
+			{
+				"id": "cube-building-window-band-a",
+				"components": {
+					"transform": {
+						"type": "Transform",
+						"properties": {
+							"position": [0, 6, 10.08],
+							"rotation": [0, 0, 0],
+							"scale": [1, 1, 1]
+						}
+					},
+					"geometry": {
+						"type": "Geometry",
+						"properties": {
+							"geometryType": "box",
+							"args": [15, 1.1, 0.12]
+						}
+					},
+					"material": {
+						"type": "Material",
+						"properties": {
+							"color": "#6f736d",
+							"texture": "/textures/floor/terrain/snow-512.jpg",
+							"repeat": true,
+							"repeatCount": [8, 1],
+							"minFilter": "NearestFilter",
+							"magFilter": "NearestFilter",
+							"roughness": 0.86
+						}
+					},
+					"crashcatPhysics": {
+						"type": "CrashcatPhysics",
+						"properties": {
+							"type": "fixed",
+							"colliders": "cuboid"
+						}
+					}
+				},
+				"children": []
+			},
+			{
+				"id": "cube-building-window-band-b",
+				"components": {
+					"transform": {
+						"type": "Transform",
+						"properties": {
+							"position": [0, 11, 10.1],
+							"rotation": [0, 0, 0],
+							"scale": [1, 1, 1]
+						}
+					},
+					"geometry": {
+						"type": "Geometry",
+						"properties": {
+							"geometryType": "box",
+							"args": [15, 1.1, 0.12]
+						}
+					},
+					"material": {
+						"type": "Material",
+						"properties": {
+							"color": "#6f736d",
+							"texture": "/textures/floor/terrain/snow-512.jpg",
+							"repeat": true,
+							"repeatCount": [8, 1],
+							"minFilter": "NearestFilter",
+							"magFilter": "NearestFilter",
+							"roughness": 0.86
+						}
+					},
+					"crashcatPhysics": {
+						"type": "CrashcatPhysics",
+						"properties": {
+							"type": "fixed",
+							"colliders": "cuboid"
+						}
+					}
+				},
+				"children": []
+			},
+			{
+				"id": "cube-building-service-plinth",
+				"components": {
+					"transform": {
+						"type": "Transform",
+						"properties": {
+							"position": [0, 0.6, 0],
+							"rotation": [0, 0, 0],
+							"scale": [1, 1, 1]
+						}
+					},
+					"geometry": {
+						"type": "Geometry",
+						"properties": {
+							"geometryType": "box",
+							"args": [21, 1.2, 23]
+						}
+					},
+					"material": {
+						"type": "Material",
+						"properties": {
+							"color": "#8d8f88",
+							"texture": "/textures/floor/terrain/snow-512.jpg",
+							"repeat": true,
+							"repeatCount": [9, 9],
+							"minFilter": "NearestFilter",
+							"magFilter": "NearestFilter",
+							"roughness": 0.94,
+							"metalness": 0.02
+						}
+					},
+					"crashcatPhysics": {
+						"type": "CrashcatPhysics",
+						"properties": {
+							"type": "fixed",
+							"colliders": "cuboid"
+						}
+					}
+				},
+				"children": []
+			}
+		]
+	}
 }

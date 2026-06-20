@@ -463,10 +463,10 @@ COMPONENT TYPES AND EXAMPLES:
    {"material":{"type":"Material","properties":{"color":"#ff0000"}}}
    // Optional: wireframe:true, texture:"/path/to/texture.png", repeat:true, repeatCount:[4,4]
 
-5. PHYSICS (for collisions/dynamics):
-   {"physics":{"type":"Physics","properties":{"type":"dynamic","collider":"hull"}}}
-   // type: "dynamic" (movable) or "fixed" (static)
-   // collider: "hull", "trimesh", "cuboid", "ball"
+5. CRASHCAT PHYSICS (for collisions/dynamics):
+    {"crashcatPhysics":{"type":"CrashcatPhysics","properties":{"type":"dynamic","colliders":"hull"}}}
+    // type: "dynamic" (movable), "fixed" (static), "kinematicPosition", or "kinematicVelocity"
+    // colliders: "hull", "trimesh", "cuboid", "ball", or "capsule"
 
 6. DIRECTIONALLIGHT (sun-like lighting):
    {"directionallight":{"type":"DirectionalLight","properties":{"color":"#ffffff","intensity":1.0,"castShadow":true,"targetOffset":[2,-5,2]}}}
@@ -483,10 +483,10 @@ STEP 2 - Add a blue sphere:
 {"root":{"children":{"$append":[{"id":"ball1","components":{"transform":{"type":"Transform","properties":{"position":[0,2,0],"rotation":[0,0,0],"scale":[1,1,1]}},"geometry":{"type":"Geometry","properties":{"geometryType":"sphere","args":[0.5,32,16]}},"material":{"type":"Material","properties":{"color":"#0000ff"}}},"children":[]}]}}}
 
 STEP 3 - Add trees using instanced 3D models:
-{"root":{"children":{"$append":[{"id":"tree1","components":{"transform":{"type":"Transform","properties":{"position":[-3,0,2],"rotation":[0,0,0],"scale":[1,1,1]}},"model":{"type":"Model","properties":{"filename":"models/environment/tree.glb","instanced":true}},"physics":{"type":"Physics","properties":{"type":"fixed"}}},"children":[]},{"id":"tree2","components":{"transform":{"type":"Transform","properties":{"position":[3,0,2],"rotation":[0,0,0],"scale":[1,1,1]}},"model":{"type":"Model","properties":{"filename":"models/environment/tree.glb","instanced":true}},"physics":{"type":"Physics","properties":{"type":"fixed"}}},"children":[]}]}}}
+{"root":{"children":{"$append":[{"id":"tree1","components":{"transform":{"type":"Transform","properties":{"position":[-3,0,2],"rotation":[0,0,0],"scale":[1,1,1]}},"model":{"type":"Model","properties":{"filename":"models/environment/tree.glb","instanced":true}},"crashcatPhysics":{"type":"CrashcatPhysics","properties":{"type":"fixed","colliders":"hull"}}},"children":[]},{"id":"tree2","components":{"transform":{"type":"Transform","properties":{"position":[3,0,2],"rotation":[0,0,0],"scale":[1,1,1]}},"model":{"type":"Model","properties":{"filename":"models/environment/tree.glb","instanced":true}},"crashcatPhysics":{"type":"CrashcatPhysics","properties":{"type":"fixed","colliders":"hull"}}},"children":[]}]}}}
 
 STEP 4 - Add a dynamic physics cube (will fall):
-{"root":{"children":{"$append":[{"id":"physics-cube","components":{"transform":{"type":"Transform","properties":{"position":[0,5,0],"rotation":[0,0,0],"scale":[1,1,1]}},"geometry":{"type":"Geometry","properties":{"geometryType":"box","args":[1,1,1]}},"material":{"type":"Material","properties":{"color":"#00ff00"}},"physics":{"type":"Physics","properties":{"type":"dynamic","collider":"cuboid"}}},"children":[]}]}}}
+{"root":{"children":{"$append":[{"id":"physics-cube","components":{"transform":{"type":"Transform","properties":{"position":[0,5,0],"rotation":[0,0,0],"scale":[1,1,1]}},"geometry":{"type":"Geometry","properties":{"geometryType":"box","args":[1,1,1]}},"material":{"type":"Material","properties":{"color":"#00ff00"}},"crashcatPhysics":{"type":"CrashcatPhysics","properties":{"type":"dynamic","colliders":"cuboid"}}},"children":[]}]}}}
 
 STEP 5 - Add a yellow spotlight:
 {"root":{"children":{"$append":[{"id":"spot1","components":{"transform":{"type":"Transform","properties":{"position":[5,10,5],"rotation":[0,0,0],"scale":[1,1,1]}},"spotlight":{"type":"SpotLight","properties":{"color":"#ffff00","intensity":2.0,"angle":0.785,"penumbra":0.5,"distance":50,"castShadow":true}}},"children":[]}]}}}

@@ -27,39 +27,6 @@
     },
     "children": [
       {
-        "id": "brutalist-ambient-fill",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                0,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "ambientLight": {
-            "type": "AmbientLight",
-            "properties": {
-              "color": "#d8d8d0",
-              "intensity": 1.25
-            }
-          }
-        },
-        "children": []
-      },
-      {
         "id": "brutalist-directional-sun",
         "components": {
           "transform": {
@@ -67,7 +34,7 @@
             "properties": {
               "position": [
                 35,
-                50,
+                77,
                 28
               ],
               "rotation": [
@@ -86,17 +53,90 @@
             "type": "DirectionalLight",
             "properties": {
               "color": "#ffffff",
-              "intensity": 2.4,
+              "intensity": 1.3,
               "targetOffset": [
                 -35,
                 -50,
                 -28
               ],
-              "castShadow": false
+              "castShadow": true,
+              "shadowCameraTop": 100,
+              "shadowCameraBottom": -100,
+              "shadowCameraLeft": -100,
+              "shadowCameraRight": 100,
+              "shadowBias": -0.0008
             }
           }
         },
         "children": []
+      },
+      {
+        "id": "e69b978f-feda-46cf-bec8-a02cda4bc3b6",
+        "name": "environment",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {}
+          },
+          "environment": {
+            "type": "Environment",
+            "properties": {
+              "intensity": 1
+            }
+          }
+        },
+        "children": [
+          {
+            "id": "e8560f1d-bda8-40b8-98ae-3738bef325d1",
+            "name": "spheremap",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "sphere",
+                  "args": [
+                    1,
+                    32,
+                    16
+                  ],
+                  "emitClickEvent": false,
+                  "clickEventName": ""
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "attach": "material",
+                  "materialType": "basic",
+                  "color": "#ff0a0a",
+                  "toneMapped": true,
+                  "wireframe": false,
+                  "transparent": false,
+                  "opacity": 1,
+                  "sizeAttenuation": true,
+                  "offset": [
+                    0,
+                    0
+                  ],
+                  "animateOffset": false,
+                  "offsetSpeed": [
+                    0,
+                    0
+                  ],
+                  "metalness": 0,
+                  "roughness": 1,
+                  "side": "BackSide",
+                  "texture": "/textures/water1.png"
+                }
+              }
+            },
+            "children": []
+          }
+        ]
       },
       {
         "id": "brutalist-ground-plaza",
@@ -135,8 +175,8 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#999b93",
-              "texture": "/textures/floor/terrain/checkerboard.jpg",
+              "color": "#d8e6f9",
+              "texture": "/textures/floor/terrain/snow-512.jpg",
               "repeat": true,
               "repeatCount": [
                 40,
@@ -147,10 +187,11 @@
               "roughness": 1
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
-              "type": "fixed"
+              "type": "fixed",
+              "colliders": "cuboid"
             }
           }
         },
@@ -194,7 +235,7 @@
             "type": "Material",
             "properties": {
               "color": "#83867e",
-              "texture": "/textures/proto32/grey_dark.png",
+              "texture": "/textures/floor/terrain/snow-512.jpg",
               "repeat": true,
               "repeatCount": [
                 40,
@@ -206,10 +247,11 @@
               "metalness": 0.02
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
-              "type": "fixed"
+              "type": "fixed",
+              "colliders": "cuboid"
             }
           }
         },
@@ -253,7 +295,7 @@
             "type": "Material",
             "properties": {
               "color": "#83867e",
-              "texture": "/textures/proto32/grey_dark.png",
+              "texture": "/textures/floor/terrain/snow-512.jpg",
               "repeat": true,
               "repeatCount": [
                 40,
@@ -265,10 +307,11 @@
               "metalness": 0.02
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
-              "type": "fixed"
+              "type": "fixed",
+              "colliders": "cuboid"
             }
           }
         },
@@ -312,7 +355,7 @@
             "type": "Material",
             "properties": {
               "color": "#83867e",
-              "texture": "/textures/proto32/grey_dark.png",
+              "texture": "/textures/floor/terrain/snow-512.jpg",
               "repeat": true,
               "repeatCount": [
                 40,
@@ -324,10 +367,11 @@
               "metalness": 0.02
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
-              "type": "fixed"
+              "type": "fixed",
+              "colliders": "cuboid"
             }
           }
         },
@@ -371,7 +415,7 @@
             "type": "Material",
             "properties": {
               "color": "#83867e",
-              "texture": "/textures/proto32/grey_dark.png",
+              "texture": "/textures/floor/terrain/snow-512.jpg",
               "repeat": true,
               "repeatCount": [
                 40,
@@ -383,10 +427,11 @@
               "metalness": 0.02
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
-              "type": "fixed"
+              "type": "fixed",
+              "colliders": "cuboid"
             }
           }
         },
@@ -429,8 +474,8 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#8d8f88",
-              "texture": "/textures/proto32/grey_dark.png",
+              "color": "#d5c0ad",
+              "texture": "/textures/floor/terrain/snow-512.jpg",
               "repeat": true,
               "repeatCount": [
                 10,
@@ -441,10 +486,11 @@
               "roughness": 0.86
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
-              "type": "fixed"
+              "type": "fixed",
+              "colliders": "cuboid"
             }
           }
         },
@@ -487,8 +533,8 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#b6b7b0",
-              "texture": "/textures/proto32/white.png",
+              "color": "#f7fbff",
+              "texture": "/textures/floor/terrain/snow-512.jpg",
               "repeat": true,
               "repeatCount": [
                 2,
@@ -499,10 +545,11 @@
               "roughness": 0.86
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
-              "type": "fixed"
+              "type": "fixed",
+              "colliders": "cuboid"
             }
           }
         },
@@ -545,8 +592,8 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#b6b7b0",
-              "texture": "/textures/proto32/white.png",
+              "color": "#f7fbff",
+              "texture": "/textures/floor/terrain/snow-512.jpg",
               "repeat": true,
               "repeatCount": [
                 28,
@@ -557,10 +604,11 @@
               "roughness": 0.86
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
-              "type": "fixed"
+              "type": "fixed",
+              "colliders": "cuboid"
             }
           }
         },
@@ -1212,7 +1260,7 @@
             "type": "Material",
             "properties": {
               "color": "#a0a29b",
-              "texture": "/textures/proto32/grey.png",
+              "texture": "/textures/floor/terrain/snow-512.jpg",
               "repeat": true,
               "repeatCount": [
                 18,
@@ -1224,10 +1272,11 @@
               "metalness": 0.02
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
-              "type": "fixed"
+              "type": "fixed",
+              "colliders": "cuboid"
             }
           }
         },
@@ -1271,7 +1320,7 @@
             "type": "Material",
             "properties": {
               "color": "#777a74",
-              "texture": "/textures/proto32/grey_dark.png",
+              "texture": "/textures/floor/terrain/snow-512.jpg",
               "repeat": true,
               "repeatCount": [
                 18,
@@ -1283,10 +1332,11 @@
               "metalness": 0.02
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
-              "type": "fixed"
+              "type": "fixed",
+              "colliders": "cuboid"
             }
           }
         },
@@ -1330,7 +1380,7 @@
             "type": "Material",
             "properties": {
               "color": "#777a74",
-              "texture": "/textures/proto32/grey_dark.png",
+              "texture": "/textures/floor/terrain/snow-512.jpg",
               "repeat": true,
               "repeatCount": [
                 18,
@@ -1342,10 +1392,11 @@
               "metalness": 0.02
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
-              "type": "fixed"
+              "type": "fixed",
+              "colliders": "cuboid"
             }
           }
         },
@@ -1389,7 +1440,7 @@
             "type": "Material",
             "properties": {
               "color": "#a7a9a2",
-              "texture": "/textures/proto32/grey.png",
+              "texture": "/textures/floor/terrain/snow-512.jpg",
               "repeat": true,
               "repeatCount": [
                 4,
@@ -1401,10 +1452,11 @@
               "metalness": 0.02
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
-              "type": "fixed"
+              "type": "fixed",
+              "colliders": "cuboid"
             }
           }
         },
@@ -1448,7 +1500,7 @@
             "type": "Material",
             "properties": {
               "color": "#90938d",
-              "texture": "/textures/proto32/grey.png",
+              "texture": "/textures/floor/terrain/snow-512.jpg",
               "repeat": true,
               "repeatCount": [
                 4,
@@ -1460,10 +1512,11 @@
               "metalness": 0.02
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
-              "type": "fixed"
+              "type": "fixed",
+              "colliders": "cuboid"
             }
           }
         },
@@ -1507,7 +1560,7 @@
             "type": "Material",
             "properties": {
               "color": "#a7a9a2",
-              "texture": "/textures/proto32/grey.png",
+              "texture": "/textures/floor/terrain/snow-512.jpg",
               "repeat": true,
               "repeatCount": [
                 4,
@@ -1519,10 +1572,11 @@
               "metalness": 0.02
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
-              "type": "fixed"
+              "type": "fixed",
+              "colliders": "cuboid"
             }
           }
         },
@@ -1566,7 +1620,7 @@
             "type": "Material",
             "properties": {
               "color": "#90938d",
-              "texture": "/textures/proto32/grey.png",
+              "texture": "/textures/floor/terrain/snow-512.jpg",
               "repeat": true,
               "repeatCount": [
                 4,
@@ -1578,10 +1632,11 @@
               "metalness": 0.02
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
-              "type": "fixed"
+              "type": "fixed",
+              "colliders": "cuboid"
             }
           }
         },
@@ -1625,7 +1680,7 @@
             "type": "Material",
             "properties": {
               "color": "#a7a9a2",
-              "texture": "/textures/proto32/grey.png",
+              "texture": "/textures/floor/terrain/snow-512.jpg",
               "repeat": true,
               "repeatCount": [
                 4,
@@ -1637,10 +1692,11 @@
               "metalness": 0.02
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
-              "type": "fixed"
+              "type": "fixed",
+              "colliders": "cuboid"
             }
           }
         },
@@ -1684,7 +1740,7 @@
             "type": "Material",
             "properties": {
               "color": "#90938d",
-              "texture": "/textures/proto32/grey.png",
+              "texture": "/textures/floor/terrain/snow-512.jpg",
               "repeat": true,
               "repeatCount": [
                 4,
@@ -1696,10 +1752,11 @@
               "metalness": 0.02
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
-              "type": "fixed"
+              "type": "fixed",
+              "colliders": "cuboid"
             }
           }
         },
@@ -1743,7 +1800,7 @@
             "type": "Material",
             "properties": {
               "color": "#a7a9a2",
-              "texture": "/textures/proto32/grey.png",
+              "texture": "/textures/floor/terrain/snow-512.jpg",
               "repeat": true,
               "repeatCount": [
                 4,
@@ -1755,10 +1812,11 @@
               "metalness": 0.02
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
-              "type": "fixed"
+              "type": "fixed",
+              "colliders": "cuboid"
             }
           }
         },
@@ -1802,7 +1860,7 @@
             "type": "Material",
             "properties": {
               "color": "#90938d",
-              "texture": "/textures/proto32/grey.png",
+              "texture": "/textures/floor/terrain/snow-512.jpg",
               "repeat": true,
               "repeatCount": [
                 4,
@@ -1814,10 +1872,11 @@
               "metalness": 0.02
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
-              "type": "fixed"
+              "type": "fixed",
+              "colliders": "cuboid"
             }
           }
         },
@@ -1861,7 +1920,7 @@
             "type": "Material",
             "properties": {
               "color": "#a7a9a2",
-              "texture": "/textures/proto32/grey.png",
+              "texture": "/textures/floor/terrain/snow-512.jpg",
               "repeat": true,
               "repeatCount": [
                 4,
@@ -1873,10 +1932,11 @@
               "metalness": 0.02
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
-              "type": "fixed"
+              "type": "fixed",
+              "colliders": "cuboid"
             }
           }
         },
@@ -1932,72 +1992,6 @@
           }
         },
         "children": []
-      },
-      {
-        "id": "e69b978f-feda-46cf-bec8-a02cda4bc3b6",
-        "name": "environment",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {}
-          },
-          "environment": {
-            "type": "Environment",
-            "properties": {}
-          }
-        },
-        "children": [
-          {
-            "id": "e8560f1d-bda8-40b8-98ae-3738bef325d1",
-            "name": "spheremap",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {}
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "geometryType": "sphere",
-                  "args": [
-                    1,
-                    32,
-                    16
-                  ],
-                  "emitClickEvent": false,
-                  "clickEventName": ""
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "attach": "material",
-                  "materialType": "basic",
-                  "color": "#ff0a0a",
-                  "toneMapped": true,
-                  "wireframe": false,
-                  "transparent": false,
-                  "opacity": 1,
-                  "sizeAttenuation": true,
-                  "offset": [
-                    0,
-                    0
-                  ],
-                  "animateOffset": false,
-                  "offsetSpeed": [
-                    0,
-                    0
-                  ],
-                  "metalness": 0,
-                  "roughness": 1,
-                  "side": "BackSide",
-                  "texture": "/textures/water1.png"
-                }
-              }
-            },
-            "children": []
-          }
-        ]
       }
     ]
   }

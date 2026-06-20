@@ -65,7 +65,7 @@
             "type": "Material",
             "properties": {
               "color": "#a8aaa4",
-              "texture": "/textures/proto32/grey.png",
+              "texture": "/textures/floor/terrain/snow-512.jpg",
               "repeat": true,
               "repeatCount": [
                 6,
@@ -77,11 +77,11 @@
               "metalness": 0.02
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
               "type": "fixed",
-              "shape": "cylinder"
+              "colliders": "hull"
             }
           }
         },
@@ -126,7 +126,7 @@
             "type": "Material",
             "properties": {
               "color": "#777a74",
-              "texture": "/textures/proto32/grey_dark.png",
+              "texture": "/textures/floor/terrain/snow-512.jpg",
               "repeat": true,
               "repeatCount": [
                 6,
@@ -138,11 +138,11 @@
               "metalness": 0.02
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
               "type": "fixed",
-              "shape": "cylinder"
+              "colliders": "hull"
             }
           }
         },
@@ -187,7 +187,7 @@
             "type": "Material",
             "properties": {
               "color": "#888b84",
-              "texture": "/textures/proto32/grey_dark.png",
+              "texture": "/textures/floor/terrain/snow-512.jpg",
               "repeat": true,
               "repeatCount": [
                 6,
@@ -199,11 +199,11 @@
               "metalness": 0.02
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
               "type": "fixed",
-              "shape": "cylinder"
+              "colliders": "hull"
             }
           }
         },
@@ -247,7 +247,7 @@
             "type": "Material",
             "properties": {
               "color": "#91948d",
-              "texture": "/textures/proto32/grey_dark.png",
+              "texture": "/textures/floor/terrain/snow-512.jpg",
               "repeat": true,
               "repeatCount": [
                 2,
@@ -259,10 +259,11 @@
               "metalness": 0.02
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
-              "type": "fixed"
+              "type": "fixed",
+              "colliders": "cuboid"
             }
           }
         },
@@ -306,7 +307,7 @@
             "type": "Material",
             "properties": {
               "color": "#686c66",
-              "texture": "/textures/proto32/grey_dark.png",
+              "texture": "/textures/floor/terrain/snow-512.jpg",
               "repeat": true,
               "repeatCount": [
                 1,
@@ -317,10 +318,11 @@
               "roughness": 0.86
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
-              "type": "fixed"
+              "type": "fixed",
+              "colliders": "cuboid"
             }
           }
         },
@@ -364,7 +366,7 @@
             "type": "Material",
             "properties": {
               "color": "#686c66",
-              "texture": "/textures/proto32/grey_dark.png",
+              "texture": "/textures/floor/terrain/snow-512.jpg",
               "repeat": true,
               "repeatCount": [
                 1,
@@ -375,10 +377,11 @@
               "roughness": 0.86
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
-              "type": "fixed"
+              "type": "fixed",
+              "colliders": "cuboid"
             }
           }
         },

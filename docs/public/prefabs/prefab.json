@@ -56,10 +56,11 @@
               "instanced": false
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
-              "type": "dynamic"
+              "type": "dynamic",
+              "colliders": "hull"
             }
           }
         },
@@ -150,8 +151,8 @@
               ]
             }
           },
-          "physics": {
-            "type": "Physics",
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
             "properties": {
               "type": "fixed",
               "colliders": "trimesh"

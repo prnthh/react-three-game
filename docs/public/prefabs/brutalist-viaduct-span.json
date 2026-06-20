@@ -1,680 +1,470 @@
 {
-  "id": "brutalist-viaduct-span",
-  "name": "Brutalist Viaduct Span",
-  "root": {
-    "id": "brutalist-viaduct-span-root",
-    "components": {
-      "transform": {
-        "type": "Transform",
-        "properties": {
-          "position": [
-            0,
-            0,
-            0
-          ],
-          "rotation": [
-            0,
-            0,
-            0
-          ],
-          "scale": [
-            1,
-            1,
-            1
-          ]
-        }
-      }
-    },
-    "children": [
-      {
-        "id": "viaduct-deck",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                7,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                8,
-                1.2,
-                92
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "color": "#b0b2aa",
-              "texture": "/textures/proto32/grey.png",
-              "repeat": true,
-              "repeatCount": [
-                4,
-                24
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
-            }
-          },
-          "physics": {
-            "type": "Physics",
-            "properties": {
-              "type": "fixed"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "viaduct-rail-left",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -3.9,
-                8.1,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                0.6,
-                1.1,
-                92
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "color": "#7f827a",
-              "texture": "/textures/proto32/grey_dark.png",
-              "repeat": true,
-              "repeatCount": [
-                1,
-                24
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
-            }
-          },
-          "physics": {
-            "type": "Physics",
-            "properties": {
-              "type": "fixed"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "viaduct-rail-right",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                3.9,
-                8.1,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                0.6,
-                1.1,
-                92
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "color": "#7f827a",
-              "texture": "/textures/proto32/grey_dark.png",
-              "repeat": true,
-              "repeatCount": [
-                1,
-                24
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
-            }
-          },
-          "physics": {
-            "type": "Physics",
-            "properties": {
-              "type": "fixed"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "viaduct-pier-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                3,
-                -42
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                4,
-                6,
-                4
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "color": "#7c7f78",
-              "texture": "/textures/proto32/grey_dark.png",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                3
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
-            }
-          },
-          "physics": {
-            "type": "Physics",
-            "properties": {
-              "type": "fixed"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "viaduct-pier-2",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                3,
-                -30
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                4,
-                6,
-                4
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "color": "#7c7f78",
-              "texture": "/textures/proto32/grey_dark.png",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                3
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
-            }
-          },
-          "physics": {
-            "type": "Physics",
-            "properties": {
-              "type": "fixed"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "viaduct-pier-3",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                3,
-                -18
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                4,
-                6,
-                4
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "color": "#7c7f78",
-              "texture": "/textures/proto32/grey_dark.png",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                3
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
-            }
-          },
-          "physics": {
-            "type": "Physics",
-            "properties": {
-              "type": "fixed"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "viaduct-pier-4",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                3,
-                -6
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                4,
-                6,
-                4
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "color": "#7c7f78",
-              "texture": "/textures/proto32/grey_dark.png",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                3
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
-            }
-          },
-          "physics": {
-            "type": "Physics",
-            "properties": {
-              "type": "fixed"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "viaduct-pier-5",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                3,
-                6
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                4,
-                6,
-                4
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "color": "#7c7f78",
-              "texture": "/textures/proto32/grey_dark.png",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                3
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
-            }
-          },
-          "physics": {
-            "type": "Physics",
-            "properties": {
-              "type": "fixed"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "viaduct-pier-6",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                3,
-                18
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                4,
-                6,
-                4
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "color": "#7c7f78",
-              "texture": "/textures/proto32/grey_dark.png",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                3
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
-            }
-          },
-          "physics": {
-            "type": "Physics",
-            "properties": {
-              "type": "fixed"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "viaduct-pier-7",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                3,
-                30
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                4,
-                6,
-                4
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "color": "#7c7f78",
-              "texture": "/textures/proto32/grey_dark.png",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                3
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
-            }
-          },
-          "physics": {
-            "type": "Physics",
-            "properties": {
-              "type": "fixed"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "viaduct-pier-8",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                3,
-                42
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                4,
-                6,
-                4
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "color": "#7c7f78",
-              "texture": "/textures/proto32/grey_dark.png",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                3
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
-            }
-          },
-          "physics": {
-            "type": "Physics",
-            "properties": {
-              "type": "fixed"
-            }
-          }
-        },
-        "children": []
-      }
-    ]
-  }
+	"id": "brutalist-viaduct-span",
+	"name": "Brutalist Viaduct Span",
+	"root": {
+		"id": "brutalist-viaduct-span-root",
+		"components": {
+			"transform": {
+				"type": "Transform",
+				"properties": {
+					"position": [0, 0, 0],
+					"rotation": [0, 0, 0],
+					"scale": [1, 1, 1]
+				}
+			}
+		},
+		"children": [
+			{
+				"id": "viaduct-deck",
+				"components": {
+					"transform": {
+						"type": "Transform",
+						"properties": {
+							"position": [0, 7, 0],
+							"rotation": [0, 0, 0],
+							"scale": [1, 1, 1]
+						}
+					},
+					"geometry": {
+						"type": "Geometry",
+						"properties": {
+							"geometryType": "box",
+							"args": [8, 1.2, 92]
+						}
+					},
+					"material": {
+						"type": "Material",
+						"properties": {
+							"color": "#b0b2aa",
+							"texture": "/textures/floor/terrain/snow-512.jpg",
+							"repeat": true,
+							"repeatCount": [4, 24],
+							"minFilter": "NearestFilter",
+							"magFilter": "NearestFilter",
+							"roughness": 0.94,
+							"metalness": 0.02
+						}
+					},
+					"crashcatPhysics": {
+						"type": "CrashcatPhysics",
+						"properties": {
+							"type": "fixed",
+							"colliders": "cuboid"
+						}
+					}
+				},
+				"children": []
+			},
+			{
+				"id": "viaduct-rail-left",
+				"components": {
+					"transform": {
+						"type": "Transform",
+						"properties": {
+							"position": [-3.9, 8.1, 0],
+							"rotation": [0, 0, 0],
+							"scale": [1, 1, 1]
+						}
+					},
+					"geometry": {
+						"type": "Geometry",
+						"properties": {
+							"geometryType": "box",
+							"args": [0.6, 1.1, 92]
+						}
+					},
+					"material": {
+						"type": "Material",
+						"properties": {
+							"color": "#7f827a",
+							"texture": "/textures/floor/terrain/snow-512.jpg",
+							"repeat": true,
+							"repeatCount": [1, 24],
+							"minFilter": "NearestFilter",
+							"magFilter": "NearestFilter",
+							"roughness": 0.94,
+							"metalness": 0.02
+						}
+					},
+					"crashcatPhysics": {
+						"type": "CrashcatPhysics",
+						"properties": {
+							"type": "fixed",
+							"colliders": "cuboid"
+						}
+					}
+				},
+				"children": []
+			},
+			{
+				"id": "viaduct-rail-right",
+				"components": {
+					"transform": {
+						"type": "Transform",
+						"properties": {
+							"position": [3.9, 8.1, 0],
+							"rotation": [0, 0, 0],
+							"scale": [1, 1, 1]
+						}
+					},
+					"geometry": {
+						"type": "Geometry",
+						"properties": {
+							"geometryType": "box",
+							"args": [0.6, 1.1, 92]
+						}
+					},
+					"material": {
+						"type": "Material",
+						"properties": {
+							"color": "#7f827a",
+							"texture": "/textures/floor/terrain/snow-512.jpg",
+							"repeat": true,
+							"repeatCount": [1, 24],
+							"minFilter": "NearestFilter",
+							"magFilter": "NearestFilter",
+							"roughness": 0.94,
+							"metalness": 0.02
+						}
+					},
+					"crashcatPhysics": {
+						"type": "CrashcatPhysics",
+						"properties": {
+							"type": "fixed",
+							"colliders": "cuboid"
+						}
+					}
+				},
+				"children": []
+			},
+			{
+				"id": "viaduct-pier-1",
+				"components": {
+					"transform": {
+						"type": "Transform",
+						"properties": {
+							"position": [0, 3, -42],
+							"rotation": [0, 0, 0],
+							"scale": [1, 1, 1]
+						}
+					},
+					"geometry": {
+						"type": "Geometry",
+						"properties": {
+							"geometryType": "box",
+							"args": [4, 6, 4]
+						}
+					},
+					"material": {
+						"type": "Material",
+						"properties": {
+							"color": "#7c7f78",
+							"texture": "/textures/floor/terrain/snow-512.jpg",
+							"repeat": true,
+							"repeatCount": [2, 3],
+							"minFilter": "NearestFilter",
+							"magFilter": "NearestFilter",
+							"roughness": 0.94,
+							"metalness": 0.02
+						}
+					},
+					"crashcatPhysics": {
+						"type": "CrashcatPhysics",
+						"properties": {
+							"type": "fixed",
+							"colliders": "cuboid"
+						}
+					}
+				},
+				"children": []
+			},
+			{
+				"id": "viaduct-pier-2",
+				"components": {
+					"transform": {
+						"type": "Transform",
+						"properties": {
+							"position": [0, 3, -30],
+							"rotation": [0, 0, 0],
+							"scale": [1, 1, 1]
+						}
+					},
+					"geometry": {
+						"type": "Geometry",
+						"properties": {
+							"geometryType": "box",
+							"args": [4, 6, 4]
+						}
+					},
+					"material": {
+						"type": "Material",
+						"properties": {
+							"color": "#7c7f78",
+							"texture": "/textures/floor/terrain/snow-512.jpg",
+							"repeat": true,
+							"repeatCount": [2, 3],
+							"minFilter": "NearestFilter",
+							"magFilter": "NearestFilter",
+							"roughness": 0.94,
+							"metalness": 0.02
+						}
+					},
+					"crashcatPhysics": {
+						"type": "CrashcatPhysics",
+						"properties": {
+							"type": "fixed",
+							"colliders": "cuboid"
+						}
+					}
+				},
+				"children": []
+			},
+			{
+				"id": "viaduct-pier-3",
+				"components": {
+					"transform": {
+						"type": "Transform",
+						"properties": {
+							"position": [0, 3, -18],
+							"rotation": [0, 0, 0],
+							"scale": [1, 1, 1]
+						}
+					},
+					"geometry": {
+						"type": "Geometry",
+						"properties": {
+							"geometryType": "box",
+							"args": [4, 6, 4]
+						}
+					},
+					"material": {
+						"type": "Material",
+						"properties": {
+							"color": "#7c7f78",
+							"texture": "/textures/floor/terrain/snow-512.jpg",
+							"repeat": true,
+							"repeatCount": [2, 3],
+							"minFilter": "NearestFilter",
+							"magFilter": "NearestFilter",
+							"roughness": 0.94,
+							"metalness": 0.02
+						}
+					},
+					"crashcatPhysics": {
+						"type": "CrashcatPhysics",
+						"properties": {
+							"type": "fixed",
+							"colliders": "cuboid"
+						}
+					}
+				},
+				"children": []
+			},
+			{
+				"id": "viaduct-pier-4",
+				"components": {
+					"transform": {
+						"type": "Transform",
+						"properties": {
+							"position": [0, 3, -6],
+							"rotation": [0, 0, 0],
+							"scale": [1, 1, 1]
+						}
+					},
+					"geometry": {
+						"type": "Geometry",
+						"properties": {
+							"geometryType": "box",
+							"args": [4, 6, 4]
+						}
+					},
+					"material": {
+						"type": "Material",
+						"properties": {
+							"color": "#7c7f78",
+							"texture": "/textures/floor/terrain/snow-512.jpg",
+							"repeat": true,
+							"repeatCount": [2, 3],
+							"minFilter": "NearestFilter",
+							"magFilter": "NearestFilter",
+							"roughness": 0.94,
+							"metalness": 0.02
+						}
+					},
+					"crashcatPhysics": {
+						"type": "CrashcatPhysics",
+						"properties": {
+							"type": "fixed",
+							"colliders": "cuboid"
+						}
+					}
+				},
+				"children": []
+			},
+			{
+				"id": "viaduct-pier-5",
+				"components": {
+					"transform": {
+						"type": "Transform",
+						"properties": {
+							"position": [0, 3, 6],
+							"rotation": [0, 0, 0],
+							"scale": [1, 1, 1]
+						}
+					},
+					"geometry": {
+						"type": "Geometry",
+						"properties": {
+							"geometryType": "box",
+							"args": [4, 6, 4]
+						}
+					},
+					"material": {
+						"type": "Material",
+						"properties": {
+							"color": "#7c7f78",
+							"texture": "/textures/floor/terrain/snow-512.jpg",
+							"repeat": true,
+							"repeatCount": [2, 3],
+							"minFilter": "NearestFilter",
+							"magFilter": "NearestFilter",
+							"roughness": 0.94,
+							"metalness": 0.02
+						}
+					},
+					"crashcatPhysics": {
+						"type": "CrashcatPhysics",
+						"properties": {
+							"type": "fixed",
+							"colliders": "cuboid"
+						}
+					}
+				},
+				"children": []
+			},
+			{
+				"id": "viaduct-pier-6",
+				"components": {
+					"transform": {
+						"type": "Transform",
+						"properties": {
+							"position": [0, 3, 18],
+							"rotation": [0, 0, 0],
+							"scale": [1, 1, 1]
+						}
+					},
+					"geometry": {
+						"type": "Geometry",
+						"properties": {
+							"geometryType": "box",
+							"args": [4, 6, 4]
+						}
+					},
+					"material": {
+						"type": "Material",
+						"properties": {
+							"color": "#7c7f78",
+							"texture": "/textures/floor/terrain/snow-512.jpg",
+							"repeat": true,
+							"repeatCount": [2, 3],
+							"minFilter": "NearestFilter",
+							"magFilter": "NearestFilter",
+							"roughness": 0.94,
+							"metalness": 0.02
+						}
+					},
+					"crashcatPhysics": {
+						"type": "CrashcatPhysics",
+						"properties": {
+							"type": "fixed",
+							"colliders": "cuboid"
+						}
+					}
+				},
+				"children": []
+			},
+			{
+				"id": "viaduct-pier-7",
+				"components": {
+					"transform": {
+						"type": "Transform",
+						"properties": {
+							"position": [0, 3, 30],
+							"rotation": [0, 0, 0],
+							"scale": [1, 1, 1]
+						}
+					},
+					"geometry": {
+						"type": "Geometry",
+						"properties": {
+							"geometryType": "box",
+							"args": [4, 6, 4]
+						}
+					},
+					"material": {
+						"type": "Material",
+						"properties": {
+							"color": "#7c7f78",
+							"texture": "/textures/floor/terrain/snow-512.jpg",
+							"repeat": true,
+							"repeatCount": [2, 3],
+							"minFilter": "NearestFilter",
+							"magFilter": "NearestFilter",
+							"roughness": 0.94,
+							"metalness": 0.02
+						}
+					},
+					"crashcatPhysics": {
+						"type": "CrashcatPhysics",
+						"properties": {
+							"type": "fixed",
+							"colliders": "cuboid"
+						}
+					}
+				},
+				"children": []
+			},
+			{
+				"id": "viaduct-pier-8",
+				"components": {
+					"transform": {
+						"type": "Transform",
+						"properties": {
+							"position": [0, 3, 42],
+							"rotation": [0, 0, 0],
+							"scale": [1, 1, 1]
+						}
+					},
+					"geometry": {
+						"type": "Geometry",
+						"properties": {
+							"geometryType": "box",
+							"args": [4, 6, 4]
+						}
+					},
+					"material": {
+						"type": "Material",
+						"properties": {
+							"color": "#7c7f78",
+							"texture": "/textures/floor/terrain/snow-512.jpg",
+							"repeat": true,
+							"repeatCount": [2, 3],
+							"minFilter": "NearestFilter",
+							"magFilter": "NearestFilter",
+							"roughness": 0.94,
+							"metalness": 0.02
+						}
+					},
+					"crashcatPhysics": {
+						"type": "CrashcatPhysics",
+						"properties": {
+							"type": "fixed",
+							"colliders": "cuboid"
+						}
+					}
+				},
+				"children": []
+			}
+		]
+	}
 }

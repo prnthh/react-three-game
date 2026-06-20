@@ -1397,7 +1397,7 @@
               ]
             }
           },
-          "crashcatphysics": {
+          "crashcatPhysics": {
             "type": "CrashcatPhysics",
             "properties": {
               "type": "dynamic",

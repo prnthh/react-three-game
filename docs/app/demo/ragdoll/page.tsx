@@ -4,14 +4,13 @@ import { useEffect } from "react";
 import { PrefabEditor, PrefabEditorMode, registerComponent } from "react-three-game/editor";
 import type { Prefab } from "react-three-game/editor";
 import {
+    CrashcatPhysicsComponent,
     CrashcatRagdollComponent,
     CrashcatRuntime,
-    createStaticBoxBody,
-    useCrashcat,
 } from "react-three-game/plugins/crashcat";
-import { rigidBody, type RigidBody } from "crashcat";
 import { BASE_PATH } from "../../basePath";
 
+registerComponent(CrashcatPhysicsComponent);
 registerComponent(CrashcatRagdollComponent);
 
 const ragdollDemoPrefab: Prefab = {
@@ -21,6 +20,39 @@ const ragdollDemoPrefab: Prefab = {
         id: "ragdoll-root",
         name: "Ragdoll Root",
         children: [
+            {
+                id: "ragdoll-floor",
+                name: "Floor",
+                components: {
+                    transform: {
+                        type: "Transform",
+                        properties: {
+                            position: [0, -0.55, 0],
+                            rotation: [0, 0, 0],
+                            scale: [1, 1, 1],
+                        },
+                    },
+                    geometry: {
+                        type: "Geometry",
+                        properties: {
+                            geometryType: "box",
+                            args: [16, 1, 14],
+                        },
+                    },
+                    material: {
+                        type: "Material",
+                        properties: {
+                            color: "#334155",
+                            roughness: 0.9,
+                            metalness: 0.02,
+                        },
+                    },
+                    crashcatPhysics: {
+                        type: "CrashcatPhysics",
+                        properties: {},
+                    },
+                },
+            },
             {
                 id: "ragdoll-orange",
                 name: "Orange Ragdoll",
@@ -101,38 +133,6 @@ const ragdollDemoPrefab: Prefab = {
     },
 };
 
-function StaticPhysicsBox({
-    position,
-    size,
-}: {
-    position: [number, number, number];
-    size: [number, number, number];
-}) {
-    const api = useCrashcat();
-
-    useEffect(() => {
-        if (!api) return undefined;
-
-        const body: RigidBody = createStaticBoxBody(
-            api.world,
-            api.staticObjectLayer,
-            [size[0] / 2, size[1] / 2, size[2] / 2],
-            position,
-        );
-
-        return () => {
-            rigidBody.remove(api.world, body);
-        };
-    }, [api, position, size]);
-
-    return (
-        <mesh receiveShadow position={position}>
-            <boxGeometry args={size} />
-            <meshStandardMaterial color="#334155" roughness={0.9} metalness={0.02} />
-        </mesh>
-    );
-}
-
 function DemoBindings() {
     useEffect(() => {
         const windowWithDebug = window as Window & {
@@ -167,7 +167,6 @@ export default function RagdollDemo() {
                     position={[6, 10, 5]}
                     shadow-mapSize={[2048, 2048]}
                 />
-                <StaticPhysicsBox position={[0, -0.55, 0]} size={[16, 1, 14]} />
             </PrefabEditor>
         </main>
     );

@@ -168,7 +168,8 @@
               "shadowCameraBottom": -38,
               "shadowCameraLeft": -38,
               "shadowCameraRight": 38,
-              "shadowBias": -0.0005
+              "shadowBias": 0.00018,
+              "shadowNormalBias": 0.025
             }
           }
         }

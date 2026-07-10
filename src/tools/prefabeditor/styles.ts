@@ -185,6 +185,8 @@ export const tree: TreeStyles = {
         userSelect: 'none',
     },
     scroll: {
+        flex: 1,
+        minHeight: 0,
         overflowY: 'auto',
         padding: 2,
         scrollbarWidth: 'thin',

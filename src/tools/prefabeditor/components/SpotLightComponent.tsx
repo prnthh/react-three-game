@@ -1,10 +1,9 @@
 import { assetRef, assetRefs } from "./ComponentRegistry";
 import type { Component, ComponentViewProps } from "./ComponentRegistry";
 import { useHelper } from "@react-three/drei";
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { BooleanField, ColorField, Label, NumberField, Vector3Input } from "./Input";
-import { SpotLightHelper } from "three";
-import type { Object3D } from "three";
+import { Object3D, SpotLightHelper } from "three";
 import type { SpotLight } from "three";
 import { useTextureAsset, useNode } from "../assetRuntime";
 import { TexturePicker } from "../../assetviewer/page";
@@ -103,7 +102,7 @@ function SpotLightView({ properties, children }: ComponentViewProps) {
     };
 
     const spotLightRef = useRef<SpotLight>(null);
-    const targetRef = useRef<Object3D | null>(null);
+    const target = useMemo(() => new Object3D(), []);
 
     const showHelper = editMode && isSelected;
     const helperTarget = showHelper && spotLightRef.current ? { current: spotLightRef.current } : null;
@@ -114,7 +113,7 @@ function SpotLightView({ properties, children }: ComponentViewProps) {
             <spotLight
                 ref={spotLightRef}
                 {...lightProps}
-                target={targetRef.current ?? undefined}
+                target={target}
             >
                 {showHelper && (
                     <>
@@ -138,10 +137,7 @@ function SpotLightView({ properties, children }: ComponentViewProps) {
                 {children}
             </spotLight>
 
-            <object3D
-                ref={targetRef}
-                position={merged.targetOffset}
-            />
+            <primitive object={target} position={merged.targetOffset} />
         </group>
     );
 }

@@ -74,12 +74,16 @@ export function ShadowBiasField({
     values,
     onChange,
     fallback = 0,
+    min = -1,
+    max = 1,
 }: {
     name: string;
     label: string;
     values: Record<string, any>;
     onChange: (values: Record<string, any>) => void;
     fallback?: number;
+    min?: number;
+    max?: number;
 }) {
     const value = values[name] ?? fallback;
     const [step, setStep] = useState<number>(() => getBiasStep(value));
@@ -91,8 +95,8 @@ export function ShadowBiasField({
                     value={value}
                     onChange={nextValue => onChange({ [name]: nextValue })}
                     step={step}
-                    min={-0.1}
-                    max={0.1}
+                    min={min}
+                    max={max}
                     style={{ width: 92 }}
                 />
                 <select

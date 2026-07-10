@@ -237,6 +237,22 @@ export default function EditorTree({
                                 setSelectedId={setSelectedId}
                             />
                         </div>
+                        <div style={{
+                            padding: 4,
+                            borderTop: `1px solid ${colors.borderLight}`,
+                            background: colors.bgLight,
+                        }}>
+                            <button
+                                type="button"
+                                style={{ ...base.btn, width: '100%' }}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAddChild(rootId);
+                                }}
+                            >
+                                + Add node
+                            </button>
+                        </div>
                     </>
                 )}
             </div>

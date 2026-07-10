@@ -1,9 +1,8 @@
 import type { Component, ComponentViewProps } from "./ComponentRegistry";
 import { useHelper } from "@react-three/drei";
-import { useEffect, useRef } from "react";
-import { CameraHelper } from "three";
-import type { Object3D } from "three";
-import type { DirectionalLight, OrthographicCamera } from "three";
+import { useMemo, useRef } from "react";
+import { CameraHelper, Object3D } from "three";
+import type { DirectionalLight } from "three";
 import { useNode } from "../assetRuntime";
 import { BooleanField, ColorField, NumberField, NumberInput, Vector3Input } from "./Input";
 import { LightSection, ShadowBiasField, mergeWithDefaults } from "./lightUtils";
@@ -123,27 +122,20 @@ function DirectionalLightView({ properties, children }: ComponentViewProps) {
         "shadow-camera-right": merged.shadowCameraRight,
     };
     const directionalLightRef = useRef<DirectionalLight>(null);
-    const targetRef = useRef<Object3D | null>(null);
-    const shadowCameraRef = useRef<OrthographicCamera>(null);
+    const target = useMemo(() => new Object3D(), []);
 
     // Show CameraHelper only in edit mode, selected, and castShadow
     const showHelper = editMode && isSelected && merged.castShadow;
-    const helperTarget = showHelper && shadowCameraRef.current ? { current: shadowCameraRef.current } : null;
+    const shadowCamera = directionalLightRef.current?.shadow.camera ?? null;
+    const helperTarget = showHelper && shadowCamera ? { current: shadowCamera } : null;
     useHelper(helperTarget, CameraHelper);
-
-    useEffect(() => {
-        if (directionalLightRef.current) {
-            shadowCameraRef.current = directionalLightRef.current.shadow.camera;
-        }
-    }, []);
 
     return (
         <group>
             <directionalLight
                 ref={directionalLightRef}
                 {...lightProps}
-                // Attach the target object
-                target={targetRef.current ?? undefined}
+                target={target}
             >
                 {children}
                 {editMode && isSelected && (
@@ -172,7 +164,7 @@ function DirectionalLightView({ properties, children }: ComponentViewProps) {
                 )}
             </directionalLight>
 
-            <object3D ref={targetRef} position={merged.targetOffset} />
+            <primitive object={target} position={merged.targetOffset} />
 
         </group>
     );

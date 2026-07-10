@@ -293,6 +293,47 @@
         "children": []
       },
       {
+        "id": "back-title-text",
+        "name": "back title text",
+        "enabled": true,
+        "visible": true,
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                1.35,
+                -6.25
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "text": {
+            "type": "Text",
+            "properties": {
+              "text": "react three game",
+              "color": "#ff2d2d",
+              "font": "/fonts/NotoSans-Regular.ttf",
+              "size": 1.05,
+              "depth": 0.08,
+              "width": 10,
+              "align": "center"
+            }
+          }
+        },
+        "children": []
+      },
+      {
         "id": "light",
         "enabled": true,
         "visible": true,

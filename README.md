@@ -165,7 +165,7 @@ Use the editor or root ref for scene-native object access, and the `Scene` mutat
 
 ```tsx
 import { useEffect, useRef } from "react";
-import { PrefabEditor, type PrefabEditorRef } from "react-three-game/editor";
+import { PrefabEditor, type PrefabEditorRef, type Scene } from "react-three-game/editor";
 
 function RaiseBall() {
   const editorRef = useRef<PrefabEditorRef>(null);
@@ -195,6 +195,13 @@ For live Three.js access, use mounted objects directly:
 ```tsx
 const ball = editorRef.current?.getObject("ball");
 ball?.rotateY(0.5);
+```
+
+Repeated `PrefabRef` instances keep their inner node ids scoped, so identical prefabs cannot overwrite each other in the runtime registry. Reach into a particular instance through the outer node's `prefabScene` handle:
+
+```tsx
+const room = editorRef.current?.getHandle<Scene>("room-placement", "prefabScene");
+room?.getObject("door")?.rotateY(Math.PI / 2);
 ```
 
 For runtime integrations that need to react to authored scene changes, subscribe through the prefab store:

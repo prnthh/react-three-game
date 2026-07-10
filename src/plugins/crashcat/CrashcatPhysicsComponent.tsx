@@ -1,6 +1,5 @@
 "use client";
 
-import { useFrame } from "@react-three/fiber";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useStore } from "zustand";
 import {
@@ -17,10 +16,12 @@ import {
 import { useModelAsset, useNode } from "../../tools/prefabeditor/assetRuntime";
 import { usePrefabStoreApi } from "../../tools/prefabeditor/prefabStore";
 import { PrefabEditorMode, useScene } from "../../tools/prefabeditor/SceneContext";
+import { withBasePath } from "../../tools/prefabeditor/runtimeUtils";
 import {
     box,
     capsule,
     convexHull,
+    cylinder,
     MotionQuality,
     MotionType,
     rigidBody,
@@ -31,18 +32,25 @@ import {
 } from "crashcat";
 import { Matrix4, Quaternion, Vector3 } from "three";
 import type { Object3D } from "three";
-import { useCrashcat, type CrashcatApi } from "./CrashcatRuntime";
+import {
+    getCrashcatApi,
+    observeCrashcat,
+    type CrashcatApi,
+    type CrashcatBodySync,
+} from "./CrashcatRuntime";
 
 const MAX_PHYSICS_DELTA = 1 / 30;
 
 type CrashcatPhysicsProperties = {
     type?: "fixed" | "dynamic" | "kinematicPosition" | "kinematicVelocity";
-    colliders?: "cuboid" | "ball" | "capsule" | "hull" | "trimesh";
+    colliders?: "cuboid" | "ball" | "capsule" | "cylinder" | "hull" | "trimesh";
     sensor?: boolean;
     friction?: number;
     restitution?: number;
     capsuleRadius?: number;
     capsuleHalfHeight?: number;
+    cylinderRadius?: number;
+    cylinderHalfHeight?: number;
     linearVelocity?: [number, number, number];
     angularVelocity?: [number, number, number];
     collisionEnterEventName?: string;
@@ -71,6 +79,7 @@ const crashcatPhysicsFields: FieldDefinition[] = [
             { value: "cuboid", label: "Cuboid" },
             { value: "ball", label: "Ball" },
             { value: "capsule", label: "Capsule" },
+            { value: "cylinder", label: "Cylinder" },
             { value: "hull", label: "Hull" },
             { value: "trimesh", label: "Tri Mesh" },
         ],
@@ -79,6 +88,8 @@ const crashcatPhysicsFields: FieldDefinition[] = [
     { name: "restitution", type: "number", label: "Restitution", step: 0.05 },
     { name: "capsuleRadius", type: "number", label: "Capsule Radius", step: 0.05 },
     { name: "capsuleHalfHeight", type: "number", label: "Capsule Half Height", step: 0.05 },
+    { name: "cylinderRadius", type: "number", label: "Cylinder Radius", step: 0.05 },
+    { name: "cylinderHalfHeight", type: "number", label: "Cylinder Half Height", step: 0.05 },
 ];
 
 type CrashcatPhysicsEditorProps = {
@@ -223,6 +234,13 @@ function createShapeForObject(object: Object3D, physics: CrashcatPhysicsProperti
     }
     scratchBoundsSize.set(maxX - minX, maxY - minY, maxZ - minZ);
 
+    if (physics.colliders === "cylinder") {
+        return cylinder.create({
+            radius: Math.max(physics.cylinderRadius ?? Math.max(scratchBoundsSize.x, scratchBoundsSize.z) * 0.5, 0.01),
+            halfHeight: Math.max(physics.cylinderHalfHeight ?? scratchBoundsSize.y * 0.5, 0.01),
+        });
+    }
+
     return box.create({
         halfExtents: [
             Math.max(scratchBoundsSize.x * 0.5, 0.01),
@@ -296,14 +314,13 @@ function createAndRegisterBody(
     nodeId: string,
     object: Object3D,
     physics: CrashcatPhysicsProperties,
+    sync?: CrashcatBodySync,
 ) {
     const shape = createShapeForObject(object, physics);
     if (!shape) return null;
 
-    object.updateWorldMatrix(true, true);
     object.getWorldPosition(scratchPosition);
-    const wq = new Quaternion();
-    object.getWorldQuaternion(wq);
+    object.getWorldQuaternion(worldQuaternion);
 
     const motionType = toMotionType(physics);
     const motionQuality = toMotionQuality(physics);
@@ -316,7 +333,7 @@ function createAndRegisterBody(
         motionQuality,
         objectLayer: isStatic ? api.staticObjectLayer : api.movingObjectLayer,
         position: [scratchPosition.x, scratchPosition.y, scratchPosition.z],
-        quaternion: [wq.x, wq.y, wq.z, wq.w],
+        quaternion: [worldQuaternion.x, worldQuaternion.y, worldQuaternion.z, worldQuaternion.w],
         sensor: Boolean(physics.sensor),
         collideKinematicVsNonDynamic: isKinematic,
         friction: physics.friction,
@@ -340,172 +357,110 @@ function createAndRegisterBody(
             sensorEnter: physics.sensorEnterEventName,
             sensorExit: physics.sensorExitEventName,
         },
-    });
+    }, sync);
 
-    return { body, motionType };
+    return body;
 }
 
-function CrashcatPhysicsView({ properties, children }: ComponentViewProps<CrashcatPhysicsProperties>) {
+function CrashcatPhysicsView({ properties, children, basePath }: ComponentViewProps<CrashcatPhysicsProperties>) {
     const { nodeId, getObject } = useNode();
     const scene = useScene();
     const store = usePrefabStoreApi();
-    const api: CrashcatApi | null = useCrashcat();
-    // Subscribe only to this node's Model filename (not its full node, which would
-    // re-render on every transform edit), then to that one model's loaded asset.
-    // Colliders rebuild when *this* node's mesh loads, not when any asset loads.
-    const modelPath = useStore(store, useCallback((s) => {
-        const node = s.nodesById[nodeId];
-        if (!node) return null;
-        for (const key in node.components) {
-            const component = node.components[key];
-            if (component?.type === "Model") {
-                return (component.properties?.filename as string | undefined) ?? null;
-            }
-        }
-        return null;
-    }, [nodeId]));
+    const node = useStore(store, useCallback(state => state.nodesById[nodeId], [nodeId]));
+    const modelPath = useMemo(() => {
+        const filename = Object.values(node?.components ?? {}).find(component => component?.type === "Model")
+            ?.properties?.filename as string | undefined;
+        return filename ? withBasePath(basePath ?? "", filename) : null;
+    }, [basePath, node]);
     const loadedModel = useModelAsset(modelPath);
     const bodyRef = useRef<RigidBody | null>(null);
-    const motionTypeRef = useRef(MotionType.STATIC);
-    const needsRegistrationRef = useRef(false);
     const syncPositionRef = useRef<[number, number, number]>([0, 0, 0]);
     const syncQuaternionRef = useRef<[number, number, number, number]>([0, 0, 0, 1]);
     const lastPositionRef = useRef<[number, number, number] | null>(null);
     const lastQuaternionRef = useRef<[number, number, number, number] | null>(null);
-    const {
-        angularVelocity,
-        capsuleHalfHeight,
-        capsuleRadius,
-        colliders,
-        collisionEnterEventName,
-        collisionExitEventName,
-        friction,
-        linearVelocity,
-        restitution,
-        sensor,
-        sensorEnterEventName,
-        sensorExitEventName,
-        type,
-    } = properties;
-    const physics = useMemo<CrashcatPhysicsProperties>(() => ({
-        angularVelocity,
-        capsuleHalfHeight,
-        capsuleRadius,
-        colliders,
-        collisionEnterEventName,
-        collisionExitEventName,
-        friction,
-        linearVelocity,
-        restitution,
-        sensor,
-        sensorEnterEventName,
-        sensorExitEventName,
-        type,
-    }), [
-        angularVelocity,
-        capsuleHalfHeight,
-        capsuleRadius,
-        colliders,
-        collisionEnterEventName,
-        collisionExitEventName,
-        friction,
-        linearVelocity,
-        restitution,
-        sensor,
-        sensorEnterEventName,
-        sensorExitEventName,
-        type,
-    ]);
-
-    const tryRegisterBody = () => {
-        if (!api || getRegisteredBody(api, nodeId, bodyRef.current)) {
-            needsRegistrationRef.current = false;
-            return;
-        }
-
-        const object = getObject();
-        if (!object) {
-            needsRegistrationRef.current = true;
-            return;
-        }
-
-        const registration = createAndRegisterBody(api, nodeId, object, physics);
-        if (!registration) {
-            needsRegistrationRef.current = true;
-            return;
-        }
-
-        bodyRef.current = registration.body;
-        motionTypeRef.current = registration.motionType;
-        needsRegistrationRef.current = false;
-        lastPositionRef.current = null;
-        lastQuaternionRef.current = null;
-    };
+    const physics = properties;
 
     useEffect(() => {
         // Rebuild mesh-derived colliders when this node's referenced model finishes loading.
         void loadedModel;
-        needsRegistrationRef.current = true;
-        if (api) {
-            api.unregister(nodeId);
-        }
-        bodyRef.current = null;
-        tryRegisterBody();
+        let registeredApi: CrashcatApi | null = null;
+        const stopObserving = observeCrashcat(api => {
+            if (!api) {
+                registeredApi = null;
+                bodyRef.current = null;
+                return;
+            }
+
+            registeredApi?.unregister(nodeId);
+            registeredApi = api;
+            bodyRef.current = null;
+
+            const object = getObject();
+            if (!object) return;
+
+            const motionType = toMotionType(physics);
+            const sync: CrashcatBodySync = {};
+
+            if (motionType === MotionType.KINEMATIC) {
+                sync.beforeStep = (body, delta) => {
+                    const currentObject = getObject();
+                    if (!currentObject) return;
+                    syncObjectToBody(api.world, body, currentObject, syncPositionRef.current, syncQuaternionRef.current, Math.min(delta, MAX_PHYSICS_DELTA));
+                };
+            } else if (motionType === MotionType.DYNAMIC) {
+                sync.afterStep = (body) => {
+                    const currentObject = getObject();
+                    if (!currentObject) return;
+
+                    if (bodyTransformChanged(body, lastPositionRef.current, lastQuaternionRef.current)) {
+                        setObjectWorldTransform(currentObject, body.position, body.quaternion);
+                        lastPositionRef.current = [body.position[0], body.position[1], body.position[2]];
+                        lastQuaternionRef.current = [body.quaternion[0], body.quaternion[1], body.quaternion[2], body.quaternion[3]];
+                    }
+
+                    if (body.position[1] < -40) {
+                        bodyRef.current = null;
+                        api.unregister(nodeId);
+                    }
+                };
+            }
+
+            bodyRef.current = createAndRegisterBody(api, nodeId, object, physics, sync);
+            lastPositionRef.current = null;
+            lastQuaternionRef.current = null;
+        });
 
         return () => {
+            stopObserving();
             bodyRef.current = null;
-            needsRegistrationRef.current = false;
-            api?.unregister(nodeId);
+            registeredApi?.unregister(nodeId);
         };
     }, [
-        api,
         getObject,
         nodeId,
         physics,
         loadedModel,
     ]);
 
-    useFrame(() => {
-        if (needsRegistrationRef.current) {
-            tryRegisterBody();
-        }
-    }, -3);
-
     useEffect(() => {
+        if (scene.mode !== PrefabEditorMode.Edit) return;
+
         const syncEditBody = () => {
+            const api = getCrashcatApi();
             const body = getRegisteredBody(api, nodeId, bodyRef.current);
             const object = getObject();
-            if (!api || !body || !object || scene.mode !== PrefabEditorMode.Edit) return;
+            if (!api || !body || !object) return;
             syncObjectToBody(api.world, body, object, syncPositionRef.current, syncQuaternionRef.current);
         };
 
         syncEditBody();
-        return store.subscribe(syncEditBody);
-    }, [api, getObject, nodeId, scene.mode, store]);
-
-    useFrame((_, delta) => {
-        const body = getRegisteredBody(api, nodeId, bodyRef.current);
-        const object = getObject();
-        if (!api || !body || !object || scene.mode !== PrefabEditorMode.Play || motionTypeRef.current !== MotionType.KINEMATIC) return;
-        syncObjectToBody(api.world, body, object, syncPositionRef.current, syncQuaternionRef.current, Math.min(delta, MAX_PHYSICS_DELTA));
-    }, -2);
-
-    useFrame(() => {
-        const body = getRegisteredBody(api, nodeId, bodyRef.current);
-        const object = getObject();
-        if (!api || !body || !object || motionTypeRef.current !== MotionType.DYNAMIC || scene.mode !== PrefabEditorMode.Play) return;
-
-        if (bodyTransformChanged(body, lastPositionRef.current, lastQuaternionRef.current)) {
-            setObjectWorldTransform(object, body.position, body.quaternion);
-            lastPositionRef.current = [body.position[0], body.position[1], body.position[2]];
-            lastQuaternionRef.current = [body.quaternion[0], body.quaternion[1], body.quaternion[2], body.quaternion[3]];
-        }
-
-        if (body.position[1] < -40) {
-            bodyRef.current = null;
-            api.unregister(nodeId);
-        }
-    });
+        // Transform authoring replaces this node record. Subscribe to that one
+        // record so edits elsewhere in the prefab do not wake every physics body.
+        return store.subscribe(
+            state => state.nodesById[nodeId],
+            syncEditBody,
+        );
+    }, [getObject, nodeId, scene.mode, store]);
 
     return <>{children}</>;
 }

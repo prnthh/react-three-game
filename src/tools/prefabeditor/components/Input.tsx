@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { colors, ui } from '../styles';
-import { usePrefabStoreApi } from '../prefabStore';
+import { usePrefabStore } from '../prefabStore';
 
 // ============================================================================
 // Field Definition Types
@@ -542,18 +542,6 @@ type SearchOption = {
     searchText: string;
 };
 
-function usePrefabSnapshot() {
-    const store = usePrefabStoreApi();
-    const [state, setState] = useState(() => store.getState());
-
-    useEffect(() => {
-        setState(store.getState());
-        return store.subscribe(nextState => setState(nextState));
-    }, [store]);
-
-    return state;
-}
-
 function SearchSuggestionList({
     query,
     options,
@@ -641,13 +629,11 @@ export function NodeInput({
     placeholder?: string;
     includeRoot?: boolean;
 }) {
-    const prefabState = usePrefabSnapshot();
+    const nodesById = usePrefabStore(state => state.nodesById);
+    const rootId = usePrefabStore(state => state.rootId);
     const [query, setQuery] = useState('');
 
     const options = useMemo<SearchOption[]>(() => {
-        const nodesById = prefabState?.nodesById ?? {};
-        const rootId = prefabState?.rootId;
-
         return Object.values(nodesById)
             .filter(node => includeRoot || node.id !== rootId)
             .map(node => {
@@ -660,7 +646,7 @@ export function NodeInput({
                 };
             })
             .sort((left, right) => left.label.localeCompare(right.label) || left.value.localeCompare(right.value));
-    }, [includeRoot, prefabState?.nodesById, prefabState?.rootId]);
+    }, [includeRoot, nodesById, rootId]);
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>

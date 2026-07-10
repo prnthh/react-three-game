@@ -1,8 +1,6 @@
-import { registerBuiltinComponents } from "./tools/prefabeditor/components";
 import "./viewer";
 
-registerBuiltinComponents();
-export { registerBuiltinComponents };
+export { registerBuiltinComponents } from "./tools/prefabeditor/components";
 
 export * from "./viewer";
 

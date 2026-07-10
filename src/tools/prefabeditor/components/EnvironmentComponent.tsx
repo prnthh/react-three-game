@@ -1,7 +1,7 @@
 import { Environment } from '@react-three/drei';
 import { Component } from './ComponentRegistry';
 import { FieldGroup, NumberField } from './Input';
-import { useAssetRevision } from '../assetRuntime';
+import { useVisualAssetRevision } from '../assetRuntime';
 
 function EnvironmentView({
     properties,
@@ -10,7 +10,7 @@ function EnvironmentView({
     properties: any;
     children?: React.ReactNode;
 }) {
-    const assetRevision = useAssetRevision();
+    const assetRevision = useVisualAssetRevision();
     const { intensity = 1, resolution = 256 } = properties;
     const environmentRevision = `${assetRevision}::${intensity}::${resolution}`;
 

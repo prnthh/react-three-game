@@ -1,5 +1,5 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
-import { Euler, Matrix4 } from "three";
+import { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { Matrix4 } from "three";
 import type { Group, Object3D } from "three";
 import type { ThreeEvent } from "@react-three/fiber";
 import { useStore } from "zustand";
@@ -8,18 +8,18 @@ import { useClickValid } from "./useClickValid";
 import { findComponent, getNodeUserData } from "./types";
 import type { ComponentData, GameObject as GameObjectType, Prefab } from "./types";
 import type { Component, ComponentViewProps } from "./components/ComponentRegistry";
-import { getComponentDef, registerComponent } from "./components/ComponentRegistry";
-import { builtinComponents } from "./components";
+import { getComponentDef } from "./components/ComponentRegistry";
 import { loadModel, loadSound, loadTexture } from "../dragdrop";
-import type { LoadedModels } from "../dragdrop";
-import { GameInstance, GameInstanceProvider, getRepeatAxesFromModelProperties } from "./InstanceProvider";
+import { GameInstanceBatch, GameInstanceProvider, getRepeatAxesFromModelProperties } from "./InstanceProvider";
 import { composeTransform, decompose, withBasePath } from "./runtimeUtils";
 import { createPrefabStore, PrefabStoreProvider, usePrefabChildIds, usePrefabNode, usePrefabRootId, usePrefabStoreApi } from "./prefabStore";
 import type { PrefabStoreApi } from "./prefabStore";
-import { AssetRuntimeProvider, NodeScope, useAllModels, useAssetRuntime } from "./assetRuntime";
+import { AssetRuntimeProvider, NodeScope, useAssetRuntime } from "./assetRuntime";
 import { gameEvents } from "./GameEvents";
 import { useScene, type Scene } from "./SceneContext";
 import { SceneProvider } from "./SceneProvider";
+import { AudioRuntimeProvider } from "./AudioRuntime";
+import { SelectionRuntimeProvider, useNodeSelected } from "./SelectionRuntime";
 import {
     createNodeInteractionHandlers,
     type NodeInteractionEvent,
@@ -29,21 +29,6 @@ import {
 
 const IDENTITY = new Matrix4();
 
-// Reusable scratch objects for buildRepeatedInstances. The matrices are pure
-// intermediates (their results are read out into plain arrays per instance),
-// so they can be shared across calls instead of allocating fresh Matrix4s in
-// nested loops for every repeated instance.
-const _scratchTranslation = new Matrix4();
-const _scratchRotation = new Matrix4();
-const _scratchScale = new Matrix4();
-const _scratchOffset = new Matrix4();
-const _scratchWorld = new Matrix4();
-const _scratchEuler = new Euler();
-
-builtinComponents.forEach((component) => {
-    if (!getComponentDef(component.name)) registerComponent(component);
-});
-
 const EMPTY_NODE_COMPONENTS: AnalyzedNodeComponents = {
     geometry: undefined,
     materials: [],
@@ -52,12 +37,6 @@ const EMPTY_NODE_COMPONENTS: AnalyzedNodeComponents = {
     clickEvent: { enabled: false, eventName: null },
     composition: [],
 };
-
-/** Check if a model component's assets are loaded. */
-function isNodeReady(model: ComponentData | undefined, loadedModels: LoadedModels): boolean {
-    if (!model?.properties?.filename) return true;
-    return Boolean(loadedModels[model.properties.filename]);
-}
 
 function getNodeMetadataProps(node: GameObjectType) {
     const nodeName = node.name?.trim() ?? '';
@@ -82,6 +61,10 @@ export interface PrefabRootProps {
     onPointerEvent?: (eventType: NodeInteractionEventType, event: NodeInteractionEvent, node: GameObjectType) => void;
     onEditNodeClick?: (event: ThreeEvent<PointerEvent>, node: GameObjectType) => void;
     basePath?: string;
+    /** Advanced: inject a Scene implementation, as PrefabEditor does for history-aware mutations. */
+    scene?: Scene;
+    /** Advanced: share Object3D/handle ids with a parent root. Assets are always shared. */
+    shareRuntimeObjects?: boolean;
     children?: React.ReactNode;
 }
 
@@ -107,51 +90,64 @@ type ClickEventConfig = {
 
 export const PrefabRoot = forwardRef<Scene, PrefabRootProps>((props, ref) => {
     const { data, store } = props;
+    const { selectedId, ...bodyProps } = props;
     const [ownedStore] = useState<PrefabStoreApi | null>(() => {
         if (store) return null;
         if (data) return createPrefabStore(data);
         throw new Error("PrefabRoot requires either a `data` or `store` prop");
     });
+    const lastAppliedDataRef = useRef(data);
     const resolvedStore = store ?? ownedStore;
     if (!resolvedStore) throw new Error("PrefabRoot requires either a `data` or `store` prop");
 
     useEffect(() => {
-        if (!store && data) resolvedStore.getState().replacePrefab(data);
+        if (!store && data && data !== lastAppliedDataRef.current) {
+            lastAppliedDataRef.current = data;
+            resolvedStore.getState().replacePrefab(data);
+        }
     }, [data, resolvedStore, store]);
 
     return (
         <PrefabStoreProvider store={resolvedStore}>
-            <AssetRuntimeProvider>
-                <SceneProvider store={resolvedStore} editMode={props.editMode} basePath={props.basePath}>
-                    <PrefabRootBody ref={ref} {...props} />
+            <AssetRuntimeProvider isolateObjects={!props.shareRuntimeObjects}>
+                <SceneProvider store={resolvedStore} scene={props.scene} editMode={props.editMode} basePath={props.basePath}>
+                    <AudioRuntimeProvider>
+                        <SelectionRuntimeProvider selectedId={selectedId}>
+                            <PrefabRootBody ref={ref} {...bodyProps} />
+                        </SelectionRuntimeProvider>
+                    </AudioRuntimeProvider>
                 </SceneProvider>
             </AssetRuntimeProvider>
         </PrefabStoreProvider>
     );
 });
 
-const PrefabRootBody = forwardRef<Scene, PrefabRootProps>(({ editMode, selectedId, onSelect, onPointerEvent, onEditNodeClick, basePath = "", children }, ref) => {
+const PrefabRootBody = memo(forwardRef<Scene, PrefabRootProps>(({ editMode, onSelect, onPointerEvent, onEditNodeClick, basePath = "", children }, ref) => {
     const scene = useScene();
     const runtime = useAssetRuntime();
-    const models = useAllModels();
     const storeApi = usePrefabStoreApi();
     const assetRefCounts = useStore(storeApi, state => state.assetRefCounts);
     useImperativeHandle(ref, () => scene, [scene]);
 
     const loading = useRef(new Set<string>());
-    const failed = useRef(new Set<string>());
 
     useEffect(() => {
-        const tryLoad = (key: string, hasLoaded: boolean, run: () => Promise<{ success: boolean; error?: unknown }>) => {
-            if (hasLoaded || loading.current.has(key) || failed.current.has(key)) return;
-            loading.current.add(key);
-            void run().then(result => {
-                loading.current.delete(key);
-                if (!result.success) {
-                    console.warn(`Failed to load asset: ${key}`, result.error);
-                    failed.current.add(key);
+        const tryLoad = (entry: string, path: string, hasLoaded: boolean, run: () => Promise<{ success: boolean; error?: unknown }>) => {
+            const loadKey = `${entry}@${path}`;
+            if (hasLoaded || loading.current.has(loadKey)) return;
+            loading.current.add(loadKey);
+            void (async () => {
+                try {
+                    const result = await run();
+                    if (!result.success) {
+                        console.warn(`Failed to load asset: ${path}`, result.error);
+                    }
+                } catch (error) {
+                    console.warn(`Failed to load asset: ${path}`, error);
+                } finally {
+                    loading.current.delete(loadKey);
                 }
-            });
+            })();
         };
 
         Object.keys(assetRefCounts).forEach(entry => {
@@ -161,21 +157,21 @@ const PrefabRootBody = forwardRef<Scene, PrefabRootProps>(({ editMode, selectedI
             const path = withBasePath(basePath, file);
 
             if (type === 'model') {
-                tryLoad(entry, !!runtime.getModel(file), async () => {
+                tryLoad(entry, path, !!runtime.getModel(path), async () => {
                     const r = await loadModel(path);
-                    if (r.success && r.model) runtime.registerModel(file, r.model);
+                    if (r.success && r.model) runtime.registerModel(path, r.model);
                     return r;
                 });
             } else if (type === 'texture') {
-                tryLoad(entry, !!runtime.getTexture(file), async () => {
+                tryLoad(entry, path, !!runtime.getTexture(path), async () => {
                     const r = await loadTexture(path);
-                    if (r.success && r.texture) runtime.registerTexture(file, r.texture);
+                    if (r.success && r.texture) runtime.registerTexture(path, r.texture);
                     return r;
                 });
             } else if (type === 'sound') {
-                tryLoad(entry, !!runtime.getSound(file), async () => {
+                tryLoad(entry, path, !!runtime.getSound(path), async () => {
                     const r = await loadSound(path);
-                    if (r.success && r.sound) runtime.registerSound(file, r.sound);
+                    if (r.success && r.sound) runtime.registerSound(path, r.sound);
                     return r;
                 });
             }
@@ -197,20 +193,17 @@ const PrefabRootBody = forwardRef<Scene, PrefabRootProps>(({ editMode, selectedI
 
     return (
         <GameInstanceProvider
-            models={models}
-            selectedId={selectedId}
             editMode={editMode}
             onSelect={editMode ? onSelect : undefined}
             onPointerEvent={editMode ? undefined : handleNodePointerEvent}
             registerRef={runtime.registerObject}
+            getObject={runtime.getObject}
         >
             <StoreRootNode
-                selectedId={selectedId}
                 onSelect={editMode ? onSelect : undefined}
                 onPointerEvent={editMode ? undefined : handleNodePointerEvent}
                 onEditNodeClick={editMode ? onEditNodeClick : undefined}
                 registerRef={runtime.registerObject}
-                loadedModels={models}
                 editMode={editMode}
                 parentMatrix={IDENTITY}
                 basePath={basePath}
@@ -218,7 +211,7 @@ const PrefabRootBody = forwardRef<Scene, PrefabRootProps>(({ editMode, selectedI
             {children}
         </GameInstanceProvider>
     );
-});
+}));
 
 function StoreRootNode(props: Omit<RendererProps, "nodeId">) {
     const rootId = usePrefabRootId();
@@ -334,20 +327,8 @@ function emitNodePointerEvent(
 export function GameObjectRenderer(props: RendererProps) {
     const node = usePrefabNode(props.nodeId);
     const isInstanced = findComponent(node, "Model")?.properties?.instanced;
-    const prevInstancedRef = useRef<boolean | undefined>(undefined);
-    const [isTransitioning, setIsTransitioning] = useState(false);
 
-    useEffect(() => {
-        if (prevInstancedRef.current !== undefined && prevInstancedRef.current !== isInstanced) {
-            setIsTransitioning(true);
-            const timer = setTimeout(() => setIsTransitioning(false), 100);
-            prevInstancedRef.current = isInstanced;
-            return () => clearTimeout(timer);
-        }
-        prevInstancedRef.current = isInstanced;
-    }, [isInstanced]);
-
-    if (!node || node.disabled || isTransitioning) return null;
+    if (!node || node.disabled) return null;
 
     const key = `${props.nodeId}_${isInstanced ? 'instanced' : 'standard'}`;
     return isInstanced
@@ -356,28 +337,42 @@ export function GameObjectRenderer(props: RendererProps) {
 }
 
 
-function InstancedNode({ nodeId, parentMatrix = IDENTITY, editMode, registerRef, onSelect, onEditNodeClick, isVisible = true }: RendererProps) {
+function InstancedNode({
+    nodeId,
+    parentMatrix = IDENTITY,
+    editMode,
+    registerRef,
+    onSelect,
+    onPointerEvent,
+    onEditNodeClick,
+    isVisible = true,
+    basePath = "",
+}: RendererProps) {
     const gameObject = usePrefabNode(nodeId);
+    const childIds = usePrefabChildIds(nodeId);
     const analyzedComponents = useMemo(
         () => gameObject ? analyzeNodeComponents(gameObject) : EMPTY_NODE_COMPONENTS,
         [gameObject],
     );
+    const transformComponent = findComponent(gameObject, "Transform");
     const localTransform = getNodeTransformProps(gameObject);
     const isLocked = Boolean(gameObject?.locked);
+    const isSelected = useNodeSelected(nodeId);
 
-    const modelUrl = analyzedComponents.models[0]?.component.properties?.filename;
+    const modelComponent = analyzedComponents.models[0]?.component;
+    const modelUrl = modelComponent?.properties?.filename
+        ? withBasePath(basePath, modelComponent.properties.filename)
+        : undefined;
     const instances = useMemo(
-        () => buildRepeatedInstances(gameObject, parentMatrix, modelUrl),
-        [gameObject, modelUrl, parentMatrix]
+        () => buildRepeatedInstances(gameObject, modelUrl),
+        [gameObject?.id, modelComponent, modelUrl]
     );
 
     const groupRef = useRef<Group>(null);
     const handleGroupRef = useCallback((object: Group | null) => {
         groupRef.current = object;
-        if (editMode) {
-            registerRef(nodeId, object);
-        }
-    }, [editMode, nodeId, registerRef]);
+        registerRef(nodeId, object);
+    }, [nodeId, registerRef]);
 
     const editClickHandlers = useClickValid(!!editMode && !isLocked, (event: ThreeEvent<PointerEvent>) => {
         if (!gameObject) return;
@@ -388,6 +383,11 @@ function InstancedNode({ nodeId, parentMatrix = IDENTITY, editMode, registerRef,
     if (!gameObject) return null;
 
     const nodeVisible = isVisible && !gameObject.hidden;
+    const world = useMemo(
+        () => parentMatrix.clone().multiply(composeTransform(localTransform.position, localTransform.rotation, localTransform.scale)),
+        [parentMatrix, transformComponent],
+    );
+    const worldTransform = decompose(world);
     const groupProps = {
         ...getNodeMetadataProps(gameObject),
         visible: nodeVisible,
@@ -396,49 +396,73 @@ function InstancedNode({ nodeId, parentMatrix = IDENTITY, editMode, registerRef,
         scale: localTransform.scale,
     };
 
-    const renderedInstances = instances.map(instance => (
-        <GameInstance
-            key={instance.id}
-            id={instance.id}
+    const instanceBatch = useMemo(() => instances.map(instance => ({
+        ...instance,
+        visible: nodeVisible,
+        locked: isLocked,
+        clickEnabled: analyzedComponents.clickEvent.enabled,
+    })), [analyzedComponents.clickEvent.enabled, instances, isLocked, nodeVisible]);
+    const renderedInstances = (
+        <GameInstanceBatch
             sourceId={gameObject.id}
-            modelUrl={instance.modelUrl}
-            position={instance.position}
-            rotation={instance.rotation}
-            scale={instance.scale}
-            visible={nodeVisible}
-            locked={isLocked}
-            clickEnabled={analyzedComponents.clickEvent.enabled}
+            instances={instanceBatch}
         />
-    ));
-
-    if (editMode) {
-        return (
-            <>
-                <group
-                    ref={handleGroupRef}
-                    {...groupProps}
-                    {...editClickHandlers}
-                >
-                    <mesh visible={false}>
-                        <boxGeometry args={[0.01, 0.01, 0.01]} />
-                    </mesh>
-                </group>
-                {renderedInstances}
-            </>
+    );
+    const childNodes = (
+        <ChildNodes
+            childIds={childIds}
+            parentMatrix={world}
+            onSelect={onSelect}
+            onPointerEvent={onPointerEvent}
+            onEditNodeClick={onEditNodeClick}
+            registerRef={registerRef}
+            editMode={editMode}
+            isVisible={nodeVisible}
+            basePath={basePath}
+        />
+    );
+    const componentRuntimeProps: ComponentRuntimeProps = {
+        editMode,
+        nodeInteractionHandlers: editMode ? editClickHandlers : undefined,
+        position: localTransform.position,
+        rotation: localTransform.rotation,
+        scale: localTransform.scale,
+        worldPosition: worldTransform.position,
+    };
+    let logicalContent: React.ReactNode = childNodes;
+    for (const { key, View, properties } of analyzedComponents.composition) {
+        logicalContent = (
+            <View key={key} properties={properties} basePath={basePath} {...componentRuntimeProps}>
+                {logicalContent}
+            </View>
         );
     }
 
-    return <>{renderedInstances}</>;
+    return (
+        <NodeScope nodeId={nodeId} editMode={editMode} isSelected={isSelected}>
+            <group
+                ref={handleGroupRef}
+                {...groupProps}
+                {...(editMode ? editClickHandlers : undefined)}
+            >
+                {editMode ? (
+                    <mesh visible={false}>
+                        <boxGeometry args={[0.01, 0.01, 0.01]} />
+                    </mesh>
+                ) : null}
+                {logicalContent}
+            </group>
+            {renderedInstances}
+        </NodeScope>
+    );
 }
 
 function StandardNode({
     nodeId,
-    selectedId,
     onSelect,
     onPointerEvent,
     onEditNodeClick,
     registerRef,
-    loadedModels,
     editMode,
     parentMatrix = IDENTITY,
     isVisible = true,
@@ -450,8 +474,10 @@ function StandardNode({
         () => gameObject ? analyzeNodeComponents(gameObject) : EMPTY_NODE_COMPONENTS,
         [gameObject],
     );
-    const isSelected = selectedId === nodeId;
+    const isSelected = useNodeSelected(nodeId);
     const isLocked = Boolean(gameObject?.locked);
+    const transformComponent = findComponent(gameObject, "Transform");
+    const transform = getNodeTransformProps(gameObject);
 
     const groupRef = useRef<Object3D | null>(null);
     const handleGroupRef = useCallback((object: Object3D | null) => {
@@ -471,14 +497,16 @@ function StandardNode({
         })
         : undefined;
 
-    const world = parentMatrix.clone().multiply(compose(gameObject));
+    const world = useMemo(
+        () => parentMatrix.clone().multiply(composeTransform(transform.position, transform.rotation, transform.scale)),
+        [parentMatrix, transformComponent],
+    );
 
     if (!gameObject) return null;
 
     const nodeVisible = isVisible && !gameObject.hidden;
     const metadataProps = getNodeMetadataProps(gameObject);
 
-    const transform = getNodeTransformProps(gameObject);
     const transformProps = {
         position: transform.position,
         rotation: transform.rotation,
@@ -490,9 +518,9 @@ function StandardNode({
         ...transformProps,
     };
     const childNodes = <ChildNodes childIds={childIds} parentMatrix={world}
-        selectedId={selectedId} onSelect={onSelect} onPointerEvent={onPointerEvent} onEditNodeClick={onEditNodeClick}
+        onSelect={onSelect} onPointerEvent={onPointerEvent} onEditNodeClick={onEditNodeClick}
         registerRef={registerRef}
-        loadedModels={loadedModels} editMode={editMode}
+        editMode={editMode}
         isVisible={nodeVisible}
         basePath={basePath}
     />;
@@ -506,7 +534,6 @@ function StandardNode({
     };
     const inner = renderNodeContent(
         analyzedComponents,
-        loadedModels,
         primaryInteractionHandlers,
         childNodes,
         basePath,
@@ -538,7 +565,6 @@ function StandardNode({
 
 interface RendererProps {
     nodeId: string;
-    selectedId?: string | null;
     onSelect?: (id: string) => void;
     onPointerEvent?: (
         eventType: NodeInteractionEventType,
@@ -548,7 +574,6 @@ interface RendererProps {
     ) => void;
     onEditNodeClick?: (event: ThreeEvent<PointerEvent>, node: GameObjectType) => void;
     registerRef: (id: string, obj: Object3D | null) => void;
-    loadedModels: LoadedModels;
     editMode?: boolean;
     parentMatrix?: Matrix4;
     isVisible?: boolean;
@@ -569,11 +594,6 @@ function ChildNodes({ childIds, parentMatrix, ...props }: { childIds: string[]; 
     );
 }
 
-function compose(node?: GameObjectType | null) {
-    const { position, rotation, scale } = getNodeTransformProps(node);
-    return composeTransform(position, rotation, scale);
-}
-
 function getModelRepeatSettings(node?: GameObjectType | null) {
     const properties = findComponent(node, "Model")?.properties ?? {};
     return {
@@ -584,7 +604,6 @@ function getModelRepeatSettings(node?: GameObjectType | null) {
 
 function buildRepeatedInstances(
     gameObject: GameObjectType | null,
-    parentMatrix: Matrix4,
     modelUrl: string | undefined,
 ) {
     if (!gameObject || !modelUrl) return [];
@@ -602,11 +621,6 @@ function buildRepeatedInstances(
         }
     }
 
-    const baseTranslation = _scratchTranslation.makeTranslation(transform.position[0], transform.position[1], transform.position[2]);
-    const baseRotation = _scratchRotation.makeRotationFromEuler(_scratchEuler.set(transform.rotation[0], transform.rotation[1], transform.rotation[2]));
-    const baseScale = _scratchScale.makeScale(transform.scale[0], transform.scale[1], transform.scale[2]);
-    const offsetMatrix = _scratchOffset;
-    const worldMatrix = _scratchWorld;
     const instances: Array<{
         id: string;
         modelUrl: string;
@@ -618,27 +632,14 @@ function buildRepeatedInstances(
     for (let x = 0; x < counts[0]; x++) {
         for (let y = 0; y < counts[1]; y++) {
             for (let z = 0; z < counts[2]; z++) {
-                offsetMatrix.makeTranslation(
-                    x * offsets[0],
-                    y * offsets[1],
-                    z * offsets[2],
-                );
-
-                worldMatrix.copy(parentMatrix)
-                    .multiply(baseTranslation)
-                    .multiply(baseRotation)
-                    .multiply(offsetMatrix)
-                    .multiply(baseScale);
-
-                const { position, rotation, scale } = decompose(worldMatrix);
                 const isBaseInstance = x === 0 && y === 0 && z === 0;
 
                 instances.push({
                     id: isBaseInstance ? gameObject.id : `${gameObject.id}__repeat_${x}_${y}_${z}`,
                     modelUrl,
-                    position,
-                    rotation,
-                    scale,
+                    position: [x * offsets[0], y * offsets[1], z * offsets[2]],
+                    rotation: [0, 0, 0],
+                    scale: [1, 1, 1],
                 });
             }
         }
@@ -658,7 +659,6 @@ function getNodeTransformProps(node?: GameObjectType | null) {
 
 function renderNodeContent(
     analyzedComponents: AnalyzedNodeComponents,
-    loadedModels: LoadedModels,
     primaryInteractionHandlers?: PrimaryInteractionHandlers,
     childNodes?: React.ReactNode,
     basePath = "",
@@ -688,6 +688,7 @@ function renderNodeContent(
                             depthTest: materialIsSprite ? primaryMaterial.properties.depthTest : false,
                             depthWrite: materialIsSprite ? primaryMaterial.properties.depthWrite : false,
                         }}
+                        basePath={basePath}
                     />
                 );
             }
@@ -697,7 +698,7 @@ function renderNodeContent(
             materialContent = materials.map(({ key, component }) => {
                 const materialDef = component.type ? getComponentDef(component.type) : undefined;
                 if (!component.properties || !materialDef?.View) return null;
-                return <materialDef.View key={key} properties={component.properties} />;
+                return <materialDef.View key={key} properties={component.properties} basePath={basePath} />;
             });
             break;
         }
@@ -706,12 +707,12 @@ function renderNodeContent(
     let primaryContent: React.ReactNode = null;
     let contentChildren = childNodes;
     const modelContent = models.map(({ key, component }) => {
-        if (!component.type || component.properties?.instanced || !isNodeReady(component, loadedModels)) return null;
+        if (!component.type || component.properties?.instanced) return null;
 
         const modelDef = getComponentDef(component.type);
         if (!modelDef?.View) return null;
 
-        return <modelDef.View key={key} properties={component.properties} />;
+        return <modelDef.View key={key} properties={component.properties} basePath={basePath} />;
     });
 
     switch (shapeKind) {
@@ -743,7 +744,7 @@ function renderNodeContent(
                     receiveShadow={visible && geometryProperties.receiveShadow !== false}
                     {...primaryInteractionHandlers}
                 >
-                    <GeometryView properties={geometry.properties} />
+                    <GeometryView properties={geometry.properties} basePath={basePath} />
                     {materialContent}
                 </mesh>
             );
@@ -759,15 +760,10 @@ function renderNodeContent(
         primaryContent = <>{primaryContent}{modelContent}</>;
     }
 
-    let content = <>{primaryContent}{contentChildren}</>;
+    let content: React.ReactNode = <>{primaryContent}{contentChildren}</>;
     for (const { key, View, properties } of analyzedComponents.composition) {
         content = (
-            <View
-                key={key}
-                properties={properties}
-                basePath={basePath}
-                {...componentRuntimeProps}
-            >
+            <View key={key} properties={properties} basePath={basePath} {...componentRuntimeProps}>
                 {content}
             </View>
         );

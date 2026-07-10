@@ -2,16 +2,23 @@
 
 import { useFrame } from "@react-three/fiber";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { PrefabEditor, PrefabEditorMode } from "react-three-game/editor";
+import { PrefabEditor, PrefabEditorMode, registerComponent, useScene } from "react-three-game/editor";
+import { CrashcatPhysicsComponent, CrashcatRuntime } from "react-three-game/plugins/crashcat";
 import stagePrefab from "../../../public/prefabs/stage.json";
-import AnimationMixer from "../../viewer/components/AnimationMixer";
-import SkinnedMesh, { type SkinnedMeshRef } from "../../viewer/components/SkinnedMesh";
+import AnimationMixer from "./components/AnimationMixer";
+import SkinnedMesh, { type SkinnedMeshRef } from "./components/SkinnedMesh";
 import { BASE_PATH, withBasePath } from "../../basePath";
+import ActivationColliderComponent from "./ActivationColliderComponent";
 import { Quaternion, Vector3, type Group } from "three";
 import type { AnimationAction } from "three";
 
+registerComponent(CrashcatPhysicsComponent);
+registerComponent(ActivationColliderComponent);
+
 const ONIMILIO_MODEL = withBasePath("/models/human/onimilio.glb");
 const PLAYER_START: [number, number, number] = [-1.25, 0, -0.35];
+const PLAYER_COLLIDER_ID = "stage-player-collider";
+const PLAYER_COLLIDER_CENTER_Y = 0.85;
 const WALK_SPEED = 1.55;
 const ARRIVAL_DISTANCE = 0.08;
 const UP = new Vector3(0, 1, 0);
@@ -33,6 +40,7 @@ function findAnimationName(actionNames: string[], preferred: "idle" | "walk") {
 type StagePoint = [number, number, number];
 
 function PlayerCharacter({ destination }: { destination: StagePoint | null }) {
+    const scene = useScene();
     const playerRef = useRef<Group>(null);
     const skinnedMeshRef = useRef<SkinnedMeshRef>(null);
     const targetRef = useRef<Vector3 | null>(null);
@@ -65,10 +73,25 @@ function PlayerCharacter({ destination }: { destination: StagePoint | null }) {
         });
     }, []);
 
+    const syncPlayerCollider = useCallback((player: Group) => {
+        const collider = scene.getObject(PLAYER_COLLIDER_ID);
+        if (!collider) return;
+
+        player.getWorldPosition(scratchPosition.current);
+        collider.position.set(scratchPosition.current.x, PLAYER_COLLIDER_CENTER_Y, scratchPosition.current.z);
+        collider.quaternion.copy(player.quaternion);
+        collider.updateMatrixWorld(true);
+    }, [scene]);
+
     useFrame((_, delta) => {
         const player = playerRef.current;
+        if (!player) return;
+
         const target = targetRef.current;
-        if (!player || !target) return;
+        if (!target) {
+            syncPlayerCollider(player);
+            return;
+        }
 
         const position = player.getWorldPosition(scratchPosition.current);
         const direction = scratchDirection.current.subVectors(target, position);
@@ -79,6 +102,7 @@ function PlayerCharacter({ destination }: { destination: StagePoint | null }) {
             player.position.set(target.x, PLAYER_START[1], target.z);
             targetRef.current = null;
             setIsWalking(false);
+            syncPlayerCollider(player);
             return;
         }
 
@@ -90,7 +114,8 @@ function PlayerCharacter({ destination }: { destination: StagePoint | null }) {
         const step = Math.min(remaining, WALK_SPEED * delta);
         player.position.x += direction.x * step;
         player.position.z += direction.z * step;
-    });
+        syncPlayerCollider(player);
+    }, -3);
 
     return (
         <group ref={playerRef} position={PLAYER_START} rotation={[0, 0.25, 0]} scale={[0.92, 0.92, 0.92]}>
@@ -120,12 +145,14 @@ export default function StageDemo() {
                     }
                 }}
             >
-                <PlayerCharacter destination={playerDestination} />
+                <CrashcatRuntime>
+                    <PlayerCharacter destination={playerDestination} />
 
-                <group position={[1.25, 0, -0.2]} rotation={[0, -0.25, 0]} scale={[0.92, 0.92, 0.92]}>
-                    <SkinnedMesh ref={rightCharacterRef} model={ONIMILIO_MODEL} />
-                    <AnimationMixer skinnedMeshRef={rightCharacterRef} />
-                </group>
+                    <group position={[1.25, 0, -0.2]} rotation={[0, -0.25, 0]} scale={[0.92, 0.92, 0.92]}>
+                        <SkinnedMesh ref={rightCharacterRef} model={ONIMILIO_MODEL} />
+                        <AnimationMixer skinnedMeshRef={rightCharacterRef} />
+                    </group>
+                </CrashcatRuntime>
             </PrefabEditor>
         </main>
     );

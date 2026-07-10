@@ -1,3 +1,7 @@
+import { registerBuiltinComponents } from "./tools/prefabeditor/components";
+
+registerBuiltinComponents();
+
 export { default as GameCanvas } from "./shared/GameCanvas";
 export type { GameCanvasProps } from "./shared/GameCanvas";
 

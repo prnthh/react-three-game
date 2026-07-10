@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useRef, useState, useEffect } from "react";
+import { createContext, useContext, useMemo, useRef, useState, useEffect, useLayoutEffect } from "react";
 import type { ComponentType, ReactNode } from "react";
 import { Merged, useHelper } from '@react-three/drei';
 import { Mesh, Matrix4, BoxHelper } from "three";
@@ -7,6 +7,8 @@ import { useStore } from "zustand";
 import { createStore, type StoreApi } from "zustand/vanilla";
 import { createNodeInteractionHandlers, usePointerEvents } from "./usePointerEvents";
 import type { NodeInteractionEvent, NodeInteractionEventType } from "./usePointerEvents";
+import { useNodeSelected } from "./SelectionRuntime";
+import { useModelAsset } from "./assetRuntime";
 
 export type RepeatAxisConfig = {
     axis: 'x' | 'y' | 'z';
@@ -92,59 +94,37 @@ function instanceEquals(a: InstanceData, b: InstanceData): boolean {
 type InstanceRegistryState = {
     instancesById: Record<string, InstanceData>;
     sourceInstanceIdsById: Record<string, Record<string, true> | undefined>;
-    addInstance: (instance: InstanceData) => void;
-    removeInstance: (id: string) => void;
+    setSourceInstances: (sourceId: string, instances: InstanceData[]) => void;
 };
 
 function createInstanceRegistryStore() {
     return createStore<InstanceRegistryState>()((set, get) => ({
         instancesById: {},
         sourceInstanceIdsById: {},
-        addInstance: (instance) => {
-            const previous = get().instancesById[instance.id];
-            if (previous && instanceEquals(previous, instance)) {
-                return;
-            }
+        setSourceInstances: (sourceId, instances) => {
+            const state = get();
+            const previousIds = Object.keys(state.sourceInstanceIdsById[sourceId] ?? {});
+            const nextById: Record<string, InstanceData> = {};
+            instances.forEach(instance => { nextById[instance.id] = instance; });
+            const unchanged = previousIds.length === instances.length
+                && instances.every(instance => {
+                    const previous = state.instancesById[instance.id];
+                    return previous ? instanceEquals(previous, instance) : false;
+                });
+            if (unchanged) return;
 
-            set(state => {
-                const instancesById = { ...state.instancesById, [instance.id]: instance };
-                const sourceInstanceIdsById = { ...state.sourceInstanceIdsById };
-
-                if (previous && previous.sourceId !== previous.id) {
-                    const previousSourceInstances = { ...(sourceInstanceIdsById[previous.sourceId] ?? {}) };
-                    delete previousSourceInstances[previous.id];
-                    sourceInstanceIdsById[previous.sourceId] = Object.keys(previousSourceInstances).length > 0
-                        ? previousSourceInstances
-                        : undefined;
+            set(current => {
+                const instancesById = { ...current.instancesById };
+                previousIds.forEach(id => { delete instancesById[id]; });
+                Object.assign(instancesById, nextById);
+                const sourceInstanceIdsById = { ...current.sourceInstanceIdsById };
+                if (instances.length > 0) {
+                    const ids: Record<string, true> = {};
+                    instances.forEach(instance => { ids[instance.id] = true; });
+                    sourceInstanceIdsById[sourceId] = ids;
+                } else {
+                    delete sourceInstanceIdsById[sourceId];
                 }
-
-                if (instance.sourceId !== instance.id) {
-                    sourceInstanceIdsById[instance.sourceId] = {
-                        ...(sourceInstanceIdsById[instance.sourceId] ?? {}),
-                        [instance.id]: true,
-                    };
-                }
-
-                return { instancesById, sourceInstanceIdsById };
-            });
-        },
-        removeInstance: (id) => {
-            const previous = get().instancesById[id];
-            if (!previous) return;
-
-            set(state => {
-                const instancesById = { ...state.instancesById };
-                const sourceInstanceIdsById = { ...state.sourceInstanceIdsById };
-                delete instancesById[id];
-
-                if (previous.sourceId !== previous.id) {
-                    const sourceInstances = { ...(sourceInstanceIdsById[previous.sourceId] ?? {}) };
-                    delete sourceInstances[id];
-                    sourceInstanceIdsById[previous.sourceId] = Object.keys(sourceInstances).length > 0
-                        ? sourceInstances
-                        : undefined;
-                }
-
                 return { instancesById, sourceInstanceIdsById };
             });
         },
@@ -153,22 +133,18 @@ function createInstanceRegistryStore() {
 
 type GameInstanceContextType = {
     store: StoreApi<InstanceRegistryState>;
-    meshes: Record<string, Mesh>;
-    modelParts?: Record<string, number>;
 };
 const GameInstanceContext = createContext<GameInstanceContextType | null>(null);
 
 export function GameInstanceProvider({
     children,
-    models,
     onSelect,
     onPointerEvent,
     registerRef,
-    selectedId,
+    getObject,
     editMode
 }: {
     children: ReactNode,
-    models: { [filename: string]: Object3D },
     onSelect?: (id: string | null) => void,
     onPointerEvent?: (
         eventType: NodeInteractionEventType,
@@ -177,48 +153,11 @@ export function GameInstanceProvider({
         object: Object3D | null,
     ) => void,
     registerRef?: (id: string, obj: Object3D | null) => void,
-    selectedId?: string | null,
+    getObject: (id: string) => Object3D | null,
     editMode?: boolean
 }) {
     const [instanceStore] = useState(createInstanceRegistryStore);
     const instancesById = useStore(instanceStore, state => state.instancesById);
-
-    // Flatten all model meshes once (models → flat mesh parts)
-    // Note: Geometry is cloned with baked transforms for instancing
-    const { flatMeshes, modelParts } = useMemo(() => {
-        const flatMeshes: Record<string, Mesh> = {};
-        const modelParts: Record<string, number> = {};
-
-        Object.entries(models).forEach(([modelKey, model]) => {
-            model.updateWorldMatrix(false, true);
-            const rootInverse = new Matrix4().copy(model.matrixWorld).invert();
-
-            let partIndex = 0;
-            model.traverse((obj) => {
-                if (obj instanceof Mesh) {
-                    // Clone geometry and bake relative transform
-                    const geom = obj.geometry.clone();
-                    geom.applyMatrix4(obj.matrixWorld.clone().premultiply(rootInverse));
-
-                    const partKey = `${modelKey}__${partIndex}`;
-                    flatMeshes[partKey] = new Mesh(geom, obj.material);
-                    partIndex++;
-                }
-            });
-            modelParts[modelKey] = partIndex;
-        });
-
-        return { flatMeshes, modelParts };
-    }, [models]);
-
-    // Cleanup geometries when models change
-    useEffect(() => {
-        return () => {
-            Object.values(flatMeshes).forEach(mesh => {
-                mesh.geometry.dispose();
-            });
-        };
-    }, [flatMeshes]);
 
     const instances = useMemo(() => Object.values(instancesById), [instancesById]);
 
@@ -238,11 +177,7 @@ export function GameInstanceProvider({
         return groups;
     }, [instances]);
 
-    const contextValue = useMemo(() => ({
-        store: instanceStore,
-        meshes: flatMeshes,
-        modelParts,
-    }), [instanceStore, flatMeshes, modelParts]);
+    const contextValue = useMemo(() => ({ store: instanceStore }), [instanceStore]);
 
     return (
         <GameInstanceContext.Provider
@@ -251,42 +186,88 @@ export function GameInstanceProvider({
             {children}
 
             {Object.entries(grouped).map(([key, group]) => {
-                const modelKey = group.instances[0].meshPath;
-                const partCount = modelParts[modelKey] || 0;
-                if (partCount === 0) return null;
-
-                const meshesForModel: Record<string, Mesh> = {};
-                for (let i = 0; i < partCount; i++) {
-                    const partKey = `${modelKey}__${i}`;
-                    meshesForModel[partKey] = flatMeshes[partKey];
-                }
-
                 return (
-                    <Merged
+                    <InstancedModelBatch
                         key={key}
-                        meshes={meshesForModel}
-                        castShadow
-                        receiveShadow
-                    >
-                        {(instancesMap: Record<string, ComponentType<object>>) => (
-                            <InstancedGroup
-                                modelKey={modelKey}
-                                group={group}
-                                partCount={partCount}
-                                instancesMap={instancesMap}
-                                onSelect={onSelect}
-                                onPointerEvent={onPointerEvent}
-                                registerRef={registerRef}
-                                selectedId={selectedId}
-                                editMode={editMode}
-                            />
-                        )}
-                    </Merged>
+                        modelKey={group.instances[0].meshPath}
+                        group={group}
+                        onSelect={onSelect}
+                        onPointerEvent={onPointerEvent}
+                        registerRef={registerRef}
+                        getObject={getObject}
+                        editMode={editMode}
+                    />
                 );
             })}
         </GameInstanceContext.Provider>
     );
 }
+
+function InstancedModelBatch({
+    modelKey,
+    group,
+    onSelect,
+    onPointerEvent,
+    registerRef,
+    getObject,
+    editMode,
+}: {
+    modelKey: string;
+    group: { instances: InstanceData[] };
+    onSelect?: (id: string | null) => void;
+    onPointerEvent?: (
+        eventType: NodeInteractionEventType,
+        event: NodeInteractionEvent,
+        nodeId: string,
+        object: Object3D | null,
+    ) => void;
+    registerRef?: (id: string, obj: Object3D | null) => void;
+    getObject: (id: string) => Object3D | null;
+    editMode?: boolean;
+}) {
+    const model = useModelAsset(modelKey);
+    const meshes = useMemo(() => {
+        if (!model) return {};
+        const result: Record<string, Mesh> = {};
+        model.updateWorldMatrix(false, true);
+        const rootInverse = new Matrix4().copy(model.matrixWorld).invert();
+        let partIndex = 0;
+        model.traverse(obj => {
+            if (!(obj instanceof Mesh)) return;
+            const geometry = obj.geometry.clone();
+            geometry.applyMatrix4(obj.matrixWorld.clone().premultiply(rootInverse));
+            result[`${modelKey}__${partIndex}`] = new Mesh(geometry, obj.material);
+            partIndex += 1;
+        });
+        return result;
+    }, [model, modelKey]);
+
+    useEffect(() => () => {
+        Object.values(meshes).forEach(mesh => mesh.geometry.dispose());
+    }, [meshes]);
+
+    const partCount = Object.keys(meshes).length;
+    if (partCount === 0) return null;
+
+    return (
+        <Merged meshes={meshes} castShadow receiveShadow>
+            {(instancesMap: Record<string, ComponentType<object>>) => (
+                <InstancedGroup
+                    modelKey={modelKey}
+                    group={group}
+                    partCount={partCount}
+                    instancesMap={instancesMap}
+                    onSelect={onSelect}
+                    onPointerEvent={onPointerEvent}
+                    registerRef={registerRef}
+                    getObject={getObject}
+                    editMode={editMode}
+                />
+            )}
+        </Merged>
+    );
+}
+
 function InstancedGroup({
     modelKey,
     group,
@@ -295,7 +276,7 @@ function InstancedGroup({
     onSelect,
     onPointerEvent,
     registerRef,
-    selectedId,
+    getObject,
     editMode
 }: {
     modelKey: string;
@@ -310,7 +291,7 @@ function InstancedGroup({
         object: Object3D | null,
     ) => void;
     registerRef?: (id: string, obj: Object3D | null) => void;
-    selectedId?: string | null;
+    getObject: (id: string) => Object3D | null;
     editMode?: boolean;
 }) {
     const instanceEntries = useMemo(() =>
@@ -336,7 +317,7 @@ function InstancedGroup({
                     onSelect={onSelect}
                     onPointerEvent={onPointerEvent}
                     registerRef={registerRef}
-                    selectedId={selectedId}
+                    getObject={getObject}
                     editMode={editMode}
                 />
             ))}
@@ -351,7 +332,7 @@ function InstanceGroupItem({
     onSelect,
     onPointerEvent,
     registerRef,
-    selectedId,
+    getObject,
     editMode
 }: {
     instance: InstanceData;
@@ -364,12 +345,15 @@ function InstanceGroupItem({
         object: Object3D | null,
     ) => void;
     registerRef?: (id: string, obj: Object3D | null) => void;
-    selectedId?: string | null;
+    getObject: (id: string) => Object3D | null;
     editMode?: boolean;
 }) {
     const groupRef = useRef<Group | null>(null);
+    const helperRef = useRef<Object3D>(null!);
     const isLocked = Boolean(instance.locked);
-    const isSelected = selectedId === instance.id || selectedId === instance.sourceId;
+    const instanceSelected = useNodeSelected(instance.id);
+    const sourceSelected = useNodeSelected(instance.sourceId);
+    const isSelected = instanceSelected || sourceSelected;
     const canSelect = Boolean(editMode) && !isLocked;
     const canClick = !editMode && Boolean(instance.clickEnabled) && Boolean(onPointerEvent);
 
@@ -389,13 +373,22 @@ function InstanceGroupItem({
     const pointerHandlers = editMode ? editPointerHandlers : runtimePointerHandlers;
 
     // Use BoxHelper when object is selected in edit mode
-    const helperTarget = editMode && isSelected && groupRef.current
-        ? { current: groupRef.current }
-        : null;
-    useHelper(helperTarget, BoxHelper, 'cyan');
+    if (groupRef.current) helperRef.current = groupRef.current;
+    useHelper(editMode && isSelected && groupRef.current ? helperRef : null, BoxHelper, 'cyan');
+
+    useLayoutEffect(() => {
+        const sourceObject = getObject(instance.sourceId);
+        const instanceObject = groupRef.current;
+        if (!sourceObject || !instanceObject) return;
+        sourceObject.add(instanceObject);
+        return () => {
+            sourceObject.remove(instanceObject);
+        };
+    }, [getObject, instance.sourceId]);
 
     useEffect(() => {
         if (editMode) return;
+        if (instance.id === instance.sourceId) return;
         registerRef?.(instance.id, groupRef.current);
         return () => registerRef?.(instance.id, null);
     }, [editMode, instance.id, registerRef]);
@@ -420,50 +413,34 @@ export function useInstanceCheck(id: string): boolean {
     return useStore(store, state => Boolean(state.instancesById[id] || state.sourceInstanceIdsById[id]));
 }
 
-export function GameInstance({
-    id,
+export function GameInstanceBatch({
     sourceId,
-    modelUrl,
-    locked = false,
-    position,
-    rotation,
-    scale,
-    visible = true,
-    clickEnabled = false,
+    instances,
 }: {
-    id: string;
-    sourceId?: string;
-    modelUrl: string;
-    locked?: boolean;
-    position: [number, number, number];
-    rotation: [number, number, number];
-    scale: [number, number, number];
-    visible?: boolean;
-    clickEnabled?: boolean;
+    sourceId: string;
+    instances: Array<Omit<InstanceData, 'sourceId' | 'meshPath'> & { modelUrl: string }>;
 }) {
     const ctx = useContext(GameInstanceContext);
-
-    const instance = useMemo<InstanceData>(() => ({
-        id,
-        sourceId: sourceId ?? id,
-        locked,
-        visible,
-        clickEnabled,
-        meshPath: modelUrl,
-        position,
-        rotation,
-        scale,
-    }), [id, sourceId, locked, visible, clickEnabled, modelUrl, position, rotation, scale]);
+    const store = ctx?.store;
+    const instanceData = useMemo<InstanceData[]>(() => instances.map(instance => ({
+        id: instance.id,
+        sourceId,
+        locked: instance.locked,
+        visible: instance.visible,
+        clickEnabled: instance.clickEnabled,
+        meshPath: instance.modelUrl,
+        position: instance.position,
+        rotation: instance.rotation,
+        scale: instance.scale,
+    })), [instances, sourceId]);
 
     useEffect(() => {
-        if (!ctx) return;
-        const store = ctx.store;
-        const { addInstance, removeInstance } = store.getState();
-        addInstance(instance);
-        return () => {
-            removeInstance(instance.id);
-        };
-    }, [ctx, instance]);
+        store?.getState().setSourceInstances(sourceId, instanceData);
+    }, [instanceData, sourceId, store]);
+
+    useEffect(() => () => {
+        store?.getState().setSourceInstances(sourceId, []);
+    }, [sourceId, store]);
 
     return null;
 }

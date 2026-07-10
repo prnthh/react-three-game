@@ -17,7 +17,7 @@ export default function Home() {
 
   return (
     <main className="flex h-screen w-screen flex-col items-center justify-between bg-white dark:bg-black sm:items-start">
-      {selectedPrefab && <PrefabEditor basePath={BASE_PATH} initialPrefab={selectedPrefab}
+      {selectedPrefab && <PrefabEditor key={selectedPrefabName} basePath={BASE_PATH} initialPrefab={selectedPrefab}
         uiPlugins={<PrefabSelector
           selectedName={selectedPrefabName}
           onSelect={(prefab: Prefab, prefabName) => {

@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { useHelper } from '@react-three/drei';
 import { PointLightHelper } from 'three';
-import type { PointLight } from 'three';
+import type { Object3D, PointLight } from 'three';
 import { useNode } from '../assetRuntime';
 import type { Component, ComponentViewProps } from './ComponentRegistry';
 import { BooleanField, ColorField, NumberField } from './Input';
@@ -71,9 +71,10 @@ function PointLightView({ properties, children }: ComponentViewProps) {
         "shadow-camera-far": merged.shadowCameraFar,
     };
     const lightRef = useRef<PointLight>(null);
+    const helperTargetRef = useRef<Object3D>(null!);
     const showHelper = editMode && isSelected && lightRef.current;
-    const helperTarget = showHelper && lightRef.current ? { current: lightRef.current } : null;
-    useHelper(helperTarget, PointLightHelper, 0.5);
+    if (lightRef.current) helperTargetRef.current = lightRef.current;
+    useHelper(showHelper ? helperTargetRef : null, PointLightHelper, 0.5);
 
     return (
         <group>

@@ -24,6 +24,7 @@ export default function Home() {
     return (
         <main className="flex h-screen w-screen flex-col items-center justify-between bg-white dark:bg-black sm:items-start">
             <PrefabEditor
+                key={selectedPrefabName}
                 ref={editorRef}
                 basePath={BASE_PATH}
                 initialPrefab={selectedPrefab}

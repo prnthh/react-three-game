@@ -1,4 +1,4 @@
-import { useContext, useMemo, type ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { useThree } from "@react-three/fiber";
 import { useStore } from "zustand";
 import type { Camera, Object3D, WebGLRenderer } from "three";
@@ -7,22 +7,25 @@ import { PrefabEditorMode, SceneContext } from "./SceneContext";
 import type { Scene } from "./SceneContext";
 import { useAssetRuntime } from "./assetRuntime";
 import type { PrefabStoreApi } from "./prefabStore";
+import { withBasePath } from "./runtimeUtils";
 
 export interface SceneProviderProps {
     store: PrefabStoreApi;
+    scene?: Scene;
     editMode?: boolean;
     basePath?: string;
     children: ReactNode;
 }
 
 /**
- * Recursive provider: if a Scene is already present above, this is a
- * pass-through. Otherwise this layer becomes the owner and builds a default
- * Scene bound to the given store + asset runtime.
+ * Owns a Scene for one prefab store. Editors may inject their history-aware
+ * Scene implementation; nested prefab roots otherwise receive an isolated
+ * authored-data scope while still sharing the asset runtime.
  */
-export function SceneProvider({ store, editMode, basePath = "", children }: SceneProviderProps) {
-    const inherited = useContext(SceneContext);
-    if (inherited !== null) return <>{children}</>;
+export function SceneProvider({ store, scene, editMode, basePath = "", children }: SceneProviderProps) {
+    if (scene) {
+        return <SceneContext.Provider value={scene}>{children}</SceneContext.Provider>;
+    }
     return (
         <SceneOwner store={store} editMode={editMode} basePath={basePath}>
             {children}
@@ -43,7 +46,7 @@ function SceneOwner({ store, editMode, basePath, children }: Required<Pick<Scene
         get: (id) => store.getState().nodesById[id] ?? null,
         getObject: runtime.getObject,
         getHandle: runtime.getHandle,
-        getModel: runtime.getModel,
+        getModel: (path) => runtime.getModel(withBasePath(basePath, path)),
         add: (node, parentId) => {
             const s = store.getState();
             s.addChild(parentId ?? s.rootId, node);
@@ -56,10 +59,10 @@ function SceneOwner({ store, editMode, basePath, children }: Required<Pick<Scene
         move: (a, b, p) => store.getState().moveNode(a, b, p),
         replace: (p) => store.getState().replacePrefab(p),
         addModel: (path, model) => {
-            void precompile(model, renderer, camera).then(() => runtime.registerModel(path, model));
+            void precompile(model, renderer, camera).then(() => runtime.registerModel(withBasePath(basePath, path), model));
         },
-        addTexture: runtime.registerTexture,
-        addSound: runtime.registerSound,
+        addTexture: (path, texture) => runtime.registerTexture(withBasePath(basePath, path), texture),
+        addSound: (path, sound) => runtime.registerSound(withBasePath(basePath, path), sound),
     }), [store, editMode, basePath, runtime, rootId, renderer, camera]);
 
     return <SceneContext.Provider value={scene}>{children}</SceneContext.Provider>;

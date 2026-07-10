@@ -1,8 +1,6 @@
-import { OrthographicCamera, PerspectiveCamera, useHelper } from '@react-three/drei';
-import { useRef } from 'react';
+import { Helper, OrthographicCamera, PerspectiveCamera } from '@react-three/drei';
 import { CameraHelper } from 'three';
-import type { OrthographicCamera as ThreeOrthographicCamera, PerspectiveCamera as ThreePerspectiveCamera } from 'three';
-import { useFrame, useThree } from '@react-three/fiber';
+import { useThree } from '@react-three/fiber';
 import { useNode } from '../assetRuntime';
 import type { Component, ComponentViewProps } from './ComponentRegistry';
 import { FieldGroup, NumberField, SelectField } from './Input';
@@ -117,19 +115,8 @@ function CameraComponentView({ properties, children }: ComponentViewProps<Camera
     const aspect = size.height > 0 ? size.width / size.height : 1;
     const halfHeight = orthographicSize / 2;
     const halfWidth = halfHeight * aspect;
-    const perspectiveCameraRef = useRef<ThreePerspectiveCamera>(null);
-    const orthographicCameraRef = useRef<ThreeOrthographicCamera>(null);
     const cameraModeKey = editMode ? 'edit-camera' : 'play-camera';
-    const activeCamera = projection === 'orthographic'
-        ? orthographicCameraRef.current
-        : perspectiveCameraRef.current;
-    const helperTarget = editMode && isSelected && activeCamera
-        ? { current: activeCamera }
-        : null;
-    useHelper(
-        helperTarget,
-        CameraHelper
-    );
+    const cameraHelper = editMode && isSelected ? <Helper type={CameraHelper} /> : null;
 
     const helperContent = editMode ? (
         <group>
@@ -148,7 +135,6 @@ function CameraComponentView({ properties, children }: ComponentViewProps<Camera
         return (
             <OrthographicCamera
                 key={cameraModeKey}
-                ref={orthographicCameraRef}
                 makeDefault={!editMode}
                 near={near}
                 zoom={zoom}
@@ -158,6 +144,7 @@ function CameraComponentView({ properties, children }: ComponentViewProps<Camera
                 top={halfHeight}
                 bottom={-halfHeight}
             >
+                {cameraHelper}
                 {helperContent}
                 {children}
             </OrthographicCamera>
@@ -167,13 +154,13 @@ function CameraComponentView({ properties, children }: ComponentViewProps<Camera
     return (
         <PerspectiveCamera
             key={cameraModeKey}
-            ref={perspectiveCameraRef}
             makeDefault={!editMode}
             fov={fov}
             near={near}
             zoom={zoom}
             far={far}
         >
+            {cameraHelper}
             {helperContent}
             {children}
         </PerspectiveCamera>

@@ -11,6 +11,7 @@ import { getRepeatAxesFromModelProperties, normalizeRepeatAxes } from '../Instan
 import type { RepeatAxisConfig } from '../InstanceProvider';
 import { base, colors, ui } from '../styles';
 import { decomposeModelToPrefabNodes } from '../modelPrefab';
+import { withBasePath } from '../runtimeUtils';
 
 const AXIS_OPTIONS = [
     { value: 'x', label: 'X' },
@@ -271,8 +272,9 @@ function ModelComponentEditor({ component, node, onUpdate, basePath = "" }: Mode
 }
 
 // View for Model component
-function ModelComponentView({ properties, children }: ComponentViewProps<ModelProperties>) {
-    const sourceModel = useModelAsset(properties.filename);
+function ModelComponentView({ properties, children, basePath = '' }: ComponentViewProps<ModelProperties>) {
+    const resolvedFilename = properties.filename ? withBasePath(basePath, properties.filename) : properties.filename;
+    const sourceModel = useModelAsset(resolvedFilename);
 
     // Clone model once and set up shadows - memoized to avoid cloning on every render
     const clonedModel = useMemo(() => {

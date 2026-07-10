@@ -1,8 +1,8 @@
 import { Component } from "./ComponentRegistry";
 import { ColorField, FieldGroup, NumberField, SelectField, StringField } from "./Input";
 import { Text } from 'three-text/three/react';
-import { useRef, useState, useCallback, useEffect } from 'react';
-import { BufferGeometry, Mesh } from "three";
+import { useRef, useState, useCallback } from 'react';
+import { BufferGeometry, Color, Mesh } from "three";
 import { withBasePath } from "../utils";
 
 function TextComponentEditor({
@@ -77,12 +77,11 @@ function TextComponentView({ properties, children, basePath = "" }: { properties
     const { text = '', font, size, depth, width, align, color } = properties;
     const textContent = String(text || '');
     const resolvedFont = font ? withBasePath(basePath, font) : font;
+    const fillColor = new Color(color ?? '#888888').toArray() as [number, number, number];
     const meshRef = useRef<Mesh>(null);
     const [offset, setOffset] = useState<[number, number, number]>([0, 0, 0]);
 
-    useEffect(() => {
-        Text.setHarfBuzzPath(withBasePath(basePath, '/fonts/hb.wasm'));
-    }, [basePath]);
+    Text.setHarfBuzzPath(withBasePath(basePath, '/fonts/hb.wasm'));
 
     const handleLoad = useCallback((_geometry: BufferGeometry, info: any) => {
         if (info?.planeBounds) {
@@ -102,7 +101,7 @@ function TextComponentView({ properties, children, basePath = "" }: { properties
         }
     }, [align]);
 
-    if (!textContent) return null;
+    if (!textContent) return <>{children}</>;
 
     return (
         <group position={offset}>
@@ -112,7 +111,7 @@ function TextComponentView({ properties, children, basePath = "" }: { properties
                 size={size}
                 depth={depth}
                 layout={{ align, width }}
-                color={color}
+                color={fillColor}
                 onLoad={handleLoad}
             >
                 {textContent}

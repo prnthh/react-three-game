@@ -72,7 +72,13 @@
             "type": "AmbientLight",
             "properties": {
               "color": "#d7e8ff",
-              "intensity": 0.55
+              "intensity": 1
+            }
+          },
+          "ambientlight": {
+            "type": "AmbientLight",
+            "properties": {
+              "intensity": 1.5
             }
           }
         },
@@ -172,6 +178,150 @@
               "color": "#3a3d42",
               "roughness": 0.82,
               "metalness": 0
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "stage-player-collider",
+        "name": "player physics cylinder",
+        "hidden": true,
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -1.25,
+                0.85,
+                -0.35
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0.32,
+                0.32,
+                1.7,
+                24
+              ],
+              "visible": false,
+              "castShadow": false,
+              "receiveShadow": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "basic",
+              "color": "#60a5fa",
+              "transparent": true,
+              "opacity": 0.08,
+              "depthWrite": false
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "kinematicPosition",
+              "colliders": "cylinder",
+              "cylinderRadius": 0.32,
+              "cylinderHalfHeight": 0.85,
+              "sensor": false
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "stage-activation-collider",
+        "name": "second character activation cylinder",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                1.25,
+                0.85,
+                -0.2
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0.95,
+                0.95,
+                1.7,
+                32
+              ],
+              "visible": false,
+              "castShadow": false,
+              "receiveShadow": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "basic",
+              "color": "#fbbf24",
+              "transparent": true,
+              "opacity": 0.08,
+              "depthWrite": false
+            }
+          },
+          "activationCollider": {
+            "type": "ActivationCollider",
+            "properties": {
+              "targetNodeId": "stage-player-collider",
+              "enterEventName": "stage:activation-enter",
+              "exitEventName": "stage:activation-exit",
+              "moods": [
+                "🙂",
+                "😄",
+                "🤔",
+                "😮",
+                "😎",
+                "🥳"
+              ],
+              "bubbleHeight": 1.35
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "cylinder",
+              "cylinderRadius": 0.95,
+              "cylinderHalfHeight": 0.85,
+              "sensor": true,
+              "sensorEnterEventName": "stage:activation-enter",
+              "sensorExitEventName": "stage:activation-exit"
             }
           }
         },

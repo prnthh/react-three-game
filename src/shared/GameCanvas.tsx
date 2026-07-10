@@ -1,6 +1,6 @@
 import { Canvas, extend, CanvasProps } from "@react-three/fiber";
 import { WebGPURenderer, MeshBasicNodeMaterial, MeshStandardNodeMaterial, SpriteNodeMaterial, PCFShadowMap } from "three/webgpu";
-import { Suspense, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { WebGPURendererParameters } from "three/src/renderers/webgpu/WebGPURenderer.Nodes.js";
 import { Loader } from "@react-three/drei";
 
@@ -18,6 +18,27 @@ export interface GameCanvasProps extends Omit<CanvasProps, 'children'> {
 
 export default function GameCanvas({ loader = false, children, glConfig, onCreated, style, ...props }: GameCanvasProps) {
     const [frameloop, setFrameloop] = useState<"never" | "always">("never");
+    const mountedRef = useRef(true);
+
+    useEffect(() => {
+        mountedRef.current = true;
+        return () => {
+            mountedRef.current = false;
+        };
+    }, []);
+
+    const createRenderer = useCallback(async ({ canvas }: Parameters<Extract<CanvasProps['gl'], (...args: any[]) => any>>[0]) => {
+        const renderer = new WebGPURenderer({
+            canvas: canvas as HTMLCanvasElement,
+            // @ts-expect-error futuristic
+            shadowMap: true,
+            antialias: true,
+            ...glConfig,
+        });
+        await renderer.init();
+        if (mountedRef.current) setFrameloop("always");
+        return renderer;
+    }, [glConfig]);
 
     return <>
         <Canvas
@@ -32,20 +53,7 @@ export default function GameCanvas({ loader = false, children, glConfig, onCreat
             shadows={{ type: PCFShadowMap }}
             dpr={[1, 1.5]}
             frameloop={frameloop}
-            gl={async ({ canvas }) => {
-                const canvasElement = canvas as HTMLCanvasElement;
-                const renderer = new WebGPURenderer({
-                    canvas: canvasElement,
-                    // @ts-expect-error futuristic
-                    shadowMap: true,
-                    antialias: true,
-                    ...glConfig,
-                });
-                await renderer.init().then(() => {
-                    setFrameloop("always");
-                });
-                return renderer
-            }}
+            gl={createRenderer}
             onCreated={(state) => {
                 onCreated?.(state);
             }}

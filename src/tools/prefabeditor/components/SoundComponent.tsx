@@ -1,13 +1,14 @@
-import { useEffect, useRef } from 'react';
-import { useThree } from '@react-three/fiber';
+import { useEffect, useMemo, useRef } from 'react';
 import { SoundPicker } from '../../assetviewer/page';
-import { useAssetRevision, useAssetRuntime, useNode } from '../assetRuntime';
+import { useAssetRuntime, useNode, useSoundAssetRevision } from '../assetRuntime';
 import { gameEvents, type ContactEventPayload, type NodePointerEventPayload } from '../GameEvents';
 import { Component } from './ComponentRegistry';
 import { BooleanField, FieldGroup, FieldRenderer, ListEditor, NumberField, SelectField, StringField } from './Input';
 import { colors, ui } from '../styles';
 import type { ComponentData } from '../types';
-import { AudioListener, PositionalAudio as ThreePositionalAudio } from 'three';
+import { PositionalAudio as ThreePositionalAudio } from 'three';
+import { useAudioListener } from '../AudioRuntime';
+import { withBasePath } from '../runtimeUtils';
 
 type ClipMode = 'single' | 'random' | 'sequence';
 
@@ -37,16 +38,6 @@ const CLIP_MODE_OPTIONS = [
     { value: 'random', label: 'Random Clip' },
     { value: 'sequence', label: 'Sequence' },
 ] as const;
-
-let sharedAudioListener: AudioListener | null = null;
-
-function getSharedAudioListener() {
-    if (!sharedAudioListener) {
-        sharedAudioListener = new AudioListener();
-    }
-
-    return sharedAudioListener;
-}
 
 function normalizeClips(clips?: string[]) {
     return (clips ?? []).map(clip => clip.trim()).filter(Boolean);
@@ -261,38 +252,20 @@ function SoundComponentEditor({ component, onUpdate, basePath = '' }: { componen
     );
 }
 
-function SoundComponentView({ properties, children }: { properties: SoundProperties; children?: React.ReactNode }) {
+function SoundComponentView({ properties, children, basePath = '' }: { properties: SoundProperties; children?: React.ReactNode; basePath?: string }) {
     const { getSound } = useAssetRuntime();
-    const assetRevision = useAssetRevision();
     const { editMode, nodeId } = useNode();
-    const { camera } = useThree();
+    const listener = useAudioListener();
     const { eventName, autoplay = false, positional = false, refDistance = 1, maxDistance = 24, rolloffFactor = 1, distanceModel = 'inverse' } = properties;
     const sequenceIndexRef = useRef(0);
-    const listenerRef = useRef<AudioListener | null>(null);
     const positionalAudioRef = useRef<ThreePositionalAudio | null>(null);
-    const { paths, mode } = resolveClipPaths(properties);
-
-    if (!listenerRef.current) {
-        listenerRef.current = getSharedAudioListener();
-    }
-
-    useEffect(() => {
-        const listener = listenerRef.current;
-        if (!listener) {
-            return;
-        }
-
-        if (listener.parent !== camera) {
-            listener.parent?.remove(listener);
-            camera.add(listener);
-        }
-
-        return () => {
-            if (listener.parent === camera) {
-                camera.remove(listener);
-            }
-        };
-    }, [camera]);
+    const { paths, mode } = useMemo(() => {
+        const resolved = resolveClipPaths(properties);
+        return { ...resolved, paths: resolved.paths.map(path => withBasePath(basePath, path)) };
+    },
+        [basePath, properties.clips, properties.clipMode],
+    );
+    const soundAssetRevision = useSoundAssetRevision(paths);
 
     useEffect(() => {
         const audio = positionalAudioRef.current;
@@ -332,7 +305,7 @@ function SoundComponentView({ properties, children }: { properties: SoundPropert
     useEffect(() => {
         // Re-run when assets load so autoplay can start once the buffer is ready
         // (the asset runtime context is now stable and no longer re-renders on load).
-        void assetRevision;
+        void soundAssetRevision;
         if (editMode || !autoplay || paths.length === 0) {
             return;
         }
@@ -347,19 +320,16 @@ function SoundComponentView({ properties, children }: { properties: SoundPropert
         if (!audio || !buffer) {
             return;
         }
-
         playBufferedAudio(audio, buffer, properties);
 
         return () => {
-            if (audio?.isPlaying) {
-                audio.stop();
-            }
+            if (audio.isPlaying) audio.stop();
         };
-    }, [autoplay, editMode, getSound, mode, paths, properties, assetRevision]);
+    }, [autoplay, editMode, getSound, mode, paths, properties, soundAssetRevision]);
 
     return (
         <>
-            {listenerRef.current ? <positionalAudio ref={positionalAudioRef} args={[listenerRef.current]} /> : null}
+            <positionalAudio ref={positionalAudioRef} args={[listener]} />
             {children}
         </>
     );

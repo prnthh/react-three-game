@@ -52,20 +52,35 @@ export type BodyMeta = {
 type BodyEntry = {
     body: RigidBody;
     meta: BodyMeta;
+    beforeStep?: (body: RigidBody, delta: number) => void;
+    afterStep?: (body: RigidBody) => void;
 };
+
+export type CrashcatBodySync = Pick<BodyEntry, "beforeStep" | "afterStep">;
 
 export interface CrashcatApi {
     world: World;
     queryFilter: Filter;
     staticObjectLayer: number;
     movingObjectLayer: number;
-    register: (nodeId: string, body: RigidBody, meta: Omit<BodyMeta, "nodeId">) => void;
+    register: (nodeId: string, body: RigidBody, meta: Omit<BodyMeta, "nodeId">, sync?: CrashcatBodySync) => void;
     unregister: (nodeId: string) => void;
     getBody: (nodeId: string) => RigidBody | null;
 }
 
 const crashcatListeners = new Set<() => void>();
 let crashcatApi: CrashcatApi | null = null;
+
+export function observeCrashcat(listener: (api: CrashcatApi | null) => void) {
+    const notify = () => listener(crashcatApi);
+    crashcatListeners.add(notify);
+    notify();
+    return () => crashcatListeners.delete(notify);
+}
+
+export function getCrashcatApi() {
+    return crashcatApi;
+}
 
 export function useCrashcat(): CrashcatApi | null {
     return useSyncExternalStore(
@@ -192,10 +207,10 @@ export function CrashcatRuntime({ debug = false, children }: { debug?: boolean; 
             queryFilter,
             staticObjectLayer,
             movingObjectLayer,
-            register: (nodeId, body, meta) => {
+            register: (nodeId, body, meta, sync) => {
                 unregister(nodeId);
                 const full: BodyMeta = { nodeId, ...meta };
-                bodies.set(nodeId, { body, meta: full });
+                bodies.set(nodeId, { body, meta: full, ...sync });
                 bodyById.set(Number(body.id), full);
             },
             unregister,
@@ -224,11 +239,18 @@ export function CrashcatRuntime({ debug = false, children }: { debug?: boolean; 
         const frameDelta = Math.min(delta, MAX_PHYSICS_CATCH_UP_DELTA);
 
         if (mode === PrefabEditorMode.Play) {
+            for (const entry of bodiesRef.current.values()) {
+                entry.beforeStep?.(entry.body, frameDelta);
+            }
             const stepCount = Math.max(1, Math.ceil(frameDelta / MAX_PHYSICS_STEP_DELTA));
             const stepDelta = frameDelta / stepCount;
 
             for (let stepIndex = 0; stepIndex < stepCount; stepIndex += 1) {
                 updateWorld(world, listener, stepDelta);
+            }
+
+            for (const entry of bodiesRef.current.values()) {
+                entry.afterStep?.(entry.body);
             }
         }
 

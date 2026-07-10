@@ -15,6 +15,8 @@ const BENCH_DELAY_MS = 2000;
 type BenchmarkResult = {
     id: string;
     label: string;
+    mutationMs: number;
+    settleMs: number;
     durationMs: number;
 };
 
@@ -269,7 +271,6 @@ export default function BenchmarkPage() {
             id: "crashcat-dynamic-100",
             label: "Add 100 dynamic Crashcat bodies",
             createPrefab: createDynamicBenchmarkPrefab,
-            settleFrames: 8,
             run: async (editor) => {
                 for (let index = 0; index < TEST_COUNT; index += 1) {
                     editor.add(createDynamicCrashcatNode(index), ROOT_ID);
@@ -306,12 +307,15 @@ export default function BenchmarkPage() {
 
                 const startTime = performance.now();
                 await benchmark.run(editor);
+                const mutationEndTime = performance.now();
                 await waitForFrames(benchmark.settleFrames ?? 2);
                 const endTime = performance.now();
 
                 nextResults.push({
                     id: benchmark.id,
                     label: benchmark.label,
+                    mutationMs: mutationEndTime - startTime,
+                    settleMs: endTime - mutationEndTime,
                     durationMs: endTime - startTime,
                 });
 
@@ -378,7 +382,7 @@ export default function BenchmarkPage() {
                     camera: { position: [10, 12, 18], fov: 45 },
                 }}
             >
-                <CrashcatRuntime debug />
+                <CrashcatRuntime />
                 <ambientLight intensity={1.8} />
                 <directionalLight intensity={2.2} position={[8, 12, 6]} castShadow />
             </PrefabEditor>
@@ -406,7 +410,9 @@ export default function BenchmarkPage() {
                             <div key={benchmark.id} className="border-t border-white/10 pt-1.5">
                                 <div>{benchmark.label}</div>
                                 <div className="text-slate-400">
-                                    {result ? `${result.durationMs.toFixed(2)} ms` : "Pending"}
+                                    {result
+                                        ? `${result.durationMs.toFixed(2)} ms · mutate ${result.mutationMs.toFixed(2)} · settle ${result.settleMs.toFixed(2)}`
+                                        : "Pending"}
                                 </div>
                             </div>
                         );

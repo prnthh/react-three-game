@@ -466,7 +466,7 @@ COMPONENT TYPES AND EXAMPLES:
 5. CRASHCAT PHYSICS (for collisions/dynamics):
     {"crashcatPhysics":{"type":"CrashcatPhysics","properties":{"type":"dynamic","colliders":"hull"}}}
     // type: "dynamic" (movable), "fixed" (static), "kinematicPosition", or "kinematicVelocity"
-    // colliders: "hull", "trimesh", "cuboid", "ball", or "capsule"
+    // colliders: "hull", "trimesh", "cuboid", "ball", "capsule", or "cylinder"
 
 6. DIRECTIONALLIGHT (sun-like lighting):
    {"directionallight":{"type":"DirectionalLight","properties":{"color":"#ffffff","intensity":1.0,"castShadow":true,"targetOffset":[2,-5,2]}}}

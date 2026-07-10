@@ -283,6 +283,9 @@ export function insertSubtree(
 	childIdsById: Record<string, string[]>,
 	parentIdById: Record<string, string | null>,
 ) {
+	if (nodesById[node.id]) {
+		throw new Error(`Duplicate prefab node id: ${node.id}`);
+	}
 	const { children, ...nodeRecord } = node;
 	nodesById[node.id] = nodeRecord;
 	childIdsById[node.id] = children?.map((child) => child.id) ?? [];

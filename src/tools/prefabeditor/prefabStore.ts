@@ -1,7 +1,7 @@
 import { Fragment, createContext, createElement, type ReactNode, useContext } from "react";
 import { subscribeWithSelector } from "zustand/middleware";
 import { useStore } from "zustand";
-import { createStore, type StoreApi } from "zustand/vanilla";
+import { createStore, type Mutate, type StoreApi } from "zustand/vanilla";
 
 import { GameObject, Prefab } from "./types";
 import {
@@ -31,7 +31,10 @@ export interface PrefabStoreState extends PrefabState {
     moveNode: (draggedId: string, targetId: string, position: "before" | "inside") => void;
 }
 
-export type PrefabStoreApi = StoreApi<PrefabStoreState>;
+export type PrefabStoreApi = Mutate<
+    StoreApi<PrefabStoreState>,
+    [["zustand/subscribeWithSelector", never]]
+>;
 
 const PrefabStoreContext = createContext<PrefabStoreApi | null>(null);
 const EMPTY_CHILD_IDS: string[] = [];

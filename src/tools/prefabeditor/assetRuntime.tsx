@@ -35,6 +35,7 @@ export interface LiveRef<T> { readonly current: T | null; }
 export interface AssetRuntimeProviderProps {
     children: ReactNode;
     runtimeRef?: React.MutableRefObject<AssetRuntime | null>;
+    isolateObjects?: boolean;
 }
 
 export const AssetRuntimeContext = createContext<AssetRuntime | null>(null);
@@ -51,13 +52,15 @@ interface AssetStoreState {
     models: LoadedModels;
     textures: LoadedTextures;
     sounds: LoadedSounds;
+    soundVersions: Record<string, number>;
+    visualVersion: number;
     version: number;
 }
 
 type AssetStoreApi = StoreApi<AssetStoreState>;
 
 function createAssetStore(): AssetStoreApi {
-    return createStore<AssetStoreState>(() => ({ models: {}, textures: {}, sounds: {}, version: 0 }));
+    return createStore<AssetStoreState>(() => ({ models: {}, textures: {}, sounds: {}, soundVersions: {}, visualVersion: 0, version: 0 }));
 }
 
 const AssetStoreContext = createContext<AssetStoreApi | null>(null);
@@ -78,19 +81,16 @@ export function useTextureAsset(path?: string | null): Texture | null {
     return useStore(useAssetStore(), s => (path ? s.textures[path] ?? null : null));
 }
 
-/** Subscribe to a single loaded sound; re-renders only when that sound changes. */
-export function useSoundAsset(path?: string | null): AudioBuffer | null {
-    return useStore(useAssetStore(), s => (path ? s.sounds[path] ?? null : null));
+/** Reacts only when one of the requested sound buffers is replaced or loaded. */
+export function useSoundAssetRevision(paths: string[]): string {
+    return useStore(useAssetStore(), state => (
+        paths.map(path => state.soundVersions[path] ?? 0).join('|')
+    ));
 }
 
-/** Subscribe to the full model map (only needed by the instancing root). */
-export function useAllModels(): LoadedModels {
-    return useStore(useAssetStore(), s => s.models);
-}
-
-/** Coarse "an asset was (un)registered" signal. */
-export function useAssetRevision(): number {
-    return useStore(useAssetStore(), s => s.version);
+/** Coarse visual-only signal for systems that rebake when scene imagery changes. */
+export function useVisualAssetRevision(): number {
+    return useStore(useAssetStore(), s => s.visualVersion);
 }
 
 export function useAssetRuntime(): AssetRuntime {
@@ -144,13 +144,65 @@ export function NodeScope({
  * Recursive provider: if an AssetRuntime is already present above, this is a
  * pass-through. Otherwise this layer becomes the owner and allocates state.
  */
-export function AssetRuntimeProvider({ children, runtimeRef }: AssetRuntimeProviderProps) {
+export function AssetRuntimeProvider({ children, runtimeRef, isolateObjects = false }: AssetRuntimeProviderProps) {
     const inherited = useContext(AssetRuntimeContext);
     if (inherited !== null) {
+        if (isolateObjects) {
+            return <ScopedAssetRuntimeOwner parent={inherited} runtimeRef={runtimeRef}>{children}</ScopedAssetRuntimeOwner>;
+        }
         if (runtimeRef) runtimeRef.current = inherited;
         return children;
     }
     return <AssetRuntimeOwner runtimeRef={runtimeRef}>{children}</AssetRuntimeOwner>;
+}
+
+function ScopedAssetRuntimeOwner({
+    parent,
+    children,
+    runtimeRef,
+}: AssetRuntimeProviderProps & { parent: AssetRuntime }) {
+    const objectRefs = useRef<Record<string, Object3D | null>>({});
+    const nodeHandles = useRef<Map<string, Map<string, unknown>>>(new Map());
+
+    const registerObject = useCallback((id: string, object: Object3D | null) => {
+        if (object) objectRefs.current[id] = object;
+        else delete objectRefs.current[id];
+    }, []);
+    const registerHandle = useCallback((id: string, kind: string, handle: unknown) => {
+        const current = nodeHandles.current.get(id);
+        if (handle == null) {
+            if (!current) return;
+            current.delete(kind);
+            if (current.size === 0) nodeHandles.current.delete(id);
+            return;
+        }
+        if (current) current.set(kind, handle);
+        else nodeHandles.current.set(id, new Map([[kind, handle]]));
+    }, []);
+    const getObject = useCallback((id: string) => objectRefs.current[id] ?? null, []);
+    const getHandle = useCallback(<T = unknown,>(id: string, kind: string) => (
+        (nodeHandles.current.get(id)?.get(kind) as T | undefined) ?? null
+    ), []);
+
+    const runtime = useMemo<AssetRuntime>(() => ({
+        get models() { return parent.models; },
+        get textures() { return parent.textures; },
+        get sounds() { return parent.sounds; },
+        registerObject,
+        registerHandle,
+        registerModel: parent.registerModel,
+        registerTexture: parent.registerTexture,
+        registerSound: parent.registerSound,
+        getObject,
+        getHandle,
+        getModel: parent.getModel,
+        getTexture: parent.getTexture,
+        getSound: parent.getSound,
+        getAssetRevision: parent.getAssetRevision,
+    }), [getHandle, getObject, parent, registerHandle, registerObject]);
+
+    if (runtimeRef) runtimeRef.current = runtime;
+    return <AssetRuntimeContext.Provider value={runtime}>{children}</AssetRuntimeContext.Provider>;
 }
 
 function AssetRuntimeOwner({ children, runtimeRef }: AssetRuntimeProviderProps) {
@@ -177,16 +229,20 @@ function AssetRuntimeOwner({ children, runtimeRef }: AssetRuntimeProviderProps) 
 
     const registerModel = useCallback((path: string, model: Object3D) => {
         if (assetStore.getState().models[path] === model) return;
-        assetStore.setState(s => ({ models: { ...s.models, [path]: model }, version: s.version + 1 }));
+        assetStore.setState(s => ({ models: { ...s.models, [path]: model }, visualVersion: s.visualVersion + 1, version: s.version + 1 }));
     }, [assetStore]);
     const registerTexture = useCallback((path: string, texture: Texture) => {
         if (assetStore.getState().textures[path] === texture) return;
-        assetStore.setState(s => ({ textures: { ...s.textures, [path]: texture }, version: s.version + 1 }));
+        assetStore.setState(s => ({ textures: { ...s.textures, [path]: texture }, visualVersion: s.visualVersion + 1, version: s.version + 1 }));
     }, [assetStore]);
     const registerSound = useCallback((path: string, sound: AudioBuffer) => {
         soundManager.setBuffer(path, sound);
         if (assetStore.getState().sounds[path] === sound) return;
-        assetStore.setState(s => ({ sounds: { ...s.sounds, [path]: sound }, version: s.version + 1 }));
+        assetStore.setState(s => ({
+            sounds: { ...s.sounds, [path]: sound },
+            soundVersions: { ...s.soundVersions, [path]: (s.soundVersions[path] ?? 0) + 1 },
+            version: s.version + 1,
+        }));
     }, [assetStore]);
 
     const getObject = useCallback((id: string) => objectRefs.current[id] ?? null, []);
@@ -201,7 +257,7 @@ function AssetRuntimeOwner({ children, runtimeRef }: AssetRuntimeProviderProps) 
     // Stable runtime: all members have stable identity, so consumers that only
     // use imperative getters/registrars never re-render on asset loads. The
     // live maps are exposed as snapshot getters for imperative readers; reactive
-    // consumers use the selector hooks (useModelAsset, useAllModels, ...).
+    // consumers use the per-asset selector hooks.
     const runtime = useMemo<AssetRuntime>(() => ({
         get models() { return assetStore.getState().models; },
         get textures() { return assetStore.getState().textures; },

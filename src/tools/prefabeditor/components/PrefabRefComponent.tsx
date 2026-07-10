@@ -1,7 +1,9 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import type { Component, ComponentViewProps } from './ComponentRegistry';
 import type { GameObject, Prefab } from '../types';
+import type { Scene } from '../SceneContext';
 import { useEditorRef } from '../EditorContext';
+import { useAssetRuntime, useNode } from '../assetRuntime';
 import { withBasePath } from '../utils';
 import { base, colors } from '../styles';
 import { FieldGroup, Label } from './Input';
@@ -22,6 +24,11 @@ async function fetchJson<T>(url: string): Promise<T> {
 
 function PrefabRefView({ properties, children, basePath = '' }: ComponentViewProps<PrefabRefProperties>) {
     const [loadedPrefab, setLoadedPrefab] = useState<Prefab | null>(null);
+    const { nodeId } = useNode();
+    const { registerHandle } = useAssetRuntime();
+    const registerNestedScene = useCallback((scene: Scene | null) => {
+        registerHandle(nodeId, 'prefabScene', scene);
+    }, [nodeId, registerHandle]);
 
     const resolvedUrl = properties.url ? withBasePath(basePath, properties.url) : '';
 
@@ -49,7 +56,7 @@ function PrefabRefView({ properties, children, basePath = '' }: ComponentViewPro
         <>
             {loadedPrefab && (
                 <Suspense fallback={null}>
-                    <PrefabRoot data={loadedPrefab} editMode={false} basePath={basePath} />
+                    <PrefabRoot ref={registerNestedScene} data={loadedPrefab} editMode={false} basePath={basePath} />
                 </Suspense>
             )}
             {children}

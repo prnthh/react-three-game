@@ -1,4 +1,4 @@
-import { createContext, useContext, useLayoutEffect, useMemo, useRef, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from 'react';
 import { extend } from '@react-three/fiber';
 import type { ThreeElement } from '@react-three/fiber';
 import { useFrame } from '@react-three/fiber';
@@ -10,6 +10,7 @@ import { useTextureAsset } from '../assetRuntime';
 import { MeshBasicNodeMaterial, MeshStandardNodeMaterial, SpriteNodeMaterial } from 'three/webgpu';
 import { TexturePicker } from '../../assetviewer/page';
 import type { ComponentData } from '../types';
+import { withBasePath } from '../runtimeUtils';
 import {
     RepeatWrapping,
     ClampToEdgeWrapping,
@@ -188,6 +189,10 @@ function useConfiguredTexture(texture: Texture | null | undefined, options: Text
         minFilter,
         magFilter,
     ]);
+
+    useEffect(() => () => {
+        configuredTexture?.dispose();
+    }, [configuredTexture]);
 
     return configuredTexture;
 }
@@ -370,7 +375,7 @@ function MaterialComponentEditor({
 }
 
 // View for Material component
-function MaterialComponentView({ properties: rawProps }: ComponentViewProps<Record<string, unknown>>) {
+function MaterialComponentView({ properties: rawProps, basePath = '' }: ComponentViewProps<Record<string, unknown>>) {
     const properties = rawProps as unknown as MaterialProps | undefined;
     const materialSource = properties ?? {} as MaterialProps;
 
@@ -385,9 +390,11 @@ function MaterialComponentView({ properties: rawProps }: ComponentViewProps<Reco
     const generateMipmaps = materialSource.generateMipmaps !== false;
     const minFilter = materialSource.minFilter ?? 'LinearMipmapLinearFilter';
     const magFilter = materialSource.magFilter ?? 'LinearFilter';
-    const texture = useTextureAsset(textureName) ?? undefined;
+    const resolvedTextureName = textureName ? withBasePath(basePath, textureName) : textureName;
+    const texture = useTextureAsset(resolvedTextureName) ?? undefined;
     const normalScaleProp = materialSource.normalScale;
-    const normalMapTexture = useTextureAsset(normalMapTextureName) ?? undefined;
+    const resolvedNormalMapTextureName = normalMapTextureName ? withBasePath(basePath, normalMapTextureName) : normalMapTextureName;
+    const normalMapTexture = useTextureAsset(resolvedNormalMapTextureName) ?? undefined;
 
     // Destructure all material props and separate custom texture handling props
     const {

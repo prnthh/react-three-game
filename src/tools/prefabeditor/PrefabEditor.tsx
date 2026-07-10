@@ -1,4 +1,4 @@
-import { MapControls, TransformControls, useHelper } from "@react-three/drei";
+import { OrbitControls, TransformControls, useHelper } from "@react-three/drei";
 import { useCallback, useEffect, useMemo, useRef, useState, forwardRef, useImperativeHandle } from "react";
 import { BoxHelper } from "three";
 import type { Object3D, Texture } from "three";
@@ -14,7 +14,7 @@ import { loadDroppedAssets } from "../dragdrop";
 import { createNode } from './prefab';
 import { createPrefabStore, type PrefabStoreState, PrefabStoreProvider } from "./prefabStore";
 import type { PrefabState } from "./prefab";
-import type { MapControls as MapControlsImpl, TransformControls as TransformControlsImpl } from 'three-stdlib';
+import type { OrbitControls as OrbitControlsImpl, TransformControls as TransformControlsImpl } from 'three-stdlib';
 import { decomposeModelToPrefabNodes, hasCollisionMeshConventions } from "./modelPrefab";
 import { EditorContext, EditorRefContext, type PrefabEditorRef } from "./EditorContext";
 
@@ -41,12 +41,8 @@ export function getPrefabAssetRef(assetRef: string, folder: "models" | "textures
 }
 
 function SelectionHelper({ object }: { object: Object3D | null }) {
-    const objectRef = useRef<Object3D | null>(null);
-    objectRef.current = object;
-    const helperTarget = objectRef.current
-        ? { current: objectRef.current }
-        : null;
-    useHelper(helperTarget, BoxHelper, "cyan");
+    const target = useMemo(() => object ? { current: object } : null, [object]);
+    useHelper(target, BoxHelper, "cyan");
     return null;
 }
 
@@ -55,6 +51,7 @@ export { EditorContext, EditorRefContext, useEditorContext, useEditorRef } from 
 
 export interface PrefabEditorProps {
     basePath?: string;
+    /** Initial document. Read once when the editor store is created. */
     initialPrefab?: Prefab;
     mode?: PrefabEditorMode;
     onChange?: (prefab: Prefab) => void;
@@ -67,7 +64,6 @@ export interface PrefabEditorProps {
 }
 
 const MAX_HISTORY_LENGTH = 50;
-const HISTORY_DEBOUNCE_MS = 500;
 
 const DEFAULT_PREFAB: Prefab = {
     id: "prefab-default",
@@ -87,11 +83,10 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
     const [history, setHistory] = useState<PrefabState[]>(() => [prefabStore.getState()]);
     const [historyIndex, setHistoryIndex] = useState(0);
     const historyIndexRef = useRef(0);
-    const historyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const notifyRafRef = useRef<number | null>(null);
     const runtimeRef = useRef<AssetRuntime | null>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
-    const controlsRef = useRef<MapControlsImpl | null>(null);
+    const controlsRef = useRef<OrbitControlsImpl | null>(null);
     const transformControlsRef = useRef<TransformControlsImpl | null>(null);
     const onChangeRef = useRef(onChange);
     const isEditMode = mode === PrefabEditorMode.Edit;
@@ -104,28 +99,20 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
     const getRoot = useCallback(() => runtimeRef.current?.getObject(prefabStore.getState().rootId) ?? null, [prefabStore]);
     const getObject = useCallback((nodeId: string) => runtimeRef.current?.getObject(nodeId) ?? null, []);
     const getHandle = useCallback(<T = unknown,>(nodeId: string, kind: string) => runtimeRef.current?.getHandle<T>(nodeId, kind) ?? null, []);
-    const getModel = useCallback((path: string) => runtimeRef.current?.getModel(path) ?? null, []);
+    const getModel = useCallback((path: string) => runtimeRef.current?.getModel(withBasePath(basePath, path)) ?? null, [basePath]);
 
     // History stores normalized state snapshots. Because store mutations use
     // structural sharing (unchanged nodes keep their references), capturing a
     // snapshot is O(1) instead of deep-cloning the whole prefab tree.
-    const scheduleHistory = useCallback((snapshot: PrefabState) => {
-        if (historyTimeoutRef.current) {
-            clearTimeout(historyTimeoutRef.current);
-            historyTimeoutRef.current = null;
-        }
-
-        historyTimeoutRef.current = setTimeout(() => {
-            const currentHistoryIndex = historyIndexRef.current;
-            setHistory(prev => {
-                const nextHistory = [...prev.slice(0, currentHistoryIndex + 1), snapshot];
-                return nextHistory.length > MAX_HISTORY_LENGTH ? nextHistory.slice(1) : nextHistory;
-            });
-            const nextHistoryIndex = Math.min(currentHistoryIndex + 1, MAX_HISTORY_LENGTH - 1);
-            historyIndexRef.current = nextHistoryIndex;
-            setHistoryIndex(nextHistoryIndex);
-            historyTimeoutRef.current = null;
-        }, HISTORY_DEBOUNCE_MS);
+    const recordHistory = useCallback((snapshot: PrefabState) => {
+        const currentHistoryIndex = historyIndexRef.current;
+        setHistory(prev => {
+            const next = [...prev.slice(0, currentHistoryIndex + 1), snapshot];
+            return next.length > MAX_HISTORY_LENGTH ? next.slice(1) : next;
+        });
+        const nextHistoryIndex = Math.min(currentHistoryIndex + 1, MAX_HISTORY_LENGTH - 1);
+        historyIndexRef.current = nextHistoryIndex;
+        setHistoryIndex(nextHistoryIndex);
     }, []);
 
     // Coalesce onChange notifications to once per frame. denormalizePrefab walks
@@ -146,9 +133,9 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
         if (after === before) return result;
 
         scheduleChange();
-        if (pushHistory) scheduleHistory(after);
+        if (pushHistory) recordHistory(after);
         return result;
-    }, [isEditMode, prefabStore, scheduleChange, scheduleHistory]);
+    }, [isEditMode, prefabStore, recordHistory, scheduleChange]);
 
     const update = useCallback((id: string, fn: (node: PrefabNode) => PrefabNode) => {
         mutate(s => s.updateNode(id, fn));
@@ -220,14 +207,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
     }, [detachTransformControls, prefabStore]);
 
     useEffect(() => {
-        if (initialPrefab) loadPrefab(initialPrefab, { resetHistory: true, notifyChange: false });
-    }, [initialPrefab, loadPrefab]);
-
-    useEffect(() => {
         return () => {
-            if (historyTimeoutRef.current) {
-                clearTimeout(historyTimeoutRef.current);
-            }
             if (notifyRafRef.current != null) {
                 cancelAnimationFrame(notifyRafRef.current);
             }
@@ -237,11 +217,12 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
     useEffect(() => {
         if (!selectedId) return;
 
-        const unsubscribe = prefabStore.subscribe((state) => {
-            if (state.nodesById[selectedId]) return;
-
-            setSelectedId(null);
-        });
+        const unsubscribe = prefabStore.subscribe(
+            state => Boolean(state.nodesById[selectedId]),
+            exists => {
+                if (!exists) setSelectedId(null);
+            },
+        );
 
         return () => unsubscribe();
     }, [prefabStore, selectedId]);
@@ -251,6 +232,9 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
         && isObjectAttachedToRoot(getRoot(), selectedObject)
         ? selectedObject
         : null;
+    const selectedIsInstanced = Boolean(
+        selectedId && findComponentEntry(getNode(selectedId), "Model")?.[1].properties?.instanced,
+    );
 
     const importPrefab = useCallback((prefab: Prefab) => {
         add(regenerateIds(prefab.root));
@@ -385,7 +369,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
             void loadDroppedAssets(e.dataTransfer, {
                 onModelLoaded: (model, filename, file) => {
                     const path = getPrefabAssetRef(filename, 'models');
-                    runtime?.registerModel(path, model);
+                    runtime?.registerModel(withBasePath(basePath, path), model);
                     const modelName = file.name.replace(/\.[^.]+$/, '');
                     const modelIdPrefix = modelName.replace(/[^\w-]+/g, '-') || 'model';
 
@@ -399,7 +383,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
                                 return key;
                             },
                         });
-                        textureRefs.forEach((texture, path) => { runtime?.registerTexture(path, texture); });
+                        textureRefs.forEach((texture, path) => { runtime?.registerTexture(withBasePath(basePath, path), texture); });
                         add({
                             ...decomposed,
                             name: modelName || decomposed.name,
@@ -411,7 +395,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
                 },
                 onTextureLoaded: (texture, filename, file) => {
                     const path = getPrefabAssetRef(filename, 'textures');
-                    runtime?.registerTexture(path, texture);
+                    runtime?.registerTexture(withBasePath(basePath, path), texture);
                     add(createImageNode(path, file.name.replace(/\.[^.]+$/, '')));
                 },
                 onLoadError: error => {
@@ -426,7 +410,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
             window.removeEventListener('dragover', handleDragOver);
             window.removeEventListener('drop', handleDrop);
         };
-    }, [add, isEditMode, enableWindowDrop]);
+    }, [add, basePath, isEditMode, enableWindowDrop]);
 
     const sceneValue = useMemo<Scene>(() => ({
         get root() {
@@ -445,9 +429,9 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
         duplicate,
         move,
         replace,
-        addModel: (path, model) => runtimeRef.current?.registerModel(path, model),
-        addTexture: (path, texture) => runtimeRef.current?.registerTexture(path, texture),
-        addSound: (path, sound) => runtimeRef.current?.registerSound(path, sound),
+        addModel: (path, model) => runtimeRef.current?.registerModel(withBasePath(basePath, path), model),
+        addTexture: (path, texture) => runtimeRef.current?.registerTexture(withBasePath(basePath, path), texture),
+        addSound: (path, sound) => runtimeRef.current?.registerSound(withBasePath(basePath, path), sound),
     }), [add, basePath, duplicate, getHandle, getModel, getNode, getObject, getRoot, mode, move, remove, replace, replaceNode, update]);
 
     const editorRefValue = useMemo<PrefabEditorRef>(() => ({
@@ -474,6 +458,8 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
                 onSelect={setSelection}
                 onPointerEvent={onPointerEvent}
                 basePath={basePath}
+                scene={sceneValue}
+                shareRuntimeObjects
             >
                 {children}
             </PrefabRoot>
@@ -524,7 +510,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
 
                             {isEditMode && (
                                 <>
-                                    <MapControls ref={controlsRef} enableDamping={false} makeDefault />
+                                    <OrbitControls ref={controlsRef} enableDamping={false} makeDefault />
                                     {transformObject && (
                                         <TransformControls
                                             ref={transformControlsRef}
@@ -532,7 +518,8 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
                                             object={transformObject}
                                             mode={transformMode}
                                             space={transformMode === "translate" ? "world" : "local"}
-                                            onObjectChange={handleTransformChange}
+                                            onObjectChange={selectedIsInstanced ? handleTransformChange : undefined}
+                                            onMouseUp={selectedIsInstanced ? undefined : handleTransformChange}
                                             translationSnap={positionSnap > 0 ? positionSnap : undefined}
                                             rotationSnap={rotationSnap > 0 ? rotationSnap : undefined}
                                             scaleSnap={scaleSnap > 0 ? scaleSnap : undefined}

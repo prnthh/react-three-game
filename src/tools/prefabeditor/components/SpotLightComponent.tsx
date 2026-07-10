@@ -9,6 +9,7 @@ import { useTextureAsset, useNode } from "../assetRuntime";
 import { TexturePicker } from "../../assetviewer/page";
 import { LightSection, ShadowBiasField, mergeWithDefaults } from "./lightUtils";
 import type { ComponentData } from "../types";
+import { withBasePath } from "../runtimeUtils";
 
 const spotLightDefaults = {
     color: '#ffffff',
@@ -74,12 +75,13 @@ function SpotLightComponentEditor({ component, onUpdate, basePath = "" }: { comp
     );
 }
 
-function SpotLightView({ properties, children }: ComponentViewProps) {
+function SpotLightView({ properties, children, basePath = '' }: ComponentViewProps) {
     const { editMode, isSelected } = useNode();
 
     const merged = mergeWithDefaults(spotLightDefaults, properties) as SpotLightProperties;
 
-    const textureMap = useTextureAsset(merged.map) ?? undefined;
+    const resolvedMap = merged.map ? withBasePath(basePath, merged.map) : merged.map;
+    const textureMap = useTextureAsset(resolvedMap) ?? undefined;
 
     const lightProps = {
         color: merged.color,
@@ -102,11 +104,12 @@ function SpotLightView({ properties, children }: ComponentViewProps) {
     };
 
     const spotLightRef = useRef<SpotLight>(null);
+    const helperTargetRef = useRef<Object3D>(null!);
     const target = useMemo(() => new Object3D(), []);
 
     const showHelper = editMode && isSelected;
-    const helperTarget = showHelper && spotLightRef.current ? { current: spotLightRef.current } : null;
-    useHelper(helperTarget, SpotLightHelper);
+    if (spotLightRef.current) helperTargetRef.current = spotLightRef.current;
+    useHelper(showHelper && spotLightRef.current ? helperTargetRef : null, SpotLightHelper);
 
     return (
         <group>

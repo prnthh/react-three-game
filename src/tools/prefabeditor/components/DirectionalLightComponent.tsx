@@ -122,13 +122,14 @@ function DirectionalLightView({ properties, children }: ComponentViewProps) {
         "shadow-camera-right": merged.shadowCameraRight,
     };
     const directionalLightRef = useRef<DirectionalLight>(null);
+    const helperTargetRef = useRef<Object3D>(null!);
     const target = useMemo(() => new Object3D(), []);
 
     // Show CameraHelper only in edit mode, selected, and castShadow
     const showHelper = editMode && isSelected && merged.castShadow;
     const shadowCamera = directionalLightRef.current?.shadow.camera ?? null;
-    const helperTarget = showHelper && shadowCamera ? { current: shadowCamera } : null;
-    useHelper(helperTarget, CameraHelper);
+    if (shadowCamera) helperTargetRef.current = shadowCamera;
+    useHelper(showHelper && shadowCamera ? helperTargetRef : null, CameraHelper);
 
     return (
         <group>

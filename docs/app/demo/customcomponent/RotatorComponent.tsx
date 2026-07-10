@@ -1,5 +1,12 @@
 import { useFrame } from "@react-three/fiber";
-import { Component, FieldRenderer, FieldDefinition, useNodeObject } from "react-three-game/editor";
+import {
+    Component,
+    FieldRenderer,
+    FieldDefinition,
+    useNodeObject,
+    type ComponentData,
+    type ComponentViewProps,
+} from "react-three-game/editor";
 
 type RotationAxis = 'x' | 'y' | 'z';
 type RotatorProperties = {
@@ -21,7 +28,13 @@ const rotatorFields: FieldDefinition[] = [
     },
 ];
 
-function RotatorComponentEditor({ component, onUpdate }: { component: any; onUpdate: (newComp: any) => void }) {
+function RotatorComponentEditor({
+    component,
+    onUpdate,
+}: {
+    component: ComponentData;
+    onUpdate: (properties: Record<string, unknown>) => void;
+}) {
     return (
         <FieldRenderer
             fields={rotatorFields}
@@ -31,7 +44,7 @@ function RotatorComponentEditor({ component, onUpdate }: { component: any; onUpd
     );
 }
 
-function RotatorView({ properties, children }: { properties: RotatorProperties; children?: React.ReactNode }) {
+function RotatorView({ properties, children }: ComponentViewProps<RotatorProperties>) {
     const objectRef = useNodeObject();
 
     useFrame((_, delta) => {

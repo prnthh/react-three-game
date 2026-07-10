@@ -20,6 +20,12 @@ import { AssetRuntimeProvider, NodeScope, useAllModels, useAssetRuntime } from "
 import { gameEvents } from "./GameEvents";
 import { useScene, type Scene } from "./SceneContext";
 import { SceneProvider } from "./SceneProvider";
+import {
+    createNodeInteractionHandlers,
+    type NodeInteractionEvent,
+    type NodeInteractionEventType,
+    type NodeInteractionHandlers,
+} from "./usePointerEvents";
 
 const IDENTITY = new Matrix4();
 
@@ -43,7 +49,7 @@ const EMPTY_NODE_COMPONENTS: AnalyzedNodeComponents = {
     materials: [],
     models: [],
     sprite: undefined,
-    clickEventName: null,
+    clickEvent: { enabled: false, eventName: null },
     composition: [],
 };
 
@@ -73,7 +79,7 @@ export interface PrefabRootProps {
     store?: PrefabStoreApi;
     selectedId?: string | null;
     onSelect?: (id: string | null) => void;
-    onClick?: (event: ThreeEvent<PointerEvent>, node: GameObjectType) => void;
+    onPointerEvent?: (eventType: NodeInteractionEventType, event: NodeInteractionEvent, node: GameObjectType) => void;
     onEditNodeClick?: (event: ThreeEvent<PointerEvent>, node: GameObjectType) => void;
     basePath?: string;
     children?: React.ReactNode;
@@ -90,8 +96,13 @@ type AnalyzedNodeComponents = {
     materials: Array<{ key: string; component: ComponentData }>;
     models: Array<{ key: string; component: ComponentData }>;
     sprite: ComponentData | undefined;
-    clickEventName: string | null;
+    clickEvent: ClickEventConfig;
     composition: CompositionComponent[];
+};
+
+type ClickEventConfig = {
+    enabled: boolean;
+    eventName: string | null;
 };
 
 export const PrefabRoot = forwardRef<Scene, PrefabRootProps>((props, ref) => {
@@ -119,7 +130,7 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>((props, ref) => {
     );
 });
 
-const PrefabRootBody = forwardRef<Scene, PrefabRootProps>(({ editMode, selectedId, onSelect, onClick, onEditNodeClick, basePath = "", children }, ref) => {
+const PrefabRootBody = forwardRef<Scene, PrefabRootProps>(({ editMode, selectedId, onSelect, onPointerEvent, onEditNodeClick, basePath = "", children }, ref) => {
     const scene = useScene();
     const runtime = useAssetRuntime();
     const models = useAllModels();
@@ -171,13 +182,18 @@ const PrefabRootBody = forwardRef<Scene, PrefabRootProps>(({ editMode, selectedI
         });
     }, [assetRefCounts, basePath, runtime]);
 
-    const handleNodeClick = useCallback((event: ThreeEvent<PointerEvent>, nodeId: string, fallbackObject: Object3D | null) => {
+    const handleNodePointerEvent = useCallback((
+        eventType: NodeInteractionEventType,
+        event: NodeInteractionEvent,
+        nodeId: string,
+        fallbackObject: Object3D | null,
+    ) => {
         const node = storeApi.getState().nodesById[nodeId];
         if (!node) return;
-        const { clickEventName } = analyzeNodeComponents(node);
-        emitNodePointerEvent(clickEventName, event, nodeId, node, fallbackObject);
-        onClick?.(event, node);
-    }, [onClick, storeApi]);
+        const { clickEvent } = analyzeNodeComponents(node);
+        emitNodePointerEvent(eventType, clickEvent.eventName, event, nodeId, node, fallbackObject);
+        onPointerEvent?.(eventType, event, node);
+    }, [onPointerEvent, storeApi]);
 
     return (
         <GameInstanceProvider
@@ -185,13 +201,13 @@ const PrefabRootBody = forwardRef<Scene, PrefabRootProps>(({ editMode, selectedI
             selectedId={selectedId}
             editMode={editMode}
             onSelect={editMode ? onSelect : undefined}
-            onClick={editMode ? undefined : handleNodeClick}
+            onPointerEvent={editMode ? undefined : handleNodePointerEvent}
             registerRef={runtime.registerObject}
         >
             <StoreRootNode
                 selectedId={selectedId}
                 onSelect={editMode ? onSelect : undefined}
-                onClick={editMode ? undefined : handleNodeClick}
+                onPointerEvent={editMode ? undefined : handleNodePointerEvent}
                 onEditNodeClick={editMode ? onEditNodeClick : undefined}
                 registerRef={runtime.registerObject}
                 loadedModels={models}
@@ -209,11 +225,20 @@ function StoreRootNode(props: Omit<RendererProps, "nodeId">) {
     return <GameObjectRenderer {...props} nodeId={rootId} />;
 }
 
-function getClickEventName(component: ComponentData | undefined) {
-    if (!component?.properties?.emitClickEvent) return null;
+function getClickEventConfig(component: ComponentData | undefined): ClickEventConfig {
+    if (!component?.properties?.emitClickEvent) {
+        return { enabled: false, eventName: null };
+    }
 
     const eventName = component.properties.clickEventName;
-    return typeof eventName === 'string' && eventName.trim() ? eventName.trim() : null;
+    return {
+        enabled: true,
+        eventName: typeof eventName === 'string' && eventName.trim() ? eventName.trim() : null,
+    };
+}
+
+function firstEnabledClickEvent(...configs: ClickEventConfig[]): ClickEventConfig {
+    return configs.find(config => config.enabled) ?? { enabled: false, eventName: null };
 }
 
 function analyzeNodeComponents(node: GameObjectType): AnalyzedNodeComponents {
@@ -264,18 +289,25 @@ function analyzeNodeComponents(node: GameObjectType): AnalyzedNodeComponents {
         materials,
         models,
         sprite,
-        clickEventName: getClickEventName(bufferGeometry) ?? getClickEventName(geometry) ?? models.map(({ component }) => getClickEventName(component)).find(Boolean) ?? getClickEventName(sprite),
+        clickEvent: firstEnabledClickEvent(
+            getClickEventConfig(bufferGeometry),
+            getClickEventConfig(geometry),
+            ...models.map(({ component }) => getClickEventConfig(component)),
+            getClickEventConfig(sprite),
+        ),
         composition,
     };
 }
 
 function emitNodePointerEvent(
+    eventType: NodeInteractionEventType,
     eventName: string | null,
-    event: ThreeEvent<PointerEvent>,
+    event: NodeInteractionEvent,
     nodeId: string,
     node: GameObjectType,
     fallbackObject: Object3D | null,
 ) {
+    const nativeEvent = event.nativeEvent as MouseEvent | PointerEvent | WheelEvent;
     const payload = {
         sourceEntityId: nodeId,
         sourceNodeId: nodeId,
@@ -284,16 +316,16 @@ function emitNodePointerEvent(
         object: event.object ?? fallbackObject,
         point: [event.point.x, event.point.y, event.point.z] as [number, number, number],
         button: event.button,
-        altKey: event.nativeEvent.altKey,
-        ctrlKey: event.nativeEvent.ctrlKey,
-        metaKey: event.nativeEvent.metaKey,
-        shiftKey: event.nativeEvent.shiftKey,
+        altKey: nativeEvent.altKey,
+        ctrlKey: nativeEvent.ctrlKey,
+        metaKey: nativeEvent.metaKey,
+        shiftKey: nativeEvent.shiftKey,
         r3fEvent: event,
     };
 
-    gameEvents.emit('click', payload);
+    gameEvents.emit(eventType, payload);
 
-    const trimmedEventName = eventName?.trim();
+    const trimmedEventName = eventType === "click" ? eventName?.trim() : "";
     if (!trimmedEventName) return;
 
     gameEvents.emit(trimmedEventName, payload);
@@ -324,7 +356,7 @@ export function GameObjectRenderer(props: RendererProps) {
 }
 
 
-function InstancedNode({ nodeId, parentMatrix = IDENTITY, editMode, registerRef, onSelect, onEditNodeClick, onClick, isVisible = true }: RendererProps) {
+function InstancedNode({ nodeId, parentMatrix = IDENTITY, editMode, registerRef, onSelect, onEditNodeClick, isVisible = true }: RendererProps) {
     const gameObject = usePrefabNode(nodeId);
     const analyzedComponents = useMemo(
         () => gameObject ? analyzeNodeComponents(gameObject) : EMPTY_NODE_COMPONENTS,
@@ -375,7 +407,7 @@ function InstancedNode({ nodeId, parentMatrix = IDENTITY, editMode, registerRef,
             scale={instance.scale}
             visible={nodeVisible}
             locked={isLocked}
-            onClick={onClick}
+            clickEnabled={analyzedComponents.clickEvent.enabled}
         />
     ));
 
@@ -403,7 +435,7 @@ function StandardNode({
     nodeId,
     selectedId,
     onSelect,
-    onClick,
+    onPointerEvent,
     onEditNodeClick,
     registerRef,
     loadedModels,
@@ -432,13 +464,11 @@ function StandardNode({
         onSelect?.(nodeId);
         onEditNodeClick?.(event, gameObject);
     });
-    const primaryClickHandlers = !editMode && onClick
-        ? {
-            onClick: (event: ThreeEvent<PointerEvent>) => {
-                event.stopPropagation();
-                onClick(event, nodeId, groupRef.current);
-            },
-        }
+    const primaryInteractionHandlers = !editMode && analyzedComponents.clickEvent.enabled && onPointerEvent
+        ? createNodeInteractionHandlers((eventType, event) => {
+            event.stopPropagation();
+            onPointerEvent(eventType, event, nodeId, groupRef.current);
+        })
         : undefined;
 
     const world = parentMatrix.clone().multiply(compose(gameObject));
@@ -460,14 +490,14 @@ function StandardNode({
         ...transformProps,
     };
     const childNodes = <ChildNodes childIds={childIds} parentMatrix={world}
-        selectedId={selectedId} onSelect={onSelect} onClick={onClick} onEditNodeClick={onEditNodeClick}
+        selectedId={selectedId} onSelect={onSelect} onPointerEvent={onPointerEvent} onEditNodeClick={onEditNodeClick}
         registerRef={registerRef}
         loadedModels={loadedModels} editMode={editMode}
         isVisible={nodeVisible}
         basePath={basePath}
     />;
 
-    const nodeInteractionHandlers = editMode ? editClickHandlers : primaryClickHandlers;
+    const nodeInteractionHandlers = editMode ? editClickHandlers : primaryInteractionHandlers;
     const componentRuntimeProps: ComponentRuntimeProps = {
         editMode,
         nodeInteractionHandlers,
@@ -477,7 +507,7 @@ function StandardNode({
     const inner = renderNodeContent(
         analyzedComponents,
         loadedModels,
-        primaryClickHandlers,
+        primaryInteractionHandlers,
         childNodes,
         basePath,
         componentRuntimeProps,
@@ -510,7 +540,12 @@ interface RendererProps {
     nodeId: string;
     selectedId?: string | null;
     onSelect?: (id: string) => void;
-    onClick?: (event: ThreeEvent<PointerEvent>, nodeId: string, object: Object3D | null) => void;
+    onPointerEvent?: (
+        eventType: NodeInteractionEventType,
+        event: NodeInteractionEvent,
+        nodeId: string,
+        object: Object3D | null,
+    ) => void;
     onEditNodeClick?: (event: ThreeEvent<PointerEvent>, node: GameObjectType) => void;
     registerRef: (id: string, obj: Object3D | null) => void;
     loadedModels: LoadedModels;
@@ -520,7 +555,7 @@ interface RendererProps {
     basePath?: string;
 }
 
-type PrimaryClickHandlers = { onClick?: (event: ThreeEvent<PointerEvent>) => void };
+type PrimaryInteractionHandlers = NodeInteractionHandlers;
 type ComponentRuntimeProps = Pick<ComponentViewProps, "editMode" | "nodeInteractionHandlers" | "position" | "rotation" | "scale" | "worldPosition">;
 
 function ChildNodes({ childIds, parentMatrix, ...props }: { childIds: string[]; parentMatrix: Matrix4 } & Omit<RendererProps, 'nodeId' | 'parentMatrix'>) {
@@ -624,7 +659,7 @@ function getNodeTransformProps(node?: GameObjectType | null) {
 function renderNodeContent(
     analyzedComponents: AnalyzedNodeComponents,
     loadedModels: LoadedModels,
-    primaryClickHandlers?: PrimaryClickHandlers,
+    primaryInteractionHandlers?: PrimaryInteractionHandlers,
     childNodes?: React.ReactNode,
     basePath = "",
     componentRuntimeProps?: ComponentRuntimeProps,
@@ -684,7 +719,7 @@ function renderNodeContent(
             primaryContent = (
                 <sprite
                     center={sprite?.properties?.center ?? [0.5, 0.5]}
-                    {...primaryClickHandlers}
+                    {...primaryInteractionHandlers}
                 >
                     {materialContent}
                     {childNodes}
@@ -706,7 +741,7 @@ function renderNodeContent(
                     visible={visible}
                     castShadow={visible && geometryProperties.castShadow !== false}
                     receiveShadow={visible && geometryProperties.receiveShadow !== false}
-                    {...primaryClickHandlers}
+                    {...primaryInteractionHandlers}
                 >
                     <GeometryView properties={geometry.properties} />
                     {materialContent}
@@ -715,7 +750,7 @@ function renderNodeContent(
             break;
         }
         case 'model': {
-            primaryContent = primaryClickHandlers ? <group {...primaryClickHandlers}>{modelContent}</group> : modelContent;
+            primaryContent = primaryInteractionHandlers ? <group {...primaryInteractionHandlers}>{modelContent}</group> : modelContent;
             break;
         }
     }

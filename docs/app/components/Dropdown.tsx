@@ -13,6 +13,7 @@ export default function Dropdown() {
 
     const options: DemoOption[] = [
         { label: "Viewer Mode", href: "/viewer" },
+        { label: "Stage", href: "/demo/stage" },
         { label: "Custom Component", href: "/demo/customcomponent" },
         { label: "Killbox", href: "/demo/killbox" },
         { label: "Physics", href: "/demo/physics" },

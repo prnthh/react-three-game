@@ -1,6 +1,7 @@
 import { useFrame } from "@react-three/fiber";
 import type { ThreeEvent } from "@react-three/fiber";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Children, Fragment, cloneElement, isValidElement, useCallback, useEffect, useRef, useState } from "react";
+import type { ReactElement, ReactNode } from "react";
 import {
     FieldRenderer,
     gameEvents,
@@ -12,6 +13,7 @@ import {
     type ComponentViewProps,
     type FieldDefinition,
     type GameObject,
+    type NodeInteractionHandlers,
 } from "react-three-game/editor";
 import { Quaternion, Vector3, type Material, type Mesh, type Object3D } from "three";
 import { withBasePath } from "../../basePath";
@@ -210,9 +212,34 @@ function emitProjectileCount(properties: IndustrialMachineGunProperties, nodeId:
     });
 }
 
+function attachPointerHandlersToPrimaryChild(
+    children: ReactNode,
+    pointerHandlers: NodeInteractionHandlers | undefined,
+): ReactNode {
+    if (!pointerHandlers) return children;
+
+    let attached = false;
+    const attach = (node: ReactNode): ReactNode => Children.map(node, child => {
+        if (!isValidElement(child)) return child;
+
+        if (child.type === Fragment) {
+            const fragment = child as ReactElement<{ children?: ReactNode }>;
+            return cloneElement(fragment, undefined, attach(fragment.props.children));
+        }
+
+        if (attached) return child;
+        attached = true;
+
+        return cloneElement(child as ReactElement<NodeInteractionHandlers>, pointerHandlers);
+    });
+
+    return attach(children);
+}
+
 function IndustrialMachineGunView({
     properties,
     children,
+    nodeInteractionHandlers,
 }: ComponentViewProps<IndustrialMachineGunProperties>) {
     const scene = useScene();
     const { editMode, nodeId } = useNode();
@@ -452,26 +479,46 @@ function IndustrialMachineGunView({
         }
     });
 
+    const pointerHandlers = editMode ? nodeInteractionHandlers : nodeInteractionHandlers ? {
+        ...nodeInteractionHandlers,
+        onPointerDown: (event: ThreeEvent<PointerEvent>) => {
+            nodeInteractionHandlers?.onPointerDown?.(event);
+            event.stopPropagation();
+            getPointerCaptureTarget(event).setPointerCapture?.(event.pointerId);
+            startFiring({
+                x: event.nativeEvent.clientX,
+                y: event.nativeEvent.clientY,
+            });
+        },
+        onPointerMove: (event: ThreeEvent<PointerEvent>) => {
+            nodeInteractionHandlers?.onPointerMove?.(event);
+            event.stopPropagation();
+            updateAimFromPointer(event);
+        },
+        onPointerUp: (event: ThreeEvent<PointerEvent>) => {
+            nodeInteractionHandlers?.onPointerUp?.(event);
+            event.stopPropagation();
+            getPointerCaptureTarget(event).releasePointerCapture?.(event.pointerId);
+            stopFiring();
+        },
+        onPointerCancel: (event: ThreeEvent<PointerEvent>) => {
+            nodeInteractionHandlers?.onPointerCancel?.(event);
+            event.stopPropagation();
+            stopFiring();
+        },
+        onLostPointerCapture: (event: ThreeEvent<PointerEvent>) => {
+            nodeInteractionHandlers?.onLostPointerCapture?.(event);
+            event.stopPropagation();
+            stopFiring();
+        },
+    } : undefined;
+    const interactiveChildren = attachPointerHandlersToPrimaryChild(children, pointerHandlers);
+
     return (
         <group
-            onPointerDown={(event) => {
-                event.stopPropagation();
-                getPointerCaptureTarget(event).setPointerCapture?.(event.pointerId);
-                startFiring({
-                    x: event.nativeEvent.clientX,
-                    y: event.nativeEvent.clientY,
-                });
-            }}
-            onPointerMove={updateAimFromPointer}
-            onPointerUp={(event) => {
-                event.stopPropagation();
-                getPointerCaptureTarget(event).releasePointerCapture?.(event.pointerId);
-                stopFiring();
-            }}
-            onPointerCancel={stopFiring}
             userData={{ machineGunActive: isFiring }}
         >
-            {children}
+            {interactiveChildren}
         </group>
     );
 }

@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useThree } from '@react-three/fiber';
 import { SoundPicker } from '../../assetviewer/page';
 import { useAssetRevision, useAssetRuntime, useNode } from '../assetRuntime';
-import { gameEvents, type ClickEventPayload, type ContactEventPayload } from '../GameEvents';
+import { gameEvents, type ContactEventPayload, type NodePointerEventPayload } from '../GameEvents';
 import { Component } from './ComponentRegistry';
 import { BooleanField, FieldGroup, FieldRenderer, ListEditor, NumberField, SelectField, StringField } from './Input';
 import { colors, ui } from '../styles';
@@ -108,7 +108,7 @@ function payloadMatchesNode(nodeId: string | undefined, payload: unknown) {
         return true;
     }
 
-    const eventPayload = payload as ClickEventPayload & ContactEventPayload;
+    const eventPayload = payload as NodePointerEventPayload & ContactEventPayload;
     const relatedNodeIds = [
         eventPayload.nodeId,
         eventPayload.sourceEntityId,

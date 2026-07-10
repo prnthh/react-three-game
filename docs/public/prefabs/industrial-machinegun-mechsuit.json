@@ -791,7 +791,9 @@
                 32
               ],
               "castShadow": true,
-              "receiveShadow": true
+              "receiveShadow": true,
+              "emitClickEvent": true,
+              "clickEventName": "machinegun:barrel-click"
             }
           },
           "material": {

@@ -1,7 +1,7 @@
 "use client";
 
-import { PerspectiveCamera, PointerLockControls, useGLTF } from "@react-three/drei";
-import { useFrame, useThree } from "@react-three/fiber";
+import { PerspectiveCamera, PointerLockControls } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
 import { CastRayStatus, capsule, castRay, createClosestCastRayCollector, createDefaultCastRaySettings, filter, kcc, rigidBody, MotionQuality, MotionType, type Filter, type RigidBody, type World } from "crashcat";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from "react";
 import { gameEvents, PrefabEditorMode, soundManager, useScene } from "react-three-game/editor";
@@ -24,8 +24,6 @@ const MAX_PLAYER_CATCH_UP_DELTA = 1 / 10;
 const SUPPORT_RAY_EXTRA_DISTANCE = 0.2;
 const SUPPORT_RAY_DIRECTION: [number, number, number] = [0, -1, 0];
 const PLAYER_ID = "player";
-const HAND_MODEL_URL = "/models/environment/picocad/hand1.glb";
-
 const forwardVector = new Vector3();
 const rightVector = new Vector3();
 const wishVector = new Vector3();
@@ -490,9 +488,6 @@ const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProp
 export default FirstPersonPlayer;
 
 const GrabArms = () => {
-    // const { scene: handScene } = useGLTF(HAND_MODEL_URL);
-    // const handModel = useMemo(() => handScene.clone(), [handScene]);
-    const scene = useThree((state) => state.scene);
     const sceneApi = useScene();
     const mode = sceneApi.mode;
     const runtime = useCrashcat();
@@ -589,9 +584,13 @@ const GrabArms = () => {
     }, [restoreGrabbedMotionQuality, runtime]);
 
     const tryGrabTarget = useCallback((world: World, camera: Camera) => {
+        const prefabRoot = sceneApi.root;
+        if (!prefabRoot) return;
+
         raycaster.setFromCamera(centerScreen, camera);
 
-        const intersections = raycaster.intersectObjects(scene.children, true);
+        // The grab ray is camera-centered, but picking stays scoped to authored prefab content.
+        const intersections = raycaster.intersectObject(prefabRoot, true);
         for (const intersection of intersections) {
             const nodeId = getPrefabNodeId(intersection.object);
             if (!nodeId) {
@@ -616,7 +615,7 @@ const GrabArms = () => {
             rigidBody.setAngularVelocity(world, body, [0, 0, 0]);
             return;
         }
-    }, [runtime, scene]);
+    }, [runtime, sceneApi.root]);
 
     useFrame((state) => {
         if (mode !== PrefabEditorMode.Play) {
@@ -690,5 +689,3 @@ const GrabArms = () => {
 
     return null;
 }
-
-// useGLTF.preload(HAND_MODEL_URL);

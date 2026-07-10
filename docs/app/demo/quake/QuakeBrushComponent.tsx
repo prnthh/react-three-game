@@ -1,6 +1,6 @@
 "use client";
 
-import { Component, loadTexture } from "react-three-game/editor";
+import { Component, loadTexture, type ComponentViewProps } from "react-three-game/editor";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
     BufferAttribute,
@@ -82,7 +82,7 @@ function configureTexture(texture: Texture, face: BrushFace) {
     return nextTexture;
 }
 
-function QuakeBrushView({ properties, loadedTextures = {} }: { properties: QuakeBrushProps; loadedTextures?: Record<string, Texture> }) {
+function QuakeBrushView({ properties, children }: ComponentViewProps<QuakeBrushProps>) {
     const faces = properties.faces ?? [];
     const roughness = properties.roughness ?? 1;
     const [localTextures, setLocalTextures] = useState<Record<string, Texture>>({});
@@ -94,7 +94,7 @@ function QuakeBrushView({ properties, loadedTextures = {} }: { properties: Quake
 
     useEffect(() => {
         const texturePaths = Array.from(new Set(faces.map((face) => face.texture)));
-        const missingTexturePaths = texturePaths.filter((path) => !loadedTextures[path] && !localTextures[path]);
+        const missingTexturePaths = texturePaths.filter((path) => !localTextures[path]);
 
         if (missingTexturePaths.length === 0) {
             return;
@@ -137,18 +137,13 @@ function QuakeBrushView({ properties, loadedTextures = {} }: { properties: Quake
         return () => {
             cancelled = true;
         };
-    }, [faces, loadedTextures, localTextures]);
+    }, [faces, localTextures]);
 
     useEffect(() => {
         return () => {
             Object.values(localTexturesRef.current).forEach((texture) => texture.dispose());
         };
     }, []);
-
-    const availableTextures = useMemo(
-        () => ({ ...localTextures, ...loadedTextures }),
-        [loadedTextures, localTextures],
-    );
 
     const renderedFaces = useMemo(() => {
         const facesByMaterial = new Map<string, BrushFace[]>();
@@ -171,7 +166,7 @@ function QuakeBrushView({ properties, loadedTextures = {} }: { properties: Quake
         return Array.from(facesByMaterial.entries()).map(([materialKey, groupedFaces]) => {
             const sampleFace = groupedFaces[0];
             const geometry = buildMergedGeometry(groupedFaces);
-            const sourceTexture = availableTextures[sampleFace.texture];
+            const sourceTexture = localTextures[sampleFace.texture];
             const configuredTexture = sourceTexture
                 ? configureTexture(sourceTexture, sampleFace)
                 : null;
@@ -189,7 +184,7 @@ function QuakeBrushView({ properties, loadedTextures = {} }: { properties: Quake
                 material,
             };
         });
-    }, [availableTextures, faces, roughness]);
+    }, [faces, localTextures, roughness]);
 
     useEffect(() => {
         return () => {
@@ -206,6 +201,7 @@ function QuakeBrushView({ properties, loadedTextures = {} }: { properties: Quake
             {renderedFaces.map(({ key, geometry, material }) => (
                 <mesh key={key} geometry={geometry} material={material} castShadow receiveShadow />
             ))}
+            {children}
         </group>
     );
 }

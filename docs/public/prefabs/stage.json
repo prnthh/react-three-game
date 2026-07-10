@@ -1,0 +1,230 @@
+{
+  "id": "stage",
+  "name": "Stage Example",
+  "root": {
+    "id": "stage-root",
+    "name": "stage root",
+    "components": {
+      "transform": {
+        "type": "Transform",
+        "properties": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      }
+    },
+    "children": [
+      {
+        "id": "stage-camera",
+        "name": "stage camera",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                1.5,
+                3
+              ],
+              "rotation": [
+                -0.12000000000000026,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "camera": {
+            "type": "Camera",
+            "properties": {
+              "projection": "perspective",
+              "fov": 80,
+              "near": 0.1,
+              "far": 100,
+              "zoom": 1
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "stage-ambient-fill",
+        "name": "ambient fill",
+        "components": {
+          "ambientLight": {
+            "type": "AmbientLight",
+            "properties": {
+              "color": "#d7e8ff",
+              "intensity": 0.55
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "stage-key-light",
+        "name": "key light",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -3,
+                6,
+                4
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "directionalLight": {
+            "type": "DirectionalLight",
+            "properties": {
+              "color": "#fff4dc",
+              "intensity": 1.25,
+              "targetOffset": [
+                3,
+                -5,
+                -5
+              ],
+              "castShadow": true,
+              "shadowMapSize": 2048,
+              "shadowCameraTop": 6,
+              "shadowCameraBottom": -6,
+              "shadowCameraLeft": -6,
+              "shadowCameraRight": 6,
+              "shadowCameraNear": 0.5,
+              "shadowCameraFar": 40,
+              "shadowBias": 0.001,
+              "shadowNormalBias": 0.02
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "stage-floor",
+        "name": "floor",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                -0.05,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                9,
+                0.1,
+                9
+              ],
+              "castShadow": false,
+              "receiveShadow": true,
+              "emitClickEvent": true,
+              "clickEventName": "stage:floor-click"
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#3a3d42",
+              "roughness": 0.82,
+              "metalness": 0
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "stage-back-wall",
+        "name": "wall",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                1.95,
+                -3.1
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                9,
+                4,
+                0.18
+              ],
+              "castShadow": false,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#7f8794",
+              "roughness": 0.9,
+              "metalness": 0
+            }
+          }
+        },
+        "children": []
+      }
+    ]
+  }
+}

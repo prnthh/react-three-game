@@ -1,12 +1,12 @@
 import { createContext, useContext, useMemo, useRef, useState, useEffect } from "react";
 import type { ComponentType, ReactNode } from "react";
 import { Merged, useHelper } from '@react-three/drei';
-import type { ThreeEvent } from '@react-three/fiber';
 import { Mesh, Matrix4, BoxHelper } from "three";
 import type { Group, Object3D } from "three";
 import { useStore } from "zustand";
 import { createStore, type StoreApi } from "zustand/vanilla";
-import { usePointerEvents } from "./usePointerEvents";
+import { createNodeInteractionHandlers, usePointerEvents } from "./usePointerEvents";
+import type { NodeInteractionEvent, NodeInteractionEventType } from "./usePointerEvents";
 
 export type RepeatAxisConfig = {
     axis: 'x' | 'y' | 'z';
@@ -60,6 +60,7 @@ export type InstanceData = {
     sourceId: string;
     locked?: boolean;
     visible?: boolean;
+    clickEnabled?: boolean;
     position: [number, number, number];
     rotation: [number, number, number];
     scale: [number, number, number];
@@ -81,6 +82,7 @@ function instanceEquals(a: InstanceData, b: InstanceData): boolean {
         a.sourceId === b.sourceId &&
         a.locked === b.locked &&
         a.visible === b.visible &&
+        a.clickEnabled === b.clickEnabled &&
         a.meshPath === b.meshPath &&
         arrayEquals(a.position, b.position) &&
         arrayEquals(a.rotation, b.rotation) &&
@@ -160,7 +162,7 @@ export function GameInstanceProvider({
     children,
     models,
     onSelect,
-    onClick,
+    onPointerEvent,
     registerRef,
     selectedId,
     editMode
@@ -168,7 +170,12 @@ export function GameInstanceProvider({
     children: ReactNode,
     models: { [filename: string]: Object3D },
     onSelect?: (id: string | null) => void,
-    onClick?: (event: ThreeEvent<PointerEvent>, nodeId: string, object: Object3D | null) => void,
+    onPointerEvent?: (
+        eventType: NodeInteractionEventType,
+        event: NodeInteractionEvent,
+        nodeId: string,
+        object: Object3D | null,
+    ) => void,
     registerRef?: (id: string, obj: Object3D | null) => void,
     selectedId?: string | null,
     editMode?: boolean
@@ -268,7 +275,7 @@ export function GameInstanceProvider({
                                 partCount={partCount}
                                 instancesMap={instancesMap}
                                 onSelect={onSelect}
-                                onClick={onClick}
+                                onPointerEvent={onPointerEvent}
                                 registerRef={registerRef}
                                 selectedId={selectedId}
                                 editMode={editMode}
@@ -286,7 +293,7 @@ function InstancedGroup({
     partCount,
     instancesMap,
     onSelect,
-    onClick,
+    onPointerEvent,
     registerRef,
     selectedId,
     editMode
@@ -296,7 +303,12 @@ function InstancedGroup({
     partCount: number;
     instancesMap: Record<string, ComponentType<object>>;
     onSelect?: (id: string | null) => void;
-    onClick?: (event: ThreeEvent<PointerEvent>, nodeId: string, object: Object3D | null) => void;
+    onPointerEvent?: (
+        eventType: NodeInteractionEventType,
+        event: NodeInteractionEvent,
+        nodeId: string,
+        object: Object3D | null,
+    ) => void;
     registerRef?: (id: string, obj: Object3D | null) => void;
     selectedId?: string | null;
     editMode?: boolean;
@@ -322,7 +334,7 @@ function InstancedGroup({
                     instance={inst}
                     instanceEntries={instanceEntries}
                     onSelect={onSelect}
-                    onClick={onClick}
+                    onPointerEvent={onPointerEvent}
                     registerRef={registerRef}
                     selectedId={selectedId}
                     editMode={editMode}
@@ -337,7 +349,7 @@ function InstanceGroupItem({
     instance,
     instanceEntries,
     onSelect,
-    onClick,
+    onPointerEvent,
     registerRef,
     selectedId,
     editMode
@@ -345,7 +357,12 @@ function InstanceGroupItem({
     instance: InstanceData;
     instanceEntries: Array<{ partKey: string; Component: ComponentType<object> }>;
     onSelect?: (id: string | null) => void;
-    onClick?: (event: ThreeEvent<PointerEvent>, nodeId: string, object: Object3D | null) => void;
+    onPointerEvent?: (
+        eventType: NodeInteractionEventType,
+        event: NodeInteractionEvent,
+        nodeId: string,
+        object: Object3D | null,
+    ) => void;
     registerRef?: (id: string, obj: Object3D | null) => void;
     selectedId?: string | null;
     editMode?: boolean;
@@ -353,21 +370,23 @@ function InstanceGroupItem({
     const groupRef = useRef<Group | null>(null);
     const isLocked = Boolean(instance.locked);
     const isSelected = selectedId === instance.id || selectedId === instance.sourceId;
-    const canSelect = editMode && !isLocked;
-    const canClick = !editMode && Boolean(onClick);
+    const canSelect = Boolean(editMode) && !isLocked;
+    const canClick = !editMode && Boolean(instance.clickEnabled) && Boolean(onPointerEvent);
 
-    const pointerHandlers = usePointerEvents({
-        enabled: canSelect || canClick,
+    const editPointerHandlers = usePointerEvents({
+        enabled: canSelect,
         node: instance,
         onClick: (event) => {
-            if (editMode) {
-                onSelect?.(instance.sourceId);
-                return;
-            }
-
-            onClick?.(event, instance.sourceId, groupRef.current);
+            onSelect?.(instance.sourceId);
         },
     });
+    const runtimePointerHandlers = canClick && onPointerEvent
+        ? createNodeInteractionHandlers((eventType, event) => {
+            event.stopPropagation();
+            onPointerEvent(eventType, event, instance.sourceId, groupRef.current);
+        })
+        : {};
+    const pointerHandlers = editMode ? editPointerHandlers : runtimePointerHandlers;
 
     // Use BoxHelper when object is selected in edit mode
     const helperTarget = editMode && isSelected && groupRef.current
@@ -410,7 +429,7 @@ export function GameInstance({
     rotation,
     scale,
     visible = true,
-    onClick: _onClick,
+    clickEnabled = false,
 }: {
     id: string;
     sourceId?: string;
@@ -420,7 +439,7 @@ export function GameInstance({
     rotation: [number, number, number];
     scale: [number, number, number];
     visible?: boolean;
-    onClick?: (event: ThreeEvent<PointerEvent>, nodeId: string, object: Object3D | null) => void;
+    clickEnabled?: boolean;
 }) {
     const ctx = useContext(GameInstanceContext);
 
@@ -429,11 +448,12 @@ export function GameInstance({
         sourceId: sourceId ?? id,
         locked,
         visible,
+        clickEnabled,
         meshPath: modelUrl,
         position,
         rotation,
         scale,
-    }), [id, sourceId, locked, visible, modelUrl, position, rotation, scale]);
+    }), [id, sourceId, locked, visible, clickEnabled, modelUrl, position, rotation, scale]);
 
     useEffect(() => {
         if (!ctx) return;

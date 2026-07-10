@@ -31,20 +31,20 @@ export {
 
 export {
 	gameEvents,
-	useClickEvent,
 	useGameEvent,
 } from "./tools/prefabeditor/GameEvents";
 export type {
-	ClickEventPayload,
 	ContactEventPayload,
 	GameEventHandler,
 	GameEventMap,
+	NodePointerEventPayload,
 } from "./tools/prefabeditor/GameEvents";
 
 export { registerComponent } from "./tools/prefabeditor/components/ComponentRegistry";
 export type {
 	Component,
 	ComponentViewProps,
+	NodeInteractionHandlers,
 } from "./tools/prefabeditor/components/ComponentRegistry";
 
 export {

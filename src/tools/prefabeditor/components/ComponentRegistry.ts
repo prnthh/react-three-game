@@ -1,6 +1,6 @@
 import type { FC } from "react";
-import type { ThreeEvent } from "@react-three/fiber";
 import type { ComponentData, GameObject } from "../types";
+import type { NodeInteractionHandlers } from "../usePointerEvents";
 
 export type AssetRef = { type: "model" | "texture" | "sound"; path: string };
 
@@ -39,12 +39,7 @@ export interface ComponentViewProps<P = Record<string, unknown>> {
 	basePath?: string;
 }
 
-export type NodeInteractionHandlers = {
-	onClick?: (event: ThreeEvent<PointerEvent>) => void;
-	onPointerDown?: (event: ThreeEvent<PointerEvent>) => void;
-	onPointerMove?: (event: ThreeEvent<PointerEvent>) => void;
-	onPointerUp?: (event: ThreeEvent<PointerEvent>) => void;
-};
+export type { NodeInteractionHandlers } from "../usePointerEvents";
 
 export interface Component {
 	name: string;

@@ -1,5 +1,6 @@
 [
 	"/prefabs/game-level.json",
+	"/prefabs/stage.json",
 	"/prefabs/machinegun-level-outdoor.json",
 	"/prefabs/machinegun-level-ridge.json",
 	"/prefabs/machinegun-level-causeway.json",

@@ -1,5 +1,18 @@
 import { useEffect, useMemo } from "react";
-import { Component, FieldDefinition, FieldRenderer, MaterialOverridesProvider, float, positionLocal, sin, time, uniform, vec3 } from "react-three-game/editor";
+import {
+    Component,
+    FieldDefinition,
+    FieldRenderer,
+    MaterialOverridesProvider,
+    float,
+    positionLocal,
+    sin,
+    time,
+    uniform,
+    vec3,
+    type ComponentData,
+    type ComponentViewProps,
+} from "react-three-game/editor";
 
 const DEFAULT_AMOUNT = 0.3;
 const DEFAULT_SPEED = 3.5;
@@ -20,14 +33,20 @@ const squishFields: FieldDefinition[] = [
     { name: "lift", type: "number", label: "Lift", min: 0, max: 1, step: 0.01 },
 ];
 
-function SquishComponentEditor({ component, onUpdate }: { component: any; onUpdate: (newComp: any) => void }) {
+function SquishComponentEditor({
+    component,
+    onUpdate,
+}: {
+    component: ComponentData;
+    onUpdate: (properties: Record<string, unknown>) => void;
+}) {
     return <FieldRenderer fields={squishFields} values={component.properties} onChange={onUpdate} />;
 }
 
 const SquishComponent: Component = {
     name: "Squish",
     Editor: SquishComponentEditor,
-    View: function SquishView({ properties, children }: { properties: SquishProperties; children?: React.ReactNode }) {
+    View: function SquishView({ properties, children }: ComponentViewProps<SquishProperties>) {
         const amountNode = useMemo(() => uniform(DEFAULT_AMOUNT), []);
         const speedNode = useMemo(() => uniform(DEFAULT_SPEED), []);
         const bulgeNode = useMemo(() => uniform(DEFAULT_BULGE), []);

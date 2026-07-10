@@ -58,6 +58,7 @@ export interface PrefabEditorProps {
     initialPrefab?: Prefab;
     mode?: PrefabEditorMode;
     onChange?: (prefab: Prefab) => void;
+    onPointerEvent?: React.ComponentProps<typeof PrefabRoot>["onPointerEvent"];
     showUI?: boolean;
     enableWindowDrop?: boolean;
     canvasProps?: Omit<React.ComponentProps<typeof GameCanvas>, 'children'>;
@@ -74,7 +75,7 @@ const DEFAULT_PREFAB: Prefab = {
     root: createNode('Root', {}, { id: 'root' })
 };
 
-const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath = "", initialPrefab, mode: initialMode = PrefabEditorMode.Edit, onChange, showUI = true, enableWindowDrop = true, canvasProps, uiPlugins, children }, ref) => {
+const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath = "", initialPrefab, mode: initialMode = PrefabEditorMode.Edit, onChange, onPointerEvent, showUI = true, enableWindowDrop = true, canvasProps, uiPlugins, children }, ref) => {
     const [mode, setMode] = useState<PrefabEditorMode>(initialMode);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [transformMode, setTransformMode] = useState<"translate" | "rotate" | "scale">("translate");
@@ -471,6 +472,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
                 editMode={isEditMode}
                 selectedId={selectedId}
                 onSelect={setSelection}
+                onPointerEvent={onPointerEvent}
                 basePath={basePath}
             >
                 {children}

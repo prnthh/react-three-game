@@ -13,7 +13,7 @@ export type ContactEventPayload = {
     event?: unknown;
 };
 
-export type ClickEventPayload = {
+export type NodePointerEventPayload = {
     sourceEntityId?: string;
     sourceNodeId?: string;
     instanceEntityId?: string;
@@ -34,7 +34,19 @@ export interface GameEventMap {
     'sensor:exit': ContactEventPayload;
     'collision:enter': ContactEventPayload;
     'collision:exit': ContactEventPayload;
-    click: ClickEventPayload;
+    click: NodePointerEventPayload;
+    contextmenu: NodePointerEventPayload;
+    doubleclick: NodePointerEventPayload;
+    wheel: NodePointerEventPayload;
+    pointerdown: NodePointerEventPayload;
+    pointerup: NodePointerEventPayload;
+    pointerover: NodePointerEventPayload;
+    pointerout: NodePointerEventPayload;
+    pointerenter: NodePointerEventPayload;
+    pointerleave: NodePointerEventPayload;
+    pointermove: NodePointerEventPayload;
+    pointercancel: NodePointerEventPayload;
+    lostpointercapture: NodePointerEventPayload;
     [eventType: string]: unknown;
 }
 
@@ -102,12 +114,4 @@ export function useGameEvent<TType extends string>(
     useEffect(() => {
         return gameEvents.on(type, stableHandler);
     }, [type, stableHandler]);
-}
-
-export function useClickEvent<TType extends string>(
-    type: TType,
-    handler: GameEventHandler<TType extends keyof GameEventMap ? GameEventMap[TType] : unknown>,
-    deps: React.DependencyList = [],
-) {
-    useGameEvent(type, handler, deps);
 }

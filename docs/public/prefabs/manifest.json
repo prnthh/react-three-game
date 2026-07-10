@@ -1,5 +1,9 @@
 [
 	"/prefabs/game-level.json",
+	"/prefabs/machinegun-level-outdoor.json",
+	"/prefabs/machinegun-level-ridge.json",
+	"/prefabs/machinegun-level-causeway.json",
+	"/prefabs/industrial-machinegun-mechsuit.json",
 	"/prefabs/killbox.json",
 	"/prefabs/prefab.json",
 	"/prefabs/brutalist-cube-building.json",

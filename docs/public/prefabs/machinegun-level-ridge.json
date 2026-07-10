@@ -1,0 +1,7171 @@
+{
+  "id": "machinegun-level-ridge",
+  "name": "Ridge Road Intercept",
+  "root": {
+    "id": "machinegun-level-ridge-root",
+    "name": "Ridge Road Intercept root",
+    "components": {
+      "transform": {
+        "type": "Transform",
+        "properties": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "data": {
+        "type": "Data",
+        "properties": {
+          "data": {
+            "kind": "machinegun-level",
+            "label": "Ridge Road Intercept",
+            "roundNumber": 2,
+            "totalRounds": 3,
+            "hitGoal": 14,
+            "atmosphere": {
+              "background": "#c56b42",
+              "fogColor": "#d55a2f",
+              "fogNear": 36,
+              "fogFar": 122
+            }
+          }
+        }
+      }
+    },
+    "children": [
+      {
+        "id": "environment",
+        "name": "environment",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                0,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "environment": {
+            "type": "Environment",
+            "properties": {
+              "intensity": 0.75
+            }
+          }
+        },
+        "children": [
+          {
+            "id": "sky-sphere",
+            "name": "sky sphere",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "sphere",
+                  "args": [
+                    170,
+                    32,
+                    16
+                  ],
+                  "castShadow": false,
+                  "receiveShadow": false
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "basic",
+                  "color": "#ffd1a3",
+                  "side": "BackSide",
+                  "toneMapped": false,
+                  "texture": "/textures/skybox/skybox2.jpg",
+                  "repeat": false
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "sun",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                56,
+                45,
+                18
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "directionalLight": {
+            "type": "DirectionalLight",
+            "properties": {
+              "color": "#f9d7a5",
+              "intensity": 1.18,
+              "targetOffset": [
+                -18,
+                -38,
+                -30
+              ],
+              "castShadow": true,
+              "shadowMapSize": 1024,
+              "shadowCameraTop": 38,
+              "shadowCameraBottom": -38,
+              "shadowCameraLeft": -38,
+              "shadowCameraRight": 38,
+              "shadowBias": -0.0005
+            }
+          }
+        }
+      },
+      {
+        "id": "ambient-fill",
+        "components": {
+          "ambientLight": {
+            "type": "AmbientLight",
+            "properties": {
+              "color": "#d7e7ff",
+              "intensity": 0.64
+            }
+          }
+        }
+      },
+      {
+        "id": "ridge-floor",
+        "name": "ridge scrub floor",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                -0.12,
+                -40
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                168,
+                0.24,
+                150
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#6f6959",
+              "roughness": 0.9,
+              "metalness": 0,
+              "texture": "/textures/floor/terrain/rock-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                34,
+                34
+              ],
+              "generateMipmaps": true,
+              "minFilter": "LinearMipmapLinearFilter",
+              "magFilter": "LinearFilter"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "cuboid",
+              "sensor": false,
+              "restitution": 0.32,
+              "friction": 0.48
+            }
+          }
+        }
+      },
+      {
+        "id": "range-road",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                -0.015,
+                -41
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                8.6,
+                0.08,
+                106
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#4d463d",
+              "roughness": 0.86,
+              "metalness": 0,
+              "texture": "/textures/floor/terrain/dirt-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                5,
+                46
+              ],
+              "generateMipmaps": true,
+              "minFilter": "LinearMipmapLinearFilter",
+              "magFilter": "LinearFilter"
+            }
+          }
+        }
+      },
+      {
+        "id": "road-centerline-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                0.045,
+                -3.6
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.16,
+                0.035,
+                1.55
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "basic",
+              "color": "#cbd5a1",
+              "roughness": 0.78,
+              "metalness": 0
+            }
+          }
+        }
+      },
+      {
+        "id": "road-centerline-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                0.045,
+                -8
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.16,
+                0.035,
+                1.55
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "basic",
+              "color": "#cbd5a1",
+              "roughness": 0.78,
+              "metalness": 0
+            }
+          }
+        }
+      },
+      {
+        "id": "road-centerline-2",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                0.045,
+                -12.4
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.16,
+                0.035,
+                1.55
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "basic",
+              "color": "#cbd5a1",
+              "roughness": 0.78,
+              "metalness": 0
+            }
+          }
+        }
+      },
+      {
+        "id": "road-centerline-3",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                0.045,
+                -16.8
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.16,
+                0.035,
+                1.55
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "basic",
+              "color": "#cbd5a1",
+              "roughness": 0.78,
+              "metalness": 0
+            }
+          }
+        }
+      },
+      {
+        "id": "road-centerline-4",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                0.045,
+                -21.2
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.16,
+                0.035,
+                1.55
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "basic",
+              "color": "#cbd5a1",
+              "roughness": 0.78,
+              "metalness": 0
+            }
+          }
+        }
+      },
+      {
+        "id": "road-centerline-5",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                0.045,
+                -25.6
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.16,
+                0.035,
+                1.55
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "basic",
+              "color": "#cbd5a1",
+              "roughness": 0.78,
+              "metalness": 0
+            }
+          }
+        }
+      },
+      {
+        "id": "road-centerline-6",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                0.045,
+                -30
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.16,
+                0.035,
+                1.55
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "basic",
+              "color": "#cbd5a1",
+              "roughness": 0.78,
+              "metalness": 0
+            }
+          }
+        }
+      },
+      {
+        "id": "road-centerline-7",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                0.045,
+                -34.4
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.16,
+                0.035,
+                1.55
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "basic",
+              "color": "#cbd5a1",
+              "roughness": 0.78,
+              "metalness": 0
+            }
+          }
+        }
+      },
+      {
+        "id": "road-centerline-8",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                0.045,
+                -38.8
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.16,
+                0.035,
+                1.55
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "basic",
+              "color": "#cbd5a1",
+              "roughness": 0.78,
+              "metalness": 0
+            }
+          }
+        }
+      },
+      {
+        "id": "left-road-berm",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -4.95,
+                0.03,
+                -41
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.18,
+                0.12,
+                90
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "basic",
+              "color": "#a59b6c",
+              "roughness": 0.9,
+              "metalness": 0,
+              "texture": "/textures/floor/terrain/sand-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                1,
+                32
+              ],
+              "generateMipmaps": true,
+              "minFilter": "LinearMipmapLinearFilter",
+              "magFilter": "LinearFilter"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "cuboid",
+              "sensor": false,
+              "restitution": 0.5,
+              "friction": 0.3
+            }
+          }
+        }
+      },
+      {
+        "id": "right-road-berm",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                4.95,
+                0.03,
+                -41
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.18,
+                0.12,
+                90
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "basic",
+              "color": "#a59b6c",
+              "roughness": 0.9,
+              "metalness": 0,
+              "texture": "/textures/floor/terrain/sand-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                1,
+                32
+              ],
+              "generateMipmaps": true,
+              "minFilter": "LinearMipmapLinearFilter",
+              "magFilter": "LinearFilter"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "cuboid",
+              "sensor": false,
+              "restitution": 0.5,
+              "friction": 0.3
+            }
+          }
+        }
+      },
+      {
+        "id": "incoming-target-1",
+        "name": "Incoming Target 1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -3.7,
+                0.94,
+                -30
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1.28,
+                1.38,
+                1.22
+              ],
+              "castShadow": false,
+              "receiveShadow": false,
+              "visible": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#6f7f45",
+              "roughness": 0.7,
+              "metalness": 0.16,
+              "transparent": true,
+              "opacity": 0
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "kinematicPosition",
+              "colliders": "cuboid",
+              "sensor": true,
+              "sensorEnterEventName": "target:hit"
+            }
+          },
+          "advancingTarget": {
+            "type": "AdvancingTarget",
+            "properties": {
+              "speed": 2.72,
+              "resetZ": -58,
+              "breachZ": 4.4,
+              "idleColor": "#6f7f45",
+              "hitColor": "#f43f5e",
+              "hitEventName": "target:hit",
+              "breachEventName": "target:breach"
+            }
+          }
+        },
+        "children": [
+          {
+            "id": "incoming-target-1-left-tread",
+            "name": "left tank tread",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.46,
+                    -0.56,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.22,
+                    0.28,
+                    0.92
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#171b1f",
+                  "roughness": 0.86,
+                  "metalness": 0.04
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-1-right-tread",
+            "name": "right tank tread",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.46,
+                    -0.56,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.22,
+                    0.28,
+                    0.92
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#171b1f",
+                  "roughness": 0.86,
+                  "metalness": 0.04
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-1-left-tread-cap-front",
+            "name": "left front tread wheel",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.46,
+                    -0.55,
+                    0.48
+                  ],
+                  "rotation": [
+                    1.5708,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.15,
+                    0.15,
+                    0.08,
+                    14
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#2f3439",
+                  "roughness": 0.8,
+                  "metalness": 0.12
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-1-right-tread-cap-front",
+            "name": "right front tread wheel",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.46,
+                    -0.55,
+                    0.48
+                  ],
+                  "rotation": [
+                    1.5708,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.15,
+                    0.15,
+                    0.08,
+                    14
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#2f3439",
+                  "roughness": 0.8,
+                  "metalness": 0.12
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-1-left-tread-cap-rear",
+            "name": "left rear tread wheel",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.46,
+                    -0.55,
+                    -0.48
+                  ],
+                  "rotation": [
+                    1.5708,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.15,
+                    0.15,
+                    0.08,
+                    14
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#2f3439",
+                  "roughness": 0.8,
+                  "metalness": 0.12
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-1-right-tread-cap-rear",
+            "name": "right rear tread wheel",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.46,
+                    -0.55,
+                    -0.48
+                  ],
+                  "rotation": [
+                    1.5708,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.15,
+                    0.15,
+                    0.08,
+                    14
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#2f3439",
+                  "roughness": 0.8,
+                  "metalness": 0.12
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-1-lower-hull",
+            "name": "tank lower hull",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    -0.35,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    1.08,
+                    0.36,
+                    1.04
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#4c5c38",
+                  "roughness": 0.72,
+                  "metalness": 0.16
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-1-front-armor",
+            "name": "sloped front armor",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    -0.12,
+                    0.42
+                  ],
+                  "rotation": [
+                    -0.28,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.98,
+                    0.36,
+                    0.18
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#6f7f45",
+                  "roughness": 0.7,
+                  "metalness": 0.2
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-1-upper-hull",
+            "name": "tank upper hull",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.02,
+                    -0.06
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.9,
+                    0.32,
+                    0.66
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#6f7f45",
+                  "roughness": 0.68,
+                  "metalness": 0.2
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-1-turret",
+            "name": "tank turret",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.34,
+                    0.03
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.48,
+                    0.28,
+                    0.42
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#6f7f45",
+                  "roughness": 0.66,
+                  "metalness": 0.22
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-1-turret-dome",
+            "name": "tank turret dome",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.52,
+                    0.02
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1.05,
+                    0.42,
+                    0.82
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "sphere",
+                  "args": [
+                    0.29,
+                    12,
+                    6
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#6f7f45",
+                  "roughness": 0.66,
+                  "metalness": 0.2
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-1-main-gun",
+            "name": "tank cannon barrel",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.36,
+                    0.54
+                  ],
+                  "rotation": [
+                    1.5708,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.055,
+                    0.055,
+                    0.72,
+                    16
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#475569",
+                  "roughness": 0.58,
+                  "metalness": 0.34
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-1-muzzle",
+            "name": "tank cannon muzzle",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.36,
+                    0.92
+                  ],
+                  "rotation": [
+                    1.5708,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.085,
+                    0.085,
+                    0.12,
+                    16
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#232a31",
+                  "roughness": 0.6,
+                  "metalness": 0.4
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-1-left-headlamp",
+            "name": "left tank headlamp",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.24,
+                    -0.06,
+                    0.58
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.12,
+                    0.09,
+                    0.035
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "basic",
+                  "color": "#fef08a",
+                  "roughness": 0.2,
+                  "metalness": 0,
+                  "toneMapped": false
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-1-right-headlamp",
+            "name": "right tank headlamp",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.24,
+                    -0.06,
+                    0.58
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.12,
+                    0.09,
+                    0.035
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "basic",
+                  "color": "#fef08a",
+                  "roughness": 0.2,
+                  "metalness": 0,
+                  "toneMapped": false
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-1-weak-point",
+            "name": "front weak point",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    -0.28,
+                    0.61
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.28,
+                    0.2,
+                    0.04
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "basic",
+                  "color": "#ef4444",
+                  "roughness": 0.25,
+                  "metalness": 0,
+                  "toneMapped": false
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "incoming-target-2",
+        "name": "Incoming Target 2",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -2.1,
+                0.94,
+                -44
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1.28,
+                1.38,
+                1.22
+              ],
+              "castShadow": false,
+              "receiveShadow": false,
+              "visible": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#6f7f45",
+              "roughness": 0.7,
+              "metalness": 0.16,
+              "transparent": true,
+              "opacity": 0
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "kinematicPosition",
+              "colliders": "cuboid",
+              "sensor": true,
+              "sensorEnterEventName": "target:hit"
+            }
+          },
+          "advancingTarget": {
+            "type": "AdvancingTarget",
+            "properties": {
+              "speed": 2.95,
+              "resetZ": -58,
+              "breachZ": 4.4,
+              "idleColor": "#6f7f45",
+              "hitColor": "#f43f5e",
+              "hitEventName": "target:hit",
+              "breachEventName": "target:breach"
+            }
+          }
+        },
+        "children": [
+          {
+            "id": "incoming-target-2-left-tread",
+            "name": "left tank tread",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.46,
+                    -0.56,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.22,
+                    0.28,
+                    0.92
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#171b1f",
+                  "roughness": 0.86,
+                  "metalness": 0.04
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-2-right-tread",
+            "name": "right tank tread",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.46,
+                    -0.56,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.22,
+                    0.28,
+                    0.92
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#171b1f",
+                  "roughness": 0.86,
+                  "metalness": 0.04
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-2-left-tread-cap-front",
+            "name": "left front tread wheel",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.46,
+                    -0.55,
+                    0.48
+                  ],
+                  "rotation": [
+                    1.5708,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.15,
+                    0.15,
+                    0.08,
+                    14
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#2f3439",
+                  "roughness": 0.8,
+                  "metalness": 0.12
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-2-right-tread-cap-front",
+            "name": "right front tread wheel",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.46,
+                    -0.55,
+                    0.48
+                  ],
+                  "rotation": [
+                    1.5708,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.15,
+                    0.15,
+                    0.08,
+                    14
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#2f3439",
+                  "roughness": 0.8,
+                  "metalness": 0.12
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-2-left-tread-cap-rear",
+            "name": "left rear tread wheel",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.46,
+                    -0.55,
+                    -0.48
+                  ],
+                  "rotation": [
+                    1.5708,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.15,
+                    0.15,
+                    0.08,
+                    14
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#2f3439",
+                  "roughness": 0.8,
+                  "metalness": 0.12
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-2-right-tread-cap-rear",
+            "name": "right rear tread wheel",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.46,
+                    -0.55,
+                    -0.48
+                  ],
+                  "rotation": [
+                    1.5708,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.15,
+                    0.15,
+                    0.08,
+                    14
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#2f3439",
+                  "roughness": 0.8,
+                  "metalness": 0.12
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-2-lower-hull",
+            "name": "tank lower hull",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    -0.35,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    1.08,
+                    0.36,
+                    1.04
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#4c5c38",
+                  "roughness": 0.72,
+                  "metalness": 0.16
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-2-front-armor",
+            "name": "sloped front armor",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    -0.12,
+                    0.42
+                  ],
+                  "rotation": [
+                    -0.28,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.98,
+                    0.36,
+                    0.18
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#6f7f45",
+                  "roughness": 0.7,
+                  "metalness": 0.2
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-2-upper-hull",
+            "name": "tank upper hull",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.02,
+                    -0.06
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.9,
+                    0.32,
+                    0.66
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#6f7f45",
+                  "roughness": 0.68,
+                  "metalness": 0.2
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-2-turret",
+            "name": "tank turret",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.34,
+                    0.03
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.48,
+                    0.28,
+                    0.42
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#6f7f45",
+                  "roughness": 0.66,
+                  "metalness": 0.22
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-2-turret-dome",
+            "name": "tank turret dome",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.52,
+                    0.02
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1.05,
+                    0.42,
+                    0.82
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "sphere",
+                  "args": [
+                    0.29,
+                    12,
+                    6
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#6f7f45",
+                  "roughness": 0.66,
+                  "metalness": 0.2
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-2-main-gun",
+            "name": "tank cannon barrel",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.36,
+                    0.54
+                  ],
+                  "rotation": [
+                    1.5708,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.055,
+                    0.055,
+                    0.72,
+                    16
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#475569",
+                  "roughness": 0.58,
+                  "metalness": 0.34
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-2-muzzle",
+            "name": "tank cannon muzzle",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.36,
+                    0.92
+                  ],
+                  "rotation": [
+                    1.5708,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.085,
+                    0.085,
+                    0.12,
+                    16
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#232a31",
+                  "roughness": 0.6,
+                  "metalness": 0.4
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-2-left-headlamp",
+            "name": "left tank headlamp",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.24,
+                    -0.06,
+                    0.58
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.12,
+                    0.09,
+                    0.035
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "basic",
+                  "color": "#fef08a",
+                  "roughness": 0.2,
+                  "metalness": 0,
+                  "toneMapped": false
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-2-right-headlamp",
+            "name": "right tank headlamp",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.24,
+                    -0.06,
+                    0.58
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.12,
+                    0.09,
+                    0.035
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "basic",
+                  "color": "#fef08a",
+                  "roughness": 0.2,
+                  "metalness": 0,
+                  "toneMapped": false
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-2-weak-point",
+            "name": "front weak point",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    -0.28,
+                    0.61
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.28,
+                    0.2,
+                    0.04
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "basic",
+                  "color": "#ef4444",
+                  "roughness": 0.25,
+                  "metalness": 0,
+                  "toneMapped": false
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "incoming-target-3",
+        "name": "Incoming Target 3",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -0.25,
+                0.94,
+                -26
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1.28,
+                1.38,
+                1.22
+              ],
+              "castShadow": false,
+              "receiveShadow": false,
+              "visible": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#6f7f45",
+              "roughness": 0.7,
+              "metalness": 0.16,
+              "transparent": true,
+              "opacity": 0
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "kinematicPosition",
+              "colliders": "cuboid",
+              "sensor": true,
+              "sensorEnterEventName": "target:hit"
+            }
+          },
+          "advancingTarget": {
+            "type": "AdvancingTarget",
+            "properties": {
+              "speed": 2.58,
+              "resetZ": -58,
+              "breachZ": 4.4,
+              "idleColor": "#6f7f45",
+              "hitColor": "#f43f5e",
+              "hitEventName": "target:hit",
+              "breachEventName": "target:breach"
+            }
+          }
+        },
+        "children": [
+          {
+            "id": "incoming-target-3-left-tread",
+            "name": "left tank tread",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.46,
+                    -0.56,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.22,
+                    0.28,
+                    0.92
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#171b1f",
+                  "roughness": 0.86,
+                  "metalness": 0.04
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-3-right-tread",
+            "name": "right tank tread",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.46,
+                    -0.56,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.22,
+                    0.28,
+                    0.92
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#171b1f",
+                  "roughness": 0.86,
+                  "metalness": 0.04
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-3-left-tread-cap-front",
+            "name": "left front tread wheel",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.46,
+                    -0.55,
+                    0.48
+                  ],
+                  "rotation": [
+                    1.5708,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.15,
+                    0.15,
+                    0.08,
+                    14
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#2f3439",
+                  "roughness": 0.8,
+                  "metalness": 0.12
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-3-right-tread-cap-front",
+            "name": "right front tread wheel",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.46,
+                    -0.55,
+                    0.48
+                  ],
+                  "rotation": [
+                    1.5708,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.15,
+                    0.15,
+                    0.08,
+                    14
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#2f3439",
+                  "roughness": 0.8,
+                  "metalness": 0.12
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-3-left-tread-cap-rear",
+            "name": "left rear tread wheel",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.46,
+                    -0.55,
+                    -0.48
+                  ],
+                  "rotation": [
+                    1.5708,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.15,
+                    0.15,
+                    0.08,
+                    14
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#2f3439",
+                  "roughness": 0.8,
+                  "metalness": 0.12
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-3-right-tread-cap-rear",
+            "name": "right rear tread wheel",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.46,
+                    -0.55,
+                    -0.48
+                  ],
+                  "rotation": [
+                    1.5708,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.15,
+                    0.15,
+                    0.08,
+                    14
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#2f3439",
+                  "roughness": 0.8,
+                  "metalness": 0.12
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-3-lower-hull",
+            "name": "tank lower hull",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    -0.35,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    1.08,
+                    0.36,
+                    1.04
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#4c5c38",
+                  "roughness": 0.72,
+                  "metalness": 0.16
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-3-front-armor",
+            "name": "sloped front armor",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    -0.12,
+                    0.42
+                  ],
+                  "rotation": [
+                    -0.28,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.98,
+                    0.36,
+                    0.18
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#6f7f45",
+                  "roughness": 0.7,
+                  "metalness": 0.2
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-3-upper-hull",
+            "name": "tank upper hull",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.02,
+                    -0.06
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.9,
+                    0.32,
+                    0.66
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#6f7f45",
+                  "roughness": 0.68,
+                  "metalness": 0.2
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-3-turret",
+            "name": "tank turret",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.34,
+                    0.03
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.48,
+                    0.28,
+                    0.42
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#6f7f45",
+                  "roughness": 0.66,
+                  "metalness": 0.22
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-3-turret-dome",
+            "name": "tank turret dome",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.52,
+                    0.02
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1.05,
+                    0.42,
+                    0.82
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "sphere",
+                  "args": [
+                    0.29,
+                    12,
+                    6
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#6f7f45",
+                  "roughness": 0.66,
+                  "metalness": 0.2
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-3-main-gun",
+            "name": "tank cannon barrel",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.36,
+                    0.54
+                  ],
+                  "rotation": [
+                    1.5708,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.055,
+                    0.055,
+                    0.72,
+                    16
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#475569",
+                  "roughness": 0.58,
+                  "metalness": 0.34
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-3-muzzle",
+            "name": "tank cannon muzzle",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.36,
+                    0.92
+                  ],
+                  "rotation": [
+                    1.5708,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.085,
+                    0.085,
+                    0.12,
+                    16
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#232a31",
+                  "roughness": 0.6,
+                  "metalness": 0.4
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-3-left-headlamp",
+            "name": "left tank headlamp",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.24,
+                    -0.06,
+                    0.58
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.12,
+                    0.09,
+                    0.035
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "basic",
+                  "color": "#fef08a",
+                  "roughness": 0.2,
+                  "metalness": 0,
+                  "toneMapped": false
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-3-right-headlamp",
+            "name": "right tank headlamp",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.24,
+                    -0.06,
+                    0.58
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.12,
+                    0.09,
+                    0.035
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "basic",
+                  "color": "#fef08a",
+                  "roughness": 0.2,
+                  "metalness": 0,
+                  "toneMapped": false
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-3-weak-point",
+            "name": "front weak point",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    -0.28,
+                    0.61
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.28,
+                    0.2,
+                    0.04
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "basic",
+                  "color": "#ef4444",
+                  "roughness": 0.25,
+                  "metalness": 0,
+                  "toneMapped": false
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "incoming-target-4",
+        "name": "Incoming Target 4",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                1.65,
+                0.94,
+                -38
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1.28,
+                1.38,
+                1.22
+              ],
+              "castShadow": false,
+              "receiveShadow": false,
+              "visible": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#6f7f45",
+              "roughness": 0.7,
+              "metalness": 0.16,
+              "transparent": true,
+              "opacity": 0
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "kinematicPosition",
+              "colliders": "cuboid",
+              "sensor": true,
+              "sensorEnterEventName": "target:hit"
+            }
+          },
+          "advancingTarget": {
+            "type": "AdvancingTarget",
+            "properties": {
+              "speed": 3.05,
+              "resetZ": -58,
+              "breachZ": 4.4,
+              "idleColor": "#6f7f45",
+              "hitColor": "#f43f5e",
+              "hitEventName": "target:hit",
+              "breachEventName": "target:breach"
+            }
+          }
+        },
+        "children": [
+          {
+            "id": "incoming-target-4-left-tread",
+            "name": "left tank tread",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.46,
+                    -0.56,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.22,
+                    0.28,
+                    0.92
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#171b1f",
+                  "roughness": 0.86,
+                  "metalness": 0.04
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-4-right-tread",
+            "name": "right tank tread",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.46,
+                    -0.56,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.22,
+                    0.28,
+                    0.92
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#171b1f",
+                  "roughness": 0.86,
+                  "metalness": 0.04
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-4-left-tread-cap-front",
+            "name": "left front tread wheel",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.46,
+                    -0.55,
+                    0.48
+                  ],
+                  "rotation": [
+                    1.5708,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.15,
+                    0.15,
+                    0.08,
+                    14
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#2f3439",
+                  "roughness": 0.8,
+                  "metalness": 0.12
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-4-right-tread-cap-front",
+            "name": "right front tread wheel",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.46,
+                    -0.55,
+                    0.48
+                  ],
+                  "rotation": [
+                    1.5708,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.15,
+                    0.15,
+                    0.08,
+                    14
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#2f3439",
+                  "roughness": 0.8,
+                  "metalness": 0.12
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-4-left-tread-cap-rear",
+            "name": "left rear tread wheel",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.46,
+                    -0.55,
+                    -0.48
+                  ],
+                  "rotation": [
+                    1.5708,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.15,
+                    0.15,
+                    0.08,
+                    14
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#2f3439",
+                  "roughness": 0.8,
+                  "metalness": 0.12
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-4-right-tread-cap-rear",
+            "name": "right rear tread wheel",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.46,
+                    -0.55,
+                    -0.48
+                  ],
+                  "rotation": [
+                    1.5708,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.15,
+                    0.15,
+                    0.08,
+                    14
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#2f3439",
+                  "roughness": 0.8,
+                  "metalness": 0.12
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-4-lower-hull",
+            "name": "tank lower hull",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    -0.35,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    1.08,
+                    0.36,
+                    1.04
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#4c5c38",
+                  "roughness": 0.72,
+                  "metalness": 0.16
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-4-front-armor",
+            "name": "sloped front armor",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    -0.12,
+                    0.42
+                  ],
+                  "rotation": [
+                    -0.28,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.98,
+                    0.36,
+                    0.18
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#6f7f45",
+                  "roughness": 0.7,
+                  "metalness": 0.2
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-4-upper-hull",
+            "name": "tank upper hull",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.02,
+                    -0.06
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.9,
+                    0.32,
+                    0.66
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#6f7f45",
+                  "roughness": 0.68,
+                  "metalness": 0.2
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-4-turret",
+            "name": "tank turret",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.34,
+                    0.03
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.48,
+                    0.28,
+                    0.42
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#6f7f45",
+                  "roughness": 0.66,
+                  "metalness": 0.22
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-4-turret-dome",
+            "name": "tank turret dome",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.52,
+                    0.02
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1.05,
+                    0.42,
+                    0.82
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "sphere",
+                  "args": [
+                    0.29,
+                    12,
+                    6
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#6f7f45",
+                  "roughness": 0.66,
+                  "metalness": 0.2
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-4-main-gun",
+            "name": "tank cannon barrel",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.36,
+                    0.54
+                  ],
+                  "rotation": [
+                    1.5708,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.055,
+                    0.055,
+                    0.72,
+                    16
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#475569",
+                  "roughness": 0.58,
+                  "metalness": 0.34
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-4-muzzle",
+            "name": "tank cannon muzzle",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.36,
+                    0.92
+                  ],
+                  "rotation": [
+                    1.5708,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.085,
+                    0.085,
+                    0.12,
+                    16
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#232a31",
+                  "roughness": 0.6,
+                  "metalness": 0.4
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-4-left-headlamp",
+            "name": "left tank headlamp",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.24,
+                    -0.06,
+                    0.58
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.12,
+                    0.09,
+                    0.035
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "basic",
+                  "color": "#fef08a",
+                  "roughness": 0.2,
+                  "metalness": 0,
+                  "toneMapped": false
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-4-right-headlamp",
+            "name": "right tank headlamp",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.24,
+                    -0.06,
+                    0.58
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.12,
+                    0.09,
+                    0.035
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "basic",
+                  "color": "#fef08a",
+                  "roughness": 0.2,
+                  "metalness": 0,
+                  "toneMapped": false
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-4-weak-point",
+            "name": "front weak point",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    -0.28,
+                    0.61
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.28,
+                    0.2,
+                    0.04
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "basic",
+                  "color": "#ef4444",
+                  "roughness": 0.25,
+                  "metalness": 0,
+                  "toneMapped": false
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "incoming-target-5",
+        "name": "Incoming Target 5",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                3.4,
+                0.94,
+                -52
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1.28,
+                1.38,
+                1.22
+              ],
+              "castShadow": false,
+              "receiveShadow": false,
+              "visible": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#6f7f45",
+              "roughness": 0.7,
+              "metalness": 0.16,
+              "transparent": true,
+              "opacity": 0
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "kinematicPosition",
+              "colliders": "cuboid",
+              "sensor": true,
+              "sensorEnterEventName": "target:hit"
+            }
+          },
+          "advancingTarget": {
+            "type": "AdvancingTarget",
+            "properties": {
+              "speed": 2.82,
+              "resetZ": -58,
+              "breachZ": 4.4,
+              "idleColor": "#6f7f45",
+              "hitColor": "#f43f5e",
+              "hitEventName": "target:hit",
+              "breachEventName": "target:breach"
+            }
+          }
+        },
+        "children": [
+          {
+            "id": "incoming-target-5-left-tread",
+            "name": "left tank tread",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.46,
+                    -0.56,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.22,
+                    0.28,
+                    0.92
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#171b1f",
+                  "roughness": 0.86,
+                  "metalness": 0.04
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-5-right-tread",
+            "name": "right tank tread",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.46,
+                    -0.56,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.22,
+                    0.28,
+                    0.92
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#171b1f",
+                  "roughness": 0.86,
+                  "metalness": 0.04
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-5-left-tread-cap-front",
+            "name": "left front tread wheel",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.46,
+                    -0.55,
+                    0.48
+                  ],
+                  "rotation": [
+                    1.5708,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.15,
+                    0.15,
+                    0.08,
+                    14
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#2f3439",
+                  "roughness": 0.8,
+                  "metalness": 0.12
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-5-right-tread-cap-front",
+            "name": "right front tread wheel",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.46,
+                    -0.55,
+                    0.48
+                  ],
+                  "rotation": [
+                    1.5708,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.15,
+                    0.15,
+                    0.08,
+                    14
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#2f3439",
+                  "roughness": 0.8,
+                  "metalness": 0.12
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-5-left-tread-cap-rear",
+            "name": "left rear tread wheel",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.46,
+                    -0.55,
+                    -0.48
+                  ],
+                  "rotation": [
+                    1.5708,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.15,
+                    0.15,
+                    0.08,
+                    14
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#2f3439",
+                  "roughness": 0.8,
+                  "metalness": 0.12
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-5-right-tread-cap-rear",
+            "name": "right rear tread wheel",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.46,
+                    -0.55,
+                    -0.48
+                  ],
+                  "rotation": [
+                    1.5708,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.15,
+                    0.15,
+                    0.08,
+                    14
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#2f3439",
+                  "roughness": 0.8,
+                  "metalness": 0.12
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-5-lower-hull",
+            "name": "tank lower hull",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    -0.35,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    1.08,
+                    0.36,
+                    1.04
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#4c5c38",
+                  "roughness": 0.72,
+                  "metalness": 0.16
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-5-front-armor",
+            "name": "sloped front armor",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    -0.12,
+                    0.42
+                  ],
+                  "rotation": [
+                    -0.28,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.98,
+                    0.36,
+                    0.18
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#6f7f45",
+                  "roughness": 0.7,
+                  "metalness": 0.2
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-5-upper-hull",
+            "name": "tank upper hull",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.02,
+                    -0.06
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.9,
+                    0.32,
+                    0.66
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#6f7f45",
+                  "roughness": 0.68,
+                  "metalness": 0.2
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-5-turret",
+            "name": "tank turret",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.34,
+                    0.03
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.48,
+                    0.28,
+                    0.42
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#6f7f45",
+                  "roughness": 0.66,
+                  "metalness": 0.22
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-5-turret-dome",
+            "name": "tank turret dome",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.52,
+                    0.02
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1.05,
+                    0.42,
+                    0.82
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "sphere",
+                  "args": [
+                    0.29,
+                    12,
+                    6
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#6f7f45",
+                  "roughness": 0.66,
+                  "metalness": 0.2
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-5-main-gun",
+            "name": "tank cannon barrel",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.36,
+                    0.54
+                  ],
+                  "rotation": [
+                    1.5708,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.055,
+                    0.055,
+                    0.72,
+                    16
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#475569",
+                  "roughness": 0.58,
+                  "metalness": 0.34
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-5-muzzle",
+            "name": "tank cannon muzzle",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.36,
+                    0.92
+                  ],
+                  "rotation": [
+                    1.5708,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.085,
+                    0.085,
+                    0.12,
+                    16
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#232a31",
+                  "roughness": 0.6,
+                  "metalness": 0.4
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-5-left-headlamp",
+            "name": "left tank headlamp",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.24,
+                    -0.06,
+                    0.58
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.12,
+                    0.09,
+                    0.035
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "basic",
+                  "color": "#fef08a",
+                  "roughness": 0.2,
+                  "metalness": 0,
+                  "toneMapped": false
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-5-right-headlamp",
+            "name": "right tank headlamp",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.24,
+                    -0.06,
+                    0.58
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.12,
+                    0.09,
+                    0.035
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "basic",
+                  "color": "#fef08a",
+                  "roughness": 0.2,
+                  "metalness": 0,
+                  "toneMapped": false
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "incoming-target-5-weak-point",
+            "name": "front weak point",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    -0.28,
+                    0.61
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.28,
+                    0.2,
+                    0.04
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "basic",
+                  "color": "#ef4444",
+                  "roughness": 0.25,
+                  "metalness": 0,
+                  "toneMapped": false
+                }
+              },
+              "data": {
+                "type": "Data",
+                "properties": {
+                  "data": {
+                    "preserveTargetColor": true
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "ridge-boulder-00",
+        "name": "ridge boulder 00",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -5.8,
+                0.35,
+                -8
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1.35,
+                0.58,
+                0.95
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                0.65,
+                10,
+                6
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#4b5563",
+              "roughness": 0.86,
+              "metalness": 0.02,
+              "texture": "/textures/floor/terrain/rock-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                2,
+                2
+              ],
+              "generateMipmaps": true,
+              "minFilter": "LinearMipmapLinearFilter",
+              "magFilter": "LinearFilter"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "ball",
+              "sensor": false,
+              "restitution": 0.72,
+              "friction": 0.18
+            }
+          }
+        }
+      },
+      {
+        "id": "ridge-concrete-pylon-00",
+        "name": "ridge concrete pylon 00",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -3.9,
+                0.65,
+                -9.2
+              ],
+              "rotation": [
+                0,
+                -0.14,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.38,
+                1.28,
+                0.38
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#8b8f86",
+              "roughness": 0.72,
+              "metalness": 0.12,
+              "texture": "/textures/floor/terrain/rock-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                1,
+                2
+              ],
+              "generateMipmaps": true,
+              "minFilter": "LinearMipmapLinearFilter",
+              "magFilter": "LinearFilter"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "cuboid",
+              "sensor": false,
+              "restitution": 0.72,
+              "friction": 0.16
+            }
+          }
+        }
+      },
+      {
+        "id": "ridge-boulder-01",
+        "name": "ridge boulder 01",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                8,
+                0.35,
+                -11.1
+              ],
+              "rotation": [
+                0.12,
+                0.31,
+                0.08
+              ],
+              "scale": [
+                1.35,
+                0.58,
+                0.95
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                0.77,
+                10,
+                6
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#6b7280",
+              "roughness": 0.86,
+              "metalness": 0.02,
+              "texture": "/textures/floor/terrain/rock-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                2,
+                2
+              ],
+              "generateMipmaps": true,
+              "minFilter": "LinearMipmapLinearFilter",
+              "magFilter": "LinearFilter"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "ball",
+              "sensor": false,
+              "restitution": 0.72,
+              "friction": 0.18
+            }
+          }
+        }
+      },
+      {
+        "id": "ridge-boulder-02",
+        "name": "ridge boulder 02",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -10.2,
+                0.35,
+                -14.2
+              ],
+              "rotation": [
+                0.24,
+                0.62,
+                0.16
+              ],
+              "scale": [
+                1.35,
+                0.58,
+                0.95
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                0.89,
+                10,
+                6
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#4b5563",
+              "roughness": 0.86,
+              "metalness": 0.02,
+              "texture": "/textures/floor/terrain/rock-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                2,
+                2
+              ],
+              "generateMipmaps": true,
+              "minFilter": "LinearMipmapLinearFilter",
+              "magFilter": "LinearFilter"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "ball",
+              "sensor": false,
+              "restitution": 0.72,
+              "friction": 0.18
+            }
+          }
+        }
+      },
+      {
+        "id": "ridge-boulder-03",
+        "name": "ridge boulder 03",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                5.8,
+                0.35,
+                -17.3
+              ],
+              "rotation": [
+                0.36,
+                0.9299999999999999,
+                0.24
+              ],
+              "scale": [
+                1.35,
+                0.58,
+                0.95
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                1.01,
+                10,
+                6
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#6b7280",
+              "roughness": 0.86,
+              "metalness": 0.02,
+              "texture": "/textures/floor/terrain/rock-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                2,
+                2
+              ],
+              "generateMipmaps": true,
+              "minFilter": "LinearMipmapLinearFilter",
+              "magFilter": "LinearFilter"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "ball",
+              "sensor": false,
+              "restitution": 0.72,
+              "friction": 0.18
+            }
+          }
+        }
+      },
+      {
+        "id": "ridge-concrete-pylon-03",
+        "name": "ridge concrete pylon 03",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                4.35,
+                0.65,
+                -18.5
+              ],
+              "rotation": [
+                0,
+                0.14,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.38,
+                1.28,
+                0.38
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#8b8f86",
+              "roughness": 0.72,
+              "metalness": 0.12,
+              "texture": "/textures/floor/terrain/rock-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                1,
+                2
+              ],
+              "generateMipmaps": true,
+              "minFilter": "LinearMipmapLinearFilter",
+              "magFilter": "LinearFilter"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "cuboid",
+              "sensor": false,
+              "restitution": 0.72,
+              "friction": 0.16
+            }
+          }
+        }
+      },
+      {
+        "id": "ridge-boulder-04",
+        "name": "ridge boulder 04",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -8,
+                0.35,
+                -20.4
+              ],
+              "rotation": [
+                0.48,
+                1.24,
+                0.32
+              ],
+              "scale": [
+                1.35,
+                0.58,
+                0.95
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                0.65,
+                10,
+                6
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#4b5563",
+              "roughness": 0.86,
+              "metalness": 0.02,
+              "texture": "/textures/floor/terrain/rock-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                2,
+                2
+              ],
+              "generateMipmaps": true,
+              "minFilter": "LinearMipmapLinearFilter",
+              "magFilter": "LinearFilter"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "ball",
+              "sensor": false,
+              "restitution": 0.72,
+              "friction": 0.18
+            }
+          }
+        }
+      },
+      {
+        "id": "ridge-boulder-05",
+        "name": "ridge boulder 05",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                10.2,
+                0.35,
+                -23.5
+              ],
+              "rotation": [
+                0.6,
+                1.55,
+                0.4
+              ],
+              "scale": [
+                1.35,
+                0.58,
+                0.95
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                0.77,
+                10,
+                6
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#6b7280",
+              "roughness": 0.86,
+              "metalness": 0.02,
+              "texture": "/textures/floor/terrain/rock-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                2,
+                2
+              ],
+              "generateMipmaps": true,
+              "minFilter": "LinearMipmapLinearFilter",
+              "magFilter": "LinearFilter"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "ball",
+              "sensor": false,
+              "restitution": 0.72,
+              "friction": 0.18
+            }
+          }
+        }
+      },
+      {
+        "id": "ridge-boulder-06",
+        "name": "ridge boulder 06",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -5.8,
+                0.35,
+                -26.6
+              ],
+              "rotation": [
+                0.72,
+                1.8599999999999999,
+                0.48
+              ],
+              "scale": [
+                1.35,
+                0.58,
+                0.95
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                0.89,
+                10,
+                6
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#4b5563",
+              "roughness": 0.86,
+              "metalness": 0.02,
+              "texture": "/textures/floor/terrain/rock-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                2,
+                2
+              ],
+              "generateMipmaps": true,
+              "minFilter": "LinearMipmapLinearFilter",
+              "magFilter": "LinearFilter"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "ball",
+              "sensor": false,
+              "restitution": 0.72,
+              "friction": 0.18
+            }
+          }
+        }
+      },
+      {
+        "id": "ridge-concrete-pylon-06",
+        "name": "ridge concrete pylon 06",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -3.9,
+                0.65,
+                -27.8
+              ],
+              "rotation": [
+                0,
+                -0.14,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.38,
+                1.28,
+                0.38
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#8b8f86",
+              "roughness": 0.72,
+              "metalness": 0.12,
+              "texture": "/textures/floor/terrain/rock-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                1,
+                2
+              ],
+              "generateMipmaps": true,
+              "minFilter": "LinearMipmapLinearFilter",
+              "magFilter": "LinearFilter"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "cuboid",
+              "sensor": false,
+              "restitution": 0.72,
+              "friction": 0.16
+            }
+          }
+        }
+      },
+      {
+        "id": "ridge-boulder-07",
+        "name": "ridge boulder 07",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                8,
+                0.35,
+                -29.7
+              ],
+              "rotation": [
+                0.84,
+                2.17,
+                0.56
+              ],
+              "scale": [
+                1.35,
+                0.58,
+                0.95
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                1.01,
+                10,
+                6
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#6b7280",
+              "roughness": 0.86,
+              "metalness": 0.02,
+              "texture": "/textures/floor/terrain/rock-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                2,
+                2
+              ],
+              "generateMipmaps": true,
+              "minFilter": "LinearMipmapLinearFilter",
+              "magFilter": "LinearFilter"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "ball",
+              "sensor": false,
+              "restitution": 0.72,
+              "friction": 0.18
+            }
+          }
+        }
+      },
+      {
+        "id": "ridge-boulder-08",
+        "name": "ridge boulder 08",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -10.2,
+                0.35,
+                -32.8
+              ],
+              "rotation": [
+                0.96,
+                2.48,
+                0.64
+              ],
+              "scale": [
+                1.35,
+                0.58,
+                0.95
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                0.65,
+                10,
+                6
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#4b5563",
+              "roughness": 0.86,
+              "metalness": 0.02,
+              "texture": "/textures/floor/terrain/rock-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                2,
+                2
+              ],
+              "generateMipmaps": true,
+              "minFilter": "LinearMipmapLinearFilter",
+              "magFilter": "LinearFilter"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "ball",
+              "sensor": false,
+              "restitution": 0.72,
+              "friction": 0.18
+            }
+          }
+        }
+      },
+      {
+        "id": "ridge-boulder-09",
+        "name": "ridge boulder 09",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                5.8,
+                0.35,
+                -35.900000000000006
+              ],
+              "rotation": [
+                1.08,
+                2.79,
+                0.72
+              ],
+              "scale": [
+                1.35,
+                0.58,
+                0.95
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                0.77,
+                10,
+                6
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#6b7280",
+              "roughness": 0.86,
+              "metalness": 0.02,
+              "texture": "/textures/floor/terrain/rock-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                2,
+                2
+              ],
+              "generateMipmaps": true,
+              "minFilter": "LinearMipmapLinearFilter",
+              "magFilter": "LinearFilter"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "ball",
+              "sensor": false,
+              "restitution": 0.72,
+              "friction": 0.18
+            }
+          }
+        }
+      },
+      {
+        "id": "ridge-concrete-pylon-09",
+        "name": "ridge concrete pylon 09",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                4.35,
+                0.65,
+                -37.10000000000001
+              ],
+              "rotation": [
+                0,
+                0.14,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.38,
+                1.28,
+                0.38
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#8b8f86",
+              "roughness": 0.72,
+              "metalness": 0.12,
+              "texture": "/textures/floor/terrain/rock-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                1,
+                2
+              ],
+              "generateMipmaps": true,
+              "minFilter": "LinearMipmapLinearFilter",
+              "magFilter": "LinearFilter"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "cuboid",
+              "sensor": false,
+              "restitution": 0.72,
+              "friction": 0.16
+            }
+          }
+        }
+      },
+      {
+        "id": "ridge-boulder-10",
+        "name": "ridge boulder 10",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -8,
+                0.35,
+                -39
+              ],
+              "rotation": [
+                1.2,
+                3.1,
+                0.8
+              ],
+              "scale": [
+                1.35,
+                0.58,
+                0.95
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                0.89,
+                10,
+                6
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#4b5563",
+              "roughness": 0.86,
+              "metalness": 0.02,
+              "texture": "/textures/floor/terrain/rock-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                2,
+                2
+              ],
+              "generateMipmaps": true,
+              "minFilter": "LinearMipmapLinearFilter",
+              "magFilter": "LinearFilter"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "ball",
+              "sensor": false,
+              "restitution": 0.72,
+              "friction": 0.18
+            }
+          }
+        }
+      },
+      {
+        "id": "ridge-boulder-11",
+        "name": "ridge boulder 11",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                10.2,
+                0.35,
+                -42.1
+              ],
+              "rotation": [
+                1.3199999999999998,
+                3.41,
+                0.88
+              ],
+              "scale": [
+                1.35,
+                0.58,
+                0.95
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                1.01,
+                10,
+                6
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#6b7280",
+              "roughness": 0.86,
+              "metalness": 0.02,
+              "texture": "/textures/floor/terrain/rock-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                2,
+                2
+              ],
+              "generateMipmaps": true,
+              "minFilter": "LinearMipmapLinearFilter",
+              "magFilter": "LinearFilter"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "ball",
+              "sensor": false,
+              "restitution": 0.72,
+              "friction": 0.18
+            }
+          }
+        }
+      },
+      {
+        "id": "ridge-boulder-12",
+        "name": "ridge boulder 12",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -5.8,
+                0.35,
+                -45.2
+              ],
+              "rotation": [
+                1.44,
+                3.7199999999999998,
+                0.96
+              ],
+              "scale": [
+                1.35,
+                0.58,
+                0.95
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                0.65,
+                10,
+                6
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#4b5563",
+              "roughness": 0.86,
+              "metalness": 0.02,
+              "texture": "/textures/floor/terrain/rock-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                2,
+                2
+              ],
+              "generateMipmaps": true,
+              "minFilter": "LinearMipmapLinearFilter",
+              "magFilter": "LinearFilter"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "ball",
+              "sensor": false,
+              "restitution": 0.72,
+              "friction": 0.18
+            }
+          }
+        }
+      },
+      {
+        "id": "ridge-concrete-pylon-12",
+        "name": "ridge concrete pylon 12",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -3.9,
+                0.65,
+                -46.400000000000006
+              ],
+              "rotation": [
+                0,
+                -0.14,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.38,
+                1.28,
+                0.38
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#8b8f86",
+              "roughness": 0.72,
+              "metalness": 0.12,
+              "texture": "/textures/floor/terrain/rock-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                1,
+                2
+              ],
+              "generateMipmaps": true,
+              "minFilter": "LinearMipmapLinearFilter",
+              "magFilter": "LinearFilter"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "cuboid",
+              "sensor": false,
+              "restitution": 0.72,
+              "friction": 0.16
+            }
+          }
+        }
+      },
+      {
+        "id": "ridge-boulder-13",
+        "name": "ridge boulder 13",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                8,
+                0.35,
+                -48.300000000000004
+              ],
+              "rotation": [
+                1.56,
+                4.03,
+                1.04
+              ],
+              "scale": [
+                1.35,
+                0.58,
+                0.95
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                0.77,
+                10,
+                6
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#6b7280",
+              "roughness": 0.86,
+              "metalness": 0.02,
+              "texture": "/textures/floor/terrain/rock-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                2,
+                2
+              ],
+              "generateMipmaps": true,
+              "minFilter": "LinearMipmapLinearFilter",
+              "magFilter": "LinearFilter"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "ball",
+              "sensor": false,
+              "restitution": 0.72,
+              "friction": 0.18
+            }
+          }
+        }
+      },
+      {
+        "id": "ridge-boulder-14",
+        "name": "ridge boulder 14",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -10.2,
+                0.35,
+                -51.4
+              ],
+              "rotation": [
+                1.68,
+                4.34,
+                1.12
+              ],
+              "scale": [
+                1.35,
+                0.58,
+                0.95
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                0.89,
+                10,
+                6
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#4b5563",
+              "roughness": 0.86,
+              "metalness": 0.02,
+              "texture": "/textures/floor/terrain/rock-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                2,
+                2
+              ],
+              "generateMipmaps": true,
+              "minFilter": "LinearMipmapLinearFilter",
+              "magFilter": "LinearFilter"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "ball",
+              "sensor": false,
+              "restitution": 0.72,
+              "friction": 0.18
+            }
+          }
+        }
+      },
+      {
+        "id": "ridge-boulder-15",
+        "name": "ridge boulder 15",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                5.8,
+                0.35,
+                -54.5
+              ],
+              "rotation": [
+                1.7999999999999998,
+                4.65,
+                1.2
+              ],
+              "scale": [
+                1.35,
+                0.58,
+                0.95
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                1.01,
+                10,
+                6
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#6b7280",
+              "roughness": 0.86,
+              "metalness": 0.02,
+              "texture": "/textures/floor/terrain/rock-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                2,
+                2
+              ],
+              "generateMipmaps": true,
+              "minFilter": "LinearMipmapLinearFilter",
+              "magFilter": "LinearFilter"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "ball",
+              "sensor": false,
+              "restitution": 0.72,
+              "friction": 0.18
+            }
+          }
+        }
+      },
+      {
+        "id": "ridge-concrete-pylon-15",
+        "name": "ridge concrete pylon 15",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                4.35,
+                0.65,
+                -55.7
+              ],
+              "rotation": [
+                0,
+                0.14,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.38,
+                1.28,
+                0.38
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#8b8f86",
+              "roughness": 0.72,
+              "metalness": 0.12,
+              "texture": "/textures/floor/terrain/rock-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                1,
+                2
+              ],
+              "generateMipmaps": true,
+              "minFilter": "LinearMipmapLinearFilter",
+              "magFilter": "LinearFilter"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "cuboid",
+              "sensor": false,
+              "restitution": 0.72,
+              "friction": 0.16
+            }
+          }
+        }
+      },
+      {
+        "id": "ridge-boulder-16",
+        "name": "ridge boulder 16",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -8,
+                0.35,
+                -57.6
+              ],
+              "rotation": [
+                1.92,
+                4.96,
+                1.28
+              ],
+              "scale": [
+                1.35,
+                0.58,
+                0.95
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                0.65,
+                10,
+                6
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#4b5563",
+              "roughness": 0.86,
+              "metalness": 0.02,
+              "texture": "/textures/floor/terrain/rock-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                2,
+                2
+              ],
+              "generateMipmaps": true,
+              "minFilter": "LinearMipmapLinearFilter",
+              "magFilter": "LinearFilter"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "ball",
+              "sensor": false,
+              "restitution": 0.72,
+              "friction": 0.18
+            }
+          }
+        }
+      },
+      {
+        "id": "ridge-boulder-17",
+        "name": "ridge boulder 17",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                10.2,
+                0.35,
+                -60.7
+              ],
+              "rotation": [
+                2.04,
+                5.27,
+                1.36
+              ],
+              "scale": [
+                1.35,
+                0.58,
+                0.95
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                0.77,
+                10,
+                6
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#6b7280",
+              "roughness": 0.86,
+              "metalness": 0.02,
+              "texture": "/textures/floor/terrain/rock-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                2,
+                2
+              ],
+              "generateMipmaps": true,
+              "minFilter": "LinearMipmapLinearFilter",
+              "magFilter": "LinearFilter"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "ball",
+              "sensor": false,
+              "restitution": 0.72,
+              "friction": 0.18
+            }
+          }
+        }
+      }
+    ]
+  }
+}

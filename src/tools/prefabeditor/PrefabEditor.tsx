@@ -542,7 +542,15 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
 
                         {showUI && (
                             <>
-                                <div style={toolbar.panel}>
+                                <div
+                                    style={{
+                                        ...toolbar.panel,
+                                        left: "50%",
+                                        right: "auto",
+                                        transform: "translateX(-50%)",
+                                        justifyContent: "center",
+                                    }}
+                                >
                                     <button type="button" style={base.btn} onClick={toggleMode}>
                                         {isEditMode ? "▶" : "⏸"}
                                     </button>

@@ -119,6 +119,7 @@ function CameraComponentView({ properties, children }: ComponentViewProps<Camera
     const halfWidth = halfHeight * aspect;
     const perspectiveCameraRef = useRef<ThreePerspectiveCamera>(null);
     const orthographicCameraRef = useRef<ThreeOrthographicCamera>(null);
+    const cameraModeKey = editMode ? 'edit-camera' : 'play-camera';
     const activeCamera = projection === 'orthographic'
         ? orthographicCameraRef.current
         : perspectiveCameraRef.current;
@@ -146,6 +147,7 @@ function CameraComponentView({ properties, children }: ComponentViewProps<Camera
     if (projection === 'orthographic') {
         return (
             <OrthographicCamera
+                key={cameraModeKey}
                 ref={orthographicCameraRef}
                 makeDefault={!editMode}
                 near={near}
@@ -164,6 +166,7 @@ function CameraComponentView({ properties, children }: ComponentViewProps<Camera
 
     return (
         <PerspectiveCamera
+            key={cameraModeKey}
             ref={perspectiveCameraRef}
             makeDefault={!editMode}
             fov={fov}

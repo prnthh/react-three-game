@@ -1,6 +1,8 @@
 import type { Object3D, Texture } from "three";
 import { SRGBColorSpace, TextureLoader } from "three";
-import { DRACOLoader, FBXLoader, GLTFLoader } from "three/examples/jsm/Addons.js";
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
+import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 export type LoadedModel = Object3D;
 export type LoadedTexture = Texture;

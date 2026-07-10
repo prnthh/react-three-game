@@ -10,7 +10,7 @@ import {
     type Object3D,
     type Object3DEventMap,
 } from "three";
-import { FBXLoader } from "three/examples/jsm/Addons.js";
+import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
 
 import type { SkinnedMeshRef } from "./SkinnedMesh";
 

@@ -33,7 +33,7 @@
 	"scripts": {
 		"clean": "rm -rf dist",
 		"watch": "npm run clean && tsc --watch",
-		"dev": "concurrently \"npm run watch\" \"cd docs && npm run dev\"",
+		"dev": "npm run build && concurrently \"tsc --watch\" \"cd docs && npm run dev\"",
 		"build": "npm run clean && tsc",
 		"release": "npm run build && npm publish --access public"
 	},

@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { ModelListViewer, SharedCanvas, SoundListViewer, TextureListViewer } from "react-three-game/editor";
 import { BASE_PATH } from "../../basePath";
 
-export default function AssetViewerPage({ basePath = BASE_PATH }: { basePath?: string } = {}) {
+export default function AssetViewerPage() {
+    const basePath = BASE_PATH;
     const [textures, setTextures] = useState<string[]>([]);
     const [models, setModels] = useState<string[]>([]);
     const [sounds, setSounds] = useState<string[]>([]);

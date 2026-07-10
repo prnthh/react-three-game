@@ -1,0 +1,983 @@
+{
+  "id": "machinegun-mechsuit",
+  "name": "Industrial Machinegun Mech",
+  "root": {
+    "id": "machinegun-mechsuit-root",
+    "name": "machinegun mech root",
+    "components": {
+      "transform": {
+        "type": "Transform",
+        "properties": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "data": {
+        "type": "Data",
+        "properties": {
+          "data": {
+            "kind": "machinegun-mechsuit"
+          }
+        }
+      }
+    },
+    "children": [
+      {
+        "id": "mech-camera",
+        "name": "mechsuit pilot camera",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                4.72,
+                10.9
+              ],
+              "rotation": [
+                -0.10783959738373575,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "camera": {
+            "type": "Camera",
+            "properties": {
+              "projection": "perspective",
+              "fov": 48,
+              "near": 0.1,
+              "zoom": 1,
+              "far": 260
+            }
+          },
+          "data": {
+            "type": "Data",
+            "properties": {
+              "data": {
+                "role": "player-camera",
+                "lookAt": [
+                  0,
+                  1.05,
+                  -23
+                ]
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": "mech-left-sill-rail",
+        "name": "left cockpit sill rail",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -2.12,
+                3.66,
+                8.12
+              ],
+              "rotation": [
+                0.04,
+                0,
+                -0.04
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.14,
+                0.16,
+                4.6
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#1b2634",
+              "roughness": 0.62,
+              "metalness": 0.32
+            }
+          }
+        }
+      },
+      {
+        "id": "mech-right-sill-rail",
+        "name": "right cockpit sill rail",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                2.12,
+                3.66,
+                8.12
+              ],
+              "rotation": [
+                0.04,
+                0,
+                0.04
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.14,
+                0.16,
+                4.6
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#1b2634",
+              "roughness": 0.62,
+              "metalness": 0.32
+            }
+          }
+        }
+      },
+      {
+        "id": "mech-front-lower-crossbar",
+        "name": "front lower cockpit crossbar",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                3.05,
+                6.18
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                4.05,
+                0.14,
+                0.14
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#1b2634",
+              "roughness": 0.62,
+              "metalness": 0.32
+            }
+          }
+        }
+      },
+      {
+        "id": "mech-front-upper-crossbar",
+        "name": "front upper roll cage crossbar",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                5.82,
+                6.78
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                4.1,
+                0.14,
+                0.14
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#223047",
+              "roughness": 0.62,
+              "metalness": 0.32
+            }
+          }
+        }
+      },
+      {
+        "id": "mech-left-front-pillar",
+        "name": "left forward roll cage pillar",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -1.92,
+                4.78,
+                6.92
+              ],
+              "rotation": [
+                0,
+                0,
+                -0.12
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.14,
+                2.15,
+                0.14
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#223047",
+              "roughness": 0.62,
+              "metalness": 0.32
+            }
+          }
+        }
+      },
+      {
+        "id": "mech-right-front-pillar",
+        "name": "right forward roll cage pillar",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                1.92,
+                4.78,
+                6.92
+              ],
+              "rotation": [
+                0,
+                0,
+                0.12
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.14,
+                2.15,
+                0.14
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#223047",
+              "roughness": 0.62,
+              "metalness": 0.32
+            }
+          }
+        }
+      },
+      {
+        "id": "mech-left-roof-rail",
+        "name": "left overhead roll cage rail",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -1.54,
+                5.74,
+                8.58
+              ],
+              "rotation": [
+                0.03,
+                0,
+                -0.02
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.13,
+                0.13,
+                3.7
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#223047",
+              "roughness": 0.62,
+              "metalness": 0.32
+            }
+          }
+        }
+      },
+      {
+        "id": "mech-right-roof-rail",
+        "name": "right overhead roll cage rail",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                1.54,
+                5.74,
+                8.58
+              ],
+              "rotation": [
+                0.03,
+                0,
+                0.02
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.13,
+                0.13,
+                3.7
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#223047",
+              "roughness": 0.62,
+              "metalness": 0.32
+            }
+          }
+        }
+      },
+      {
+        "id": "mech-rear-roof-crossbar",
+        "name": "rear overhead roll cage crossbar",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                5.7,
+                10.18
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                3.15,
+                0.13,
+                0.13
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#223047",
+              "roughness": 0.62,
+              "metalness": 0.32
+            }
+          }
+        }
+      },
+      {
+        "id": "mech-left-diagonal-brace",
+        "name": "left angled roll cage brace",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -1.88,
+                4.75,
+                8.36
+              ],
+              "rotation": [
+                0.34,
+                0.08,
+                -0.05
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.12,
+                0.12,
+                3
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#2c3b4d",
+              "roughness": 0.62,
+              "metalness": 0.32
+            }
+          }
+        }
+      },
+      {
+        "id": "mech-right-diagonal-brace",
+        "name": "right angled roll cage brace",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                1.88,
+                4.75,
+                8.36
+              ],
+              "rotation": [
+                0.34,
+                -0.08,
+                0.05
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.12,
+                0.12,
+                3
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#2c3b4d",
+              "roughness": 0.62,
+              "metalness": 0.32
+            }
+          }
+        }
+      },
+      {
+        "id": "mech-gun-cradle",
+        "name": "machinegun cradle block",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                2.28,
+                5.96
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1.55,
+                0.42,
+                0.72
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#111827",
+              "roughness": 0.62,
+              "metalness": 0.32
+            }
+          }
+        }
+      },
+      {
+        "id": "mech-left-gun-support",
+        "name": "left gun support strut",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -0.82,
+                2.8,
+                6.45
+              ],
+              "rotation": [
+                0.48,
+                0,
+                -0.18
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.16,
+                1.12,
+                0.16
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#243244",
+              "roughness": 0.62,
+              "metalness": 0.32
+            }
+          }
+        }
+      },
+      {
+        "id": "mech-right-gun-support",
+        "name": "right gun support strut",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0.82,
+                2.8,
+                6.45
+              ],
+              "rotation": [
+                0.48,
+                0,
+                0.18
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.16,
+                1.12,
+                0.16
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#243244",
+              "roughness": 0.62,
+              "metalness": 0.32
+            }
+          }
+        }
+      },
+      {
+        "id": "machinegun-barrel",
+        "name": "integrated machinegun barrel",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                2.52,
+                5.68
+              ],
+              "rotation": [
+                1.535,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0.17,
+                0.24,
+                3.08,
+                32
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#737a80",
+              "roughness": 0.52,
+              "metalness": 0.45
+            }
+          },
+          "industrialMachineGun": {
+            "type": "IndustrialMachineGun",
+            "properties": {
+              "barrelId": "machinegun-barrel",
+              "fireRate": 13,
+              "projectileSpeed": 86,
+              "projectileRadius": 0.1,
+              "projectileLifetime": 1.35,
+              "muzzleOffset": 2.12,
+              "muzzleFlashId": "muzzle-flash",
+              "spread": 0.015,
+              "shotEventName": "machinegun:shot",
+              "triggerEventName": "machinegun:trigger",
+              "aimYawRange": 0.7,
+              "aimPitchRange": 0.38,
+              "aimSmoothing": 11,
+              "recoilKick": 0.045,
+              "recoilReturn": 11,
+              "fireSound": "/sound/explode.mp3",
+              "fireVolume": 0.16,
+              "projectileCountEventName": "machinegun:projectiles"
+            }
+          }
+        },
+        "children": [
+          {
+            "id": "muzzle-brake",
+            "name": "muzzle brake",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    -1.62,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.28,
+                    0.28,
+                    0.28,
+                    24
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#111827",
+                  "roughness": 0.68,
+                  "metalness": 0.24
+                }
+              }
+            }
+          },
+          {
+            "id": "muzzle-flash",
+            "name": "muzzle flash",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    -1.9,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    0.5,
+                    0.5,
+                    0.5
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "sphere",
+                  "args": [
+                    0.34,
+                    16,
+                    8
+                  ],
+                  "castShadow": false,
+                  "receiveShadow": false,
+                  "visible": false
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "basic",
+                  "color": "#ffb020",
+                  "transparent": true,
+                  "opacity": 0,
+                  "toneMapped": false,
+                  "depthWrite": false
+                }
+              }
+            }
+          },
+          {
+            "id": "cooling-jacket-top",
+            "name": "cooling jacket top",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    -0.2,
+                    0.25
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.2,
+                    1.64,
+                    0.11
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "standard",
+                  "color": "#3f4650",
+                  "roughness": 0.78,
+                  "metalness": 0.08
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

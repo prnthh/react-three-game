@@ -12,7 +12,7 @@ import { getComponentDef } from "./components/ComponentRegistry";
 import { loadModel, loadSound, loadTexture } from "../dragdrop";
 import { GameInstanceBatch, GameInstanceProvider, getRepeatAxesFromModelProperties } from "./InstanceProvider";
 import { composeTransform, decompose, withBasePath } from "./runtimeUtils";
-import { createPrefabStore, PrefabStoreProvider, usePrefabChildIds, usePrefabNode, usePrefabRootId, usePrefabStoreApi } from "./prefabStore";
+import { createPrefabStore, PrefabStoreProvider, usePrefabChildIds, usePrefabNode, usePrefabRootId, usePrefabStore, usePrefabStoreApi } from "./prefabStore";
 import type { PrefabStoreApi } from "./prefabStore";
 import { AssetRuntimeProvider, NodeScope, useAssetRuntime } from "./assetRuntime";
 import { gameEvents } from "./GameEvents";
@@ -214,8 +214,9 @@ const PrefabRootBody = memo(forwardRef<Scene, PrefabRootProps>(({ editMode, onSe
 }));
 
 function StoreRootNode(props: Omit<RendererProps, "nodeId">) {
+    const prefabId = usePrefabStore(state => state.prefabId);
     const rootId = usePrefabRootId();
-    return <GameObjectRenderer {...props} nodeId={rootId} />;
+    return <GameObjectRenderer key={`${prefabId ?? ''}:${rootId}`} {...props} nodeId={rootId} />;
 }
 
 function getClickEventConfig(component: ComponentData | undefined): ClickEventConfig {

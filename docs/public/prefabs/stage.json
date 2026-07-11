@@ -467,11 +467,6 @@
                 "type": "StageInteraction",
                 "properties": {
                   "action": "dialogue",
-                  "approach": [
-                    -0.55,
-                    0,
-                    -0.65
-                  ],
                   "page1": "The secure hotline only calls payphones that have not been invented yet.",
                   "page2": "Someone left a message: 'Bring the polymorphic dongle. And snacks.'"
                 }
@@ -530,11 +525,6 @@
                 "type": "StageInteraction",
                 "properties": {
                   "action": "dialogue",
-                  "approach": [
-                    0.2,
-                    0,
-                    -0.55
-                  ],
                   "page1": "A suitcase cyberdeck with a phosphor display and three keyboards. None of them agree on where Escape is.",
                   "page2": "Its esoteric packet-origami chip allegedly folds a hypothetical network until two distant ports touch. Strictly for research, naturally."
                 }
@@ -1123,11 +1113,6 @@
             "type": "StageInteraction",
             "properties": {
               "action": "dialogue",
-              "approach": [
-                2.45,
-                0,
-                -2.15
-              ],
               "page1": "The cabinet contains forbidden silicon: moon-phase timers, an artisanal entropy diode, and one chip labeled DO NOT LICK.",
               "page2": "They are perfect for imaginary capers involving air-gapped vending machines and extremely confused routing tables."
             }
@@ -1186,11 +1171,6 @@
             "type": "StageInteraction",
             "properties": {
               "action": "dialogue",
-              "approach": [
-                2.2,
-                0,
-                1.1
-              ],
               "page1": "A spectral signal diviner. It finds ghost packets by listening for the tiny apologies they make after missing a handshake.",
               "page2": "The brass dial selects between NORMAL, ESOTERIC, and PLAUSIBLE DENIABILITY."
             }
@@ -1322,12 +1302,7 @@
               "stageInteraction": {
                 "type": "StageInteraction",
                 "properties": {
-                  "action": "transition",
-                  "approach": [
-                    -3.35,
-                    0,
-                    1.15
-                  ]
+                  "action": "transition"
                 }
               }
             },

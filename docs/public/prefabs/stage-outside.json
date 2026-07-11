@@ -103,7 +103,7 @@
             "type": "Geometry",
             "properties": {
               "geometryType": "box",
-              "args": [10.8, 0.1, 8.4],
+              "args": [22, 0.1, 18],
               "castShadow": false,
               "receiveShadow": true,
               "emitClickEvent": true,
@@ -120,6 +120,53 @@
           }
         },
         "children": []
+      },
+      {
+        "id": "stage-environment",
+        "name": "overcast junkyard environment",
+        "components": {
+          "environment": {
+            "type": "Environment",
+            "properties": {
+              "intensity": 0.65,
+              "resolution": 128
+            }
+          }
+        },
+        "children": [
+          {
+            "id": "stage-environment-sky",
+            "name": "muted evening sky",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [0, 0, 0],
+                  "rotation": [0, 0, 0],
+                  "scale": [1, 1, 1]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "sphere",
+                  "args": [30, 24, 12],
+                  "castShadow": false,
+                  "receiveShadow": false
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "basic",
+                  "color": "#7890a0",
+                  "side": "BackSide"
+                }
+              }
+            },
+            "children": []
+          }
+        ]
       },
       {
         "id": "stage-office-exterior",
@@ -186,8 +233,7 @@
               "stageInteraction": {
                 "type": "StageInteraction",
                 "properties": {
-                  "action": "transition",
-                  "approach": [-2.05, 0, 0.95]
+                  "action": "transition"
                 }
               }
             },
@@ -298,7 +344,6 @@
             "type": "StageInteraction",
             "properties": {
               "action": "dialogue",
-              "approach": [1.75, 0, -0.35],
               "page1": "A once-proud getaway car, retired after its dashboard developed root access and locked the driver out.",
               "page2": "The glove box still contains a hypothetical CAN-bus séance kit. It asks the engine control unit questions through interpretive blinking."
             }
@@ -341,7 +386,6 @@
             "type": "StageInteraction",
             "properties": {
               "action": "dialogue",
-              "approach": [3.0, 0, 0.15],
               "page1": "The trashcan is full of shredded one-time pads, expired access badges, and a banana peel with suspiciously good opsec.",
               "page2": "At the bottom: an esoteric refuse-collection chip that exfiltrates nothing except the smell. A flawless threat model."
             }
@@ -414,6 +458,71 @@
         "children": []
       },
       {
+        "id": "stage-background-trees",
+        "name": "background tree line",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [0, 0, 0],
+              "rotation": [0, 0, 0],
+              "scale": [1, 1, 1]
+            }
+          }
+        },
+        "children": [
+          {
+            "id": "stage-tree-left-far",
+            "name": "left far tree",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [-7.2, 0, -7.2],
+                  "rotation": [0, 0.18, 0],
+                  "scale": [0.72, 0.82, 0.75]
+                }
+              },
+              "model": {
+                "type": "Model",
+                "properties": {
+                  "filename": "models/environment/tree.glb",
+                  "instanced": true
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-tree-left-back",
+            "name": "left back tree",
+            "components": {
+              "transform": { "type": "Transform", "properties": { "position": [-4.8, 0, -8.4], "rotation": [0, -0.22, 0], "scale": [0.58, 0.68, 0.62] } },
+              "model": { "type": "Model", "properties": { "filename": "models/environment/tree.glb", "instanced": true } }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-tree-right-back",
+            "name": "right back tree",
+            "components": {
+              "transform": { "type": "Transform", "properties": { "position": [5.2, 0, -8.1], "rotation": [0, 0.12, 0], "scale": [0.65, 0.76, 0.69] } },
+              "model": { "type": "Model", "properties": { "filename": "models/environment/tree.glb", "instanced": true } }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-tree-right-far",
+            "name": "right far tree",
+            "components": {
+              "transform": { "type": "Transform", "properties": { "position": [8.1, 0, -6.8], "rotation": [0, -0.16, 0], "scale": [0.78, 0.88, 0.8] } },
+              "model": { "type": "Model", "properties": { "filename": "models/environment/tree.glb", "instanced": true } }
+            },
+            "children": []
+          }
+        ]
+      },
+      {
         "id": "stage-player-collider",
         "name": "player physics cylinder",
         "hidden": true,
@@ -421,7 +530,7 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [-2.05, 0.85, 0.95],
+              "position": [-0.9, 0.85, -0.35],
               "rotation": [0, 0, 0],
               "scale": [1, 1, 1]
             }

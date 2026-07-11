@@ -25,7 +25,7 @@ const officeScene: StageScene = {
     prefab: officePrefab as Prefab,
     playerStart: [-1.25, 0, 0.25],
     transition: (nodeId) => nodeId === "stage-left-door"
-        ? { prefab: outsidePrefab as Prefab, spawn: [-2.05, 0, 0.95] }
+        ? { prefab: outsidePrefab as Prefab, spawn: [-0.9, 0, -0.35] }
         : null,
     Content: OfficeContent,
 };

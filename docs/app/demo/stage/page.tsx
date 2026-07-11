@@ -1,9 +1,9 @@
 "use client";
 
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { findComponent, PrefabEditor, PrefabEditorMode, registerComponent, useScene } from "react-three-game/editor";
-import type { Prefab } from "react-three-game/editor";
+import { findComponent, gameEvents, PrefabEditor, PrefabEditorMode, registerComponent, useScene } from "react-three-game/editor";
+import type { ContactEventPayload, Prefab } from "react-three-game/editor";
 import { CrashcatPhysicsComponent, CrashcatRuntime } from "react-three-game/plugins/crashcat";
 import AnimationMixer from "./components/AnimationMixer";
 import SkinnedMesh, { type SkinnedMeshRef } from "./components/SkinnedMesh";
@@ -13,7 +13,7 @@ import StageInteractionComponent, { type StageInteractionProperties, type StageP
 import officeScene from "./scenes/office";
 import outsideScene from "./scenes/outside";
 import type { StageScene } from "./scenes/types";
-import { Quaternion, Vector3, type Group } from "three";
+import { OrthographicCamera, PerspectiveCamera, Quaternion, Vector3, type Group } from "three";
 import type { AnimationAction } from "three";
 
 registerComponent(CrashcatPhysicsComponent);
@@ -24,8 +24,12 @@ const ONIMILIO_MODEL = withBasePath("/models/human/onimilio.glb");
 const STAGE_SCENES = [officeScene, outsideScene];
 const PLAYER_COLLIDER_ID = "stage-player-collider";
 const PLAYER_COLLIDER_CENTER_Y = 0.85;
+const INTERACTION_ENTER_EVENT = "stage:interaction-enter";
+const INTERACTION_EXIT_EVENT = "stage:interaction-exit";
 const WALK_SPEED = 1.55;
 const ARRIVAL_DISTANCE = 0.08;
+const CAMERA_DEAD_ZONE_X = 0.8;
+const CAMERA_FOLLOW_SPEED = 8;
 const UP = new Vector3(0, 1, 0);
 
 type PendingInteraction = { nodeId: string; properties: StageInteractionProperties };
@@ -59,14 +63,51 @@ function StagePrefabLoader({ prefab }: { prefab: Prefab }) {
     return null;
 }
 
+function PlayerCameraFollow() {
+    const scene = useScene();
+    const camera = useThree((state) => state.camera);
+    const worldPosition = useRef(new Vector3());
+    const viewPosition = useRef(new Vector3());
+    const projectedPosition = useRef(new Vector3());
+
+    useFrame((_, delta) => {
+        const player = scene.getObject(PLAYER_COLLIDER_ID);
+        if (!player) return;
+
+        player.getWorldPosition(worldPosition.current);
+        camera.updateMatrixWorld();
+        projectedPosition.current.copy(worldPosition.current).project(camera);
+
+        const projectedX = projectedPosition.current.x;
+        if (Math.abs(projectedX) <= CAMERA_DEAD_ZONE_X) return;
+
+        viewPosition.current.copy(worldPosition.current).applyMatrix4(camera.matrixWorldInverse);
+        let halfWidth = 0;
+        if (camera instanceof PerspectiveCamera) {
+            halfWidth = -viewPosition.current.z
+                * Math.tan(camera.fov * Math.PI / 360)
+                * camera.aspect
+                / camera.zoom;
+        } else if (camera instanceof OrthographicCamera) {
+            halfWidth = (camera.right - camera.left) / (2 * camera.zoom);
+        }
+        if (halfWidth <= 0) return;
+
+        const boundary = Math.sign(projectedX) * CAMERA_DEAD_ZONE_X;
+        const targetOffset = (projectedX - boundary) * halfWidth;
+        camera.position.x += targetOffset * (1 - Math.exp(-CAMERA_FOLLOW_SPEED * delta));
+        camera.updateMatrixWorld();
+    }, -2);
+
+    return null;
+}
+
 function PlayerCharacter({
     destination,
     spawn,
-    onArrive,
 }: {
     destination: StagePoint | null;
     spawn: StagePoint;
-    onArrive?: () => void;
 }) {
     const scene = useScene();
     const playerRef = useRef<Group>(null);
@@ -105,7 +146,11 @@ function PlayerCharacter({
     }, [spawn, syncPlayerCollider]);
 
     useEffect(() => {
-        if (!destination) return;
+        if (!destination) {
+            targetRef.current = null;
+            setIsWalking(false);
+            return;
+        }
 
         targetRef.current = new Vector3(destination[0], spawn[1], destination[2]);
         setIsWalking(true);
@@ -142,7 +187,6 @@ function PlayerCharacter({
             targetRef.current = null;
             setIsWalking(false);
             syncPlayerCollider(player);
-            onArrive?.();
             return;
         }
 
@@ -174,6 +218,7 @@ export default function StageDemo() {
     const [playerSpawn, setPlayerSpawn] = useState<StagePoint>(officeScene.playerStart);
     const [playerDestination, setPlayerDestination] = useState<StagePoint | null>(null);
     const pendingInteractionRef = useRef<PendingInteraction | null>(null);
+    const activeInteractionSensorsRef = useRef(new Set<string>());
     const [dialogue, setDialogue] = useState<Dialogue | null>(null);
 
     const dialogueText = dialogue?.pages[dialogue.page] ?? "";
@@ -214,10 +259,7 @@ export default function StageDemo() {
         };
     }, []);
 
-    const handlePlayerArrive = useCallback(() => {
-        const interaction = pendingInteractionRef.current;
-        if (!interaction) return;
-
+    const activateInteraction = useCallback((interaction: PendingInteraction) => {
         pendingInteractionRef.current = null;
         setPlayerDestination(null);
 
@@ -236,6 +278,28 @@ export default function StageDemo() {
         setActiveScene(targetScene);
         setPlayerSpawn(transition.spawn);
     }, [activeScene]);
+
+    useEffect(() => {
+        const stopEnter = gameEvents.on(INTERACTION_ENTER_EVENT, (payload) => {
+            const contact = payload as ContactEventPayload;
+            if (!contact.sourceNodeId || contact.targetNodeId !== PLAYER_COLLIDER_ID) return;
+            activeInteractionSensorsRef.current.add(contact.sourceNodeId);
+
+            const interaction = pendingInteractionRef.current;
+            if (interaction?.nodeId === contact.sourceNodeId) activateInteraction(interaction);
+        });
+        const stopExit = gameEvents.on(INTERACTION_EXIT_EVENT, (payload) => {
+            const contact = payload as ContactEventPayload;
+            if (contact.sourceNodeId && contact.targetNodeId === PLAYER_COLLIDER_ID) {
+                activeInteractionSensorsRef.current.delete(contact.sourceNodeId);
+            }
+        });
+        return () => {
+            stopEnter();
+            stopExit();
+            activeInteractionSensorsRef.current.clear();
+        };
+    }, [activateInteraction]);
 
     const advanceDialogue = useCallback(() => {
         setDialogue((current) => {
@@ -259,10 +323,16 @@ export default function StageDemo() {
                     if (eventType !== "click") return;
 
                     const interaction = findComponent(node, "StageInteraction")?.properties as StageInteractionProperties | undefined;
-                    if (interaction?.approach) {
-                        pendingInteractionRef.current = { nodeId: node.id, properties: interaction };
+                    if (interaction) {
+                        const objectPosition = event.object.getWorldPosition(new Vector3());
+                        const pendingInteraction = { nodeId: node.id, properties: interaction };
+                        pendingInteractionRef.current = pendingInteraction;
                         setDialogue(null);
-                        setPlayerDestination(interaction.approach);
+                        if (activeInteractionSensorsRef.current.has(node.id)) {
+                            activateInteraction(pendingInteraction);
+                            return;
+                        }
+                        setPlayerDestination([objectPosition.x, 0, objectPosition.z]);
                         return;
                     }
 
@@ -275,10 +345,11 @@ export default function StageDemo() {
             >
                 <CrashcatRuntime>
                     <StagePrefabLoader prefab={activeScene.prefab} />
+                    <PlayerCameraFollow />
                     <PlayerCharacter
+                        key={activeScene.id}
                         destination={playerDestination}
                         spawn={playerSpawn}
-                        onArrive={handlePlayerArrive}
                     />
 
                     {ActiveSceneContent ? <ActiveSceneContent /> : null}

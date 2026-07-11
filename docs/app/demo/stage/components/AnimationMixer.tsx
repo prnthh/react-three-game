@@ -102,12 +102,12 @@ function useExternalAnimations(animationOverrides?: Record<string, string>) {
 
 function useAnimationState(
     clone?: Object3D<Object3DEventMap> | null,
+    animation?: string,
     animationOverrides?: Record<string, string>,
     onActions?: (actions: Record<string, AnimationAction>) => void,
     modelAnimations?: AnimationClip[],
     neckBoneName = "mixamorigNeck",
 ) {
-    const [thisAnimation, setThisAnimation] = useState<string | string[] | undefined>(undefined);
     const prevActionRef = useRef<AnimationAction | null>(null);
     const lastKeyRef = useRef<string | undefined>(undefined);
     const externalAnimations = useExternalAnimations(animationOverrides);
@@ -186,21 +186,18 @@ function useAnimationState(
     }, [mixer]);
 
     useEffect(() => {
-        if (!thisAnimation || !mixer) return;
+        if (!animation || !mixer) return;
 
-        const animationKey = typeof thisAnimation === "string" ? thisAnimation : thisAnimation[0];
-        if (!animationKey) return;
-
-        const isReversed = animationKey in REVERSE_ANIMATION_MAP;
+        const isReversed = animation in REVERSE_ANIMATION_MAP;
         const actionKeys = Object.keys(actions);
         if (actionKeys.length === 0) return;
 
-        const next = actions[animationKey];
+        const next = actions[animation];
         if (!next) {
-            console.warn(`Animation "${animationKey}" was not found. Available animations: ${actionKeys.join(", ")}`);
+            console.warn(`Animation "${animation}" was not found. Available animations: ${actionKeys.join(", ")}`);
             return;
         }
-        if (lastKeyRef.current === animationKey && prevActionRef.current === next) return;
+        if (lastKeyRef.current === animation && prevActionRef.current === next && next.isRunning()) return;
 
         const prev = prevActionRef.current;
         next.clampWhenFinished = true;
@@ -211,24 +208,22 @@ function useAnimationState(
         } catch { }
 
         try {
-            next.reset().setLoop(LoopRepeat, 1000).fadeIn(0.2);
+            next.reset().setLoop(LoopRepeat, Infinity).fadeIn(0.2);
             next.time = isReversed ? next.getClip().duration : 0;
             next.play();
         } catch (error) {
-            console.warn(`Could not play animation "${animationKey}".`, error);
+            console.warn(`Could not play animation "${animation}".`, error);
             return;
         }
 
         prevActionRef.current = next;
-        lastKeyRef.current = animationKey;
-    }, [actions, mixer, thisAnimation]);
+        lastKeyRef.current = animation;
+    }, [actions, animation, mixer]);
 
     return useMemo(() => ({
-        thisAnimation,
-        setThisAnimation,
         mixer,
         actions,
-    }), [actions, mixer, thisAnimation]);
+    }), [actions, mixer]);
 }
 
 function getTargetWorldPosition(target: PlayerTarget, result: Vector3) {
@@ -306,13 +301,7 @@ export default function AnimationMixer({
     const model = skinnedMesh?.model ?? null;
     const animations = skinnedMesh?.animations ?? [];
     const activeAnimation = animation ?? animations[0]?.name;
-    const { mixer, setThisAnimation } = useAnimationState(model, animationOverrides, onActions, animations, neckBoneName);
-
-    useEffect(() => {
-        if (activeAnimation && mixer) {
-            setThisAnimation(activeAnimation);
-        }
-    }, [activeAnimation, mixer, setThisAnimation]);
+    const { mixer } = useAnimationState(model, activeAnimation, animationOverrides, onActions, animations, neckBoneName);
 
     useFrame((_, delta) => {
         mixer?.update(delta);

@@ -1,0 +1,464 @@
+{
+  "id": "stage-outside",
+  "name": "Stage Junkyard Exterior",
+  "root": {
+    "id": "stage-root",
+    "name": "junkyard root",
+    "components": {
+      "transform": {
+        "type": "Transform",
+        "properties": {
+          "position": [0, 0, 0],
+          "rotation": [0, 0, 0],
+          "scale": [1, 1, 1]
+        }
+      }
+    },
+    "children": [
+      {
+        "id": "stage-camera",
+        "name": "junkyard camera",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [0.3, 2.45, 6.6],
+              "rotation": [-0.36, 0.03, 0],
+              "scale": [1, 1, 1]
+            }
+          },
+          "camera": {
+            "type": "Camera",
+            "properties": {
+              "projection": "perspective",
+              "fov": 58,
+              "near": 0.1,
+              "far": 120,
+              "zoom": 1
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "stage-ambient-fill",
+        "name": "cool outdoor fill",
+        "components": {
+          "ambientLight": {
+            "type": "AmbientLight",
+            "properties": {
+              "color": "#c9dcff",
+              "intensity": 1.25
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "stage-key-light",
+        "name": "low yard sun",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [-3.8, 5.4, 5.2],
+              "rotation": [0, 0, 0],
+              "scale": [1, 1, 1]
+            }
+          },
+          "directionalLight": {
+            "type": "DirectionalLight",
+            "properties": {
+              "color": "#ffe5ba",
+              "intensity": 1.8,
+              "targetOffset": [3.4, -5.1, -5.4],
+              "castShadow": true,
+              "shadowMapSize": 2048,
+              "shadowCameraTop": 8,
+              "shadowCameraBottom": -8,
+              "shadowCameraLeft": -8,
+              "shadowCameraRight": 8,
+              "shadowCameraNear": 0.5,
+              "shadowCameraFar": 50,
+              "shadowBias": 0.001,
+              "shadowNormalBias": 0.02
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "stage-floor",
+        "name": "packed dirt yard",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [0, -0.05, 0],
+              "rotation": [0, 0, 0],
+              "scale": [1, 1, 1]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [10.8, 0.1, 8.4],
+              "castShadow": false,
+              "receiveShadow": true,
+              "emitClickEvent": true,
+              "clickEventName": "stage:floor-click"
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#6d5b45",
+              "roughness": 0.96,
+              "metalness": 0
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "stage-office-exterior",
+        "name": "small office building",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [-2.85, 1.05, -2.75],
+              "rotation": [0, 0.06, 0],
+              "scale": [1, 1, 1]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [3.2, 2.1, 1.65],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#9b6a42",
+              "roughness": 0.9,
+              "metalness": 0
+            }
+          }
+        },
+        "children": [
+          {
+            "id": "stage-office-exterior-door",
+            "name": "outside office door",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [0.95, -0.25, 0.86],
+                  "rotation": [0, 0, 0],
+                  "scale": [1, 1, 1]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [0.72, 1.35, 0.1],
+                  "castShadow": true,
+                  "receiveShadow": true,
+                  "emitClickEvent": true,
+                  "clickEventName": "stage:door-click"
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "color": "#29556d",
+                  "roughness": 0.82,
+                  "metalness": 0
+                }
+              },
+              "stageInteraction": {
+                "type": "StageInteraction",
+                "properties": {
+                  "action": "transition",
+                  "approach": [-2.05, 0, 0.95]
+                }
+              }
+            },
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "stage-chainlink-back",
+        "name": "back fence",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [1.1, 0.9, -4.05],
+              "rotation": [0, 0, 0],
+              "scale": [1, 1, 1]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [8.9, 1.8, 0.08],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#aab2b5",
+              "roughness": 0.55,
+              "metalness": 0.35,
+              "transparent": true,
+              "opacity": 0.58
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "stage-chainlink-left",
+        "name": "left fence",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [-5.35, 0.9, 0],
+              "rotation": [0, 0, 0],
+              "scale": [1, 1, 1]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [0.08, 1.8, 8.1],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#aab2b5",
+              "roughness": 0.55,
+              "metalness": 0.35,
+              "transparent": true,
+              "opacity": 0.58
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "stage-scrap-car",
+        "name": "rusted car shell",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [2.55, 0.34, -1.45],
+              "rotation": [0, -0.32, 0],
+              "scale": [1, 1, 1]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [1.9, 0.68, 1.05],
+              "castShadow": true,
+              "receiveShadow": true,
+              "emitClickEvent": true,
+              "clickEventName": "stage:inspect-car"
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#8a3f25",
+              "roughness": 0.97,
+              "metalness": 0.15
+            }
+          },
+          "stageInteraction": {
+            "type": "StageInteraction",
+            "properties": {
+              "action": "dialogue",
+              "approach": [1.75, 0, -0.35],
+              "page1": "A once-proud getaway car, retired after its dashboard developed root access and locked the driver out.",
+              "page2": "The glove box still contains a hypothetical CAN-bus séance kit. It asks the engine control unit questions through interpretive blinking."
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "stage-trashcan",
+        "name": "network operations trashcan",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [3.75, 0.52, -0.15],
+              "rotation": [0, -0.12, 0],
+              "scale": [1, 1, 1]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [0.42, 0.34, 1.04, 20],
+              "castShadow": true,
+              "receiveShadow": true,
+              "emitClickEvent": true,
+              "clickEventName": "stage:inspect-trashcan"
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#51636a",
+              "roughness": 0.76,
+              "metalness": 0.38
+            }
+          },
+          "stageInteraction": {
+            "type": "StageInteraction",
+            "properties": {
+              "action": "dialogue",
+              "approach": [3.0, 0, 0.15],
+              "page1": "The trashcan is full of shredded one-time pads, expired access badges, and a banana peel with suspiciously good opsec.",
+              "page2": "At the bottom: an esoteric refuse-collection chip that exfiltrates nothing except the smell. A flawless threat model."
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "stage-tire-stack",
+        "name": "tire stack",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [4.0, 0.42, 1.25],
+              "rotation": [0, 0.16, 0],
+              "scale": [1, 1, 1]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [0.45, 0.45, 0.84, 28],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#1f2325",
+              "roughness": 0.92,
+              "metalness": 0
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "stage-junk-pile",
+        "name": "angular junk pile",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [0.95, 0.28, 2.25],
+              "rotation": [0, 0.42, 0],
+              "scale": [1, 1, 1]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [1.35, 0.56, 1.0],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#747168",
+              "roughness": 0.88,
+              "metalness": 0.25
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "stage-player-collider",
+        "name": "player physics cylinder",
+        "hidden": true,
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [-2.05, 0.85, 0.95],
+              "rotation": [0, 0, 0],
+              "scale": [1, 1, 1]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [0.32, 0.32, 1.7, 24],
+              "visible": false,
+              "castShadow": false,
+              "receiveShadow": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "basic",
+              "color": "#60a5fa",
+              "transparent": true,
+              "opacity": 0.08,
+              "depthWrite": false
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "kinematicPosition",
+              "colliders": "cylinder",
+              "cylinderRadius": 0.32,
+              "cylinderHalfHeight": 0.85,
+              "sensor": false
+            }
+          }
+        },
+        "children": []
+      }
+    ]
+  }
+}

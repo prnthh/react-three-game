@@ -2,26 +2,38 @@
 
 import { useFrame } from "@react-three/fiber";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { PrefabEditor, PrefabEditorMode, registerComponent, useScene } from "react-three-game/editor";
+import { findComponent, PrefabEditor, PrefabEditorMode, registerComponent, useScene } from "react-three-game/editor";
+import type { Prefab } from "react-three-game/editor";
 import { CrashcatPhysicsComponent, CrashcatRuntime } from "react-three-game/plugins/crashcat";
-import stagePrefab from "../../../public/prefabs/stage.json";
 import AnimationMixer from "./components/AnimationMixer";
 import SkinnedMesh, { type SkinnedMeshRef } from "./components/SkinnedMesh";
 import { BASE_PATH, withBasePath } from "../../basePath";
 import ActivationColliderComponent from "./ActivationColliderComponent";
+import StageInteractionComponent, { type StageInteractionProperties, type StagePoint } from "./StageInteractionComponent";
+import officeScene from "./scenes/office";
+import outsideScene from "./scenes/outside";
+import type { StageScene } from "./scenes/types";
 import { Quaternion, Vector3, type Group } from "three";
 import type { AnimationAction } from "three";
 
 registerComponent(CrashcatPhysicsComponent);
 registerComponent(ActivationColliderComponent);
+registerComponent(StageInteractionComponent);
 
 const ONIMILIO_MODEL = withBasePath("/models/human/onimilio.glb");
-const PLAYER_START: [number, number, number] = [-1.25, 0, -0.35];
+const STAGE_SCENES = [officeScene, outsideScene];
 const PLAYER_COLLIDER_ID = "stage-player-collider";
 const PLAYER_COLLIDER_CENTER_Y = 0.85;
 const WALK_SPEED = 1.55;
 const ARRIVAL_DISTANCE = 0.08;
 const UP = new Vector3(0, 1, 0);
+
+type PendingInteraction = { nodeId: string; properties: StageInteractionProperties };
+type Dialogue = { nodeId: string; pages: string[]; page: number; visible: number };
+
+function interactionPages(properties: StageInteractionProperties) {
+    return [properties.page1, properties.page2].filter((page): page is string => Boolean(page?.trim()));
+}
 
 function findAnimationName(actionNames: string[], preferred: "idle" | "walk") {
     const normalized = actionNames.map((name) => ({ name, key: name.toLowerCase() }));
@@ -37,9 +49,25 @@ function findAnimationName(actionNames: string[], preferred: "idle" | "walk") {
         ?? actionNames[0];
 }
 
-type StagePoint = [number, number, number];
+function StagePrefabLoader({ prefab }: { prefab: Prefab }) {
+    const scene = useScene();
 
-function PlayerCharacter({ destination }: { destination: StagePoint | null }) {
+    useEffect(() => {
+        scene.replace(prefab);
+    }, [prefab, scene]);
+
+    return null;
+}
+
+function PlayerCharacter({
+    destination,
+    spawn,
+    onArrive,
+}: {
+    destination: StagePoint | null;
+    spawn: StagePoint;
+    onArrive?: () => void;
+}) {
     const scene = useScene();
     const playerRef = useRef<Group>(null);
     const skinnedMeshRef = useRef<SkinnedMeshRef>(null);
@@ -55,12 +83,33 @@ function PlayerCharacter({ destination }: { destination: StagePoint | null }) {
         return findAnimationName(actionNames, isWalking ? "walk" : "idle");
     }, [actionNames, isWalking]);
 
+    const syncPlayerCollider = useCallback((player: Group) => {
+        const collider = scene.getObject(PLAYER_COLLIDER_ID);
+        if (!collider) return;
+
+        player.getWorldPosition(scratchPosition.current);
+        collider.position.set(scratchPosition.current.x, PLAYER_COLLIDER_CENTER_Y, scratchPosition.current.z);
+        collider.quaternion.copy(player.quaternion);
+        collider.updateMatrixWorld(true);
+    }, [scene]);
+
+    useEffect(() => {
+        const player = playerRef.current;
+        if (!player) return;
+
+        player.position.set(spawn[0], spawn[1], spawn[2]);
+        player.rotation.set(0, 0.25, 0);
+        targetRef.current = null;
+        setIsWalking(false);
+        syncPlayerCollider(player);
+    }, [spawn, syncPlayerCollider]);
+
     useEffect(() => {
         if (!destination) return;
 
-        targetRef.current = new Vector3(destination[0], PLAYER_START[1], destination[2]);
+        targetRef.current = new Vector3(destination[0], spawn[1], destination[2]);
         setIsWalking(true);
-    }, [destination]);
+    }, [destination, spawn]);
 
     const handleActions = useCallback((actions: Record<string, AnimationAction>) => {
         const nextNames = Object.keys(actions);
@@ -72,16 +121,6 @@ function PlayerCharacter({ destination }: { destination: StagePoint | null }) {
             return nextNames;
         });
     }, []);
-
-    const syncPlayerCollider = useCallback((player: Group) => {
-        const collider = scene.getObject(PLAYER_COLLIDER_ID);
-        if (!collider) return;
-
-        player.getWorldPosition(scratchPosition.current);
-        collider.position.set(scratchPosition.current.x, PLAYER_COLLIDER_CENTER_Y, scratchPosition.current.z);
-        collider.quaternion.copy(player.quaternion);
-        collider.updateMatrixWorld(true);
-    }, [scene]);
 
     useFrame((_, delta) => {
         const player = playerRef.current;
@@ -99,10 +138,11 @@ function PlayerCharacter({ destination }: { destination: StagePoint | null }) {
 
         const remaining = direction.length();
         if (remaining <= ARRIVAL_DISTANCE) {
-            player.position.set(target.x, PLAYER_START[1], target.z);
+            player.position.set(target.x, spawn[1], target.z);
             targetRef.current = null;
             setIsWalking(false);
             syncPlayerCollider(player);
+            onArrive?.();
             return;
         }
 
@@ -118,7 +158,7 @@ function PlayerCharacter({ destination }: { destination: StagePoint | null }) {
     }, -3);
 
     return (
-        <group ref={playerRef} position={PLAYER_START} rotation={[0, 0.25, 0]} scale={[0.92, 0.92, 0.92]}>
+        <group ref={playerRef} position={spawn} rotation={[0, 0.25, 0]} scale={[0.92, 0.92, 0.92]}>
             <SkinnedMesh ref={skinnedMeshRef} model={ONIMILIO_MODEL} />
             <AnimationMixer
                 skinnedMeshRef={skinnedMeshRef}
@@ -130,30 +170,132 @@ function PlayerCharacter({ destination }: { destination: StagePoint | null }) {
 }
 
 export default function StageDemo() {
-    const rightCharacterRef = useRef<SkinnedMeshRef>(null);
+    const [activeScene, setActiveScene] = useState<StageScene>(officeScene);
+    const [playerSpawn, setPlayerSpawn] = useState<StagePoint>(officeScene.playerStart);
     const [playerDestination, setPlayerDestination] = useState<StagePoint | null>(null);
+    const pendingInteractionRef = useRef<PendingInteraction | null>(null);
+    const [dialogue, setDialogue] = useState<Dialogue | null>(null);
+
+    const dialogueText = dialogue?.pages[dialogue.page] ?? "";
+    const debugStateRef = useRef({ activeScene, playerSpawn, playerDestination, dialogue, dialogueText });
+    debugStateRef.current = { activeScene, playerSpawn, playerDestination, dialogue, dialogueText };
+
+    useEffect(() => {
+        if (!dialogue || dialogue.visible >= dialogueText.length) return;
+
+        const timer = window.setInterval(() => {
+            setDialogue((current) => current && current.nodeId === dialogue.nodeId && current.page === dialogue.page
+                ? { ...current, visible: Math.min(dialogueText.length, current.visible + 1) }
+                : current);
+        }, 24);
+        return () => window.clearInterval(timer);
+    }, [dialogue, dialogueText]);
+
+    useEffect(() => {
+        const debugWindow = window as Window & { render_game_to_text?: () => string };
+        debugWindow.render_game_to_text = () => {
+            const state = debugStateRef.current;
+            return JSON.stringify({
+                scene: state.activeScene.id,
+                playerSpawn: state.playerSpawn,
+                destination: state.playerDestination,
+                dialogue: state.dialogue ? {
+                    object: state.dialogue.nodeId,
+                    page: state.dialogue.page + 1,
+                    pages: state.dialogue.pages.length,
+                    text: state.dialogueText.slice(0, state.dialogue.visible),
+                    typing: state.dialogue.visible < state.dialogueText.length,
+                } : null,
+                coordinates: "x right, y up, z toward camera",
+            });
+        };
+        return () => {
+            delete debugWindow.render_game_to_text;
+        };
+    }, []);
+
+    const handlePlayerArrive = useCallback(() => {
+        const interaction = pendingInteractionRef.current;
+        if (!interaction) return;
+
+        pendingInteractionRef.current = null;
+        setPlayerDestination(null);
+
+        if (interaction.properties.action === "dialogue") {
+            const pages = interactionPages(interaction.properties);
+            if (pages.length > 0) setDialogue({ nodeId: interaction.nodeId, pages, page: 0, visible: 0 });
+            return;
+        }
+
+        const transition = activeScene.transition(interaction.nodeId);
+        if (!transition) return;
+
+        const targetScene = STAGE_SCENES.find((scene) => scene.prefab === transition.prefab);
+        if (!targetScene) return;
+
+        setActiveScene(targetScene);
+        setPlayerSpawn(transition.spawn);
+    }, [activeScene]);
+
+    const advanceDialogue = useCallback(() => {
+        setDialogue((current) => {
+            if (!current) return null;
+            const text = current.pages[current.page] ?? "";
+            if (current.visible < text.length) return { ...current, visible: text.length };
+            if (current.page + 1 < current.pages.length) return { ...current, page: current.page + 1, visible: 0 };
+            return null;
+        });
+    }, []);
+
+    const ActiveSceneContent = activeScene.Content;
 
     return (
-        <main className="flex h-screen w-screen flex-col items-center justify-between bg-white dark:bg-black sm:items-start">
+        <main className="relative flex h-screen w-screen flex-col items-center justify-between overflow-hidden bg-white dark:bg-black sm:items-start">
             <PrefabEditor
                 basePath={BASE_PATH}
-                initialPrefab={stagePrefab}
+                initialPrefab={officeScene.prefab}
                 mode={PrefabEditorMode.Play}
                 onPointerEvent={(eventType, event, node) => {
-                    if (eventType === "click" && node.id == "stage-floor") {
+                    if (eventType !== "click") return;
+
+                    const interaction = findComponent(node, "StageInteraction")?.properties as StageInteractionProperties | undefined;
+                    if (interaction?.approach) {
+                        pendingInteractionRef.current = { nodeId: node.id, properties: interaction };
+                        setDialogue(null);
+                        setPlayerDestination(interaction.approach);
+                        return;
+                    }
+
+                    if (node.id === "stage-floor") {
+                        pendingInteractionRef.current = null;
+                        setDialogue(null);
                         setPlayerDestination([event.point.x, event.point.y, event.point.z]);
                     }
                 }}
             >
                 <CrashcatRuntime>
-                    <PlayerCharacter destination={playerDestination} />
+                    <StagePrefabLoader prefab={activeScene.prefab} />
+                    <PlayerCharacter
+                        destination={playerDestination}
+                        spawn={playerSpawn}
+                        onArrive={handlePlayerArrive}
+                    />
 
-                    <group position={[1.25, 0, -0.2]} rotation={[0, -0.25, 0]} scale={[0.92, 0.92, 0.92]}>
-                        <SkinnedMesh ref={rightCharacterRef} model={ONIMILIO_MODEL} />
-                        <AnimationMixer skinnedMeshRef={rightCharacterRef} />
-                    </group>
+                    {ActiveSceneContent ? <ActiveSceneContent /> : null}
                 </CrashcatRuntime>
             </PrefabEditor>
+            {dialogue ? (
+                <button
+                    type="button"
+                    onClick={advanceDialogue}
+                    className="absolute bottom-8 left-1/2 z-20 w-[min(42rem,calc(100vw-2rem))] -translate-x-1/2 cursor-pointer rounded-2xl border-4 border-black bg-[#fff7cf] px-6 py-5 text-left font-mono text-base leading-relaxed text-black shadow-[8px_8px_0_#1b1b1b] sm:text-lg"
+                    aria-label="Continue dialogue"
+                >
+                    <span className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#8b3d2f]">Field notes</span>
+                    {dialogueText.slice(0, dialogue.visible)}
+                    <span className="ml-1 animate-pulse">{dialogue.visible < dialogueText.length ? "▌" : "▼"}</span>
+                </button>
+            ) : null}
         </main>
     );
 }

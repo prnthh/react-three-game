@@ -1,9 +1,9 @@
 {
-  "id": "stage",
-  "name": "Stage Example",
+  "id": "stage-office",
+  "name": "Stage Office",
   "root": {
     "id": "stage-root",
-    "name": "stage root",
+    "name": "office root",
     "components": {
       "transform": {
         "type": "Transform",
@@ -29,18 +29,18 @@
     "children": [
       {
         "id": "stage-camera",
-        "name": "stage camera",
+        "name": "office camera",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
                 0,
-                1.5,
-                3
+                3.05,
+                6.55
               ],
               "rotation": [
-                -0.12000000000000026,
+                -0.38,
                 0,
                 0
               ],
@@ -55,7 +55,7 @@
             "type": "Camera",
             "properties": {
               "projection": "perspective",
-              "fov": 80,
+              "fov": 64,
               "near": 0.1,
               "far": 100,
               "zoom": 1
@@ -66,19 +66,13 @@
       },
       {
         "id": "stage-ambient-fill",
-        "name": "ambient fill",
+        "name": "warm room fill",
         "components": {
           "ambientLight": {
             "type": "AmbientLight",
             "properties": {
-              "color": "#d7e8ff",
-              "intensity": 1
-            }
-          },
-          "ambientlight": {
-            "type": "AmbientLight",
-            "properties": {
-              "intensity": 1.5
+              "color": "#ffe3bf",
+              "intensity": 1.15
             }
           }
         },
@@ -86,15 +80,15 @@
       },
       {
         "id": "stage-key-light",
-        "name": "key light",
+        "name": "roof spotlight",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
-                -3,
-                6,
-                4
+                0.25,
+                2,
+                0.3
               ],
               "rotation": [
                 0,
@@ -108,24 +102,24 @@
               ]
             }
           },
-          "directionalLight": {
-            "type": "DirectionalLight",
+          "spotLight": {
+            "type": "SpotLight",
             "properties": {
-              "color": "#fff4dc",
-              "intensity": 1.25,
+              "color": "#fff3db",
+              "intensity": 80,
+              "angle": 1.55,
+              "penumbra": 0.58,
+              "distance": 10,
+              "decay": 2,
               "targetOffset": [
-                3,
-                -5,
-                -5
+                -0.25,
+                -3.35,
+                -0.8
               ],
               "castShadow": true,
               "shadowMapSize": 2048,
-              "shadowCameraTop": 6,
-              "shadowCameraBottom": -6,
-              "shadowCameraLeft": -6,
-              "shadowCameraRight": 6,
-              "shadowCameraNear": 0.5,
-              "shadowCameraFar": 40,
+              "shadowCameraNear": 0.2,
+              "shadowCameraFar": 12,
               "shadowBias": 0.001,
               "shadowNormalBias": 0.02
             }
@@ -135,7 +129,7 @@
       },
       {
         "id": "stage-floor",
-        "name": "floor",
+        "name": "scuffed office floor",
         "components": {
           "transform": {
             "type": "Transform",
@@ -162,9 +156,9 @@
             "properties": {
               "geometryType": "box",
               "args": [
-                9,
+                8.6,
                 0.1,
-                9
+                10.2
               ],
               "castShadow": false,
               "receiveShadow": true,
@@ -175,13 +169,1220 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#3a3d42",
-              "roughness": 0.82,
+              "color": "#795a3d",
+              "roughness": 0.88,
               "metalness": 0
             }
           }
         },
         "children": []
+      },
+      {
+        "id": "stage-back-wall",
+        "name": "back office wall",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                1.75,
+                -3.4
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                8.8,
+                3.6,
+                0.16
+              ],
+              "castShadow": false,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#b68455",
+              "roughness": 0.86,
+              "metalness": 0
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "stage-left-wall",
+        "name": "left office wall",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -4.38,
+                1.75,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.16,
+                3.6,
+                10.2
+              ],
+              "castShadow": false,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#a56f47",
+              "roughness": 0.86,
+              "metalness": 0
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "stage-right-wall",
+        "name": "right office wall",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                4.38,
+                1.75,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.16,
+                3.6,
+                10.2
+              ],
+              "castShadow": false,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#8f6040",
+              "roughness": 0.88,
+              "metalness": 0
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "stage-desk",
+        "name": "cluttered partner desk",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0.45,
+                0.43,
+                -1.7
+              ],
+              "rotation": [
+                0,
+                -0.08,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                2.8,
+                0.85,
+                1.05
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#5a3828",
+              "roughness": 0.72,
+              "metalness": 0
+            }
+          }
+        },
+        "children": [
+          {
+            "id": "stage-desk-blotter",
+            "name": "green desk blotter",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.05,
+                    0.47,
+                    0.02
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    1.45,
+                    0.04,
+                    0.64
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "color": "#314932",
+                  "roughness": 0.92,
+                  "metalness": 0
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-phone",
+            "name": "oversized desk phone",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.88,
+                    0.58,
+                    0.08
+                  ],
+                  "rotation": [
+                    0,
+                    0.24,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.56,
+                    0.18,
+                    0.42
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true,
+                  "emitClickEvent": true,
+                  "clickEventName": "stage:inspect-phone"
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "color": "#26211f",
+                  "roughness": 0.55,
+                  "metalness": 0
+                }
+              },
+              "stageInteraction": {
+                "type": "StageInteraction",
+                "properties": {
+                  "action": "dialogue",
+                  "approach": [
+                    -0.55,
+                    0,
+                    -0.65
+                  ],
+                  "page1": "The secure hotline only calls payphones that have not been invented yet.",
+                  "page2": "Someone left a message: 'Bring the polymorphic dongle. And snacks.'"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-cyberdeck",
+            "name": "suitcase cyberdeck",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.32,
+                    0.68,
+                    -0.04
+                  ],
+                  "rotation": [
+                    -0.12,
+                    -0.05,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.92,
+                    0.42,
+                    0.16
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true,
+                  "emitClickEvent": true,
+                  "clickEventName": "stage:inspect-cyberdeck"
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "color": "#182a25",
+                  "roughness": 0.55,
+                  "metalness": 0.18
+                }
+              },
+              "stageInteraction": {
+                "type": "StageInteraction",
+                "properties": {
+                  "action": "dialogue",
+                  "approach": [
+                    0.2,
+                    0,
+                    -0.55
+                  ],
+                  "page1": "A suitcase cyberdeck with a phosphor display and three keyboards. None of them agree on where Escape is.",
+                  "page2": "Its esoteric packet-origami chip allegedly folds a hypothetical network until two distant ports touch. Strictly for research, naturally."
+                }
+              }
+            },
+            "children": [
+              {
+                "id": "stage-cyberdeck-screen",
+                "name": "green phosphor display",
+                "components": {
+                  "transform": {
+                    "type": "Transform",
+                    "properties": {
+                      "position": [
+                        0,
+                        0.02,
+                        0.091
+                      ],
+                      "rotation": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "scale": [
+                        1,
+                        1,
+                        1
+                      ]
+                    }
+                  },
+                  "geometry": {
+                    "type": "Geometry",
+                    "properties": {
+                      "geometryType": "box",
+                      "args": [
+                        0.62,
+                        0.22,
+                        0.018
+                      ],
+                      "castShadow": false,
+                      "receiveShadow": false
+                    }
+                  },
+                  "material": {
+                    "type": "Material",
+                    "properties": {
+                      "materialType": "basic",
+                      "color": "#72ff8c"
+                    }
+                  }
+                },
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "stage-file-cabinet",
+        "name": "leaning file cabinet",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                3.2,
+                0.75,
+                -2.75
+              ],
+              "rotation": [
+                0,
+                -0.18,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.8,
+                1.5,
+                0.55
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#55606a",
+              "roughness": 0.8,
+              "metalness": 0.2
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "stage-couch",
+        "name": "tired office couch",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -2,
+                0.42,
+                -2.55
+              ],
+              "rotation": [
+                0,
+                0.04,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1.9,
+                0.62,
+                0.72
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#8a2634",
+              "roughness": 0.9,
+              "metalness": 0
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "stage-box-stack",
+        "name": "case files and boxes",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                2.65,
+                0.28,
+                1.72
+              ],
+              "rotation": [
+                0,
+                0.2,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.95,
+                0.56,
+                0.74
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#a66a36",
+              "roughness": 0.94,
+              "metalness": 0
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "stage-ceiling",
+        "name": "stained office ceiling",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                3.58,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                8.8,
+                0.12,
+                10.2
+              ],
+              "castShadow": false,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#c6ad86",
+              "roughness": 0.96,
+              "metalness": 0
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "stage-roof",
+        "name": "tar paper roof",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                3.73,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                9.15,
+                0.2,
+                10.55
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#3d332f",
+              "roughness": 0.98,
+              "metalness": 0
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "stage-window-left",
+        "name": "rainy back window left",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -2.55,
+                2.15,
+                -3.3
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1.65,
+                1.15,
+                0.08
+              ],
+              "castShadow": false,
+              "receiveShadow": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "basic",
+              "color": "#76a8b5"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "stage-window-right",
+        "name": "rainy back window right",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                2.55,
+                2.15,
+                -3.3
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1.65,
+                1.15,
+                0.08
+              ],
+              "castShadow": false,
+              "receiveShadow": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "basic",
+              "color": "#76a8b5"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "stage-ceiling-fan",
+        "name": "slow ceiling fan",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0.25,
+                3.25,
+                -0.35
+              ],
+              "rotation": [
+                0,
+                0.35,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0.18,
+                0.25,
+                0.22,
+                20
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#47342b",
+              "roughness": 0.75,
+              "metalness": 0.12
+            }
+          }
+        },
+        "children": [
+          {
+            "id": "stage-fan-blade-a",
+            "name": "fan blade pair",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    -0.08,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    2.35,
+                    0.07,
+                    0.28
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "color": "#5b4030",
+                  "roughness": 0.82,
+                  "metalness": 0
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-fan-blade-b",
+            "name": "fan blade pair crossed",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    -0.08,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    1.5707963268,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    2.35,
+                    0.07,
+                    0.28
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "color": "#5b4030",
+                  "roughness": 0.82,
+                  "metalness": 0
+                }
+              }
+            },
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "stage-chip-cabinet",
+        "name": "esoteric chip drawers",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                3.2,
+                1.1,
+                -2.45
+              ],
+              "rotation": [
+                0,
+                -0.18,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.62,
+                0.52,
+                0.08
+              ],
+              "castShadow": true,
+              "receiveShadow": true,
+              "emitClickEvent": true,
+              "clickEventName": "stage:inspect-chips"
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#91a29c",
+              "roughness": 0.7,
+              "metalness": 0.25
+            }
+          },
+          "stageInteraction": {
+            "type": "StageInteraction",
+            "properties": {
+              "action": "dialogue",
+              "approach": [
+                2.45,
+                0,
+                -2.15
+              ],
+              "page1": "The cabinet contains forbidden silicon: moon-phase timers, an artisanal entropy diode, and one chip labeled DO NOT LICK.",
+              "page2": "They are perfect for imaginary capers involving air-gapped vending machines and extremely confused routing tables."
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "stage-signal-analyzer",
+        "name": "spectral signal analyzer",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                2.65,
+                0.78,
+                1.72
+              ],
+              "rotation": [
+                0,
+                0.2,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.72,
+                0.46,
+                0.5
+              ],
+              "castShadow": true,
+              "receiveShadow": true,
+              "emitClickEvent": true,
+              "clickEventName": "stage:inspect-analyzer"
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#263a43",
+              "roughness": 0.55,
+              "metalness": 0.28
+            }
+          },
+          "stageInteraction": {
+            "type": "StageInteraction",
+            "properties": {
+              "action": "dialogue",
+              "approach": [
+                2.2,
+                0,
+                1.1
+              ],
+              "page1": "A spectral signal diviner. It finds ghost packets by listening for the tiny apologies they make after missing a handshake.",
+              "page2": "The brass dial selects between NORMAL, ESOTERIC, and PLAUSIBLE DENIABILITY."
+            }
+          }
+        },
+        "children": [
+          {
+            "id": "stage-signal-analyzer-screen",
+            "name": "analyzer glow",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.04,
+                    0.26
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.42,
+                    0.2,
+                    0.02
+                  ],
+                  "castShadow": false,
+                  "receiveShadow": false
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialType": "basic",
+                  "color": "#ef9d4c"
+                }
+              }
+            },
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "stage-left-door-prefab",
+        "name": "left door prefab",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -4.28,
+                0,
+                1.15
+              ],
+              "rotation": [
+                0,
+                1.5707963268,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          }
+        },
+        "children": [
+          {
+            "id": "stage-left-door",
+            "name": "door to junkyard",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    1.1,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    1.15,
+                    2.2,
+                    0.12
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true,
+                  "emitClickEvent": true,
+                  "clickEventName": "stage:door-click"
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "color": "#2f5f78",
+                  "roughness": 0.82,
+                  "metalness": 0
+                }
+              },
+              "stageInteraction": {
+                "type": "StageInteraction",
+                "properties": {
+                  "action": "transition",
+                  "approach": [
+                    -3.35,
+                    0,
+                    1.15
+                  ]
+                }
+              }
+            },
+            "children": [
+              {
+                "id": "stage-left-door-knob",
+                "name": "brass door knob",
+                "components": {
+                  "transform": {
+                    "type": "Transform",
+                    "properties": {
+                      "position": [
+                        0.36,
+                        0.02,
+                        0.09
+                      ],
+                      "rotation": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "scale": [
+                        1,
+                        1,
+                        1
+                      ]
+                    }
+                  },
+                  "geometry": {
+                    "type": "Geometry",
+                    "properties": {
+                      "geometryType": "sphere",
+                      "args": [
+                        0.08,
+                        18,
+                        12
+                      ],
+                      "castShadow": true,
+                      "receiveShadow": true
+                    }
+                  },
+                  "material": {
+                    "type": "Material",
+                    "properties": {
+                      "color": "#d1a545",
+                      "roughness": 0.38,
+                      "metalness": 0.45
+                    }
+                  }
+                },
+                "children": []
+              }
+            ]
+          }
+        ]
       },
       {
         "id": "stage-player-collider",
@@ -194,7 +1395,7 @@
               "position": [
                 -1.25,
                 0.85,
-                -0.35
+                0.25
               ],
               "rotation": [
                 0,
@@ -248,7 +1449,7 @@
       },
       {
         "id": "stage-activation-collider",
-        "name": "second character activation cylinder",
+        "name": "partner activation cylinder",
         "components": {
           "transform": {
             "type": "Transform",
@@ -256,7 +1457,7 @@
               "position": [
                 1.25,
                 0.85,
-                -0.2
+                -0.1
               ],
               "rotation": [
                 0,
@@ -322,54 +1523,6 @@
               "sensor": true,
               "sensorEnterEventName": "stage:activation-enter",
               "sensorExitEventName": "stage:activation-exit"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "stage-back-wall",
-        "name": "wall",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                1.95,
-                -3.1
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                9,
-                4,
-                0.18
-              ],
-              "castShadow": false,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "color": "#7f8794",
-              "roughness": 0.9,
-              "metalness": 0
             }
           }
         },

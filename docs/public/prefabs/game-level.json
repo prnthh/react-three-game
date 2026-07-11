@@ -84,6 +84,13 @@
             "properties": {
               "intensity": 1
             }
+          },
+          "ambientlight": {
+            "type": "AmbientLight",
+            "properties": {
+              "intensity": 0.6,
+              "color": "#ffd6d6"
+            }
           }
         },
         "children": [
@@ -622,13 +629,13 @@
             "type": "Transform",
             "properties": {
               "position": [
-                -18,
+                -23,
                 0,
-                -6
+                33
               ],
               "rotation": [
                 0,
-                0,
+                1.5707963267948966,
                 0
               ],
               "scale": [
@@ -654,19 +661,19 @@
             "type": "Transform",
             "properties": {
               "position": [
-                28,
+                23.5,
                 0,
-                -8
+                -0.5
               ],
               "rotation": [
                 0,
-                1.5708,
+                -1.5707963267948966,
                 0
               ],
               "scale": [
-                1,
+                0.9999999999999999,
                 1.15,
-                1
+                0.9999999999999999
               ]
             }
           },
@@ -686,7 +693,7 @@
             "type": "Transform",
             "properties": {
               "position": [
-                -50,
+                -51,
                 0,
                 -42
               ],
@@ -718,19 +725,19 @@
             "type": "Transform",
             "properties": {
               "position": [
-                -18,
+                -19.5,
                 0,
-                -54
+                -33
               ],
               "rotation": [
                 0,
-                0.08,
+                0,
                 0
               ],
               "scale": [
                 1.3,
-                1.25,
-                0.8
+                2.15,
+                0.8000000000000004
               ]
             }
           },
@@ -750,18 +757,18 @@
             "type": "Transform",
             "properties": {
               "position": [
-                48,
+                42.5,
                 0,
-                -34
+                -43
               ],
               "rotation": [
                 0,
-                -0.18,
+                -0.17999999999999988,
                 0
               ],
               "scale": [
                 1.1,
-                1.4,
+                2.25,
                 1.1
               ]
             }
@@ -782,13 +789,13 @@
             "type": "Transform",
             "properties": {
               "position": [
-                38,
+                50.5,
                 0,
                 46
               ],
               "rotation": [
                 0,
-                0.16,
+                0,
                 0
               ],
               "scale": [
@@ -816,16 +823,16 @@
               "position": [
                 -56,
                 0,
-                28
+                32.5
               ],
               "rotation": [
                 0,
-                -0.12,
+                1.5707963267948966,
                 0
               ],
               "scale": [
                 0.9,
-                1.7,
+                2.35,
                 0.9
               ]
             }
@@ -846,13 +853,13 @@
             "type": "Transform",
             "properties": {
               "position": [
-                -24,
+                -21.5,
                 0,
-                34
+                -1
               ],
               "rotation": [
                 0,
-                0.22,
+                0,
                 0
               ],
               "scale": [
@@ -878,9 +885,9 @@
             "type": "Transform",
             "properties": {
               "position": [
-                58,
+                64.5,
                 0,
-                18
+                6.5
               ],
               "rotation": [
                 0,
@@ -942,18 +949,18 @@
             "type": "Transform",
             "properties": {
               "position": [
-                8,
+                -0.5,
                 0,
                 -64
               ],
               "rotation": [
                 0,
-                0.2,
+                0.20000000000000004,
                 0
               ],
               "scale": [
                 1.35,
-                1.2,
+                1.75,
                 1.35
               ]
             }
@@ -974,9 +981,9 @@
             "type": "Transform",
             "properties": {
               "position": [
-                64,
+                65.5,
                 0,
-                -58
+                -28.5
               ],
               "rotation": [
                 0,
@@ -1038,13 +1045,13 @@
             "type": "Transform",
             "properties": {
               "position": [
-                66,
+                22.5,
                 0,
-                -2
+                -65
               ],
               "rotation": [
                 0,
-                -0.6,
+                -0.5999999999999999,
                 0
               ],
               "scale": [
@@ -1104,12 +1111,12 @@
               "position": [
                 0,
                 0,
-                62
+                64.5
               ],
               "rotation": [
-                0,
-                1.1,
-                0
+                -3.141592653589793,
+                1.2246467991473532e-16,
+                -3.141592653589793
               ],
               "scale": [
                 1.45,
@@ -1134,19 +1141,19 @@
             "type": "Transform",
             "properties": {
               "position": [
-                62,
+                20,
                 0,
-                60
+                46.5
               ],
               "rotation": [
                 0,
-                -1,
+                -0.9999999999999993,
                 0
               ],
               "scale": [
-                0.95,
+                0.9500000000000001,
                 0.8,
-                0.95
+                0.9500000000000001
               ]
             }
           },
@@ -1166,9 +1173,9 @@
             "type": "Transform",
             "properties": {
               "position": [
-                -44,
+                -53.5,
                 0,
-                -2
+                -6
               ],
               "rotation": [
                 0,
@@ -1218,186 +1225,6 @@
             "type": "PrefabRef",
             "properties": {
               "url": "/prefabs/brutalist-viaduct-span.json"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "high-bridge-between-towers",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                13,
-                -52
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                58,
-                2,
-                7
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "color": "#a0a29b",
-              "texture": "/textures/floor/terrain/snow-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                18,
-                2
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
-            }
-          },
-          "crashcatPhysics": {
-            "type": "CrashcatPhysics",
-            "properties": {
-              "type": "fixed",
-              "colliders": "cuboid"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "bridge-parapet-front",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                14.4,
-                -48.8
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                58,
-                1.4,
-                0.7
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "color": "#777a74",
-              "texture": "/textures/floor/terrain/snow-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                18,
-                1
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
-            }
-          },
-          "crashcatPhysics": {
-            "type": "CrashcatPhysics",
-            "properties": {
-              "type": "fixed",
-              "colliders": "cuboid"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "bridge-parapet-back",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                14.4,
-                -55.2
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                58,
-                1.4,
-                0.7
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "color": "#777a74",
-              "texture": "/textures/floor/terrain/snow-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                18,
-                1
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
-            }
-          },
-          "crashcatPhysics": {
-            "type": "CrashcatPhysics",
-            "properties": {
-              "type": "fixed",
-              "colliders": "cuboid"
             }
           }
         },
@@ -1584,66 +1411,6 @@
         "children": []
       },
       {
-        "id": "low-service-bunker-4",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -12,
-                2.2,
-                68
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                8,
-                4.4,
-                9
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "color": "#90938d",
-              "texture": "/textures/floor/terrain/snow-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                4,
-                2
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
-            }
-          },
-          "crashcatPhysics": {
-            "type": "CrashcatPhysics",
-            "properties": {
-              "type": "fixed",
-              "colliders": "cuboid"
-            }
-          }
-        },
-        "children": []
-      },
-      {
         "id": "low-service-bunker-5",
         "components": {
           "transform": {
@@ -1681,66 +1448,6 @@
             "type": "Material",
             "properties": {
               "color": "#a7a9a2",
-              "texture": "/textures/floor/terrain/snow-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                4,
-                2
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
-            }
-          },
-          "crashcatPhysics": {
-            "type": "CrashcatPhysics",
-            "properties": {
-              "type": "fixed",
-              "colliders": "cuboid"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "low-service-bunker-6",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                12,
-                2.2,
-                68
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                8,
-                4.4,
-                9
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "color": "#90938d",
               "texture": "/textures/floor/terrain/snow-512.jpg",
               "repeat": true,
               "repeatCount": [
@@ -1989,6 +1696,110 @@
               "minFilter": "NearestFilter",
               "magFilter": "NearestFilter",
               "roughness": 0.86
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "mid-skywalk",
+        "name": "mid-skywalk",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -25,
+                13.5,
+                -36.5
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "prefab": {
+            "type": "PrefabRef",
+            "properties": {
+              "url": "/prefabs/brutalist-skywalk.json"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "upper-skywalk",
+        "name": "upper-skywalk",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                12,
+                30.5,
+                -38.5
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1.25,
+                1,
+                1
+              ]
+            }
+          },
+          "prefab": {
+            "type": "PrefabRef",
+            "properties": {
+              "url": "/prefabs/brutalist-skywalk.json"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "ec0adba6-09a8-4b4c-af40-f7817ec5d64d",
+        "name": "camera",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                24.5,
+                53
+              ],
+              "rotation": [
+                -0.23820312500000002,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "camera": {
+            "type": "Camera",
+            "properties": {
+              "projection": "perspective",
+              "fov": 50,
+              "near": 0.1,
+              "zoom": 1,
+              "far": 1000,
+              "orthographicSize": 10
             }
           }
         },

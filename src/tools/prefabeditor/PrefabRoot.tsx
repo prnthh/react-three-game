@@ -369,9 +369,7 @@ function InstancedNode({
         [gameObject?.id, modelComponent, modelUrl]
     );
 
-    const groupRef = useRef<Group>(null);
     const handleGroupRef = useCallback((object: Group | null) => {
-        groupRef.current = object;
         registerRef(nodeId, object);
     }, [nodeId, registerRef]);
 
@@ -388,7 +386,6 @@ function InstancedNode({
         () => parentMatrix.clone().multiply(composeTransform(localTransform.position, localTransform.rotation, localTransform.scale)),
         [parentMatrix, transformComponent],
     );
-    const worldTransform = decompose(world);
     const groupProps = {
         ...getNodeMetadataProps(gameObject),
         visible: nodeVisible,
@@ -428,7 +425,7 @@ function InstancedNode({
         position: localTransform.position,
         rotation: localTransform.rotation,
         scale: localTransform.scale,
-        worldPosition: worldTransform.position,
+        worldPosition: analyzedComponents.composition.length ? decompose(world).position : undefined,
     };
     let logicalContent: React.ReactNode = childNodes;
     for (const { key, View, properties } of analyzedComponents.composition) {
@@ -446,11 +443,6 @@ function InstancedNode({
                 {...groupProps}
                 {...(editMode ? editClickHandlers : undefined)}
             >
-                {editMode ? (
-                    <mesh visible={false}>
-                        <boxGeometry args={[0.01, 0.01, 0.01]} />
-                    </mesh>
-                ) : null}
                 {logicalContent}
             </group>
             {renderedInstances}
@@ -513,7 +505,6 @@ function StandardNode({
         rotation: transform.rotation,
         scale: transform.scale,
     };
-    const worldTransform = decompose(world);
     const groupProps = {
         ...metadataProps,
         ...transformProps,
@@ -531,7 +522,7 @@ function StandardNode({
         editMode,
         nodeInteractionHandlers,
         ...transformProps,
-        worldPosition: worldTransform.position,
+        worldPosition: analyzedComponents.composition.length ? decompose(world).position : undefined,
     };
     const inner = renderNodeContent(
         analyzedComponents,
@@ -540,11 +531,6 @@ function StandardNode({
         basePath,
         componentRuntimeProps,
     );
-    const editAnchor = editMode ? (
-        <mesh visible={false}>
-            <boxGeometry args={[0.01, 0.01, 0.01]} />
-        </mesh>
-    ) : null;
     const standardNode = (
         <group
             ref={handleGroupRef}
@@ -552,7 +538,6 @@ function StandardNode({
             visible={nodeVisible}
             {...(editMode ? editClickHandlers : undefined)}
         >
-            {editAnchor}
             {inner}
         </group>
     );
@@ -609,7 +594,6 @@ function buildRepeatedInstances(
 ) {
     if (!gameObject || !modelUrl) return [];
 
-    const transform = getNodeTransformProps(gameObject);
     const repeat = getModelRepeatSettings(gameObject);
     const counts: [number, number, number] = [1, 1, 1];
     const offsets: [number, number, number] = [0, 0, 0];

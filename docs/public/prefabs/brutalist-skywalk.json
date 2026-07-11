@@ -1,0 +1,1713 @@
+{
+  "id": "brutalist-skywalk",
+  "name": "Guarded Brutalist Skywalk",
+  "root": {
+    "id": "skywalk-root",
+    "components": {
+      "transform": {
+        "type": "Transform",
+        "properties": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      }
+    },
+    "children": [
+      {
+        "id": "walkway-deck",
+        "name": "walkway-deck",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                0,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                34,
+                0.65,
+                4.2
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#92928d",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "walkway-underbeam",
+        "name": "walkway-underbeam",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                -0.85,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                32,
+                0.8,
+                0.7
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "handrail--1.85",
+        "name": "handrail--1.85",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                1.45,
+                -1.85
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                34,
+                0.18,
+                0.18
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "curb--1.85",
+        "name": "curb--1.85",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                0.28,
+                -1.85
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                34,
+                0.45,
+                0.22
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "post--1.85--16",
+        "name": "post--1.85--16",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -16,
+                0.82,
+                -1.85
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.16,
+                1.35,
+                0.16
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "post--1.85--12",
+        "name": "post--1.85--12",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -12,
+                0.82,
+                -1.85
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.16,
+                1.35,
+                0.16
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "post--1.85--8",
+        "name": "post--1.85--8",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -8,
+                0.82,
+                -1.85
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.16,
+                1.35,
+                0.16
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "post--1.85--4",
+        "name": "post--1.85--4",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -4,
+                0.82,
+                -1.85
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.16,
+                1.35,
+                0.16
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "post--1.85-0",
+        "name": "post--1.85-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                0.82,
+                -1.85
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.16,
+                1.35,
+                0.16
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "post--1.85-4",
+        "name": "post--1.85-4",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                4,
+                0.82,
+                -1.85
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.16,
+                1.35,
+                0.16
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "post--1.85-8",
+        "name": "post--1.85-8",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                8,
+                0.82,
+                -1.85
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.16,
+                1.35,
+                0.16
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "post--1.85-12",
+        "name": "post--1.85-12",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                12,
+                0.82,
+                -1.85
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.16,
+                1.35,
+                0.16
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "post--1.85-16",
+        "name": "post--1.85-16",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                16,
+                0.82,
+                -1.85
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.16,
+                1.35,
+                0.16
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "handrail-1.85",
+        "name": "handrail-1.85",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                1.45,
+                1.85
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                34,
+                0.18,
+                0.18
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "curb-1.85",
+        "name": "curb-1.85",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                0.28,
+                1.85
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                34,
+                0.45,
+                0.22
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "post-1.85--16",
+        "name": "post-1.85--16",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -16,
+                0.82,
+                1.85
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.16,
+                1.35,
+                0.16
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "post-1.85--12",
+        "name": "post-1.85--12",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -12,
+                0.82,
+                1.85
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.16,
+                1.35,
+                0.16
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "post-1.85--8",
+        "name": "post-1.85--8",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -8,
+                0.82,
+                1.85
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.16,
+                1.35,
+                0.16
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "post-1.85--4",
+        "name": "post-1.85--4",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -4,
+                0.82,
+                1.85
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.16,
+                1.35,
+                0.16
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "post-1.85-0",
+        "name": "post-1.85-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                0.82,
+                1.85
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.16,
+                1.35,
+                0.16
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "post-1.85-4",
+        "name": "post-1.85-4",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                4,
+                0.82,
+                1.85
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.16,
+                1.35,
+                0.16
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "post-1.85-8",
+        "name": "post-1.85-8",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                8,
+                0.82,
+                1.85
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.16,
+                1.35,
+                0.16
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "post-1.85-12",
+        "name": "post-1.85-12",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                12,
+                0.82,
+                1.85
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.16,
+                1.35,
+                0.16
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "post-1.85-16",
+        "name": "post-1.85-16",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                16,
+                0.82,
+                1.85
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.16,
+                1.35,
+                0.16
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "brace-a--13",
+        "name": "brace-a--13",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -13,
+                -0.55,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0.48
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.22,
+                0.22,
+                4
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "brace-b--13",
+        "name": "brace-b--13",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -11,
+                -0.55,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                -0.48
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.22,
+                0.22,
+                4
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "brace-a--7",
+        "name": "brace-a--7",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -7,
+                -0.55,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0.48
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.22,
+                0.22,
+                4
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "brace-b--7",
+        "name": "brace-b--7",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -5,
+                -0.55,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                -0.48
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.22,
+                0.22,
+                4
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "brace-a--1",
+        "name": "brace-a--1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -1,
+                -0.55,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0.48
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.22,
+                0.22,
+                4
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "brace-b--1",
+        "name": "brace-b--1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                1,
+                -0.55,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                -0.48
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.22,
+                0.22,
+                4
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "brace-a-5",
+        "name": "brace-a-5",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                5,
+                -0.55,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0.48
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.22,
+                0.22,
+                4
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "brace-b-5",
+        "name": "brace-b-5",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                7,
+                -0.55,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                -0.48
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.22,
+                0.22,
+                4
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "brace-a-11",
+        "name": "brace-a-11",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                11,
+                -0.55,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0.48
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.22,
+                0.22,
+                4
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "brace-b-11",
+        "name": "brace-b-11",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                13,
+                -0.55,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                -0.48
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.22,
+                0.22,
+                4
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#343331",
+              "roughness": 0.9,
+              "metalness": 0.04
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "wayfinding-strip",
+        "name": "wayfinding-strip",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                0.18,
+                -2.02
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                22,
+                0.12,
+                0.08
+              ],
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#d3242b",
+              "roughness": 0.9,
+              "metalness": 0.04,
+              "emissive": "#d3242b",
+              "emissiveIntensity": 2.5
+            }
+          }
+        },
+        "children": []
+      }
+    ]
+  }
+}

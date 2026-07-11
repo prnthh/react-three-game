@@ -8,9 +8,21 @@
       "transform": {
         "type": "Transform",
         "properties": {
-          "position": [0, 0, 0],
-          "rotation": [0, 0, 0],
-          "scale": [1, 1, 1]
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
         }
       }
     },
@@ -22,9 +34,21 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [0.3, 2.45, 6.6],
-              "rotation": [-0.36, 0.03, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                0.3,
+                2.45,
+                6.6
+              ],
+              "rotation": [
+                -0.36,
+                0.03,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "camera": {
@@ -61,9 +85,21 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [-3.8, 5.4, 5.2],
-              "rotation": [0, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                -3.8,
+                5.4,
+                5.2
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "directionalLight": {
@@ -71,7 +107,11 @@
             "properties": {
               "color": "#ffe5ba",
               "intensity": 1.8,
-              "targetOffset": [3.4, -5.1, -5.4],
+              "targetOffset": [
+                3.4,
+                -5.1,
+                -5.4
+              ],
               "castShadow": true,
               "shadowMapSize": 2048,
               "shadowCameraTop": 8,
@@ -94,16 +134,32 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [0, -0.05, 0],
-              "rotation": [0, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                0,
+                -0.05,
+                -3.5
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "box",
-              "args": [22, 0.1, 18],
+              "args": [
+                22,
+                0.1,
+                25
+              ],
               "castShadow": false,
               "receiveShadow": true,
               "emitClickEvent": true,
@@ -141,16 +197,32 @@
               "transform": {
                 "type": "Transform",
                 "properties": {
-                  "position": [0, 0, 0],
-                  "rotation": [0, 0, 0],
-                  "scale": [1, 1, 1]
+                  "position": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
                 }
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
                   "geometryType": "sphere",
-                  "args": [30, 24, 12],
+                  "args": [
+                    30,
+                    24,
+                    12
+                  ],
                   "castShadow": false,
                   "receiveShadow": false
                 }
@@ -175,16 +247,32 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [-2.85, 1.05, -2.75],
-              "rotation": [0, 0.06, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                -2.85,
+                1.05,
+                -2.75
+              ],
+              "rotation": [
+                0,
+                0.06,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "box",
-              "args": [3.2, 2.1, 1.65],
+              "args": [
+                3.2,
+                2.1,
+                1.65
+              ],
               "castShadow": true,
               "receiveShadow": true
             }
@@ -206,16 +294,32 @@
               "transform": {
                 "type": "Transform",
                 "properties": {
-                  "position": [0.95, -0.25, 0.86],
-                  "rotation": [0, 0, 0],
-                  "scale": [1, 1, 1]
+                  "position": [
+                    0.95,
+                    -0.25,
+                    0.86
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
                 }
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
                   "geometryType": "box",
-                  "args": [0.72, 1.35, 0.1],
+                  "args": [
+                    0.72,
+                    1.35,
+                    0.1
+                  ],
                   "castShadow": true,
                   "receiveShadow": true,
                   "emitClickEvent": true,
@@ -248,16 +352,32 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [1.1, 0.9, -4.05],
-              "rotation": [0, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                -1,
+                0.9,
+                -4.05
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "box",
-              "args": [8.9, 1.8, 0.08],
+              "args": [
+                8.9,
+                1.8,
+                0.08
+              ],
               "castShadow": true,
               "receiveShadow": true
             }
@@ -282,16 +402,32 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [-5.35, 0.9, 0],
-              "rotation": [0, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                -5.35,
+                0.9,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "box",
-              "args": [0.08, 1.8, 8.1],
+              "args": [
+                0.08,
+                1.8,
+                8.1
+              ],
               "castShadow": true,
               "receiveShadow": true
             }
@@ -316,16 +452,32 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [2.55, 0.34, -1.45],
-              "rotation": [0, -0.32, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                2.55,
+                0.34,
+                -1.45
+              ],
+              "rotation": [
+                0,
+                -0.32,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "box",
-              "args": [1.9, 0.68, 1.05],
+              "args": [
+                1.9,
+                0.68,
+                1.05
+              ],
               "castShadow": true,
               "receiveShadow": true,
               "emitClickEvent": true,
@@ -358,16 +510,33 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [3.75, 0.52, -0.15],
-              "rotation": [0, -0.12, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                3.75,
+                0.52,
+                -0.15
+              ],
+              "rotation": [
+                0,
+                -0.12,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "cylinder",
-              "args": [0.42, 0.34, 1.04, 20],
+              "args": [
+                0.42,
+                0.34,
+                1.04,
+                20
+              ],
               "castShadow": true,
               "receiveShadow": true,
               "emitClickEvent": true,
@@ -400,16 +569,33 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [4.0, 0.42, 1.25],
-              "rotation": [0, 0.16, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                4,
+                0.42,
+                1.25
+              ],
+              "rotation": [
+                0,
+                0.16,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "cylinder",
-              "args": [0.45, 0.45, 0.84, 28],
+              "args": [
+                0.45,
+                0.45,
+                0.84,
+                28
+              ],
               "castShadow": true,
               "receiveShadow": true
             }
@@ -432,16 +618,32 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [0.95, 0.28, 2.25],
-              "rotation": [0, 0.42, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                0.95,
+                0.28,
+                2.25
+              ],
+              "rotation": [
+                0,
+                0.42,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "box",
-              "args": [1.35, 0.56, 1.0],
+              "args": [
+                1.35,
+                0.56,
+                1
+              ],
               "castShadow": true,
               "receiveShadow": true
             }
@@ -464,9 +666,21 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [0, 0, 0],
-              "rotation": [0, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                0,
+                0,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           }
         },
@@ -478,9 +692,21 @@
               "transform": {
                 "type": "Transform",
                 "properties": {
-                  "position": [-7.2, 0, -7.2],
-                  "rotation": [0, 0.18, 0],
-                  "scale": [0.72, 0.82, 0.75]
+                  "position": [
+                    -7.2,
+                    0,
+                    -7.2
+                  ],
+                  "rotation": [
+                    0,
+                    0.18,
+                    0
+                  ],
+                  "scale": [
+                    0.72,
+                    0.82,
+                    0.75
+                  ]
                 }
               },
               "model": {
@@ -497,8 +723,33 @@
             "id": "stage-tree-left-back",
             "name": "left back tree",
             "components": {
-              "transform": { "type": "Transform", "properties": { "position": [-4.8, 0, -8.4], "rotation": [0, -0.22, 0], "scale": [0.58, 0.68, 0.62] } },
-              "model": { "type": "Model", "properties": { "filename": "models/environment/tree.glb", "instanced": true } }
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -5.5,
+                    0,
+                    -12.5
+                  ],
+                  "rotation": [
+                    0,
+                    -0.22000000000000003,
+                    0
+                  ],
+                  "scale": [
+                    0.58,
+                    0.68,
+                    0.62
+                  ]
+                }
+              },
+              "model": {
+                "type": "Model",
+                "properties": {
+                  "filename": "models/environment/tree.glb",
+                  "instanced": true
+                }
+              }
             },
             "children": []
           },
@@ -506,8 +757,33 @@
             "id": "stage-tree-right-back",
             "name": "right back tree",
             "components": {
-              "transform": { "type": "Transform", "properties": { "position": [5.2, 0, -8.1], "rotation": [0, 0.12, 0], "scale": [0.65, 0.76, 0.69] } },
-              "model": { "type": "Model", "properties": { "filename": "models/environment/tree.glb", "instanced": true } }
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    4,
+                    0,
+                    -11
+                  ],
+                  "rotation": [
+                    0,
+                    0.12000000000000027,
+                    0
+                  ],
+                  "scale": [
+                    0.6499999999999999,
+                    0.76,
+                    0.69
+                  ]
+                }
+              },
+              "model": {
+                "type": "Model",
+                "properties": {
+                  "filename": "models/environment/tree.glb",
+                  "instanced": true
+                }
+              }
             },
             "children": []
           },
@@ -515,8 +791,370 @@
             "id": "stage-tree-right-far",
             "name": "right far tree",
             "components": {
-              "transform": { "type": "Transform", "properties": { "position": [8.1, 0, -6.8], "rotation": [0, -0.16, 0], "scale": [0.78, 0.88, 0.8] } },
-              "model": { "type": "Model", "properties": { "filename": "models/environment/tree.glb", "instanced": true } }
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.5,
+                    0,
+                    -7.5
+                  ],
+                  "rotation": [
+                    0,
+                    -0.16,
+                    0
+                  ],
+                  "scale": [
+                    0.78,
+                    0.88,
+                    0.8
+                  ]
+                }
+              },
+              "model": {
+                "type": "Model",
+                "properties": {
+                  "filename": "models/environment/tree.glb",
+                  "instanced": true
+                }
+              }
+            },
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "stage-road",
+        "name": "service road",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                7.8,
+                0.01,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                4.4,
+                0.08,
+                18
+              ],
+              "castShadow": false,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "color": "#34383b",
+              "roughness": 0.94,
+              "metalness": 0
+            }
+          }
+        },
+        "children": [
+          {
+            "id": "stage-road-yard-curb",
+            "name": "yard side curb",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -2.18,
+                    0.1,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.18,
+                    0.18,
+                    18
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "color": "#a3a09a",
+                  "roughness": 0.9,
+                  "metalness": 0
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-road-outer-curb",
+            "name": "outer curb",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    2.18,
+                    0.1,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.18,
+                    0.18,
+                    18
+                  ],
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "color": "#8d8b86",
+                  "roughness": 0.9,
+                  "metalness": 0
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-road-line-near",
+            "name": "near lane marking",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.065,
+                    5.8
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.1,
+                    0.015,
+                    2.3
+                  ],
+                  "castShadow": false,
+                  "receiveShadow": false
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "color": "#d9c675",
+                  "roughness": 0.82,
+                  "metalness": 0
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-road-line-center",
+            "name": "center lane marking",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.065,
+                    1.8
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.1,
+                    0.015,
+                    2.3
+                  ],
+                  "castShadow": false,
+                  "receiveShadow": false
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "color": "#d9c675",
+                  "roughness": 0.82,
+                  "metalness": 0
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-road-line-back",
+            "name": "back lane marking",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.065,
+                    -2.2
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.1,
+                    0.015,
+                    2.3
+                  ],
+                  "castShadow": false,
+                  "receiveShadow": false
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "color": "#d9c675",
+                  "roughness": 0.82,
+                  "metalness": 0
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-road-line-far",
+            "name": "far lane marking",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.065,
+                    -6.2
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "scale": [
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.1,
+                    0.015,
+                    2.3
+                  ],
+                  "castShadow": false,
+                  "receiveShadow": false
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "color": "#d9c675",
+                  "roughness": 0.82,
+                  "metalness": 0
+                }
+              }
             },
             "children": []
           }
@@ -530,16 +1168,33 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [-0.9, 0.85, -0.35],
-              "rotation": [0, 0, 0],
-              "scale": [1, 1, 1]
+              "position": [
+                -0.9,
+                0.85,
+                -0.35
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
             }
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
               "geometryType": "cylinder",
-              "args": [0.32, 0.32, 1.7, 24],
+              "args": [
+                0.32,
+                0.32,
+                1.7,
+                24
+              ],
               "visible": false,
               "castShadow": false,
               "receiveShadow": false

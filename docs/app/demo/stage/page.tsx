@@ -28,7 +28,7 @@ const INTERACTION_ENTER_EVENT = "stage:interaction-enter";
 const INTERACTION_EXIT_EVENT = "stage:interaction-exit";
 const WALK_SPEED = 1.55;
 const ARRIVAL_DISTANCE = 0.08;
-const CAMERA_DEAD_ZONE_X = 0.8;
+const CAMERA_DEAD_ZONE_X = 0.4;
 const CAMERA_FOLLOW_SPEED = 8;
 const UP = new Vector3(0, 1, 0);
 

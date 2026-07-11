@@ -190,10 +190,6 @@ function useConfiguredTexture(texture: Texture | null | undefined, options: Text
         magFilter,
     ]);
 
-    useEffect(() => () => {
-        configuredTexture?.dispose();
-    }, [configuredTexture]);
-
     return configuredTexture;
 }
 

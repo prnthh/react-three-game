@@ -1,6 +1,6 @@
 import { Canvas, extend, CanvasProps } from "@react-three/fiber";
 import { WebGPURenderer, MeshBasicNodeMaterial, MeshStandardNodeMaterial, SpriteNodeMaterial, PCFShadowMap } from "three/webgpu";
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { WebGPURendererParameters } from "three/src/renderers/webgpu/WebGPURenderer.Nodes.js";
 import { Loader } from "@react-three/drei";
 
@@ -22,23 +22,8 @@ export default function GameCanvas({ loader = false, children, glConfig, onCreat
 
     useEffect(() => {
         mountedRef.current = true;
-        return () => {
-            mountedRef.current = false;
-        };
+        return () => { mountedRef.current = false; };
     }, []);
-
-    const createRenderer = useCallback(async ({ canvas }: Parameters<Extract<CanvasProps['gl'], (...args: any[]) => any>>[0]) => {
-        const renderer = new WebGPURenderer({
-            canvas: canvas as HTMLCanvasElement,
-            // @ts-expect-error futuristic
-            shadowMap: true,
-            antialias: true,
-            ...glConfig,
-        });
-        await renderer.init();
-        if (mountedRef.current) setFrameloop("always");
-        return renderer;
-    }, [glConfig]);
 
     return <>
         <Canvas
@@ -53,9 +38,27 @@ export default function GameCanvas({ loader = false, children, glConfig, onCreat
             shadows={{ type: PCFShadowMap }}
             dpr={[1, 1.5]}
             frameloop={frameloop}
-            gl={createRenderer}
-            onCreated={(state) => {
+            gl={async ({ canvas }) => {
+                const renderer = new WebGPURenderer({
+                    canvas: canvas as HTMLCanvasElement,
+                    // @ts-expect-error futuristic
+                    shadowMap: true,
+                    antialias: true,
+                    ...glConfig,
+                });
+                await renderer.init();
+                return renderer;
+            }}
+            onCreated={async (state) => {
                 onCreated?.(state);
+                try {
+                    await (state.gl as unknown as WebGPURenderer).compileAsync(state.scene, state.camera);
+                    if (mountedRef.current) state.gl.render(state.scene, state.camera);
+                } catch (error) {
+                    console.error("[GameCanvas] scene prewarm failed:", error);
+                } finally {
+                    if (mountedRef.current) setFrameloop("always");
+                }
             }}
             {...props}
         >

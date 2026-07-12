@@ -13,10 +13,11 @@ export default function Dropdown() {
 
     const options: DemoOption[] = [
         { label: "Viewer Mode", href: "/viewer" },
-        { label: "Stage", href: "/demo/stage" },
+        { label: "Streamed World", href: "/demo/grassworld" },
+        { label: "Point n Click", href: "/demo/stage" },
+        { label: "Killbox FPS", href: "/demo/killbox" },
+        { label: "Cannons (Physics)", href: "/demo/physics" },
         { label: "Custom Component", href: "/demo/customcomponent" },
-        { label: "Killbox", href: "/demo/killbox" },
-        { label: "Physics", href: "/demo/physics" },
         { label: "Ragdoll", href: "/demo/ragdoll" },
         { label: "Quake", href: "/demo/quake" },
         { label: "Asset Viewer", href: "/demo/assetviewer" },

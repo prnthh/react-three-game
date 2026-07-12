@@ -160,7 +160,7 @@ export default function Water({ level, size }: { level: number; size: number }) 
         const capturedEnvironment = scene.environment as CubeTexture | null;
         if (capturedEnvironment && capturedEnvironment !== environment) setEnvironment(capturedEnvironment);
         if (!surface.current) return;
-        // Revo's material samples the current viewport/depth buffers. When the
+        // material samples the current viewport/depth buffers. When the
         // camera intersects or passes below the single-sided surface those reads
         // become self-referential on WebGPU. Keep the shader unchanged and guard
         // the invalid camera/surface configuration at the adapter boundary.

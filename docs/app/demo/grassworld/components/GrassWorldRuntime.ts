@@ -13,7 +13,6 @@ import type { WebGPURenderer } from "three/webgpu";
 
 export type PlayerRuntime = {
 	position: Vector3;
-	velocity: Vector3;
 	grounded: boolean;
 	chunk: Vector2;
 };
@@ -23,7 +22,6 @@ const PlayerRuntimeContext = createContext<MutableRefObject<PlayerRuntime> | nul
 export function GrassWorldRuntimeProvider({ children }: { children: ReactNode }) {
 	const runtime = useRef<PlayerRuntime>({
 		position: new Vector3(),
-		velocity: new Vector3(),
 		grounded: false,
 		chunk: new Vector2(),
 	});

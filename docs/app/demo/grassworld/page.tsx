@@ -1,9 +1,15 @@
 "use client";
 
-import { PrefabEditor, PrefabEditorMode, type Prefab } from "react-three-game/editor";
+import { PrefabEditor, PrefabEditorMode, registerComponent, type Prefab } from "react-three-game/editor";
+import {
+    CrashcatPhysicsComponent,
+    CrashcatRuntime,
+} from "react-three-game/plugins/crashcat";
 
 import GrassWorld, { terrainHeight } from "./GrassWorld";
 import { BASE_PATH } from "../../basePath";
+
+registerComponent(CrashcatPhysicsComponent);
 
 const grassWorldPrefab: Prefab = {
     id: "grassworld",
@@ -79,6 +85,15 @@ const grassWorldPrefab: Prefab = {
                         type: "Material",
                         properties: { color: "#d9d5c7", roughness: 0.72, metalness: 0 },
                     },
+                    crashcatPhysics: {
+                        type: "CrashcatPhysics",
+                        properties: {
+                            type: "dynamic",
+                            colliders: "ball",
+                            friction: 0.8,
+                            restitution: 0.05,
+                        },
+                    },
                 },
             },
         ],
@@ -116,7 +131,9 @@ export default function GrassWorldDemo() {
                     camera: { position: [0, 16, 20], fov: 45, near: 0.01, far: 150 },
                 }}
             >
-                <GrassWorld config={grassWorldConfig} />
+                <CrashcatRuntime>
+                    <GrassWorld config={grassWorldConfig} />
+                </CrashcatRuntime>
             </PrefabEditor>
         </main>
     );

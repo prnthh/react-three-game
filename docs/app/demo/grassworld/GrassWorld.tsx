@@ -1,7 +1,9 @@
 import { useTexture } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { MotionType, rigidBody, triangleMesh } from "crashcat";
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { PrefabEditorMode, useScene } from "react-three-game/editor";
+import { useCrashcat } from "react-three-game/plugins/crashcat";
 import {
     Color,
     DirectionalLight,
@@ -9,7 +11,6 @@ import {
     LinearSRGBColorSpace,
     Object3D,
     PlaneGeometry,
-    Quaternion,
     RepeatWrapping,
     Texture,
     Vector2,
@@ -25,7 +26,6 @@ import Flowers from "./components/Flowers";
 const CHUNK_SIZE = 24;
 const CHUNK_RADIUS = 2;
 const TERRAIN_SEGMENTS = 12;
-const BALL_RADIUS = 0.5;
 const TERRAIN_NORMAL_SCALE = new Vector2(0.85, 0.85);
 const FOG_COLOR = new Color().setRGB(0.4, 0.6, 0.3);
 
@@ -49,13 +49,6 @@ export function terrainHeight(x: number, z: number) {
     return shore + broad + crossing + detail;
 }
 
-function terrainNormal(x: number, z: number, target: Vector3) {
-    const epsilon = 0.12;
-    const dx = terrainHeight(x + epsilon, z) - terrainHeight(x - epsilon, z);
-    const dz = terrainHeight(x, z + epsilon) - terrainHeight(x, z - epsilon);
-    return target.set(-dx, epsilon * 2, -dz).normalize();
-}
-
 const TerrainChunk = memo(function TerrainChunk({
     x,
     z,
@@ -63,6 +56,7 @@ const TerrainChunk = memo(function TerrainChunk({
     normalMap,
     aoMap,
 }: ChunkCoord & { waterLevel: number; normalMap: Texture; aoMap: Texture }) {
+    const crashcat = useCrashcat();
     const geometry = useMemo(() => {
         const value = new PlaneGeometry(CHUNK_SIZE, CHUNK_SIZE, TERRAIN_SEGMENTS, TERRAIN_SEGMENTS);
         value.rotateX(-Math.PI / 2);
@@ -79,7 +73,7 @@ const TerrainChunk = memo(function TerrainChunk({
             const height = terrainHeight(worldX, worldZ);
             positions.setY(index, height);
 
-            // Revo's terrain blends warm sand into green ground using its
+            // terrain blends warm sand into green ground using its
             // authored grass map and noise atlas. Use the same authored colors
             // with a world-height shoreline mask and low-frequency variation.
             const t = Math.max(0, Math.min(1, (height - (waterLevel + 0.2)) / 1.15));
@@ -94,6 +88,26 @@ const TerrainChunk = memo(function TerrainChunk({
         value.computeVertexNormals();
         return value;
     }, [waterLevel, x, z]);
+    useEffect(() => {
+        if (!crashcat || !geometry.index) return;
+        const nodeId = `grassworld-terrain-${x}:${z}`;
+        const shape = triangleMesh.create({
+            positions: Array.from(geometry.attributes.position.array),
+            indices: Array.from(geometry.index.array),
+        });
+        const body = rigidBody.create(crashcat.world, {
+            shape,
+            motionType: MotionType.STATIC,
+            objectLayer: crashcat.staticObjectLayer,
+            position: [x * CHUNK_SIZE, 0, z * CHUNK_SIZE],
+            friction: 0.9,
+            restitution: 0,
+            enhancedInternalEdgeRemoval: true,
+            userData: { nodeId },
+        });
+        crashcat.register(nodeId, body, { motionType: MotionType.STATIC, sensor: false });
+        return () => crashcat.unregister(nodeId);
+    }, [crashcat, geometry, x, z]);
     return (
         <mesh geometry={geometry} position={[x * CHUNK_SIZE, 0, z * CHUNK_SIZE]} receiveShadow>
             <meshStandardMaterial
@@ -152,16 +166,15 @@ function StreamedTerrain({ waterLevel }: { waterLevel: number }) {
 
 function RollingBall() {
     const prefabScene = useScene();
+    const crashcat = useCrashcat();
     const runtime = usePlayerRuntime();
     const player = runtime.current;
     const keys = useRef(new Set<string>());
-    const { position, velocity } = player;
-    const normal = useRef(new Vector3());
+    const { position } = player;
     const move = useRef(new Vector3());
+    const bodyVelocity = useRef<[number, number, number]>([0, 0, 0]);
     const cameraTarget = useRef(new Vector3());
     const cameraPosition = useRef(new Vector3(0, 8, 13));
-    const rotationAxis = useRef(new Vector3());
-    const rotation = useRef(new Quaternion());
     const ballObject = useRef<Object3D | null>(null);
     const { camera } = useThree();
     const isPlayMode = prefabScene.mode === PrefabEditorMode.Play;
@@ -172,14 +185,13 @@ function RollingBall() {
         if (!ball) return;
         ballObject.current = ball;
         position.copy(ball.position);
-        velocity.set(0, 0, 0);
-        player.grounded = ball.position.y <= terrainHeight(ball.position.x, ball.position.z) + BALL_RADIUS + 0.001;
+        player.grounded = false;
         const chunk = {
             x: Math.round(ball.position.x / CHUNK_SIZE),
             z: Math.round(ball.position.z / CHUNK_SIZE),
         };
         player.chunk.set(chunk.x, chunk.z);
-    }, [isPlayMode, player, position, prefabScene, velocity]);
+    }, [isPlayMode, player, position, prefabScene]);
 
     useEffect(() => {
         if (!isPlayMode) {
@@ -204,64 +216,58 @@ function RollingBall() {
         };
     }, [isPlayMode]);
 
-    const update = useCallback((delta: number) => {
-        // In Edit mode the PrefabEditor owns navigation and the selected ball's
-        // authored transform. Do not consume input or overwrite its camera.
-        if (!isPlayMode) return;
+    useFrame((_, delta) => {
+        if (!isPlayMode || !crashcat) return;
+        const body = crashcat.getBody("grassworld-ball");
+        if (!body) return;
         const dt = Math.min(delta, 1 / 30);
         const pressed = keys.current;
+        const linearVelocity = body.motionProperties.linearVelocity;
+        let velocityX = linearVelocity[0];
+        let velocityY = linearVelocity[1];
+        let velocityZ = linearVelocity[2];
         move.current.set(
             (pressed.has("KeyD") || pressed.has("ArrowRight") ? 1 : 0) - (pressed.has("KeyA") || pressed.has("ArrowLeft") ? 1 : 0),
             0,
             (pressed.has("KeyS") || pressed.has("ArrowDown") ? 1 : 0) - (pressed.has("KeyW") || pressed.has("ArrowUp") ? 1 : 0),
         );
         if (move.current.lengthSq() > 0) {
-            // Manual-controller equivalent of Revo's rigid-body drive after
-            // accounting for the friction we do not simulate here.
             move.current.normalize().multiplyScalar(32 * dt);
-            velocity.x += move.current.x;
-            velocity.z += move.current.z;
+            velocityX += move.current.x;
+            velocityZ += move.current.z;
         }
         const drag = Math.exp(-1.8 * dt);
-        velocity.x *= drag;
-        velocity.z *= drag;
-        velocity.y -= 18 * dt;
+        velocityX *= drag;
+        velocityZ *= drag;
+        player.grounded = body.contactCount > 0;
         if (pressed.has("Space") && player.grounded) {
-            velocity.y = 10.5;
+            velocityY = 10.5;
             player.grounded = false;
         }
-        position.addScaledVector(velocity, dt);
-        const floor = terrainHeight(position.x, position.z) + BALL_RADIUS;
-        if (position.y <= floor) {
-            position.y = floor;
-            terrainNormal(position.x, position.z, normal.current);
-            if (velocity.y < 0) velocity.y = 0;
-            velocity.addScaledVector(normal.current, -normal.current.dot(velocity) * 0.18);
-            player.grounded = true;
-        } else player.grounded = false;
+        bodyVelocity.current[0] = velocityX;
+        bodyVelocity.current[1] = velocityY;
+        bodyVelocity.current[2] = velocityZ;
+        rigidBody.setLinearVelocity(crashcat.world, body, bodyVelocity.current);
+    }, -2);
+
+    useFrame((_, delta) => {
+        if (!isPlayMode) return;
         const ball = ballObject.current;
-        if (ball) {
-            ball.position.copy(position);
-            const planarSpeed = Math.hypot(velocity.x, velocity.z);
-            if (planarSpeed > 0.01) {
-                rotationAxis.current.set(velocity.z, 0, -velocity.x).normalize();
-                rotation.current.setFromAxisAngle(rotationAxis.current, planarSpeed * dt / BALL_RADIUS);
-                ball.quaternion.premultiply(rotation.current);
-            }
+        if (!ball) return;
+        position.copy(ball.position);
+        const body = crashcat?.getBody("grassworld-ball");
+        if (body) {
+            player.grounded = body.contactCount > 0;
         }
         const chunkX = Math.round(position.x / CHUNK_SIZE);
         const chunkZ = Math.round(position.z / CHUNK_SIZE);
         if (player.chunk.x !== chunkX || player.chunk.y !== chunkZ) player.chunk.set(chunkX, chunkZ);
         cameraTarget.current.copy(position).y += 1;
-        // Revo Player.ts: CAMERA_OFFSET [0, 16, 20], lerp factor 7.5.
+        const dt = Math.min(delta, 1 / 30);
         cameraPosition.current.set(position.x, position.y + 16, position.z + 20);
         camera.position.lerp(cameraPosition.current, Math.min(1, 7.5 * dt));
         camera.lookAt(cameraTarget.current);
-    }, [camera, isPlayMode, player, position, prefabScene, velocity]);
-
-    // Match Revo's engine order: player state is resolved before vegetation
-    // consumes the throttled update event for trails and interaction.
-    useFrame((_, delta) => update(delta), -9);
+    }, 0);
     return null;
 }
 

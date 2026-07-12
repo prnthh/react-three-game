@@ -3,7 +3,6 @@ import { Matrix4 } from "three";
 import type { Group, Object3D } from "three";
 import type { ThreeEvent } from "@react-three/fiber";
 import { useStore } from "zustand";
-import { useClickValid } from "./useClickValid";
 
 import { findComponent, getNodeUserData } from "./types";
 import type { ComponentData, GameObject as GameObjectType, Prefab } from "./types";
@@ -59,7 +58,7 @@ export interface PrefabRootProps {
     selectedId?: string | null;
     onSelect?: (id: string | null) => void;
     onPointerEvent?: (eventType: NodeInteractionEventType, event: NodeInteractionEvent, node: GameObjectType) => void;
-    onEditNodeClick?: (event: ThreeEvent<PointerEvent>, node: GameObjectType) => void;
+    onEditNodeClick?: (event: ThreeEvent<MouseEvent>, node: GameObjectType) => void;
     basePath?: string;
     /** Advanced: inject a Scene implementation, as PrefabEditor does for history-aware mutations. */
     scene?: Scene;
@@ -109,7 +108,7 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>((props, ref) => {
 
     return (
         <PrefabStoreProvider store={resolvedStore}>
-            <AssetRuntimeProvider isolateObjects={!props.shareRuntimeObjects}>
+            <AssetRuntimeProvider isolateNodes={!props.shareRuntimeObjects}>
                 <SceneProvider store={resolvedStore} scene={props.scene} editMode={props.editMode} basePath={props.basePath}>
                     <AudioRuntimeProvider>
                         <SelectionRuntimeProvider selectedId={selectedId}>
@@ -130,6 +129,7 @@ const PrefabRootBody = memo(forwardRef<Scene, PrefabRootProps>(({ editMode, onSe
     useImperativeHandle(ref, () => scene, [scene]);
 
     const loading = useRef(new Set<string>());
+    const lastPick = useRef<{ x: number; y: number; ids: string[]; index: number } | null>(null);
 
     useEffect(() => {
         const tryLoad = (entry: string, path: string, hasLoaded: boolean, run: () => Promise<{ success: boolean; error?: unknown }>) => {
@@ -183,26 +183,68 @@ const PrefabRootBody = memo(forwardRef<Scene, PrefabRootProps>(({ editMode, onSe
         event: NodeInteractionEvent,
         nodeId: string,
         fallbackObject: Object3D | null,
+        eventName: string | null,
     ) => {
         const node = storeApi.getState().nodesById[nodeId];
         if (!node) return;
-        const { clickEvent } = analyzeNodeComponents(node);
-        emitNodePointerEvent(eventType, clickEvent.eventName, event, nodeId, node, fallbackObject);
+        emitNodePointerEvent(eventType, eventName, event, nodeId, node, fallbackObject);
         onPointerEvent?.(eventType, event, node);
     }, [onPointerEvent, storeApi]);
+
+    const handleEditClick = useCallback((event: ThreeEvent<MouseEvent>) => {
+        if (event.delta > 4) return;
+        event.stopPropagation();
+
+        const state = storeApi.getState();
+        const ids: string[] = [];
+        const seen = new Set<string>();
+        for (const intersection of event.intersections) {
+            let object: Object3D | null = intersection.object;
+            while (object) {
+                const id = object.userData.prefabNodeId;
+                const node = typeof id === 'string' ? state.nodesById[id] : null;
+                if (node && !node.locked) {
+                    if (!seen.has(id)) {
+                        seen.add(id);
+                        ids.push(id);
+                    }
+                    break;
+                }
+                object = object.parent;
+            }
+        }
+
+        if (ids.length === 0) {
+            lastPick.current = null;
+            return;
+        }
+
+        const nativeEvent = event.nativeEvent;
+        const previous = lastPick.current;
+        const sameSpot = previous
+            && Math.abs(previous.x - nativeEvent.clientX) <= 4
+            && Math.abs(previous.y - nativeEvent.clientY) <= 4;
+        const sameIds = sameSpot
+            && previous.ids.length === ids.length
+            && ids.every((id, index) => previous.ids[index] === id);
+        const index = sameIds ? (previous.index + 1) % ids.length : 0;
+        lastPick.current = { x: nativeEvent.clientX, y: nativeEvent.clientY, ids, index };
+
+        const node = state.nodesById[ids[index]];
+        onSelect?.(node.id);
+        onEditNodeClick?.(event, node);
+    }, [onEditNodeClick, onSelect, storeApi]);
 
     return (
         <GameInstanceProvider
             editMode={editMode}
-            onSelect={editMode ? onSelect : undefined}
+            onEditClick={editMode ? handleEditClick : undefined}
             onPointerEvent={editMode ? undefined : handleNodePointerEvent}
             registerRef={runtime.registerObject}
             getObject={runtime.getObject}
         >
             <StoreRootNode
-                onSelect={editMode ? onSelect : undefined}
                 onPointerEvent={editMode ? undefined : handleNodePointerEvent}
-                onEditNodeClick={editMode ? onEditNodeClick : undefined}
                 registerRef={runtime.registerObject}
                 editMode={editMode}
                 parentMatrix={IDENTITY}
@@ -331,10 +373,9 @@ export function GameObjectRenderer(props: RendererProps) {
 
     if (!node || node.disabled) return null;
 
-    const key = `${props.nodeId}_${isInstanced ? 'instanced' : 'standard'}`;
     return isInstanced
-        ? <InstancedNode key={key} {...props} />
-        : <StandardNode key={key} {...props} />;
+        ? <InstancedNode {...props} />
+        : <StandardNode {...props} />;
 }
 
 
@@ -343,9 +384,7 @@ function InstancedNode({
     parentMatrix = IDENTITY,
     editMode,
     registerRef,
-    onSelect,
     onPointerEvent,
-    onEditNodeClick,
     isVisible = true,
     basePath = "",
 }: RendererProps) {
@@ -357,27 +396,20 @@ function InstancedNode({
     );
     const transformComponent = findComponent(gameObject, "Transform");
     const localTransform = getNodeTransformProps(gameObject);
-    const isLocked = Boolean(gameObject?.locked);
     const isSelected = useNodeSelected(nodeId);
 
     const modelComponent = analyzedComponents.models[0]?.component;
-    const modelUrl = modelComponent?.properties?.filename
+    const modelPath = modelComponent?.properties?.filename
         ? withBasePath(basePath, modelComponent.properties.filename)
         : undefined;
     const instances = useMemo(
-        () => buildRepeatedInstances(gameObject, modelUrl),
-        [gameObject?.id, modelComponent, modelUrl]
+        () => buildRepeatedInstances(gameObject, modelPath),
+        [gameObject?.id, modelComponent, modelPath]
     );
 
     const handleGroupRef = useCallback((object: Group | null) => {
         registerRef(nodeId, object);
     }, [nodeId, registerRef]);
-
-    const editClickHandlers = useClickValid(!!editMode && !isLocked, (event: ThreeEvent<PointerEvent>) => {
-        if (!gameObject) return;
-        onSelect?.(nodeId);
-        onEditNodeClick?.(event, gameObject);
-    });
 
     if (!gameObject) return null;
 
@@ -397,22 +429,14 @@ function InstancedNode({
     const instanceBatch = useMemo(() => instances.map(instance => ({
         ...instance,
         visible: nodeVisible,
-        locked: isLocked,
         clickEnabled: analyzedComponents.clickEvent.enabled,
-    })), [analyzedComponents.clickEvent.enabled, instances, isLocked, nodeVisible]);
-    const renderedInstances = (
-        <GameInstanceBatch
-            sourceId={gameObject.id}
-            instances={instanceBatch}
-        />
-    );
+        clickEventName: analyzedComponents.clickEvent.eventName,
+    })), [analyzedComponents.clickEvent, instances, nodeVisible]);
     const childNodes = (
         <ChildNodes
             childIds={childIds}
             parentMatrix={world}
-            onSelect={onSelect}
             onPointerEvent={onPointerEvent}
-            onEditNodeClick={onEditNodeClick}
             registerRef={registerRef}
             editMode={editMode}
             isVisible={nodeVisible}
@@ -421,7 +445,7 @@ function InstancedNode({
     );
     const componentRuntimeProps: ComponentRuntimeProps = {
         editMode,
-        nodeInteractionHandlers: editMode ? editClickHandlers : undefined,
+        nodeInteractionHandlers: undefined,
         position: localTransform.position,
         rotation: localTransform.rotation,
         scale: localTransform.scale,
@@ -441,20 +465,17 @@ function InstancedNode({
             <group
                 ref={handleGroupRef}
                 {...groupProps}
-                {...(editMode ? editClickHandlers : undefined)}
             >
                 {logicalContent}
             </group>
-            {renderedInstances}
+            <GameInstanceBatch sourceId={gameObject.id} instances={instanceBatch} />
         </NodeScope>
     );
 }
 
 function StandardNode({
     nodeId,
-    onSelect,
     onPointerEvent,
-    onEditNodeClick,
     registerRef,
     editMode,
     parentMatrix = IDENTITY,
@@ -468,7 +489,6 @@ function StandardNode({
         [gameObject],
     );
     const isSelected = useNodeSelected(nodeId);
-    const isLocked = Boolean(gameObject?.locked);
     const transformComponent = findComponent(gameObject, "Transform");
     const transform = getNodeTransformProps(gameObject);
 
@@ -478,15 +498,10 @@ function StandardNode({
         registerRef(nodeId, object);
     }, [nodeId, registerRef]);
 
-    const editClickHandlers = useClickValid(!!editMode && !isLocked, (event: ThreeEvent<PointerEvent>) => {
-        if (!gameObject) return;
-        onSelect?.(nodeId);
-        onEditNodeClick?.(event, gameObject);
-    });
     const primaryInteractionHandlers = !editMode && analyzedComponents.clickEvent.enabled && onPointerEvent
         ? createNodeInteractionHandlers((eventType, event) => {
             event.stopPropagation();
-            onPointerEvent(eventType, event, nodeId, groupRef.current);
+            onPointerEvent(eventType, event, nodeId, groupRef.current, analyzedComponents.clickEvent.eventName);
         })
         : undefined;
 
@@ -510,17 +525,16 @@ function StandardNode({
         ...transformProps,
     };
     const childNodes = <ChildNodes childIds={childIds} parentMatrix={world}
-        onSelect={onSelect} onPointerEvent={onPointerEvent} onEditNodeClick={onEditNodeClick}
+        onPointerEvent={onPointerEvent}
         registerRef={registerRef}
         editMode={editMode}
         isVisible={nodeVisible}
         basePath={basePath}
     />;
 
-    const nodeInteractionHandlers = editMode ? editClickHandlers : primaryInteractionHandlers;
     const componentRuntimeProps: ComponentRuntimeProps = {
         editMode,
-        nodeInteractionHandlers,
+        nodeInteractionHandlers: primaryInteractionHandlers,
         ...transformProps,
         worldPosition: analyzedComponents.composition.length ? decompose(world).position : undefined,
     };
@@ -531,34 +545,28 @@ function StandardNode({
         basePath,
         componentRuntimeProps,
     );
-    const standardNode = (
-        <group
-            ref={handleGroupRef}
-            {...groupProps}
-            visible={nodeVisible}
-            {...(editMode ? editClickHandlers : undefined)}
-        >
-            {inner}
-        </group>
-    );
-
     return (
         <NodeScope nodeId={nodeId} editMode={editMode} isSelected={isSelected}>
-            {standardNode}
+            <group
+                ref={handleGroupRef}
+                {...groupProps}
+                visible={nodeVisible}
+            >
+                {inner}
+            </group>
         </NodeScope>
     );
 }
 
 interface RendererProps {
     nodeId: string;
-    onSelect?: (id: string) => void;
     onPointerEvent?: (
         eventType: NodeInteractionEventType,
         event: NodeInteractionEvent,
         nodeId: string,
         object: Object3D | null,
+        eventName: string | null,
     ) => void;
-    onEditNodeClick?: (event: ThreeEvent<PointerEvent>, node: GameObjectType) => void;
     registerRef: (id: string, obj: Object3D | null) => void;
     editMode?: boolean;
     parentMatrix?: Matrix4;
@@ -580,26 +588,18 @@ function ChildNodes({ childIds, parentMatrix, ...props }: { childIds: string[]; 
     );
 }
 
-function getModelRepeatSettings(node?: GameObjectType | null) {
-    const properties = findComponent(node, "Model")?.properties ?? {};
-    return {
-        repeat: Boolean(properties.repeat),
-        repeatAxes: getRepeatAxesFromModelProperties(properties),
-    };
-}
-
 function buildRepeatedInstances(
     gameObject: GameObjectType | null,
-    modelUrl: string | undefined,
+    modelPath: string | undefined,
 ) {
-    if (!gameObject || !modelUrl) return [];
+    if (!gameObject || !modelPath) return [];
 
-    const repeat = getModelRepeatSettings(gameObject);
+    const modelProperties = findComponent(gameObject, "Model")?.properties ?? {};
     const counts: [number, number, number] = [1, 1, 1];
     const offsets: [number, number, number] = [0, 0, 0];
 
-    if (repeat.repeat) {
-        for (const entry of repeat.repeatAxes) {
+    if (modelProperties.repeat) {
+        for (const entry of getRepeatAxesFromModelProperties(modelProperties)) {
             const axisIndex = entry.axis === 'x' ? 0 : entry.axis === 'y' ? 1 : 2;
             counts[axisIndex] = entry.count;
             offsets[axisIndex] = entry.offset;
@@ -608,7 +608,7 @@ function buildRepeatedInstances(
 
     const instances: Array<{
         id: string;
-        modelUrl: string;
+        modelPath: string;
         position: [number, number, number];
         rotation: [number, number, number];
         scale: [number, number, number];
@@ -621,7 +621,7 @@ function buildRepeatedInstances(
 
                 instances.push({
                     id: isBaseInstance ? gameObject.id : `${gameObject.id}__repeat_${x}_${y}_${z}`,
-                    modelUrl,
+                    modelPath,
                     position: [x * offsets[0], y * offsets[1], z * offsets[2]],
                     rotation: [0, 0, 0],
                     scale: [1, 1, 1],
@@ -753,7 +753,6 @@ function renderNodeContent(
             </View>
         );
     }
-
     return content;
 }
 

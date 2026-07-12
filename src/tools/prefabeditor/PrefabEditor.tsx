@@ -1,10 +1,10 @@
 import { OrbitControls, TransformControls, useHelper } from "@react-three/drei";
-import { useCallback, useEffect, useMemo, useRef, useState, forwardRef, useImperativeHandle } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, forwardRef, useImperativeHandle } from "react";
 import { BoxHelper } from "three";
 import type { Object3D, Texture } from "three";
 import { findComponentEntry } from "./types";
 import type { GameObject, Prefab } from "./types";
-import { GameCanvas, PrefabRoot, PrefabEditorMode, SceneContext, AssetRuntimeProvider, createImageNode, createModelNode, denormalizePrefab } from "../../viewer";
+import { GameCanvas, PrefabRoot, PrefabEditorMode, SceneContext, AssetRuntimeProvider, createImageNode, createModelNode, denormalizePrefab, useAssetRuntime } from "../../viewer";
 import type { AssetRuntime, PrefabNode, Scene } from "../../viewer";
 import EditorUI from "./EditorUI";
 import { base, toolbar } from "./styles";
@@ -44,6 +44,25 @@ function SelectionHelper({ object }: { object: Object3D | null }) {
     const target = useMemo(() => object ? { current: object } : null, [object]);
     useHelper(target, BoxHelper, "cyan");
     return null;
+}
+
+function useRuntimeObject(nodeId: string) {
+    const runtime = useAssetRuntime();
+    const subscribe = useCallback(
+        (notify: () => void) => runtime.subscribeObject(nodeId, notify),
+        [nodeId, runtime],
+    );
+    const getSnapshot = useCallback(
+        () => runtime.getObject(nodeId),
+        [nodeId, runtime],
+    );
+
+    return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+}
+
+function RegisteredObject({ id, children }: { id: string; children: (object: Object3D) => React.ReactNode }) {
+    const object = useRuntimeObject(id);
+    return object ? children(object) : null;
 }
 
 export type { EditorContextType, PrefabEditorRef } from "./EditorContext";
@@ -227,11 +246,6 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
         return () => unsubscribe();
     }, [prefabStore, selectedId]);
 
-    const selectedObject = selectedId ? getObject(selectedId) : null;
-    const transformObject = isEditMode && selectedObject
-        && isObjectAttachedToRoot(getRoot(), selectedObject)
-        ? selectedObject
-        : null;
     const selectedIsInstanced = Boolean(
         selectedId && findComponentEntry(getNode(selectedId), "Model")?.[1].properties?.instanced,
     );
@@ -506,24 +520,29 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
                                 : canvasProps?.onPointerMissed}
                         >
                             {content}
-                            {isEditMode ? <SelectionHelper object={transformObject} /> : null}
 
                             {isEditMode && (
                                 <>
                                     <OrbitControls ref={controlsRef} enableDamping={false} makeDefault />
-                                    {transformObject && (
-                                        <TransformControls
-                                            ref={transformControlsRef}
-                                            key={`transform-${selectedId}-${transformMode}-${positionSnap}-${rotationSnap}-${scaleSnap}`}
-                                            object={transformObject}
-                                            mode={transformMode}
-                                            space={transformMode === "translate" ? "world" : "local"}
-                                            onObjectChange={selectedIsInstanced ? handleTransformChange : undefined}
-                                            onMouseUp={selectedIsInstanced ? undefined : handleTransformChange}
-                                            translationSnap={positionSnap > 0 ? positionSnap : undefined}
-                                            rotationSnap={rotationSnap > 0 ? rotationSnap : undefined}
-                                            scaleSnap={scaleSnap > 0 ? scaleSnap : undefined}
-                                        />
+                                    {selectedId && (
+                                        <RegisteredObject id={selectedId}>
+                                            {object => isObjectAttachedToRoot(getRoot(), object) ? (
+                                                <>
+                                                    <SelectionHelper object={object} />
+                                                    <TransformControls
+                                                        ref={transformControlsRef}
+                                                        object={object}
+                                                        mode={transformMode}
+                                                        space={transformMode === "translate" ? "world" : "local"}
+                                                        onObjectChange={selectedIsInstanced ? handleTransformChange : undefined}
+                                                        onMouseUp={selectedIsInstanced ? undefined : handleTransformChange}
+                                                        translationSnap={positionSnap > 0 ? positionSnap : undefined}
+                                                        rotationSnap={rotationSnap > 0 ? rotationSnap : undefined}
+                                                        scaleSnap={scaleSnap > 0 ? scaleSnap : undefined}
+                                                    />
+                                                </>
+                                            ) : null}
+                                        </RegisteredObject>
                                     )}
                                 </>
                             )}

@@ -1,13 +1,13 @@
 import { createContext, useContext, useMemo, useRef, useState, useEffect, useLayoutEffect } from "react";
 import type { ComponentType, ReactNode } from "react";
-import { Merged, useHelper } from '@react-three/drei';
-import { Mesh, Matrix4, BoxHelper } from "three";
+import type { ThreeEvent } from "@react-three/fiber";
+import { Merged } from '@react-three/drei';
+import { Mesh, Matrix4 } from "three";
 import type { Group, Object3D } from "three";
 import { useStore } from "zustand";
 import { createStore, type StoreApi } from "zustand/vanilla";
-import { createNodeInteractionHandlers, usePointerEvents } from "./usePointerEvents";
+import { createNodeInteractionHandlers } from "./usePointerEvents";
 import type { NodeInteractionEvent, NodeInteractionEventType } from "./usePointerEvents";
-import { useNodeSelected } from "./SelectionRuntime";
 import { useModelAsset } from "./assetRuntime";
 
 export type RepeatAxisConfig = {
@@ -60,13 +60,13 @@ export function getRepeatAxesFromModelProperties(properties: Record<string, unkn
 export type InstanceData = {
     id: string;
     sourceId: string;
-    locked?: boolean;
     visible?: boolean;
     clickEnabled?: boolean;
+    clickEventName?: string | null;
     position: [number, number, number];
     rotation: [number, number, number];
     scale: [number, number, number];
-    meshPath: string;
+    modelPath: string;
 };
 
 // Helper functions for comparison
@@ -82,10 +82,10 @@ function arrayEquals(a: number[], b: number[]): boolean {
 function instanceEquals(a: InstanceData, b: InstanceData): boolean {
     return a.id === b.id &&
         a.sourceId === b.sourceId &&
-        a.locked === b.locked &&
         a.visible === b.visible &&
         a.clickEnabled === b.clickEnabled &&
-        a.meshPath === b.meshPath &&
+        a.clickEventName === b.clickEventName &&
+        a.modelPath === b.modelPath &&
         arrayEquals(a.position, b.position) &&
         arrayEquals(a.rotation, b.rotation) &&
         arrayEquals(a.scale, b.scale);
@@ -93,19 +93,17 @@ function instanceEquals(a: InstanceData, b: InstanceData): boolean {
 
 type InstanceRegistryState = {
     instancesById: Record<string, InstanceData>;
-    sourceInstanceIdsById: Record<string, Record<string, true> | undefined>;
+    instanceIdsBySourceId: Record<string, string[] | undefined>;
     setSourceInstances: (sourceId: string, instances: InstanceData[]) => void;
 };
 
 function createInstanceRegistryStore() {
     return createStore<InstanceRegistryState>()((set, get) => ({
         instancesById: {},
-        sourceInstanceIdsById: {},
+        instanceIdsBySourceId: {},
         setSourceInstances: (sourceId, instances) => {
             const state = get();
-            const previousIds = Object.keys(state.sourceInstanceIdsById[sourceId] ?? {});
-            const nextById: Record<string, InstanceData> = {};
-            instances.forEach(instance => { nextById[instance.id] = instance; });
+            const previousIds = state.instanceIdsBySourceId[sourceId] ?? [];
             const unchanged = previousIds.length === instances.length
                 && instances.every(instance => {
                     const previous = state.instancesById[instance.id];
@@ -116,116 +114,91 @@ function createInstanceRegistryStore() {
             set(current => {
                 const instancesById = { ...current.instancesById };
                 previousIds.forEach(id => { delete instancesById[id]; });
-                Object.assign(instancesById, nextById);
-                const sourceInstanceIdsById = { ...current.sourceInstanceIdsById };
+                instances.forEach(instance => { instancesById[instance.id] = instance; });
+                const instanceIdsBySourceId = { ...current.instanceIdsBySourceId };
                 if (instances.length > 0) {
-                    const ids: Record<string, true> = {};
-                    instances.forEach(instance => { ids[instance.id] = true; });
-                    sourceInstanceIdsById[sourceId] = ids;
+                    instanceIdsBySourceId[sourceId] = instances.map(instance => instance.id);
                 } else {
-                    delete sourceInstanceIdsById[sourceId];
+                    delete instanceIdsBySourceId[sourceId];
                 }
-                return { instancesById, sourceInstanceIdsById };
+                return { instancesById, instanceIdsBySourceId };
             });
         },
     }));
 }
 
-type GameInstanceContextType = {
-    store: StoreApi<InstanceRegistryState>;
-};
-const GameInstanceContext = createContext<GameInstanceContextType | null>(null);
-
-export function GameInstanceProvider({
-    children,
-    onSelect,
-    onPointerEvent,
-    registerRef,
-    getObject,
-    editMode
-}: {
-    children: ReactNode,
-    onSelect?: (id: string | null) => void,
+type InstanceRuntimeProps = {
     onPointerEvent?: (
         eventType: NodeInteractionEventType,
         event: NodeInteractionEvent,
         nodeId: string,
         object: Object3D | null,
-    ) => void,
-    registerRef?: (id: string, obj: Object3D | null) => void,
-    getObject: (id: string) => Object3D | null,
-    editMode?: boolean
+        eventName: string | null,
+    ) => void;
+    registerRef?: (id: string, obj: Object3D | null) => void;
+    getObject: (id: string) => Object3D | null;
+    editMode?: boolean;
+};
+const GameInstanceContext = createContext<StoreApi<InstanceRegistryState> | null>(null);
+
+export function GameInstanceProvider({
+    children,
+    onEditClick,
+    onPointerEvent,
+    registerRef,
+    getObject,
+    editMode
+}: InstanceRuntimeProps & {
+    children: ReactNode;
+    onEditClick?: (event: ThreeEvent<MouseEvent>) => void;
 }) {
     const [instanceStore] = useState(createInstanceRegistryStore);
     const instancesById = useStore(instanceStore, state => state.instancesById);
 
-    const instances = useMemo(() => Object.values(instancesById), [instancesById]);
-
-    // Group instances by meshPath for batched rendering.
-    const grouped = useMemo(() => {
-        const groups: Record<string, { instances: InstanceData[] }> = {};
-        for (const inst of instances) {
-            const key = inst.meshPath;
-            if (!groups[key]) groups[key] = { instances: [] };
-            groups[key].instances.push(inst);
+    const instancesByModelPath = useMemo(() => {
+        const groups: Record<string, InstanceData[]> = {};
+        for (const instance of Object.values(instancesById)) {
+            (groups[instance.modelPath] ??= []).push(instance);
         }
 
-        Object.values(groups).forEach(group => {
-            group.instances.sort((a, b) => a.id.localeCompare(b.id));
-        });
+        Object.values(groups).forEach(instances => instances.sort((a, b) => a.id.localeCompare(b.id)));
 
         return groups;
-    }, [instances]);
-
-    const contextValue = useMemo(() => ({ store: instanceStore }), [instanceStore]);
+    }, [instancesById]);
 
     return (
-        <GameInstanceContext.Provider
-            value={contextValue}
-        >
-            {children}
+        <GameInstanceContext.Provider value={instanceStore}>
+            <group onClick={onEditClick}>
+                {children}
 
-            {Object.entries(grouped).map(([key, group]) => {
-                return (
+                {Object.entries(instancesByModelPath).map(([modelPath, instances]) => (
                     <InstancedModelBatch
-                        key={key}
-                        modelKey={group.instances[0].meshPath}
-                        group={group}
-                        onSelect={onSelect}
+                        key={modelPath}
+                        modelPath={modelPath}
+                        instances={instances}
                         onPointerEvent={onPointerEvent}
                         registerRef={registerRef}
                         getObject={getObject}
                         editMode={editMode}
                     />
-                );
-            })}
+                ))}
+            </group>
         </GameInstanceContext.Provider>
     );
 }
 
 function InstancedModelBatch({
-    modelKey,
-    group,
-    onSelect,
+    modelPath,
+    instances,
     onPointerEvent,
     registerRef,
     getObject,
     editMode,
-}: {
-    modelKey: string;
-    group: { instances: InstanceData[] };
-    onSelect?: (id: string | null) => void;
-    onPointerEvent?: (
-        eventType: NodeInteractionEventType,
-        event: NodeInteractionEvent,
-        nodeId: string,
-        object: Object3D | null,
-    ) => void;
-    registerRef?: (id: string, obj: Object3D | null) => void;
-    getObject: (id: string) => Object3D | null;
-    editMode?: boolean;
+}: InstanceRuntimeProps & {
+    modelPath: string;
+    instances: InstanceData[];
 }) {
-    const model = useModelAsset(modelKey);
+    const model = useModelAsset(modelPath);
     const meshes = useMemo(() => {
         if (!model) return {};
         const result: Record<string, Mesh> = {};
@@ -236,28 +209,24 @@ function InstancedModelBatch({
             if (!(obj instanceof Mesh)) return;
             const geometry = obj.geometry.clone();
             geometry.applyMatrix4(obj.matrixWorld.clone().premultiply(rootInverse));
-            result[`${modelKey}__${partIndex}`] = new Mesh(geometry, obj.material);
+            result[`part${partIndex}`] = new Mesh(geometry, obj.material);
             partIndex += 1;
         });
         return result;
-    }, [model, modelKey]);
+    }, [model]);
 
     useEffect(() => () => {
         Object.values(meshes).forEach(mesh => mesh.geometry.dispose());
     }, [meshes]);
 
-    const partCount = Object.keys(meshes).length;
-    if (partCount === 0) return null;
+    if (Object.keys(meshes).length === 0) return null;
 
     return (
         <Merged meshes={meshes} castShadow receiveShadow>
             {(instancesMap: Record<string, ComponentType<object>>) => (
                 <InstancedGroup
-                    modelKey={modelKey}
-                    group={group}
-                    partCount={partCount}
+                    instances={instances}
                     instancesMap={instancesMap}
-                    onSelect={onSelect}
                     onPointerEvent={onPointerEvent}
                     registerRef={registerRef}
                     getObject={getObject}
@@ -269,42 +238,23 @@ function InstancedModelBatch({
 }
 
 function InstancedGroup({
-    modelKey,
-    group,
-    partCount,
+    instances,
     instancesMap,
-    onSelect,
     onPointerEvent,
     registerRef,
     getObject,
     editMode
-}: {
-    modelKey: string;
-    group: { instances: InstanceData[] };
-    partCount: number;
+}: InstanceRuntimeProps & {
+    instances: InstanceData[];
     instancesMap: Record<string, ComponentType<object>>;
-    onSelect?: (id: string | null) => void;
-    onPointerEvent?: (
-        eventType: NodeInteractionEventType,
-        event: NodeInteractionEvent,
-        nodeId: string,
-        object: Object3D | null,
-    ) => void;
-    registerRef?: (id: string, obj: Object3D | null) => void;
-    getObject: (id: string) => Object3D | null;
-    editMode?: boolean;
 }) {
-    const instanceEntries = useMemo(() =>
-        Array.from({ length: partCount }, (_, i) => {
-            const partKey = `${modelKey}__${i}`;
-            const Component = instancesMap[partKey];
-            return Component ? { partKey, Component } : null;
-        }).filter((entry): entry is { partKey: string; Component: ComponentType<object> } => Boolean(entry)),
-        [instancesMap, modelKey, partCount]
+    const instanceEntries = useMemo(
+        () => Object.entries(instancesMap).map(([partKey, Component]) => ({ partKey, Component })),
+        [instancesMap],
     );
     const visibleInstances = useMemo(
-        () => group.instances.filter(instance => instance.visible !== false),
-        [group.instances]
+        () => instances.filter(instance => instance.visible !== false),
+        [instances]
     );
 
     return (
@@ -314,7 +264,6 @@ function InstancedGroup({
                     key={inst.id}
                     instance={inst}
                     instanceEntries={instanceEntries}
-                    onSelect={onSelect}
                     onPointerEvent={onPointerEvent}
                     registerRef={registerRef}
                     getObject={getObject}
@@ -329,52 +278,21 @@ function InstancedGroup({
 function InstanceGroupItem({
     instance,
     instanceEntries,
-    onSelect,
     onPointerEvent,
     registerRef,
     getObject,
     editMode
-}: {
+}: InstanceRuntimeProps & {
     instance: InstanceData;
     instanceEntries: Array<{ partKey: string; Component: ComponentType<object> }>;
-    onSelect?: (id: string | null) => void;
-    onPointerEvent?: (
-        eventType: NodeInteractionEventType,
-        event: NodeInteractionEvent,
-        nodeId: string,
-        object: Object3D | null,
-    ) => void;
-    registerRef?: (id: string, obj: Object3D | null) => void;
-    getObject: (id: string) => Object3D | null;
-    editMode?: boolean;
 }) {
-    const groupRef = useRef<Group | null>(null);
-    const helperRef = useRef<Object3D>(null!);
-    const isLocked = Boolean(instance.locked);
-    const instanceSelected = useNodeSelected(instance.id);
-    const sourceSelected = useNodeSelected(instance.sourceId);
-    const isSelected = instanceSelected || sourceSelected;
-    const canSelect = Boolean(editMode) && !isLocked;
-    const canClick = !editMode && Boolean(instance.clickEnabled) && Boolean(onPointerEvent);
-
-    const editPointerHandlers = usePointerEvents({
-        enabled: canSelect,
-        node: instance,
-        onClick: (event) => {
-            onSelect?.(instance.sourceId);
-        },
-    });
-    const runtimePointerHandlers = canClick && onPointerEvent
+    const groupRef = useRef<Group>(null!);
+    const pointerHandlers = !editMode && instance.clickEnabled && onPointerEvent
         ? createNodeInteractionHandlers((eventType, event) => {
             event.stopPropagation();
-            onPointerEvent(eventType, event, instance.sourceId, groupRef.current);
+            onPointerEvent(eventType, event, instance.sourceId, groupRef.current, instance.clickEventName ?? null);
         })
-        : {};
-    const pointerHandlers = editMode ? editPointerHandlers : runtimePointerHandlers;
-
-    // Use BoxHelper when object is selected in edit mode
-    if (groupRef.current) helperRef.current = groupRef.current;
-    useHelper(editMode && isSelected && groupRef.current ? helperRef : null, BoxHelper, 'cyan');
+        : undefined;
 
     useLayoutEffect(() => {
         const sourceObject = getObject(instance.sourceId);
@@ -408,9 +326,8 @@ function InstanceGroupItem({
 
 
 export function useInstanceCheck(id: string): boolean {
-    const ctx = useContext(GameInstanceContext);
-    const store = ctx?.store ?? EMPTY_INSTANCE_STORE;
-    return useStore(store, state => Boolean(state.instancesById[id] || state.sourceInstanceIdsById[id]));
+    const store = useContext(GameInstanceContext) ?? EMPTY_INSTANCE_STORE;
+    return useStore(store, state => Boolean(state.instancesById[id] || state.instanceIdsBySourceId[id]));
 }
 
 export function GameInstanceBatch({
@@ -418,21 +335,13 @@ export function GameInstanceBatch({
     instances,
 }: {
     sourceId: string;
-    instances: Array<Omit<InstanceData, 'sourceId' | 'meshPath'> & { modelUrl: string }>;
+    instances: Array<Omit<InstanceData, 'sourceId'>>;
 }) {
-    const ctx = useContext(GameInstanceContext);
-    const store = ctx?.store;
-    const instanceData = useMemo<InstanceData[]>(() => instances.map(instance => ({
-        id: instance.id,
-        sourceId,
-        locked: instance.locked,
-        visible: instance.visible,
-        clickEnabled: instance.clickEnabled,
-        meshPath: instance.modelUrl,
-        position: instance.position,
-        rotation: instance.rotation,
-        scale: instance.scale,
-    })), [instances, sourceId]);
+    const store = useContext(GameInstanceContext);
+    const instanceData = useMemo<InstanceData[]>(
+        () => instances.map(instance => ({ ...instance, sourceId })),
+        [instances, sourceId],
+    );
 
     useEffect(() => {
         store?.getState().setSourceInstances(sourceId, instanceData);

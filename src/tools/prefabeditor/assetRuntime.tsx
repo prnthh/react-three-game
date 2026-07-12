@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useImperativeHandle, useMemo, useRef, useState, type ReactNode } from "react";
 import { useStore } from "zustand";
 import { createStore, type StoreApi } from "zustand/vanilla";
 import type { Object3D, Texture } from "three";
@@ -6,10 +6,8 @@ import type { LoadedModels, LoadedSounds, LoadedTextures } from "../dragdrop";
 import { sound as soundManager } from "../../helpers/SoundManager";
 
 export interface AssetRuntime {
-    models: LoadedModels;
-    textures: LoadedTextures;
-    sounds: LoadedSounds;
     registerObject: (id: string, object: Object3D | null) => void;
+    subscribeObject: (id: string, listener: () => void) => () => void;
     registerHandle: (id: string, kind: string, handle: unknown) => void;
     registerModel: (path: string, model: Object3D) => void;
     registerTexture: (path: string, texture: Texture) => void;
@@ -35,7 +33,7 @@ export interface LiveRef<T> { readonly current: T | null; }
 export interface AssetRuntimeProviderProps {
     children: ReactNode;
     runtimeRef?: React.MutableRefObject<AssetRuntime | null>;
-    isolateObjects?: boolean;
+    isolateNodes?: boolean;
 }
 
 export const AssetRuntimeContext = createContext<AssetRuntime | null>(null);
@@ -144,51 +142,75 @@ export function NodeScope({
  * Recursive provider: if an AssetRuntime is already present above, this is a
  * pass-through. Otherwise this layer becomes the owner and allocates state.
  */
-export function AssetRuntimeProvider({ children, runtimeRef, isolateObjects = false }: AssetRuntimeProviderProps) {
+export function AssetRuntimeProvider({ children, runtimeRef, isolateNodes = false }: AssetRuntimeProviderProps) {
     const inherited = useContext(AssetRuntimeContext);
+    useImperativeHandle(inherited && !isolateNodes ? runtimeRef : undefined, () => inherited!, [inherited]);
+
     if (inherited !== null) {
-        if (isolateObjects) {
-            return <ScopedAssetRuntimeOwner parent={inherited} runtimeRef={runtimeRef}>{children}</ScopedAssetRuntimeOwner>;
+        if (isolateNodes) {
+            return <IsolatedNodeRuntime parent={inherited} runtimeRef={runtimeRef}>{children}</IsolatedNodeRuntime>;
         }
-        if (runtimeRef) runtimeRef.current = inherited;
         return children;
     }
     return <AssetRuntimeOwner runtimeRef={runtimeRef}>{children}</AssetRuntimeOwner>;
 }
 
-function ScopedAssetRuntimeOwner({
+function useObjectRegistry() {
+    const objects = useRef(new Map<string, Object3D>());
+    const listeners = useRef(new Map<string, Set<() => void>>());
+
+    const registerObject = useCallback((id: string, object: Object3D | null) => {
+        if ((objects.current.get(id) ?? null) === object) return;
+        if (object) objects.current.set(id, object);
+        else objects.current.delete(id);
+        listeners.current.get(id)?.forEach(listener => listener());
+    }, []);
+    const subscribeObject = useCallback((id: string, listener: () => void) => {
+        const nodeListeners = listeners.current.get(id) ?? new Set<() => void>();
+        nodeListeners.add(listener);
+        listeners.current.set(id, nodeListeners);
+        return () => {
+            nodeListeners.delete(listener);
+            if (nodeListeners.size === 0) listeners.current.delete(id);
+        };
+    }, []);
+    const getObject = useCallback((id: string) => objects.current.get(id) ?? null, []);
+
+    return { registerObject, subscribeObject, getObject };
+}
+
+function useHandleRegistry() {
+    const handles = useRef(new Map<string, Map<string, unknown>>());
+
+    const registerHandle = useCallback((id: string, kind: string, handle: unknown) => {
+        const nodeHandles = handles.current.get(id);
+        if (handle == null) {
+            nodeHandles?.delete(kind);
+            if (nodeHandles?.size === 0) handles.current.delete(id);
+        } else if (nodeHandles) {
+            nodeHandles.set(kind, handle);
+        } else {
+            handles.current.set(id, new Map([[kind, handle]]));
+        }
+    }, []);
+    const getHandle = useCallback(<T = unknown,>(id: string, kind: string) => (
+        (handles.current.get(id)?.get(kind) as T | undefined) ?? null
+    ), []);
+
+    return { registerHandle, getHandle };
+}
+
+function IsolatedNodeRuntime({
     parent,
     children,
     runtimeRef,
 }: AssetRuntimeProviderProps & { parent: AssetRuntime }) {
-    const objectRefs = useRef<Record<string, Object3D | null>>({});
-    const nodeHandles = useRef<Map<string, Map<string, unknown>>>(new Map());
-
-    const registerObject = useCallback((id: string, object: Object3D | null) => {
-        if (object) objectRefs.current[id] = object;
-        else delete objectRefs.current[id];
-    }, []);
-    const registerHandle = useCallback((id: string, kind: string, handle: unknown) => {
-        const current = nodeHandles.current.get(id);
-        if (handle == null) {
-            if (!current) return;
-            current.delete(kind);
-            if (current.size === 0) nodeHandles.current.delete(id);
-            return;
-        }
-        if (current) current.set(kind, handle);
-        else nodeHandles.current.set(id, new Map([[kind, handle]]));
-    }, []);
-    const getObject = useCallback((id: string) => objectRefs.current[id] ?? null, []);
-    const getHandle = useCallback(<T = unknown,>(id: string, kind: string) => (
-        (nodeHandles.current.get(id)?.get(kind) as T | undefined) ?? null
-    ), []);
+    const { registerObject, subscribeObject, getObject } = useObjectRegistry();
+    const { registerHandle, getHandle } = useHandleRegistry();
 
     const runtime = useMemo<AssetRuntime>(() => ({
-        get models() { return parent.models; },
-        get textures() { return parent.textures; },
-        get sounds() { return parent.sounds; },
         registerObject,
+        subscribeObject,
         registerHandle,
         registerModel: parent.registerModel,
         registerTexture: parent.registerTexture,
@@ -199,33 +221,16 @@ function ScopedAssetRuntimeOwner({
         getTexture: parent.getTexture,
         getSound: parent.getSound,
         getAssetRevision: parent.getAssetRevision,
-    }), [getHandle, getObject, parent, registerHandle, registerObject]);
+    }), [getHandle, getObject, parent, registerHandle, registerObject, subscribeObject]);
 
-    if (runtimeRef) runtimeRef.current = runtime;
+    useImperativeHandle(runtimeRef, () => runtime, [runtime]);
     return <AssetRuntimeContext.Provider value={runtime}>{children}</AssetRuntimeContext.Provider>;
 }
 
 function AssetRuntimeOwner({ children, runtimeRef }: AssetRuntimeProviderProps) {
     const [assetStore] = useState(createAssetStore);
-    const objectRefs = useRef<Record<string, Object3D | null>>({});
-    const nodeHandles = useRef<Map<string, Map<string, unknown>>>(new Map());
-
-    const registerObject = useCallback((id: string, obj: Object3D | null) => {
-        if (obj) objectRefs.current[id] = obj;
-        else delete objectRefs.current[id];
-    }, []);
-
-    const registerHandle = useCallback((id: string, kind: string, handle: unknown) => {
-        const current = nodeHandles.current.get(id);
-        if (handle == null) {
-            if (!current) return;
-            current.delete(kind);
-            if (current.size === 0) nodeHandles.current.delete(id);
-            return;
-        }
-        if (current) { current.set(kind, handle); return; }
-        nodeHandles.current.set(id, new Map([[kind, handle]]));
-    }, []);
+    const { registerObject, subscribeObject, getObject } = useObjectRegistry();
+    const { registerHandle, getHandle } = useHandleRegistry();
 
     const registerModel = useCallback((path: string, model: Object3D) => {
         if (assetStore.getState().models[path] === model) return;
@@ -236,8 +241,8 @@ function AssetRuntimeOwner({ children, runtimeRef }: AssetRuntimeProviderProps) 
         assetStore.setState(s => ({ textures: { ...s.textures, [path]: texture }, visualVersion: s.visualVersion + 1, version: s.version + 1 }));
     }, [assetStore]);
     const registerSound = useCallback((path: string, sound: AudioBuffer) => {
-        soundManager.setBuffer(path, sound);
         if (assetStore.getState().sounds[path] === sound) return;
+        soundManager.setBuffer(path, sound);
         assetStore.setState(s => ({
             sounds: { ...s.sounds, [path]: sound },
             soundVersions: { ...s.soundVersions, [path]: (s.soundVersions[path] ?? 0) + 1 },
@@ -245,30 +250,21 @@ function AssetRuntimeOwner({ children, runtimeRef }: AssetRuntimeProviderProps) 
         }));
     }, [assetStore]);
 
-    const getObject = useCallback((id: string) => objectRefs.current[id] ?? null, []);
-    const getHandle = useCallback(<T = unknown,>(id: string, kind: string) => {
-        return (nodeHandles.current.get(id)?.get(kind) as T | undefined) ?? null;
-    }, []);
     const getModel = useCallback((path: string) => assetStore.getState().models[path] ?? null, [assetStore]);
     const getTexture = useCallback((path: string) => assetStore.getState().textures[path] ?? null, [assetStore]);
     const getSound = useCallback((path: string) => assetStore.getState().sounds[path] ?? null, [assetStore]);
     const getAssetRevision = useCallback(() => assetStore.getState().version, [assetStore]);
 
-    // Stable runtime: all members have stable identity, so consumers that only
-    // use imperative getters/registrars never re-render on asset loads. The
-    // live maps are exposed as snapshot getters for imperative readers; reactive
-    // consumers use the per-asset selector hooks.
+    // Stable runtime: imperative readers do not re-render on asset loads.
+    // Reactive consumers use the per-asset selector hooks.
     const runtime = useMemo<AssetRuntime>(() => ({
-        get models() { return assetStore.getState().models; },
-        get textures() { return assetStore.getState().textures; },
-        get sounds() { return assetStore.getState().sounds; },
-        registerObject, registerHandle,
+        registerObject, subscribeObject, registerHandle,
         registerModel, registerTexture, registerSound,
         getObject, getHandle, getModel, getTexture, getSound,
         getAssetRevision,
-    }), [assetStore, registerObject, registerHandle, registerModel, registerTexture, registerSound, getObject, getHandle, getModel, getTexture, getSound, getAssetRevision]);
+    }), [assetStore, registerObject, subscribeObject, registerHandle, registerModel, registerTexture, registerSound, getObject, getHandle, getModel, getTexture, getSound, getAssetRevision]);
 
-    if (runtimeRef) runtimeRef.current = runtime;
+    useImperativeHandle(runtimeRef, () => runtime, [runtime]);
 
     return (
         <AssetStoreContext.Provider value={assetStore}>

@@ -41,5 +41,6 @@ npm --prefix docs run build
 | `/editor` | Optional `PrefabEditor` entrypoint |
 | `/demo/customcomponent` | Registered component views and inferred inspector fields |
 | `/demo/physics` | Nested prefabs, camera nodes, materials, events, Crashcat |
-| `/demo/stage` | Authored cameras, runtime services, interactions |
+| `/demo/stage` | Runtime-only point-and-click scene viewer |
+| `/demo/stage/editor` | Point-and-click scene browser and editor |
 | `/demo/benchmark` | Instancing and rendering scale |

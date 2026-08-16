@@ -10,10 +10,8 @@ import {
     type ComponentViewProps,
     type ContactEventPayload,
 } from "react-three-game";
-import { FieldRenderer } from "react-three-game/editor";
-import type { ComponentEditorProps, FieldDefinition } from "react-three-game/editor";
 
-type ActivationColliderProperties = {
+export type ActivationColliderProperties = {
     targetNodeId?: string;
     enterEventName?: string;
     exitEventName?: string;
@@ -26,17 +24,6 @@ const DEFAULT_EXIT_EVENT = "stage:activation-exit";
 const DEFAULT_TARGET_NODE = "stage-player-collider";
 const DEFAULT_MOODS = ["🙂", "😄", "🤔", "😮", "😎", "🥳"];
 const DEFAULT_BUBBLE_HEIGHT = 1.35;
-
-const activationColliderFields = [
-    { name: "targetNodeId", type: "node", label: "Target Node" },
-    { name: "enterEventName", type: "string", label: "Enter Event" },
-    { name: "exitEventName", type: "string", label: "Exit Event" },
-    { name: "bubbleHeight", type: "number", label: "Bubble Height", step: 0.05 },
-] satisfies FieldDefinition<ActivationColliderProperties>[];
-
-function ActivationColliderEditor({ properties, update }: ComponentEditorProps<ActivationColliderProperties>) {
-    return <FieldRenderer fields={activationColliderFields} values={properties} onChange={update} />;
-}
 
 function asContactPayload(payload: unknown): ContactEventPayload {
     return (payload ?? {}) as ContactEventPayload;
@@ -136,7 +123,6 @@ const bubbleStyles: Record<string, CSSProperties> = {
 
 const ActivationColliderComponent: Component<ActivationColliderProperties> = {
     name: "ActivationCollider",
-    Editor: ActivationColliderEditor,
     View: ActivationColliderView,
     defaultProperties: {
         targetNodeId: DEFAULT_TARGET_NODE,

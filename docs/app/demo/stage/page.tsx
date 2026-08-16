@@ -2,17 +2,15 @@
 
 import { useFrame, useThree } from "@react-three/fiber";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { findComponent, gameEvents, PrefabEditorMode, registerComponent, usePrefab, useScene } from "react-three-game";
-import type { ContactEventPayload, Prefab } from "react-three-game";
-import { PrefabEditor } from "react-three-game/editor";
+import { findComponent, GameCanvas, gameEvents, PrefabEditorMode, PrefabRoot, registerComponent, usePrefab, useScene } from "react-three-game";
+import type { ContactEventPayload } from "react-three-game";
 import { CrashcatPhysicsComponent, CrashcatRuntime } from "react-three-game/plugins/crashcat";
 import AnimationMixer from "./components/AnimationMixer";
 import SkinnedMesh, { type SkinnedMeshRef } from "./components/SkinnedMesh";
 import { BASE_PATH, withBasePath } from "../../basePath";
 import ActivationColliderComponent from "./ActivationColliderComponent";
 import StageInteractionComponent, { type StageInteractionProperties, type StagePoint } from "./StageInteractionComponent";
-import officeScene from "./scenes/office";
-import outsideScene from "./scenes/outside";
+import { officeScene, STAGE_SCENES } from "./scenes";
 import type { StageScene } from "./scenes/types";
 import { OrthographicCamera, PerspectiveCamera, Quaternion, Vector3, type Group } from "three";
 import type { AnimationAction } from "three";
@@ -22,7 +20,6 @@ registerComponent(ActivationColliderComponent);
 registerComponent(StageInteractionComponent);
 
 const ONIMILIO_MODEL = withBasePath("/models/human/onimilio.glb");
-const STAGE_SCENES = [officeScene, outsideScene];
 const PLAYER_COLLIDER_ID = "stage-player-collider";
 const PLAYER_COLLIDER_CENTER_Y = 0.85;
 const INTERACTION_ENTER_EVENT = "stage:interaction-enter";
@@ -52,16 +49,6 @@ function findAnimationName(actionNames: string[], preferred: "idle" | "walk") {
         ?? normalized.find(({ key }) => key.includes("run"))?.name
         ?? normalized.find(({ key }) => !key.includes("idle"))?.name
         ?? actionNames[0];
-}
-
-function StagePrefabLoader({ prefab }: { prefab: Prefab }) {
-    const scene = usePrefab();
-
-    useEffect(() => {
-        scene.replace(prefab);
-    }, [prefab, scene]);
-
-    return null;
 }
 
 function PlayerCameraFollow() {
@@ -318,46 +305,46 @@ export default function StageDemo() {
 
     return (
         <main className="relative flex h-screen w-screen flex-col items-center justify-between overflow-hidden bg-white dark:bg-black sm:items-start">
-            <PrefabEditor
-                basePath={BASE_PATH}
-                prefab={officeScene.prefab}
-                mode={PrefabEditorMode.Play}
-                onPointerEvent={(eventType, event, node) => {
-                    if (eventType !== "click") return;
+            <GameCanvas>
+                <PrefabRoot
+                    basePath={BASE_PATH}
+                    data={activeScene.prefab}
+                    onPointerEvent={(eventType, event, node) => {
+                        if (eventType !== "click") return;
 
-                    const interaction = findComponent(node, "StageInteraction")?.properties as StageInteractionProperties | undefined;
-                    if (interaction) {
-                        const objectPosition = event.object.getWorldPosition(new Vector3());
-                        const pendingInteraction = { nodeId: node.id, properties: interaction };
-                        pendingInteractionRef.current = pendingInteraction;
-                        setDialogue(null);
-                        if (activeInteractionSensorsRef.current.has(node.id)) {
-                            activateInteraction(pendingInteraction);
+                        const interaction = findComponent(node, "StageInteraction")?.properties as StageInteractionProperties | undefined;
+                        if (interaction) {
+                            const objectPosition = event.object.getWorldPosition(new Vector3());
+                            const pendingInteraction = { nodeId: node.id, properties: interaction };
+                            pendingInteractionRef.current = pendingInteraction;
+                            setDialogue(null);
+                            if (activeInteractionSensorsRef.current.has(node.id)) {
+                                activateInteraction(pendingInteraction);
+                                return;
+                            }
+                            setPlayerDestination([objectPosition.x, 0, objectPosition.z]);
                             return;
                         }
-                        setPlayerDestination([objectPosition.x, 0, objectPosition.z]);
-                        return;
-                    }
 
-                    if (node.id === "stage-floor") {
-                        pendingInteractionRef.current = null;
-                        setDialogue(null);
-                        setPlayerDestination([event.point.x, event.point.y, event.point.z]);
-                    }
-                }}
-            >
-                <CrashcatRuntime>
-                    <StagePrefabLoader prefab={activeScene.prefab} />
-                    <PlayerCameraFollow />
-                    <PlayerCharacter
-                        key={activeScene.id}
-                        destination={playerDestination}
-                        spawn={playerSpawn}
-                    />
+                        if (node.id === "stage-floor") {
+                            pendingInteractionRef.current = null;
+                            setDialogue(null);
+                            setPlayerDestination([event.point.x, event.point.y, event.point.z]);
+                        }
+                    }}
+                >
+                    <CrashcatRuntime>
+                        <PlayerCameraFollow />
+                        <PlayerCharacter
+                            key={activeScene.id}
+                            destination={playerDestination}
+                            spawn={playerSpawn}
+                        />
 
-                    {ActiveSceneContent ? <ActiveSceneContent /> : null}
-                </CrashcatRuntime>
-            </PrefabEditor>
+                        {ActiveSceneContent ? <ActiveSceneContent /> : null}
+                    </CrashcatRuntime>
+                </PrefabRoot>
+            </GameCanvas>
             {dialogue ? (
                 <button
                     type="button"

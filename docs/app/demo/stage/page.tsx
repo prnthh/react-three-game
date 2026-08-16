@@ -2,8 +2,9 @@
 
 import { useFrame, useThree } from "@react-three/fiber";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { findComponent, gameEvents, PrefabEditor, PrefabEditorMode, registerComponent, useScene } from "react-three-game/editor";
-import type { ContactEventPayload, Prefab } from "react-three-game/editor";
+import { findComponent, gameEvents, PrefabEditorMode, registerComponent, usePrefab, useScene } from "react-three-game";
+import type { ContactEventPayload, Prefab } from "react-three-game";
+import { PrefabEditor } from "react-three-game/editor";
 import { CrashcatPhysicsComponent, CrashcatRuntime } from "react-three-game/plugins/crashcat";
 import AnimationMixer from "./components/AnimationMixer";
 import SkinnedMesh, { type SkinnedMeshRef } from "./components/SkinnedMesh";
@@ -54,7 +55,7 @@ function findAnimationName(actionNames: string[], preferred: "idle" | "walk") {
 }
 
 function StagePrefabLoader({ prefab }: { prefab: Prefab }) {
-    const scene = useScene();
+    const scene = usePrefab();
 
     useEffect(() => {
         scene.replace(prefab);
@@ -64,14 +65,16 @@ function StagePrefabLoader({ prefab }: { prefab: Prefab }) {
 }
 
 function PlayerCameraFollow() {
-    const scene = useScene();
+    const { mode } = useScene();
+    const prefab = usePrefab();
     const camera = useThree((state) => state.camera);
     const worldPosition = useRef(new Vector3());
     const viewPosition = useRef(new Vector3());
     const projectedPosition = useRef(new Vector3());
 
     useFrame((_, delta) => {
-        const player = scene.getObject(PLAYER_COLLIDER_ID);
+        if (mode !== PrefabEditorMode.Play) return;
+        const player = prefab.getObject(PLAYER_COLLIDER_ID);
         if (!player) return;
 
         player.getWorldPosition(worldPosition.current);
@@ -109,7 +112,7 @@ function PlayerCharacter({
     destination: StagePoint | null;
     spawn: StagePoint;
 }) {
-    const scene = useScene();
+    const scene = usePrefab();
     const playerRef = useRef<Group>(null);
     const skinnedMeshRef = useRef<SkinnedMeshRef>(null);
     const targetRef = useRef<Vector3 | null>(null);
@@ -317,7 +320,7 @@ export default function StageDemo() {
         <main className="relative flex h-screen w-screen flex-col items-center justify-between overflow-hidden bg-white dark:bg-black sm:items-start">
             <PrefabEditor
                 basePath={BASE_PATH}
-                initialPrefab={officeScene.prefab}
+                prefab={officeScene.prefab}
                 mode={PrefabEditorMode.Play}
                 onPointerEvent={(eventType, event, node) => {
                     if (eventType !== "click") return;

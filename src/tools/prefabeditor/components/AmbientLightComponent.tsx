@@ -1,5 +1,5 @@
-import { Component } from "./ComponentRegistry";
-import { ColorField, FieldGroup, NumberField } from "./Input";
+import type { Component, ComponentEditorProps, ComponentViewProps } from "./ComponentRegistry";
+import { ColorField, NumberField } from "./Input";
 import { LightSection, mergeWithDefaults } from "./lightUtils";
 
 const ambientLightDefaults = {
@@ -7,24 +7,20 @@ const ambientLightDefaults = {
     intensity: 1,
 };
 
-function AmbientLightComponentEditor({
-    component,
-    onUpdate,
-}: {
-    component: any;
-    onUpdate: (newProps: any) => void;
-}) {
-    const values = mergeWithDefaults(ambientLightDefaults, component.properties);
+type AmbientLightProperties = Partial<typeof ambientLightDefaults>;
+
+function AmbientLightComponentEditor({ properties, update }: ComponentEditorProps<AmbientLightProperties>) {
+    const values = mergeWithDefaults(ambientLightDefaults, properties);
 
     return (
         <LightSection title="Light">
-            <ColorField name="color" label="Color" values={values} onChange={onUpdate} />
-            <NumberField name="intensity" label="Intensity" values={values} onChange={onUpdate} min={0} step={0.1} fallback={1} />
+            <ColorField name="color" label="Color" values={values} onChange={update} />
+            <NumberField name="intensity" label="Intensity" values={values} onChange={update} min={0} step={0.1} fallback={1} />
         </LightSection>
     );
 }
 
-function AmbientLightComponentView({ properties, children }: { properties: any; children?: React.ReactNode }) {
+function AmbientLightComponentView({ properties, children }: ComponentViewProps<AmbientLightProperties>) {
     const { color, intensity } = mergeWithDefaults(ambientLightDefaults, properties);
 
     return (
@@ -35,7 +31,7 @@ function AmbientLightComponentView({ properties, children }: { properties: any; 
     );
 }
 
-const AmbientLightComponent: Component = {
+const AmbientLightComponent: Component<AmbientLightProperties> = {
     name: 'AmbientLight',
     Editor: AmbientLightComponentEditor,
     View: AmbientLightComponentView,

@@ -3,6 +3,9 @@ import { WebGPURenderer, MeshBasicNodeMaterial, MeshStandardNodeMaterial, Sprite
 import { Suspense, useEffect, useRef, useState } from "react";
 import { WebGPURendererParameters } from "three/src/renderers/webgpu/WebGPURenderer.Nodes.js";
 import { Loader } from "@react-three/drei";
+import { installBVHRaycasting } from "./raycast";
+import { AssetRuntimeProvider } from "../tools/prefabeditor/assetRuntime";
+import { AudioRuntimeProvider } from "../tools/prefabeditor/AudioRuntime";
 
 extend({
     MeshBasicNodeMaterial: MeshBasicNodeMaterial,
@@ -10,13 +13,15 @@ extend({
     SpriteNodeMaterial: SpriteNodeMaterial,
 });
 
+installBVHRaycasting();
+
 export interface GameCanvasProps extends Omit<CanvasProps, 'children'> {
     loader?: boolean;
     children: React.ReactNode;
     glConfig?: WebGPURendererParameters;
 }
 
-export default function GameCanvas({ loader = false, children, glConfig, onCreated, style, ...props }: GameCanvasProps) {
+export default function GameCanvas({ loader = false, children, glConfig, onCreated, raycaster, style, ...props }: GameCanvasProps) {
     const [frameloop, setFrameloop] = useState<"never" | "always">("never");
     const mountedRef = useRef(true);
 
@@ -38,6 +43,7 @@ export default function GameCanvas({ loader = false, children, glConfig, onCreat
             shadows={{ type: PCFShadowMap }}
             dpr={[1, 1.5]}
             frameloop={frameloop}
+            raycaster={{ firstHitOnly: true, ...raycaster }}
             gl={async ({ canvas }) => {
                 const renderer = new WebGPURenderer({
                     canvas: canvas as HTMLCanvasElement,
@@ -62,9 +68,13 @@ export default function GameCanvas({ loader = false, children, glConfig, onCreat
             }}
             {...props}
         >
-            <Suspense>
-                {children}
-            </Suspense>
+            <AssetRuntimeProvider>
+                <AudioRuntimeProvider>
+                    <Suspense>
+                        {children}
+                    </Suspense>
+                </AudioRuntimeProvider>
+            </AssetRuntimeProvider>
 
             {loader ? <Loader /> : null}
         </Canvas>

@@ -1,20 +1,18 @@
 import { useFrame } from "@react-three/fiber";
 import type { ThreeEvent } from "@react-three/fiber";
-import { Children, Fragment, cloneElement, isValidElement, useCallback, useEffect, useRef, useState } from "react";
-import type { ReactElement, ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
-    FieldRenderer,
     gameEvents,
     soundManager,
     useNode,
     useNodeObject,
-    useScene,
+    usePrefab,
     type Component,
     type ComponentViewProps,
-    type FieldDefinition,
     type GameObject,
-    type NodeInteractionHandlers,
-} from "react-three-game/editor";
+} from "react-three-game";
+import { FieldRenderer } from "react-three-game/editor";
+import type { ComponentEditorProps, FieldDefinition } from "react-three-game/editor";
 import { Quaternion, Vector3, type Material, type Mesh, type Object3D } from "three";
 import { withBasePath } from "../../basePath";
 
@@ -70,6 +68,7 @@ const DEFAULT_AIM_SMOOTHING = 9;
 const DEFAULT_RECOIL_KICK = 0.045;
 const DEFAULT_RECOIL_RETURN = 11;
 const DEFAULT_FIRE_VOLUME = 0.18;
+export const MACHINEGUN_PROJECTILE_ID_PREFIX = "machinegun-projectile-";
 
 function setMuzzleFlashObject(object: Object3D | null, intensity: number) {
     if (!object) return;
@@ -92,7 +91,7 @@ function setMuzzleFlashObject(object: Object3D | null, intensity: number) {
     });
 }
 
-const machineGunFields: FieldDefinition[] = [
+const machineGunFields = [
     { name: "barrelId", type: "node", label: "Barrel" },
     { name: "fireRate", type: "number", label: "Fire Rate", min: 1, step: 1 },
     { name: "projectileSpeed", type: "number", label: "Projectile Speed", min: 1, step: 1 },
@@ -111,16 +110,10 @@ const machineGunFields: FieldDefinition[] = [
     { name: "recoilReturn", type: "number", label: "Recoil Return", min: 0.1, step: 0.1 },
     { name: "fireSound", type: "string", label: "Fire Sound" },
     { name: "fireVolume", type: "number", label: "Fire Volume", min: 0, max: 1, step: 0.05 },
-];
+] satisfies FieldDefinition<IndustrialMachineGunProperties>[];
 
-function IndustrialMachineGunEditor({
-    component,
-    onUpdate,
-}: {
-    component: { properties: IndustrialMachineGunProperties };
-    onUpdate: (next: Partial<IndustrialMachineGunProperties>) => void;
-}) {
-    return <FieldRenderer fields={machineGunFields} values={component.properties} onChange={onUpdate} />;
+function IndustrialMachineGunEditor({ properties, update }: ComponentEditorProps<IndustrialMachineGunProperties>) {
+    return <FieldRenderer fields={machineGunFields} values={properties} onChange={update} />;
 }
 
 function createProjectileNode(
@@ -129,7 +122,7 @@ function createProjectileNode(
     radius: number,
 ): GameObject {
     return {
-        id: crypto.randomUUID(),
+        id: `${MACHINEGUN_PROJECTILE_ID_PREFIX}${crypto.randomUUID()}`,
         name: "machinegun-round",
         components: {
             transform: {
@@ -138,22 +131,20 @@ function createProjectileNode(
                     position: [spawnPosition.x, spawnPosition.y, spawnPosition.z],
                 },
             },
+            mesh: {
+                type: "Mesh",
+                properties: { castShadow: false, receiveShadow: false },
+            },
             geometry: {
                 type: "Geometry",
                 properties: {
                     geometryType: "sphere",
                     args: [radius, 12, 8],
-                    castShadow: false,
-                    receiveShadow: false,
                 },
             },
             material: {
                 type: "Material",
-                properties: {
-                    materialType: "basic",
-                    color: "#fff7ad",
-                    toneMapped: false,
-                },
+                properties: { materialId: "machinegun-projectile" },
             },
             crashcatPhysics: {
                 type: "CrashcatPhysics",
@@ -169,8 +160,8 @@ function createProjectileNode(
     };
 }
 
-function readBarrelPose(scene: ReturnType<typeof useScene>, barrelId: string, muzzleOffset: number, spread: number) {
-    const barrelObject = scene.getObject(barrelId);
+function readBarrelPose(prefab: ReturnType<typeof usePrefab>, barrelId: string, muzzleOffset: number, spread: number) {
+    const barrelObject = prefab.getObject(barrelId);
     if (!barrelObject) return null;
 
     barrelObject.updateWorldMatrix(true, false);
@@ -212,37 +203,12 @@ function emitProjectileCount(properties: IndustrialMachineGunProperties, nodeId:
     });
 }
 
-function attachPointerHandlersToPrimaryChild(
-    children: ReactNode,
-    pointerHandlers: NodeInteractionHandlers | undefined,
-): ReactNode {
-    if (!pointerHandlers) return children;
-
-    let attached = false;
-    const attach = (node: ReactNode): ReactNode => Children.map(node, child => {
-        if (!isValidElement(child)) return child;
-
-        if (child.type === Fragment) {
-            const fragment = child as ReactElement<{ children?: ReactNode }>;
-            return cloneElement(fragment, undefined, attach(fragment.props.children));
-        }
-
-        if (attached) return child;
-        attached = true;
-
-        return cloneElement(child as ReactElement<NodeInteractionHandlers>, pointerHandlers);
-    });
-
-    return attach(children);
-}
-
 function IndustrialMachineGunView({
     properties,
     children,
-    nodeInteractionHandlers,
 }: ComponentViewProps<IndustrialMachineGunProperties>) {
-    const scene = useScene();
-    const { editMode, nodeId } = useNode();
+    const prefab = usePrefab();
+    const { editMode, nodeId, nodeInteractionHandlers } = useNode();
     const objectRef = useNodeObject();
     const [isFiring, setIsFiring] = useState(false);
     const firingRef = useRef(false);
@@ -357,12 +323,20 @@ function IndustrialMachineGunView({
         const projectileSpeed = properties.projectileSpeed ?? DEFAULT_PROJECTILE_SPEED;
         const projectileRadius = properties.projectileRadius ?? DEFAULT_PROJECTILE_RADIUS;
         const projectileLifetime = properties.projectileLifetime ?? DEFAULT_PROJECTILE_LIFETIME;
-        const pose = readBarrelPose(scene, barrelId, properties.muzzleOffset ?? DEFAULT_MUZZLE_OFFSET, properties.spread ?? DEFAULT_SPREAD);
+        const pose = readBarrelPose(prefab, barrelId, properties.muzzleOffset ?? DEFAULT_MUZZLE_OFFSET, properties.spread ?? DEFAULT_SPREAD);
         if (!pose) return;
 
         const launchVelocity = pose.direction.clone().multiplyScalar(projectileSpeed);
         const spawnStart = performance.now();
-        const projectile = scene.add(createProjectileNode(pose.spawnPosition, launchVelocity, projectileRadius));
+        if (!prefab.getMaterial("machinegun-projectile")) {
+            prefab.setMaterial("machinegun-projectile", {
+                name: "Machinegun Projectile",
+                materialType: "basic",
+                color: "#fff7ad",
+                toneMapped: false,
+            });
+        }
+        const projectile = prefab.add(createProjectileNode(pose.spawnPosition, launchVelocity, projectileRadius));
         const spawnMs = performance.now() - spawnStart;
         liveProjectilesRef.current.push({
             id: projectile.id,
@@ -406,7 +380,7 @@ function IndustrialMachineGunView({
         properties.recoilKick,
         properties.shotEventName,
         properties.spread,
-        scene,
+        prefab,
     ]);
 
     useFrame((_, delta) => {
@@ -438,7 +412,7 @@ function IndustrialMachineGunView({
         }
 
         const muzzleFlashId = properties.muzzleFlashId?.trim();
-        const muzzleFlashObject = muzzleFlashId ? scene.getObject(muzzleFlashId) : null;
+        const muzzleFlashObject = muzzleFlashId ? prefab.getObject(muzzleFlashId) : null;
 
         if (editMode) {
             flashPulseRef.current = 0;
@@ -459,7 +433,7 @@ function IndustrialMachineGunView({
             projectile.age += delta;
             if (projectile.age < projectile.lifetime) continue;
 
-            scene.remove(projectile.id);
+            prefab.remove(projectile.id);
             liveProjectiles.splice(index, 1);
             removedProjectiles = true;
         }
@@ -479,7 +453,7 @@ function IndustrialMachineGunView({
         }
     });
 
-    const pointerHandlers = editMode ? nodeInteractionHandlers : nodeInteractionHandlers ? {
+    const pointerHandlers = editMode ? nodeInteractionHandlers : {
         ...nodeInteractionHandlers,
         onPointerDown: (event: ThreeEvent<PointerEvent>) => {
             nodeInteractionHandlers?.onPointerDown?.(event);
@@ -511,19 +485,18 @@ function IndustrialMachineGunView({
             event.stopPropagation();
             stopFiring();
         },
-    } : undefined;
-    const interactiveChildren = attachPointerHandlersToPrimaryChild(children, pointerHandlers);
-
+    };
     return (
         <group
             userData={{ machineGunActive: isFiring }}
+            {...pointerHandlers}
         >
-            {interactiveChildren}
+            {children}
         </group>
     );
 }
 
-const IndustrialMachineGunComponent: Component = {
+const IndustrialMachineGunComponent: Component<IndustrialMachineGunProperties> = {
     name: "IndustrialMachineGun",
     Editor: IndustrialMachineGunEditor,
     View: IndustrialMachineGunView,

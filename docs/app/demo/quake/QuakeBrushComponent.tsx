@@ -1,6 +1,6 @@
 "use client";
 
-import { Component, loadTexture, type ComponentViewProps } from "react-three-game/editor";
+import { loadTexture, type Component, type ComponentViewProps } from "react-three-game";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
     BufferAttribute,

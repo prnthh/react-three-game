@@ -3,7 +3,7 @@ import { subscribeWithSelector } from "zustand/middleware";
 import { useStore } from "zustand";
 import { createStore, type Mutate, type StoreApi } from "zustand/vanilla";
 
-import { GameObject, Prefab } from "./types";
+import { GameObject, Prefab, PrefabMaterial } from "./types";
 import {
     collectAssetRefsForIds,
     collectSubtreeAssetRefs,
@@ -18,12 +18,14 @@ import {
     PrefabAssetRefCounts,
     PrefabNodeRecord,
     updateAssetRefsForNodeChange,
+    updateMaterialAssetRefs,
 } from "./prefab";
 
 export interface PrefabStoreState extends PrefabState {
     replacePrefab: (prefab: Prefab) => void;
     restoreState: (snapshot: PrefabState) => void;
     updateNode: (id: string, update: (node: PrefabNodeRecord) => PrefabNodeRecord) => void;
+    setMaterial: (id: string, material: PrefabMaterial) => void;
     replaceNode: (id: string, node: GameObject) => void;
     addChild: (parentId: string, node: GameObject) => void;
     deleteNode: (id: string) => void;
@@ -142,11 +144,11 @@ export function createPrefabStore(prefab: Prefab): PrefabStoreApi {
             set({
                 prefabId: snapshot.prefabId,
                 prefabName: snapshot.prefabName,
+                materials: snapshot.materials,
                 rootId: snapshot.rootId,
                 nodesById: snapshot.nodesById,
                 childIdsById: snapshot.childIdsById,
                 parentIdById: snapshot.parentIdById,
-                assetManifestKey: snapshot.assetManifestKey,
                 assetRefCounts: snapshot.assetRefCounts,
             });
         },
@@ -162,6 +164,15 @@ export function createPrefabStore(prefab: Prefab): PrefabStoreApi {
 
             set(createPrefabPatch(state, {
                 nodesById: { ...state.nodesById, [id]: nextNode },
+            }, nextAssetRefCounts));
+        },
+        setMaterial: (id, material) => {
+            const state = get();
+            const current = state.materials[id];
+            if (current === material) return;
+            const nextAssetRefCounts = updateMaterialAssetRefs(state.assetRefCounts, current, material);
+            set(createPrefabPatch(state, {
+                materials: { ...state.materials, [id]: material },
             }, nextAssetRefCounts));
         },
         replaceNode: (id, node) => {

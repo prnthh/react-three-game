@@ -1,6 +1,6 @@
-import { GameCanvas, PrefabRoot } from "react-three-game/viewer";
+import { GameCanvas, PrefabRoot } from "react-three-game";
 import { useState, useEffect } from "react";
-import type { Prefab } from "react-three-game/viewer";
+import type { Prefab } from "react-three-game";
 import { withBasePath, BASE_PATH } from "../basePath";
 
 export default function DemoApp() {

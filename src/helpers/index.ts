@@ -14,13 +14,8 @@ export interface GroundOptions {
 	rotation?: Vec3;
 	scale?: Vec3;
 
-	/** Material overrides. */
-	color?: string;
-	texture?: string;
-	/** When true, set repeat wrapping. Defaults to true if texture is provided. */
-	repeat?: boolean;
-	/** Texture repeat counts when repeat=true. Defaults to [25,25]. */
-	repeatCount?: [number, number];
+	/** Material id from the prefab's shared materials list. */
+	materialId?: string;
 
 	/** Set true to disable the node. */
 	disabled?: boolean;
@@ -32,7 +27,7 @@ export interface GroundOptions {
  * Designed to reduce prefab boilerplate:
  * - Transform (rotated to lie flat)
  * - Geometry (plane)
- * - Material (optional texture + repeat)
+	 * - Shared Material reference
  */
 export function ground(options: GroundOptions = {}): GameObject {
 	const {
@@ -41,10 +36,7 @@ export function ground(options: GroundOptions = {}): GameObject {
 		position = [0, 0, 0],
 		rotation = [-Math.PI / 2, 0, 0],
 		scale = [1, 1, 1],
-		color = "#eeeeee",
-		texture,
-		repeat = texture ? true : false,
-		repeatCount = [25, 25],
+		materialId = "default",
 		disabled = false,
 	} = options;
 
@@ -60,6 +52,10 @@ export function ground(options: GroundOptions = {}): GameObject {
 					scale,
 				},
 			},
+			mesh: {
+				type: "Mesh",
+				properties: {},
+			},
 			geometry: {
 				type: "Geometry",
 				properties: {
@@ -69,11 +65,7 @@ export function ground(options: GroundOptions = {}): GameObject {
 			},
 			material: {
 				type: "Material",
-				properties: {
-					color,
-					...(texture ? { texture } : {}),
-					...(repeat ? { repeat: true, repeatCount } : {}),
-				},
+				properties: { materialId },
 			},
 		},
 	};

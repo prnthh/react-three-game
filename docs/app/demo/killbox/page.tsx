@@ -1,10 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { PrefabEditor, registerComponent } from "react-three-game/editor";
+import { registerComponent, type Prefab } from "react-three-game";
+import { PrefabEditor, type PrefabEditorRef } from "react-three-game/editor";
 import { CrashcatPhysicsComponent, CrashcatRuntime } from "react-three-game/plugins/crashcat";
 import initialWorld from "../../../public/prefabs/killbox.json";
-import type { Prefab, PrefabEditorRef } from "react-three-game/editor";
 
 import PrefabSelector from "../../components/PrefabSelector";
 import FirstPersonPlayer from "./components/FirstPersonPlayer";
@@ -18,30 +18,29 @@ registerComponent(OrbMover);
 
 export default function Home() {
     const editorRef = useRef<PrefabEditorRef>(null);
-    const [selectedPrefab, setSelectedPrefab] = useState<Prefab>(initialWorld as Prefab);
+    const [selectedPrefab, setSelectedPrefab] = useState<Prefab>(initialWorld as unknown as Prefab);
     const [selectedPrefabName, setSelectedPrefabName] = useState("killbox");
 
     return (
         <main className="flex h-screen w-screen flex-col items-center justify-between bg-white dark:bg-black sm:items-start">
             <PrefabEditor
-                key={selectedPrefabName}
                 ref={editorRef}
                 basePath={BASE_PATH}
-                initialPrefab={selectedPrefab}
-                uiPlugins={(
-                    <PrefabSelector
-                        selectedName={selectedPrefabName}
-                        onSelect={(prefab: Prefab, prefabName) => {
-                            setSelectedPrefab(prefab);
-                            setSelectedPrefabName(prefabName);
-                        }}
-                    />
-                )}
+                prefab={selectedPrefab}
             >
                 <CrashcatRuntime>
                     <FirstPersonPlayer />
                 </CrashcatRuntime>
             </PrefabEditor>
+            <div className="fixed top-2 left-1/2 -translate-x-1/2 z-2">
+                <PrefabSelector
+                    selectedName={selectedPrefabName}
+                    onSelect={(prefab: Prefab, prefabName) => {
+                        setSelectedPrefab(prefab);
+                        setSelectedPrefabName(prefabName);
+                    }}
+                />
+            </div>
         </main>
     );
 }

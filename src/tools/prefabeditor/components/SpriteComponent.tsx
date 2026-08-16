@@ -1,7 +1,5 @@
-import type { Component } from './ComponentRegistry';
-import type { ComponentData } from '../types';
+import type { Component, ComponentEditorProps, ComponentViewProps } from './ComponentRegistry';
 import { BooleanField, FieldRenderer, NumberInput, StringField } from './Input';
-import type { FieldDefinition } from './Input';
 
 export interface SpriteProps {
     center?: [number, number];
@@ -44,41 +42,35 @@ function Vector2Editor({
     );
 }
 
-function SpriteComponentEditor({
-    component,
-    onUpdate,
-}: {
-    component: ComponentData;
-    onUpdate: (newComp: Partial<SpriteProps>) => void;
-}) {
-    const fields: FieldDefinition[] = [
-        {
-            name: 'center',
-            type: 'custom',
-            label: 'Center',
-            render: ({ value, onChange }) => (
-                <Vector2Editor value={value} onChange={onChange} min={0} max={1} step={0.01} />
-            ),
-        },
-    ];
-
+function SpriteComponentEditor({ properties, update }: ComponentEditorProps<SpriteProps>) {
     return (
         <>
-            <FieldRenderer fields={fields} values={component.properties} onChange={onUpdate} />
+            <FieldRenderer
+                fields={[{
+                    name: 'center',
+                    type: 'custom',
+                    label: 'Center',
+                    render: ({ value, onChange }) => (
+                        <Vector2Editor value={value} onChange={onChange} min={0} max={1} step={0.01} />
+                    ),
+                }]}
+                values={properties}
+                onChange={update}
+            />
             <div style={{ marginTop: 8 }}>
                 <BooleanField
                     name="emitClickEvent"
                     label="Emit Click Event"
-                    values={component.properties}
-                    onChange={onUpdate}
+                    values={properties}
+                    onChange={update}
                     fallback={false}
                 />
-                {component.properties.emitClickEvent ? (
+                {properties.emitClickEvent ? (
                     <StringField
                         name="clickEventName"
                         label="Click Event Name"
-                        values={component.properties}
-                        onChange={onUpdate}
+                        values={properties}
+                        onChange={update}
                         fallback="node:click"
                     />
                 ) : null}
@@ -87,10 +79,15 @@ function SpriteComponentEditor({
     );
 }
 
-const SpriteComponent: Component = {
+function SpriteComponentView({ properties, children }: ComponentViewProps<SpriteProps>) {
+    return <sprite center={properties.center ?? [0.5, 0.5]}>{children}</sprite>;
+}
+
+const SpriteComponent: Component<SpriteProps> = {
     name: 'Sprite',
-    disableSiblingComposition: true,
+    disableSiblingComposition: 'object',
     Editor: SpriteComponentEditor,
+    View: SpriteComponentView,
     defaultProperties: {
         center: [0.5, 0.5],
         emitClickEvent: false,

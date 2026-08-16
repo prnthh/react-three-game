@@ -7,15 +7,15 @@ import {
     FieldRenderer,
     StringField,
     Vector3Field,
-    type FieldDefinition,
 } from "../../tools/prefabeditor/components/Input";
 import {
     type Component,
+    type ComponentEditorProps,
     type ComponentViewProps,
 } from "../../tools/prefabeditor/components/ComponentRegistry";
-import { useModelAsset, useNode } from "../../tools/prefabeditor/assetRuntime";
+import { useModelAsset } from "../../tools/prefabeditor/assetRuntime";
+import { PrefabEditorMode, useNode, usePrefab, useScene } from "../../tools/prefabeditor/SceneContext";
 import { usePrefabStoreApi } from "../../tools/prefabeditor/prefabStore";
-import { PrefabEditorMode, useScene } from "../../tools/prefabeditor/SceneContext";
 import { withBasePath } from "../../tools/prefabeditor/runtimeUtils";
 import {
     box,
@@ -59,55 +59,52 @@ type CrashcatPhysicsProperties = {
     sensorExitEventName?: string;
 };
 
-const crashcatPhysicsFields: FieldDefinition[] = [
-    {
-        name: "type",
-        type: "select",
-        label: "Motion Type",
-        options: [
-            { value: "fixed", label: "Fixed" },
-            { value: "dynamic", label: "Dynamic" },
-            { value: "kinematicPosition", label: "Kinematic Position" },
-            { value: "kinematicVelocity", label: "Kinematic Velocity" },
-        ],
-    },
-    {
-        name: "colliders",
-        type: "select",
-        label: "Collider",
-        options: [
-            { value: "cuboid", label: "Cuboid" },
-            { value: "ball", label: "Ball" },
-            { value: "capsule", label: "Capsule" },
-            { value: "cylinder", label: "Cylinder" },
-            { value: "hull", label: "Hull" },
-            { value: "trimesh", label: "Tri Mesh" },
-        ],
-    },
-    { name: "friction", type: "number", label: "Friction", step: 0.05 },
-    { name: "restitution", type: "number", label: "Restitution", step: 0.05 },
-    { name: "capsuleRadius", type: "number", label: "Capsule Radius", step: 0.05 },
-    { name: "capsuleHalfHeight", type: "number", label: "Capsule Half Height", step: 0.05 },
-    { name: "cylinderRadius", type: "number", label: "Cylinder Radius", step: 0.05 },
-    { name: "cylinderHalfHeight", type: "number", label: "Cylinder Half Height", step: 0.05 },
-];
-
-type CrashcatPhysicsEditorProps = {
-    component: { properties: CrashcatPhysicsProperties };
-    onUpdate: (values: CrashcatPhysicsProperties) => void;
-};
-
-function CrashcatPhysicsEditor({ component, onUpdate }: CrashcatPhysicsEditorProps) {
+function CrashcatPhysicsEditor({ properties, update }: ComponentEditorProps<CrashcatPhysicsProperties>) {
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <FieldRenderer fields={crashcatPhysicsFields} values={component.properties} onChange={onUpdate} />
-            <BooleanField name="sensor" label="Sensor" values={component.properties} onChange={onUpdate} fallback={false} />
-            <Vector3Field name="linearVelocity" label="Linear Velocity" values={component.properties} onChange={onUpdate} fallback={[0, 0, 0]} />
-            <Vector3Field name="angularVelocity" label="Angular Velocity" values={component.properties} onChange={onUpdate} fallback={[0, 0, 0]} />
-            <StringField name="collisionEnterEventName" label="Collision Enter" values={component.properties} onChange={onUpdate} fallback="" />
-            <StringField name="collisionExitEventName" label="Collision Exit" values={component.properties} onChange={onUpdate} fallback="" />
-            <StringField name="sensorEnterEventName" label="Sensor Enter" values={component.properties} onChange={onUpdate} fallback="" />
-            <StringField name="sensorExitEventName" label="Sensor Exit" values={component.properties} onChange={onUpdate} fallback="" />
+            <FieldRenderer
+                fields={[
+                    {
+                        name: "type",
+                        type: "select",
+                        label: "Motion Type",
+                        options: [
+                            { value: "fixed", label: "Fixed" },
+                            { value: "dynamic", label: "Dynamic" },
+                            { value: "kinematicPosition", label: "Kinematic Position" },
+                            { value: "kinematicVelocity", label: "Kinematic Velocity" },
+                        ],
+                    },
+                    {
+                        name: "colliders",
+                        type: "select",
+                        label: "Collider",
+                        options: [
+                            { value: "cuboid", label: "Cuboid" },
+                            { value: "ball", label: "Ball" },
+                            { value: "capsule", label: "Capsule" },
+                            { value: "cylinder", label: "Cylinder" },
+                            { value: "hull", label: "Hull" },
+                            { value: "trimesh", label: "Tri Mesh" },
+                        ],
+                    },
+                    { name: "friction", type: "number", label: "Friction", step: 0.05 },
+                    { name: "restitution", type: "number", label: "Restitution", step: 0.05 },
+                    { name: "capsuleRadius", type: "number", label: "Capsule Radius", step: 0.05 },
+                    { name: "capsuleHalfHeight", type: "number", label: "Capsule Half Height", step: 0.05 },
+                    { name: "cylinderRadius", type: "number", label: "Cylinder Radius", step: 0.05 },
+                    { name: "cylinderHalfHeight", type: "number", label: "Cylinder Half Height", step: 0.05 },
+                ]}
+                values={properties}
+                onChange={update}
+            />
+            <BooleanField name="sensor" label="Sensor" values={properties} onChange={update} fallback={false} />
+            <Vector3Field name="linearVelocity" label="Linear Velocity" values={properties} onChange={update} fallback={[0, 0, 0]} />
+            <Vector3Field name="angularVelocity" label="Angular Velocity" values={properties} onChange={update} fallback={[0, 0, 0]} />
+            <StringField name="collisionEnterEventName" label="Collision Enter" values={properties} onChange={update} fallback="" />
+            <StringField name="collisionExitEventName" label="Collision Exit" values={properties} onChange={update} fallback="" />
+            <StringField name="sensorEnterEventName" label="Sensor Enter" values={properties} onChange={update} fallback="" />
+            <StringField name="sensorExitEventName" label="Sensor Exit" values={properties} onChange={update} fallback="" />
         </div>
     );
 }
@@ -362,9 +359,10 @@ function createAndRegisterBody(
     return body;
 }
 
-function CrashcatPhysicsView({ properties, children, basePath }: ComponentViewProps<CrashcatPhysicsProperties>) {
+function CrashcatPhysicsView({ properties, children }: ComponentViewProps<CrashcatPhysicsProperties>) {
     const { nodeId, getObject } = useNode();
     const scene = useScene();
+    const { basePath } = usePrefab();
     const store = usePrefabStoreApi();
     const node = useStore(store, useCallback(state => state.nodesById[nodeId], [nodeId]));
     const modelPath = useMemo(() => {
@@ -465,7 +463,7 @@ function CrashcatPhysicsView({ properties, children, basePath }: ComponentViewPr
     return <>{children}</>;
 }
 
-const CrashcatPhysicsComponent: Component = {
+const CrashcatPhysicsComponent: Component<CrashcatPhysicsProperties> = {
     name: "CrashcatPhysics",
     Editor: CrashcatPhysicsEditor,
     View: CrashcatPhysicsView,

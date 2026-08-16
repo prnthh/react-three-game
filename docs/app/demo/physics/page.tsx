@@ -10,17 +10,17 @@ import {
 } from "three";
 import {
     gameEvents,
-    PrefabEditor,
     PrefabEditorMode,
+    PrefabRoot,
     registerComponent,
     soundManager,
-    type GameObject,
     type Prefab,
-} from "react-three-game/editor";
+} from "react-three-game";
+import { PrefabEditor } from "react-three-game/editor";
 import { CrashcatPhysicsComponent, CrashcatRuntime } from "react-three-game/plugins/crashcat";
 
 import AdvancingTargetComponent from "./AdvancingTargetComponent";
-import IndustrialMachineGunComponent from "./IndustrialMachineGunComponent";
+import IndustrialMachineGunComponent, { MACHINEGUN_PROJECTILE_ID_PREFIX } from "./IndustrialMachineGunComponent";
 import { withBasePath, BASE_PATH } from "../../basePath";
 
 import outdoorLevelPrefab from "../../../public/prefabs/machinegun-level-outdoor.json";
@@ -76,9 +76,9 @@ const LEVEL_PREFABS = [
     outdoorLevelPrefab,
     ridgeLevelPrefab,
     causewayLevelPrefab,
-] as Prefab[];
+] as unknown as Prefab[];
 
-const MECHSUIT_PREFAB = mechsuitPrefab as Prefab;
+const MECHSUIT_PREFAB = mechsuitPrefab as unknown as Prefab;
 const DEFAULT_ATMOSPHERE: AtmosphereConfig = {
     background: "#9ed4ff",
     fogColor: "#9ed4ff",
@@ -103,38 +103,6 @@ const LEVELS: LevelDefinition[] = LEVEL_PREFABS.map((prefab, index) => ({
     prefab,
     data: readLevelData(prefab, index),
 }));
-
-function cloneGameObject(node: GameObject): GameObject {
-    return JSON.parse(JSON.stringify(node)) as GameObject;
-}
-
-function createRootTransform() {
-    return {
-        type: "Transform",
-        properties: {
-            position: [0, 0, 0],
-            rotation: [0, 0, 0],
-            scale: [1, 1, 1],
-        },
-    };
-}
-
-function composeDemoPrefab(level: Prefab, mechsuit: Prefab): Prefab {
-    return {
-        id: `machinegun-demo-${level.id ?? "level"}-${mechsuit.id ?? "mechsuit"}`,
-        name: `${level.name ?? "Level"} + ${mechsuit.name ?? "Mechsuit"}`,
-        root: {
-            id: "machinegun-demo-root",
-            components: {
-                transform: createRootTransform(),
-            },
-            children: [
-                cloneGameObject(level.root),
-                cloneGameObject(mechsuit.root),
-            ],
-        },
-    };
-}
 
 function createInitialStats(): CombatStats {
     return {
@@ -319,11 +287,6 @@ export default function PhysicsDemo() {
     }, []);
 
     const selectedLevel = levelIndex === null ? null : LEVELS[levelIndex];
-    const demoPrefab = useMemo(() => {
-        if (!selectedLevel) return null;
-        return composeDemoPrefab(selectedLevel.prefab, MECHSUIT_PREFAB);
-    }, [selectedLevel]);
-
     useEffect(() => {
         if (!selectedLevel) return;
         setStats(createInitialStats());
@@ -370,7 +333,11 @@ export default function PhysicsDemo() {
             if (activeProjectileCount === undefined) return;
             setStats((current) => ({ ...current, liveRounds: activeProjectileCount }));
         });
-        const stopHit = gameEvents.on(TARGET_HIT_EVENT, () => {
+        const stopHit = gameEvents.on(TARGET_HIT_EVENT, (payload: unknown) => {
+            const detail = payload as { targetNodeId?: unknown } | null;
+            if (typeof detail?.targetNodeId !== "string"
+                || !detail.targetNodeId.startsWith(MACHINEGUN_PROJECTILE_ID_PREFIX)) return;
+
             const clip = TARGET_HIT_SOUNDS[Math.floor(Math.random() * TARGET_HIT_SOUNDS.length)];
             void soundManager.play(withBasePath(clip), {
                 volume: 0.58,
@@ -399,21 +366,20 @@ export default function PhysicsDemo() {
         };
     }, [selectedLevel]);
 
-    if (!selectedLevel || !demoPrefab) {
+    if (!selectedLevel) {
         return <main className="flex h-screen w-screen flex-col" style={{ background: DEFAULT_ATMOSPHERE.background }} />;
     }
-
-    const prefabKey = `${demoPrefab.id}:${selectedLevel.prefab.id}`;
 
     return (
         <main className="flex h-screen w-screen flex-col">
             <PrefabEditor
-                key={prefabKey}
+                key={selectedLevel.prefab.id}
                 basePath={BASE_PATH}
-                initialPrefab={demoPrefab}
+                prefab={selectedLevel.prefab}
                 mode={PrefabEditorMode.Play}
             >
                 <CrashcatRuntime>
+                    <PrefabRoot data={MECHSUIT_PREFAB} basePath={BASE_PATH} />
                     <SceneAtmosphere atmosphere={selectedLevel.data.atmosphere} />
                     <BattlefieldEffects />
                     <BattlefieldStatus stats={stats} />

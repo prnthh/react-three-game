@@ -1,6 +1,5 @@
 import type { FC } from "react";
-import type { ComponentData, GameObject } from "../types";
-import type { NodeInteractionHandlers } from "../usePointerEvents";
+import type { GameObject } from "../types";
 
 export type AssetRef = { type: "model" | "texture" | "sound"; path: string };
 
@@ -23,51 +22,40 @@ export interface ComponentViewProps<P = Record<string, unknown>> {
 	properties: P;
 	/** Children to render for components that wrap the current subtree. */
 	children?: React.ReactNode;
-	/** Whether this node is currently rendered in editor mode. */
-	editMode?: boolean;
-	/** Node-level pointer/click handlers for custom components that render their own pickable objects. */
-	nodeInteractionHandlers?: NodeInteractionHandlers;
-	/** Current node local position for wrapper components. */
-	position?: [number, number, number];
-	/** Current node local rotation in radians for wrapper components. */
-	rotation?: [number, number, number];
-	/** Current node local scale for wrapper components. */
-	scale?: [number, number, number];
-	/** Current node world position. Components that create world-space resources should prefer this. */
-	worldPosition?: [number, number, number];
-	/** Public asset URL prefix, such as a Next.js basePath. */
-	basePath?: string;
 }
 
 export type { NodeInteractionHandlers } from "../usePointerEvents";
 
-export interface Component {
-	name: string;
-	/** Set when this component occupies a single slot on a node. Use a string to share a slot across component types. */
-	disableSiblingComposition?: boolean | string;
-	Editor?: FC<{
-		node?: GameObject;
-		component: ComponentData;
-		onUpdate: (newComp: Record<string, unknown>) => void;
-		basePath?: string;
-	}>;
-	defaultProperties: Record<string, unknown>;
-	View?: FC<ComponentViewProps>;
-	/** Declare which asset paths this component references (for asset loading). */
-	getAssetRefs?: (properties: Record<string, unknown>) => AssetRef[];
+export interface ComponentEditorProps<P extends object = Record<string, any>> {
+	node: GameObject;
+	properties: P;
+	update: (patch: Partial<P>) => void;
 }
 
-const REGISTRY: Record<string, Component> = {};
+export interface Component<P extends object = Record<string, any>> {
+	name: string;
+	/** Render beside children so R3F can attach this object to the enclosing component. */
+	attachment?: boolean;
+	/** Set when this component occupies a single slot on a node. Use a string to share a slot across component types. */
+	disableSiblingComposition?: boolean | string;
+	Editor?: FC<ComponentEditorProps<P>>;
+	defaultProperties: Partial<P>;
+	View?: FC<ComponentViewProps<P>>;
+	/** Declare which asset paths this component references (for asset loading). */
+	getAssetRefs?: (properties: P) => AssetRef[];
+}
 
-export function registerComponent(component: Component) {
+const REGISTRY: Record<string, Component<any>> = {};
+
+export function registerComponent(component: Component<any>) {
 	REGISTRY[component.name] = component;
 }
 
-export function getComponentDef(name: string): Component | undefined {
+export function getComponentDef(name: string): Component<any> | undefined {
 	return REGISTRY[name];
 }
 
-export function getAllComponentDefs(): Record<string, Component> {
+export function getAllComponentDefs(): Record<string, Component<any>> {
 	return { ...REGISTRY };
 }
 
@@ -76,7 +64,7 @@ export function getSiblingCompositionSlot(componentName: string, disableSiblingC
 	return typeof disableSiblingComposition === "string" ? disableSiblingComposition : componentName;
 }
 
-export function canAddComponentToNode(node: GameObject, component: Component | undefined, allComponents = REGISTRY) {
+export function canAddComponentToNode(node: GameObject, component: Component<any> | undefined, allComponents = REGISTRY) {
 	if (!component) return false;
 
 	const slot = getSiblingCompositionSlot(component.name, component.disableSiblingComposition);

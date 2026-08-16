@@ -1,4 +1,4 @@
-import type { Prefab } from "react-three-game/editor";
+import type { Prefab } from "react-three-game";
 import officePrefab from "../../../../public/prefabs/stage.json";
 import outsidePrefab from "../../../../public/prefabs/stage-outside.json";
 import type { StageScene } from "./types";

@@ -1,6 +1,8 @@
-import { Component } from "./ComponentRegistry";
-import { BooleanField, FieldGroup, StringField } from "./Input";
+import type { Component, ComponentEditorProps, ComponentViewProps } from "./ComponentRegistry";
+import { useNode } from "../SceneContext";
+import { BooleanField, FieldGroup } from "./Input";
 import { base, ui } from "../styles";
+import { scheduleGeometryRaycast } from "../../../shared/raycast";
 
 type NumericArray = number[];
 type GeometryGroup = { start: number; count: number; materialIndex?: number };
@@ -12,9 +14,6 @@ interface BufferGeometryProperties {
     uvs?: NumericArray;
     groups?: GeometryGroup[];
     computeVertexNormals?: boolean;
-    visible?: boolean;
-    castShadow?: boolean;
-    receiveShadow?: boolean;
 }
 
 const DEFAULT_TRIANGLE_POSITIONS = [
@@ -117,15 +116,7 @@ function BufferArrayField({
     );
 }
 
-function BufferGeometryComponentEditor({
-    component,
-    onUpdate,
-}: {
-    component: any;
-    onUpdate: (newProps: any) => void;
-}) {
-    const properties = component.properties ?? {};
-
+function BufferGeometryComponentEditor({ properties, update }: ComponentEditorProps<BufferGeometryProperties>) {
     return (
         <FieldGroup>
             <BufferArrayField
@@ -133,75 +124,39 @@ function BufferGeometryComponentEditor({
                 value={properties.positions}
                 fallback={DEFAULT_TRIANGLE_POSITIONS}
                 rows={5}
-                onChange={(positions) => onUpdate({ positions })}
+                onChange={(positions) => update({ positions })}
             />
             <BufferArrayField
                 label="Indices"
                 value={properties.indices}
                 fallback={DEFAULT_TRIANGLE_INDICES}
-                onChange={(indices) => onUpdate({ indices })}
+                onChange={(indices) => update({ indices })}
             />
             <BufferArrayField
                 label="Normals"
                 value={properties.normals}
                 fallback={[]}
-                onChange={(normals) => onUpdate({ normals })}
+                onChange={(normals) => update({ normals })}
             />
             <BufferArrayField
                 label="UVs"
                 value={properties.uvs}
                 fallback={DEFAULT_TRIANGLE_UVS}
-                onChange={(uvs) => onUpdate({ uvs })}
+                onChange={(uvs) => update({ uvs })}
             />
             <BooleanField
                 name="computeVertexNormals"
                 label="Compute Normals"
                 values={properties}
-                onChange={onUpdate}
+                onChange={update}
                 fallback={true}
             />
-            <BooleanField
-                name="visible"
-                label="Visible"
-                values={properties}
-                onChange={onUpdate}
-                fallback={true}
-            />
-            <BooleanField
-                name="castShadow"
-                label="Cast Shadow"
-                values={properties}
-                onChange={onUpdate}
-                fallback={true}
-            />
-            <BooleanField
-                name="receiveShadow"
-                label="Receive Shadow"
-                values={properties}
-                onChange={onUpdate}
-                fallback={true}
-            />
-            <BooleanField
-                name="emitClickEvent"
-                label="Emit Click Event"
-                values={properties}
-                onChange={onUpdate}
-                fallback={false}
-            />
-            {properties.emitClickEvent ? (
-                <StringField
-                    name="clickEventName"
-                    label="Click Event Name"
-                    values={properties}
-                    onChange={onUpdate}
-                    placeholder="node:click"
-                />
-            ) : null}
         </FieldGroup>
     );
 }
 
-function BufferGeometryComponentView({ properties }: { properties: BufferGeometryProperties }) {
+function BufferGeometryComponentView({ properties, children }: ComponentViewProps<BufferGeometryProperties>) {
+    const { editMode, nodeInteractionHandlers } = useNode();
     const positions = normalizeNumberArray(properties.positions, DEFAULT_TRIANGLE_POSITIONS);
     const indices = normalizeNumberArray(properties.indices, DEFAULT_TRIANGLE_INDICES);
     const normals = normalizeNumberArray(properties.normals, []);
@@ -211,7 +166,7 @@ function BufferGeometryComponentView({ properties }: { properties: BufferGeometr
     const hasUvs = uvs.length >= 2 && uvs.length % 2 === 0;
     const groups = isGeometryGroupArray(properties.groups) ? properties.groups : [];
 
-    return (
+    return <>
         <bufferGeometry onUpdate={(geometry) => {
             geometry.clearGroups();
             groups.forEach(group => {
@@ -222,6 +177,9 @@ function BufferGeometryComponentView({ properties }: { properties: BufferGeometr
             }
             geometry.computeBoundingBox();
             geometry.computeBoundingSphere();
+            if (editMode || nodeInteractionHandlers) {
+                scheduleGeometryRaycast(geometry);
+            }
         }}>
             <bufferAttribute attach="attributes-position" args={[new Float32Array(positions), 3]} />
             {indexArray ? (
@@ -234,11 +192,13 @@ function BufferGeometryComponentView({ properties }: { properties: BufferGeometr
                 <bufferAttribute attach="attributes-uv" args={[new Float32Array(uvs), 2]} />
             ) : null}
         </bufferGeometry>
-    );
+        {children}
+    </>;
 }
 
-const BufferGeometryComponent: Component = {
+const BufferGeometryComponent: Component<BufferGeometryProperties> = {
     name: 'BufferGeometry',
+    attachment: true,
     disableSiblingComposition: 'geometry',
     Editor: BufferGeometryComponentEditor,
     View: BufferGeometryComponentView,
@@ -249,8 +209,6 @@ const BufferGeometryComponent: Component = {
         uvs: DEFAULT_TRIANGLE_UVS,
         groups: [],
         computeVertexNormals: true,
-        emitClickEvent: false,
-        clickEventName: '',
     },
 };
 

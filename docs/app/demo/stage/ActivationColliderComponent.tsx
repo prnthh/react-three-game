@@ -4,14 +4,14 @@ import { Html } from "@react-three/drei";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import {
-    FieldRenderer,
     gameEvents,
     useNode,
     type Component,
     type ComponentViewProps,
     type ContactEventPayload,
-    type FieldDefinition,
-} from "react-three-game/editor";
+} from "react-three-game";
+import { FieldRenderer } from "react-three-game/editor";
+import type { ComponentEditorProps, FieldDefinition } from "react-three-game/editor";
 
 type ActivationColliderProperties = {
     targetNodeId?: string;
@@ -27,21 +27,15 @@ const DEFAULT_TARGET_NODE = "stage-player-collider";
 const DEFAULT_MOODS = ["🙂", "😄", "🤔", "😮", "😎", "🥳"];
 const DEFAULT_BUBBLE_HEIGHT = 1.35;
 
-const activationColliderFields: FieldDefinition[] = [
+const activationColliderFields = [
     { name: "targetNodeId", type: "node", label: "Target Node" },
     { name: "enterEventName", type: "string", label: "Enter Event" },
     { name: "exitEventName", type: "string", label: "Exit Event" },
     { name: "bubbleHeight", type: "number", label: "Bubble Height", step: 0.05 },
-];
+] satisfies FieldDefinition<ActivationColliderProperties>[];
 
-function ActivationColliderEditor({
-    component,
-    onUpdate,
-}: {
-    component: { properties: ActivationColliderProperties };
-    onUpdate: (values: ActivationColliderProperties) => void;
-}) {
-    return <FieldRenderer fields={activationColliderFields} values={component.properties} onChange={onUpdate} />;
+function ActivationColliderEditor({ properties, update }: ComponentEditorProps<ActivationColliderProperties>) {
+    return <FieldRenderer fields={activationColliderFields} values={properties} onChange={update} />;
 }
 
 function asContactPayload(payload: unknown): ContactEventPayload {
@@ -140,7 +134,7 @@ const bubbleStyles: Record<string, CSSProperties> = {
     },
 };
 
-const ActivationColliderComponent: Component = {
+const ActivationColliderComponent: Component<ActivationColliderProperties> = {
     name: "ActivationCollider",
     Editor: ActivationColliderEditor,
     View: ActivationColliderView,

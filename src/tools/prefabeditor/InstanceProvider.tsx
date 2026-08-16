@@ -9,6 +9,7 @@ import { createStore, type StoreApi } from "zustand/vanilla";
 import { createNodeInteractionHandlers } from "./usePointerEvents";
 import type { NodeInteractionEvent, NodeInteractionEventType } from "./usePointerEvents";
 import { useModelAsset } from "./assetRuntime";
+import { scheduleObjectRaycast } from "../../shared/raycast";
 
 export type RepeatAxisConfig = {
     axis: 'x' | 'y' | 'z';
@@ -218,6 +219,14 @@ function InstancedModelBatch({
     useEffect(() => () => {
         Object.values(meshes).forEach(mesh => mesh.geometry.dispose());
     }, [meshes]);
+
+    const raycastEnabled = editMode || instances.some(instance => instance.clickEnabled);
+    useEffect(() => {
+        if (!raycastEnabled) return;
+        for (const mesh of Object.values(meshes)) {
+            scheduleObjectRaycast(mesh);
+        }
+    }, [meshes, raycastEnabled]);
 
     if (Object.keys(meshes).length === 0) return null;
 

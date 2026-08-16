@@ -1,10 +1,9 @@
 import { memo, MouseEvent, useCallback, useState } from 'react';
-import { Prefab } from "./types";
 import { base, colors, tree } from './styles';
 import { useEditorContext, useEditorRef } from './EditorContext';
 import { Dropdown } from './Dropdown';
 import { FileMenu, TreeContextMenu, TreeContextMenuState, TreeNodeMenu } from './EditorTreeMenus';
-import { createEmptyNode, createPackedPrefabNode } from './prefab';
+import { createEmptyNode } from './prefab';
 import { PrefabStoreState, usePrefabChildIds, usePrefabNode, usePrefabRootId, usePrefabStore, usePrefabStoreApi } from './prefabStore';
 
 type DropPosition = 'before' | 'inside';
@@ -12,23 +11,13 @@ type DropPosition = 'before' | 'inside';
 export default function EditorTree({
     selectedId,
     setSelectedId,
-    getPrefab,
-    onReplacePrefab,
-    onImportPrefab,
-    onUndo,
-    onRedo,
     canUndo,
     canRedo
 }: {
     selectedId: string | null;
     setSelectedId: (id: string | null) => void;
-    getPrefab: () => Prefab;
-    onReplacePrefab: (prefab: Prefab) => void;
-    onImportPrefab: (prefab: Prefab) => void;
-    onUndo?: () => void;
-    onRedo?: () => void;
-    canUndo?: boolean;
-    canRedo?: boolean;
+    canUndo: boolean;
+    canRedo: boolean;
 }) {
     const { onFocusNode } = useEditorContext();
     const editor = useEditorRef();
@@ -55,10 +44,6 @@ export default function EditorTree({
 
         editor.add(newNode, parentId);
         setSelectedId(newNode.id);
-    };
-
-    const handleImportPackedPrefab = (url: string) => {
-        editor.add(createPackedPrefabNode(url), rootId);
     };
 
     const handleDuplicate = (nodeId: string) => {
@@ -158,7 +143,7 @@ export default function EditorTree({
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                             <button
                                 style={{ ...base.btn, padding: '2px 6px', fontSize: 10, opacity: canUndo ? 1 : 0.4 }}
-                                onClick={(e) => { e.stopPropagation(); onUndo?.(); }}
+                                onClick={(e) => { e.stopPropagation(); editor.undo(); }}
                                 disabled={!canUndo}
                                 title="Undo"
                             >
@@ -166,7 +151,7 @@ export default function EditorTree({
                             </button>
                             <button
                                 style={{ ...base.btn, padding: '2px 6px', fontSize: 10, opacity: canRedo ? 1 : 0.4 }}
-                                onClick={(e) => { e.stopPropagation(); onRedo?.(); }}
+                                onClick={(e) => { e.stopPropagation(); editor.redo(); }}
                                 disabled={!canRedo}
                                 title="Redo"
                             >
@@ -190,10 +175,6 @@ export default function EditorTree({
                             >
                                 {(close) => (
                                     <FileMenu
-                                        getPrefab={getPrefab}
-                                        onReplacePrefab={onReplacePrefab}
-                                        onImportPrefab={onImportPrefab}
-                                        onImportPackedPrefab={handleImportPackedPrefab}
                                         onClose={close}
                                     />
                                 )}

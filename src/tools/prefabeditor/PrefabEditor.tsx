@@ -4,14 +4,18 @@ import { BoxHelper } from "three";
 import type { Object3D, Texture } from "three";
 import { findComponentEntry } from "./types";
 import type { GameObject, Prefab } from "./types";
-import { GameCanvas, PrefabRoot, PrefabEditorMode, SceneContext, AssetRuntimeProvider, createImageNode, createModelNode, denormalizePrefab, useAssetRuntime } from "../../viewer";
-import type { AssetRuntime, PrefabNode, Scene } from "../../viewer";
+import GameCanvas from "../../shared/GameCanvas";
+import PrefabRoot from "./PrefabRoot";
+import { AssetRuntimeProvider } from "./assetRuntime";
+import type { AssetRuntime } from "./assetRuntime";
+import { createPrefabRegistry, PrefabEditorMode } from "./SceneContext";
+import type { PrefabApi, PrefabNode, Scene } from "./SceneContext";
+import { createDefaultMaterial, createImageNode, createModelNode, denormalizePrefab } from "./prefab";
 import EditorUI from "./EditorUI";
 import { base, toolbar } from "./styles";
-import { computeParentWorldMatrix, decompose, exportGLB as exportGLBFile, exportGLBData, focusCameraOnObject, isExternalPath, regenerateIds, withBasePath } from "./utils";
+import { computeParentWorldMatrix, decompose, exportGLB as exportGLBFile, exportGLBData, focusCameraOnObject, isExternalPath, withBasePath } from "./utils";
 import type { ExportGLBOptions } from "./utils";
 import { loadDroppedAssets } from "../dragdrop";
-import { createNode } from './prefab';
 import { createPrefabStore, type PrefabStoreState, PrefabStoreProvider } from "./prefabStore";
 import type { PrefabState } from "./prefab";
 import type { OrbitControls as OrbitControlsImpl, TransformControls as TransformControlsImpl } from 'three-stdlib';
@@ -46,22 +50,21 @@ function SelectionHelper({ object }: { object: Object3D | null }) {
     return null;
 }
 
-function useRuntimeObject(nodeId: string) {
-    const runtime = useAssetRuntime();
+function useRuntimeObject(nodeId: string, prefab: PrefabApi) {
     const subscribe = useCallback(
-        (notify: () => void) => runtime.subscribeObject(nodeId, notify),
-        [nodeId, runtime],
+        (notify: () => void) => prefab.subscribeObject(nodeId, notify),
+        [nodeId, prefab],
     );
     const getSnapshot = useCallback(
-        () => runtime.getObject(nodeId),
-        [nodeId, runtime],
+        () => prefab.getObject(nodeId),
+        [nodeId, prefab],
     );
 
     return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
-function RegisteredObject({ id, children }: { id: string; children: (object: Object3D) => React.ReactNode }) {
-    const object = useRuntimeObject(id);
+function RegisteredObject({ id, prefab, children }: { id: string; prefab: PrefabApi; children: (object: Object3D) => React.ReactNode }) {
+    const object = useRuntimeObject(id, prefab);
     return object ? children(object) : null;
 }
 
@@ -70,44 +73,36 @@ export { EditorContext, EditorRefContext, useEditorContext, useEditorRef } from 
 
 export interface PrefabEditorProps {
     basePath?: string;
-    /** Initial document. Read once when the editor store is created. */
-    initialPrefab?: Prefab;
+    /** Document to edit. Passing a different value reloads the editor. */
+    prefab: Prefab;
+    /** Editor mode input. Passing a different value updates the editor mode. */
     mode?: PrefabEditorMode;
-    onChange?: (prefab: Prefab) => void;
     onPointerEvent?: React.ComponentProps<typeof PrefabRoot>["onPointerEvent"];
     showUI?: boolean;
     enableWindowDrop?: boolean;
     canvasProps?: Omit<React.ComponentProps<typeof GameCanvas>, 'children'>;
-    uiPlugins?: React.ReactNode[] | React.ReactNode;
     children?: React.ReactNode;
 }
 
 const MAX_HISTORY_LENGTH = 50;
 
-const DEFAULT_PREFAB: Prefab = {
-    id: "prefab-default",
-    name: "New Prefab",
-    root: createNode('Root', {}, { id: 'root' })
-};
-
-const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath = "", initialPrefab, mode: initialMode = PrefabEditorMode.Edit, onChange, onPointerEvent, showUI = true, enableWindowDrop = true, canvasProps, uiPlugins, children }, ref) => {
-    const [mode, setMode] = useState<PrefabEditorMode>(initialMode);
+const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath = "", prefab, mode: providedMode = PrefabEditorMode.Edit, onPointerEvent, showUI = true, enableWindowDrop = true, canvasProps, children }, ref) => {
+    const [mode, setMode] = useState<PrefabEditorMode>(providedMode);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [transformMode, setTransformMode] = useState<"translate" | "rotate" | "scale">("translate");
     const [scaleSnap, setScaleSnap] = useState(0);
     const [positionSnap, setPositionSnap] = useState(0.5);
     const [rotationSnap, setRotationSnap] = useState(Math.PI / 4);
-    const startingPrefab = initialPrefab ?? DEFAULT_PREFAB;
-    const [prefabStore] = useState(() => createPrefabStore(startingPrefab));
+    const [prefabStore] = useState(() => createPrefabStore(prefab));
+    const [prefabRegistry] = useState(createPrefabRegistry);
     const [history, setHistory] = useState<PrefabState[]>(() => [prefabStore.getState()]);
     const [historyIndex, setHistoryIndex] = useState(0);
     const historyIndexRef = useRef(0);
-    const notifyRafRef = useRef<number | null>(null);
+    const providedPrefabRef = useRef(prefab);
     const runtimeRef = useRef<AssetRuntime | null>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const controlsRef = useRef<OrbitControlsImpl | null>(null);
     const transformControlsRef = useRef<TransformControlsImpl | null>(null);
-    const onChangeRef = useRef(onChange);
     const isEditMode = mode === PrefabEditorMode.Edit;
     const detachTransformControls = useCallback(() => {
         transformControlsRef.current?.detach();
@@ -115,9 +110,9 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
 
     const getPrefab = useCallback(() => denormalizePrefab(prefabStore.getState()), [prefabStore]);
     const getNode = useCallback((nodeId: string) => prefabStore.getState().nodesById[nodeId] ?? null, [prefabStore]);
-    const getRoot = useCallback(() => runtimeRef.current?.getObject(prefabStore.getState().rootId) ?? null, [prefabStore]);
-    const getObject = useCallback((nodeId: string) => runtimeRef.current?.getObject(nodeId) ?? null, []);
-    const getHandle = useCallback(<T = unknown,>(nodeId: string, kind: string) => runtimeRef.current?.getHandle<T>(nodeId, kind) ?? null, []);
+    const getRoot = useCallback(() => prefabRegistry.getObject(prefabStore.getState().rootId), [prefabRegistry, prefabStore]);
+    const getObject = prefabRegistry.getObject;
+    const getHandle = prefabRegistry.getHandle;
     const getModel = useCallback((path: string) => runtimeRef.current?.getModel(withBasePath(basePath, path)) ?? null, [basePath]);
 
     // History stores normalized state snapshots. Because store mutations use
@@ -134,30 +129,21 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
         setHistoryIndex(nextHistoryIndex);
     }, []);
 
-    // Coalesce onChange notifications to once per frame. denormalizePrefab walks
-    // the entire tree, so calling it on every mutation (e.g. per-frame gizmo
-    // drags) does not scale. We only pay that cost once, with the latest state.
-    const scheduleChange = useCallback(() => {
-        if (!onChangeRef.current || notifyRafRef.current != null) return;
-        notifyRafRef.current = requestAnimationFrame(() => {
-            notifyRafRef.current = null;
-            onChangeRef.current?.(denormalizePrefab(prefabStore.getState()));
-        });
-    }, [prefabStore]);
-
     const mutate = useCallback(<R,>(run: (s: PrefabStoreState) => R, pushHistory: boolean = isEditMode): R => {
         const before = prefabStore.getState();
         const result = run(before);
         const after = prefabStore.getState();
         if (after === before) return result;
 
-        scheduleChange();
         if (pushHistory) recordHistory(after);
         return result;
-    }, [isEditMode, prefabStore, recordHistory, scheduleChange]);
+    }, [isEditMode, prefabStore, recordHistory]);
 
     const update = useCallback((id: string, fn: (node: PrefabNode) => PrefabNode) => {
         mutate(s => s.updateNode(id, fn));
+    }, [mutate]);
+    const setMaterial = useCallback<PrefabApi["setMaterial"]>((id, material) => {
+        mutate(s => s.setMaterial(id, material));
     }, [mutate]);
     const replaceNode = useCallback((id: string, node: GameObject) => {
         mutate(s => s.replaceNode(id, node));
@@ -178,8 +164,6 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
     const replace = useCallback((prefab: Prefab) => {
         mutate(s => s.replacePrefab(prefab), false);
     }, [mutate]);
-
-    onChangeRef.current = onChange;
 
     const setSelection = useCallback((nodeId: string | null) => {
         const nextNode = nodeId ? prefabStore.getState().nodesById[nodeId] : null;
@@ -202,36 +186,24 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
         updateMode(isEditMode ? PrefabEditorMode.Play : PrefabEditorMode.Edit);
     };
 
-    useEffect(() => {
-        updateMode(initialMode);
-    }, [initialMode, updateMode]);
-
-    const loadPrefab = useCallback((prefab: Prefab, options?: { resetHistory?: boolean; notifyChange?: boolean }) => {
+    const loadPrefab = useCallback((nextPrefab: Prefab) => {
         detachTransformControls();
-        const before = prefabStore.getState();
-        prefabStore.getState().replacePrefab(prefab);
-        const after = prefabStore.getState();
-        if (after !== before && options?.notifyChange !== false) {
-            onChangeRef.current?.(prefab);
-        }
-
-        if (options?.resetHistory) {
-            setSelectedId(null);
-            setHistory([prefabStore.getState()]);
-            historyIndexRef.current = 0;
-            setHistoryIndex(0);
-        } else {
-            setSelectedId(prev => prev && prefabStore.getState().nodesById[prev] ? prev : null);
-        }
+        prefabStore.getState().replacePrefab(nextPrefab);
+        setSelectedId(null);
+        setHistory([prefabStore.getState()]);
+        historyIndexRef.current = 0;
+        setHistoryIndex(0);
     }, [detachTransformControls, prefabStore]);
 
     useEffect(() => {
-        return () => {
-            if (notifyRafRef.current != null) {
-                cancelAnimationFrame(notifyRafRef.current);
-            }
-        };
-    }, []);
+        if (providedPrefabRef.current === prefab) return;
+        providedPrefabRef.current = prefab;
+        loadPrefab(prefab);
+    }, [loadPrefab, prefab]);
+
+    useEffect(() => {
+        updateMode(providedMode);
+    }, [providedMode, updateMode]);
 
     useEffect(() => {
         if (!selectedId) return;
@@ -250,18 +222,13 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
         selectedId && findComponentEntry(getNode(selectedId), "Model")?.[1].properties?.instanced,
     );
 
-    const importPrefab = useCallback((prefab: Prefab) => {
-        add(regenerateIds(prefab.root));
-    }, [add]);
-
     const applyHistory = useCallback((index: number) => {
         detachTransformControls();
         prefabStore.getState().restoreState(history[index]);
-        scheduleChange();
         historyIndexRef.current = index;
         setHistoryIndex(index);
         setSelectedId(prev => prev && prefabStore.getState().nodesById[prev] ? prev : null);
-    }, [detachTransformControls, history, prefabStore, scheduleChange]);
+    }, [detachTransformControls, history, prefabStore]);
 
     const undo = useCallback(() => {
         if (historyIndex > 0) {
@@ -398,9 +365,10 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
                             },
                         });
                         textureRefs.forEach((texture, path) => { runtime?.registerTexture(withBasePath(basePath, path), texture); });
+                        Object.entries(decomposed.materials).forEach(([id, material]) => setMaterial(id, material));
                         add({
-                            ...decomposed,
-                            name: modelName || decomposed.name,
+                            ...decomposed.root,
+                            name: modelName || decomposed.root.name,
                         });
                         return;
                     }
@@ -410,7 +378,16 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
                 onTextureLoaded: (texture, filename, file) => {
                     const path = getPrefabAssetRef(filename, 'textures');
                     runtime?.registerTexture(withBasePath(basePath, path), texture);
-                    add(createImageNode(path, file.name.replace(/\.[^.]+$/, '')));
+                    const name = file.name.replace(/\.[^.]+$/, '');
+                    const materialId = `material-${crypto.randomUUID()}`;
+                    setMaterial(materialId, {
+                        ...createDefaultMaterial(),
+                        name,
+                        materialType: 'basic',
+                        texture: path,
+                        transparent: true,
+                    });
+                    add(createImageNode(path, materialId, name));
                 },
                 onLoadError: error => {
                     console.error('Drop asset error:', error);
@@ -424,20 +401,22 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
             window.removeEventListener('dragover', handleDragOver);
             window.removeEventListener('drop', handleDrop);
         };
-    }, [add, basePath, isEditMode, enableWindowDrop]);
+    }, [add, basePath, isEditMode, enableWindowDrop, setMaterial]);
 
-    const sceneValue = useMemo<Scene>(() => ({
+    const prefabValue = useMemo<PrefabApi>(() => ({
+        ...prefabRegistry,
         get root() {
             return getRoot();
         },
-        mode,
         basePath,
         get: getNode,
         getObject,
         getHandle,
         getModel,
+        getMaterial: (id) => prefabStore.getState().materials[id] ?? null,
         add,
         update,
+        setMaterial,
         replaceNode,
         remove,
         duplicate,
@@ -446,9 +425,14 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
         addModel: (path, model) => runtimeRef.current?.registerModel(withBasePath(basePath, path), model),
         addTexture: (path, texture) => runtimeRef.current?.registerTexture(withBasePath(basePath, path), texture),
         addSound: (path, sound) => runtimeRef.current?.registerSound(withBasePath(basePath, path), sound),
-    }), [add, basePath, duplicate, getHandle, getModel, getNode, getObject, getRoot, mode, move, remove, replace, replaceNode, update]);
+    }), [add, basePath, duplicate, getHandle, getModel, getNode, getObject, getRoot, move, prefabRegistry, prefabStore, remove, replace, replaceNode, setMaterial, update]);
+    const sceneValue = useMemo<Scene>(() => ({
+        get root() { return prefabValue.root; },
+        mode,
+    }), [mode, prefabValue]);
 
     const editorRefValue = useMemo<PrefabEditorRef>(() => ({
+        ...prefabValue,
         ...sceneValue,
         save: getPrefab,
         load: loadPrefab,
@@ -458,27 +442,9 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
         exportGLB: handleExportGLB,
         exportGLBData: handleExportGLBData,
         clearSelection,
-    }), [clearSelection, getPrefab, handleExportGLB, handleExportGLBData, handleScreenshot, loadPrefab, redo, sceneValue, undo]);
+    }), [clearSelection, getPrefab, handleExportGLB, handleExportGLBData, handleScreenshot, loadPrefab, prefabValue, redo, sceneValue, undo]);
 
     useImperativeHandle(ref, () => editorRefValue, [editorRefValue]);
-
-    const content = (
-        <>
-            {isEditMode ? <gridHelper args={[10, 10]} position={[0, -1, 0]} /> : null}
-            <PrefabRoot
-                store={prefabStore}
-                editMode={isEditMode}
-                selectedId={selectedId}
-                onSelect={setSelection}
-                onPointerEvent={onPointerEvent}
-                basePath={basePath}
-                scene={sceneValue}
-                shareRuntimeObjects
-            >
-                {children}
-            </PrefabRoot>
-        </>
-    );
 
     const handleCanvasCreated = useCallback((state: Parameters<NonNullable<React.ComponentProps<typeof GameCanvas>["onCreated"]>>[0]) => {
         canvasRef.current = state.gl.domElement as HTMLCanvasElement;
@@ -489,9 +455,6 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
         <AssetRuntimeProvider runtimeRef={runtimeRef}>
             <EditorRefContext.Provider value={editorRefValue}>
                 <EditorContext.Provider value={{
-                    mode,
-                    basePath,
-                    setMode: updateMode,
                     transformMode,
                     setTransformMode,
                     scaleSnap,
@@ -500,87 +463,88 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
                     setPositionSnap,
                     rotationSnap,
                     setRotationSnap,
-                    onFocusNode: isEditMode ? handleFocusNode : undefined,
-                    onScreenshot: handleScreenshot,
-                    onExportGLB: handleExportGLB
+                    onFocusNode: isEditMode ? handleFocusNode : undefined
                 }}>
-                    <SceneContext.Provider value={sceneValue}>
-                        <GameCanvas
-                            camera={{ position: [0, 5, 15] }}
-                            {...canvasProps}
-                            onCreated={handleCanvasCreated}
-                            onPointerMissed={isEditMode
-                                ? (event) => {
-                                    const button = event.button ?? (event as MouseEvent & { sourceEvent?: MouseEvent }).sourceEvent?.button ?? 0;
-                                    if (button === 0 && selectedId) {
-                                        setSelection(null);
-                                    }
-                                    canvasProps?.onPointerMissed?.(event);
+                    <GameCanvas
+                        camera={{ position: [0, 5, 15] }}
+                        {...canvasProps}
+                        onCreated={handleCanvasCreated}
+                        onPointerMissed={isEditMode
+                            ? (event) => {
+                                const button = event.button ?? (event as MouseEvent & { sourceEvent?: MouseEvent }).sourceEvent?.button ?? 0;
+                                if (button === 0 && selectedId) {
+                                    setSelection(null);
                                 }
-                                : canvasProps?.onPointerMissed}
+                                canvasProps?.onPointerMissed?.(event);
+                            }
+                            : canvasProps?.onPointerMissed}
+                    >
+                        {isEditMode ? <gridHelper args={[10, 10]} position={[0, -1, 0]} /> : null}
+                        <PrefabRoot
+                            store={prefabStore}
+                            editMode={isEditMode}
+                            selectedId={selectedId}
+                            onSelect={setSelection}
+                            onPointerEvent={onPointerEvent}
+                            basePath={basePath}
+                            scene={sceneValue}
+                            prefab={prefabValue}
                         >
-                            {content}
+                            {children}
+                        </PrefabRoot>
 
-                            {isEditMode && (
-                                <>
-                                    <OrbitControls ref={controlsRef} enableDamping={false} makeDefault />
-                                    {selectedId && (
-                                        <RegisteredObject id={selectedId}>
-                                            {object => isObjectAttachedToRoot(getRoot(), object) ? (
-                                                <>
-                                                    <SelectionHelper object={object} />
-                                                    <TransformControls
-                                                        ref={transformControlsRef}
-                                                        object={object}
-                                                        mode={transformMode}
-                                                        space={transformMode === "translate" ? "world" : "local"}
-                                                        onObjectChange={selectedIsInstanced ? handleTransformChange : undefined}
-                                                        onMouseUp={selectedIsInstanced ? undefined : handleTransformChange}
-                                                        translationSnap={positionSnap > 0 ? positionSnap : undefined}
-                                                        rotationSnap={rotationSnap > 0 ? rotationSnap : undefined}
-                                                        scaleSnap={scaleSnap > 0 ? scaleSnap : undefined}
-                                                    />
-                                                </>
-                                            ) : null}
-                                        </RegisteredObject>
-                                    )}
-                                </>
-                            )}
-                        </GameCanvas>
-
-                        {showUI && (
+                        {isEditMode && (
                             <>
-                                <div
-                                    style={{
-                                        ...toolbar.panel,
-                                        left: "50%",
-                                        right: "auto",
-                                        transform: "translateX(-50%)",
-                                        justifyContent: "center",
-                                    }}
-                                >
-                                    <button type="button" style={base.btn} onClick={toggleMode}>
-                                        {isEditMode ? "▶" : "⏸"}
-                                    </button>
-                                    {uiPlugins}
-                                </div>
-                                {isEditMode && (
-                                    <EditorUI
-                                        selectedId={selectedId}
-                                        setSelectedId={setSelection}
-                                        getPrefab={getPrefab}
-                                        onReplacePrefab={(prefab: Prefab) => loadPrefab(prefab, { resetHistory: true })}
-                                        onImportPrefab={importPrefab}
-                                        basePath={basePath}
-                                        onUndo={undo}
-                                        onRedo={redo}
-                                        canUndo={historyIndex > 0}
-                                        canRedo={historyIndex < history.length - 1}
-                                    />
+                                <OrbitControls ref={controlsRef} enableDamping={false} makeDefault />
+                                {selectedId && (
+                                    <RegisteredObject id={selectedId} prefab={prefabValue}>
+                                        {object => isObjectAttachedToRoot(getRoot(), object) ? (
+                                            <>
+                                                <SelectionHelper object={object} />
+                                                <TransformControls
+                                                    ref={transformControlsRef}
+                                                    object={object}
+                                                    mode={transformMode}
+                                                    space={transformMode === "translate" ? "world" : "local"}
+                                                    onObjectChange={selectedIsInstanced ? handleTransformChange : undefined}
+                                                    onMouseUp={selectedIsInstanced ? undefined : handleTransformChange}
+                                                    translationSnap={positionSnap > 0 ? positionSnap : undefined}
+                                                    rotationSnap={rotationSnap > 0 ? rotationSnap : undefined}
+                                                    scaleSnap={scaleSnap > 0 ? scaleSnap : undefined}
+                                                />
+                                            </>
+                                        ) : null}
+                                    </RegisteredObject>
                                 )}
                             </>
                         )}
-                    </SceneContext.Provider>
+                    </GameCanvas>
+
+                    {showUI && (
+                        <>
+                            <div
+                                style={{
+                                    ...toolbar.panel,
+                                    left: "50%",
+                                    right: "auto",
+                                    transform: "translateX(-50%)",
+                                    justifyContent: "center",
+                                }}
+                            >
+                                <button type="button" style={base.btn} onClick={toggleMode}>
+                                    {isEditMode ? "▶" : "⏸"}
+                                </button>
+                            </div>
+                            {isEditMode && (
+                                <EditorUI
+                                    selectedId={selectedId}
+                                    setSelectedId={setSelection}
+                                    canUndo={historyIndex > 0}
+                                    canRedo={historyIndex < history.length - 1}
+                                />
+                            )}
+                        </>
+                    )}
                 </EditorContext.Provider>
             </EditorRefContext.Provider>
         </AssetRuntimeProvider>

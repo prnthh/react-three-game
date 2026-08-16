@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import type { Prefab } from "react-three-game/editor";
+import type { Prefab } from "react-three-game";
 import type { StagePoint } from "../StageInteractionComponent";
 
 export type SceneTransition = {

@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Prefab } from './types';
-import { createEmptyPrefab } from './prefab';
+import { createEmptyPrefab, createPackedPrefabNode } from './prefab';
 import { menu } from './styles';
-import { useEditorContext } from './EditorContext';
-import { loadJson, loadJsonFile, saveJson, withBasePath } from './utils';
+import { useEditorRef } from './EditorContext';
+import { loadJson, loadJsonFile, regenerateIds, saveJson, withBasePath } from './utils';
 
 export type TreeContextMenuState = { nodeId: string; x: number; y: number } | null;
 
@@ -198,34 +197,27 @@ export function TreeContextMenu({
 }
 
 export function FileMenu({
-    getPrefab,
-    onReplacePrefab,
-    onImportPrefab,
-    onImportPackedPrefab,
     onClose
 }: {
-    getPrefab: () => Prefab;
-    onReplacePrefab: (prefab: Prefab) => void;
-    onImportPrefab: (prefab: Prefab) => void;
-    onImportPackedPrefab: (url: string) => void;
     onClose: () => void;
 }) {
-    const { basePath, onScreenshot, onExportGLB } = useEditorContext();
+    const editor = useEditorRef();
+    const { basePath } = editor;
 
     const handleNew = () => {
-        onReplacePrefab(createEmptyPrefab());
+        editor.load(createEmptyPrefab());
         onClose();
     };
 
     const handleOpen = async () => {
         const loaded = await loadJson();
         if (!loaded) return;
-        onReplacePrefab(loaded);
+        editor.load(loaded);
         onClose();
     };
 
     const handleSave = () => {
-        saveJson(getPrefab(), 'prefab');
+        void saveJson(editor.save(), 'prefab');
         onClose();
     };
 
@@ -239,7 +231,7 @@ export function FileMenu({
                 entry.endsWith(`/${loaded.filename}`) || entry === `/${loaded.filename}`
             );
             if (matched) {
-                onImportPackedPrefab(matched);
+                editor.add(createPackedPrefabNode(matched));
                 onClose();
                 return;
             }
@@ -247,7 +239,7 @@ export function FileMenu({
             // manifest not available, fall through to full import
         }
 
-        onImportPrefab(loaded.prefab);
+        editor.add(regenerateIds(loaded.prefab.root));
         onClose();
     };
 
@@ -268,10 +260,10 @@ export function FileMenu({
                 </MenuItemButton>
             </MenuSubmenu>
             <MenuSubmenu label="Export">
-                <MenuItemButton onClick={() => { onExportGLB?.(); onClose(); }}>
+                <MenuItemButton onClick={() => { void editor.exportGLB(); onClose(); }}>
                     GLB
                 </MenuItemButton>
-                <MenuItemButton onClick={() => { onScreenshot?.(); onClose(); }}>
+                <MenuItemButton onClick={() => { editor.screenshot(); onClose(); }}>
                     PNG
                 </MenuItemButton>
             </MenuSubmenu>

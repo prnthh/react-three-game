@@ -2,8 +2,10 @@
 
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
-import { FieldRenderer, useNode, useScene, useGameEvent } from "react-three-game/editor";
-import type { Component, ComponentViewProps, ContactEventPayload, FieldDefinition } from "react-three-game/editor";
+import { useNode, useNodeObject, useGameEvent } from "react-three-game";
+import type { Component, ComponentViewProps, ContactEventPayload } from "react-three-game";
+import { FieldRenderer } from "react-three-game/editor";
+import type { ComponentEditorProps, FieldDefinition } from "react-three-game/editor";
 
 const DEFAULT_SPEED = 1.2;
 const COLLISION_EVENT_NAME = "orb:collision";
@@ -18,30 +20,30 @@ type OrbCollisionPayload = ContactEventPayload & {
     collisionNormal?: [number, number, number];
 };
 
-const orbMoverFields: FieldDefinition[] = [
+const orbMoverFields = [
     { name: "speed", type: "number", label: "Speed", min: 0, step: 0.1 },
     { name: "velocityX", type: "number", label: "Velocity X", step: 0.1 },
     { name: "velocityZ", type: "number", label: "Velocity Z", step: 0.1 },
-];
+] satisfies FieldDefinition<OrbMoverProperties>[];
 
 function normalizeVelocity(x = 0, z = 0) {
     const magnitude = Math.hypot(x, z);
     return magnitude <= Number.EPSILON ? { x: 1, z: 0 } : { x: x / magnitude, z: z / magnitude };
 }
 
-function OrbMoverEditor({ component, onUpdate }: { component: { properties: OrbMoverProperties }; onUpdate: (newComp: { properties: OrbMoverProperties }) => void }) {
+function OrbMoverEditor({ properties, update }: ComponentEditorProps<OrbMoverProperties>) {
     return (
         <FieldRenderer
             fields={orbMoverFields}
-            values={component.properties}
-            onChange={(properties) => onUpdate({ ...component, properties: properties as OrbMoverProperties })}
+            values={properties}
+            onChange={update}
         />
     );
 }
 
 function OrbMoverView({ properties, children }: ComponentViewProps<OrbMoverProperties>) {
     const { editMode, nodeId } = useNode();
-    const scene = useScene();
+    const object = useNodeObject();
     const velocityRef = useRef(normalizeVelocity(properties.velocityX ?? 1, properties.velocityZ ?? 0));
 
     const speed = properties.speed ?? DEFAULT_SPEED;
@@ -70,7 +72,7 @@ function OrbMoverView({ properties, children }: ComponentViewProps<OrbMoverPrope
 
     useFrame((_, delta) => {
         if (editMode) return;
-        const orb = scene.getObject(nodeId);
+        const orb = object.current;
         if (!orb) return;
         orb.position.x += velocityRef.current.x * speed * delta;
         orb.position.z += velocityRef.current.z * speed * delta;
@@ -80,7 +82,7 @@ function OrbMoverView({ properties, children }: ComponentViewProps<OrbMoverPrope
     return <>{children}</>;
 }
 
-const OrbMover: Component = {
+const OrbMover: Component<OrbMoverProperties> = {
     name: "OrbMover",
     Editor: OrbMoverEditor,
     View: OrbMoverView,

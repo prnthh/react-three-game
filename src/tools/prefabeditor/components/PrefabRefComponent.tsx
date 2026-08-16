@@ -1,9 +1,9 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
-import type { Component, ComponentViewProps } from './ComponentRegistry';
-import type { GameObject, Prefab } from '../types';
-import type { Scene } from '../SceneContext';
+import { lazy, Suspense, useEffect, useState } from 'react';
+import type { Component, ComponentEditorProps, ComponentViewProps } from './ComponentRegistry';
+import type { Prefab } from '../types';
+import { usePrefab } from '../SceneContext';
 import { useEditorRef } from '../EditorContext';
-import { useAssetRuntime, useNode } from '../assetRuntime';
+import { scopePrefabMaterials } from '../prefab';
 import { withBasePath } from '../utils';
 import { base, colors } from '../styles';
 import { FieldGroup, Label } from './Input';
@@ -22,13 +22,9 @@ async function fetchJson<T>(url: string): Promise<T> {
     return response.json() as Promise<T>;
 }
 
-function PrefabRefView({ properties, children, basePath = '' }: ComponentViewProps<PrefabRefProperties>) {
+function PrefabRefView({ properties, children }: ComponentViewProps<PrefabRefProperties>) {
+    const { basePath } = usePrefab();
     const [loadedPrefab, setLoadedPrefab] = useState<Prefab | null>(null);
-    const { nodeId } = useNode();
-    const { registerHandle } = useAssetRuntime();
-    const registerNestedScene = useCallback((scene: Scene | null) => {
-        registerHandle(nodeId, 'prefabScene', scene);
-    }, [nodeId, registerHandle]);
 
     const resolvedUrl = properties.url ? withBasePath(basePath, properties.url) : '';
 
@@ -56,7 +52,7 @@ function PrefabRefView({ properties, children, basePath = '' }: ComponentViewPro
         <>
             {loadedPrefab && (
                 <Suspense fallback={null}>
-                    <PrefabRoot ref={registerNestedScene} data={loadedPrefab} editMode={false} basePath={basePath} />
+                    <PrefabRoot data={loadedPrefab} basePath={basePath} />
                 </Suspense>
             )}
             {children}
@@ -64,21 +60,12 @@ function PrefabRefView({ properties, children, basePath = '' }: ComponentViewPro
     );
 }
 
-function PrefabRefEditor({
-    node,
-    component,
-    onUpdate,
-    basePath = '',
-}: {
-    node?: GameObject;
-    component: { properties?: PrefabRefProperties };
-    onUpdate: (newProps: Record<string, unknown>) => void;
-    basePath?: string;
-}) {
-    const url = component.properties?.url ?? '';
+function PrefabRefEditor({ node, properties, update }: ComponentEditorProps<PrefabRefProperties>) {
+    const url = properties.url ?? '';
     const [manifest, setManifest] = useState<string[]>([]);
     const [unpacking, setUnpacking] = useState(false);
     const editor = useEditorRef();
+    const { basePath } = editor;
 
     useEffect(() => {
         let cancelled = false;
@@ -102,7 +89,11 @@ function PrefabRefEditor({
         setUnpacking(true);
         try {
             const prefab = await fetchJson<Prefab>(withBasePath(basePath, url));
-            editor.replaceNode(node.id, prefab.root);
+            const scoped = scopePrefabMaterials(prefab, node.id);
+            Object.entries(scoped.materials ?? {}).forEach(([id, material]) => {
+                editor.setMaterial(id, material);
+            });
+            editor.replaceNode(node.id, scoped.root);
         } catch (err) {
             console.error('[PrefabRef] Unpack failed:', err);
         } finally {
@@ -118,14 +109,14 @@ function PrefabRefEditor({
                     type="text"
                     style={{ ...base.input, width: '100%', boxSizing: 'border-box', fontFamily: 'monospace' }}
                     value={url}
-                    onChange={e => onUpdate({ url: e.target.value })}
+                    onChange={e => update({ url: e.target.value })}
                     placeholder="/prefabs/my-prefab.json"
                 />
                 {manifest.length > 0 && (
                     <select
                         style={{ ...base.input, width: '100%', marginTop: 4, background: colors.bgInput, boxSizing: 'border-box' }}
                         value={url}
-                        onChange={e => onUpdate({ url: e.target.value })}
+                        onChange={e => update({ url: e.target.value })}
                     >
                         <option value="">— pick from manifest —</option>
                         {manifest.map(entry => (
@@ -148,7 +139,7 @@ function PrefabRefEditor({
     );
 }
 
-const PrefabRefComponent: Component = {
+const PrefabRefComponent: Component<PrefabRefProperties> = {
     name: 'PrefabRef',
     Editor: PrefabRefEditor,
     View: PrefabRefView,

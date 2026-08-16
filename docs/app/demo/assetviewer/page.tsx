@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { ModelListViewer, SharedCanvas, SoundListViewer, TextureListViewer } from "react-three-game/editor";
+import { ModelListViewer, SoundListViewer, TextureListViewer } from "react-three-game/editor";
 import { BASE_PATH } from "../../basePath";
 
 export default function AssetViewerPage() {
@@ -28,8 +28,7 @@ export default function AssetViewerPage() {
     }
 
     return (
-        <>
-            <div className="p-2 text-gray-300 overflow-y-auto min-h-screen text-sm w-64 bg-gray-900 border-r border-gray-700">
+        <div className="p-2 text-gray-300 overflow-y-auto min-h-screen text-sm w-64 bg-gray-900 border-r border-gray-700">
                 <h1 className="text-lg mb-2 font-bold">Asset Viewer</h1>
 
                 <h2 className="text-sm mt-4 mb-1 font-semibold">Textures ({textures.length})</h2>
@@ -41,11 +40,9 @@ export default function AssetViewerPage() {
                 {sounds.length > 0 && (
                     <>
                         <h2 className="text-sm mt-4 mb-1 font-semibold">Sounds ({sounds.length})</h2>
-                        <SoundListViewer files={sounds} basePath={basePath} onSelect={() => { }} />
+                        <SoundListViewer files={sounds} onSelect={() => { }} />
                     </>
                 )}
-            </div>
-            <SharedCanvas />
-        </>
+        </div>
     );
 }

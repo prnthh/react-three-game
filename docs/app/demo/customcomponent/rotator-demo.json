@@ -53,6 +53,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -66,13 +70,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#ffffff",
-              "texture": "/textures/floor/terrain/rock-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                10,
-                10
-              ]
+              "materialId": "material"
             }
           }
         },
@@ -103,6 +101,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -117,8 +119,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#ff6b6b",
-              "texture": "/textures/proto32/white.png"
+              "materialId": "material-2"
             }
           },
           "rotator": {
@@ -156,6 +157,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -170,8 +175,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#4ecdc4",
-              "texture": "/textures/proto32/white.png"
+              "materialId": "material-3"
             }
           },
           "rotator": {
@@ -209,6 +213,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -223,8 +231,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#ffe66d",
-              "texture": "/textures/proto32/white.png"
+              "materialId": "material-4"
             }
           },
           "rotator": {
@@ -262,6 +269,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -276,8 +287,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#8fd694",
-              "texture": "/textures/proto32/white.png"
+              "materialId": "material-5"
             }
           },
           "squish": {
@@ -375,5 +385,32 @@
         "children": []
       }
     ]
+  },
+  "materials": {
+    "material": {
+      "color": "#ffffff",
+      "texture": "/textures/floor/terrain/rock-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        10,
+        10
+      ]
+    },
+    "material-2": {
+      "color": "#ff6b6b",
+      "texture": "/textures/proto32/white.png"
+    },
+    "material-3": {
+      "color": "#4ecdc4",
+      "texture": "/textures/proto32/white.png"
+    },
+    "material-4": {
+      "color": "#ffe66d",
+      "texture": "/textures/proto32/white.png"
+    },
+    "material-5": {
+      "color": "#8fd694",
+      "texture": "/textures/proto32/white.png"
+    }
   }
 }

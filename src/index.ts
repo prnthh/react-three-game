@@ -15,21 +15,21 @@ export type { PrefabRootProps } from "./tools/prefabeditor/PrefabRoot";
 export {
 	PrefabEditorMode,
 	SceneContext,
+	PrefabContext,
 	useScene,
+	usePrefab,
+	useNode,
+	useNodeHandle,
+	useNodeObject,
 } from "./tools/prefabeditor/SceneContext";
-export type { PrefabNode, Scene } from "./tools/prefabeditor/SceneContext";
+export type { LiveRef, NodeApi, PrefabApi, PrefabNode, Scene } from "./tools/prefabeditor/SceneContext";
 export { SceneProvider } from "./tools/prefabeditor/SceneProvider";
 
 export type {
 	AssetRuntime,
-	NodeApi,
-	LiveRef,
 } from "./tools/prefabeditor/assetRuntime";
 export {
 	useAssetRuntime,
-	useNode,
-	useNodeHandle,
-	useNodeObject,
 	AssetRuntimeProvider,
 } from "./tools/prefabeditor/assetRuntime";
 
@@ -58,6 +58,9 @@ export {
 } from "./tools/prefabeditor/prefab";
 export type {
 	Prefab,
+	PrefabMaterial,
+	PrefabMaterialType,
+	MaterialComponentProperties,
 	GameObject,
 	ComponentData,
 } from "./tools/prefabeditor/types";
@@ -84,3 +87,15 @@ export type {
 	TextureLoadResult,
 	ProgressCallback,
 } from "./tools/dragdrop/modelLoader";
+
+export { MaterialOverridesProvider, useMaterialOverrides } from "./tools/prefabeditor/components/MaterialComponent";
+export type { MaterialOverrides } from "./tools/prefabeditor/components/MaterialComponent";
+
+export {
+	float,
+	positionLocal,
+	sin,
+	time,
+	uniform,
+	vec3,
+} from "three/tsl";

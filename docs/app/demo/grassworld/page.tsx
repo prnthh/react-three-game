@@ -1,6 +1,7 @@
 "use client";
 
-import { PrefabEditor, PrefabEditorMode, registerComponent, type Prefab } from "react-three-game/editor";
+import { PrefabEditorMode, registerComponent, type Prefab } from "react-three-game";
+import { PrefabEditor } from "react-three-game/editor";
 import {
     CrashcatPhysicsComponent,
     CrashcatRuntime,
@@ -14,6 +15,16 @@ registerComponent(CrashcatPhysicsComponent);
 const grassWorldPrefab: Prefab = {
     id: "grassworld",
     name: "Grass World",
+    materials: {
+        sky: {
+            materialType: "basic",
+            color: "#d7ecff",
+            side: "BackSide",
+            toneMapped: false,
+            texture: "/textures/skybox/skybox3.jpg",
+        },
+        ball: { color: "#d9d5c7", roughness: 0.72, metalness: 0 },
+    },
     root: {
         id: "grassworld-root",
         name: "Grass World",
@@ -46,20 +57,17 @@ const grassWorldPrefab: Prefab = {
                                 type: "Transform",
                                 properties: { position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1] },
                             },
+                            mesh: {
+                                type: "Mesh",
+                                properties: { castShadow: false, receiveShadow: false },
+                            },
                             geometry: {
                                 type: "Geometry",
-                                properties: { geometryType: "sphere", args: [170, 24, 12], castShadow: false, receiveShadow: false },
+                                properties: { geometryType: "sphere", args: [170, 24, 12] },
                             },
                             material: {
                                 type: "Material",
-                                properties: {
-                                    materialType: "basic",
-                                    color: "#d7ecff",
-                                    side: "BackSide",
-                                    toneMapped: false,
-                                    texture: "/textures/skybox/skybox3.jpg",
-                                    repeat: false,
-                                },
+                                properties: { materialId: "sky" },
                             },
                         },
                     },
@@ -77,13 +85,14 @@ const grassWorldPrefab: Prefab = {
                             scale: [1, 1, 1],
                         },
                     },
+                    mesh: { type: "Mesh", properties: {} },
                     geometry: {
                         type: "Geometry",
                         properties: { geometryType: "sphere", args: [0.5, 24, 16] },
                     },
                     material: {
                         type: "Material",
-                        properties: { color: "#d9d5c7", roughness: 0.72, metalness: 0 },
+                        properties: { materialId: "ball" },
                     },
                     crashcatPhysics: {
                         type: "CrashcatPhysics",
@@ -112,7 +121,7 @@ export default function GrassWorldDemo() {
         <main className="h-screen w-screen bg-sky-300">
             <PrefabEditor
                 basePath={BASE_PATH}
-                initialPrefab={grassWorldPrefab}
+                prefab={grassWorldPrefab}
                 mode={PrefabEditorMode.Play}
                 enableWindowDrop={false}
                 canvasProps={{

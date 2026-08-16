@@ -6,60 +6,62 @@ import { usePrefabStore } from '../prefabStore';
 // Field Definition Types
 // ============================================================================
 
-export type FieldType = 'vector3' | 'number' | 'string' | 'color' | 'boolean' | 'select' | 'node';
-
-interface BaseFieldDefinition {
-    name: string;
+interface BaseFieldDefinition<Name extends string = string> {
+    name: Name;
     label: string;
 }
 
-interface Vector3FieldDefinition extends BaseFieldDefinition {
+interface Vector3FieldDefinition<Name extends string = string> extends BaseFieldDefinition<Name> {
     type: 'vector3';
     snap?: number;
 }
 
-interface NumberFieldDefinition extends BaseFieldDefinition {
+interface NumberFieldDefinition<Name extends string = string> extends BaseFieldDefinition<Name> {
     type: 'number';
     min?: number;
     max?: number;
     step?: number;
 }
 
-interface StringFieldDefinition extends BaseFieldDefinition {
+interface StringFieldDefinition<Name extends string = string> extends BaseFieldDefinition<Name> {
     type: 'string';
     placeholder?: string;
 }
 
-interface ColorFieldDefinition extends BaseFieldDefinition {
+interface ColorFieldDefinition<Name extends string = string> extends BaseFieldDefinition<Name> {
     type: 'color';
 }
 
-interface BooleanFieldDefinition extends BaseFieldDefinition {
+interface BooleanFieldDefinition<Name extends string = string> extends BaseFieldDefinition<Name> {
     type: 'boolean';
 }
 
-interface SelectFieldDefinition extends BaseFieldDefinition {
+interface SelectFieldDefinition<Name extends string = string, Value extends string = string> extends BaseFieldDefinition<Name> {
     type: 'select';
-    options: { value: string; label: string }[];
+    options: { value: Value; label: string }[];
 }
 
-interface NodeFieldDefinition extends BaseFieldDefinition {
+interface NodeFieldDefinition<Name extends string = string> extends BaseFieldDefinition<Name> {
     type: 'node';
     placeholder?: string;
     includeRoot?: boolean;
 }
 
-interface CustomFieldDefinition extends BaseFieldDefinition {
+interface CustomFieldDefinition<
+    Name extends string = string,
+    Value = any,
+    Values extends object = Record<string, any>,
+> extends BaseFieldDefinition<Name> {
     type: 'custom';
     render: (props: {
-        value: any;
-        onChange: (value: any) => void;
-        values: Record<string, any>;
-        onChangeMultiple: (values: Record<string, any>) => void;
+        value: Value;
+        onChange: (value: Value) => void;
+        values: Values;
+        onChangeMultiple: (values: Partial<Values>) => void;
     }) => React.ReactNode;
 }
 
-export type FieldDefinition =
+type UntypedFieldDefinition =
     | Vector3FieldDefinition
     | NumberFieldDefinition
     | StringFieldDefinition
@@ -68,6 +70,28 @@ export type FieldDefinition =
     | SelectFieldDefinition
     | NodeFieldDefinition
     | CustomFieldDefinition;
+
+type StringValue<Value> = Extract<NonNullable<Value>, string>;
+
+type FieldForProperty<Values extends object, Name extends Extract<keyof Values, string>> =
+    | CustomFieldDefinition<Name, Values[Name], Values>
+    | ([number, number, number] extends NonNullable<Values[Name]> ? Vector3FieldDefinition<Name> : never)
+    | (number extends NonNullable<Values[Name]> ? NumberFieldDefinition<Name> : never)
+    | (boolean extends NonNullable<Values[Name]> ? BooleanFieldDefinition<Name> : never)
+    | (string extends NonNullable<Values[Name]>
+        ? StringFieldDefinition<Name> | ColorFieldDefinition<Name> | NodeFieldDefinition<Name>
+        : never)
+    | (StringValue<Values[Name]> extends never
+        ? never
+        : SelectFieldDefinition<Name, StringValue<Values[Name]>>);
+
+/** A field schema checked against the properties it edits. */
+export type FieldDefinition<Values extends object> =
+    string extends keyof Values
+        ? UntypedFieldDefinition
+        : {
+            [Name in Extract<keyof Values, string>]-?: FieldForProperty<Values, Name>
+        }[Extract<keyof Values, string>];
 
 // ============================================================================
 // Shared Styles (derived from shared color tokens)
@@ -151,13 +175,17 @@ interface InputProps {
     max?: number;
     style?: React.CSSProperties;
     label?: string;
+    /** Keep expensive values local while typing/scrubbing and publish once. */
+    commitOnBlur?: boolean;
 }
 
-export function NumberInput({ value, onChange, step, min, max, style }: InputProps) {
+export function NumberInput({ value, onChange, step, min, max, style, commitOnBlur = false }: InputProps) {
     const [draft, setDraft] = useState(() => value.toString());
     const [isFocused, setIsFocused] = useState(false);
+    const committedValue = useRef(value);
 
     useEffect(() => {
+        committedValue.current = value;
         if (!isFocused) {
             setDraft(value.toString());
         }
@@ -170,20 +198,18 @@ export function NumberInput({ value, onChange, step, min, max, style }: InputPro
         if (isIncompleteNumber(inputValue)) return;
 
         const num = Number(inputValue);
-        if (Number.isFinite(num)) {
+        if (!commitOnBlur && Number.isFinite(num)) {
             onChange(clampNumber(num, min, max));
         }
     };
 
-    const handleBlur = () => {
-        setIsFocused(false);
-
-        if (isIncompleteNumber(draft)) {
+    const commitDraft = (inputValue: string) => {
+        if (isIncompleteNumber(inputValue)) {
             setDraft(value.toString());
             return;
         }
 
-        const num = Number(draft);
+        const num = Number(inputValue);
         if (!Number.isFinite(num)) {
             setDraft(value.toString());
             return;
@@ -192,9 +218,15 @@ export function NumberInput({ value, onChange, step, min, max, style }: InputPro
         const normalized = normalizeNumber(num, step, min, max);
         setDraft(normalized.toString());
 
-        if (normalized !== value) {
+        if (normalized !== committedValue.current) {
+            committedValue.current = normalized;
             onChange(normalized);
         }
+    };
+
+    const handleBlur = (event: React.FocusEvent<HTMLInputElement>) => {
+        setIsFocused(false);
+        commitDraft(event.currentTarget.value);
     };
 
     const dragState = useRef<{
@@ -202,7 +234,7 @@ export function NumberInput({ value, onChange, step, min, max, style }: InputPro
         startValue: number;
     } | null>(null);
 
-    const startScrub = (e: React.PointerEvent) => {
+    const startScrub = (e: React.PointerEvent<HTMLInputElement>) => {
         dragState.current = {
             startX: e.clientX,
             startValue: value
@@ -212,7 +244,7 @@ export function NumberInput({ value, onChange, step, min, max, style }: InputPro
         document.body.style.cursor = "ew-resize";
     };
 
-    const onScrubMove = (e: React.PointerEvent) => {
+    const onScrubMove = (e: React.PointerEvent<HTMLInputElement>) => {
         if (!dragState.current) return;
 
         const { startX, startValue } = dragState.current;
@@ -227,15 +259,17 @@ export function NumberInput({ value, onChange, step, min, max, style }: InputPro
         const nextValue = normalizeNumber(rawValue, scrubStep, min, max);
 
         setDraft(nextValue.toString());
-        onChange(nextValue);
+        if (!commitOnBlur) onChange(nextValue);
     };
 
-    const endScrub = (e: React.PointerEvent) => {
+    const endScrub = (e: React.PointerEvent<HTMLInputElement>) => {
         if (!dragState.current) return;
 
         dragState.current = null;
         document.body.style.cursor = "";
         e.currentTarget.releasePointerCapture(e.pointerId);
+
+        if (commitOnBlur) commitDraft(e.currentTarget.value);
     };
 
     return (
@@ -736,52 +770,70 @@ export function SelectInput({
     );
 }
 
-interface BoundFieldProps {
-    name: string;
-    values: Record<string, any>;
-    onChange: (values: Record<string, any>) => void;
+type FieldNameFor<Values extends object, Value> = string extends keyof Values
+    ? string
+    : {
+        [Name in Extract<keyof Values, string>]-?: Value extends NonNullable<Values[Name]> ? Name : never
+    }[Extract<keyof Values, string>];
+
+type SelectFieldName<Values extends object> = string extends keyof Values
+    ? string
+    : {
+        [Name in Extract<keyof Values, string>]-?: StringValue<Values[Name]> extends never ? never : Name
+    }[Extract<keyof Values, string>];
+
+interface BoundFieldProps<Values extends object, Value> {
+    name: FieldNameFor<Values, Value>;
+    values: Values;
+    onChange: (values: Partial<Values>) => void;
 }
 
-interface BoundNumberFieldProps extends BoundFieldProps {
+interface BoundNumberFieldProps<Values extends object> extends BoundFieldProps<Values, number> {
     label: string;
     fallback?: number;
     step?: string | number;
     min?: number;
     max?: number;
     style?: React.CSSProperties;
+    commitOnBlur?: boolean;
 }
 
-interface BoundStringFieldProps extends BoundFieldProps {
+interface BoundStringFieldProps<Values extends object> extends BoundFieldProps<Values, string> {
     label: string;
     fallback?: string;
     placeholder?: string;
 }
 
-interface BoundColorFieldProps extends BoundFieldProps {
+interface BoundColorFieldProps<Values extends object> extends BoundFieldProps<Values, string> {
     label: string;
     fallback?: string;
 }
 
-interface BoundBooleanFieldProps extends BoundFieldProps {
+interface BoundBooleanFieldProps<Values extends object> extends BoundFieldProps<Values, boolean> {
     label: string;
     fallback?: boolean;
 }
 
-interface BoundSelectFieldProps extends BoundFieldProps {
+type BoundSelectFieldProps<Values extends object> = Omit<BoundFieldProps<Values, string>, 'name'> & {
+    name: SelectFieldName<Values>;
     label: string;
     fallback?: string;
     options: { value: string; label: string }[];
-}
+};
 
-interface BoundVector3FieldProps extends BoundFieldProps {
+interface BoundVector3FieldProps<Values extends object> extends BoundFieldProps<Values, [number, number, number]> {
     label: string;
     fallback?: [number, number, number];
     snap?: number;
     labelExtra?: React.ReactNode;
 }
 
-function bindFieldChange(name: string, onChange: (values: Record<string, any>) => void) {
-    return (value: any) => onChange({ [name]: value });
+function bindFieldChange<Values extends object>(name: string, onChange: (values: Partial<Values>) => void) {
+    return (value: unknown) => onChange({ [name]: value } as Partial<Values>);
+}
+
+function getFieldValue(values: object, name: string) {
+    return (values as Record<string, any>)[name];
 }
 
 export function FieldGroup({ children }: { children: React.ReactNode }) {
@@ -879,7 +931,7 @@ export function ListEditor<T>({
     );
 }
 
-export function NumberField({
+export function NumberField<Values extends object>({
     name,
     label,
     values,
@@ -889,106 +941,108 @@ export function NumberField({
     min,
     max,
     style,
-}: BoundNumberFieldProps) {
+    commitOnBlur,
+}: BoundNumberFieldProps<Values>) {
     return (
         <FieldRow label={label}>
             <NumberInput
-                value={values[name] ?? fallback}
+                value={getFieldValue(values, name) ?? fallback}
                 onChange={bindFieldChange(name, onChange)}
                 step={step}
                 min={min}
                 max={max}
                 style={style}
+                commitOnBlur={commitOnBlur}
             />
         </FieldRow>
     );
 }
 
-export function StringField({
+export function StringField<Values extends object>({
     name,
     label,
     values,
     onChange,
     fallback = '',
     placeholder,
-}: BoundStringFieldProps) {
+}: BoundStringFieldProps<Values>) {
     return (
         <StringInput
             label={label}
-            value={values[name] ?? fallback}
+            value={getFieldValue(values, name) ?? fallback}
             onChange={bindFieldChange(name, onChange)}
             placeholder={placeholder}
         />
     );
 }
 
-export function ColorField({
+export function ColorField<Values extends object>({
     name,
     label,
     values,
     onChange,
     fallback = '#ffffff',
-}: BoundColorFieldProps) {
+}: BoundColorFieldProps<Values>) {
     return (
         <ColorInput
             label={label}
-            value={values[name] ?? fallback}
+            value={getFieldValue(values, name) ?? fallback}
             onChange={bindFieldChange(name, onChange)}
         />
     );
 }
 
-export function BooleanField({
+export function BooleanField<Values extends object>({
     name,
     label,
     values,
     onChange,
     fallback = false,
-}: BoundBooleanFieldProps) {
+}: BoundBooleanFieldProps<Values>) {
     return (
         <BooleanInput
             label={label}
-            value={values[name] ?? fallback}
+            value={getFieldValue(values, name) ?? fallback}
             onChange={bindFieldChange(name, onChange)}
         />
     );
 }
 
-export function SelectField({
+export function SelectField<Values extends object>({
     name,
     label,
     values,
     onChange,
     fallback,
     options,
-}: BoundSelectFieldProps) {
+}: BoundSelectFieldProps<Values>) {
     return (
         <SelectInput
             label={label}
-            value={values[name] ?? fallback ?? options[0]?.value ?? ''}
+            value={getFieldValue(values, name) ?? fallback ?? options[0]?.value ?? ''}
             onChange={bindFieldChange(name, onChange)}
             options={options}
         />
     );
 }
 
-export function NodeField({
+export function NodeField<Values extends object>({
     name,
     label,
     values,
     onChange,
     fallback = '',
-}: BoundStringFieldProps & { fallback?: string }) {
+}: BoundStringFieldProps<Values> & { fallback?: string }) {
     return (
         <NodeInput
             label={label}
-            value={values[name] ?? fallback}
+            value={getFieldValue(values, name) ?? fallback}
             onChange={bindFieldChange(name, onChange)}
         />
     );
 }
 
-export function Vector3Field({
+export function Vector3Field<Values extends object>({
     name,
     label,
     values,
@@ -996,11 +1050,11 @@ export function Vector3Field({
     fallback = [0, 0, 0],
     snap,
     labelExtra,
-}: BoundVector3FieldProps) {
+}: BoundVector3FieldProps<Values>) {
     return (
         <Vector3Input
             label={label}
-            value={values[name] ?? fallback}
+            value={getFieldValue(values, name) ?? fallback}
             onChange={bindFieldChange(name, onChange)}
             snap={snap}
             labelExtra={labelExtra}
@@ -1012,21 +1066,23 @@ export function Vector3Field({
 // Field Renderer - Schema-driven UI generation
 // ============================================================================
 
-interface FieldRendererProps {
-    fields: FieldDefinition[];
-    values: Record<string, any>;
-    onChange: (values: Record<string, any>) => void;
+interface FieldRendererProps<Values extends object> {
+    fields: readonly FieldDefinition<NoInfer<Values>>[];
+    values: Values;
+    onChange: (values: Partial<Values>) => void;
 }
 
-export function FieldRenderer({ fields, values, onChange }: FieldRendererProps) {
+export function FieldRenderer<Values extends object>({ fields, values, onChange }: FieldRendererProps<Values>) {
+    const untypedValues = values as Record<string, any>;
     const updateField = (name: string, value: any) => {
-        onChange({ [name]: value });
+        onChange({ [name]: value } as Partial<Values>);
     };
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {fields.map(field => {
-                const value = values[field.name];
+            {fields.map(typedField => {
+                const field = typedField as UntypedFieldDefinition;
+                const value = untypedValues[field.name];
 
                 switch (field.type) {
                     case 'vector3':
@@ -1114,8 +1170,8 @@ export function FieldRenderer({ fields, values, onChange }: FieldRendererProps) 
                                 {field.render({
                                     value,
                                     onChange: v => updateField(field.name, v),
-                                    values,
-                                    onChangeMultiple: onChange,
+                                    values: untypedValues,
+                                    onChangeMultiple: values => onChange(values as Partial<Values>),
                                 })}
                             </div>
                         );

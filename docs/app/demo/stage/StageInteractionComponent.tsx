@@ -2,12 +2,12 @@
 
 import { useEffect } from "react";
 import {
-    FieldRenderer,
     useNode,
     type Component,
     type ComponentViewProps,
-    type FieldDefinition,
-} from "react-three-game/editor";
+} from "react-three-game";
+import { FieldRenderer } from "react-three-game/editor";
+import type { FieldDefinition } from "react-three-game/editor";
 import { useCrashcat } from "react-three-game/plugins/crashcat";
 import { cylinder, MotionType, rigidBody } from "crashcat";
 import { Quaternion, Vector3 } from "three";
@@ -27,7 +27,7 @@ export type StageInteractionProperties = {
 const DEFAULT_ENTER_EVENT = "stage:interaction-enter";
 const DEFAULT_EXIT_EVENT = "stage:interaction-exit";
 
-const fields: FieldDefinition[] = [
+const fields = [
     {
         name: "action",
         type: "select",
@@ -43,7 +43,7 @@ const fields: FieldDefinition[] = [
     { name: "sensorHalfHeight", type: "number", label: "Sensor Half Height", min: 0.05, step: 0.05 },
     { name: "enterEventName", type: "string", label: "Enter Event" },
     { name: "exitEventName", type: "string", label: "Exit Event" },
-];
+] satisfies FieldDefinition<StageInteractionProperties>[];
 
 function StageInteractionView({ properties, children }: ComponentViewProps<StageInteractionProperties>) {
     const api = useCrashcat();
@@ -84,10 +84,10 @@ function StageInteractionView({ properties, children }: ComponentViewProps<Stage
     return <>{children}</>;
 }
 
-const StageInteractionComponent: Component = {
+const StageInteractionComponent: Component<StageInteractionProperties> = {
     name: "StageInteraction",
-    Editor: ({ component, onUpdate }) => (
-        <FieldRenderer fields={fields} values={component.properties} onChange={onUpdate} />
+    Editor: ({ properties, update }) => (
+        <FieldRenderer fields={fields} values={properties} onChange={update} />
     ),
     View: StageInteractionView,
     defaultProperties: {

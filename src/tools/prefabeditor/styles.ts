@@ -50,6 +50,10 @@ interface UtilityStyles {
     monoTextInput: Style;
 }
 
+interface PopupStyles {
+    modal: Style;
+}
+
 export const colors = {
     bg: '#f3f3f3',
     bgSurface: '#d7d7d7',
@@ -91,6 +95,7 @@ export const base: BaseStyles = {
     header: {
         padding: '3px 6px',
         display: 'flex',
+        width: '100%',
         alignItems: 'center',
         justifyContent: 'space-between',
         cursor: 'pointer',
@@ -304,5 +309,16 @@ export const ui: UtilityStyles = {
     monoTextInput: {
         ...base.input,
         fontFamily: 'monospace',
+    },
+};
+
+export const popup: PopupStyles = {
+    modal: {
+        ...base.panel,
+        position: 'absolute',
+        top: '50vh',
+        left: '50vw',
+        transform: 'translate(-50%, -50%)',
+        zIndex: 30,
     },
 };

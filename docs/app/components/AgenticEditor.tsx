@@ -390,7 +390,7 @@ export default function AgenticEditor({
         const apiMessages: any[] = [
             {
                 role: "system",
-                content: "You are an expert at generating react-three-game prefab edits as JSON patches. You can see the current 3D scene and understand the spatial layout of objects.\n\nYou can work iteratively across multiple turns. After applying a patch, you will receive a screenshot of the result. If the result is not perfect, you can continue making adjustments in subsequent turns until the user's goal is achieved."
+                content: "You are an expert at generating react-three-game prefab edits as JSON patches. You can see the current 3D scene and understand the spatial layout of objects.\n\nYou can work iteratively across multiple turns. After applying a patch, use the resulting screenshot to refine the scene in subsequent turns until the user's goal is achieved."
             },
         ];
 
@@ -435,73 +435,61 @@ Goal: ${userPrompt}
 
 ${recentMessages.length > 0 ? "You are working iteratively. Review the previous screenshots and patches to understand what has been done so far. Make incremental improvements until the goal is achieved." : ""}
 
-CRITICAL RULES:
-1. Output ONLY valid JSON (no text/markdown before or after, no comments)
-2. All numbers must be bare numbers, NOT strings: position:[0,1,2] NOT position:["0","1","2"]
-3. Each object MUST have a UNIQUE id (cube1, cube2, cube3 - NOT all "cube1")
-4. Transform MUST include ALL THREE: position:[x,y,z], rotation:[x,y,z], scale:[x,y,z]
-5. NEVER use UUID-like ids from the scene - those are read-only
+OUTPUT CONTRACT:
+1. Return one valid JSON patch object.
+2. Use JSON numbers for numeric values.
+3. Give every appended node a stable unique id.
+4. Give appended transforms position, rotation, and scale tuples.
+5. Preserve existing ids when targeting current nodes.
 
-COMPONENT TYPES AND EXAMPLES:
+PREFAB MODEL:
+- root is the authored node hierarchy.
+- materials stores shared material definitions by id.
+- Material components select a shared definition with materialId.
+- Components on one node compose like R3F children.
 
-1. TRANSFORM (required for ALL entities - position, rotation, scale):
-   {"transform":{"type":"Transform","properties":{"position":[0,0,0],"rotation":[0,0,0],"scale":[1,1,1]}}}
+COMPONENT SYNTAX:
 
-2. GEOMETRY + MATERIAL (for basic shapes like cubes, spheres, planes):
-   {"geometry":{"type":"Geometry","properties":{"geometryType":"box","args":[1,1,1]}},"material":{"type":"Material","properties":{"color":"#ff0000"}}}
-   // geometryType options: "box", "sphere", "plane"
-   // box args: [width, height, depth]
-   // sphere args: [radius, widthSegments, heightSegments]
-   // plane args: [width, height]
+Transform:
+{"transform":{"type":"Transform","properties":{"position":[0,0,0],"rotation":[0,0,0],"scale":[1,1,1]}}}
 
-3. MODEL (for loading 3D models from files - use instead of geometry):
-   {"model":{"type":"Model","properties":{"filename":"models/environment/tree.glb","instanced":true}}}
-   // filename: path to .glb/.gltf model file (relative to public folder)
-   // Add instanced:true ONLY when using MANY copies of same model (better performance via GPU instancing)
+Mesh with geometry and shared material:
+{"mesh":{"type":"Mesh","properties":{"castShadow":true,"receiveShadow":true}},"geometry":{"type":"Geometry","properties":{"geometryType":"box","args":[1,1,1]}},"material":{"type":"Material","properties":{"materialId":"red"}}}
 
-4. MATERIAL (appearance - use with geometry OR model):
-   {"material":{"type":"Material","properties":{"color":"#ff0000"}}}
-   // Optional: wireframe:true, texture:"/path/to/texture.png", repeat:true, repeatCount:[4,4]
+Geometry args:
+- box: [width,height,depth]
+- sphere: [radius,widthSegments,heightSegments]
+- plane: [width,height]
+- cylinder: [radiusTop,radiusBottom,height,radialSegments]
 
-5. CRASHCAT PHYSICS (for collisions/dynamics):
-    {"crashcatPhysics":{"type":"CrashcatPhysics","properties":{"type":"dynamic","colliders":"hull"}}}
-    // type: "dynamic" (movable), "fixed" (static), "kinematicPosition", or "kinematicVelocity"
-    // colliders: "hull", "trimesh", "cuboid", "ball", "capsule", or "cylinder"
+Model:
+{"model":{"type":"Model","properties":{"filename":"/models/environment/tree.glb","instanced":true}}}
 
-6. DIRECTIONALLIGHT (sun-like lighting):
-   {"directionallight":{"type":"DirectionalLight","properties":{"color":"#ffffff","intensity":1.0,"castShadow":true,"targetOffset":[2,-5,2]}}}
+Camera:
+{"camera":{"type":"Camera","properties":{"projection":"perspective","fov":50,"near":0.1,"far":1000}}}
 
-7. SPOTLIGHT (cone-shaped light):
-   {"spotlight":{"type":"SpotLight","properties":{"color":"#ffffff","intensity":1.0,"angle":0.523,"penumbra":0.5,"distance":100,"castShadow":true}}}
+Directional light:
+{"light":{"type":"DirectionalLight","properties":{"color":"#ffffff","intensity":2,"castShadow":true,"targetOffset":[0,-5,-5]}}}
 
-EXAMPLE SCENE BUILDING (step-by-step):
+Spot light:
+{"light":{"type":"SpotLight","properties":{"color":"#ffffff","intensity":2,"angle":0.785,"penumbra":0.5,"distance":50,"castShadow":true}}}
 
-STEP 1 - Add a red cube:
-{"root":{"children":{"$append":[{"id":"cube1","components":{"transform":{"type":"Transform","properties":{"position":[2,0,0],"rotation":[0,0,0],"scale":[1,1,1]}},"geometry":{"type":"Geometry","properties":{"geometryType":"box","args":[1,1,1]}},"material":{"type":"Material","properties":{"color":"#ff0000"}}},"children":[]}]}}}
+PATCH SYNTAX:
 
-STEP 2 - Add a blue sphere:
-{"root":{"children":{"$append":[{"id":"ball1","components":{"transform":{"type":"Transform","properties":{"position":[0,2,0],"rotation":[0,0,0],"scale":[1,1,1]}},"geometry":{"type":"Geometry","properties":{"geometryType":"sphere","args":[0.5,32,16]}},"material":{"type":"Material","properties":{"color":"#0000ff"}}},"children":[]}]}}}
+Add a shared material and a cube:
+{"materials":{"red":{"name":"Red","materialType":"standard","color":"#ff0000","roughness":0.7}},"root":{"children":{"$append":[{"id":"red-cube","components":{"transform":{"type":"Transform","properties":{"position":[2,0.5,0],"rotation":[0,0,0],"scale":[1,1,1]}},"mesh":{"type":"Mesh","properties":{"castShadow":true,"receiveShadow":true}},"geometry":{"type":"Geometry","properties":{"geometryType":"box","args":[1,1,1]}},"material":{"type":"Material","properties":{"materialId":"red"}}},"children":[]}]}}}
 
-STEP 3 - Add trees using instanced 3D models:
-{"root":{"children":{"$append":[{"id":"tree1","components":{"transform":{"type":"Transform","properties":{"position":[-3,0,2],"rotation":[0,0,0],"scale":[1,1,1]}},"model":{"type":"Model","properties":{"filename":"models/environment/tree.glb","instanced":true}},"crashcatPhysics":{"type":"CrashcatPhysics","properties":{"type":"fixed","colliders":"hull"}}},"children":[]},{"id":"tree2","components":{"transform":{"type":"Transform","properties":{"position":[3,0,2],"rotation":[0,0,0],"scale":[1,1,1]}},"model":{"type":"Model","properties":{"filename":"models/environment/tree.glb","instanced":true}},"crashcatPhysics":{"type":"CrashcatPhysics","properties":{"type":"fixed","colliders":"hull"}}},"children":[]}]}}}
+Add a blue sphere using a second shared material:
+{"materials":{"blue":{"name":"Blue","materialType":"standard","color":"#2563eb","roughness":0.45}},"root":{"children":{"$append":[{"id":"blue-ball","components":{"transform":{"type":"Transform","properties":{"position":[0,2,0],"rotation":[0,0,0],"scale":[1,1,1]}},"mesh":{"type":"Mesh","properties":{"castShadow":true}},"geometry":{"type":"Geometry","properties":{"geometryType":"sphere","args":[0.5,32,16]}},"material":{"type":"Material","properties":{"materialId":"blue"}}},"children":[]}]}}}
 
-STEP 4 - Add a dynamic physics cube (will fall):
-{"root":{"children":{"$append":[{"id":"physics-cube","components":{"transform":{"type":"Transform","properties":{"position":[0,5,0],"rotation":[0,0,0],"scale":[1,1,1]}},"geometry":{"type":"Geometry","properties":{"geometryType":"box","args":[1,1,1]}},"material":{"type":"Material","properties":{"color":"#00ff00"}},"crashcatPhysics":{"type":"CrashcatPhysics","properties":{"type":"dynamic","colliders":"cuboid"}}},"children":[]}]}}}
+Add repeated trees:
+{"root":{"children":{"$append":[{"id":"tree-line","components":{"transform":{"type":"Transform","properties":{"position":[0,0,2],"rotation":[0,0,0],"scale":[1,1,1]}},"model":{"type":"Model","properties":{"filename":"/models/environment/tree.glb","instanced":true,"repeat":true,"repeatAxes":[{"axis":"x","count":8,"offset":4}]}}},"children":[]}]}}}
 
-STEP 5 - Add a yellow spotlight:
-{"root":{"children":{"$append":[{"id":"spot1","components":{"transform":{"type":"Transform","properties":{"position":[5,10,5],"rotation":[0,0,0],"scale":[1,1,1]}},"spotlight":{"type":"SpotLight","properties":{"color":"#ffff00","intensity":2.0,"angle":0.785,"penumbra":0.5,"distance":50,"castShadow":true}}},"children":[]}]}}}
+Update an existing node by id:
+{"root":{"children":[{"id":"red-cube","components":{"transform":{"type":"Transform","properties":{"position":[5,0.5,0],"rotation":[0,0,0],"scale":[1,1,1]}}}}]}}
 
-STEP 6 - Remove the sphere and first tree:
-{"root":{"children":{"$delete":["ball1","tree1"]}}}
-
-STEP 7 - Move the red cube to new position:
-{"root":{"children":[{"id":"cube1","components":{"transform":{"type":"Transform","properties":{"position":[5,0,0],"rotation":[0,0,0],"scale":[1,1,1]}}}}]}}
-
-COMMON MISTAKES TO AVOID:
-❌ "position":["0","1","2"] → ✅ "position":[0,1,2] (numbers not strings!)
-❌ Multiple objects with id:"cube1" → ✅ id:"cube1", id:"cube2", id:"cube3" (unique!)
-❌ Partial transform → ✅ Include position AND rotation AND scale
-❌ Using UUIDs from scene → ✅ Use simple ids or $delete operation
+Remove nodes by id:
+{"root":{"children":{"$delete":["blue-ball"]}}}
 
 Current prefab:
 ${JSON.stringify(prefab, null, 2)}

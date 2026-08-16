@@ -94,6 +94,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -108,19 +112,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#ffffff",
-              "wireframe": false,
-              "transparent": false,
-              "opacity": 1,
-              "metalness": 0,
-              "roughness": 1,
-              "side": "BackSide",
-              "texture": "/textures/proto32/checkers_01.png",
-              "repeat": true,
-              "repeatCount": [
-                20,
-                20
-              ]
+              "materialId": "material"
             }
           },
           "crashcatPhysics": {
@@ -190,6 +182,10 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -204,15 +200,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "basic",
-                  "color": "#e8e8e8",
-                  "toneMapped": true,
-                  "wireframe": false,
-                  "transparent": false,
-                  "opacity": 1,
-                  "metalness": 0,
-                  "roughness": 1,
-                  "side": "BackSide"
+                  "materialId": "material-2"
                 }
               }
             },
@@ -245,6 +233,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -259,20 +251,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#ffffff",
-              "toneMapped": true,
-              "wireframe": false,
-              "transparent": false,
-              "opacity": 1,
-              "metalness": 0,
-              "roughness": 1,
-              "texture": "/textures/proto32/checkers_01.png",
-              "repeat": true,
-              "repeatCount": [
-                29,
-                2
-              ]
+              "materialId": "material-3"
             }
           },
           "crashcatPhysics": {
@@ -309,6 +288,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -323,20 +306,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#ffffff",
-              "toneMapped": true,
-              "wireframe": false,
-              "transparent": false,
-              "opacity": 1,
-              "metalness": 0,
-              "roughness": 1,
-              "texture": "/textures/proto32/checkers_01.png",
-              "repeat": true,
-              "repeatCount": [
-                29,
-                2
-              ]
+              "materialId": "material-3"
             }
           },
           "crashcatPhysics": {
@@ -373,6 +343,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -387,20 +361,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#ffffff",
-              "toneMapped": true,
-              "wireframe": false,
-              "transparent": false,
-              "opacity": 1,
-              "metalness": 0,
-              "roughness": 1,
-              "texture": "/textures/proto32/checkers_01.png",
-              "repeat": true,
-              "repeatCount": [
-                29,
-                2
-              ]
+              "materialId": "material-3"
             }
           },
           "crashcatPhysics": {
@@ -437,6 +398,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -451,20 +416,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#ffffff",
-              "toneMapped": true,
-              "wireframe": false,
-              "transparent": false,
-              "opacity": 1,
-              "metalness": 0,
-              "roughness": 1,
-              "texture": "/textures/proto32/checkers_01.png",
-              "repeat": true,
-              "repeatCount": [
-                4,
-                4
-              ]
+              "materialId": "material-4"
             }
           },
           "crashcatPhysics": {
@@ -501,6 +453,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -515,20 +471,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#ffffff",
-              "toneMapped": true,
-              "wireframe": false,
-              "transparent": false,
-              "opacity": 1,
-              "metalness": 0,
-              "roughness": 1,
-              "texture": "/textures/proto32/checkers_01.png",
-              "repeat": true,
-              "repeatCount": [
-                4,
-                4
-              ]
+              "materialId": "material-4"
             }
           },
           "crashcatPhysics": {
@@ -565,6 +508,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -579,20 +526,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#ffffff",
-              "toneMapped": true,
-              "wireframe": false,
-              "transparent": false,
-              "opacity": 1,
-              "metalness": 0,
-              "roughness": 1,
-              "texture": "/textures/proto32/checkers_01.png",
-              "repeat": true,
-              "repeatCount": [
-                4,
-                4
-              ]
+              "materialId": "material-4"
             }
           },
           "crashcatPhysics": {
@@ -629,6 +563,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -643,20 +581,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#ffffff",
-              "toneMapped": true,
-              "wireframe": false,
-              "transparent": false,
-              "opacity": 1,
-              "metalness": 0,
-              "roughness": 1,
-              "texture": "/textures/proto32/checkers_01.png",
-              "repeat": true,
-              "repeatCount": [
-                4,
-                4
-              ]
+              "materialId": "material-4"
             }
           },
           "crashcatPhysics": {
@@ -693,6 +618,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -707,20 +636,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#ffffff",
-              "toneMapped": true,
-              "wireframe": false,
-              "transparent": false,
-              "opacity": 1,
-              "metalness": 0,
-              "roughness": 1,
-              "texture": "/textures/proto32/checkers_01.png",
-              "repeat": true,
-              "repeatCount": [
-                4,
-                4
-              ]
+              "materialId": "material-4"
             }
           },
           "crashcatPhysics": {
@@ -757,6 +673,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -771,20 +691,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#ffffff",
-              "toneMapped": true,
-              "wireframe": false,
-              "transparent": false,
-              "opacity": 1,
-              "metalness": 0,
-              "roughness": 1,
-              "texture": "/textures/proto32/checkers_01.png",
-              "repeat": true,
-              "repeatCount": [
-                4,
-                4
-              ]
+              "materialId": "material-4"
             }
           },
           "crashcatPhysics": {
@@ -821,6 +728,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -835,20 +746,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#ffffff",
-              "toneMapped": true,
-              "wireframe": false,
-              "transparent": false,
-              "opacity": 1,
-              "metalness": 0,
-              "roughness": 1,
-              "texture": "/textures/proto32/checkers_01.png",
-              "repeat": true,
-              "repeatCount": [
-                3.5,
-                2
-              ]
+              "materialId": "material-5"
             }
           },
           "crashcatPhysics": {
@@ -911,6 +809,10 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -926,14 +828,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#ffac4d",
-                  "toneMapped": true,
-                  "wireframe": false,
-                  "transparent": true,
-                  "opacity": 0.49,
-                  "metalness": 0,
-                  "roughness": 1
+                  "materialId": "material-6"
                 }
               }
             },
@@ -963,6 +858,10 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -977,14 +876,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#bababa",
-                  "toneMapped": true,
-                  "wireframe": false,
-                  "transparent": false,
-                  "opacity": 1,
-                  "metalness": 0,
-                  "roughness": 1
+                  "materialId": "material-7"
                 }
               },
               "crashcatPhysics": {
@@ -1021,6 +913,10 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -1035,14 +931,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#bababa",
-                  "toneMapped": true,
-                  "wireframe": false,
-                  "transparent": false,
-                  "opacity": 1,
-                  "metalness": 0,
-                  "roughness": 1
+                  "materialId": "material-7"
                 }
               },
               "crashcatPhysics": {
@@ -1080,6 +969,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -1094,9 +987,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#ff6b6b",
-              "transparent": true,
-              "opacity": 0.74
+              "materialId": "material-8"
             }
           },
           "sound": {
@@ -1160,6 +1051,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -1174,9 +1069,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#4ecdc4",
-              "transparent": true,
-              "opacity": 0.68
+              "materialId": "material-9"
             }
           },
           "sound": {
@@ -1253,6 +1146,12 @@
               "returnDuration": 2.5
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": false
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -1261,27 +1160,13 @@
                 2,
                 0.1,
                 2
-              ],
-              "castShadow": false
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#ffffff",
-              "toneMapped": true,
-              "wireframe": false,
-              "transparent": true,
-              "opacity": 1,
-              "metalness": 0,
-              "roughness": 1,
-              "texture": "/textures/proto32/checkers_02.png",
-              "repeat": true,
-              "repeatCount": [
-                1.5,
-                1.5
-              ]
+              "materialId": "material-10"
             }
           },
           "crashcatPhysics": {
@@ -1331,6 +1216,12 @@
               "returnDuration": 2.5
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": false
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -1339,27 +1230,13 @@
                 2,
                 0.1,
                 2
-              ],
-              "castShadow": false
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#ffffff",
-              "toneMapped": true,
-              "wireframe": false,
-              "transparent": true,
-              "opacity": 1,
-              "metalness": 0,
-              "roughness": 1,
-              "texture": "/textures/proto32/checkers_02.png",
-              "repeat": true,
-              "repeatCount": [
-                1.5,
-                1.5
-              ]
+              "materialId": "material-10"
             }
           },
           "crashcatPhysics": {
@@ -1405,6 +1282,13 @@
               "sensor": false
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "emitClickEvent": false,
+              "clickEventName": ""
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -1413,39 +1297,156 @@
                 1,
                 1,
                 1
-              ],
-              "emitClickEvent": false,
-              "clickEventName": ""
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "attach": "material",
-              "materialType": "standard",
-              "color": "#ffffff",
-              "toneMapped": true,
-              "wireframe": false,
-              "transparent": false,
-              "opacity": 1,
-              "sizeAttenuation": true,
-              "offset": [
-                0,
-                0
-              ],
-              "animateOffset": false,
-              "offsetSpeed": [
-                0,
-                0
-              ],
-              "metalness": 0,
-              "roughness": 1,
-              "texture": "/textures/proto32/orange_ochre.png"
+              "materialId": "material-11"
             }
           }
         },
         "children": []
       }
     ]
+  },
+  "materials": {
+    "material": {
+      "color": "#ffffff",
+      "wireframe": false,
+      "transparent": false,
+      "opacity": 1,
+      "metalness": 0,
+      "roughness": 1,
+      "side": "BackSide",
+      "texture": "/textures/proto32/checkers_01.png",
+      "repeat": true,
+      "repeatCount": [
+        20,
+        20
+      ]
+    },
+    "material-2": {
+      "materialType": "basic",
+      "color": "#e8e8e8",
+      "toneMapped": true,
+      "wireframe": false,
+      "transparent": false,
+      "opacity": 1,
+      "metalness": 0,
+      "roughness": 1,
+      "side": "BackSide"
+    },
+    "material-3": {
+      "materialType": "standard",
+      "color": "#ffffff",
+      "toneMapped": true,
+      "wireframe": false,
+      "transparent": false,
+      "opacity": 1,
+      "metalness": 0,
+      "roughness": 1,
+      "texture": "/textures/proto32/checkers_01.png",
+      "repeat": true,
+      "repeatCount": [
+        29,
+        2
+      ]
+    },
+    "material-4": {
+      "materialType": "standard",
+      "color": "#ffffff",
+      "toneMapped": true,
+      "wireframe": false,
+      "transparent": false,
+      "opacity": 1,
+      "metalness": 0,
+      "roughness": 1,
+      "texture": "/textures/proto32/checkers_01.png",
+      "repeat": true,
+      "repeatCount": [
+        4,
+        4
+      ]
+    },
+    "material-5": {
+      "materialType": "standard",
+      "color": "#ffffff",
+      "toneMapped": true,
+      "wireframe": false,
+      "transparent": false,
+      "opacity": 1,
+      "metalness": 0,
+      "roughness": 1,
+      "texture": "/textures/proto32/checkers_01.png",
+      "repeat": true,
+      "repeatCount": [
+        3.5,
+        2
+      ]
+    },
+    "material-6": {
+      "materialType": "standard",
+      "color": "#ffac4d",
+      "toneMapped": true,
+      "wireframe": false,
+      "transparent": true,
+      "opacity": 0.49,
+      "metalness": 0,
+      "roughness": 1
+    },
+    "material-7": {
+      "materialType": "standard",
+      "color": "#bababa",
+      "toneMapped": true,
+      "wireframe": false,
+      "transparent": false,
+      "opacity": 1,
+      "metalness": 0,
+      "roughness": 1
+    },
+    "material-8": {
+      "color": "#ff6b6b",
+      "transparent": true,
+      "opacity": 0.74
+    },
+    "material-9": {
+      "color": "#4ecdc4",
+      "transparent": true,
+      "opacity": 0.68
+    },
+    "material-10": {
+      "materialType": "standard",
+      "color": "#ffffff",
+      "toneMapped": true,
+      "wireframe": false,
+      "transparent": true,
+      "opacity": 1,
+      "metalness": 0,
+      "roughness": 1,
+      "texture": "/textures/proto32/checkers_02.png",
+      "repeat": true,
+      "repeatCount": [
+        1.5,
+        1.5
+      ]
+    },
+    "material-11": {
+      "materialType": "standard",
+      "color": "#ffffff",
+      "toneMapped": true,
+      "wireframe": false,
+      "transparent": false,
+      "opacity": 1,
+      "sizeAttenuation": true,
+      "offset": [
+        0,
+        0
+      ],
+      "metalness": 0,
+      "roughness": 1,
+      "texture": "/textures/proto32/orange_ochre.png"
+    }
   }
 }

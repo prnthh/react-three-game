@@ -1,10 +1,84 @@
-import { useState, type ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { DoubleSide } from 'three';
 import { base, colors, ui } from '../styles';
 import { FieldGroup, FieldRow, NumberInput } from './Input';
 
+export const MIN_SHADOW_MAP_SIZE = 128;
+export const MAX_SHADOW_MAP_SIZE = 2048;
+
+/** A small, raycastable Unity-style scene gizmo for otherwise invisible lights. */
+export function EditorLightGizmo({
+    color,
+    selected = false,
+}: {
+    color: string;
+    selected?: boolean;
+}) {
+    return (
+        <mesh
+            position={[0, -0.22, 0]}
+            renderOrder={10_000}
+        >
+            <coneGeometry args={[0.36, 0.72, 12, 1, true]} />
+            <meshBasicMaterial
+                color={selected ? '#ffffff' : color}
+                depthTest={false}
+                depthWrite={false}
+                opacity={selected ? 0.95 : 0.62}
+                side={DoubleSide}
+                toneMapped={false}
+                transparent
+                wireframe
+            />
+        </mesh>
+    );
+}
+
+export function normalizeShadowMapSize(value: unknown, fallback = 512) {
+    const numericValue = Number(value);
+    const finiteValue = Number.isFinite(numericValue) ? numericValue : fallback;
+    const clampedValue = Math.min(MAX_SHADOW_MAP_SIZE, Math.max(MIN_SHADOW_MAP_SIZE, finiteValue));
+    return Math.round(clampedValue / 128) * 128;
+}
+
+interface ShadowMapOwner {
+    shadow: {
+        map: { dispose(): void } | null;
+        mapPass?: { dispose(): void } | null;
+        mapSize: { set(width: number, height: number): unknown };
+        needsUpdate: boolean;
+    };
+}
+
+/** Recreate an expensive shadow target only after an authored value is committed. */
+export function useShadowMapResolution<T extends ShadowMapOwner>(
+    lightRef: RefObject<T | null>,
+    mapSize: number,
+) {
+    const appliedSize = useRef<number | null>(null);
+
+    useLayoutEffect(() => {
+        const shadow = lightRef.current?.shadow;
+        if (!shadow || appliedSize.current === mapSize) return;
+
+        const replacingTarget = appliedSize.current !== null;
+        appliedSize.current = mapSize;
+        shadow.mapSize.set(mapSize, mapSize);
+
+        if (replacingTarget) {
+            shadow.map?.dispose();
+            shadow.map = null;
+            shadow.mapPass?.dispose();
+            shadow.mapPass = null;
+        }
+
+        shadow.needsUpdate = true;
+    }, [lightRef, mapSize]);
+}
+
 export function mergeWithDefaults<T extends Record<string, any>>(
     defaults: T,
-    properties?: Record<string, any> | null,
+    properties?: Partial<NoInfer<T>> | null,
 ): T {
     const merged = { ...defaults };
 
@@ -68,6 +142,11 @@ function formatBiasStep(step: number) {
     });
 }
 
+type ShadowBiasValues = {
+    shadowBias: number;
+    shadowNormalBias: number;
+};
+
 export function ShadowBiasField({
     name,
     label,
@@ -77,10 +156,10 @@ export function ShadowBiasField({
     min = -1,
     max = 1,
 }: {
-    name: string;
+    name: keyof ShadowBiasValues;
     label: string;
-    values: Record<string, any>;
-    onChange: (values: Record<string, any>) => void;
+    values: ShadowBiasValues;
+    onChange: (values: Partial<ShadowBiasValues>) => void;
     fallback?: number;
     min?: number;
     max?: number;

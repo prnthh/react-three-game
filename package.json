@@ -1,27 +1,25 @@
 {
 	"name": "react-three-game",
 	"version": "0.0.112",
-	"description": "high performance 3D game engine built in React",
+	"description": "Serializable prefab documents for React Three Fiber scenes and games",
+	"types": "./dist/index.d.ts",
+	"main": "./dist/index.js",
+	"module": "./dist/index.js",
 	"exports": {
-		"./viewer": {
-			"types": "./dist/viewer.d.ts",
-			"import": "./dist/viewer.js",
-			"default": "./dist/viewer.js"
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js",
+			"default": "./dist/index.js"
 		},
 		"./editor": {
 			"types": "./dist/editor.d.ts",
 			"import": "./dist/editor.js",
 			"default": "./dist/editor.js"
 		},
-		"./plugins": {
-			"types": "./dist/plugins/index.d.ts",
-			"import": "./dist/plugins/index.js",
-			"default": "./dist/plugins/index.js"
-		},
-		"./plugins/crashcat": {
-			"types": "./dist/plugins/crashcat/index.d.ts",
-			"import": "./dist/plugins/crashcat/index.js",
-			"default": "./dist/plugins/crashcat/index.js"
+		"./plugins/*": {
+			"types": "./dist/plugins/*/index.d.ts",
+			"import": "./dist/plugins/*/index.js",
+			"default": "./dist/plugins/*/index.js"
 		},
 		"./package.json": "./package.json"
 	},
@@ -73,6 +71,7 @@
 		"vite": ">=8.0.16"
 	},
 	"dependencies": {
+		"three-mesh-bvh": "^0.9.14",
 		"zustand": ">=5.0.14"
 	}
 }

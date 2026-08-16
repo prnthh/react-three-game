@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { SoundPicker } from '../../assetviewer/page';
-import { useAssetRuntime, useNode, useSoundAssetRevision } from '../assetRuntime';
+import { useAssetRuntime, useSoundAssetRevision } from '../assetRuntime';
+import { useNode } from '../SceneContext';
 import { gameEvents, type ContactEventPayload, type NodePointerEventPayload } from '../GameEvents';
-import { Component } from './ComponentRegistry';
+import type { Component, ComponentEditorProps, ComponentViewProps } from './ComponentRegistry';
 import { BooleanField, FieldGroup, FieldRenderer, ListEditor, NumberField, SelectField, StringField } from './Input';
 import { colors, ui } from '../styles';
-import type { ComponentData } from '../types';
 import { PositionalAudio as ThreePositionalAudio } from 'three';
 import { useAudioListener } from '../AudioRuntime';
 import { withBasePath } from '../runtimeUtils';
+import { usePrefab } from '../SceneContext';
+import { useEditorRef } from '../EditorContext';
 
 type ClipMode = 'single' | 'random' | 'sequence';
 
@@ -126,16 +128,17 @@ function playBufferedAudio(audio: ThreePositionalAudio, buffer: AudioBuffer, pro
     audio.play();
 }
 
-function SoundComponentEditor({ component, onUpdate, basePath = '' }: { component: ComponentData; onUpdate: (newComp: any) => void; basePath?: string }) {
-    const clips = Array.isArray(component.properties.clips)
-        ? component.properties.clips.map((clip: unknown) => typeof clip === 'string' ? clip : '')
+function SoundComponentEditor({ properties, update }: ComponentEditorProps<SoundProperties>) {
+    const { basePath } = useEditorRef();
+    const clips = Array.isArray(properties.clips)
+        ? properties.clips.map((clip: unknown) => typeof clip === 'string' ? clip : '')
         : [];
-    const randomizePitch = Boolean(component.properties.randomizePitch);
-    const randomizeVolume = Boolean(component.properties.randomizeVolume);
-    const positional = Boolean(component.properties.positional);
+    const randomizePitch = Boolean(properties.randomizePitch);
+    const randomizeVolume = Boolean(properties.randomizeVolume);
+    const positional = Boolean(properties.positional);
 
     const setClips = (nextClips: string[]) => {
-        onUpdate({ clips: nextClips });
+        update({ clips: nextClips });
     };
 
     const addClip = () => {
@@ -157,12 +160,12 @@ function SoundComponentEditor({ component, onUpdate, basePath = '' }: { componen
             <StringField
                 name="eventName"
                 label="Listen Event"
-                values={component.properties}
-                onChange={onUpdate}
+                values={properties}
+                onChange={update}
                 placeholder="player:footstep"
             />
-            <BooleanField name="autoplay" label="Autoplay" values={component.properties} onChange={onUpdate} fallback={false} />
-            <BooleanField name="loop" label="Loop" values={component.properties} onChange={onUpdate} fallback={false} />
+            <BooleanField name="autoplay" label="Autoplay" values={properties} onChange={update} fallback={false} />
+            <BooleanField name="loop" label="Loop" values={properties} onChange={update} fallback={false} />
             <FieldRenderer
                 fields={[
                     {
@@ -172,8 +175,8 @@ function SoundComponentEditor({ component, onUpdate, basePath = '' }: { componen
                         options: CLIP_MODE_OPTIONS.map(option => ({ value: option.value, label: option.label })),
                     },
                 ]}
-                values={component.properties}
-                onChange={onUpdate}
+                values={properties}
+                onChange={update}
             />
             <ListEditor
                 label="Clips"
@@ -210,17 +213,17 @@ function SoundComponentEditor({ component, onUpdate, basePath = '' }: { componen
                     </div>
                 )}
             />
-            <BooleanField name="positional" label="Positional" values={component.properties} onChange={onUpdate} fallback={false} />
+            <BooleanField name="positional" label="Positional" values={properties} onChange={update} fallback={false} />
             {positional ? (
                 <>
-                    <NumberField name="refDistance" label="Ref Distance" values={component.properties} onChange={onUpdate} fallback={1} min={0.01} step={0.1} />
-                    <NumberField name="maxDistance" label="Max Distance" values={component.properties} onChange={onUpdate} fallback={24} min={0.01} step={0.1} />
-                    <NumberField name="rolloffFactor" label="Rolloff" values={component.properties} onChange={onUpdate} fallback={1} min={0} step={0.1} />
+                    <NumberField name="refDistance" label="Ref Distance" values={properties} onChange={update} fallback={1} min={0.01} step={0.1} />
+                    <NumberField name="maxDistance" label="Max Distance" values={properties} onChange={update} fallback={24} min={0.01} step={0.1} />
+                    <NumberField name="rolloffFactor" label="Rolloff" values={properties} onChange={update} fallback={1} min={0} step={0.1} />
                     <SelectField
                         name="distanceModel"
                         label="Distance Model"
-                        values={component.properties}
-                        onChange={onUpdate}
+                        values={properties}
+                        onChange={update}
                         fallback="inverse"
                         options={[
                             { value: 'inverse', label: 'Inverse' },
@@ -230,29 +233,30 @@ function SoundComponentEditor({ component, onUpdate, basePath = '' }: { componen
                     />
                 </>
             ) : null}
-            <BooleanField name="randomizePitch" label="Random Pitch" values={component.properties} onChange={onUpdate} fallback={false} />
+            <BooleanField name="randomizePitch" label="Random Pitch" values={properties} onChange={update} fallback={false} />
             {randomizePitch ? (
                 <>
-                    <NumberField name="minPitch" label="Min Pitch" values={component.properties} onChange={onUpdate} fallback={0.96} step={0.01} min={0.1} />
-                    <NumberField name="maxPitch" label="Max Pitch" values={component.properties} onChange={onUpdate} fallback={1.04} step={0.01} min={0.1} />
+                    <NumberField name="minPitch" label="Min Pitch" values={properties} onChange={update} fallback={0.96} step={0.01} min={0.1} />
+                    <NumberField name="maxPitch" label="Max Pitch" values={properties} onChange={update} fallback={1.04} step={0.01} min={0.1} />
                 </>
             ) : (
-                <NumberField name="pitch" label="Pitch" values={component.properties} onChange={onUpdate} fallback={1} step={0.01} min={0.1} />
+                <NumberField name="pitch" label="Pitch" values={properties} onChange={update} fallback={1} step={0.01} min={0.1} />
             )}
-            <BooleanField name="randomizeVolume" label="Random Volume" values={component.properties} onChange={onUpdate} fallback={false} />
+            <BooleanField name="randomizeVolume" label="Random Volume" values={properties} onChange={update} fallback={false} />
             {randomizeVolume ? (
                 <>
-                    <NumberField name="minVolume" label="Min Volume" values={component.properties} onChange={onUpdate} fallback={0.9} step={0.01} min={0} />
-                    <NumberField name="maxVolume" label="Max Volume" values={component.properties} onChange={onUpdate} fallback={1} step={0.01} min={0} />
+                    <NumberField name="minVolume" label="Min Volume" values={properties} onChange={update} fallback={0.9} step={0.01} min={0} />
+                    <NumberField name="maxVolume" label="Max Volume" values={properties} onChange={update} fallback={1} step={0.01} min={0} />
                 </>
             ) : (
-                <NumberField name="volume" label="Volume" values={component.properties} onChange={onUpdate} fallback={1} step={0.01} min={0} />
+                <NumberField name="volume" label="Volume" values={properties} onChange={update} fallback={1} step={0.01} min={0} />
             )}
         </FieldGroup>
     );
 }
 
-function SoundComponentView({ properties, children, basePath = '' }: { properties: SoundProperties; children?: React.ReactNode; basePath?: string }) {
+function SoundComponentView({ properties, children }: ComponentViewProps<SoundProperties>) {
+    const { basePath } = usePrefab();
     const { getSound } = useAssetRuntime();
     const { editMode, nodeId } = useNode();
     const listener = useAudioListener();
@@ -335,7 +339,7 @@ function SoundComponentView({ properties, children, basePath = '' }: { propertie
     );
 }
 
-const SoundComponent: Component = {
+const SoundComponent: Component<SoundProperties> = {
     name: 'Sound',
     Editor: SoundComponentEditor,
     View: SoundComponentView,

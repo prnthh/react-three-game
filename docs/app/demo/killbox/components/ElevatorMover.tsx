@@ -1,8 +1,10 @@
 "use client";
 
 import { useRef } from "react";
-import { FieldRenderer, useNode, useScene, useGameEvent } from "react-three-game/editor";
-import type { Component, ComponentViewProps, ContactEventPayload, FieldDefinition } from "react-three-game/editor";
+import { useNode, useNodeObject, useGameEvent } from "react-three-game";
+import type { Component, ComponentViewProps, ContactEventPayload } from "react-three-game";
+import { FieldRenderer } from "react-three-game/editor";
+import type { ComponentEditorProps, FieldDefinition } from "react-three-game/editor";
 import { useFrame } from "@react-three/fiber";
 
 const DEFAULT_CONTACT_EVENT_NAME = "elevator:contact";
@@ -24,7 +26,7 @@ type ElevatorMoverProperties = {
     returnDuration?: number;
 };
 
-const elevatorMoverFields: FieldDefinition[] = [
+const elevatorMoverFields = [
     {
         name: "contactEventName",
         type: "string",
@@ -36,20 +38,15 @@ const elevatorMoverFields: FieldDefinition[] = [
     { name: "startDelay", type: "number", label: "Start Delay", min: 0, step: 0.1 },
     { name: "returnDelay", type: "number", label: "Return Delay", min: 0, step: 0.1 },
     { name: "returnDuration", type: "number", label: "Return Duration", min: 0.01, step: 0.1 },
-];
+] satisfies FieldDefinition<ElevatorMoverProperties>[];
 
-type ElevatorMoverEditorProps = {
-    component: { properties: ElevatorMoverProperties };
-    onUpdate: (values: ElevatorMoverProperties) => void;
-};
-
-function ElevatorMoverEditor({ component, onUpdate }: ElevatorMoverEditorProps) {
-    return <FieldRenderer fields={elevatorMoverFields} values={component.properties} onChange={onUpdate} />;
+function ElevatorMoverEditor({ properties, update }: ComponentEditorProps<ElevatorMoverProperties>) {
+    return <FieldRenderer fields={elevatorMoverFields} values={properties} onChange={update} />;
 }
 
 function ElevatorMoverView({ properties, children }: ComponentViewProps<ElevatorMoverProperties>) {
     const { editMode, nodeId } = useNode();
-    const scene = useScene();
+    const object = useNodeObject();
     const phaseRef = useRef<ElevatorPhase>("idle");
     const waitTimerRef = useRef(0);
     const startHeightsRef = useRef<Record<string, number>>({});
@@ -88,7 +85,7 @@ function ElevatorMoverView({ properties, children }: ComponentViewProps<Elevator
             return;
         }
 
-        const platformObject = scene.getObject(nodeId);
+        const platformObject = object.current;
         if (!platformObject) {
             phaseRef.current = "idle";
             waitTimerRef.current = 0;
@@ -152,7 +149,7 @@ function ElevatorMoverView({ properties, children }: ComponentViewProps<Elevator
     return <>{children}</>;
 }
 
-const ElevatorMover: Component = {
+const ElevatorMover: Component<ElevatorMoverProperties> = {
     name: "ElevatorMover",
     Editor: ElevatorMoverEditor,
     View: ElevatorMoverView,

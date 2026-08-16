@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { PrefabEditor, PrefabEditorMode, registerComponent } from "react-three-game/editor";
-import type { Prefab } from "react-three-game/editor";
+import { PrefabEditorMode, registerComponent, type Prefab } from "react-three-game";
+import { PrefabEditor } from "react-three-game/editor";
 import {
     CrashcatPhysicsComponent,
     CrashcatRagdollComponent,
@@ -16,6 +16,9 @@ registerComponent(CrashcatRagdollComponent);
 const ragdollDemoPrefab: Prefab = {
     id: "ragdoll-demo",
     name: "Ragdoll Demo",
+    materials: {
+        floor: { color: "#334155", roughness: 0.9, metalness: 0.02 },
+    },
     root: {
         id: "ragdoll-root",
         name: "Ragdoll Root",
@@ -32,6 +35,7 @@ const ragdollDemoPrefab: Prefab = {
                             scale: [1, 1, 1],
                         },
                     },
+                    mesh: { type: "Mesh", properties: {} },
                     geometry: {
                         type: "Geometry",
                         properties: {
@@ -41,11 +45,7 @@ const ragdollDemoPrefab: Prefab = {
                     },
                     material: {
                         type: "Material",
-                        properties: {
-                            color: "#334155",
-                            roughness: 0.9,
-                            metalness: 0.02,
-                        },
+                        properties: { materialId: "floor" },
                     },
                     crashcatPhysics: {
                         type: "CrashcatPhysics",
@@ -157,7 +157,7 @@ function DemoBindings() {
 export default function RagdollDemo() {
     return (
         <main className="h-screen w-screen bg-slate-950">
-            <PrefabEditor basePath={BASE_PATH} initialPrefab={ragdollDemoPrefab} mode={PrefabEditorMode.Play}>
+            <PrefabEditor basePath={BASE_PATH} prefab={ragdollDemoPrefab} mode={PrefabEditorMode.Play}>
                 <CrashcatRuntime debug />
                 <DemoBindings />
                 <ambientLight intensity={0.65} />

@@ -122,6 +122,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -136,19 +140,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#ffffff",
-              "wireframe": false,
-              "transparent": false,
-              "opacity": 1,
-              "metalness": 0,
-              "roughness": 1,
-              "side": "BackSide",
-              "texture": "/textures/proto32/grey.png",
-              "repeat": true,
-              "repeatCount": [
-                20,
-                20
-              ]
+              "materialId": "material"
             }
           },
           "crashcatPhysics": {
@@ -161,5 +153,22 @@
         }
       }
     ]
+  },
+  "materials": {
+    "material": {
+      "color": "#ffffff",
+      "wireframe": false,
+      "transparent": false,
+      "opacity": 1,
+      "metalness": 0,
+      "roughness": 1,
+      "side": "BackSide",
+      "texture": "/textures/proto32/grey.png",
+      "repeat": true,
+      "repeatCount": [
+        20,
+        20
+      ]
+    }
   }
 }

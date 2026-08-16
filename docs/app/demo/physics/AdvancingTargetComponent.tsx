@@ -1,15 +1,16 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import {
-    FieldRenderer,
     gameEvents,
     useNode,
     useNodeObject,
     type Component,
     type ComponentViewProps,
-    type FieldDefinition,
-} from "react-three-game/editor";
+} from "react-three-game";
+import { FieldRenderer } from "react-three-game/editor";
+import type { ComponentEditorProps, FieldDefinition } from "react-three-game/editor";
 import type { Material, Mesh, Object3D } from "three";
+import { MACHINEGUN_PROJECTILE_ID_PREFIX } from "./IndustrialMachineGunComponent";
 
 type AdvancingTargetProperties = {
     speed?: number;
@@ -29,7 +30,7 @@ const DEFAULT_HIT_COLOR = "#f43f5e";
 const DEFAULT_HIT_EVENT = "target:hit";
 const DEFAULT_BREACH_EVENT = "target:breach";
 
-const advancingTargetFields: FieldDefinition[] = [
+const advancingTargetFields = [
     { name: "speed", type: "number", label: "Speed", min: 0, step: 0.1 },
     { name: "resetZ", type: "number", label: "Reset Z", step: 0.5 },
     { name: "breachZ", type: "number", label: "Breach Z", step: 0.5 },
@@ -37,7 +38,7 @@ const advancingTargetFields: FieldDefinition[] = [
     { name: "hitColor", type: "color", label: "Hit Color" },
     { name: "hitEventName", type: "string", label: "Hit Event" },
     { name: "breachEventName", type: "string", label: "Breach Event" },
-];
+] satisfies FieldDefinition<AdvancingTargetProperties>[];
 
 function setObjectColor(object: Object3D, color: string) {
     object.traverse((child) => {
@@ -61,20 +62,15 @@ function isHitForNode(payload: unknown, nodeId: string) {
         targetNodeId?: unknown;
     } | null;
 
-    return detail?.sourceEntityId === nodeId
-        || detail?.sourceNodeId === nodeId
-        || detail?.targetEntityId === nodeId
-        || detail?.targetNodeId === nodeId;
+    const sourceId = detail?.sourceNodeId ?? detail?.sourceEntityId;
+    const targetId = detail?.targetNodeId ?? detail?.targetEntityId;
+    return sourceId === nodeId
+        && typeof targetId === "string"
+        && targetId.startsWith(MACHINEGUN_PROJECTILE_ID_PREFIX);
 }
 
-function AdvancingTargetEditor({
-    component,
-    onUpdate,
-}: {
-    component: { properties: AdvancingTargetProperties };
-    onUpdate: (next: Partial<AdvancingTargetProperties>) => void;
-}) {
-    return <FieldRenderer fields={advancingTargetFields} values={component.properties} onChange={onUpdate} />;
+function AdvancingTargetEditor({ properties, update }: ComponentEditorProps<AdvancingTargetProperties>) {
+    return <FieldRenderer fields={advancingTargetFields} values={properties} onChange={update} />;
 }
 
 function AdvancingTargetView({
@@ -142,7 +138,7 @@ function AdvancingTargetView({
     return <>{children}</>;
 }
 
-const AdvancingTargetComponent: Component = {
+const AdvancingTargetComponent: Component<AdvancingTargetProperties> = {
     name: "AdvancingTarget",
     Editor: AdvancingTargetEditor,
     View: AdvancingTargetView,

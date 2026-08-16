@@ -6,33 +6,29 @@ import { useStore } from "zustand";
 
 import { findComponent, getNodeUserData } from "./types";
 import type { ComponentData, GameObject as GameObjectType, Prefab } from "./types";
-import type { Component, ComponentViewProps } from "./components/ComponentRegistry";
+import type { Component } from "./components/ComponentRegistry";
 import { getComponentDef } from "./components/ComponentRegistry";
 import { loadModel, loadSound, loadTexture } from "../dragdrop";
 import { GameInstanceBatch, GameInstanceProvider, getRepeatAxesFromModelProperties } from "./InstanceProvider";
 import { composeTransform, decompose, withBasePath } from "./runtimeUtils";
 import { createPrefabStore, PrefabStoreProvider, usePrefabChildIds, usePrefabNode, usePrefabRootId, usePrefabStore, usePrefabStoreApi } from "./prefabStore";
 import type { PrefabStoreApi } from "./prefabStore";
-import { AssetRuntimeProvider, NodeScope, useAssetRuntime } from "./assetRuntime";
+import { AssetRuntimeProvider, useAssetRuntime } from "./assetRuntime";
 import { gameEvents } from "./GameEvents";
-import { useScene, type Scene } from "./SceneContext";
+import { NodeScope, PrefabEditorMode, usePrefab, useScene, type PrefabApi, type Scene } from "./SceneContext";
 import { SceneProvider } from "./SceneProvider";
 import { AudioRuntimeProvider } from "./AudioRuntime";
+import { MaterialRuntimeProvider } from "./components/MaterialComponent";
 import { SelectionRuntimeProvider, useNodeSelected } from "./SelectionRuntime";
 import {
     createNodeInteractionHandlers,
     type NodeInteractionEvent,
     type NodeInteractionEventType,
-    type NodeInteractionHandlers,
 } from "./usePointerEvents";
 
 const IDENTITY = new Matrix4();
 
 const EMPTY_NODE_COMPONENTS: AnalyzedNodeComponents = {
-    geometry: undefined,
-    materials: [],
-    models: [],
-    sprite: undefined,
     clickEvent: { enabled: false, eventName: null },
     composition: [],
 };
@@ -60,24 +56,22 @@ export interface PrefabRootProps {
     onPointerEvent?: (eventType: NodeInteractionEventType, event: NodeInteractionEvent, node: GameObjectType) => void;
     onEditNodeClick?: (event: ThreeEvent<MouseEvent>, node: GameObjectType) => void;
     basePath?: string;
-    /** Advanced: inject a Scene implementation, as PrefabEditor does for history-aware mutations. */
+    /** Advanced: inject the outer scene and document APIs, as PrefabEditor does. */
     scene?: Scene;
-    /** Advanced: share Object3D/handle ids with a parent root. Assets are always shared. */
-    shareRuntimeObjects?: boolean;
+    prefab?: PrefabApi;
     children?: React.ReactNode;
 }
 
 type CompositionComponent = {
     key: string;
+    type: string;
     View: NonNullable<Component["View"]>;
     properties: ComponentData["properties"];
+    attachment: boolean;
+    object: boolean;
 };
 
 type AnalyzedNodeComponents = {
-    geometry: ComponentData | undefined;
-    materials: Array<{ key: string; component: ComponentData }>;
-    models: Array<{ key: string; component: ComponentData }>;
-    sprite: ComponentData | undefined;
     clickEvent: ClickEventConfig;
     composition: CompositionComponent[];
 };
@@ -88,8 +82,7 @@ type ClickEventConfig = {
 };
 
 export const PrefabRoot = forwardRef<Scene, PrefabRootProps>((props, ref) => {
-    const { data, store } = props;
-    const { selectedId, ...bodyProps } = props;
+    const { data, store, selectedId, editMode, ...bodyProps } = props;
     const [ownedStore] = useState<PrefabStoreApi | null>(() => {
         if (store) return null;
         if (data) return createPrefabStore(data);
@@ -108,21 +101,25 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>((props, ref) => {
 
     return (
         <PrefabStoreProvider store={resolvedStore}>
-            <AssetRuntimeProvider isolateNodes={!props.shareRuntimeObjects}>
-                <SceneProvider store={resolvedStore} scene={props.scene} editMode={props.editMode} basePath={props.basePath}>
-                    <AudioRuntimeProvider>
-                        <SelectionRuntimeProvider selectedId={selectedId}>
-                            <PrefabRootBody ref={ref} {...bodyProps} />
-                        </SelectionRuntimeProvider>
-                    </AudioRuntimeProvider>
+            <AssetRuntimeProvider>
+                <SceneProvider store={resolvedStore} scene={props.scene} prefab={props.prefab} editMode={editMode} basePath={props.basePath}>
+                    <MaterialRuntimeProvider>
+                        <AudioRuntimeProvider>
+                            <SelectionRuntimeProvider selectedId={selectedId}>
+                                <PrefabRootBody ref={ref} {...bodyProps} />
+                            </SelectionRuntimeProvider>
+                        </AudioRuntimeProvider>
+                    </MaterialRuntimeProvider>
                 </SceneProvider>
             </AssetRuntimeProvider>
         </PrefabStoreProvider>
     );
 });
 
-const PrefabRootBody = memo(forwardRef<Scene, PrefabRootProps>(({ editMode, onSelect, onPointerEvent, onEditNodeClick, basePath = "", children }, ref) => {
+const PrefabRootBody = memo(forwardRef<Scene, PrefabRootProps>(({ onSelect, onPointerEvent, onEditNodeClick, basePath = "", children }, ref) => {
     const scene = useScene();
+    const editMode = scene.mode === PrefabEditorMode.Edit;
+    const prefab = usePrefab();
     const runtime = useAssetRuntime();
     const storeApi = usePrefabStoreApi();
     const assetRefCounts = useStore(storeApi, state => state.assetRefCounts);
@@ -240,12 +237,12 @@ const PrefabRootBody = memo(forwardRef<Scene, PrefabRootProps>(({ editMode, onSe
             editMode={editMode}
             onEditClick={editMode ? handleEditClick : undefined}
             onPointerEvent={editMode ? undefined : handleNodePointerEvent}
-            registerRef={runtime.registerObject}
-            getObject={runtime.getObject}
+            registerRef={prefab.registerObject}
+            getObject={prefab.getObject}
         >
             <StoreRootNode
                 onPointerEvent={editMode ? undefined : handleNodePointerEvent}
-                registerRef={runtime.registerObject}
+                registerRef={prefab.registerObject}
                 editMode={editMode}
                 parentMatrix={IDENTITY}
                 basePath={basePath}
@@ -261,76 +258,35 @@ function StoreRootNode(props: Omit<RendererProps, "nodeId">) {
     return <GameObjectRenderer key={`${prefabId ?? ''}:${rootId}`} {...props} nodeId={rootId} />;
 }
 
-function getClickEventConfig(component: ComponentData | undefined): ClickEventConfig {
-    if (!component?.properties?.emitClickEvent) {
-        return { enabled: false, eventName: null };
-    }
-
-    const eventName = component.properties.clickEventName;
+function getClickEventConfig(node: GameObjectType): ClickEventConfig {
+    const component = Object.values(node.components ?? {}).find(entry => entry?.properties?.emitClickEvent);
+    const eventName = component?.properties.clickEventName;
     return {
-        enabled: true,
+        enabled: Boolean(component),
         eventName: typeof eventName === 'string' && eventName.trim() ? eventName.trim() : null,
     };
 }
 
-function firstEnabledClickEvent(...configs: ClickEventConfig[]): ClickEventConfig {
-    return configs.find(config => config.enabled) ?? { enabled: false, eventName: null };
-}
-
 function analyzeNodeComponents(node: GameObjectType): AnalyzedNodeComponents {
-    let bufferGeometry: ComponentData | undefined;
-    let geometry: ComponentData | undefined;
-    const materials: Array<{ key: string; component: ComponentData }> = [];
-    const models: Array<{ key: string; component: ComponentData }> = [];
-    let sprite: ComponentData | undefined;
     const composition: CompositionComponent[] = [];
 
     for (const [key, component] of Object.entries(node.components ?? {})) {
-        if (!component?.type) continue;
+        if (!component?.type || component.type === "Transform") continue;
+        const def = getComponentDef(component.type);
+        if (!def?.View) continue;
 
-        switch (component.type) {
-            case "Transform":
-                break;
-            case "BufferGeometry":
-                bufferGeometry = component;
-                break;
-            case "Geometry":
-                geometry = component;
-                break;
-            case "Material":
-                materials.push({ key, component });
-                break;
-            case "Model":
-                models.push({ key, component });
-                break;
-            case "Sprite":
-                sprite = component;
-                break;
-            default: {
-                const def = getComponentDef(component.type);
-                if (!def?.View) break;
-
-                composition.push({
-                    key,
-                    View: def.View,
-                    properties: component.properties,
-                });
-                break;
-            }
-        }
+        composition.push({
+            key,
+            type: component.type,
+            View: def.View,
+            properties: component.properties,
+            attachment: def.attachment === true,
+            object: def.disableSiblingComposition === 'object',
+        });
     }
 
     return {
-        geometry: bufferGeometry ?? geometry,
-        materials,
-        models,
-        sprite,
-        clickEvent: firstEnabledClickEvent(
-            getClickEventConfig(bufferGeometry),
-            getClickEventConfig(geometry),
-            ...models.map(({ component }) => getClickEventConfig(component)),
-            getClickEventConfig(sprite),
-        ),
+        clickEvent: getClickEventConfig(node),
         composition,
     };
 }
@@ -398,7 +354,7 @@ function InstancedNode({
     const localTransform = getNodeTransformProps(gameObject);
     const isSelected = useNodeSelected(nodeId);
 
-    const modelComponent = analyzedComponents.models[0]?.component;
+    const modelComponent = findComponent(gameObject, "Model");
     const modelPath = modelComponent?.properties?.filename
         ? withBasePath(basePath, modelComponent.properties.filename)
         : undefined;
@@ -407,13 +363,21 @@ function InstancedNode({
         [gameObject?.id, modelComponent, modelPath]
     );
 
+    const groupRef = useRef<Group | null>(null);
     const handleGroupRef = useCallback((object: Group | null) => {
+        groupRef.current = object;
         registerRef(nodeId, object);
     }, [nodeId, registerRef]);
 
     if (!gameObject) return null;
 
     const nodeVisible = isVisible && !gameObject.hidden;
+    const nodeInteractionHandlers = !editMode && analyzedComponents.clickEvent.enabled && onPointerEvent
+        ? createNodeInteractionHandlers((eventType, event) => {
+            event.stopPropagation();
+            onPointerEvent(eventType, event, nodeId, groupRef.current, analyzedComponents.clickEvent.eventName);
+        })
+        : undefined;
     const world = useMemo(
         () => parentMatrix.clone().multiply(composeTransform(localTransform.position, localTransform.rotation, localTransform.scale)),
         [parentMatrix, transformComponent],
@@ -443,28 +407,20 @@ function InstancedNode({
             basePath={basePath}
         />
     );
-    const componentRuntimeProps: ComponentRuntimeProps = {
-        editMode,
-        nodeInteractionHandlers: undefined,
-        position: localTransform.position,
-        rotation: localTransform.rotation,
-        scale: localTransform.scale,
-        worldPosition: analyzedComponents.composition.length ? decompose(world).position : undefined,
-    };
-    let logicalContent: React.ReactNode = childNodes;
-    for (const { key, View, properties } of analyzedComponents.composition) {
-        logicalContent = (
-            <View key={key} properties={properties} basePath={basePath} {...componentRuntimeProps}>
-                {logicalContent}
-            </View>
-        );
-    }
+    const logicalContent = renderNodeContent(analyzedComponents, childNodes, "Model");
 
     return (
-        <NodeScope nodeId={nodeId} editMode={editMode} isSelected={isSelected}>
+        <NodeScope
+            nodeId={nodeId}
+            editMode={editMode}
+            isSelected={isSelected}
+            nodeInteractionHandlers={nodeInteractionHandlers}
+            worldPosition={analyzedComponents.composition.length ? decompose(world).position : undefined}
+        >
             <group
                 ref={handleGroupRef}
                 {...groupProps}
+                {...nodeInteractionHandlers}
             >
                 {logicalContent}
             </group>
@@ -532,24 +488,22 @@ function StandardNode({
         basePath={basePath}
     />;
 
-    const componentRuntimeProps: ComponentRuntimeProps = {
-        editMode,
-        nodeInteractionHandlers: primaryInteractionHandlers,
-        ...transformProps,
-        worldPosition: analyzedComponents.composition.length ? decompose(world).position : undefined,
-    };
     const inner = renderNodeContent(
         analyzedComponents,
-        primaryInteractionHandlers,
         childNodes,
-        basePath,
-        componentRuntimeProps,
     );
     return (
-        <NodeScope nodeId={nodeId} editMode={editMode} isSelected={isSelected}>
+        <NodeScope
+            nodeId={nodeId}
+            editMode={editMode}
+            isSelected={isSelected}
+            nodeInteractionHandlers={primaryInteractionHandlers}
+            worldPosition={analyzedComponents.composition.length ? decompose(world).position : undefined}
+        >
             <group
                 ref={handleGroupRef}
                 {...groupProps}
+                {...primaryInteractionHandlers}
                 visible={nodeVisible}
             >
                 {inner}
@@ -573,9 +527,6 @@ interface RendererProps {
     isVisible?: boolean;
     basePath?: string;
 }
-
-type PrimaryInteractionHandlers = NodeInteractionHandlers;
-type ComponentRuntimeProps = Pick<ComponentViewProps, "editMode" | "nodeInteractionHandlers" | "position" | "rotation" | "scale" | "worldPosition">;
 
 function ChildNodes({ childIds, parentMatrix, ...props }: { childIds: string[]; parentMatrix: Matrix4 } & Omit<RendererProps, 'nodeId' | 'parentMatrix'>) {
     return childIds.map(childId =>
@@ -644,116 +595,33 @@ function getNodeTransformProps(node?: GameObjectType | null) {
 
 function renderNodeContent(
     analyzedComponents: AnalyzedNodeComponents,
-    primaryInteractionHandlers?: PrimaryInteractionHandlers,
     childNodes?: React.ReactNode,
-    basePath = "",
-    componentRuntimeProps?: ComponentRuntimeProps,
+    skippedType?: string,
 ) {
-    const geometry = analyzedComponents.geometry;
-    const models = analyzedComponents.models;
-    const materials = analyzedComponents.materials;
-    const primaryMaterial = materials[0]?.component;
-    const sprite = analyzedComponents.sprite;
-    const shapeKind = sprite?.type ? 'sprite' : geometry?.type ? 'mesh' : models.length > 0 ? 'model' : 'none';
-    let materialContent: React.ReactNode = null;
-
-    switch (shapeKind) {
-        case 'sprite': {
-            const materialDef = primaryMaterial?.type ? getComponentDef(primaryMaterial.type) : undefined;
-            if (primaryMaterial?.properties && materialDef?.View) {
-                const materialIsSprite = primaryMaterial.properties.materialType === 'sprite';
-                materialContent = (
-                    <materialDef.View
-                        key={materials[0]?.key ?? 'material'}
-                        properties={{
-                            ...primaryMaterial.properties,
-                            materialType: 'sprite',
-                            attach: 'material',
-                            transparent: materialIsSprite ? primaryMaterial.properties.transparent : true,
-                            depthTest: materialIsSprite ? primaryMaterial.properties.depthTest : false,
-                            depthWrite: materialIsSprite ? primaryMaterial.properties.depthWrite : false,
-                        }}
-                        basePath={basePath}
-                    />
-                );
-            }
-            break;
-        }
-        case 'mesh': {
-            materialContent = materials.map(({ key, component }) => {
-                const materialDef = component.type ? getComponentDef(component.type) : undefined;
-                if (!component.properties || !materialDef?.View) return null;
-                return <materialDef.View key={key} properties={component.properties} basePath={basePath} />;
-            });
-            break;
-        }
-    }
-
-    let primaryContent: React.ReactNode = null;
-    let contentChildren = childNodes;
-    const modelContent = models.map(({ key, component }) => {
-        if (!component.type || component.properties?.instanced) return null;
-
-        const modelDef = getComponentDef(component.type);
-        if (!modelDef?.View) return null;
-
-        return <modelDef.View key={key} properties={component.properties} basePath={basePath} />;
-    });
-
-    switch (shapeKind) {
-        case 'sprite': {
-            primaryContent = (
-                <sprite
-                    center={sprite?.properties?.center ?? [0.5, 0.5]}
-                    {...primaryInteractionHandlers}
-                >
-                    {materialContent}
-                    {childNodes}
-                </sprite>
-            );
-            contentChildren = null;
-            break;
-        }
-        case 'mesh': {
-            const geometryDef = geometry?.type ? getComponentDef(geometry.type) : undefined;
-            if (!geometry?.properties || !geometryDef?.View) break;
-
-            const GeometryView = geometryDef.View;
-            const geometryProperties = geometry.properties ?? {};
-            const visible = geometryProperties.visible !== false;
-
-            primaryContent = (
-                <mesh
-                    visible={visible}
-                    castShadow={visible && geometryProperties.castShadow !== false}
-                    receiveShadow={visible && geometryProperties.receiveShadow !== false}
-                    {...primaryInteractionHandlers}
-                >
-                    <GeometryView properties={geometry.properties} basePath={basePath} />
-                    {materialContent}
-                </mesh>
-            );
-            break;
-        }
-        case 'model': {
-            primaryContent = primaryInteractionHandlers ? <group {...primaryInteractionHandlers}>{modelContent}</group> : modelContent;
-            break;
-        }
-    }
-
-    if (shapeKind !== 'model' && modelContent.some(Boolean)) {
-        primaryContent = <>{primaryContent}{modelContent}</>;
-    }
-
-    let content: React.ReactNode = <>{primaryContent}{contentChildren}</>;
-    for (const { key, View, properties } of analyzedComponents.composition) {
-        content = (
-            <View key={key} properties={properties} basePath={basePath} {...componentRuntimeProps}>
-                {content}
+    const components = analyzedComponents.composition.filter(component => component.type !== skippedType);
+    let content = components
+        .filter(component => component.attachment)
+        .reduceRight<React.ReactNode>((children, { key, View, properties }) => (
+            <View key={key} properties={properties}>
+                {children}
             </View>
-        );
-    }
-    return content;
+        ), childNodes);
+
+    content = components
+        .filter(component => component.object)
+        .reduceRight<React.ReactNode>((children, { key, View, properties }) => (
+            <View key={key} properties={properties}>
+                {children}
+            </View>
+        ), content);
+
+    return components
+        .filter(component => !component.attachment && !component.object)
+        .reduceRight<React.ReactNode>((children, { key, View, properties }) => (
+            <View key={key} properties={properties}>
+                {children}
+            </View>
+        ), content);
 }
 
 export default PrefabRoot;

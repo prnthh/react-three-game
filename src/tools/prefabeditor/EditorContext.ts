@@ -1,11 +1,11 @@
 import { createContext, useContext } from "react";
-import type { PrefabEditorMode, Scene } from "./SceneContext";
+import type { PrefabApi, Scene } from "./SceneContext";
 import type { Prefab } from "./types";
 import type { ExportGLBOptions } from "./utils";
 
-export interface PrefabEditorRef extends Scene {
+export interface PrefabEditorRef extends Scene, PrefabApi {
     save: () => Prefab;
-    load: (prefab: Prefab, options?: { resetHistory?: boolean; notifyChange?: boolean }) => void;
+    load: (prefab: Prefab) => void;
     undo: () => void;
     redo: () => void;
     screenshot: () => void;
@@ -15,9 +15,6 @@ export interface PrefabEditorRef extends Scene {
 }
 
 export interface EditorContextType {
-    mode: PrefabEditorMode;
-    basePath: string;
-    setMode: (mode: PrefabEditorMode) => void;
     transformMode: "translate" | "rotate" | "scale";
     setTransformMode: (mode: "translate" | "rotate" | "scale") => void;
     scaleSnap: number;
@@ -27,8 +24,6 @@ export interface EditorContextType {
     rotationSnap: number;
     setRotationSnap: (resolution: number) => void;
     onFocusNode?: (nodeId: string) => void;
-    onScreenshot?: () => void;
-    onExportGLB?: () => void;
 }
 
 export const EditorContext = createContext<EditorContextType | null>(null);

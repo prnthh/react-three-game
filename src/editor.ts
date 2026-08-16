@@ -1,8 +1,9 @@
-import "./viewer";
+import { registerBuiltinComponentEditors } from "./tools/prefabeditor/components";
+import "./index";
 
-export { registerBuiltinComponents } from "./tools/prefabeditor/components";
+registerBuiltinComponentEditors();
 
-export * from "./viewer";
+export type { ComponentEditorProps } from "./tools/prefabeditor/components/ComponentRegistry";
 
 export { default as PrefabEditor } from "./tools/prefabeditor/PrefabEditor";
 export type { PrefabEditorProps, PrefabEditorRef } from "./tools/prefabeditor/PrefabEditor";
@@ -42,21 +43,9 @@ export {
 export type { ExportGLBOptions } from "./tools/prefabeditor/utils";
 
 export { decomposeModelToPrefabNodes } from "./tools/prefabeditor/modelPrefab";
-export type { DecomposeModelOptions } from "./tools/prefabeditor/modelPrefab";
+export type { DecomposeModelOptions, DecomposedPrefabNodes } from "./tools/prefabeditor/modelPrefab";
 
-export type { FieldDefinition, FieldType } from "./tools/prefabeditor/components/Input";
-export { MaterialOverridesProvider, useMaterialOverrides } from "./tools/prefabeditor/components/MaterialComponent";
-export type { MaterialOverrides } from "./tools/prefabeditor/components/MaterialComponent";
-
-export {
-  float,
-  positionLocal,
-  sin,
-  time,
-  uniform,
-  vec3,
-} from "three/tsl";
-
+export type { FieldDefinition } from "./tools/prefabeditor/components/Input";
 export { loadFiles } from "./tools/dragdrop/DragDropLoader";
 export type { AssetLoadOptions } from "./tools/dragdrop/DragDropLoader";
 

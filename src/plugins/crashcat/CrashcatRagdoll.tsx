@@ -27,9 +27,11 @@ import {
 } from "../../tools/prefabeditor/components/Input";
 import type {
     Component,
+    ComponentEditorProps,
     ComponentViewProps,
     NodeInteractionHandlers,
 } from "../../tools/prefabeditor/components/ComponentRegistry";
+import { useNode } from "../../tools/prefabeditor/SceneContext";
 import { useCrashcat, type CrashcatApi } from "./CrashcatRuntime";
 
 export enum RagdollBodyPart {
@@ -415,13 +417,13 @@ function stabilizeRagdoll(bodies: Map<RagdollBodyPart, RigidBody>, skeleton: Ske
 const meshPosition = new Vector3();
 const meshQuaternion = new Quaternion();
 
-const ragdollFields: FieldDefinition[] = [
+const ragdollFields = [
     { name: "scale", type: "number", label: "Scale", step: 0.1 },
     { name: "swingAngle", type: "number", label: "Swing Angle", step: 0.05 },
     { name: "shoulderAngle", type: "number", label: "Shoulder Angle", step: 0.05 },
     { name: "twistAngle", type: "number", label: "Twist Angle", step: 0.05 },
     { name: "clickImpulse", type: "number", label: "Click Impulse", min: 0, step: 0.5 },
-];
+] satisfies FieldDefinition<CrashcatRagdollComponentProperties>[];
 
 export function CrashcatRagdoll({
     position = DEFAULT_POSITION,
@@ -548,20 +550,14 @@ export function CrashcatRagdoll({
     );
 }
 
-function CrashcatRagdollEditor({
-    component,
-    onUpdate,
-}: {
-    component: { properties: CrashcatRagdollComponentProperties };
-    onUpdate: (values: CrashcatRagdollComponentProperties) => void;
-}) {
+function CrashcatRagdollEditor({ properties, update }: ComponentEditorProps<CrashcatRagdollComponentProperties>) {
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <FieldRenderer fields={ragdollFields} values={component.properties} onChange={onUpdate} />
-            <BooleanField name="stabilize" label="Stabilize" values={component.properties} onChange={onUpdate} fallback />
-            <StringField name="color" label="Color" values={component.properties} onChange={onUpdate} fallback="#f97316" />
-            <Vector3Field name="initialLinearVelocity" label="Initial Linear Velocity" values={component.properties} onChange={onUpdate} fallback={[0, 0, 0]} />
-            <Vector3Field name="initialAngularVelocity" label="Initial Angular Velocity" values={component.properties} onChange={onUpdate} fallback={[0, 0, 0]} />
+            <FieldRenderer fields={ragdollFields} values={properties} onChange={update} />
+            <BooleanField name="stabilize" label="Stabilize" values={properties} onChange={update} fallback />
+            <StringField name="color" label="Color" values={properties} onChange={update} fallback="#f97316" />
+            <Vector3Field name="initialLinearVelocity" label="Initial Linear Velocity" values={properties} onChange={update} fallback={[0, 0, 0]} />
+            <Vector3Field name="initialAngularVelocity" label="Initial Angular Velocity" values={properties} onChange={update} fallback={[0, 0, 0]} />
         </div>
     );
 }
@@ -569,11 +565,9 @@ function CrashcatRagdollEditor({
 function CrashcatRagdollView({
     properties,
     children,
-    editMode,
-    nodeInteractionHandlers,
-    worldPosition,
 }: ComponentViewProps<CrashcatRagdollComponentProperties>) {
     const scene = useThree((state) => state.scene);
+    const { editMode, nodeInteractionHandlers, worldPosition } = useNode();
 
     return (
         <>
@@ -600,7 +594,7 @@ function CrashcatRagdollView({
     );
 }
 
-const CrashcatRagdollComponent: Component = {
+const CrashcatRagdollComponent: Component<CrashcatRagdollComponentProperties> = {
     name: "CrashcatRagdoll",
     Editor: CrashcatRagdollEditor,
     View: CrashcatRagdollView,

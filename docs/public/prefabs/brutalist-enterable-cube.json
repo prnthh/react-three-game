@@ -49,6 +49,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -63,16 +67,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#a2a49d",
-              "texture": "/textures/floor/terrain/snow-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                12,
-                10
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.86
+              "materialId": "material"
             }
           },
           "crashcatPhysics": {
@@ -108,6 +103,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -122,17 +121,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#989a95",
-              "texture": "/textures/floor/terrain/snow-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                12,
-                10
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
+              "materialId": "material-2"
             }
           },
           "crashcatPhysics": {
@@ -168,6 +157,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -182,17 +175,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#b8b8b2",
-              "texture": "/textures/floor/terrain/snow-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                12,
-                3
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
+              "materialId": "material-3"
             }
           },
           "crashcatPhysics": {
@@ -228,6 +211,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -242,17 +229,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#b8b8b2",
-              "texture": "/textures/floor/terrain/snow-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                10,
-                3
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
+              "materialId": "material-4"
             }
           },
           "crashcatPhysics": {
@@ -288,6 +265,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -302,17 +283,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#b8b8b2",
-              "texture": "/textures/floor/terrain/snow-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                10,
-                3
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
+              "materialId": "material-4"
             }
           },
           "crashcatPhysics": {
@@ -348,6 +319,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -362,17 +337,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#b8b8b2",
-              "texture": "/textures/floor/terrain/snow-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                5,
-                3
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
+              "materialId": "material-5"
             }
           },
           "crashcatPhysics": {
@@ -408,6 +373,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -422,17 +391,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#b8b8b2",
-              "texture": "/textures/floor/terrain/snow-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                5,
-                3
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
+              "materialId": "material-5"
             }
           },
           "crashcatPhysics": {
@@ -468,6 +427,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -482,17 +445,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#b8b8b2",
-              "texture": "/textures/floor/terrain/snow-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                4,
-                1
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
+              "materialId": "material-6"
             }
           },
           "crashcatPhysics": {
@@ -528,6 +481,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -542,17 +499,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#777a74",
-              "texture": "/textures/floor/terrain/snow-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                7,
-                3
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
+              "materialId": "material-7"
             }
           },
           "crashcatPhysics": {
@@ -588,6 +535,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -602,17 +553,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#777a74",
-              "texture": "/textures/floor/terrain/snow-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                5,
-                3
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
+              "materialId": "material-8"
             }
           },
           "crashcatPhysics": {
@@ -648,6 +589,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -662,17 +607,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#777a74",
-              "texture": "/textures/floor/terrain/snow-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                5,
-                3
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
+              "materialId": "material-8"
             }
           },
           "crashcatPhysics": {
@@ -708,6 +643,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -722,17 +661,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#777a74",
-              "texture": "/textures/floor/terrain/snow-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                5,
-                3
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
+              "materialId": "material-8"
             }
           },
           "crashcatPhysics": {
@@ -768,6 +697,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -782,17 +715,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#777a74",
-              "texture": "/textures/floor/terrain/snow-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                5,
-                3
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.94,
-              "metalness": 0.02
+              "materialId": "material-8"
             }
           },
           "crashcatPhysics": {
@@ -828,6 +751,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -842,16 +769,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#7e8179",
-              "texture": "/textures/proto32/trigger.png",
-              "repeat": true,
-              "repeatCount": [
-                1,
-                1
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.86
+              "materialId": "material-9"
             }
           },
           "crashcatPhysics": {
@@ -887,6 +805,10 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -901,16 +823,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "color": "#7e8179",
-              "texture": "/textures/proto32/trigger.png",
-              "repeat": true,
-              "repeatCount": [
-                1,
-                1
-              ],
-              "minFilter": "NearestFilter",
-              "magFilter": "NearestFilter",
-              "roughness": 0.86
+              "materialId": "material-9"
             }
           },
           "crashcatPhysics": {
@@ -924,5 +837,122 @@
         "children": []
       }
     ]
+  },
+  "materials": {
+    "material": {
+      "color": "#a2a49d",
+      "texture": "/textures/floor/terrain/snow-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        12,
+        10
+      ],
+      "minFilter": "NearestFilter",
+      "magFilter": "NearestFilter",
+      "roughness": 0.86
+    },
+    "material-2": {
+      "color": "#989a95",
+      "texture": "/textures/floor/terrain/snow-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        12,
+        10
+      ],
+      "minFilter": "NearestFilter",
+      "magFilter": "NearestFilter",
+      "roughness": 0.94,
+      "metalness": 0.02
+    },
+    "material-3": {
+      "color": "#b8b8b2",
+      "texture": "/textures/floor/terrain/snow-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        12,
+        3
+      ],
+      "minFilter": "NearestFilter",
+      "magFilter": "NearestFilter",
+      "roughness": 0.94,
+      "metalness": 0.02
+    },
+    "material-4": {
+      "color": "#b8b8b2",
+      "texture": "/textures/floor/terrain/snow-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        10,
+        3
+      ],
+      "minFilter": "NearestFilter",
+      "magFilter": "NearestFilter",
+      "roughness": 0.94,
+      "metalness": 0.02
+    },
+    "material-5": {
+      "color": "#b8b8b2",
+      "texture": "/textures/floor/terrain/snow-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        5,
+        3
+      ],
+      "minFilter": "NearestFilter",
+      "magFilter": "NearestFilter",
+      "roughness": 0.94,
+      "metalness": 0.02
+    },
+    "material-6": {
+      "color": "#b8b8b2",
+      "texture": "/textures/floor/terrain/snow-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        4,
+        1
+      ],
+      "minFilter": "NearestFilter",
+      "magFilter": "NearestFilter",
+      "roughness": 0.94,
+      "metalness": 0.02
+    },
+    "material-7": {
+      "color": "#777a74",
+      "texture": "/textures/floor/terrain/snow-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        7,
+        3
+      ],
+      "minFilter": "NearestFilter",
+      "magFilter": "NearestFilter",
+      "roughness": 0.94,
+      "metalness": 0.02
+    },
+    "material-8": {
+      "color": "#777a74",
+      "texture": "/textures/floor/terrain/snow-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        5,
+        3
+      ],
+      "minFilter": "NearestFilter",
+      "magFilter": "NearestFilter",
+      "roughness": 0.94,
+      "metalness": 0.02
+    },
+    "material-9": {
+      "color": "#7e8179",
+      "texture": "/textures/proto32/trigger.png",
+      "repeat": true,
+      "repeatCount": [
+        1,
+        1
+      ],
+      "minFilter": "NearestFilter",
+      "magFilter": "NearestFilter",
+      "roughness": 0.86
+    }
   }
 }

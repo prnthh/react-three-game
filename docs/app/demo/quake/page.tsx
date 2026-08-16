@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { PrefabEditor, registerComponent } from "react-three-game/editor";
-import type { Prefab } from "react-three-game/editor";
+import { registerComponent, type Prefab } from "react-three-game";
+import { PrefabEditor } from "react-three-game/editor";
 import { parseQuakeMap, quakeMapToPrefab } from "./quakeMapParser";
 import QuakeBrushComponent from "./QuakeBrushComponent";
 import { withBasePath, BASE_PATH } from "../../basePath";
@@ -62,7 +62,7 @@ export default function QuakeMapDemo() {
             <div className="h-screen w-screen">
 
                 {/* Map in editor mode */}
-                <PrefabEditor basePath={BASE_PATH} initialPrefab={mapPrefab} />
+                <PrefabEditor basePath={BASE_PATH} prefab={mapPrefab} />
             </div>
         </>
     );

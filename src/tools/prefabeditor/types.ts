@@ -1,7 +1,45 @@
 export interface Prefab {
     id?: string;
     name?: string;
+    materials?: Record<string, PrefabMaterial>;
     root: GameObject;
+}
+
+export type PrefabMaterialType = 'standard' | 'basic' | 'sprite';
+
+export interface PrefabMaterial {
+    name?: string;
+    materialType?: PrefabMaterialType;
+    color?: string;
+    toneMapped?: boolean;
+    wireframe?: boolean;
+    transparent?: boolean;
+    opacity?: number;
+    alphaTest?: number;
+    depthTest?: boolean;
+    depthWrite?: boolean;
+    metalness?: number;
+    roughness?: number;
+    transmission?: number;
+    thickness?: number;
+    ior?: number;
+    rotation?: number;
+    sizeAttenuation?: boolean;
+    texture?: string;
+    offset?: [number, number];
+    repeat?: boolean;
+    repeatCount?: [number, number];
+    generateMipmaps?: boolean;
+    minFilter?: string;
+    magFilter?: string;
+    normalMapTexture?: string;
+    normalScale?: [number, number];
+    side?: 'FrontSide' | 'BackSide' | 'DoubleSide';
+}
+
+export interface MaterialComponentProperties {
+    materialId?: string;
+    attach?: string;
 }
 
 export interface GameObject {
@@ -16,9 +54,9 @@ export interface GameObject {
     };
 }
 
-export interface ComponentData {
+export interface ComponentData<P extends object = Record<string, any>> {
     type: string;
-    properties: Record<string, any>;
+    properties: P;
 }
 
 type ComponentHost = { components?: Record<string, { type?: string; properties?: Record<string, any> } | undefined> };

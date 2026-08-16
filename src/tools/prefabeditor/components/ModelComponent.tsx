@@ -1,17 +1,20 @@
 import { ModelPicker } from '../../assetviewer/page';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Mesh, Texture } from 'three';
 import { assetRef, assetRefs } from './ComponentRegistry';
-import type { Component, ComponentViewProps } from './ComponentRegistry';
+import type { Component, ComponentEditorProps, ComponentViewProps } from './ComponentRegistry';
 import { BooleanField, FieldGroup, Label, ListEditor, NumberInput, SelectInput, StringField } from './Input';
 import { useModelAsset } from '../assetRuntime';
-import type { ComponentData, GameObject } from '../types';
+import { useNode } from '../SceneContext';
+import type { ComponentData } from '../types';
 import { useEditorContext, useEditorRef } from '../EditorContext';
 import { getRepeatAxesFromModelProperties, normalizeRepeatAxes } from '../InstanceProvider';
 import type { RepeatAxisConfig } from '../InstanceProvider';
 import { base, colors, ui } from '../styles';
 import { decomposeModelToPrefabNodes } from '../modelPrefab';
 import { withBasePath } from '../runtimeUtils';
+import { scheduleObjectRaycast } from '../../../shared/raycast';
+import { usePrefab } from '../SceneContext';
 
 const AXIS_OPTIONS = [
     { value: 'x', label: 'X' },
@@ -32,17 +35,6 @@ type ModelProperties = {
     clickEventName?: string;
     repeat?: boolean;
     repeatAxes?: RepeatAxisConfig[];
-} & Record<string, unknown>;
-
-type ModelComponentData = ComponentData & {
-    properties: ModelProperties;
-};
-
-type ModelComponentEditorProps = {
-    component: ModelComponentData;
-    node?: GameObject;
-    onUpdate: (newComp: Partial<ModelProperties>) => void;
-    basePath?: string;
 };
 
 function quantize(value: number, step: number) {
@@ -151,15 +143,16 @@ function RepeatAxisEditor({
     );
 }
 
-function ModelComponentEditor({ component, node, onUpdate, basePath = "" }: ModelComponentEditorProps) {
+function ModelComponentEditor({ properties, node, update }: ComponentEditorProps<ModelProperties>) {
     const { positionSnap } = useEditorContext();
     const editor = useEditorRef();
-    const repeatAxes = getRepeatAxesFromModelProperties(component.properties);
-    const filename = component.properties.filename;
-    const canDecompose = Boolean(node && filename);
+    const { basePath } = editor;
+    const repeatAxes = getRepeatAxesFromModelProperties(properties);
+    const filename = properties.filename;
+    const canDecompose = Boolean(filename);
 
     const handleDecompose = () => {
-        if (!node || !filename) return;
+        if (!filename) return;
 
         const model = editor.getModel(filename);
         if (!model) {
@@ -179,6 +172,9 @@ function ModelComponentEditor({ component, node, onUpdate, basePath = "" }: Mode
         textureRefs.forEach((texture, path) => {
             editor.addTexture(path, texture);
         });
+        Object.entries(decomposed.materials).forEach(([id, material]) => {
+            editor.setMaterial(id, material);
+        });
         const preservedComponents = Object.entries(node.components ?? {}).reduce<Record<string, ComponentData>>((result, [key, entry]) => {
             if (!entry?.type) return result;
             if (entry.type === 'Model' || entry.type === 'Geometry' || entry.type === 'BufferGeometry' || entry.type === 'Material') {
@@ -188,7 +184,7 @@ function ModelComponentEditor({ component, node, onUpdate, basePath = "" }: Mode
             result[key] = entry;
             return result;
         }, {});
-        const decomposedComponents = Object.entries(decomposed.components ?? {}).reduce<Record<string, ComponentData>>((result, [key, entry]) => {
+        const decomposedComponents = Object.entries(decomposed.root.components ?? {}).reduce<Record<string, ComponentData>>((result, [key, entry]) => {
             if (!entry?.type || entry.type === 'Transform') return result;
             result[key] = entry;
             return result;
@@ -196,12 +192,12 @@ function ModelComponentEditor({ component, node, onUpdate, basePath = "" }: Mode
 
         editor.replaceNode(node.id, {
             ...node,
-            name: node.name ?? decomposed.name,
+            name: node.name ?? decomposed.root.name,
             components: {
                 ...preservedComponents,
                 ...decomposedComponents,
             },
-            children: decomposed.children ?? [],
+            children: decomposed.root.children ?? [],
         });
     };
 
@@ -209,7 +205,7 @@ function ModelComponentEditor({ component, node, onUpdate, basePath = "" }: Mode
         <FieldGroup>
             <ModelPicker
                 value={filename}
-                onChange={(filename) => onUpdate({ filename })}
+                onChange={(filename) => update({ filename })}
                 basePath={basePath}
                 pickerKey={node?.id}
             />
@@ -225,43 +221,43 @@ function ModelComponentEditor({ component, node, onUpdate, basePath = "" }: Mode
             <BooleanField
                 name="instanced"
                 label="Instanced"
-                values={component.properties}
-                onChange={onUpdate}
+                values={properties}
+                onChange={update}
                 fallback={false}
             />
-            {!component.properties.instanced ? (
+            {!properties.instanced ? (
                 <>
                     <BooleanField
                         name="emitClickEvent"
                         label="Emit Click Event"
-                        values={component.properties}
-                        onChange={onUpdate}
+                        values={properties}
+                        onChange={update}
                         fallback={false}
                     />
-                    {component.properties.emitClickEvent ? (
+                    {properties.emitClickEvent ? (
                         <StringField
                             name="clickEventName"
                             label="Click Event Name"
-                            values={component.properties}
-                            onChange={onUpdate}
+                            values={properties}
+                            onChange={update}
                             placeholder="node:click"
                         />
                     ) : null}
                 </>
             ) : null}
-            {component.properties.instanced && (
+            {properties.instanced && (
                 <>
                     <BooleanField
                         name="repeat"
                         label="Repeat"
-                        values={component.properties}
-                        onChange={onUpdate}
+                        values={properties}
+                        onChange={update}
                         fallback={false}
                     />
-                    {component.properties.repeat && (
+                    {properties.repeat && (
                         <RepeatAxisEditor
                             axes={repeatAxes}
-                            onChange={(nextAxes) => onUpdate({ repeatAxes: nextAxes })}
+                            onChange={(nextAxes) => update({ repeatAxes: nextAxes })}
                             positionSnap={positionSnap}
                         />
                     )}
@@ -272,7 +268,10 @@ function ModelComponentEditor({ component, node, onUpdate, basePath = "" }: Mode
 }
 
 // View for Model component
-function ModelComponentView({ properties, children, basePath = '' }: ComponentViewProps<ModelProperties>) {
+function ModelComponentView({ properties, children }: ComponentViewProps<ModelProperties>) {
+    const { editMode, nodeInteractionHandlers } = useNode();
+    const { basePath } = usePrefab();
+    const interactive = Boolean(nodeInteractionHandlers);
     const resolvedFilename = properties.filename ? withBasePath(basePath, properties.filename) : properties.filename;
     const sourceModel = useModelAsset(resolvedFilename);
 
@@ -289,13 +288,19 @@ function ModelComponentView({ properties, children, basePath = '' }: ComponentVi
         return clone;
     }, [properties.filename, properties.instanced, sourceModel]);
 
+    useEffect(() => {
+        if (!editMode && !interactive) return;
+        scheduleObjectRaycast(clonedModel);
+    }, [clonedModel, editMode, interactive]);
+
     if (!clonedModel) return <>{children}</>;
 
     return <primitive object={clonedModel}>{children}</primitive>;
 }
 
-const ModelComponent: Component = {
+const ModelComponent: Component<ModelProperties> = {
     name: 'Model',
+    disableSiblingComposition: 'object',
     Editor: ModelComponentEditor,
     View: ModelComponentView,
     defaultProperties: {},

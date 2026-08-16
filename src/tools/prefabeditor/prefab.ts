@@ -2,7 +2,7 @@ import {
 	getComponentAssetRefs,
 	getComponentDef,
 } from "./components/ComponentRegistry";
-import type { ComponentData, GameObject, Prefab } from "./types";
+import type { ComponentData, GameObject, MaterialComponentProperties, Prefab, PrefabMaterial } from "./types";
 
 export type PrefabNodeRecord = Omit<GameObject, "children">;
 export type PrefabAssetRefCounts = Record<string, number>;
@@ -10,12 +10,37 @@ export type PrefabAssetRefCounts = Record<string, number>;
 export interface PrefabState {
 	prefabId?: string;
 	prefabName?: string;
+	materials: Record<string, PrefabMaterial>;
 	rootId: string;
 	nodesById: Record<string, PrefabNodeRecord>;
 	childIdsById: Record<string, string[]>;
 	parentIdById: Record<string, string | null>;
-	assetManifestKey: string;
 	assetRefCounts: PrefabAssetRefCounts;
+}
+
+export const DEFAULT_MATERIAL_ID = "default";
+
+export function createDefaultMaterial(): PrefabMaterial {
+	return {
+		name: "Default",
+		materialType: "standard",
+		color: "#ffffff",
+		toneMapped: true,
+		wireframe: false,
+		transparent: false,
+		opacity: 1,
+		metalness: 0,
+		roughness: 1,
+		sizeAttenuation: true,
+		offset: [0, 0],
+	};
+}
+
+function normalizeMaterials(materials?: Record<string, PrefabMaterial>) {
+	return {
+		[DEFAULT_MATERIAL_ID]: createDefaultMaterial(),
+		...clonePrefabValue(materials ?? {}),
+	};
 }
 
 function clonePrefabValue<T>(value: T): T {
@@ -60,10 +85,6 @@ function getNodeNameFromPath(path: string, name?: string) {
 	return name ?? path.replace(/^.*[\/]/, "").replace(/\.[^.]+$/, "");
 }
 
-function getAssetManifestKey(assetRefCounts: PrefabAssetRefCounts) {
-	return Object.keys(assetRefCounts).sort().join("|");
-}
-
 function sameStringArrays(left: string[], right: string[]) {
 	if (left.length !== right.length) return false;
 	return left.every((value, index) => value === right[index]);
@@ -104,10 +125,22 @@ function removeAssetRefs(assetRefCounts: PrefabAssetRefCounts, refs: string[]) {
 	});
 }
 
-function createAssetRefCounts(nodesById: Record<string, PrefabNodeRecord>) {
+function getMaterialAssetRefs(material: PrefabMaterial) {
+	return [material.texture, material.normalMapTexture]
+		.filter((path): path is string => typeof path === "string" && path.length > 0)
+		.map((path) => `texture:${path}`);
+}
+
+function createAssetRefCounts(
+	nodesById: Record<string, PrefabNodeRecord>,
+	materials: Record<string, PrefabMaterial>,
+) {
 	const assetRefCounts: PrefabAssetRefCounts = {};
 	Object.values(nodesById).forEach((node) => {
 		addAssetRefs(assetRefCounts, getAssetRefs(node));
+	});
+	Object.values(materials).forEach((material) => {
+		addAssetRefs(assetRefCounts, getMaterialAssetRefs(material));
 	});
 	return assetRefCounts;
 }
@@ -168,6 +201,7 @@ export function createEmptyPrefab(): Prefab {
 	return {
 		id: crypto.randomUUID(),
 		name: "New Prefab",
+		materials: { [DEFAULT_MATERIAL_ID]: createDefaultMaterial() },
 		root: createNode("Root", {}, { id: crypto.randomUUID(), children: [] }),
 	};
 }
@@ -188,16 +222,21 @@ export function createModelNode(filename: string, name?: string): GameObject {
 
 export function createImageNode(
 	texturePath: string,
+	materialId: string,
 	name?: string,
 ): GameObject {
 	return createNode(getNodeNameFromPath(texturePath, name), {
+		mesh: {
+			type: "Mesh",
+			properties: {},
+		},
 		geometry: {
 			type: "Geometry",
 			properties: { geometryType: "plane", args: [1, 1] },
 		},
 		material: {
 			type: "Material",
-			properties: { color: "#ffffff", texture: texturePath },
+			properties: { materialId } satisfies MaterialComponentProperties,
 		},
 	});
 }
@@ -211,6 +250,44 @@ export function createPackedPrefabNode(url: string): GameObject {
 	});
 }
 
+/** Give a prefab's materials collision-safe ids while keeping every reference in sync. */
+export function scopePrefabMaterials(prefab: Prefab, scope: string): Prefab {
+	const ids: Record<string, string> = {};
+	const materials: Record<string, PrefabMaterial> = {};
+	Object.entries(prefab.materials ?? {}).forEach(([id, material]) => {
+		ids[id] = `${scope}:${id}`;
+		materials[ids[id]] = material;
+	});
+
+	const remap = (node: GameObject): GameObject => {
+		const components = { ...node.components };
+		Object.entries(components).forEach(([key, component]) => {
+			if (component?.type === "Material") {
+				const materialId = component.properties.materialId ?? DEFAULT_MATERIAL_ID;
+				components[key] = {
+					...component,
+					properties: {
+						...component.properties,
+						materialId: ids[materialId] ?? materialId,
+					},
+				};
+			}
+		});
+
+		return {
+			...node,
+			components,
+			children: node.children?.map(remap),
+		};
+	};
+
+	return {
+		...prefab,
+		materials,
+		root: remap(prefab.root),
+	};
+}
+
 export function normalizePrefab(prefab: Prefab): PrefabState {
 	const nodesById: Record<string, PrefabNodeRecord> = {};
 	const childIdsById: Record<string, string[]> = {};
@@ -218,16 +295,17 @@ export function normalizePrefab(prefab: Prefab): PrefabState {
 
 	insertSubtree(prefab.root, null, nodesById, childIdsById, parentIdById);
 
-	const assetRefCounts = createAssetRefCounts(nodesById);
+	const materials = normalizeMaterials(prefab.materials);
+	const assetRefCounts = createAssetRefCounts(nodesById, materials);
 
 	return {
 		prefabId: prefab.id,
 		prefabName: prefab.name,
+		materials,
 		rootId: prefab.root.id,
 		nodesById,
 		childIdsById,
 		parentIdById,
-		assetManifestKey: getAssetManifestKey(assetRefCounts),
 		assetRefCounts,
 	};
 }
@@ -241,26 +319,33 @@ export function createPrefabPatch(
 
 	return {
 		...patch,
-		...(assetRefsChanged
-			? {
-					assetRefCounts: nextAssetRefCounts,
-					assetManifestKey: getAssetManifestKey(nextAssetRefCounts),
-				}
-			: null),
+		...(assetRefsChanged ? { assetRefCounts: nextAssetRefCounts } : null),
 	};
 }
 
 export function denormalizePrefab(
 	state: Pick<
 		PrefabState,
-		"prefabId" | "prefabName" | "rootId" | "nodesById" | "childIdsById"
+		"prefabId" | "prefabName" | "materials" | "rootId" | "nodesById" | "childIdsById"
 	>,
 ): Prefab {
 	return {
 		id: state.prefabId,
 		name: state.prefabName,
+		materials: clonePrefabValue(state.materials),
 		root: denormalizeNode(state.rootId, state.nodesById, state.childIdsById),
 	};
+}
+
+export function updateMaterialAssetRefs(
+	assetRefCounts: PrefabAssetRefCounts,
+	current: PrefabMaterial | undefined,
+	next: PrefabMaterial,
+) {
+	const nextAssetRefCounts = { ...assetRefCounts };
+	if (current) removeAssetRefs(nextAssetRefCounts, getMaterialAssetRefs(current));
+	addAssetRefs(nextAssetRefCounts, getMaterialAssetRefs(next));
+	return nextAssetRefCounts;
 }
 
 export function collectSubtreeIds(

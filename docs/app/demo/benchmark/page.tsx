@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { PrefabEditor, PrefabEditorMode, registerComponent } from "react-three-game/editor";
+import { PrefabEditorMode, registerComponent, type GameObject, type Prefab } from "react-three-game";
+import { PrefabEditor, type PrefabEditorRef } from "react-three-game/editor";
 import { CrashcatPhysicsComponent, CrashcatRuntime } from "react-three-game/plugins/crashcat";
-import type { GameObject, Prefab, PrefabEditorRef } from "react-three-game/editor";
 import { BASE_PATH } from "../../basePath";
 
 registerComponent(CrashcatPhysicsComponent);
@@ -32,6 +32,18 @@ function createEmptyPrefab(): Prefab {
     return {
         id: "benchmark-prefab",
         name: "Benchmark",
+        materials: {
+            floor: { color: "#1e293b", roughness: 0.95 },
+            static: { color: "#7dd3fc", metalness: 0.1, roughness: 0.8 },
+            ...Object.fromEntries(Array.from({ length: TEST_COUNT }, (_, index) => [
+                `mesh-${index}`,
+                { color: `hsl(${(index * 17) % 360}, 65%, 55%)`, roughness: 0.6 },
+            ])),
+            ...Object.fromEntries(Array.from({ length: TEST_COUNT }, (_, index) => [
+                `dynamic-${index}`,
+                { color: `hsl(${(index * 23) % 360}, 70%, 62%)`, roughness: 0.7 },
+            ])),
+        },
         root: {
             id: ROOT_ID,
             name: "Root",
@@ -56,6 +68,7 @@ function createCrashcatFloorNode(): GameObject {
         name: "Benchmark Floor",
         components: {
             transform: createTransform([0, -0.5, 0]),
+            mesh: { type: "Mesh", properties: {} },
             geometry: {
                 type: "Geometry",
                 properties: {
@@ -65,10 +78,7 @@ function createCrashcatFloorNode(): GameObject {
             },
             material: {
                 type: "Material",
-                properties: {
-                    color: "#1e293b",
-                    roughness: 0.95,
-                },
+                properties: { materialId: "floor" },
             },
             crashcatPhysics: {
                 type: "CrashcatPhysics",
@@ -106,6 +116,7 @@ function createGeometryMaterialNode(index: number): GameObject {
         name: `Mesh ${index + 1}`,
         components: {
             transform: createTransform([x * 1.6, 0.5, z * 1.6]),
+            mesh: { type: "Mesh", properties: {} },
             geometry: {
                 type: "Geometry",
                 properties: {
@@ -115,10 +126,7 @@ function createGeometryMaterialNode(index: number): GameObject {
             },
             material: {
                 type: "Material",
-                properties: {
-                    color: `hsl(${(index * 17) % 360}, 65%, 55%)`,
-                    roughness: 0.6,
-                },
+                properties: { materialId: `mesh-${index}` },
             },
         },
     };
@@ -154,6 +162,7 @@ function createStaticCrashcatNode(index: number): GameObject {
         name: `Crashcat Static ${index + 1}`,
         components: {
             transform: createTransform([x * 1.4, 0.5, z * 1.4]),
+            mesh: { type: "Mesh", properties: {} },
             geometry: {
                 type: "Geometry",
                 properties: {
@@ -163,11 +172,7 @@ function createStaticCrashcatNode(index: number): GameObject {
             },
             material: {
                 type: "Material",
-                properties: {
-                    color: "#7dd3fc",
-                    metalness: 0.1,
-                    roughness: 0.8,
-                },
+                properties: { materialId: "static" },
             },
             crashcatPhysics: {
                 type: "CrashcatPhysics",
@@ -187,6 +192,7 @@ function createDynamicCrashcatNode(index: number): GameObject {
         name: `Crashcat Dynamic ${index + 1}`,
         components: {
             transform: createTransform([x * 1.2, y, z * 1.2]),
+            mesh: { type: "Mesh", properties: {} },
             geometry: {
                 type: "Geometry",
                 properties: {
@@ -196,10 +202,7 @@ function createDynamicCrashcatNode(index: number): GameObject {
             },
             material: {
                 type: "Material",
-                properties: {
-                    color: `hsl(${(index * 23) % 360}, 70%, 62%)`,
-                    roughness: 0.7,
-                },
+                properties: { materialId: `dynamic-${index}` },
             },
             crashcatPhysics: {
                 type: "CrashcatPhysics",
@@ -237,7 +240,7 @@ export default function BenchmarkPage() {
     const [isRunning, setIsRunning] = useState(false);
     const [results, setResults] = useState<BenchmarkResult[]>([]);
     const [error, setError] = useState<string | null>(null);
-    const initialPrefab = useMemo(() => createEmptyPrefab(), []);
+    const benchmarkPrefab = useMemo(() => createEmptyPrefab(), []);
 
     const benchmarkDefinitions = useMemo<BenchmarkDefinition[]>(() => [
         {
@@ -302,7 +305,7 @@ export default function BenchmarkPage() {
                 if (benchIndex > 0) {
                     await new Promise<void>((resolve) => setTimeout(resolve, BENCH_DELAY_MS));
                 }
-                editor.load((benchmark.createPrefab ?? createEmptyPrefab)(), { resetHistory: true, notifyChange: false });
+                editor.load((benchmark.createPrefab ?? createEmptyPrefab)());
                 await waitForFrames();
 
                 const startTime = performance.now();
@@ -375,7 +378,7 @@ export default function BenchmarkPage() {
             <PrefabEditor
                 ref={editorRef}
                 basePath={BASE_PATH}
-                initialPrefab={initialPrefab}
+                prefab={benchmarkPrefab}
                 mode={PrefabEditorMode.Play}
                 enableWindowDrop={false}
                 canvasProps={{

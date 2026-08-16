@@ -1,16 +1,16 @@
 "use client";
 
-import { GameCanvas, PrefabRoot } from "react-three-game/viewer";
+import { GameCanvas, PrefabRoot } from "react-three-game";
 import { useState } from "react";
 import { OrbitControls } from "@react-three/drei";
 import { BASE_PATH } from "../basePath";
-import type { Prefab } from "react-three-game/viewer";
+import type { Prefab } from "react-three-game";
 
 import PrefabSelector from "../components/PrefabSelector";
 import gameLevel from "../../public/prefabs/game-level.json";
 
 export default function Home() {
-    const [selectedScene, setSelectedScene] = useState<Prefab>(gameLevel as Prefab);
+    const [selectedScene, setSelectedScene] = useState<Prefab>(gameLevel as unknown as Prefab);
     const [selectedPrefabName, setSelectedPrefabName] = useState("game-level");
 
     return (

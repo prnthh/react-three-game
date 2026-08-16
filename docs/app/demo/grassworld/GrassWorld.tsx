@@ -2,7 +2,7 @@ import { useTexture } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { MotionType, rigidBody, triangleMesh } from "crashcat";
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { PrefabEditorMode, useScene } from "react-three-game/editor";
+import { PrefabEditorMode, usePrefab, useScene } from "react-three-game";
 import { useCrashcat } from "react-three-game/plugins/crashcat";
 import {
     Color,
@@ -165,7 +165,8 @@ function StreamedTerrain({ waterLevel }: { waterLevel: number }) {
 }
 
 function RollingBall() {
-    const prefabScene = useScene();
+    const scene = useScene();
+    const prefab = usePrefab();
     const crashcat = useCrashcat();
     const runtime = usePlayerRuntime();
     const player = runtime.current;
@@ -177,11 +178,11 @@ function RollingBall() {
     const cameraPosition = useRef(new Vector3(0, 8, 13));
     const ballObject = useRef<Object3D | null>(null);
     const { camera } = useThree();
-    const isPlayMode = prefabScene.mode === PrefabEditorMode.Play;
+    const isPlayMode = scene.mode === PrefabEditorMode.Play;
 
     useLayoutEffect(() => {
         if (!isPlayMode) return;
-        const ball = prefabScene.getObject("grassworld-ball");
+        const ball = prefab.getObject("grassworld-ball");
         if (!ball) return;
         ballObject.current = ball;
         position.copy(ball.position);
@@ -191,7 +192,7 @@ function RollingBall() {
             z: Math.round(ball.position.z / CHUNK_SIZE),
         };
         player.chunk.set(chunk.x, chunk.z);
-    }, [isPlayMode, player, position, prefabScene]);
+    }, [isPlayMode, player, position, prefab]);
 
     useEffect(() => {
         if (!isPlayMode) {

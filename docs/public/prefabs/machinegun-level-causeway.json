@@ -101,6 +101,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": false
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -109,20 +116,13 @@
                     170,
                     32,
                     16
-                  ],
-                  "castShadow": false,
-                  "receiveShadow": false
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "basic",
-                  "color": "#cdefff",
-                  "side": "BackSide",
-                  "toneMapped": false,
-                  "texture": "/textures/skybox/skybox1.jpg",
-                  "repeat": false
+                  "materialId": "material"
                 }
               }
             }
@@ -210,6 +210,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -218,27 +225,13 @@
                 180,
                 0.24,
                 156
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#416c55",
-              "roughness": 0.92,
-              "metalness": 0,
-              "texture": "/textures/floor/terrain/grass-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                44,
-                40
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-2"
             }
           },
           "crashcatPhysics": {
@@ -276,6 +269,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -284,27 +284,13 @@
                 9.4,
                 0.08,
                 110
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#58666a",
-              "roughness": 0.82,
-              "metalness": 0.04,
-              "texture": "/textures/floor/terrain/rock-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                5,
-                48
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-3"
             }
           }
         }
@@ -332,6 +318,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -340,18 +333,13 @@
                 0.16,
                 0.035,
                 1.55
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "basic",
-              "color": "#cbd5a1",
-              "roughness": 0.78,
-              "metalness": 0
+              "materialId": "material-4"
             }
           }
         }
@@ -379,6 +367,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -387,18 +382,13 @@
                 0.16,
                 0.035,
                 1.55
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "basic",
-              "color": "#cbd5a1",
-              "roughness": 0.78,
-              "metalness": 0
+              "materialId": "material-4"
             }
           }
         }
@@ -426,6 +416,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -434,18 +431,13 @@
                 0.16,
                 0.035,
                 1.55
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "basic",
-              "color": "#cbd5a1",
-              "roughness": 0.78,
-              "metalness": 0
+              "materialId": "material-4"
             }
           }
         }
@@ -473,6 +465,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -481,18 +480,13 @@
                 0.16,
                 0.035,
                 1.55
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "basic",
-              "color": "#cbd5a1",
-              "roughness": 0.78,
-              "metalness": 0
+              "materialId": "material-4"
             }
           }
         }
@@ -520,6 +514,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -528,18 +529,13 @@
                 0.16,
                 0.035,
                 1.55
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "basic",
-              "color": "#cbd5a1",
-              "roughness": 0.78,
-              "metalness": 0
+              "materialId": "material-4"
             }
           }
         }
@@ -567,6 +563,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -575,18 +578,13 @@
                 0.16,
                 0.035,
                 1.55
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "basic",
-              "color": "#cbd5a1",
-              "roughness": 0.78,
-              "metalness": 0
+              "materialId": "material-4"
             }
           }
         }
@@ -614,6 +612,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -622,18 +627,13 @@
                 0.16,
                 0.035,
                 1.55
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "basic",
-              "color": "#cbd5a1",
-              "roughness": 0.78,
-              "metalness": 0
+              "materialId": "material-4"
             }
           }
         }
@@ -661,6 +661,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -669,18 +676,13 @@
                 0.16,
                 0.035,
                 1.55
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "basic",
-              "color": "#cbd5a1",
-              "roughness": 0.78,
-              "metalness": 0
+              "materialId": "material-4"
             }
           }
         }
@@ -708,6 +710,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -716,18 +725,13 @@
                 0.16,
                 0.035,
                 1.55
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "basic",
-              "color": "#cbd5a1",
-              "roughness": 0.78,
-              "metalness": 0
+              "materialId": "material-4"
             }
           }
         }
@@ -755,6 +759,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -763,27 +774,13 @@
                 0.18,
                 0.12,
                 94
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "basic",
-              "color": "#b9bc83",
-              "roughness": 0.9,
-              "metalness": 0,
-              "texture": "/textures/floor/terrain/sand-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                1,
-                34
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-5"
             }
           },
           "crashcatPhysics": {
@@ -821,6 +818,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -829,27 +833,13 @@
                 0.18,
                 0.12,
                 94
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "basic",
-              "color": "#b9bc83",
-              "roughness": 0.9,
-              "metalness": 0,
-              "texture": "/textures/floor/terrain/sand-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                1,
-                34
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-5"
             }
           },
           "crashcatPhysics": {
@@ -888,6 +878,14 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "visible": true,
+              "castShadow": false,
+              "receiveShadow": false
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -896,21 +894,13 @@
                 1.28,
                 1.38,
                 1.22
-              ],
-              "castShadow": false,
-              "receiveShadow": false,
-              "visible": false
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#6f7f45",
-              "roughness": 0.7,
-              "metalness": 0.16,
-              "transparent": true,
-              "opacity": 0
+              "materialId": "material-6"
             }
           },
           "crashcatPhysics": {
@@ -960,6 +950,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -968,18 +965,13 @@
                     0.22,
                     0.28,
                     0.92
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#171b1f",
-                  "roughness": 0.86,
-                  "metalness": 0.04
+                  "materialId": "material-7"
                 }
               },
               "data": {
@@ -1016,6 +1008,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -1024,18 +1023,13 @@
                     0.22,
                     0.28,
                     0.92
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#171b1f",
-                  "roughness": 0.86,
-                  "metalness": 0.04
+                  "materialId": "material-7"
                 }
               },
               "data": {
@@ -1072,6 +1066,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -1081,18 +1082,13 @@
                     0.15,
                     0.08,
                     14
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#2f3439",
-                  "roughness": 0.8,
-                  "metalness": 0.12
+                  "materialId": "material-8"
                 }
               },
               "data": {
@@ -1129,6 +1125,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -1138,18 +1141,13 @@
                     0.15,
                     0.08,
                     14
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#2f3439",
-                  "roughness": 0.8,
-                  "metalness": 0.12
+                  "materialId": "material-8"
                 }
               },
               "data": {
@@ -1186,6 +1184,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -1195,18 +1200,13 @@
                     0.15,
                     0.08,
                     14
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#2f3439",
-                  "roughness": 0.8,
-                  "metalness": 0.12
+                  "materialId": "material-8"
                 }
               },
               "data": {
@@ -1243,6 +1243,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -1252,18 +1259,13 @@
                     0.15,
                     0.08,
                     14
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#2f3439",
-                  "roughness": 0.8,
-                  "metalness": 0.12
+                  "materialId": "material-8"
                 }
               },
               "data": {
@@ -1300,6 +1302,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -1308,18 +1317,13 @@
                     1.08,
                     0.36,
                     1.04
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#4c5c38",
-                  "roughness": 0.72,
-                  "metalness": 0.16
+                  "materialId": "material-9"
                 }
               }
             }
@@ -1348,6 +1352,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -1356,18 +1367,13 @@
                     0.98,
                     0.36,
                     0.18
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#6f7f45",
-                  "roughness": 0.7,
-                  "metalness": 0.2
+                  "materialId": "material-10"
                 }
               }
             }
@@ -1396,6 +1402,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -1404,18 +1417,13 @@
                     0.9,
                     0.32,
                     0.66
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#6f7f45",
-                  "roughness": 0.68,
-                  "metalness": 0.2
+                  "materialId": "material-11"
                 }
               }
             }
@@ -1444,6 +1452,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -1452,18 +1467,13 @@
                     0.48,
                     0.28,
                     0.42
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#6f7f45",
-                  "roughness": 0.66,
-                  "metalness": 0.22
+                  "materialId": "material-12"
                 }
               }
             }
@@ -1492,6 +1502,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -1500,18 +1517,13 @@
                     0.29,
                     12,
                     6
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#6f7f45",
-                  "roughness": 0.66,
-                  "metalness": 0.2
+                  "materialId": "material-13"
                 }
               }
             }
@@ -1540,6 +1552,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -1549,18 +1568,13 @@
                     0.055,
                     0.72,
                     16
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#475569",
-                  "roughness": 0.58,
-                  "metalness": 0.34
+                  "materialId": "material-14"
                 }
               },
               "data": {
@@ -1597,6 +1611,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -1606,18 +1627,13 @@
                     0.085,
                     0.12,
                     16
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#232a31",
-                  "roughness": 0.6,
-                  "metalness": 0.4
+                  "materialId": "material-15"
                 }
               },
               "data": {
@@ -1654,6 +1670,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -1662,19 +1685,13 @@
                     0.12,
                     0.09,
                     0.035
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "basic",
-                  "color": "#fef08a",
-                  "roughness": 0.2,
-                  "metalness": 0,
-                  "toneMapped": false
+                  "materialId": "material-16"
                 }
               },
               "data": {
@@ -1711,6 +1728,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -1719,19 +1743,13 @@
                     0.12,
                     0.09,
                     0.035
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "basic",
-                  "color": "#fef08a",
-                  "roughness": 0.2,
-                  "metalness": 0,
-                  "toneMapped": false
+                  "materialId": "material-16"
                 }
               },
               "data": {
@@ -1768,6 +1786,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -1776,19 +1801,13 @@
                     0.28,
                     0.2,
                     0.04
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "basic",
-                  "color": "#ef4444",
-                  "roughness": 0.25,
-                  "metalness": 0,
-                  "toneMapped": false
+                  "materialId": "material-17"
                 }
               },
               "data": {
@@ -1827,6 +1846,14 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "visible": true,
+              "castShadow": false,
+              "receiveShadow": false
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -1835,21 +1862,13 @@
                 1.28,
                 1.38,
                 1.22
-              ],
-              "castShadow": false,
-              "receiveShadow": false,
-              "visible": false
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#6f7f45",
-              "roughness": 0.7,
-              "metalness": 0.16,
-              "transparent": true,
-              "opacity": 0
+              "materialId": "material-6"
             }
           },
           "crashcatPhysics": {
@@ -1899,6 +1918,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -1907,18 +1933,13 @@
                     0.22,
                     0.28,
                     0.92
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#171b1f",
-                  "roughness": 0.86,
-                  "metalness": 0.04
+                  "materialId": "material-7"
                 }
               },
               "data": {
@@ -1955,6 +1976,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -1963,18 +1991,13 @@
                     0.22,
                     0.28,
                     0.92
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#171b1f",
-                  "roughness": 0.86,
-                  "metalness": 0.04
+                  "materialId": "material-7"
                 }
               },
               "data": {
@@ -2011,6 +2034,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -2020,18 +2050,13 @@
                     0.15,
                     0.08,
                     14
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#2f3439",
-                  "roughness": 0.8,
-                  "metalness": 0.12
+                  "materialId": "material-8"
                 }
               },
               "data": {
@@ -2068,6 +2093,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -2077,18 +2109,13 @@
                     0.15,
                     0.08,
                     14
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#2f3439",
-                  "roughness": 0.8,
-                  "metalness": 0.12
+                  "materialId": "material-8"
                 }
               },
               "data": {
@@ -2125,6 +2152,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -2134,18 +2168,13 @@
                     0.15,
                     0.08,
                     14
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#2f3439",
-                  "roughness": 0.8,
-                  "metalness": 0.12
+                  "materialId": "material-8"
                 }
               },
               "data": {
@@ -2182,6 +2211,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -2191,18 +2227,13 @@
                     0.15,
                     0.08,
                     14
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#2f3439",
-                  "roughness": 0.8,
-                  "metalness": 0.12
+                  "materialId": "material-8"
                 }
               },
               "data": {
@@ -2239,6 +2270,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -2247,18 +2285,13 @@
                     1.08,
                     0.36,
                     1.04
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#4c5c38",
-                  "roughness": 0.72,
-                  "metalness": 0.16
+                  "materialId": "material-9"
                 }
               }
             }
@@ -2287,6 +2320,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -2295,18 +2335,13 @@
                     0.98,
                     0.36,
                     0.18
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#6f7f45",
-                  "roughness": 0.7,
-                  "metalness": 0.2
+                  "materialId": "material-10"
                 }
               }
             }
@@ -2335,6 +2370,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -2343,18 +2385,13 @@
                     0.9,
                     0.32,
                     0.66
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#6f7f45",
-                  "roughness": 0.68,
-                  "metalness": 0.2
+                  "materialId": "material-11"
                 }
               }
             }
@@ -2383,6 +2420,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -2391,18 +2435,13 @@
                     0.48,
                     0.28,
                     0.42
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#6f7f45",
-                  "roughness": 0.66,
-                  "metalness": 0.22
+                  "materialId": "material-12"
                 }
               }
             }
@@ -2431,6 +2470,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -2439,18 +2485,13 @@
                     0.29,
                     12,
                     6
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#6f7f45",
-                  "roughness": 0.66,
-                  "metalness": 0.2
+                  "materialId": "material-13"
                 }
               }
             }
@@ -2479,6 +2520,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -2488,18 +2536,13 @@
                     0.055,
                     0.72,
                     16
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#475569",
-                  "roughness": 0.58,
-                  "metalness": 0.34
+                  "materialId": "material-14"
                 }
               },
               "data": {
@@ -2536,6 +2579,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -2545,18 +2595,13 @@
                     0.085,
                     0.12,
                     16
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#232a31",
-                  "roughness": 0.6,
-                  "metalness": 0.4
+                  "materialId": "material-15"
                 }
               },
               "data": {
@@ -2593,6 +2638,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -2601,19 +2653,13 @@
                     0.12,
                     0.09,
                     0.035
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "basic",
-                  "color": "#fef08a",
-                  "roughness": 0.2,
-                  "metalness": 0,
-                  "toneMapped": false
+                  "materialId": "material-16"
                 }
               },
               "data": {
@@ -2650,6 +2696,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -2658,19 +2711,13 @@
                     0.12,
                     0.09,
                     0.035
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "basic",
-                  "color": "#fef08a",
-                  "roughness": 0.2,
-                  "metalness": 0,
-                  "toneMapped": false
+                  "materialId": "material-16"
                 }
               },
               "data": {
@@ -2707,6 +2754,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -2715,19 +2769,13 @@
                     0.28,
                     0.2,
                     0.04
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "basic",
-                  "color": "#ef4444",
-                  "roughness": 0.25,
-                  "metalness": 0,
-                  "toneMapped": false
+                  "materialId": "material-17"
                 }
               },
               "data": {
@@ -2766,6 +2814,14 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "visible": true,
+              "castShadow": false,
+              "receiveShadow": false
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -2774,21 +2830,13 @@
                 1.28,
                 1.38,
                 1.22
-              ],
-              "castShadow": false,
-              "receiveShadow": false,
-              "visible": false
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#6f7f45",
-              "roughness": 0.7,
-              "metalness": 0.16,
-              "transparent": true,
-              "opacity": 0
+              "materialId": "material-6"
             }
           },
           "crashcatPhysics": {
@@ -2838,6 +2886,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -2846,18 +2901,13 @@
                     0.22,
                     0.28,
                     0.92
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#171b1f",
-                  "roughness": 0.86,
-                  "metalness": 0.04
+                  "materialId": "material-7"
                 }
               },
               "data": {
@@ -2894,6 +2944,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -2902,18 +2959,13 @@
                     0.22,
                     0.28,
                     0.92
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#171b1f",
-                  "roughness": 0.86,
-                  "metalness": 0.04
+                  "materialId": "material-7"
                 }
               },
               "data": {
@@ -2950,6 +3002,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -2959,18 +3018,13 @@
                     0.15,
                     0.08,
                     14
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#2f3439",
-                  "roughness": 0.8,
-                  "metalness": 0.12
+                  "materialId": "material-8"
                 }
               },
               "data": {
@@ -3007,6 +3061,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -3016,18 +3077,13 @@
                     0.15,
                     0.08,
                     14
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#2f3439",
-                  "roughness": 0.8,
-                  "metalness": 0.12
+                  "materialId": "material-8"
                 }
               },
               "data": {
@@ -3064,6 +3120,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -3073,18 +3136,13 @@
                     0.15,
                     0.08,
                     14
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#2f3439",
-                  "roughness": 0.8,
-                  "metalness": 0.12
+                  "materialId": "material-8"
                 }
               },
               "data": {
@@ -3121,6 +3179,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -3130,18 +3195,13 @@
                     0.15,
                     0.08,
                     14
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#2f3439",
-                  "roughness": 0.8,
-                  "metalness": 0.12
+                  "materialId": "material-8"
                 }
               },
               "data": {
@@ -3178,6 +3238,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -3186,18 +3253,13 @@
                     1.08,
                     0.36,
                     1.04
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#4c5c38",
-                  "roughness": 0.72,
-                  "metalness": 0.16
+                  "materialId": "material-9"
                 }
               }
             }
@@ -3226,6 +3288,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -3234,18 +3303,13 @@
                     0.98,
                     0.36,
                     0.18
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#6f7f45",
-                  "roughness": 0.7,
-                  "metalness": 0.2
+                  "materialId": "material-10"
                 }
               }
             }
@@ -3274,6 +3338,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -3282,18 +3353,13 @@
                     0.9,
                     0.32,
                     0.66
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#6f7f45",
-                  "roughness": 0.68,
-                  "metalness": 0.2
+                  "materialId": "material-11"
                 }
               }
             }
@@ -3322,6 +3388,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -3330,18 +3403,13 @@
                     0.48,
                     0.28,
                     0.42
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#6f7f45",
-                  "roughness": 0.66,
-                  "metalness": 0.22
+                  "materialId": "material-12"
                 }
               }
             }
@@ -3370,6 +3438,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -3378,18 +3453,13 @@
                     0.29,
                     12,
                     6
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#6f7f45",
-                  "roughness": 0.66,
-                  "metalness": 0.2
+                  "materialId": "material-13"
                 }
               }
             }
@@ -3418,6 +3488,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -3427,18 +3504,13 @@
                     0.055,
                     0.72,
                     16
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#475569",
-                  "roughness": 0.58,
-                  "metalness": 0.34
+                  "materialId": "material-14"
                 }
               },
               "data": {
@@ -3475,6 +3547,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -3484,18 +3563,13 @@
                     0.085,
                     0.12,
                     16
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#232a31",
-                  "roughness": 0.6,
-                  "metalness": 0.4
+                  "materialId": "material-15"
                 }
               },
               "data": {
@@ -3532,6 +3606,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -3540,19 +3621,13 @@
                     0.12,
                     0.09,
                     0.035
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "basic",
-                  "color": "#fef08a",
-                  "roughness": 0.2,
-                  "metalness": 0,
-                  "toneMapped": false
+                  "materialId": "material-16"
                 }
               },
               "data": {
@@ -3589,6 +3664,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -3597,19 +3679,13 @@
                     0.12,
                     0.09,
                     0.035
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "basic",
-                  "color": "#fef08a",
-                  "roughness": 0.2,
-                  "metalness": 0,
-                  "toneMapped": false
+                  "materialId": "material-16"
                 }
               },
               "data": {
@@ -3646,6 +3722,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -3654,19 +3737,13 @@
                     0.28,
                     0.2,
                     0.04
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "basic",
-                  "color": "#ef4444",
-                  "roughness": 0.25,
-                  "metalness": 0,
-                  "toneMapped": false
+                  "materialId": "material-17"
                 }
               },
               "data": {
@@ -3705,6 +3782,14 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "visible": true,
+              "castShadow": false,
+              "receiveShadow": false
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -3713,21 +3798,13 @@
                 1.28,
                 1.38,
                 1.22
-              ],
-              "castShadow": false,
-              "receiveShadow": false,
-              "visible": false
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#6f7f45",
-              "roughness": 0.7,
-              "metalness": 0.16,
-              "transparent": true,
-              "opacity": 0
+              "materialId": "material-6"
             }
           },
           "crashcatPhysics": {
@@ -3777,6 +3854,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -3785,18 +3869,13 @@
                     0.22,
                     0.28,
                     0.92
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#171b1f",
-                  "roughness": 0.86,
-                  "metalness": 0.04
+                  "materialId": "material-7"
                 }
               },
               "data": {
@@ -3833,6 +3912,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -3841,18 +3927,13 @@
                     0.22,
                     0.28,
                     0.92
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#171b1f",
-                  "roughness": 0.86,
-                  "metalness": 0.04
+                  "materialId": "material-7"
                 }
               },
               "data": {
@@ -3889,6 +3970,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -3898,18 +3986,13 @@
                     0.15,
                     0.08,
                     14
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#2f3439",
-                  "roughness": 0.8,
-                  "metalness": 0.12
+                  "materialId": "material-8"
                 }
               },
               "data": {
@@ -3946,6 +4029,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -3955,18 +4045,13 @@
                     0.15,
                     0.08,
                     14
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#2f3439",
-                  "roughness": 0.8,
-                  "metalness": 0.12
+                  "materialId": "material-8"
                 }
               },
               "data": {
@@ -4003,6 +4088,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -4012,18 +4104,13 @@
                     0.15,
                     0.08,
                     14
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#2f3439",
-                  "roughness": 0.8,
-                  "metalness": 0.12
+                  "materialId": "material-8"
                 }
               },
               "data": {
@@ -4060,6 +4147,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -4069,18 +4163,13 @@
                     0.15,
                     0.08,
                     14
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#2f3439",
-                  "roughness": 0.8,
-                  "metalness": 0.12
+                  "materialId": "material-8"
                 }
               },
               "data": {
@@ -4117,6 +4206,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -4125,18 +4221,13 @@
                     1.08,
                     0.36,
                     1.04
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#4c5c38",
-                  "roughness": 0.72,
-                  "metalness": 0.16
+                  "materialId": "material-9"
                 }
               }
             }
@@ -4165,6 +4256,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -4173,18 +4271,13 @@
                     0.98,
                     0.36,
                     0.18
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#6f7f45",
-                  "roughness": 0.7,
-                  "metalness": 0.2
+                  "materialId": "material-10"
                 }
               }
             }
@@ -4213,6 +4306,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -4221,18 +4321,13 @@
                     0.9,
                     0.32,
                     0.66
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#6f7f45",
-                  "roughness": 0.68,
-                  "metalness": 0.2
+                  "materialId": "material-11"
                 }
               }
             }
@@ -4261,6 +4356,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -4269,18 +4371,13 @@
                     0.48,
                     0.28,
                     0.42
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#6f7f45",
-                  "roughness": 0.66,
-                  "metalness": 0.22
+                  "materialId": "material-12"
                 }
               }
             }
@@ -4309,6 +4406,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -4317,18 +4421,13 @@
                     0.29,
                     12,
                     6
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#6f7f45",
-                  "roughness": 0.66,
-                  "metalness": 0.2
+                  "materialId": "material-13"
                 }
               }
             }
@@ -4357,6 +4456,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -4366,18 +4472,13 @@
                     0.055,
                     0.72,
                     16
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#475569",
-                  "roughness": 0.58,
-                  "metalness": 0.34
+                  "materialId": "material-14"
                 }
               },
               "data": {
@@ -4414,6 +4515,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -4423,18 +4531,13 @@
                     0.085,
                     0.12,
                     16
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#232a31",
-                  "roughness": 0.6,
-                  "metalness": 0.4
+                  "materialId": "material-15"
                 }
               },
               "data": {
@@ -4471,6 +4574,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -4479,19 +4589,13 @@
                     0.12,
                     0.09,
                     0.035
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "basic",
-                  "color": "#fef08a",
-                  "roughness": 0.2,
-                  "metalness": 0,
-                  "toneMapped": false
+                  "materialId": "material-16"
                 }
               },
               "data": {
@@ -4528,6 +4632,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -4536,19 +4647,13 @@
                     0.12,
                     0.09,
                     0.035
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "basic",
-                  "color": "#fef08a",
-                  "roughness": 0.2,
-                  "metalness": 0,
-                  "toneMapped": false
+                  "materialId": "material-16"
                 }
               },
               "data": {
@@ -4585,6 +4690,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -4593,19 +4705,13 @@
                     0.28,
                     0.2,
                     0.04
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "basic",
-                  "color": "#ef4444",
-                  "roughness": 0.25,
-                  "metalness": 0,
-                  "toneMapped": false
+                  "materialId": "material-17"
                 }
               },
               "data": {
@@ -4644,6 +4750,14 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "visible": true,
+              "castShadow": false,
+              "receiveShadow": false
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -4652,21 +4766,13 @@
                 1.28,
                 1.38,
                 1.22
-              ],
-              "castShadow": false,
-              "receiveShadow": false,
-              "visible": false
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#6f7f45",
-              "roughness": 0.7,
-              "metalness": 0.16,
-              "transparent": true,
-              "opacity": 0
+              "materialId": "material-6"
             }
           },
           "crashcatPhysics": {
@@ -4716,6 +4822,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -4724,18 +4837,13 @@
                     0.22,
                     0.28,
                     0.92
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#171b1f",
-                  "roughness": 0.86,
-                  "metalness": 0.04
+                  "materialId": "material-7"
                 }
               },
               "data": {
@@ -4772,6 +4880,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -4780,18 +4895,13 @@
                     0.22,
                     0.28,
                     0.92
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#171b1f",
-                  "roughness": 0.86,
-                  "metalness": 0.04
+                  "materialId": "material-7"
                 }
               },
               "data": {
@@ -4828,6 +4938,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -4837,18 +4954,13 @@
                     0.15,
                     0.08,
                     14
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#2f3439",
-                  "roughness": 0.8,
-                  "metalness": 0.12
+                  "materialId": "material-8"
                 }
               },
               "data": {
@@ -4885,6 +4997,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -4894,18 +5013,13 @@
                     0.15,
                     0.08,
                     14
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#2f3439",
-                  "roughness": 0.8,
-                  "metalness": 0.12
+                  "materialId": "material-8"
                 }
               },
               "data": {
@@ -4942,6 +5056,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -4951,18 +5072,13 @@
                     0.15,
                     0.08,
                     14
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#2f3439",
-                  "roughness": 0.8,
-                  "metalness": 0.12
+                  "materialId": "material-8"
                 }
               },
               "data": {
@@ -4999,6 +5115,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -5008,18 +5131,13 @@
                     0.15,
                     0.08,
                     14
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#2f3439",
-                  "roughness": 0.8,
-                  "metalness": 0.12
+                  "materialId": "material-8"
                 }
               },
               "data": {
@@ -5056,6 +5174,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -5064,18 +5189,13 @@
                     1.08,
                     0.36,
                     1.04
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#4c5c38",
-                  "roughness": 0.72,
-                  "metalness": 0.16
+                  "materialId": "material-9"
                 }
               }
             }
@@ -5104,6 +5224,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -5112,18 +5239,13 @@
                     0.98,
                     0.36,
                     0.18
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#6f7f45",
-                  "roughness": 0.7,
-                  "metalness": 0.2
+                  "materialId": "material-10"
                 }
               }
             }
@@ -5152,6 +5274,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -5160,18 +5289,13 @@
                     0.9,
                     0.32,
                     0.66
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#6f7f45",
-                  "roughness": 0.68,
-                  "metalness": 0.2
+                  "materialId": "material-11"
                 }
               }
             }
@@ -5200,6 +5324,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -5208,18 +5339,13 @@
                     0.48,
                     0.28,
                     0.42
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#6f7f45",
-                  "roughness": 0.66,
-                  "metalness": 0.22
+                  "materialId": "material-12"
                 }
               }
             }
@@ -5248,6 +5374,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -5256,18 +5389,13 @@
                     0.29,
                     12,
                     6
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#6f7f45",
-                  "roughness": 0.66,
-                  "metalness": 0.2
+                  "materialId": "material-13"
                 }
               }
             }
@@ -5296,6 +5424,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -5305,18 +5440,13 @@
                     0.055,
                     0.72,
                     16
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#475569",
-                  "roughness": 0.58,
-                  "metalness": 0.34
+                  "materialId": "material-14"
                 }
               },
               "data": {
@@ -5353,6 +5483,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -5362,18 +5499,13 @@
                     0.085,
                     0.12,
                     16
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "standard",
-                  "color": "#232a31",
-                  "roughness": 0.6,
-                  "metalness": 0.4
+                  "materialId": "material-15"
                 }
               },
               "data": {
@@ -5410,6 +5542,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -5418,19 +5557,13 @@
                     0.12,
                     0.09,
                     0.035
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "basic",
-                  "color": "#fef08a",
-                  "roughness": 0.2,
-                  "metalness": 0,
-                  "toneMapped": false
+                  "materialId": "material-16"
                 }
               },
               "data": {
@@ -5467,6 +5600,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -5475,19 +5615,13 @@
                     0.12,
                     0.09,
                     0.035
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "basic",
-                  "color": "#fef08a",
-                  "roughness": 0.2,
-                  "metalness": 0,
-                  "toneMapped": false
+                  "materialId": "material-16"
                 }
               },
               "data": {
@@ -5524,6 +5658,13 @@
                   ]
                 }
               },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": true,
+                  "receiveShadow": true
+                }
+              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -5532,19 +5673,13 @@
                     0.28,
                     0.2,
                     0.04
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
+                  ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialType": "basic",
-                  "color": "#ef4444",
-                  "roughness": 0.25,
-                  "metalness": 0,
-                  "toneMapped": false
+                  "materialId": "material-17"
                 }
               },
               "data": {
@@ -5583,6 +5718,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -5591,29 +5733,13 @@
                 3.8,
                 0.035,
                 2.8
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#3da4c7",
-              "roughness": 0.18,
-              "metalness": 0,
-              "transparent": true,
-              "opacity": 0.78,
-              "texture": "/textures/floor/terrain/water512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-18"
             }
           }
         }
@@ -5642,6 +5768,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -5650,29 +5783,13 @@
                 3.8,
                 0.035,
                 2.8
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#3da4c7",
-              "roughness": 0.18,
-              "metalness": 0,
-              "transparent": true,
-              "opacity": 0.78,
-              "texture": "/textures/floor/terrain/water512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-18"
             }
           }
         }
@@ -5701,6 +5818,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -5710,27 +5834,13 @@
                 0.24,
                 2.1,
                 12
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#59636e",
-              "roughness": 0.72,
-              "metalness": 0.12,
-              "texture": "/textures/floor/terrain/rock-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                1,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-19"
             }
           },
           "crashcatPhysics": {
@@ -5771,6 +5881,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -5779,19 +5896,13 @@
                 0.18,
                 12,
                 6
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "basic",
-              "color": "#fde68a",
-              "roughness": 0.68,
-              "metalness": 0.24,
-              "toneMapped": false
+              "materialId": "material-20"
             }
           }
         }
@@ -5820,6 +5931,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -5828,29 +5946,13 @@
                 3.8,
                 0.035,
                 2.8
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#3da4c7",
-              "roughness": 0.18,
-              "metalness": 0,
-              "transparent": true,
-              "opacity": 0.78,
-              "texture": "/textures/floor/terrain/water512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-18"
             }
           }
         }
@@ -5879,6 +5981,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -5887,29 +5996,13 @@
                 3.8,
                 0.035,
                 2.8
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#3da4c7",
-              "roughness": 0.18,
-              "metalness": 0,
-              "transparent": true,
-              "opacity": 0.78,
-              "texture": "/textures/floor/terrain/water512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-18"
             }
           }
         }
@@ -5938,6 +6031,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -5947,27 +6047,13 @@
                 0.22,
                 1.7,
                 16
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#334155",
-              "roughness": 0.72,
-              "metalness": 0.12,
-              "texture": "/textures/floor/terrain/rock-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                1,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-21"
             }
           },
           "crashcatPhysics": {
@@ -6008,6 +6094,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -6016,29 +6109,13 @@
                 3.8,
                 0.035,
                 2.8
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#3da4c7",
-              "roughness": 0.18,
-              "metalness": 0,
-              "transparent": true,
-              "opacity": 0.78,
-              "texture": "/textures/floor/terrain/water512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-18"
             }
           }
         }
@@ -6067,6 +6144,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -6075,29 +6159,13 @@
                 3.8,
                 0.035,
                 2.8
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#3da4c7",
-              "roughness": 0.18,
-              "metalness": 0,
-              "transparent": true,
-              "opacity": 0.78,
-              "texture": "/textures/floor/terrain/water512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-18"
             }
           }
         }
@@ -6126,6 +6194,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -6135,27 +6210,13 @@
                 0.24,
                 2.1,
                 12
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#59636e",
-              "roughness": 0.72,
-              "metalness": 0.12,
-              "texture": "/textures/floor/terrain/rock-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                1,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-19"
             }
           },
           "crashcatPhysics": {
@@ -6196,6 +6257,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -6204,19 +6272,13 @@
                 0.18,
                 12,
                 6
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "basic",
-              "color": "#fde68a",
-              "roughness": 0.68,
-              "metalness": 0.24,
-              "toneMapped": false
+              "materialId": "material-20"
             }
           }
         }
@@ -6245,6 +6307,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -6253,29 +6322,13 @@
                 3.8,
                 0.035,
                 2.8
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#3da4c7",
-              "roughness": 0.18,
-              "metalness": 0,
-              "transparent": true,
-              "opacity": 0.78,
-              "texture": "/textures/floor/terrain/water512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-18"
             }
           }
         }
@@ -6304,6 +6357,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -6312,29 +6372,13 @@
                 3.8,
                 0.035,
                 2.8
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#3da4c7",
-              "roughness": 0.18,
-              "metalness": 0,
-              "transparent": true,
-              "opacity": 0.78,
-              "texture": "/textures/floor/terrain/water512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-18"
             }
           }
         }
@@ -6363,6 +6407,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -6371,29 +6422,13 @@
                 3.8,
                 0.035,
                 2.8
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#3da4c7",
-              "roughness": 0.18,
-              "metalness": 0,
-              "transparent": true,
-              "opacity": 0.78,
-              "texture": "/textures/floor/terrain/water512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-18"
             }
           }
         }
@@ -6422,6 +6457,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -6430,29 +6472,13 @@
                 3.8,
                 0.035,
                 2.8
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#3da4c7",
-              "roughness": 0.18,
-              "metalness": 0,
-              "transparent": true,
-              "opacity": 0.78,
-              "texture": "/textures/floor/terrain/water512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-18"
             }
           }
         }
@@ -6481,6 +6507,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -6490,27 +6523,13 @@
                 0.24,
                 2.1,
                 12
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#59636e",
-              "roughness": 0.72,
-              "metalness": 0.12,
-              "texture": "/textures/floor/terrain/rock-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                1,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-19"
             }
           },
           "crashcatPhysics": {
@@ -6551,6 +6570,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -6559,19 +6585,13 @@
                 0.18,
                 12,
                 6
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "basic",
-              "color": "#fde68a",
-              "roughness": 0.68,
-              "metalness": 0.24,
-              "toneMapped": false
+              "materialId": "material-20"
             }
           }
         }
@@ -6600,6 +6620,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -6609,27 +6636,13 @@
                 0.22,
                 1.7,
                 16
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#334155",
-              "roughness": 0.72,
-              "metalness": 0.12,
-              "texture": "/textures/floor/terrain/rock-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                1,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-21"
             }
           },
           "crashcatPhysics": {
@@ -6670,6 +6683,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -6678,29 +6698,13 @@
                 3.8,
                 0.035,
                 2.8
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#3da4c7",
-              "roughness": 0.18,
-              "metalness": 0,
-              "transparent": true,
-              "opacity": 0.78,
-              "texture": "/textures/floor/terrain/water512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-18"
             }
           }
         }
@@ -6729,6 +6733,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -6737,29 +6748,13 @@
                 3.8,
                 0.035,
                 2.8
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#3da4c7",
-              "roughness": 0.18,
-              "metalness": 0,
-              "transparent": true,
-              "opacity": 0.78,
-              "texture": "/textures/floor/terrain/water512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-18"
             }
           }
         }
@@ -6788,6 +6783,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -6796,29 +6798,13 @@
                 3.8,
                 0.035,
                 2.8
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#3da4c7",
-              "roughness": 0.18,
-              "metalness": 0,
-              "transparent": true,
-              "opacity": 0.78,
-              "texture": "/textures/floor/terrain/water512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-18"
             }
           }
         }
@@ -6847,6 +6833,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -6855,29 +6848,13 @@
                 3.8,
                 0.035,
                 2.8
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#3da4c7",
-              "roughness": 0.18,
-              "metalness": 0,
-              "transparent": true,
-              "opacity": 0.78,
-              "texture": "/textures/floor/terrain/water512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-18"
             }
           }
         }
@@ -6906,6 +6883,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -6915,27 +6899,13 @@
                 0.24,
                 2.1,
                 12
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#59636e",
-              "roughness": 0.72,
-              "metalness": 0.12,
-              "texture": "/textures/floor/terrain/rock-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                1,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-19"
             }
           },
           "crashcatPhysics": {
@@ -6976,6 +6946,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -6984,19 +6961,13 @@
                 0.18,
                 12,
                 6
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "basic",
-              "color": "#fde68a",
-              "roughness": 0.68,
-              "metalness": 0.24,
-              "toneMapped": false
+              "materialId": "material-20"
             }
           }
         }
@@ -7025,6 +6996,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -7033,29 +7011,13 @@
                 3.8,
                 0.035,
                 2.8
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#3da4c7",
-              "roughness": 0.18,
-              "metalness": 0,
-              "transparent": true,
-              "opacity": 0.78,
-              "texture": "/textures/floor/terrain/water512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-18"
             }
           }
         }
@@ -7084,6 +7046,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -7092,29 +7061,13 @@
                 3.8,
                 0.035,
                 2.8
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#3da4c7",
-              "roughness": 0.18,
-              "metalness": 0,
-              "transparent": true,
-              "opacity": 0.78,
-              "texture": "/textures/floor/terrain/water512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-18"
             }
           }
         }
@@ -7143,6 +7096,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -7152,27 +7112,13 @@
                 0.22,
                 1.7,
                 16
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#334155",
-              "roughness": 0.72,
-              "metalness": 0.12,
-              "texture": "/textures/floor/terrain/rock-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                1,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-21"
             }
           },
           "crashcatPhysics": {
@@ -7213,6 +7159,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -7221,29 +7174,13 @@
                 3.8,
                 0.035,
                 2.8
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#3da4c7",
-              "roughness": 0.18,
-              "metalness": 0,
-              "transparent": true,
-              "opacity": 0.78,
-              "texture": "/textures/floor/terrain/water512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-18"
             }
           }
         }
@@ -7272,6 +7209,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -7280,29 +7224,13 @@
                 3.8,
                 0.035,
                 2.8
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#3da4c7",
-              "roughness": 0.18,
-              "metalness": 0,
-              "transparent": true,
-              "opacity": 0.78,
-              "texture": "/textures/floor/terrain/water512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-18"
             }
           }
         }
@@ -7331,6 +7259,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -7340,27 +7275,13 @@
                 0.24,
                 2.1,
                 12
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#59636e",
-              "roughness": 0.72,
-              "metalness": 0.12,
-              "texture": "/textures/floor/terrain/rock-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                1,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-19"
             }
           },
           "crashcatPhysics": {
@@ -7401,6 +7322,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -7409,19 +7337,13 @@
                 0.18,
                 12,
                 6
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "basic",
-              "color": "#fde68a",
-              "roughness": 0.68,
-              "metalness": 0.24,
-              "toneMapped": false
+              "materialId": "material-20"
             }
           }
         }
@@ -7450,6 +7372,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -7458,29 +7387,13 @@
                 3.8,
                 0.035,
                 2.8
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#3da4c7",
-              "roughness": 0.18,
-              "metalness": 0,
-              "transparent": true,
-              "opacity": 0.78,
-              "texture": "/textures/floor/terrain/water512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-18"
             }
           }
         }
@@ -7509,6 +7422,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -7517,29 +7437,13 @@
                 3.8,
                 0.035,
                 2.8
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#3da4c7",
-              "roughness": 0.18,
-              "metalness": 0,
-              "transparent": true,
-              "opacity": 0.78,
-              "texture": "/textures/floor/terrain/water512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-18"
             }
           }
         }
@@ -7568,6 +7472,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -7576,29 +7487,13 @@
                 3.8,
                 0.035,
                 2.8
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#3da4c7",
-              "roughness": 0.18,
-              "metalness": 0,
-              "transparent": true,
-              "opacity": 0.78,
-              "texture": "/textures/floor/terrain/water512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-18"
             }
           }
         }
@@ -7627,6 +7522,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -7635,29 +7537,13 @@
                 3.8,
                 0.035,
                 2.8
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#3da4c7",
-              "roughness": 0.18,
-              "metalness": 0,
-              "transparent": true,
-              "opacity": 0.78,
-              "texture": "/textures/floor/terrain/water512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-18"
             }
           }
         }
@@ -7686,6 +7572,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -7695,27 +7588,13 @@
                 0.24,
                 2.1,
                 12
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#59636e",
-              "roughness": 0.72,
-              "metalness": 0.12,
-              "texture": "/textures/floor/terrain/rock-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                1,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-19"
             }
           },
           "crashcatPhysics": {
@@ -7756,6 +7635,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -7764,19 +7650,13 @@
                 0.18,
                 12,
                 6
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "basic",
-              "color": "#fde68a",
-              "roughness": 0.68,
-              "metalness": 0.24,
-              "toneMapped": false
+              "materialId": "material-20"
             }
           }
         }
@@ -7805,6 +7685,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -7814,27 +7701,13 @@
                 0.22,
                 1.7,
                 16
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#334155",
-              "roughness": 0.72,
-              "metalness": 0.12,
-              "texture": "/textures/floor/terrain/rock-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                1,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-21"
             }
           },
           "crashcatPhysics": {
@@ -7875,6 +7748,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -7883,29 +7763,13 @@
                 3.8,
                 0.035,
                 2.8
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#3da4c7",
-              "roughness": 0.18,
-              "metalness": 0,
-              "transparent": true,
-              "opacity": 0.78,
-              "texture": "/textures/floor/terrain/water512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-18"
             }
           }
         }
@@ -7934,6 +7798,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -7942,29 +7813,13 @@
                 3.8,
                 0.035,
                 2.8
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#3da4c7",
-              "roughness": 0.18,
-              "metalness": 0,
-              "transparent": true,
-              "opacity": 0.78,
-              "texture": "/textures/floor/terrain/water512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                2,
-                2
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-18"
             }
           }
         }
@@ -7993,6 +7848,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -8001,27 +7863,13 @@
                 0.46,
                 2.85,
                 62
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#425066",
-              "roughness": 0.72,
-              "metalness": 0.14,
-              "texture": "/textures/floor/terrain/rock-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                1,
-                26
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-22"
             }
           },
           "crashcatPhysics": {
@@ -8068,6 +7916,13 @@
               ]
             }
           },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          },
           "geometry": {
             "type": "Geometry",
             "properties": {
@@ -8076,27 +7931,13 @@
                 0.46,
                 2.85,
                 62
-              ],
-              "castShadow": true,
-              "receiveShadow": true
+              ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialType": "standard",
-              "color": "#425066",
-              "roughness": 0.72,
-              "metalness": 0.14,
-              "texture": "/textures/floor/terrain/rock-512.jpg",
-              "repeat": true,
-              "repeatCount": [
-                1,
-                26
-              ],
-              "generateMipmaps": true,
-              "minFilter": "LinearMipmapLinearFilter",
-              "magFilter": "LinearFilter"
+              "materialId": "material-22"
             }
           },
           "crashcatPhysics": {
@@ -8120,5 +7961,211 @@
         }
       }
     ]
+  },
+  "materials": {
+    "material": {
+      "materialType": "basic",
+      "color": "#cdefff",
+      "side": "BackSide",
+      "toneMapped": false,
+      "texture": "/textures/skybox/skybox1.jpg",
+      "repeat": false
+    },
+    "material-2": {
+      "materialType": "standard",
+      "color": "#416c55",
+      "roughness": 0.92,
+      "metalness": 0,
+      "texture": "/textures/floor/terrain/grass-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        44,
+        40
+      ],
+      "generateMipmaps": true,
+      "minFilter": "LinearMipmapLinearFilter",
+      "magFilter": "LinearFilter"
+    },
+    "material-3": {
+      "materialType": "standard",
+      "color": "#58666a",
+      "roughness": 0.82,
+      "metalness": 0.04,
+      "texture": "/textures/floor/terrain/rock-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        5,
+        48
+      ],
+      "generateMipmaps": true,
+      "minFilter": "LinearMipmapLinearFilter",
+      "magFilter": "LinearFilter"
+    },
+    "material-4": {
+      "materialType": "basic",
+      "color": "#cbd5a1",
+      "roughness": 0.78,
+      "metalness": 0
+    },
+    "material-5": {
+      "materialType": "basic",
+      "color": "#b9bc83",
+      "roughness": 0.9,
+      "metalness": 0,
+      "texture": "/textures/floor/terrain/sand-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        1,
+        34
+      ],
+      "generateMipmaps": true,
+      "minFilter": "LinearMipmapLinearFilter",
+      "magFilter": "LinearFilter"
+    },
+    "material-6": {
+      "materialType": "standard",
+      "color": "#6f7f45",
+      "roughness": 0.7,
+      "metalness": 0.16,
+      "transparent": true,
+      "opacity": 0
+    },
+    "material-7": {
+      "materialType": "standard",
+      "color": "#171b1f",
+      "roughness": 0.86,
+      "metalness": 0.04
+    },
+    "material-8": {
+      "materialType": "standard",
+      "color": "#2f3439",
+      "roughness": 0.8,
+      "metalness": 0.12
+    },
+    "material-9": {
+      "materialType": "standard",
+      "color": "#4c5c38",
+      "roughness": 0.72,
+      "metalness": 0.16
+    },
+    "material-10": {
+      "materialType": "standard",
+      "color": "#6f7f45",
+      "roughness": 0.7,
+      "metalness": 0.2
+    },
+    "material-11": {
+      "materialType": "standard",
+      "color": "#6f7f45",
+      "roughness": 0.68,
+      "metalness": 0.2
+    },
+    "material-12": {
+      "materialType": "standard",
+      "color": "#6f7f45",
+      "roughness": 0.66,
+      "metalness": 0.22
+    },
+    "material-13": {
+      "materialType": "standard",
+      "color": "#6f7f45",
+      "roughness": 0.66,
+      "metalness": 0.2
+    },
+    "material-14": {
+      "materialType": "standard",
+      "color": "#475569",
+      "roughness": 0.58,
+      "metalness": 0.34
+    },
+    "material-15": {
+      "materialType": "standard",
+      "color": "#232a31",
+      "roughness": 0.6,
+      "metalness": 0.4
+    },
+    "material-16": {
+      "materialType": "basic",
+      "color": "#fef08a",
+      "roughness": 0.2,
+      "metalness": 0,
+      "toneMapped": false
+    },
+    "material-17": {
+      "materialType": "basic",
+      "color": "#ef4444",
+      "roughness": 0.25,
+      "metalness": 0,
+      "toneMapped": false
+    },
+    "material-18": {
+      "materialType": "standard",
+      "color": "#3da4c7",
+      "roughness": 0.18,
+      "metalness": 0,
+      "transparent": true,
+      "opacity": 0.78,
+      "texture": "/textures/floor/terrain/water512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        2,
+        2
+      ],
+      "generateMipmaps": true,
+      "minFilter": "LinearMipmapLinearFilter",
+      "magFilter": "LinearFilter"
+    },
+    "material-19": {
+      "materialType": "standard",
+      "color": "#59636e",
+      "roughness": 0.72,
+      "metalness": 0.12,
+      "texture": "/textures/floor/terrain/rock-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        1,
+        2
+      ],
+      "generateMipmaps": true,
+      "minFilter": "LinearMipmapLinearFilter",
+      "magFilter": "LinearFilter"
+    },
+    "material-20": {
+      "materialType": "basic",
+      "color": "#fde68a",
+      "roughness": 0.68,
+      "metalness": 0.24,
+      "toneMapped": false
+    },
+    "material-21": {
+      "materialType": "standard",
+      "color": "#334155",
+      "roughness": 0.72,
+      "metalness": 0.12,
+      "texture": "/textures/floor/terrain/rock-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        1,
+        2
+      ],
+      "generateMipmaps": true,
+      "minFilter": "LinearMipmapLinearFilter",
+      "magFilter": "LinearFilter"
+    },
+    "material-22": {
+      "materialType": "standard",
+      "color": "#425066",
+      "roughness": 0.72,
+      "metalness": 0.14,
+      "texture": "/textures/floor/terrain/rock-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        1,
+        26
+      ],
+      "generateMipmaps": true,
+      "minFilter": "LinearMipmapLinearFilter",
+      "magFilter": "LinearFilter"
+    }
   }
 }

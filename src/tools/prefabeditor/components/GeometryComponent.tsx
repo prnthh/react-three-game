@@ -1,5 +1,7 @@
-import { Component } from "./ComponentRegistry";
-import { BooleanField, FieldGroup, NumberField, SelectField, StringField } from "./Input";
+import type { Component, ComponentEditorProps, ComponentViewProps } from "./ComponentRegistry";
+import { useNode } from "../SceneContext";
+import { FieldGroup, NumberField, SelectField } from "./Input";
+import { scheduleGeometryRaycast } from "../../../shared/raycast";
 
 const GEOMETRY_ARGS: Record<string, {
     fields: Array<{
@@ -40,34 +42,33 @@ const GEOMETRY_ARGS: Record<string, {
     },
 };
 
+type GeometryProperties = {
+    geometryType?: string;
+    args?: number[];
+};
+
 function getDefaultArgs(geometryType: string) {
     return (GEOMETRY_ARGS[geometryType]?.fields ?? []).map(field => field.defaultValue);
 }
 
-function GeometryComponentEditor({
-    component,
-    onUpdate,
-}: {
-    component: any;
-    onUpdate: (newProps: any) => void;
-}) {
-    const geometryType = component.properties.geometryType ?? 'box';
+function GeometryComponentEditor({ properties, update }: ComponentEditorProps<GeometryProperties>) {
+    const geometryType = properties.geometryType ?? 'box';
     const schema = GEOMETRY_ARGS[geometryType] ?? GEOMETRY_ARGS.box;
-    const args = component.properties.args ?? getDefaultArgs(geometryType);
+    const args = properties.args ?? getDefaultArgs(geometryType);
 
     // Handle geometry type change to reset args
-    const handleChange = (newValues: Record<string, any>) => {
-        if ('geometryType' in newValues && newValues.geometryType !== geometryType) {
-            onUpdate({ geometryType: newValues.geometryType, args: getDefaultArgs(newValues.geometryType) });
+    const handleChange = (newValues: Partial<GeometryProperties>) => {
+        if (typeof newValues.geometryType === 'string' && newValues.geometryType !== geometryType) {
+            update({ geometryType: newValues.geometryType, args: getDefaultArgs(newValues.geometryType) });
         } else {
-            onUpdate(newValues);
+            update(newValues);
         }
     };
 
     const updateArg = (index: number, value: number) => {
         const next = [...args];
         next[index] = value;
-        onUpdate({ args: next });
+        update({ args: next });
     };
 
     return (
@@ -75,7 +76,7 @@ function GeometryComponentEditor({
             <SelectField
                 name="geometryType"
                 label="Type"
-                values={component.properties}
+                values={properties}
                 onChange={handleChange}
                 options={[
                     { value: 'box', label: 'Box' },
@@ -90,84 +91,56 @@ function GeometryComponentEditor({
                     name={field.name}
                     label={field.label}
                     values={{ [field.name]: args[index] ?? field.defaultValue }}
-                    onChange={(next) => updateArg(index, next[field.name])}
+                    onChange={(next) => updateArg(index, next[field.name] ?? field.defaultValue)}
                     fallback={field.defaultValue}
                     min={field.min}
                     step={field.step}
                 />
             ))}
-            <BooleanField
-                name="visible"
-                label="Visible"
-                values={component.properties}
-                onChange={handleChange}
-                fallback={true}
-            />
-            <BooleanField
-                name="castShadow"
-                label="Cast Shadow"
-                values={component.properties}
-                onChange={handleChange}
-                fallback={true}
-            />
-            <BooleanField
-                name="receiveShadow"
-                label="Receive Shadow"
-                values={component.properties}
-                onChange={handleChange}
-                fallback={true}
-            />
-            <BooleanField
-                name="emitClickEvent"
-                label="Emit Click Event"
-                values={component.properties}
-                onChange={handleChange}
-                fallback={false}
-            />
-            {component.properties.emitClickEvent ? (
-                <StringField
-                    name="clickEventName"
-                    label="Click Event Name"
-                    values={component.properties}
-                    onChange={handleChange}
-                    placeholder="cannon:fire"
-                />
-            ) : null}
         </FieldGroup>
     );
 }
 
 
 // View for Geometry component
-function GeometryComponentView({ properties, children }: { properties: any, children?: React.ReactNode }) {
+function GeometryComponentView({ properties, children }: ComponentViewProps<GeometryProperties>) {
+    const { editMode, nodeInteractionHandlers } = useNode();
     const { geometryType, args = [] } = properties;
     const geometryKey = `${geometryType ?? 'box'}:${JSON.stringify(args)}`;
+    const onGeometryUpdate = editMode || nodeInteractionHandlers
+        ? scheduleGeometryRaycast
+        : undefined;
 
-    // Only return the geometry node, do not wrap in mesh or group
+    let geometry: React.ReactNode;
     switch (geometryType) {
         case "box":
-            return <boxGeometry key={geometryKey} args={args as [number, number, number]} />;
+            geometry = <boxGeometry key={geometryKey} args={args as [number, number, number]} onUpdate={onGeometryUpdate} />;
+            break;
         case "sphere":
-            return <sphereGeometry key={geometryKey} args={args as [number, number?, number?]} />;
+            geometry = <sphereGeometry key={geometryKey} args={args as [number, number?, number?]} onUpdate={onGeometryUpdate} />;
+            break;
         case "plane":
-            return <planeGeometry key={geometryKey} args={args as [number, number]} />;
+            geometry = <planeGeometry key={geometryKey} args={args as [number, number]} onUpdate={onGeometryUpdate} />;
+            break;
         case "cylinder":
-            return <cylinderGeometry key={geometryKey} args={args as [number, number, number, number?]} />;
+            geometry = <cylinderGeometry key={geometryKey} args={args as [number, number, number, number?]} onUpdate={onGeometryUpdate} />;
+            break;
         default:
-            return <boxGeometry key="box:[1,1,1]" args={[1, 1, 1]} />;
+            geometry = <boxGeometry key="box:[1,1,1]" args={[1, 1, 1]} onUpdate={onGeometryUpdate} />;
     }
+
+    return <>{geometry}{children}</>;
 }
 
-const GeometryComponent: Component = {
+const GeometryComponent: Component<GeometryProperties> = {
     name: 'Geometry',
+    attachment: true,
     disableSiblingComposition: 'geometry',
     Editor: GeometryComponentEditor,
     View: GeometryComponentView,
     defaultProperties: {
         geometryType: 'box',
         args: getDefaultArgs('box'),
-        emitClickEvent: false,
-        clickEventName: '',
     }
 };
 

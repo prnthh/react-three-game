@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     default: "React Three Game - AI-Native 3D Engine",
     template: "%s | React Three Game"
   },
-  description: "The first 3D game engine designed for AI-native development. Everything is JSON-serializable prefabs that AI agents can generate, modify, and compose without writing imperative code.",
+  description: "An AI-native 3D game library where agents compose JSON prefab documents, reusable components, and React Three Fiber runtime systems.",
   keywords: ["react", "three.js", "3d", "game engine", "webgpu", "ai", "prefab", "game development"],
   authors: [{ name: "prnthh" }],
   openGraph: {

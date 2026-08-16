@@ -12,15 +12,15 @@ function Features() {
       <ul className="space-y-1.5 text-left font-mono text-sm font-semibold text-zinc-950/80">
         <li className="flex items-start gap-2">
           <span className="text-emerald-700">▸</span>
-          <span>Create prefabs in the editor</span>
+          <span>Define a serializable prefab document</span>
         </li>
         <li className="flex items-start gap-2">
           <span className="text-emerald-700">▸</span>
-          <span>Export prefabs as JSON</span>
+          <span>Compose entities from reusable components</span>
         </li>
         <li className="flex items-start gap-2">
           <span className="text-emerald-700">▸</span>
-          <span>Load prefabs in your app using viewer</span>
+          <span>Mount the scene with PrefabRoot</span>
         </li>
       </ul>
     </div>
@@ -38,7 +38,7 @@ function Features2() {
         </li>
         <li className="flex items-start gap-2">
           <span className="text-emerald-700">▸</span>
-          <span>Lightweight embeddable viewer mode</span>
+          <span>Lightweight runtime entrypoint</span>
         </li>
         <li className="flex items-start gap-2">
           <span className="text-emerald-700">▸</span>
@@ -50,7 +50,7 @@ function Features2() {
         </li>
         <li className="flex items-start gap-2">
           <span className="text-emerald-700">▸</span>
-          <span>Pure renderer core with userland runtime hooks</span>
+          <span>Scene, prefab, and node runtime scopes</span>
         </li>
         <li className="flex items-start gap-2">
           <span className="text-emerald-700">▸</span>
@@ -85,7 +85,7 @@ export default function Home() {
         <div className="text-center font-bold">
           <h1 className="metal-title mb-2">REACT-THREE-GAME</h1>
           <div className="metal-subtitle mt-1">
-            high performance 3D game engine
+            JSON prefab documents for React Three Fiber
           </div>
         </div>
 

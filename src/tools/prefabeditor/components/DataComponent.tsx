@@ -1,5 +1,5 @@
 import { CSSProperties, useEffect, useState } from "react";
-import { Component } from "./ComponentRegistry";
+import type { Component, ComponentEditorProps } from "./ComponentRegistry";
 import { colors, ui } from "../styles";
 
 type DataComponentProperties = {
@@ -66,17 +66,14 @@ function parseData(raw: string): { ok: true; value: Record<string, unknown> } | 
     }
 }
 
-function DataComponentEditor({ component, onUpdate }: {
-    component: { properties?: DataComponentProperties };
-    onUpdate: (newComp: any) => void;
-}) {
-    const [draft, setDraft] = useState(() => formatData(component.properties?.data));
+function DataComponentEditor({ properties, update }: ComponentEditorProps<DataComponentProperties>) {
+    const [draft, setDraft] = useState(() => formatData(properties.data));
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        setDraft(formatData(component.properties?.data));
+        setDraft(formatData(properties.data));
         setError(null);
-    }, [component.properties?.data]);
+    }, [properties.data]);
 
     const commitDraft = () => {
         const parsed = parseData(draft);
@@ -87,7 +84,7 @@ function DataComponentEditor({ component, onUpdate }: {
 
         setError(null);
         setDraft(formatData(parsed.value));
-        onUpdate({ data: parsed.value });
+        update({ data: parsed.value });
     };
 
     return (
@@ -114,7 +111,7 @@ function DataComponentEditor({ component, onUpdate }: {
     );
 }
 
-const DataComponent: Component = {
+const DataComponent: Component<DataComponentProperties> = {
     name: 'Data',
     disableSiblingComposition: true,
     Editor: DataComponentEditor,

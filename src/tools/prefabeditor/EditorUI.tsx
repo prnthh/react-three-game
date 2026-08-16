@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GameObject as GameObjectType, Prefab, hasComponent } from "./types";
+import { GameObject as GameObjectType } from "./types";
 import EditorTree from './EditorTree';
 import { canAddComponentToNode, getAllComponentDefs, getNextComponentKey } from './components/ComponentRegistry';
 import { createComponentData } from './prefab';
@@ -10,25 +10,13 @@ import { usePrefabStore } from './prefabStore';
 function EditorUI({
     selectedId,
     setSelectedId,
-    getPrefab,
-    onReplacePrefab,
-    onImportPrefab,
-    basePath,
-    onUndo,
-    onRedo,
     canUndo,
     canRedo
 }: {
     selectedId: string | null;
     setSelectedId: (id: string | null) => void;
-    getPrefab: () => Prefab;
-    onReplacePrefab: (prefab: Prefab) => void;
-    onImportPrefab: (prefab: Prefab) => void;
-    basePath?: string;
-    onUndo?: () => void;
-    onRedo?: () => void;
-    canUndo?: boolean;
-    canRedo?: boolean;
+    canUndo: boolean;
+    canRedo: boolean;
 }) {
     const [collapsed, setCollapsed] = useState(false);
     const rootId = usePrefabStore(state => state.rootId);
@@ -57,19 +45,14 @@ function EditorUI({
                     node={selectedNode}
                     updateNode={updateNodeHandler}
                     deleteNode={deleteNodeHandler}
-                    basePath={basePath}
                 />
             )}
         </div>
+
         <div style={{ position: 'absolute', top: 8, left: 8, zIndex: 20 }}>
             <EditorTree
                 selectedId={selectedId}
                 setSelectedId={setSelectedId}
-                getPrefab={getPrefab}
-                onReplacePrefab={onReplacePrefab}
-                onImportPrefab={onImportPrefab}
-                onUndo={onUndo}
-                onRedo={onRedo}
                 canUndo={canUndo}
                 canRedo={canRedo}
             />
@@ -82,12 +65,10 @@ function NodeInspector({
     node,
     updateNode,
     deleteNode,
-    basePath
 }: {
     node: GameObjectType;
     updateNode: (update: (n: GameObjectType) => GameObjectType) => void;
     deleteNode: () => void;
-    basePath?: string;
 }) {
     const ALL_COMPONENTS = getAllComponentDefs();
     const allKeys = Object.keys(ALL_COMPONENTS);
@@ -150,16 +131,15 @@ function NodeInspector({
                         </div>
                         {def.Editor && (
                             <def.Editor
-                                component={comp}
                                 node={node}
-                                onUpdate={(newProps: any) => updateNode(n => ({
+                                properties={comp.properties}
+                                update={(patch) => updateNode(n => ({
                                     ...n,
                                     components: {
                                         ...n.components,
-                                        [key]: { ...comp, properties: { ...comp.properties, ...newProps } }
+                                        [key]: { ...comp, properties: { ...comp.properties, ...patch } }
                                     }
                                 }))}
-                                basePath={basePath}
                             />
                         )}
                     </div>

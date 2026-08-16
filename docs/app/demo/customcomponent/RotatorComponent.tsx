@@ -1,12 +1,11 @@
 import { useFrame } from "@react-three/fiber";
 import {
-    Component,
-    FieldRenderer,
-    FieldDefinition,
     useNodeObject,
-    type ComponentData,
+    type Component,
     type ComponentViewProps,
-} from "react-three-game/editor";
+} from "react-three-game";
+import { FieldRenderer } from "react-three-game/editor";
+import type { ComponentEditorProps } from "react-three-game/editor";
 
 type RotationAxis = 'x' | 'y' | 'z';
 type RotatorProperties = {
@@ -14,32 +13,24 @@ type RotatorProperties = {
     axis?: RotationAxis;
 };
 
-const rotatorFields: FieldDefinition[] = [
-    { name: 'speed', type: 'number', label: 'Rotation Speed', step: 0.1 },
-    {
-        name: 'axis',
-        type: 'select',
-        label: 'Rotation Axis',
-        options: [
-            { value: 'x', label: 'X' },
-            { value: 'y', label: 'Y' },
-            { value: 'z', label: 'Z' },
-        ],
-    },
-];
-
-function RotatorComponentEditor({
-    component,
-    onUpdate,
-}: {
-    component: ComponentData;
-    onUpdate: (properties: Record<string, unknown>) => void;
-}) {
+function RotatorComponentEditor({ properties, update }: ComponentEditorProps<RotatorProperties>) {
     return (
         <FieldRenderer
-            fields={rotatorFields}
-            values={component.properties}
-            onChange={onUpdate}
+            fields={[
+                { name: 'speed', type: 'number', label: 'Rotation Speed', step: 0.1 },
+                {
+                    name: 'axis',
+                    type: 'select',
+                    label: 'Rotation Axis',
+                    options: [
+                        { value: 'x', label: 'X' },
+                        { value: 'y', label: 'Y' },
+                        { value: 'z', label: 'Z' },
+                    ],
+                },
+            ]}
+            values={properties}
+            onChange={update}
         />
     );
 }
@@ -59,7 +50,7 @@ function RotatorView({ properties, children }: ComponentViewProps<RotatorPropert
     return <>{children}</>;
 }
 
-const RotatorComponent: Component = {
+const RotatorComponent: Component<RotatorProperties> = {
     name: 'Rotator',
     Editor: RotatorComponentEditor,
     View: RotatorView,

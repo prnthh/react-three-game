@@ -1,4 +1,4 @@
-import { Component } from "./ComponentRegistry";
+import type { Component, ComponentEditorProps } from "./ComponentRegistry";
 import { Label, Vector3Input } from "./Input";
 import { useEditorContext } from "../EditorContext";
 import { colors } from "../styles";
@@ -65,6 +65,12 @@ const snapLockBtnStyle: React.CSSProperties = {
     color: colors.textMuted,
 };
 
+type TransformProperties = {
+    position?: [number, number, number];
+    rotation?: [number, number, number];
+    scale?: [number, number, number];
+};
+
 function SnapLockButton({ locked, onToggle, title }: { locked: boolean; onToggle: () => void; title: string }) {
     return (
         <button style={snapLockBtnStyle} onClick={onToggle} title={title}>
@@ -73,10 +79,7 @@ function SnapLockButton({ locked, onToggle, title }: { locked: boolean; onToggle
     );
 }
 
-function TransformComponentEditor({ component, onUpdate }: {
-    component: any;
-    onUpdate: (newComp: any) => void;
-}) {
+function TransformComponentEditor({ properties, update }: ComponentEditorProps<TransformProperties>) {
     const {
         transformMode,
         setTransformMode,
@@ -100,8 +103,8 @@ function TransformComponentEditor({ component, onUpdate }: {
             />
             <Vector3Input
                 label="Position"
-                value={component.properties.position ?? [0, 0, 0]}
-                onChange={v => onUpdate({ position: v })}
+                value={properties.position ?? [0, 0, 0]}
+                onChange={v => update({ position: v })}
                 snap={positionSnap}
                 labelExtra={
                     <SnapLockButton
@@ -113,8 +116,8 @@ function TransformComponentEditor({ component, onUpdate }: {
             />
             <Vector3Input
                 label="Rotation"
-                value={component.properties.rotation ?? [0, 0, 0]}
-                onChange={v => onUpdate({ rotation: v })}
+                value={properties.rotation ?? [0, 0, 0]}
+                onChange={v => update({ rotation: v })}
                 snap={rotationSnap}
                 labelExtra={
                     <SnapLockButton
@@ -126,8 +129,8 @@ function TransformComponentEditor({ component, onUpdate }: {
             />
             <Vector3Input
                 label="Scale"
-                value={component.properties.scale ?? [1, 1, 1]}
-                onChange={v => onUpdate({ scale: v })}
+                value={properties.scale ?? [1, 1, 1]}
+                onChange={v => update({ scale: v })}
                 snap={scaleSnap}
                 labelExtra={
                     <SnapLockButton
@@ -141,7 +144,7 @@ function TransformComponentEditor({ component, onUpdate }: {
     );
 }
 
-const TransformComponent: Component = {
+const TransformComponent: Component<TransformProperties> = {
     name: 'Transform',
     disableSiblingComposition: true,
     Editor: TransformComponentEditor,

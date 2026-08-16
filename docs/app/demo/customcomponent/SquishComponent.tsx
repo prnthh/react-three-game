@@ -1,8 +1,5 @@
 import { useEffect, useMemo } from "react";
 import {
-    Component,
-    FieldDefinition,
-    FieldRenderer,
     MaterialOverridesProvider,
     float,
     positionLocal,
@@ -10,9 +7,11 @@ import {
     time,
     uniform,
     vec3,
-    type ComponentData,
+    type Component,
     type ComponentViewProps,
-} from "react-three-game/editor";
+} from "react-three-game";
+import { FieldRenderer } from "react-three-game/editor";
+import type { ComponentEditorProps, FieldDefinition } from "react-three-game/editor";
 
 const DEFAULT_AMOUNT = 0.3;
 const DEFAULT_SPEED = 3.5;
@@ -26,24 +25,18 @@ type SquishProperties = {
     lift?: number;
 };
 
-const squishFields: FieldDefinition[] = [
+const squishFields = [
     { name: "amount", type: "number", label: "Amount", min: 0, max: 0.95, step: 0.01 },
     { name: "speed", type: "number", label: "Speed", min: 0.1, step: 0.1 },
     { name: "bulge", type: "number", label: "Bulge", min: 0, max: 2, step: 0.01 },
     { name: "lift", type: "number", label: "Lift", min: 0, max: 1, step: 0.01 },
-];
+] satisfies FieldDefinition<SquishProperties>[];
 
-function SquishComponentEditor({
-    component,
-    onUpdate,
-}: {
-    component: ComponentData;
-    onUpdate: (properties: Record<string, unknown>) => void;
-}) {
-    return <FieldRenderer fields={squishFields} values={component.properties} onChange={onUpdate} />;
+function SquishComponentEditor({ properties, update }: ComponentEditorProps<SquishProperties>) {
+    return <FieldRenderer fields={squishFields} values={properties} onChange={update} />;
 }
 
-const SquishComponent: Component = {
+const SquishComponent: Component<SquishProperties> = {
     name: "Squish",
     Editor: SquishComponentEditor,
     View: function SquishView({ properties, children }: ComponentViewProps<SquishProperties>) {

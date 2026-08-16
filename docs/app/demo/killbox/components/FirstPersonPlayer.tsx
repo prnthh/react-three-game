@@ -4,7 +4,7 @@ import { PerspectiveCamera, PointerLockControls } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { CastRayStatus, capsule, castRay, createClosestCastRayCollector, createDefaultCastRaySettings, filter, kcc, rigidBody, MotionQuality, MotionType, type Filter, type RigidBody, type World } from "crashcat";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from "react";
-import { gameEvents, PrefabEditorMode, soundManager, useScene } from "react-three-game/editor";
+import { gameEvents, PrefabEditorMode, soundManager, usePrefab, useScene } from "react-three-game";
 import { useCrashcat } from "react-three-game/plugins/crashcat";
 import { MathUtils, Quaternion, Raycaster, Vector2, Vector3 } from "three";
 import type { Camera, Group, Object3D } from "three";
@@ -488,8 +488,8 @@ const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProp
 export default FirstPersonPlayer;
 
 const GrabArms = () => {
-    const sceneApi = useScene();
-    const mode = sceneApi.mode;
+    const { mode } = useScene();
+    const prefab = usePrefab();
     const runtime = useCrashcat();
 
     const grabbedNodeIdRef = useRef<string | null>(null);
@@ -584,7 +584,7 @@ const GrabArms = () => {
     }, [restoreGrabbedMotionQuality, runtime]);
 
     const tryGrabTarget = useCallback((world: World, camera: Camera) => {
-        const prefabRoot = sceneApi.root;
+        const prefabRoot = prefab.root;
         if (!prefabRoot) return;
 
         raycaster.setFromCamera(centerScreen, camera);
@@ -615,7 +615,7 @@ const GrabArms = () => {
             rigidBody.setAngularVelocity(world, body, [0, 0, 0]);
             return;
         }
-    }, [runtime, sceneApi.root]);
+    }, [prefab.root, runtime]);
 
     useFrame((state) => {
         if (mode !== PrefabEditorMode.Play) {

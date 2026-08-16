@@ -1,10 +1,8 @@
-import { Helper, OrthographicCamera, PerspectiveCamera } from '@react-three/drei';
-import { CameraHelper } from 'three';
+import { OrthographicCamera, PerspectiveCamera } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
-import { useNode } from '../assetRuntime';
-import type { Component, ComponentViewProps } from './ComponentRegistry';
+import { useNode } from '../SceneContext';
+import type { Component, ComponentEditorProps, ComponentViewProps } from './ComponentRegistry';
 import { FieldGroup, NumberField, SelectField } from './Input';
-import type { ComponentData } from '../types';
 
 const CAMERA_PROJECTION_OPTIONS = [
     { value: 'perspective', label: 'Perspective' },
@@ -12,7 +10,7 @@ const CAMERA_PROJECTION_OPTIONS = [
 ] as const;
 
 const cameraDefaults = {
-    projection: 'perspective',
+    projection: 'perspective' as CameraProjection,
     fov: 50,
     near: 0.1,
     zoom: 1,
@@ -28,14 +26,10 @@ type CameraProperties = {
     zoom?: number;
     far?: number;
     orthographicSize?: number;
-} & Record<string, unknown>;
-
-type CameraComponentData = ComponentData & {
-    properties: CameraProperties;
 };
 
-function CameraComponentEditor({ component, onUpdate }: { component: CameraComponentData; onUpdate: (newComp: Partial<CameraProperties>) => void }) {
-    const values = { ...cameraDefaults, ...component.properties };
+function CameraComponentEditor({ properties, update }: ComponentEditorProps<CameraProperties>) {
+    const values = { ...cameraDefaults, ...properties };
     const projection = values.projection ?? cameraDefaults.projection;
 
     return (
@@ -44,7 +38,7 @@ function CameraComponentEditor({ component, onUpdate }: { component: CameraCompo
                 name="projection"
                 label="Projection"
                 values={values}
-                onChange={onUpdate}
+                onChange={update}
                 fallback={cameraDefaults.projection}
                 options={[...CAMERA_PROJECTION_OPTIONS]}
             />
@@ -53,7 +47,7 @@ function CameraComponentEditor({ component, onUpdate }: { component: CameraCompo
                     name="fov"
                     label="FOV"
                     values={values}
-                    onChange={onUpdate}
+                    onChange={update}
                     fallback={50}
                     min={1}
                     max={179}
@@ -65,7 +59,7 @@ function CameraComponentEditor({ component, onUpdate }: { component: CameraCompo
                     name="orthographicSize"
                     label="Ortho Size"
                     values={values}
-                    onChange={onUpdate}
+                    onChange={update}
                     fallback={cameraDefaults.orthographicSize}
                     min={0.01}
                     step={0.1}
@@ -75,7 +69,7 @@ function CameraComponentEditor({ component, onUpdate }: { component: CameraCompo
                 name="near"
                 label="Near"
                 values={values}
-                onChange={onUpdate}
+                onChange={update}
                 fallback={0.1}
                 min={0.001}
                 step={0.1}
@@ -84,7 +78,7 @@ function CameraComponentEditor({ component, onUpdate }: { component: CameraCompo
                 name="zoom"
                 label="Zoom"
                 values={values}
-                onChange={onUpdate}
+                onChange={update}
                 fallback={1}
                 min={0.01}
                 step={0.1}
@@ -93,7 +87,7 @@ function CameraComponentEditor({ component, onUpdate }: { component: CameraCompo
                 name="far"
                 label="Far"
                 values={values}
-                onChange={onUpdate}
+                onChange={update}
                 fallback={1000}
                 min={0.1}
                 step={1}
@@ -103,7 +97,7 @@ function CameraComponentEditor({ component, onUpdate }: { component: CameraCompo
 }
 
 function CameraComponentView({ properties, children }: ComponentViewProps<CameraProperties>) {
-    const { editMode, isSelected } = useNode();
+    const { editMode } = useNode();
     const { size } = useThree();
     const merged = { ...cameraDefaults, ...properties };
     const projection = merged.projection ?? cameraDefaults.projection;
@@ -115,10 +109,7 @@ function CameraComponentView({ properties, children }: ComponentViewProps<Camera
     const aspect = size.height > 0 ? size.width / size.height : 1;
     const halfHeight = orthographicSize / 2;
     const halfWidth = halfHeight * aspect;
-    const cameraModeKey = editMode ? 'edit-camera' : 'play-camera';
-    const cameraHelper = editMode && isSelected ? <Helper type={CameraHelper} /> : null;
-
-    const helperContent = editMode ? (
+    if (editMode) return (
         <group>
             <mesh>
                 <boxGeometry args={[0.3, 0.3, 0.5]} />
@@ -128,14 +119,14 @@ function CameraComponentView({ properties, children }: ComponentViewProps<Camera
                 <coneGeometry args={[0.08, 0.16, 16]} />
                 <meshBasicMaterial color={'#22d3ee'} wireframe />
             </mesh>
+            {children}
         </group>
-    ) : null;
+    );
 
     if (projection === 'orthographic') {
         return (
             <OrthographicCamera
-                key={cameraModeKey}
-                makeDefault={!editMode}
+                makeDefault
                 near={near}
                 zoom={zoom}
                 far={far}
@@ -144,8 +135,6 @@ function CameraComponentView({ properties, children }: ComponentViewProps<Camera
                 top={halfHeight}
                 bottom={-halfHeight}
             >
-                {cameraHelper}
-                {helperContent}
                 {children}
             </OrthographicCamera>
         );
@@ -153,21 +142,18 @@ function CameraComponentView({ properties, children }: ComponentViewProps<Camera
 
     return (
         <PerspectiveCamera
-            key={cameraModeKey}
-            makeDefault={!editMode}
+            makeDefault
             fov={fov}
             near={near}
             zoom={zoom}
             far={far}
         >
-            {cameraHelper}
-            {helperContent}
             {children}
         </PerspectiveCamera>
     );
 }
 
-const CameraComponent: Component = {
+const CameraComponent: Component<CameraProperties> = {
     name: 'Camera',
     Editor: CameraComponentEditor,
     View: CameraComponentView,

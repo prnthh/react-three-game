@@ -1,5 +1,5 @@
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Stage, View, PerspectiveCamera } from "@react-three/drei";
+import { OrbitControls, View, PerspectiveCamera } from "@react-three/drei";
 import { Suspense, useEffect, useLayoutEffect, useState, useRef } from "react";
 import { createPortal } from 'react-dom';
 import { Material, Mesh, Texture, TextureLoader } from "three";
@@ -102,7 +102,7 @@ function getItemsInPath(files: string[], currentPath: string) {
     const folders = new Set<string>();
     const filesInCurrentPath: string[] = [];
 
-    relevantFiles.forEach((file, index) => {
+    relevantFiles.forEach((file) => {
         const relativePath = file.slice(prefix.length);
         const parts = relativePath.split('/').filter(Boolean);
 
@@ -165,12 +165,11 @@ function useInView() {
 
 interface AssetListViewerProps {
     files: string[];
-    selected?: string;
     onSelect: (file: string) => void;
     renderCard: (file: string, onSelect: (file: string) => void) => React.ReactNode;
 }
 
-function AssetListViewer({ files, selected, onSelect, renderCard }: AssetListViewerProps) {
+function AssetListViewer({ files, onSelect, renderCard }: AssetListViewerProps) {
     const [currentPath, setCurrentPath] = useState('');
     const { folders, filesInCurrentPath } = getItemsInPath(files, currentPath);
 
@@ -208,18 +207,16 @@ function AssetListViewer({ files, selected, onSelect, renderCard }: AssetListVie
 
 interface TextureListViewerProps {
     files: string[];
-    selected?: string;
     onSelect: (file: string) => void;
     basePath?: string;
 }
 
-export function TextureListViewer({ files, selected, onSelect, basePath = "" }: TextureListViewerProps) {
+export function TextureListViewer({ files, onSelect, basePath = "" }: TextureListViewerProps) {
     return (
         <div style={{ position: 'relative', width: '100%', height: '100%' }}>
             <div style={{ width: '100%', height: '100%', overflowY: 'auto', overflowX: 'hidden', paddingRight: 4 }}>
                 <AssetListViewer
                     files={files}
-                    selected={selected}
                     onSelect={onSelect}
                     renderCard={(file, onSelectHandler) => (
                         <TextureCard file={file} basePath={basePath} onSelect={onSelectHandler} />
@@ -231,7 +228,17 @@ export function TextureListViewer({ files, selected, onSelect, basePath = "" }: 
     );
 }
 
-function TextureCard({ file, onSelect, basePath = "" }: { file: string; onSelect: (file: string) => void; basePath?: string }) {
+function TextureCard({
+    file,
+    onSelect,
+    basePath = "",
+    size = 60,
+}: {
+    file: string;
+    onSelect: (file: string) => void;
+    basePath?: string;
+    size?: number;
+}) {
     const [isHovered, setIsHovered] = useState(false);
     const [error, setError] = useState(false);
     const { ref, isInView } = useInView();
@@ -242,7 +249,7 @@ function TextureCard({ file, onSelect, basePath = "" }: { file: string; onSelect
         return (
             <div
                 ref={ref}
-                style={{ maxWidth: 60, aspectRatio: '1 / 1', ...assetTileStyle, backgroundColor: assetViewerColors.errorBg }}
+                style={{ width: size, aspectRatio: '1 / 1', ...assetTileStyle, backgroundColor: assetViewerColors.errorBg }}
                 onClick={() => onSelect(file)}
                 title={`Could not load ${file}`}
             >
@@ -259,7 +266,7 @@ function TextureCard({ file, onSelect, basePath = "" }: { file: string; onSelect
     return (
         <div
             ref={ref}
-            style={{ maxWidth: 60, aspectRatio: '1 / 1', ...assetTileStyle }}
+            style={{ width: size, aspectRatio: '1 / 1', ...assetTileStyle }}
             onClick={() => onSelect(file)}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
@@ -335,18 +342,16 @@ function TextureSphere({ url, onError }: { url: string; onError?: () => void }) 
 
 interface ModelListViewerProps {
     files: string[];
-    selected?: string;
     onSelect: (file: string) => void;
     basePath?: string;
 }
 
-export function ModelListViewer({ files, selected, onSelect, basePath = "" }: ModelListViewerProps) {
+export function ModelListViewer({ files, onSelect, basePath = "" }: ModelListViewerProps) {
     return (
         <div style={{ position: 'relative', width: '100%', height: '100%' }}>
             <div style={{ width: '100%', height: '100%', overflowY: 'auto', overflowX: 'hidden', paddingRight: 4 }}>
                 <AssetListViewer
                     files={files}
-                    selected={selected}
                     onSelect={onSelect}
                     renderCard={(file, onSelectHandler) => (
                         <ModelCard file={file} basePath={basePath} onSelect={onSelectHandler} />
@@ -449,27 +454,23 @@ function ModelPreview({ url, onError }: { url: string; onError?: () => void }) {
 
 interface SoundListViewerProps {
     files: string[];
-    selected?: string;
     onSelect: (file: string) => void;
-    basePath?: string;
 }
 
-export function SoundListViewer({ files, selected, onSelect, basePath = "" }: SoundListViewerProps) {
+export function SoundListViewer({ files, onSelect }: SoundListViewerProps) {
     return (
         <AssetListViewer
             files={files}
-            selected={selected}
             onSelect={onSelect}
             renderCard={(file, onSelectHandler) => (
-                <SoundCard file={file} basePath={basePath} onSelect={onSelectHandler} />
+                <SoundCard file={file} onSelect={onSelectHandler} />
             )}
         />
     );
 }
 
-function SoundCard({ file, onSelect, basePath = "" }: { file: string; onSelect: (file: string) => void; basePath?: string }) {
+function SoundCard({ file, onSelect }: { file: string; onSelect: (file: string) => void }) {
     const fileName = file.split('/').pop() || '';
-    const fullPath = withBasePath(basePath, file);
     return (
         <div
             onClick={() => onSelect(file)}
@@ -483,6 +484,26 @@ function SoundCard({ file, onSelect, basePath = "" }: { file: string; onSelect: 
 
 const PICKER_POPUP_WIDTH = 260;
 const PICKER_POPUP_HEIGHT = 360;
+const VISUAL_PICKER_PREVIEW_SIZE = 76;
+const visualAssetPickerRootStyle = {
+    width: '100%',
+    overflow: 'visible',
+    position: 'relative',
+    display: 'flex',
+    gap: 6,
+    alignItems: 'center',
+} as const;
+const visualAssetPickerControlsStyle = {
+    flex: 1,
+    minWidth: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 4,
+} as const;
+const visualAssetPickerButtonStyle = {
+    ...assetPickerWideButtonStyle,
+    padding: '4px 6px',
+} as const;
 
 function AssetPicker({
     value,
@@ -606,14 +627,14 @@ export function TexturePicker({ value, onChange, basePath = "" }: { value: strin
             onChange={onChange}
             basePath={basePath}
             manifestFolder="textures"
-            rootStyle={{ maxHeight: 128, overflow: 'visible', position: 'relative', display: 'flex', alignItems: 'center' }}
-            changeButtonStyle={{ ...assetPickerSmallButtonStyle, marginTop: 4 }}
-            clearButtonStyle={{ ...assetPickerSmallButtonStyle, marginTop: 4, marginLeft: 4 }}
-            preview={<SingleTextureViewer file={value} basePath={basePath} />}
-            renderList={({ files, value: selectedValue, onSelect, basePath: currentBasePath }) => (
+            rootStyle={visualAssetPickerRootStyle}
+            controlsStyle={visualAssetPickerControlsStyle}
+            changeButtonStyle={visualAssetPickerButtonStyle}
+            clearButtonStyle={visualAssetPickerButtonStyle}
+            preview={<SingleTextureViewer file={value} basePath={basePath} size={VISUAL_PICKER_PREVIEW_SIZE} />}
+            renderList={({ files, onSelect, basePath: currentBasePath }) => (
                 <TextureListViewer
                     files={files}
-                    selected={selectedValue || undefined}
                     onSelect={onSelect}
                     basePath={currentBasePath}
                 />
@@ -629,17 +650,16 @@ export function ModelPicker({ value, onChange, basePath = "", pickerKey }: { val
             onChange={onChange}
             basePath={basePath}
             manifestFolder="models"
-            rootStyle={{ maxHeight: 160, overflow: 'visible', position: 'relative', display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}
-            controlsStyle={{ display: 'flex', flexDirection: 'column', gap: 6, flex: '0 0 84px', minWidth: 84, justifyContent: 'flex-end' }}
-            changeButtonStyle={{ ...assetPickerWideButtonStyle, border: `1px solid ${assetViewerColors.accentBorder}` }}
-            clearButtonStyle={{ ...assetPickerWideButtonStyle, border: `1px solid ${assetViewerColors.accentBorder}` }}
+            rootStyle={visualAssetPickerRootStyle}
+            controlsStyle={visualAssetPickerControlsStyle}
+            changeButtonStyle={visualAssetPickerButtonStyle}
+            clearButtonStyle={visualAssetPickerButtonStyle}
             popupStyle={{ border: `1px solid ${assetViewerColors.accentBorder}` }}
-            preview={<div style={{ flex: '0 0 auto' }}><SingleModelViewer file={value} basePath={basePath} /></div>}
-            renderList={({ files, value: selectedValue, onSelect, basePath: currentBasePath }) => (
+            preview={<SingleModelViewer file={value} basePath={basePath} size={VISUAL_PICKER_PREVIEW_SIZE} />}
+            renderList={({ files, onSelect, basePath: currentBasePath }) => (
                 <ModelListViewer
                     key={pickerKey}
                     files={files}
-                    selected={selectedValue ? `/${selectedValue}` : undefined}
                     onSelect={(file) => onSelect(file.startsWith('/') ? file.slice(1) : file)}
                     basePath={currentBasePath}
                 />
@@ -659,43 +679,58 @@ export function SoundPicker({ value, onChange, basePath = "" }: { value: string 
             controlsStyle={{ display: 'flex', flexDirection: 'column', gap: 6, flex: '0 0 84px', minWidth: 84, justifyContent: 'flex-end' }}
             changeButtonStyle={assetPickerWideButtonStyle}
             clearButtonStyle={assetPickerWideButtonStyle}
-            preview={<div style={{ flex: '0 0 auto', minWidth: 84 }}>{value ? <SingleSoundViewer file={value} basePath={basePath} /> : <div style={{ width: 84, height: 60, ...assetPickerEmptyPreviewStyle }} />}</div>}
-            renderList={({ files, value: selectedValue, onSelect, basePath: currentBasePath }) => (
+            preview={<div style={{ flex: '0 0 auto', minWidth: 84 }}>{value ? <SingleSoundViewer file={value} /> : <div style={{ width: 84, height: 60, ...assetPickerEmptyPreviewStyle }} />}</div>}
+            renderList={({ files, onSelect }) => (
                 <SoundListViewer
                     files={files}
-                    selected={selectedValue || undefined}
                     onSelect={onSelect}
-                    basePath={currentBasePath}
                 />
             )}
         />
     );
 }
 
+function SingleVisualAssetViewer({
+    file,
+    size,
+    children,
+}: {
+    file?: string;
+    size: number;
+    children: React.ReactNode;
+}) {
+    return (
+        <>
+            <div style={{ flex: '0 0 auto', width: size, height: size }}>
+                {file
+                    ? children
+                    : <div style={{ width: '100%', height: '100%', ...assetPickerEmptyPreviewStyle }} />}
+            </div>
+            {file ? <SharedCanvas /> : null}
+        </>
+    );
+}
+
 // Single Asset Viewer Components - display only one selected asset
-export function SingleTextureViewer({ file, basePath = "" }: { file?: string; basePath?: string }) {
-    if (!file) return <div style={{ width: 60, aspectRatio: '1 / 1', ...assetPickerEmptyPreviewStyle }} />;
+export function SingleTextureViewer({ file, basePath = "", size = 60 }: { file?: string; basePath?: string; size?: number }) {
     return (
-        <>
-            <TextureCard file={file} basePath={basePath} onSelect={() => { }} />
-            <SharedCanvas />
-        </>
+        <SingleVisualAssetViewer file={file} size={size}>
+            {file ? <TextureCard file={file} basePath={basePath} onSelect={() => { }} size={size} /> : null}
+        </SingleVisualAssetViewer>
     );
 }
 
-export function SingleModelViewer({ file, basePath = "" }: { file?: string; basePath?: string }) {
-    if (!file) return <div style={{ width: 112, aspectRatio: '1 / 1', ...assetPickerEmptyPreviewStyle }} />;
+export function SingleModelViewer({ file, basePath = "", size = 112 }: { file?: string; basePath?: string; size?: number }) {
     return (
-        <>
-            <ModelCard file={file} basePath={basePath} onSelect={() => { }} size={112} />
-            <SharedCanvas />
-        </>
+        <SingleVisualAssetViewer file={file} size={size}>
+            {file ? <ModelCard file={file} basePath={basePath} onSelect={() => { }} size={size} /> : null}
+        </SingleVisualAssetViewer>
     );
 }
 
-export function SingleSoundViewer({ file, basePath = "" }: { file?: string; basePath?: string }) {
+export function SingleSoundViewer({ file }: { file?: string }) {
     if (!file) return null;
-    return <SoundCard file={file} basePath={basePath} onSelect={() => { }} />;
+    return <SoundCard file={file} onSelect={() => { }} />;
 }
 
 // Shared Canvas Component - can be used independently in any viewer

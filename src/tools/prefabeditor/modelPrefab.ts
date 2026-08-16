@@ -2,13 +2,12 @@ import {
     BackSide,
     BufferAttribute,
     DoubleSide,
-    FrontSide,
     Material,
     Mesh,
     Object3D,
 } from 'three';
-import type { BufferGeometry, ColorRepresentation, Texture } from 'three';
-import type { ComponentData, GameObject } from './types';
+import type { BufferGeometry, Texture } from 'three';
+import type { ComponentData, GameObject, MaterialComponentProperties, PrefabMaterial } from './types';
 
 type NumericArray = number[];
 
@@ -115,7 +114,7 @@ function getSideName(side: Material['side']) {
 
 function getMaterialColor(material: Material) {
     const maybeColor = material as Material & { color?: { getStyle?: () => string } };
-    return maybeColor.color?.getStyle?.() as ColorRepresentation | undefined;
+    return maybeColor.color?.getStyle?.();
 }
 
 function getTextureImagePath(texture: Texture | null | undefined) {
@@ -160,7 +159,7 @@ function getTexturePath(texture: Texture | null | undefined, usage: 'map' | 'nor
     return getTextureImagePath(texture) ?? options.getTexturePath(texture, usage) ?? undefined;
 }
 
-function serializeMaterial(material: Material, attach: string, options: Required<DecomposeModelOptions>): ComponentData {
+function serializeMaterial(material: Material, options: Required<DecomposeModelOptions>): PrefabMaterial {
     const source = material as Material & {
         color?: { getStyle?: () => string };
         map?: Texture | null;
@@ -178,24 +177,21 @@ function serializeMaterial(material: Material, attach: string, options: Required
     const normalScale = source.normalScale?.toArray?.();
 
     return {
-        type: 'Material',
-        properties: {
-            attach,
-            materialType,
-            color: getMaterialColor(material) ?? '#ffffff',
-            ...(texture ? { texture } : null),
-            ...(normalMapTexture ? { normalMapTexture } : null),
-            ...(normalScale ? { normalScale } : null),
-            opacity: material.opacity,
-            transparent: material.transparent,
-            side: getSideName(material.side),
-            wireframe: source.wireframe ?? false,
-            toneMapped: source.toneMapped ?? true,
-            ...(materialType === 'standard' ? {
-                metalness: source.metalness ?? 0,
-                roughness: source.roughness ?? 1,
-            } : null),
-        },
+        name: material.name || undefined,
+        materialType,
+        color: getMaterialColor(material) ?? '#ffffff',
+        ...(texture ? { texture } : null),
+        ...(normalMapTexture ? { normalMapTexture } : null),
+        ...(normalScale ? { normalScale: normalScale as [number, number] } : null),
+        opacity: material.opacity,
+        transparent: material.transparent,
+        side: getSideName(material.side),
+        wireframe: source.wireframe ?? false,
+        toneMapped: source.toneMapped ?? true,
+        ...(materialType === 'standard' ? {
+            metalness: source.metalness ?? 0,
+            roughness: source.roughness ?? 1,
+        } : null),
     };
 }
 
@@ -241,12 +237,31 @@ function createNode(
     };
 }
 
-function decomposeObject(object: Object3D, options: Required<DecomposeModelOptions>): GameObject | null {
+type MaterialCollector = {
+    ids: Map<Material, string>;
+    definitions: Record<string, PrefabMaterial>;
+};
+
+function getMaterialId(material: Material, options: Required<DecomposeModelOptions>, collector: MaterialCollector) {
+    const existing = collector.ids.get(material);
+    if (existing) return existing;
+
+    const id = createId(`${options.idPrefix}-material`);
+    collector.ids.set(material, id);
+    collector.definitions[id] = serializeMaterial(material, options);
+    return id;
+}
+
+function decomposeObject(
+    object: Object3D,
+    options: Required<DecomposeModelOptions>,
+    materials: MaterialCollector,
+): GameObject | null {
     const collisionMesh = getCollisionMeshConvention(object.name, options.inferCollisionMeshes);
     if (!options.includeInvisible && !object.visible && !collisionMesh) return null;
 
     const childNodes = object.children
-        .map(child => decomposeObject(child, options))
+        .map(child => decomposeObject(child, options, materials))
         .filter((child): child is GameObject => child != null);
 
     if (!(object instanceof Mesh)) {
@@ -255,19 +270,28 @@ function decomposeObject(object: Object3D, options: Required<DecomposeModelOptio
 
     const parts = getMeshParts(object);
     const materialComponents = parts.reduce<Record<string, ComponentData>>((result, part) => {
-        result[part.key] = serializeMaterial(part.material, part.attach, options);
+        result[part.key] = {
+            type: 'Material',
+            properties: {
+                materialId: getMaterialId(part.material, options, materials),
+                attach: part.attach,
+            } satisfies MaterialComponentProperties,
+        };
         return result;
     }, {});
 
     return createNode(object, options.idPrefix, childNodes, {
-        geometry: {
-            type: 'BufferGeometry',
+        mesh: {
+            type: 'Mesh',
             properties: {
-                ...serializeGeometry(object.geometry),
                 visible: collisionMesh ? collisionMesh.renderMesh : object.visible,
                 castShadow: object.castShadow,
                 receiveShadow: object.receiveShadow,
             },
+        },
+        geometry: {
+            type: 'BufferGeometry',
+            properties: serializeGeometry(object.geometry),
         },
         ...materialComponents,
         ...(collisionMesh ? {
@@ -284,17 +308,26 @@ function decomposeObject(object: Object3D, options: Required<DecomposeModelOptio
 }
 
 /**
- * Converts a live Three object hierarchy into prefab JSON nodes made from
- * Transform, BufferGeometry, and Material components.
+ * Converts a live Three object hierarchy into composable prefab nodes and
+ * shared material definitions. Reused Three material objects keep one id.
  */
+export interface DecomposedPrefabNodes {
+    root: GameObject;
+    materials: Record<string, PrefabMaterial>;
+}
+
 export function decomposeModelToPrefabNodes(
     object: Object3D,
     options: DecomposeModelOptions = {},
-): GameObject {
-    return decomposeObject(object, {
+): DecomposedPrefabNodes {
+    const resolvedOptions = {
         idPrefix: options.idPrefix ?? 'model',
         includeInvisible: options.includeInvisible ?? false,
         inferCollisionMeshes: options.inferCollisionMeshes ?? true,
         getTexturePath: options.getTexturePath ?? (() => undefined),
-    }) ?? createNode(object, options.idPrefix ?? 'model');
+    };
+    const materials: MaterialCollector = { ids: new Map(), definitions: {} };
+    const root = decomposeObject(object, resolvedOptions, materials)
+        ?? createNode(object, resolvedOptions.idPrefix);
+    return { root, materials: materials.definitions };
 }

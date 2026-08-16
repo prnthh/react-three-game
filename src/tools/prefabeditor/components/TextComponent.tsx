@@ -1,68 +1,73 @@
-import { Component } from "./ComponentRegistry";
+import type { Component, ComponentEditorProps, ComponentViewProps } from "./ComponentRegistry";
+import { usePrefab } from "../SceneContext";
 import { ColorField, FieldGroup, NumberField, SelectField, StringField } from "./Input";
 import { Text } from 'three-text/three/react';
 import { useRef, useState, useCallback } from 'react';
 import { BufferGeometry, Color, Mesh } from "three";
 import { withBasePath } from "../utils";
 
-function TextComponentEditor({
-    component,
-    onUpdate,
-}: {
-    component: any;
-    onUpdate: (newProps: any) => void;
-}) {
+type TextProperties = {
+    text?: string;
+    color?: string;
+    font?: string;
+    size?: number;
+    depth?: number;
+    width?: number;
+    align?: 'left' | 'center' | 'right';
+};
+
+function TextComponentEditor({ properties, update }: ComponentEditorProps<TextProperties>) {
     return (
         <FieldGroup>
             <StringField
                 name="text"
                 label="Text"
-                values={component.properties}
-                onChange={onUpdate}
+                values={properties}
+                onChange={update}
                 placeholder="Enter text..."
             />
             <ColorField
                 name="color"
                 label="Color"
-                values={component.properties}
-                onChange={onUpdate}
+                values={properties}
+                onChange={update}
             />
             <StringField
                 name="font"
                 label="Font"
-                values={component.properties}
-                onChange={onUpdate}
+                values={properties}
+                onChange={update}
                 placeholder="/fonts/NotoSans-Regular.ttf"
             />
             <NumberField
                 name="size"
                 label="Size"
-                values={component.properties}
-                onChange={onUpdate}
+                values={properties}
+                onChange={update}
                 min={0.01}
                 step={0.1}
             />
             <NumberField
                 name="depth"
                 label="Depth"
-                values={component.properties}
-                onChange={onUpdate}
+                values={properties}
+                onChange={update}
                 min={0}
                 step={0.1}
             />
             <NumberField
                 name="width"
                 label="Width"
-                values={component.properties}
-                onChange={onUpdate}
+                values={properties}
+                onChange={update}
                 min={0}
                 step={0.5}
             />
             <SelectField
                 name="align"
                 label="Align"
-                values={component.properties}
-                onChange={onUpdate}
+                values={properties}
+                onChange={update}
                 options={[
                     { value: 'left', label: 'Left' },
                     { value: 'center', label: 'Center' },
@@ -73,8 +78,9 @@ function TextComponentEditor({
     );
 }
 
-function TextComponentView({ properties, children, basePath = "" }: { properties: any; children?: React.ReactNode; basePath?: string }) {
-    const { text = '', font, size, depth, width, align, color } = properties;
+function TextComponentView({ properties, children }: ComponentViewProps<TextProperties>) {
+    const { basePath } = usePrefab();
+    const { text = '', font = '/fonts/NotoSans-Regular.ttf', size, depth, width, align, color } = properties;
     const textContent = String(text || '');
     const resolvedFont = font ? withBasePath(basePath, font) : font;
     const fillColor = new Color(color ?? '#888888').toArray() as [number, number, number];
@@ -121,7 +127,7 @@ function TextComponentView({ properties, children, basePath = "" }: { properties
     );
 }
 
-const TextComponent: Component = {
+const TextComponent: Component<TextProperties> = {
     name: 'Text',
     Editor: TextComponentEditor,
     View: TextComponentView,

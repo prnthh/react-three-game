@@ -1,0 +1,213 @@
+{
+  "id": "street",
+  "name": "Street",
+  "materials": {
+    "street-ground": {
+      "color": "#3f4449",
+      "roughness": 0.96,
+      "metalness": 0.02,
+      "texture": "/textures/floor/terrain/rock-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        48,
+        48
+      ]
+    },
+    "street-sky": {
+      "materialType": "basic",
+      "color": "#d7ecff",
+      "side": "BackSide",
+      "toneMapped": false,
+      "texture": "/textures/skybox/skybox3.jpg"
+    }
+  },
+  "root": {
+    "id": "street-root",
+    "name": "Street Root",
+    "components": {
+      "transform": {
+        "type": "Transform",
+        "properties": {}
+      }
+    },
+    "children": [
+      {
+        "id": "street-ground",
+        "name": "Street Ground",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                -0.125,
+                0
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": false
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                240,
+                0.25,
+                240
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "street-ground"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "friction": 0.8,
+              "restitution": 0
+            }
+          }
+        }
+      },
+      {
+        "id": "street-environment",
+        "name": "Street Environment",
+        "disabled": false,
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {}
+          },
+          "environment": {
+            "type": "Environment",
+            "properties": {
+              "intensity": 0.5
+            }
+          }
+        },
+        "children": [
+          {
+            "id": "street-sky",
+            "name": "Street Sky",
+            "disabled": false,
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {}
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": false
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "sphere",
+                  "args": [
+                    300,
+                    32,
+                    16
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "street-sky"
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "street-ambient-light",
+        "name": "Street Ambient Light",
+        "disabled": false,
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {}
+          },
+          "ambientLight": {
+            "type": "AmbientLight",
+            "properties": {
+              "color": "#e5f3ff",
+              "intensity": 5
+            }
+          }
+        }
+      },
+      {
+        "id": "street-sun",
+        "name": "Street Directional Light",
+        "disabled": false,
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                45,
+                70,
+                30
+              ]
+            }
+          },
+          "directionalLight": {
+            "type": "DirectionalLight",
+            "properties": {
+              "color": "#fff1c7",
+              "intensity": 7,
+              "targetOffset": [
+                -45,
+                -65,
+                -30
+              ],
+              "castShadow": true,
+              "shadowMapSize": 2048,
+              "shadowCameraFar": 180,
+              "shadowCameraTop": 80,
+              "shadowCameraBottom": -80,
+              "shadowCameraLeft": -80,
+              "shadowCameraRight": 80,
+              "shadowBias": 0.0002,
+              "shadowNormalBias": 0.025
+            }
+          }
+        }
+      },
+      {
+        "id": "a808b2a4-44ad-4281-ae10-c9c6d07f8941",
+        "name": "tree",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -11,
+                0,
+                -11
+              ]
+            }
+          },
+          "model": {
+            "type": "Model",
+            "properties": {
+              "filename": "models/environment/tree.glb"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

@@ -115,8 +115,8 @@ const DataComponent: Component<DataComponentProperties> = {
     name: 'Data',
     disableSiblingComposition: true,
     Editor: DataComponentEditor,
-    defaultProperties: {
-        data: {},
+    properties: {
+        data: { type: 'object', default: {} },
     },
 };
 

@@ -1,29 +1,155 @@
 {
   "id": "machinegun-level-ridge",
   "name": "Ridge Road Intercept",
+  "materials": {
+    "material": {
+      "materialType": "basic",
+      "color": "#ffd1a3",
+      "side": "BackSide",
+      "toneMapped": false,
+      "texture": "/textures/skybox/skybox2.jpg"
+    },
+    "material-2": {
+      "color": "#6f6959",
+      "roughness": 0.9,
+      "texture": "/textures/floor/terrain/rock-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        34,
+        34
+      ]
+    },
+    "material-3": {
+      "color": "#4d463d",
+      "roughness": 0.86,
+      "texture": "/textures/floor/terrain/dirt-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        5,
+        46
+      ]
+    },
+    "material-4": {
+      "materialType": "basic",
+      "color": "#cbd5a1",
+      "roughness": 0.78
+    },
+    "material-5": {
+      "materialType": "basic",
+      "color": "#a59b6c",
+      "roughness": 0.9,
+      "texture": "/textures/floor/terrain/sand-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        1,
+        32
+      ]
+    },
+    "material-6": {
+      "color": "#6f7f45",
+      "roughness": 0.7,
+      "metalness": 0.16,
+      "transparent": true,
+      "opacity": 0
+    },
+    "material-7": {
+      "color": "#171b1f",
+      "roughness": 0.86,
+      "metalness": 0.04
+    },
+    "material-8": {
+      "color": "#2f3439",
+      "roughness": 0.8,
+      "metalness": 0.12
+    },
+    "material-9": {
+      "color": "#4c5c38",
+      "roughness": 0.72,
+      "metalness": 0.16
+    },
+    "material-10": {
+      "color": "#6f7f45",
+      "roughness": 0.7,
+      "metalness": 0.2
+    },
+    "material-11": {
+      "color": "#6f7f45",
+      "roughness": 0.68,
+      "metalness": 0.2
+    },
+    "material-12": {
+      "color": "#6f7f45",
+      "roughness": 0.66,
+      "metalness": 0.22
+    },
+    "material-13": {
+      "color": "#6f7f45",
+      "roughness": 0.66,
+      "metalness": 0.2
+    },
+    "material-14": {
+      "color": "#475569",
+      "roughness": 0.58,
+      "metalness": 0.34
+    },
+    "material-15": {
+      "color": "#232a31",
+      "roughness": 0.6,
+      "metalness": 0.4
+    },
+    "material-16": {
+      "materialType": "basic",
+      "color": "#fef08a",
+      "roughness": 0.2,
+      "toneMapped": false
+    },
+    "material-17": {
+      "materialType": "basic",
+      "color": "#ef4444",
+      "roughness": 0.25,
+      "toneMapped": false
+    },
+    "material-18": {
+      "color": "#4b5563",
+      "roughness": 0.86,
+      "metalness": 0.02,
+      "texture": "/textures/floor/terrain/rock-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        2,
+        2
+      ]
+    },
+    "material-19": {
+      "color": "#8b8f86",
+      "roughness": 0.72,
+      "metalness": 0.12,
+      "texture": "/textures/floor/terrain/rock-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        1,
+        2
+      ]
+    },
+    "material-20": {
+      "color": "#6b7280",
+      "roughness": 0.86,
+      "metalness": 0.02,
+      "texture": "/textures/floor/terrain/rock-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        2,
+        2
+      ]
+    }
+  },
   "root": {
     "id": "machinegun-level-ridge-root",
     "name": "Ridge Road Intercept root",
     "components": {
       "transform": {
         "type": "Transform",
-        "properties": {
-          "position": [
-            0,
-            0,
-            0
-          ],
-          "rotation": [
-            0,
-            0,
-            0
-          ],
-          "scale": [
-            1,
-            1,
-            1
-          ]
-        }
+        "properties": {}
       },
       "data": {
         "type": "Data",
@@ -51,23 +177,7 @@
         "components": {
           "transform": {
             "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                0,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
+            "properties": {}
           },
           "environment": {
             "type": "Environment",
@@ -83,23 +193,7 @@
             "components": {
               "transform": {
                 "type": "Transform",
-                "properties": {
-                  "position": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
-                  ]
-                }
+                "properties": {}
               },
               "mesh": {
                 "type": "Mesh",
@@ -125,7 +219,8 @@
                   "materialId": "material"
                 }
               }
-            }
+            },
+            "children": []
           }
         ]
       },
@@ -139,16 +234,6 @@
                 56,
                 45,
                 18
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
@@ -172,7 +257,8 @@
               "shadowNormalBias": 0.025
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "ambient-fill",
@@ -184,7 +270,8 @@
               "intensity": 0.64
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "ridge-floor",
@@ -197,30 +284,16 @@
                 0,
                 -0.12,
                 -40
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 168,
                 0.24,
@@ -244,7 +317,8 @@
               "friction": 0.48
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "range-road",
@@ -256,30 +330,16 @@
                 0,
                 -0.015,
                 -41
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 8.6,
                 0.08,
@@ -293,7 +353,8 @@
               "materialId": "material-3"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "road-centerline-0",
@@ -305,30 +366,16 @@
                 0,
                 0.045,
                 -3.6
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.16,
                 0.035,
@@ -342,7 +389,8 @@
               "materialId": "material-4"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "road-centerline-1",
@@ -354,30 +402,16 @@
                 0,
                 0.045,
                 -8
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.16,
                 0.035,
@@ -391,7 +425,8 @@
               "materialId": "material-4"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "road-centerline-2",
@@ -403,30 +438,16 @@
                 0,
                 0.045,
                 -12.4
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.16,
                 0.035,
@@ -440,7 +461,8 @@
               "materialId": "material-4"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "road-centerline-3",
@@ -452,30 +474,16 @@
                 0,
                 0.045,
                 -16.8
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.16,
                 0.035,
@@ -489,7 +497,8 @@
               "materialId": "material-4"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "road-centerline-4",
@@ -501,30 +510,16 @@
                 0,
                 0.045,
                 -21.2
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.16,
                 0.035,
@@ -538,7 +533,8 @@
               "materialId": "material-4"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "road-centerline-5",
@@ -550,30 +546,16 @@
                 0,
                 0.045,
                 -25.6
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.16,
                 0.035,
@@ -587,7 +569,8 @@
               "materialId": "material-4"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "road-centerline-6",
@@ -599,30 +582,16 @@
                 0,
                 0.045,
                 -30
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.16,
                 0.035,
@@ -636,7 +605,8 @@
               "materialId": "material-4"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "road-centerline-7",
@@ -648,30 +618,16 @@
                 0,
                 0.045,
                 -34.4
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.16,
                 0.035,
@@ -685,7 +641,8 @@
               "materialId": "material-4"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "road-centerline-8",
@@ -697,30 +654,16 @@
                 0,
                 0.045,
                 -38.8
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.16,
                 0.035,
@@ -734,7 +677,8 @@
               "materialId": "material-4"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "left-road-berm",
@@ -746,30 +690,16 @@
                 -4.95,
                 0.03,
                 -41
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.18,
                 0.12,
@@ -793,7 +723,8 @@
               "friction": 0.3
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "right-road-berm",
@@ -805,30 +736,16 @@
                 4.95,
                 0.03,
                 -41
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.18,
                 0.12,
@@ -852,7 +769,8 @@
               "friction": 0.3
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "incoming-target-1",
@@ -865,23 +783,12 @@
                 -3.7,
                 0.94,
                 -30
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "visible": true,
               "castShadow": false,
               "receiveShadow": false
             }
@@ -889,7 +796,6 @@
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 1.28,
                 1.38,
@@ -937,30 +843,16 @@
                     -0.46,
                     -0.56,
                     0
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.22,
                     0.28,
@@ -982,7 +874,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-1-right-tread",
@@ -995,30 +888,16 @@
                     0.46,
                     -0.56,
                     0
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.22,
                     0.28,
@@ -1040,7 +919,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-1-left-tread-cap-front",
@@ -1058,20 +938,12 @@
                     1.5708,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -1099,7 +971,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-1-right-tread-cap-front",
@@ -1117,20 +990,12 @@
                     1.5708,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -1158,7 +1023,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-1-left-tread-cap-rear",
@@ -1176,20 +1042,12 @@
                     1.5708,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -1217,7 +1075,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-1-right-tread-cap-rear",
@@ -1235,20 +1094,12 @@
                     1.5708,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -1276,7 +1127,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-1-lower-hull",
@@ -1289,30 +1141,16 @@
                     0,
                     -0.35,
                     0
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     1.08,
                     0.36,
@@ -1326,7 +1164,8 @@
                   "materialId": "material-9"
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-1-front-armor",
@@ -1344,25 +1183,16 @@
                     -0.28,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.98,
                     0.36,
@@ -1376,7 +1206,8 @@
                   "materialId": "material-10"
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-1-upper-hull",
@@ -1389,30 +1220,16 @@
                     0,
                     0.02,
                     -0.06
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.9,
                     0.32,
@@ -1426,7 +1243,8 @@
                   "materialId": "material-11"
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-1-turret",
@@ -1439,30 +1257,16 @@
                     0,
                     0.34,
                     0.03
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.48,
                     0.28,
@@ -1476,7 +1280,8 @@
                   "materialId": "material-12"
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-1-turret-dome",
@@ -1490,11 +1295,6 @@
                     0.52,
                     0.02
                   ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
                   "scale": [
                     1.05,
                     0.42,
@@ -1504,10 +1304,7 @@
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -1526,7 +1323,8 @@
                   "materialId": "material-13"
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-1-main-gun",
@@ -1544,20 +1342,12 @@
                     1.5708,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -1585,7 +1375,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-1-muzzle",
@@ -1603,20 +1394,12 @@
                     1.5708,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -1644,7 +1427,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-1-left-headlamp",
@@ -1657,30 +1441,16 @@
                     -0.24,
                     -0.06,
                     0.58
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.12,
                     0.09,
@@ -1702,7 +1472,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-1-right-headlamp",
@@ -1715,30 +1486,16 @@
                     0.24,
                     -0.06,
                     0.58
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.12,
                     0.09,
@@ -1760,7 +1517,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-1-weak-point",
@@ -1773,30 +1531,16 @@
                     0,
                     -0.28,
                     0.61
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.28,
                     0.2,
@@ -1818,7 +1562,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           }
         ]
       },
@@ -1833,23 +1578,12 @@
                 -2.1,
                 0.94,
                 -44
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "visible": true,
               "castShadow": false,
               "receiveShadow": false
             }
@@ -1857,7 +1591,6 @@
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 1.28,
                 1.38,
@@ -1905,30 +1638,16 @@
                     -0.46,
                     -0.56,
                     0
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.22,
                     0.28,
@@ -1950,7 +1669,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-2-right-tread",
@@ -1963,30 +1683,16 @@
                     0.46,
                     -0.56,
                     0
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.22,
                     0.28,
@@ -2008,7 +1714,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-2-left-tread-cap-front",
@@ -2026,20 +1733,12 @@
                     1.5708,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -2067,7 +1766,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-2-right-tread-cap-front",
@@ -2085,20 +1785,12 @@
                     1.5708,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -2126,7 +1818,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-2-left-tread-cap-rear",
@@ -2144,20 +1837,12 @@
                     1.5708,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -2185,7 +1870,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-2-right-tread-cap-rear",
@@ -2203,20 +1889,12 @@
                     1.5708,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -2244,7 +1922,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-2-lower-hull",
@@ -2257,30 +1936,16 @@
                     0,
                     -0.35,
                     0
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     1.08,
                     0.36,
@@ -2294,7 +1959,8 @@
                   "materialId": "material-9"
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-2-front-armor",
@@ -2312,25 +1978,16 @@
                     -0.28,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.98,
                     0.36,
@@ -2344,7 +2001,8 @@
                   "materialId": "material-10"
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-2-upper-hull",
@@ -2357,30 +2015,16 @@
                     0,
                     0.02,
                     -0.06
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.9,
                     0.32,
@@ -2394,7 +2038,8 @@
                   "materialId": "material-11"
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-2-turret",
@@ -2407,30 +2052,16 @@
                     0,
                     0.34,
                     0.03
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.48,
                     0.28,
@@ -2444,7 +2075,8 @@
                   "materialId": "material-12"
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-2-turret-dome",
@@ -2458,11 +2090,6 @@
                     0.52,
                     0.02
                   ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
                   "scale": [
                     1.05,
                     0.42,
@@ -2472,10 +2099,7 @@
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -2494,7 +2118,8 @@
                   "materialId": "material-13"
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-2-main-gun",
@@ -2512,20 +2137,12 @@
                     1.5708,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -2553,7 +2170,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-2-muzzle",
@@ -2571,20 +2189,12 @@
                     1.5708,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -2612,7 +2222,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-2-left-headlamp",
@@ -2625,30 +2236,16 @@
                     -0.24,
                     -0.06,
                     0.58
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.12,
                     0.09,
@@ -2670,7 +2267,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-2-right-headlamp",
@@ -2683,30 +2281,16 @@
                     0.24,
                     -0.06,
                     0.58
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.12,
                     0.09,
@@ -2728,7 +2312,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-2-weak-point",
@@ -2741,30 +2326,16 @@
                     0,
                     -0.28,
                     0.61
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.28,
                     0.2,
@@ -2786,7 +2357,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           }
         ]
       },
@@ -2801,23 +2373,12 @@
                 -0.25,
                 0.94,
                 -26
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "visible": true,
               "castShadow": false,
               "receiveShadow": false
             }
@@ -2825,7 +2386,6 @@
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 1.28,
                 1.38,
@@ -2873,30 +2433,16 @@
                     -0.46,
                     -0.56,
                     0
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.22,
                     0.28,
@@ -2918,7 +2464,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-3-right-tread",
@@ -2931,30 +2478,16 @@
                     0.46,
                     -0.56,
                     0
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.22,
                     0.28,
@@ -2976,7 +2509,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-3-left-tread-cap-front",
@@ -2994,20 +2528,12 @@
                     1.5708,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -3035,7 +2561,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-3-right-tread-cap-front",
@@ -3053,20 +2580,12 @@
                     1.5708,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -3094,7 +2613,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-3-left-tread-cap-rear",
@@ -3112,20 +2632,12 @@
                     1.5708,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -3153,7 +2665,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-3-right-tread-cap-rear",
@@ -3171,20 +2684,12 @@
                     1.5708,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -3212,7 +2717,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-3-lower-hull",
@@ -3225,30 +2731,16 @@
                     0,
                     -0.35,
                     0
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     1.08,
                     0.36,
@@ -3262,7 +2754,8 @@
                   "materialId": "material-9"
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-3-front-armor",
@@ -3280,25 +2773,16 @@
                     -0.28,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.98,
                     0.36,
@@ -3312,7 +2796,8 @@
                   "materialId": "material-10"
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-3-upper-hull",
@@ -3325,30 +2810,16 @@
                     0,
                     0.02,
                     -0.06
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.9,
                     0.32,
@@ -3362,7 +2833,8 @@
                   "materialId": "material-11"
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-3-turret",
@@ -3375,30 +2847,16 @@
                     0,
                     0.34,
                     0.03
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.48,
                     0.28,
@@ -3412,7 +2870,8 @@
                   "materialId": "material-12"
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-3-turret-dome",
@@ -3426,11 +2885,6 @@
                     0.52,
                     0.02
                   ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
                   "scale": [
                     1.05,
                     0.42,
@@ -3440,10 +2894,7 @@
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -3462,7 +2913,8 @@
                   "materialId": "material-13"
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-3-main-gun",
@@ -3480,20 +2932,12 @@
                     1.5708,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -3521,7 +2965,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-3-muzzle",
@@ -3539,20 +2984,12 @@
                     1.5708,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -3580,7 +3017,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-3-left-headlamp",
@@ -3593,30 +3031,16 @@
                     -0.24,
                     -0.06,
                     0.58
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.12,
                     0.09,
@@ -3638,7 +3062,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-3-right-headlamp",
@@ -3651,30 +3076,16 @@
                     0.24,
                     -0.06,
                     0.58
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.12,
                     0.09,
@@ -3696,7 +3107,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-3-weak-point",
@@ -3709,30 +3121,16 @@
                     0,
                     -0.28,
                     0.61
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.28,
                     0.2,
@@ -3754,7 +3152,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           }
         ]
       },
@@ -3769,23 +3168,12 @@
                 1.65,
                 0.94,
                 -38
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "visible": true,
               "castShadow": false,
               "receiveShadow": false
             }
@@ -3793,7 +3181,6 @@
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 1.28,
                 1.38,
@@ -3841,30 +3228,16 @@
                     -0.46,
                     -0.56,
                     0
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.22,
                     0.28,
@@ -3886,7 +3259,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-4-right-tread",
@@ -3899,30 +3273,16 @@
                     0.46,
                     -0.56,
                     0
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.22,
                     0.28,
@@ -3944,7 +3304,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-4-left-tread-cap-front",
@@ -3962,20 +3323,12 @@
                     1.5708,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -4003,7 +3356,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-4-right-tread-cap-front",
@@ -4021,20 +3375,12 @@
                     1.5708,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -4062,7 +3408,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-4-left-tread-cap-rear",
@@ -4080,20 +3427,12 @@
                     1.5708,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -4121,7 +3460,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-4-right-tread-cap-rear",
@@ -4139,20 +3479,12 @@
                     1.5708,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -4180,7 +3512,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-4-lower-hull",
@@ -4193,30 +3526,16 @@
                     0,
                     -0.35,
                     0
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     1.08,
                     0.36,
@@ -4230,7 +3549,8 @@
                   "materialId": "material-9"
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-4-front-armor",
@@ -4248,25 +3568,16 @@
                     -0.28,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.98,
                     0.36,
@@ -4280,7 +3591,8 @@
                   "materialId": "material-10"
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-4-upper-hull",
@@ -4293,30 +3605,16 @@
                     0,
                     0.02,
                     -0.06
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.9,
                     0.32,
@@ -4330,7 +3628,8 @@
                   "materialId": "material-11"
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-4-turret",
@@ -4343,30 +3642,16 @@
                     0,
                     0.34,
                     0.03
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.48,
                     0.28,
@@ -4380,7 +3665,8 @@
                   "materialId": "material-12"
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-4-turret-dome",
@@ -4394,11 +3680,6 @@
                     0.52,
                     0.02
                   ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
                   "scale": [
                     1.05,
                     0.42,
@@ -4408,10 +3689,7 @@
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -4430,7 +3708,8 @@
                   "materialId": "material-13"
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-4-main-gun",
@@ -4448,20 +3727,12 @@
                     1.5708,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -4489,7 +3760,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-4-muzzle",
@@ -4507,20 +3779,12 @@
                     1.5708,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -4548,7 +3812,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-4-left-headlamp",
@@ -4561,30 +3826,16 @@
                     -0.24,
                     -0.06,
                     0.58
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.12,
                     0.09,
@@ -4606,7 +3857,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-4-right-headlamp",
@@ -4619,30 +3871,16 @@
                     0.24,
                     -0.06,
                     0.58
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.12,
                     0.09,
@@ -4664,7 +3902,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-4-weak-point",
@@ -4677,30 +3916,16 @@
                     0,
                     -0.28,
                     0.61
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.28,
                     0.2,
@@ -4722,7 +3947,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           }
         ]
       },
@@ -4737,23 +3963,12 @@
                 3.4,
                 0.94,
                 -52
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "visible": true,
               "castShadow": false,
               "receiveShadow": false
             }
@@ -4761,7 +3976,6 @@
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 1.28,
                 1.38,
@@ -4809,30 +4023,16 @@
                     -0.46,
                     -0.56,
                     0
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.22,
                     0.28,
@@ -4854,7 +4054,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-5-right-tread",
@@ -4867,30 +4068,16 @@
                     0.46,
                     -0.56,
                     0
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.22,
                     0.28,
@@ -4912,7 +4099,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-5-left-tread-cap-front",
@@ -4930,20 +4118,12 @@
                     1.5708,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -4971,7 +4151,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-5-right-tread-cap-front",
@@ -4989,20 +4170,12 @@
                     1.5708,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -5030,7 +4203,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-5-left-tread-cap-rear",
@@ -5048,20 +4222,12 @@
                     1.5708,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -5089,7 +4255,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-5-right-tread-cap-rear",
@@ -5107,20 +4274,12 @@
                     1.5708,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -5148,7 +4307,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-5-lower-hull",
@@ -5161,30 +4321,16 @@
                     0,
                     -0.35,
                     0
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     1.08,
                     0.36,
@@ -5198,7 +4344,8 @@
                   "materialId": "material-9"
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-5-front-armor",
@@ -5216,25 +4363,16 @@
                     -0.28,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.98,
                     0.36,
@@ -5248,7 +4386,8 @@
                   "materialId": "material-10"
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-5-upper-hull",
@@ -5261,30 +4400,16 @@
                     0,
                     0.02,
                     -0.06
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.9,
                     0.32,
@@ -5298,7 +4423,8 @@
                   "materialId": "material-11"
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-5-turret",
@@ -5311,30 +4437,16 @@
                     0,
                     0.34,
                     0.03
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.48,
                     0.28,
@@ -5348,7 +4460,8 @@
                   "materialId": "material-12"
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-5-turret-dome",
@@ -5362,11 +4475,6 @@
                     0.52,
                     0.02
                   ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
                   "scale": [
                     1.05,
                     0.42,
@@ -5376,10 +4484,7 @@
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -5398,7 +4503,8 @@
                   "materialId": "material-13"
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-5-main-gun",
@@ -5416,20 +4522,12 @@
                     1.5708,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -5457,7 +4555,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-5-muzzle",
@@ -5475,20 +4574,12 @@
                     1.5708,
                     0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -5516,7 +4607,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-5-left-headlamp",
@@ -5529,30 +4621,16 @@
                     -0.24,
                     -0.06,
                     0.58
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.12,
                     0.09,
@@ -5574,7 +4652,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-5-right-headlamp",
@@ -5587,30 +4666,16 @@
                     0.24,
                     -0.06,
                     0.58
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.12,
                     0.09,
@@ -5632,7 +4697,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "incoming-target-5-weak-point",
@@ -5645,30 +4711,16 @@
                     0,
                     -0.28,
                     0.61
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.28,
                     0.2,
@@ -5690,7 +4742,8 @@
                   }
                 }
               }
-            }
+            },
+            "children": []
           }
         ]
       },
@@ -5706,11 +4759,6 @@
                 0.35,
                 -8
               ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
               "scale": [
                 1.35,
                 0.58,
@@ -5720,10 +4768,7 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
@@ -5752,7 +4797,8 @@
               "friction": 0.18
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "ridge-concrete-pylon-00",
@@ -5770,25 +4816,16 @@
                 0,
                 -0.14,
                 0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.38,
                 1.28,
@@ -5812,7 +4849,8 @@
               "friction": 0.16
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "ridge-boulder-01",
@@ -5840,10 +4878,7 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
@@ -5872,7 +4907,8 @@
               "friction": 0.18
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "ridge-boulder-02",
@@ -5900,10 +4936,7 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
@@ -5932,7 +4965,8 @@
               "friction": 0.18
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "ridge-boulder-03",
@@ -5960,10 +4994,7 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
@@ -5992,7 +5023,8 @@
               "friction": 0.18
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "ridge-concrete-pylon-03",
@@ -6010,25 +5042,16 @@
                 0,
                 0.14,
                 0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.38,
                 1.28,
@@ -6052,7 +5075,8 @@
               "friction": 0.16
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "ridge-boulder-04",
@@ -6080,10 +5104,7 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
@@ -6112,7 +5133,8 @@
               "friction": 0.18
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "ridge-boulder-05",
@@ -6140,10 +5162,7 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
@@ -6172,7 +5191,8 @@
               "friction": 0.18
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "ridge-boulder-06",
@@ -6200,10 +5220,7 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
@@ -6232,7 +5249,8 @@
               "friction": 0.18
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "ridge-concrete-pylon-06",
@@ -6250,25 +5268,16 @@
                 0,
                 -0.14,
                 0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.38,
                 1.28,
@@ -6292,7 +5301,8 @@
               "friction": 0.16
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "ridge-boulder-07",
@@ -6320,10 +5330,7 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
@@ -6352,7 +5359,8 @@
               "friction": 0.18
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "ridge-boulder-08",
@@ -6380,10 +5388,7 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
@@ -6412,7 +5417,8 @@
               "friction": 0.18
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "ridge-boulder-09",
@@ -6440,10 +5446,7 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
@@ -6472,7 +5475,8 @@
               "friction": 0.18
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "ridge-concrete-pylon-09",
@@ -6490,25 +5494,16 @@
                 0,
                 0.14,
                 0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.38,
                 1.28,
@@ -6532,7 +5527,8 @@
               "friction": 0.16
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "ridge-boulder-10",
@@ -6560,10 +5556,7 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
@@ -6592,7 +5585,8 @@
               "friction": 0.18
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "ridge-boulder-11",
@@ -6620,10 +5614,7 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
@@ -6652,7 +5643,8 @@
               "friction": 0.18
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "ridge-boulder-12",
@@ -6680,10 +5672,7 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
@@ -6712,7 +5701,8 @@
               "friction": 0.18
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "ridge-concrete-pylon-12",
@@ -6730,25 +5720,16 @@
                 0,
                 -0.14,
                 0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.38,
                 1.28,
@@ -6772,7 +5753,8 @@
               "friction": 0.16
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "ridge-boulder-13",
@@ -6800,10 +5782,7 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
@@ -6832,7 +5811,8 @@
               "friction": 0.18
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "ridge-boulder-14",
@@ -6860,10 +5840,7 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
@@ -6892,7 +5869,8 @@
               "friction": 0.18
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "ridge-boulder-15",
@@ -6920,10 +5898,7 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
@@ -6952,7 +5927,8 @@
               "friction": 0.18
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "ridge-concrete-pylon-15",
@@ -6970,25 +5946,16 @@
                 0,
                 0.14,
                 0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.38,
                 1.28,
@@ -7012,7 +5979,8 @@
               "friction": 0.16
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "ridge-boulder-16",
@@ -7040,10 +6008,7 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
@@ -7072,7 +6037,8 @@
               "friction": 0.18
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "ridge-boulder-17",
@@ -7100,10 +6066,7 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
@@ -7132,190 +6095,9 @@
               "friction": 0.18
             }
           }
-        }
+        },
+        "children": []
       }
     ]
-  },
-  "materials": {
-    "material": {
-      "materialType": "basic",
-      "color": "#ffd1a3",
-      "side": "BackSide",
-      "toneMapped": false,
-      "texture": "/textures/skybox/skybox2.jpg",
-      "repeat": false
-    },
-    "material-2": {
-      "materialType": "standard",
-      "color": "#6f6959",
-      "roughness": 0.9,
-      "metalness": 0,
-      "texture": "/textures/floor/terrain/rock-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        34,
-        34
-      ],
-      "generateMipmaps": true,
-      "minFilter": "LinearMipmapLinearFilter",
-      "magFilter": "LinearFilter"
-    },
-    "material-3": {
-      "materialType": "standard",
-      "color": "#4d463d",
-      "roughness": 0.86,
-      "metalness": 0,
-      "texture": "/textures/floor/terrain/dirt-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        5,
-        46
-      ],
-      "generateMipmaps": true,
-      "minFilter": "LinearMipmapLinearFilter",
-      "magFilter": "LinearFilter"
-    },
-    "material-4": {
-      "materialType": "basic",
-      "color": "#cbd5a1",
-      "roughness": 0.78,
-      "metalness": 0
-    },
-    "material-5": {
-      "materialType": "basic",
-      "color": "#a59b6c",
-      "roughness": 0.9,
-      "metalness": 0,
-      "texture": "/textures/floor/terrain/sand-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        1,
-        32
-      ],
-      "generateMipmaps": true,
-      "minFilter": "LinearMipmapLinearFilter",
-      "magFilter": "LinearFilter"
-    },
-    "material-6": {
-      "materialType": "standard",
-      "color": "#6f7f45",
-      "roughness": 0.7,
-      "metalness": 0.16,
-      "transparent": true,
-      "opacity": 0
-    },
-    "material-7": {
-      "materialType": "standard",
-      "color": "#171b1f",
-      "roughness": 0.86,
-      "metalness": 0.04
-    },
-    "material-8": {
-      "materialType": "standard",
-      "color": "#2f3439",
-      "roughness": 0.8,
-      "metalness": 0.12
-    },
-    "material-9": {
-      "materialType": "standard",
-      "color": "#4c5c38",
-      "roughness": 0.72,
-      "metalness": 0.16
-    },
-    "material-10": {
-      "materialType": "standard",
-      "color": "#6f7f45",
-      "roughness": 0.7,
-      "metalness": 0.2
-    },
-    "material-11": {
-      "materialType": "standard",
-      "color": "#6f7f45",
-      "roughness": 0.68,
-      "metalness": 0.2
-    },
-    "material-12": {
-      "materialType": "standard",
-      "color": "#6f7f45",
-      "roughness": 0.66,
-      "metalness": 0.22
-    },
-    "material-13": {
-      "materialType": "standard",
-      "color": "#6f7f45",
-      "roughness": 0.66,
-      "metalness": 0.2
-    },
-    "material-14": {
-      "materialType": "standard",
-      "color": "#475569",
-      "roughness": 0.58,
-      "metalness": 0.34
-    },
-    "material-15": {
-      "materialType": "standard",
-      "color": "#232a31",
-      "roughness": 0.6,
-      "metalness": 0.4
-    },
-    "material-16": {
-      "materialType": "basic",
-      "color": "#fef08a",
-      "roughness": 0.2,
-      "metalness": 0,
-      "toneMapped": false
-    },
-    "material-17": {
-      "materialType": "basic",
-      "color": "#ef4444",
-      "roughness": 0.25,
-      "metalness": 0,
-      "toneMapped": false
-    },
-    "material-18": {
-      "materialType": "standard",
-      "color": "#4b5563",
-      "roughness": 0.86,
-      "metalness": 0.02,
-      "texture": "/textures/floor/terrain/rock-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        2,
-        2
-      ],
-      "generateMipmaps": true,
-      "minFilter": "LinearMipmapLinearFilter",
-      "magFilter": "LinearFilter"
-    },
-    "material-19": {
-      "materialType": "standard",
-      "color": "#8b8f86",
-      "roughness": 0.72,
-      "metalness": 0.12,
-      "texture": "/textures/floor/terrain/rock-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        1,
-        2
-      ],
-      "generateMipmaps": true,
-      "minFilter": "LinearMipmapLinearFilter",
-      "magFilter": "LinearFilter"
-    },
-    "material-20": {
-      "materialType": "standard",
-      "color": "#6b7280",
-      "roughness": 0.86,
-      "metalness": 0.02,
-      "texture": "/textures/floor/terrain/rock-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        2,
-        2
-      ],
-      "generateMipmaps": true,
-      "minFilter": "LinearMipmapLinearFilter",
-      "magFilter": "LinearFilter"
-    }
   }
 }

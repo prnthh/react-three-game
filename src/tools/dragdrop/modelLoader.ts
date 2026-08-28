@@ -111,6 +111,7 @@ function parseModelBuffer(arrayBuffer: ArrayBuffer, sourceName: string): Promise
                 arrayBuffer,
                 "",
                 gltf => {
+                    gltf.scene.animations = gltf.animations;
                     resolve({ success: true, model: gltf.scene });
                 },
                 error => {
@@ -210,7 +211,10 @@ export async function loadModel(
             return new Promise(resolve => {
                 gltfLoader.load(
                     fullPath,
-                    gltf => resolve({ success: true, model: gltf.scene }),
+                    gltf => {
+                        gltf.scene.animations = gltf.animations;
+                        resolve({ success: true, model: gltf.scene });
+                    },
                     progressEvent => {
                         if (!onProgress) {
                             return;

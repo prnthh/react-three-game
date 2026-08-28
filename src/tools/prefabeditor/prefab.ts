@@ -1,5 +1,6 @@
 import {
 	getComponentAssetRefs,
+	getComponentDefaultProperties,
 	getComponentDef,
 } from "./components/ComponentRegistry";
 import type { ComponentData, GameObject, MaterialComponentProperties, Prefab, PrefabMaterial } from "./types";
@@ -34,6 +35,79 @@ export function createDefaultMaterial(): PrefabMaterial {
 		sizeAttenuation: true,
 		offset: [0, 0],
 	};
+}
+
+const MATERIAL_DEFAULTS: Record<string, unknown> = {
+	materialType: "standard",
+	color: "#ffffff",
+	toneMapped: true,
+	wireframe: false,
+	opacity: 1,
+	alphaTest: 0,
+	metalness: 0,
+	roughness: 1,
+	transmission: 0,
+	thickness: 0,
+	ior: 1.5,
+	rotation: 0,
+	sizeAttenuation: true,
+	repeat: false,
+	repeatCount: [1, 1],
+	offset: [0, 0],
+	generateMipmaps: true,
+	minFilter: "LinearMipmapLinearFilter",
+	magFilter: "LinearFilter",
+	normalScale: [1, 1],
+	side: "FrontSide",
+};
+
+function samePrefabValue(left: unknown, right: unknown): boolean {
+	if (Array.isArray(left) && Array.isArray(right)) {
+		return left.length === right.length
+			&& left.every((value, index) => samePrefabValue(value, right[index]));
+	}
+
+	if (left && right && typeof left === "object" && typeof right === "object") {
+		const leftEntries = Object.entries(left);
+		const rightRecord = right as Record<string, unknown>;
+		return leftEntries.length === Object.keys(rightRecord).length
+			&& leftEntries.every(([key, value]) => samePrefabValue(value, rightRecord[key]));
+	}
+
+	return left === right;
+}
+
+/** Remove values supplied by the runtime so serialized prefab JSON only stores intent. */
+export function compactPrefabMaterial(material: PrefabMaterial): PrefabMaterial {
+	const materialType = material.materialType ?? "standard";
+	const defaults: Record<string, unknown> = {
+		...MATERIAL_DEFAULTS,
+		transparent: materialType === "sprite",
+		depthTest: materialType !== "sprite",
+		depthWrite: materialType !== "sprite",
+	};
+	const compact: Record<string, unknown> = {};
+
+	Object.entries(material).forEach(([key, value]) => {
+		if (value === undefined || samePrefabValue(value, defaults[key])) return;
+		compact[key] = clonePrefabValue(value);
+	});
+
+	return compact as PrefabMaterial;
+}
+
+function compactMaterials(materials: Record<string, PrefabMaterial>) {
+	const compact: Record<string, PrefabMaterial> = {};
+
+	Object.entries(materials).forEach(([id, material]) => {
+		const definition = compactPrefabMaterial(material);
+		const isImplicitDefault = Object.keys(definition).length === 0
+			|| (Object.keys(definition).length === 1 && definition.name === "Default");
+		if (id === DEFAULT_MATERIAL_ID && isImplicitDefault) return;
+		compact[id] = definition;
+	});
+
+	return compact;
 }
 
 function normalizeMaterials(materials?: Record<string, PrefabMaterial>) {
@@ -151,18 +225,25 @@ function denormalizeNode(
 	childIdsById: Record<string, string[]>,
 ): GameObject {
 	const node = nodesById[id];
+	const { components: _components, ...nodeProperties } = node;
+	const components = Object.entries(node.components ?? {}).reduce<Record<string, ComponentData>>((result, [key, component]) => {
+		if (!component) return result;
+		const defaults = getComponentDefaultProperties(getComponentDef(component.type), component.properties);
+		const properties = Object.entries(component.properties ?? {}).reduce<Record<string, unknown>>((sparse, [name, value]) => {
+			if (!samePrefabValue(value, defaults[name])) sparse[name] = clonePrefabValue(value);
+			return sparse;
+		}, {});
+		result[key] = { ...component, properties };
+		return result;
+	}, {});
+	const children = (childIdsById[id] ?? []).map((childId) =>
+		denormalizeNode(childId, nodesById, childIdsById),
+	);
 	return {
-		...node,
-		children: (childIdsById[id] ?? []).map((childId) =>
-			denormalizeNode(childId, nodesById, childIdsById),
-		),
+		...nodeProperties,
+		...(Object.keys(components).length > 0 ? { components } : null),
+		...(children.length > 0 ? { children } : null),
 	};
-}
-
-export function createDefaultComponentProperties(
-	type: string,
-): Record<string, any> {
-	return clonePrefabValue(getComponentDef(type)?.defaultProperties ?? {});
 }
 
 export function createComponentData(
@@ -171,9 +252,7 @@ export function createComponentData(
 ): ComponentData {
 	return {
 		type,
-		properties: properties
-			? clonePrefabValue(properties)
-			: createDefaultComponentProperties(type),
+		properties: clonePrefabValue(properties ?? {}),
 	};
 }
 
@@ -201,7 +280,6 @@ export function createEmptyPrefab(): Prefab {
 	return {
 		id: crypto.randomUUID(),
 		name: "New Prefab",
-		materials: { [DEFAULT_MATERIAL_ID]: createDefaultMaterial() },
 		root: createNode("Root", {}, { id: crypto.randomUUID(), children: [] }),
 	};
 }
@@ -212,7 +290,6 @@ export function createModelNode(filename: string, name?: string): GameObject {
 			type: "Model",
 			properties: {
 				filename,
-				instanced: false,
 				repeat: false,
 				repeatAxes: [{ axis: "x", count: 1, offset: 1 }],
 			},
@@ -329,10 +406,12 @@ export function denormalizePrefab(
 		"prefabId" | "prefabName" | "materials" | "rootId" | "nodesById" | "childIdsById"
 	>,
 ): Prefab {
+	const materials = compactMaterials(state.materials);
+
 	return {
 		id: state.prefabId,
 		name: state.prefabName,
-		materials: clonePrefabValue(state.materials),
+		...(Object.keys(materials).length > 0 ? { materials } : null),
 		root: denormalizeNode(state.rootId, state.nodesById, state.childIdsById),
 	};
 }

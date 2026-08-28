@@ -360,7 +360,7 @@ function createAndRegisterBody(
 }
 
 function CrashcatPhysicsView({ properties, children }: ComponentViewProps<CrashcatPhysicsProperties>) {
-    const { nodeId, getObject } = useNode();
+    const { nodeId, runtimeNodeId, getObject } = useNode();
     const scene = useScene();
     const { basePath } = usePrefab();
     const store = usePrefabStoreApi();
@@ -389,7 +389,7 @@ function CrashcatPhysicsView({ properties, children }: ComponentViewProps<Crashc
                 return;
             }
 
-            registeredApi?.unregister(nodeId);
+            registeredApi?.unregister(runtimeNodeId);
             registeredApi = api;
             bodyRef.current = null;
 
@@ -418,12 +418,12 @@ function CrashcatPhysicsView({ properties, children }: ComponentViewProps<Crashc
 
                     if (body.position[1] < -40) {
                         bodyRef.current = null;
-                        api.unregister(nodeId);
+                        api.unregister(runtimeNodeId);
                     }
                 };
             }
 
-            bodyRef.current = createAndRegisterBody(api, nodeId, object, physics, sync);
+            bodyRef.current = createAndRegisterBody(api, runtimeNodeId, object, physics, sync);
             lastPositionRef.current = null;
             lastQuaternionRef.current = null;
         });
@@ -431,11 +431,11 @@ function CrashcatPhysicsView({ properties, children }: ComponentViewProps<Crashc
         return () => {
             stopObserving();
             bodyRef.current = null;
-            registeredApi?.unregister(nodeId);
+            registeredApi?.unregister(runtimeNodeId);
         };
     }, [
         getObject,
-        nodeId,
+        runtimeNodeId,
         physics,
         loadedModel,
     ]);
@@ -445,7 +445,7 @@ function CrashcatPhysicsView({ properties, children }: ComponentViewProps<Crashc
 
         const syncEditBody = () => {
             const api = getCrashcatApi();
-            const body = getRegisteredBody(api, nodeId, bodyRef.current);
+            const body = getRegisteredBody(api, runtimeNodeId, bodyRef.current);
             const object = getObject();
             if (!api || !body || !object) return;
             syncObjectToBody(api.world, body, object, syncPositionRef.current, syncQuaternionRef.current);
@@ -458,7 +458,7 @@ function CrashcatPhysicsView({ properties, children }: ComponentViewProps<Crashc
             state => state.nodesById[nodeId],
             syncEditBody,
         );
-    }, [getObject, nodeId, scene.mode, store]);
+    }, [getObject, nodeId, runtimeNodeId, scene.mode, store]);
 
     return <>{children}</>;
 }
@@ -467,10 +467,42 @@ const CrashcatPhysicsComponent: Component<CrashcatPhysicsProperties> = {
     name: "CrashcatPhysics",
     Editor: CrashcatPhysicsEditor,
     View: CrashcatPhysicsView,
-    defaultProperties: {
-        type: "fixed",
-        colliders: "cuboid",
-        sensor: false,
+    properties: {
+        type: {
+            type: "select",
+            default: "fixed",
+            options: [
+                { value: "fixed", label: "Fixed" },
+                { value: "dynamic", label: "Dynamic" },
+                { value: "kinematicPosition", label: "Kinematic Position" },
+                { value: "kinematicVelocity", label: "Kinematic Velocity" },
+            ],
+        },
+        colliders: {
+            type: "select",
+            default: "cuboid",
+            options: [
+                { value: "cuboid", label: "Cuboid" },
+                { value: "ball", label: "Ball" },
+                { value: "capsule", label: "Capsule" },
+                { value: "cylinder", label: "Cylinder" },
+                { value: "hull", label: "Hull" },
+                { value: "trimesh", label: "Tri Mesh" },
+            ],
+        },
+        sensor: { type: "boolean", default: false },
+        friction: { default: undefined },
+        restitution: { default: undefined },
+        capsuleRadius: { default: undefined },
+        capsuleHalfHeight: { default: undefined },
+        cylinderRadius: { default: undefined },
+        cylinderHalfHeight: { default: undefined },
+        linearVelocity: { type: "vector3", default: [0, 0, 0] },
+        angularVelocity: { type: "vector3", default: [0, 0, 0] },
+        collisionEnterEventName: { type: "string", default: "" },
+        collisionExitEventName: { type: "string", default: "" },
+        sensorEnterEventName: { type: "string", default: "" },
+        sensorExitEventName: { type: "string", default: "" },
     },
 };
 

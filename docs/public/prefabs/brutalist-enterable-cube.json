@@ -1,28 +1,66 @@
 {
   "id": "brutalist-enterable-cube",
-  "name": "Enterable Brutalist Cube",
+  "name": "Enterable Brutalist Podium Block",
+  "materials": {
+    "concrete": {
+      "name": "concrete",
+      "color": "#727978",
+      "texture": "/textures/floor/terrain/snow-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        12,
+        12
+      ],
+      "roughness": 0.98,
+      "metalness": 0.01
+    },
+    "concrete-dark": {
+      "name": "concrete",
+      "color": "#454b4d",
+      "texture": "/textures/floor/terrain/snow-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        8,
+        8
+      ],
+      "roughness": 0.99
+    },
+    "concrete-light": {
+      "name": "concrete",
+      "color": "#909594",
+      "texture": "/textures/floor/terrain/snow-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        10,
+        3
+      ],
+      "roughness": 0.97
+    },
+    "window-recess": {
+      "name": "glass",
+      "color": "#111a1d",
+      "roughness": 0.38,
+      "metalness": 0.18
+    },
+    "window-dirty": {
+      "name": "glass",
+      "color": "#28363a",
+      "roughness": 0.52,
+      "metalness": 0.12
+    },
+    "metal": {
+      "name": "metal",
+      "color": "#3f4749",
+      "roughness": 0.62,
+      "metalness": 0.52
+    }
+  },
   "root": {
     "id": "brutalist-enterable-cube-root",
     "components": {
       "transform": {
         "type": "Transform",
-        "properties": {
-          "position": [
-            0,
-            0,
-            0
-          ],
-          "rotation": [
-            0,
-            0,
-            0
-          ],
-          "scale": [
-            1,
-            1,
-            1
-          ]
-        }
+        "properties": {}
       }
     },
     "children": [
@@ -36,16 +74,6 @@
                 0,
                 0.08,
                 0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
@@ -56,18 +84,17 @@
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
-                34,
+                33.6,
                 0.25,
-                28
+                27.6
               ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material"
+              "materialId": "concrete-dark"
             }
           },
           "crashcatPhysics": {
@@ -90,16 +117,6 @@
                 0,
                 6.4,
                 0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
@@ -110,18 +127,17 @@
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
-                34,
+                34.6,
                 0.8,
-                28
+                28.6
               ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-2"
+              "materialId": "concrete-light"
             }
           },
           "crashcatPhysics": {
@@ -142,18 +158,8 @@
             "properties": {
               "position": [
                 0,
-                3,
+                2.95,
                 -13.5
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
@@ -164,10 +170,9 @@
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
-                34,
-                6,
+                32,
+                6.1,
                 1
               ]
             }
@@ -175,7 +180,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-3"
+              "materialId": "concrete"
             }
           },
           "crashcatPhysics": {
@@ -196,18 +201,8 @@
             "properties": {
               "position": [
                 -16.5,
-                3,
+                2.95,
                 0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
@@ -218,10 +213,9 @@
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 1,
-                6,
+                6.1,
                 28
               ]
             }
@@ -229,7 +223,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-4"
+              "materialId": "concrete"
             }
           },
           "crashcatPhysics": {
@@ -250,18 +244,8 @@
             "properties": {
               "position": [
                 16.5,
-                3,
+                2.95,
                 0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
@@ -272,10 +256,9 @@
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 1,
-                6,
+                6.1,
                 28
               ]
             }
@@ -283,7 +266,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-4"
+              "materialId": "concrete"
             }
           },
           "crashcatPhysics": {
@@ -303,19 +286,9 @@
             "type": "Transform",
             "properties": {
               "position": [
-                -11,
-                3,
+                -10.5,
+                2.95,
                 13.5
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
@@ -326,10 +299,9 @@
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
-                12,
-                6,
+                11,
+                6.1,
                 1
               ]
             }
@@ -337,7 +309,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-5"
+              "materialId": "concrete"
             }
           },
           "crashcatPhysics": {
@@ -357,19 +329,9 @@
             "type": "Transform",
             "properties": {
               "position": [
-                11,
-                3,
+                10.5,
+                2.95,
                 13.5
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
@@ -380,10 +342,9 @@
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
-                12,
-                6,
+                11,
+                6.1,
                 1
               ]
             }
@@ -391,7 +352,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-5"
+              "materialId": "concrete"
             }
           },
           "crashcatPhysics": {
@@ -412,18 +373,8 @@
             "properties": {
               "position": [
                 0,
-                5.8,
+                5.55,
                 13.5
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
@@ -434,10 +385,9 @@
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 10,
-                1.2,
+                0.9,
                 1
               ]
             }
@@ -445,7 +395,179 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-6"
+              "materialId": "concrete-dark"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "cuboid"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-entry-canopy",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                4.4,
+                15.1
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                12,
+                0.5,
+                4.2
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete-dark"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "cuboid"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-block",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                14.8,
+                -1.5
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                27,
+                16,
+                20
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "cuboid"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-cap",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                23.15,
+                -1.5
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                28.4,
+                0.8,
+                21.4
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete-light"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "cuboid"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-service-rib",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                7.8,
+                15.65,
+                9.1
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                4,
+                18.5,
+                2.2
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete-dark"
             }
           },
           "crashcatPhysics": {
@@ -468,16 +590,6 @@
                 0,
                 3,
                 0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
@@ -488,7 +600,6 @@
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 1,
                 6,
@@ -499,7 +610,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-7"
+              "materialId": "concrete-dark"
             }
           },
           "crashcatPhysics": {
@@ -522,16 +633,6 @@
                 -8,
                 3,
                 -4
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
@@ -542,7 +643,6 @@
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 15,
                 6,
@@ -553,7 +653,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-8"
+              "materialId": "concrete"
             }
           },
           "crashcatPhysics": {
@@ -576,16 +676,6 @@
                 -8,
                 3,
                 5
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
@@ -596,7 +686,6 @@
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 15,
                 6,
@@ -607,7 +696,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-8"
+              "materialId": "concrete"
             }
           },
           "crashcatPhysics": {
@@ -630,16 +719,6 @@
                 8,
                 3,
                 -6
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
@@ -650,7 +729,6 @@
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 15,
                 6,
@@ -661,7 +739,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-8"
+              "materialId": "concrete"
             }
           },
           "crashcatPhysics": {
@@ -684,16 +762,6 @@
                 8,
                 3,
                 6
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
@@ -704,7 +772,6 @@
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 15,
                 6,
@@ -715,7 +782,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-8"
+              "materialId": "concrete"
             }
           },
           "crashcatPhysics": {
@@ -738,16 +805,6 @@
                 -11,
                 0.22,
                 0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
@@ -758,7 +815,6 @@
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 3,
                 0.1,
@@ -769,7 +825,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-9"
+              "materialId": "window-dirty"
             }
           },
           "crashcatPhysics": {
@@ -792,16 +848,6 @@
                 11,
                 0.22,
                 0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
@@ -812,7 +858,6 @@
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 3,
                 0.1,
@@ -823,7 +868,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-9"
+              "materialId": "window-dirty"
             }
           },
           "crashcatPhysics": {
@@ -835,124 +880,2887 @@
           }
         },
         "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-0-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -10.8,
+                8.6,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-0-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -7.200000000000001,
+                8.6,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-0-2",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -3.6000000000000005,
+                8.6,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-0-3",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                8.6,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-0-4",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                3.5999999999999996,
+                8.6,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-0-5",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                7.199999999999999,
+                8.6,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-0-6",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                10.8,
+                8.6,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-eyebrow-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                9.17,
+                8.76
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                25,
+                0.2,
+                0.6
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete-light"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-1-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -10.8,
+                11.35,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-1-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -7.200000000000001,
+                11.35,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-1-2",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -3.6000000000000005,
+                11.35,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-1-3",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                11.35,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-1-4",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                3.5999999999999996,
+                11.35,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-1-5",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                7.199999999999999,
+                11.35,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-1-6",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                10.8,
+                11.35,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-eyebrow-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                11.92,
+                8.76
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                25,
+                0.2,
+                0.6
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete-light"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-2-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -10.8,
+                14.1,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-2-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -7.200000000000001,
+                14.1,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-2-2",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -3.6000000000000005,
+                14.1,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-2-3",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                14.1,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-2-4",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                3.5999999999999996,
+                14.1,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-2-5",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                7.199999999999999,
+                14.1,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-2-6",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                10.8,
+                14.1,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-eyebrow-2",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                14.67,
+                8.76
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                25,
+                0.2,
+                0.6
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete-light"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-3-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -10.8,
+                16.85,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-3-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -7.200000000000001,
+                16.85,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-3-2",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -3.6000000000000005,
+                16.85,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-3-3",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                16.85,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-3-4",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                3.5999999999999996,
+                16.85,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-3-5",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                7.199999999999999,
+                16.85,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-3-6",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                10.8,
+                16.85,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-eyebrow-3",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                17.42,
+                8.76
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                25,
+                0.2,
+                0.6
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete-light"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-4-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -10.8,
+                19.6,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-4-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -7.200000000000001,
+                19.6,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-4-2",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -3.6000000000000005,
+                19.6,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-4-3",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                19.6,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-4-4",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                3.5999999999999996,
+                19.6,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-4-5",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                7.199999999999999,
+                19.6,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-window-4-6",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                10.8,
+                19.6,
+                8.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-front-eyebrow-4",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                20.17,
+                8.76
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                25,
+                0.2,
+                0.6
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete-light"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-0-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -10.8,
+                8.6,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-0-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -7.200000000000001,
+                8.6,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-0-2",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -3.6000000000000005,
+                8.6,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-0-3",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                8.6,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-0-4",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                3.5999999999999996,
+                8.6,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-0-5",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                7.199999999999999,
+                8.6,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-0-6",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                10.8,
+                8.6,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-eyebrow-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                9.17,
+                -11.76
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                25,
+                0.2,
+                0.6
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete-light"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-1-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -10.8,
+                11.35,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-1-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -7.200000000000001,
+                11.35,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-1-2",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -3.6000000000000005,
+                11.35,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-1-3",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                11.35,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-1-4",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                3.5999999999999996,
+                11.35,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-1-5",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                7.199999999999999,
+                11.35,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-1-6",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                10.8,
+                11.35,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-eyebrow-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                11.92,
+                -11.76
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                25,
+                0.2,
+                0.6
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete-light"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-2-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -10.8,
+                14.1,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-2-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -7.200000000000001,
+                14.1,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-2-2",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -3.6000000000000005,
+                14.1,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-2-3",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                14.1,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-2-4",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                3.5999999999999996,
+                14.1,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-2-5",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                7.199999999999999,
+                14.1,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-2-6",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                10.8,
+                14.1,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-eyebrow-2",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                14.67,
+                -11.76
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                25,
+                0.2,
+                0.6
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete-light"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-3-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -10.8,
+                16.85,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-3-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -7.200000000000001,
+                16.85,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-3-2",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -3.6000000000000005,
+                16.85,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-3-3",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                16.85,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-3-4",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                3.5999999999999996,
+                16.85,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-3-5",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                7.199999999999999,
+                16.85,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-3-6",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                10.8,
+                16.85,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-eyebrow-3",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                17.42,
+                -11.76
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                25,
+                0.2,
+                0.6
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete-light"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-4-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -10.8,
+                19.6,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-4-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -7.200000000000001,
+                19.6,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-4-2",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -3.6000000000000005,
+                19.6,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-4-3",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                19.6,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-4-4",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                3.5999999999999996,
+                19.6,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-4-5",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                7.199999999999999,
+                19.6,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-window-4-6",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                10.8,
+                19.6,
+                -11.58
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.25,
+                0.78,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "enterable-upper-back-eyebrow-4",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                20.17,
+                -11.76
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                25,
+                0.2,
+                0.6
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete-light"
+            }
+          }
+        },
+        "children": []
       }
     ]
-  },
-  "materials": {
-    "material": {
-      "color": "#a2a49d",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        12,
-        10
-      ],
-      "minFilter": "NearestFilter",
-      "magFilter": "NearestFilter",
-      "roughness": 0.86
-    },
-    "material-2": {
-      "color": "#989a95",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        12,
-        10
-      ],
-      "minFilter": "NearestFilter",
-      "magFilter": "NearestFilter",
-      "roughness": 0.94,
-      "metalness": 0.02
-    },
-    "material-3": {
-      "color": "#b8b8b2",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        12,
-        3
-      ],
-      "minFilter": "NearestFilter",
-      "magFilter": "NearestFilter",
-      "roughness": 0.94,
-      "metalness": 0.02
-    },
-    "material-4": {
-      "color": "#b8b8b2",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        10,
-        3
-      ],
-      "minFilter": "NearestFilter",
-      "magFilter": "NearestFilter",
-      "roughness": 0.94,
-      "metalness": 0.02
-    },
-    "material-5": {
-      "color": "#b8b8b2",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        5,
-        3
-      ],
-      "minFilter": "NearestFilter",
-      "magFilter": "NearestFilter",
-      "roughness": 0.94,
-      "metalness": 0.02
-    },
-    "material-6": {
-      "color": "#b8b8b2",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        4,
-        1
-      ],
-      "minFilter": "NearestFilter",
-      "magFilter": "NearestFilter",
-      "roughness": 0.94,
-      "metalness": 0.02
-    },
-    "material-7": {
-      "color": "#777a74",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        7,
-        3
-      ],
-      "minFilter": "NearestFilter",
-      "magFilter": "NearestFilter",
-      "roughness": 0.94,
-      "metalness": 0.02
-    },
-    "material-8": {
-      "color": "#777a74",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        5,
-        3
-      ],
-      "minFilter": "NearestFilter",
-      "magFilter": "NearestFilter",
-      "roughness": 0.94,
-      "metalness": 0.02
-    },
-    "material-9": {
-      "color": "#7e8179",
-      "texture": "/textures/proto32/trigger.png",
-      "repeat": true,
-      "repeatCount": [
-        1,
-        1
-      ],
-      "minFilter": "NearestFilter",
-      "magFilter": "NearestFilter",
-      "roughness": 0.86
-    }
   }
 }

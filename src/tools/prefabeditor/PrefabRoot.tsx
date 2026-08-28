@@ -7,18 +7,17 @@ import { useStore } from "zustand";
 import { findComponent, getNodeUserData } from "./types";
 import type { ComponentData, GameObject as GameObjectType, Prefab } from "./types";
 import type { Component } from "./components/ComponentRegistry";
-import { getComponentDef } from "./components/ComponentRegistry";
+import { getComponentDef, resolveComponentProperties } from "./components/ComponentRegistry";
 import { loadModel, loadSound, loadTexture } from "../dragdrop";
-import { GameInstanceBatch, GameInstanceProvider, getRepeatAxesFromModelProperties } from "./InstanceProvider";
+import { GameInstanceBatch, GameInstanceProvider, getRepeatAxesFromModelProperties, useIsModelPathInstanced } from "./InstanceProvider";
 import { composeTransform, decompose, withBasePath } from "./runtimeUtils";
 import { createPrefabStore, PrefabStoreProvider, usePrefabChildIds, usePrefabNode, usePrefabRootId, usePrefabStore, usePrefabStoreApi } from "./prefabStore";
 import type { PrefabStoreApi } from "./prefabStore";
-import { AssetRuntimeProvider, useAssetRuntime } from "./assetRuntime";
+import { AssetRuntimeProvider, useAssetRuntime, useModelAsset } from "./assetRuntime";
 import { gameEvents } from "./GameEvents";
 import { NodeScope, PrefabEditorMode, usePrefab, useScene, type PrefabApi, type Scene } from "./SceneContext";
 import { SceneProvider } from "./SceneProvider";
-import { AudioRuntimeProvider } from "./AudioRuntime";
-import { MaterialRuntimeProvider } from "./components/MaterialComponent";
+import { RuntimeWrappers } from "./RuntimeWrapperRegistry";
 import { SelectionRuntimeProvider, useNodeSelected } from "./SelectionRuntime";
 import {
     createNodeInteractionHandlers,
@@ -52,6 +51,7 @@ export interface PrefabRootProps {
     data?: Prefab;
     store?: PrefabStoreApi;
     selectedId?: string | null;
+    enabled?: boolean;
     onSelect?: (id: string | null) => void;
     onPointerEvent?: (eventType: NodeInteractionEventType, event: NodeInteractionEvent, node: GameObjectType) => void;
     onEditNodeClick?: (event: ThreeEvent<MouseEvent>, node: GameObjectType) => void;
@@ -69,6 +69,7 @@ type CompositionComponent = {
     properties: ComponentData["properties"];
     attachment: boolean;
     object: boolean;
+    renderWhenDisabled: boolean;
 };
 
 type AnalyzedNodeComponents = {
@@ -103,20 +104,18 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>((props, ref) => {
         <PrefabStoreProvider store={resolvedStore}>
             <AssetRuntimeProvider>
                 <SceneProvider store={resolvedStore} scene={props.scene} prefab={props.prefab} editMode={editMode} basePath={props.basePath}>
-                    <MaterialRuntimeProvider>
-                        <AudioRuntimeProvider>
-                            <SelectionRuntimeProvider selectedId={selectedId}>
-                                <PrefabRootBody ref={ref} {...bodyProps} />
-                            </SelectionRuntimeProvider>
-                        </AudioRuntimeProvider>
-                    </MaterialRuntimeProvider>
+                    <RuntimeWrappers>
+                        <SelectionRuntimeProvider selectedId={selectedId} select={bodyProps.onSelect}>
+                            <PrefabRootBody ref={ref} {...bodyProps} />
+                        </SelectionRuntimeProvider>
+                    </RuntimeWrappers>
                 </SceneProvider>
             </AssetRuntimeProvider>
         </PrefabStoreProvider>
     );
 });
 
-const PrefabRootBody = memo(forwardRef<Scene, PrefabRootProps>(({ onSelect, onPointerEvent, onEditNodeClick, basePath = "", children }, ref) => {
+const PrefabRootBody = memo(forwardRef<Scene, PrefabRootProps>(({ onSelect, onPointerEvent, onEditNodeClick, basePath = "", enabled = true, children }, ref) => {
     const scene = useScene();
     const editMode = scene.mode === PrefabEditorMode.Edit;
     const prefab = usePrefab();
@@ -189,6 +188,10 @@ const PrefabRootBody = memo(forwardRef<Scene, PrefabRootProps>(({ onSelect, onPo
     }, [onPointerEvent, storeApi]);
 
     const handleEditClick = useCallback((event: ThreeEvent<MouseEvent>) => {
+        // Nested PrefabRef roots need an edit handler so their descendant meshes
+        // participate in raycasting, but selection belongs to the outer document.
+        // Leave the event unconsumed when this root has no selection callbacks.
+        if (!onSelect && !onEditNodeClick) return;
         if (event.delta > 4) return;
         event.stopPropagation();
 
@@ -245,6 +248,7 @@ const PrefabRootBody = memo(forwardRef<Scene, PrefabRootProps>(({ onSelect, onPo
                 registerRef={prefab.registerObject}
                 editMode={editMode}
                 parentMatrix={IDENTITY}
+                isEnabled={enabled}
                 basePath={basePath}
             />
             {children}
@@ -259,8 +263,14 @@ function StoreRootNode(props: Omit<RendererProps, "nodeId">) {
 }
 
 function getClickEventConfig(node: GameObjectType): ClickEventConfig {
-    const component = Object.values(node.components ?? {}).find(entry => entry?.properties?.emitClickEvent);
-    const eventName = component?.properties.clickEventName;
+	const component = Object.values(node.components ?? {}).find(entry => {
+		if (!entry?.type) return false;
+		return resolveComponentProperties(getComponentDef(entry.type), entry.properties).emitClickEvent;
+	});
+	const resolved = component
+		? resolveComponentProperties(getComponentDef(component.type), component.properties)
+		: null;
+	const eventName = resolved?.clickEventName;
     return {
         enabled: Boolean(component),
         eventName: typeof eventName === 'string' && eventName.trim() ? eventName.trim() : null,
@@ -279,9 +289,10 @@ function analyzeNodeComponents(node: GameObjectType): AnalyzedNodeComponents {
             key,
             type: component.type,
             View: def.View,
-            properties: component.properties,
+			properties: resolveComponentProperties(def, component.properties),
             attachment: def.attachment === true,
             object: def.disableSiblingComposition === 'object',
+            renderWhenDisabled: def.renderWhenDisabled === true,
         });
     }
 
@@ -325,9 +336,14 @@ function emitNodePointerEvent(
 
 export function GameObjectRenderer(props: RendererProps) {
     const node = usePrefabNode(props.nodeId);
-    const isInstanced = findComponent(node, "Model")?.properties?.instanced;
+    const modelProperties = findComponent(node, "Model")?.properties;
+    const modelPath = modelProperties?.filename
+        ? withBasePath(props.basePath ?? "", modelProperties.filename)
+        : undefined;
+    const model = useModelAsset(modelPath);
+    const isInstanced = Boolean(model) && (model?.animations.length ?? 0) === 0;
 
-    if (!node || node.disabled) return null;
+    if (!node) return null;
 
     return isInstanced
         ? <InstancedNode {...props} />
@@ -342,6 +358,7 @@ function InstancedNode({
     registerRef,
     onPointerEvent,
     isVisible = true,
+    isEnabled = true,
     basePath = "",
 }: RendererProps) {
     const gameObject = usePrefabNode(nodeId);
@@ -362,6 +379,7 @@ function InstancedNode({
         () => buildRepeatedInstances(gameObject, modelPath),
         [gameObject?.id, modelComponent, modelPath]
     );
+    const isModelPathInstanced = useIsModelPathInstanced(modelPath);
 
     const groupRef = useRef<Group | null>(null);
     const handleGroupRef = useCallback((object: Group | null) => {
@@ -371,7 +389,8 @@ function InstancedNode({
 
     if (!gameObject) return null;
 
-    const nodeVisible = isVisible && !gameObject.hidden;
+    const nodeEnabled = isEnabled && !gameObject.disabled;
+    const nodeVisible = nodeEnabled && isVisible && !gameObject.hidden;
     const nodeInteractionHandlers = !editMode && analyzedComponents.clickEvent.enabled && onPointerEvent
         ? createNodeInteractionHandlers((eventType, event) => {
             event.stopPropagation();
@@ -393,7 +412,7 @@ function InstancedNode({
     const instanceBatch = useMemo(() => instances.map(instance => ({
         ...instance,
         visible: nodeVisible,
-        clickEnabled: analyzedComponents.clickEvent.enabled,
+        clickEnabled: nodeEnabled && analyzedComponents.clickEvent.enabled,
         clickEventName: analyzedComponents.clickEvent.eventName,
     })), [analyzedComponents.clickEvent, instances, nodeVisible]);
     const childNodes = (
@@ -404,10 +423,16 @@ function InstancedNode({
             registerRef={registerRef}
             editMode={editMode}
             isVisible={nodeVisible}
+            isEnabled={nodeEnabled}
             basePath={basePath}
         />
     );
-    const logicalContent = renderNodeContent(analyzedComponents, childNodes, "Model");
+    const logicalContent = renderNodeContent(
+        analyzedComponents,
+        childNodes,
+        isModelPathInstanced ? "Model" : undefined,
+        nodeEnabled,
+    );
 
     return (
         <NodeScope
@@ -436,6 +461,7 @@ function StandardNode({
     editMode,
     parentMatrix = IDENTITY,
     isVisible = true,
+    isEnabled = true,
     basePath = "",
 }: RendererProps) {
     const gameObject = usePrefabNode(nodeId);
@@ -468,7 +494,8 @@ function StandardNode({
 
     if (!gameObject) return null;
 
-    const nodeVisible = isVisible && !gameObject.hidden;
+    const nodeEnabled = isEnabled && !gameObject.disabled;
+    const nodeVisible = nodeEnabled && isVisible && !gameObject.hidden;
     const metadataProps = getNodeMetadataProps(gameObject);
 
     const transformProps = {
@@ -485,12 +512,15 @@ function StandardNode({
         registerRef={registerRef}
         editMode={editMode}
         isVisible={nodeVisible}
+        isEnabled={nodeEnabled}
         basePath={basePath}
     />;
 
     const inner = renderNodeContent(
         analyzedComponents,
         childNodes,
+        undefined,
+        nodeEnabled,
     );
     return (
         <NodeScope
@@ -525,6 +555,7 @@ interface RendererProps {
     editMode?: boolean;
     parentMatrix?: Matrix4;
     isVisible?: boolean;
+    isEnabled?: boolean;
     basePath?: string;
 }
 
@@ -597,12 +628,15 @@ function renderNodeContent(
     analyzedComponents: AnalyzedNodeComponents,
     childNodes?: React.ReactNode,
     skippedType?: string,
+    enabled = true,
 ) {
-    const components = analyzedComponents.composition.filter(component => component.type !== skippedType);
+    const components = analyzedComponents.composition.filter(component => (
+        component.type !== skippedType && (enabled || component.renderWhenDisabled)
+    ));
     let content = components
         .filter(component => component.attachment)
         .reduceRight<React.ReactNode>((children, { key, View, properties }) => (
-            <View key={key} properties={properties}>
+            <View key={key} properties={properties} enabled={enabled}>
                 {children}
             </View>
         ), childNodes);
@@ -610,7 +644,7 @@ function renderNodeContent(
     content = components
         .filter(component => component.object)
         .reduceRight<React.ReactNode>((children, { key, View, properties }) => (
-            <View key={key} properties={properties}>
+            <View key={key} properties={properties} enabled={enabled}>
                 {children}
             </View>
         ), content);
@@ -618,7 +652,7 @@ function renderNodeContent(
     return components
         .filter(component => !component.attachment && !component.object)
         .reduceRight<React.ReactNode>((children, { key, View, properties }) => (
-            <View key={key} properties={properties}>
+            <View key={key} properties={properties} enabled={enabled}>
                 {children}
             </View>
         ), content);

@@ -194,9 +194,25 @@ function DirectionalLightView({ properties, children }: ComponentViewProps<Direc
 
 const DirectionalLightComponent: Component<DirectionalLightProperties> = {
     name: 'DirectionalLight',
+    renderWhenDisabled: true,
     Editor: DirectionalLightComponentEditor,
     View: DirectionalLightView,
-    defaultProperties: {},
+    properties: {
+        color: { type: 'color', default: directionalLightDefaults.color },
+        intensity: { default: directionalLightDefaults.intensity },
+        castShadow: { type: 'boolean', default: directionalLightDefaults.castShadow },
+        shadowMapSize: { default: directionalLightDefaults.shadowMapSize },
+        shadowBias: { default: directionalLightDefaults.shadowBias },
+        shadowNormalBias: { default: directionalLightDefaults.shadowNormalBias },
+        shadowAutoUpdate: { type: 'boolean', default: directionalLightDefaults.shadowAutoUpdate },
+        shadowCameraNear: { default: directionalLightDefaults.shadowCameraNear },
+        shadowCameraFar: { default: directionalLightDefaults.shadowCameraFar },
+        shadowCameraTop: { default: directionalLightDefaults.shadowCameraTop },
+        shadowCameraBottom: { default: directionalLightDefaults.shadowCameraBottom },
+        shadowCameraLeft: { default: directionalLightDefaults.shadowCameraLeft },
+        shadowCameraRight: { default: directionalLightDefaults.shadowCameraRight },
+        targetOffset: { type: 'vector3', default: directionalLightDefaults.targetOffset },
+    },
 };
 
 export default DirectionalLightComponent;

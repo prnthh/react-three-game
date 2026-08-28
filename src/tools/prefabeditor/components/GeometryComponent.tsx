@@ -40,6 +40,14 @@ const GEOMETRY_ARGS: Record<string, {
             { name: 'radialSegments', label: 'Radial Segments', defaultValue: 32, min: 3, step: 1 },
         ],
     },
+    torus: {
+        fields: [
+            { name: 'radius', label: 'Radius', defaultValue: 1, min: 0.01, step: 0.1 },
+            { name: 'tube', label: 'Tube', defaultValue: 0.4, min: 0.01, step: 0.05 },
+            { name: 'radialSegments', label: 'Radial Segments', defaultValue: 12, min: 3, step: 1 },
+            { name: 'tubularSegments', label: 'Tubular Segments', defaultValue: 24, min: 3, step: 1 },
+        ],
+    },
 };
 
 type GeometryProperties = {
@@ -83,6 +91,7 @@ function GeometryComponentEditor({ properties, update }: ComponentEditorProps<Ge
                     { value: 'sphere', label: 'Sphere' },
                     { value: 'plane', label: 'Plane' },
                     { value: 'cylinder', label: 'Cylinder' },
+                    { value: 'torus', label: 'Torus' },
                 ]}
             />
             {schema.fields.map((field, index) => (
@@ -125,6 +134,9 @@ function GeometryComponentView({ properties, children }: ComponentViewProps<Geom
         case "cylinder":
             geometry = <cylinderGeometry key={geometryKey} args={args as [number, number, number, number?]} onUpdate={onGeometryUpdate} />;
             break;
+        case "torus":
+            geometry = <torusGeometry key={geometryKey} args={args as [number, number?, number?, number?]} onUpdate={onGeometryUpdate} />;
+            break;
         default:
             geometry = <boxGeometry key="box:[1,1,1]" args={[1, 1, 1]} onUpdate={onGeometryUpdate} />;
     }
@@ -134,13 +146,27 @@ function GeometryComponentView({ properties, children }: ComponentViewProps<Geom
 
 const GeometryComponent: Component<GeometryProperties> = {
     name: 'Geometry',
+    renderWhenDisabled: true,
     attachment: true,
     disableSiblingComposition: 'geometry',
     Editor: GeometryComponentEditor,
     View: GeometryComponentView,
-    defaultProperties: {
-        geometryType: 'box',
-        args: getDefaultArgs('box'),
+    properties: {
+        geometryType: {
+            type: 'select',
+            default: 'box',
+            options: [
+                { value: 'box', label: 'Box' },
+                { value: 'sphere', label: 'Sphere' },
+                { value: 'plane', label: 'Plane' },
+                { value: 'cylinder', label: 'Cylinder' },
+                { value: 'torus', label: 'Torus' },
+            ],
+        },
+        args: {
+            type: 'number[]',
+            default: properties => getDefaultArgs(properties.geometryType ?? 'box'),
+        },
     }
 };
 

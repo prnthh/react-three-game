@@ -463,10 +463,13 @@ Geometry args:
 - cylinder: [radiusTop,radiusBottom,height,radialSegments]
 
 Model:
-{"model":{"type":"Model","properties":{"filename":"/models/environment/tree.glb","instanced":true}}}
+{"model":{"type":"Model","properties":{"filename":"/models/environment/tree.glb"}}}
+
+Merge all compatible descendant meshes under one parent:
+{"mergedMesh":{"type":"MergedMesh","properties":{"enabled":true,"castShadow":true,"receiveShadow":true}}}
 
 Camera:
-{"camera":{"type":"Camera","properties":{"projection":"perspective","fov":50,"near":0.1,"far":1000}}}
+{"camera":{"type":"Camera","properties":{"projection":"perspective","fov":50,"near":0.1,"far":1000,"lockX":false,"lockY":false,"lockZ":false}}}
 
 Directional light:
 {"light":{"type":"DirectionalLight","properties":{"color":"#ffffff","intensity":2,"castShadow":true,"targetOffset":[0,-5,-5]}}}
@@ -483,7 +486,7 @@ Add a blue sphere using a second shared material:
 {"materials":{"blue":{"name":"Blue","materialType":"standard","color":"#2563eb","roughness":0.45}},"root":{"children":{"$append":[{"id":"blue-ball","components":{"transform":{"type":"Transform","properties":{"position":[0,2,0],"rotation":[0,0,0],"scale":[1,1,1]}},"mesh":{"type":"Mesh","properties":{"castShadow":true}},"geometry":{"type":"Geometry","properties":{"geometryType":"sphere","args":[0.5,32,16]}},"material":{"type":"Material","properties":{"materialId":"blue"}}},"children":[]}]}}}
 
 Add repeated trees:
-{"root":{"children":{"$append":[{"id":"tree-line","components":{"transform":{"type":"Transform","properties":{"position":[0,0,2],"rotation":[0,0,0],"scale":[1,1,1]}},"model":{"type":"Model","properties":{"filename":"/models/environment/tree.glb","instanced":true,"repeat":true,"repeatAxes":[{"axis":"x","count":8,"offset":4}]}}},"children":[]}]}}}
+{"root":{"children":{"$append":[{"id":"tree-line","components":{"transform":{"type":"Transform","properties":{"position":[0,0,2],"rotation":[0,0,0],"scale":[1,1,1]}},"model":{"type":"Model","properties":{"filename":"/models/environment/tree.glb","repeat":true,"repeatAxes":[{"axis":"x","count":8,"offset":4}]}}},"children":[]}]}}}
 
 Update an existing node by id:
 {"root":{"children":[{"id":"red-cube","components":{"transform":{"type":"Transform","properties":{"position":[5,0.5,0],"rotation":[0,0,0],"scale":[1,1,1]}}}}]}}

@@ -1,28 +1,31 @@
 {
   "id": "brutalist-skywalk",
   "name": "Guarded Brutalist Skywalk",
+  "materials": {
+    "material": {
+      "color": "#92928d",
+      "roughness": 0.9,
+      "metalness": 0.04
+    },
+    "material-2": {
+      "color": "#343331",
+      "roughness": 0.9,
+      "metalness": 0.04
+    },
+    "material-3": {
+      "color": "#d3242b",
+      "roughness": 0.9,
+      "metalness": 0.04,
+      "emissive": "#d3242b",
+      "emissiveIntensity": 2.5
+    }
+  },
   "root": {
     "id": "skywalk-root",
     "components": {
       "transform": {
         "type": "Transform",
-        "properties": {
-          "position": [
-            0,
-            0,
-            0
-          ],
-          "rotation": [
-            0,
-            0,
-            0
-          ],
-          "scale": [
-            1,
-            1,
-            1
-          ]
-        }
+        "properties": {}
       }
     },
     "children": [
@@ -32,35 +35,15 @@
         "components": {
           "transform": {
             "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                0,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
+            "properties": {}
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 34,
                 0.65,
@@ -88,30 +71,16 @@
                 0,
                 -0.85,
                 0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 32,
                 0.8,
@@ -139,30 +108,16 @@
                 0,
                 1.45,
                 -1.85
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 34,
                 0.18,
@@ -190,30 +145,16 @@
                 0,
                 0.28,
                 -1.85
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 34,
                 0.45,
@@ -241,30 +182,16 @@
                 -16,
                 0.82,
                 -1.85
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.16,
                 1.35,
@@ -292,30 +219,16 @@
                 -12,
                 0.82,
                 -1.85
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.16,
                 1.35,
@@ -343,30 +256,16 @@
                 -8,
                 0.82,
                 -1.85
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.16,
                 1.35,
@@ -394,30 +293,16 @@
                 -4,
                 0.82,
                 -1.85
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.16,
                 1.35,
@@ -445,30 +330,16 @@
                 0,
                 0.82,
                 -1.85
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.16,
                 1.35,
@@ -496,30 +367,16 @@
                 4,
                 0.82,
                 -1.85
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.16,
                 1.35,
@@ -547,30 +404,16 @@
                 8,
                 0.82,
                 -1.85
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.16,
                 1.35,
@@ -598,30 +441,16 @@
                 12,
                 0.82,
                 -1.85
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.16,
                 1.35,
@@ -649,30 +478,16 @@
                 16,
                 0.82,
                 -1.85
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.16,
                 1.35,
@@ -700,30 +515,16 @@
                 0,
                 1.45,
                 1.85
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 34,
                 0.18,
@@ -751,30 +552,16 @@
                 0,
                 0.28,
                 1.85
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 34,
                 0.45,
@@ -802,30 +589,16 @@
                 -16,
                 0.82,
                 1.85
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.16,
                 1.35,
@@ -853,30 +626,16 @@
                 -12,
                 0.82,
                 1.85
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.16,
                 1.35,
@@ -904,30 +663,16 @@
                 -8,
                 0.82,
                 1.85
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.16,
                 1.35,
@@ -955,30 +700,16 @@
                 -4,
                 0.82,
                 1.85
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.16,
                 1.35,
@@ -1006,30 +737,16 @@
                 0,
                 0.82,
                 1.85
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.16,
                 1.35,
@@ -1057,30 +774,16 @@
                 4,
                 0.82,
                 1.85
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.16,
                 1.35,
@@ -1108,30 +811,16 @@
                 8,
                 0.82,
                 1.85
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.16,
                 1.35,
@@ -1159,30 +848,16 @@
                 12,
                 0.82,
                 1.85
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.16,
                 1.35,
@@ -1210,30 +885,16 @@
                 16,
                 0.82,
                 1.85
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.16,
                 1.35,
@@ -1266,25 +927,16 @@
                 0,
                 0,
                 0.48
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.22,
                 0.22,
@@ -1317,25 +969,16 @@
                 0,
                 0,
                 -0.48
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.22,
                 0.22,
@@ -1368,25 +1011,16 @@
                 0,
                 0,
                 0.48
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.22,
                 0.22,
@@ -1419,25 +1053,16 @@
                 0,
                 0,
                 -0.48
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.22,
                 0.22,
@@ -1470,25 +1095,16 @@
                 0,
                 0,
                 0.48
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.22,
                 0.22,
@@ -1521,25 +1137,16 @@
                 0,
                 0,
                 -0.48
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.22,
                 0.22,
@@ -1572,25 +1179,16 @@
                 0,
                 0,
                 0.48
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.22,
                 0.22,
@@ -1623,25 +1221,16 @@
                 0,
                 0,
                 -0.48
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.22,
                 0.22,
@@ -1674,25 +1263,16 @@
                 0,
                 0,
                 0.48
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.22,
                 0.22,
@@ -1725,25 +1305,16 @@
                 0,
                 0,
                 -0.48
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.22,
                 0.22,
@@ -1771,30 +1342,16 @@
                 0,
                 0.18,
                 -2.02
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 22,
                 0.12,
@@ -1812,24 +1369,5 @@
         "children": []
       }
     ]
-  },
-  "materials": {
-    "material": {
-      "color": "#92928d",
-      "roughness": 0.9,
-      "metalness": 0.04
-    },
-    "material-2": {
-      "color": "#343331",
-      "roughness": 0.9,
-      "metalness": 0.04
-    },
-    "material-3": {
-      "color": "#d3242b",
-      "roughness": 0.9,
-      "metalness": 0.04,
-      "emissive": "#d3242b",
-      "emissiveIntensity": 2.5
-    }
   }
 }

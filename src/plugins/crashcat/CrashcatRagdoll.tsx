@@ -598,16 +598,16 @@ const CrashcatRagdollComponent: Component<CrashcatRagdollComponentProperties> = 
     name: "CrashcatRagdoll",
     Editor: CrashcatRagdollEditor,
     View: CrashcatRagdollView,
-    defaultProperties: {
-        scale: 1.8,
-        swingAngle: Math.PI / 4,
-        shoulderAngle: Math.PI / 4,
-        twistAngle: 0,
-        stabilize: true,
-        color: "#f97316",
-        clickImpulse: 8,
-        initialLinearVelocity: [0, 0, 0],
-        initialAngularVelocity: [0, 0, 0],
+    properties: {
+        scale: { default: 1.8 },
+        swingAngle: { default: Math.PI / 4 },
+        shoulderAngle: { default: Math.PI / 4 },
+        twistAngle: { default: 0 },
+        stabilize: { type: "boolean", default: true },
+        color: { type: "color", default: "#f97316" },
+        clickImpulse: { default: 8 },
+        initialLinearVelocity: { type: "vector3", default: [0, 0, 0] },
+        initialAngularVelocity: { type: "vector3", default: [0, 0, 0] },
     },
 };
 

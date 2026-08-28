@@ -54,9 +54,17 @@ const RotatorComponent: Component<RotatorProperties> = {
     name: 'Rotator',
     Editor: RotatorComponentEditor,
     View: RotatorView,
-    defaultProperties: {
-        speed: 1.0,
-        axis: 'y'
+    properties: {
+        speed: { default: 1.0 },
+        axis: {
+            type: 'select',
+            default: 'y',
+            options: [
+                { value: 'x', label: 'X' },
+                { value: 'y', label: 'Y' },
+                { value: 'z', label: 'Z' },
+            ],
+        },
     }
 };
 

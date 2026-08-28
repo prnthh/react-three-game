@@ -1,6 +1,122 @@
 {
   "id": "game-level",
   "name": "Brutalist Game Level Demo",
+  "materials": {
+    "material": {
+      "materialType": "basic",
+      "side": "BackSide",
+      "texture": "/textures/skybox/skybox3.jpg"
+    },
+    "material-2": {
+      "name": "concrete",
+      "color": "#626967",
+      "texture": "/textures/floor/terrain/snow-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        32,
+        32
+      ],
+      "roughness": 0.98,
+      "metalness": 0.01
+    },
+    "material-3": {
+      "name": "concrete",
+      "color": "#4a5051",
+      "texture": "/textures/floor/terrain/snow-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        32,
+        4
+      ],
+      "roughness": 0.99,
+      "metalness": 0.01
+    },
+    "material-4": {
+      "name": "concrete",
+      "color": "#505858",
+      "texture": "/textures/floor/terrain/snow-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        10,
+        10
+      ],
+      "roughness": 0.99
+    },
+    "material-5": {
+      "name": "concrete",
+      "color": "#767d7b",
+      "texture": "/textures/floor/terrain/snow-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        2,
+        28
+      ],
+      "roughness": 0.97
+    },
+    "material-6": {
+      "name": "concrete",
+      "color": "#767d7b",
+      "texture": "/textures/floor/terrain/snow-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        28,
+        2
+      ],
+      "roughness": 0.97
+    },
+    "material-7": {
+      "name": "concrete",
+      "color": "#626867",
+      "texture": "/textures/floor/terrain/snow-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        4,
+        2
+      ],
+      "roughness": 0.98
+    },
+    "material-8": {
+      "name": "concrete",
+      "color": "#4b5253",
+      "texture": "/textures/floor/terrain/snow-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        4,
+        2
+      ],
+      "roughness": 0.99
+    },
+    "material-9": {
+      "color": "#d3d5ca",
+      "texture": "/textures/proto32/symbol_cross.png",
+      "repeat": true,
+      "minFilter": "NearestFilter",
+      "magFilter": "NearestFilter",
+      "roughness": 0.86
+    },
+    "ground-joint": {
+      "name": "default",
+      "color": "#252b2c",
+      "roughness": 1
+    },
+    "ground-patch": {
+      "name": "concrete",
+      "color": "#747b79",
+      "texture": "/textures/floor/terrain/snow-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        4,
+        3
+      ],
+      "roughness": 0.99
+    },
+    "ground-drain": {
+      "name": "metal",
+      "color": "#252c2e",
+      "roughness": 0.72,
+      "metalness": 0.42
+    }
+  },
   "root": {
     "id": "root",
     "components": {
@@ -11,21 +127,3309 @@
             0,
             -4,
             -15
-          ],
-          "rotation": [
-            0,
-            0,
-            0
-          ],
-          "scale": [
-            1,
-            1,
-            1
           ]
         }
       }
     },
     "children": [
+      {
+        "id": "brutalist-static-geometry",
+        "name": "static geometry (merged)",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {}
+          },
+          "mergedMesh": {
+            "type": "MergedMesh",
+            "properties": {}
+          }
+        },
+        "children": [
+          {
+            "id": "brutalist-ground-plaza",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    -0.5,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    160,
+                    1,
+                    160
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "material-2"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cuboid"
+                }
+              }
+            }
+          },
+          {
+            "id": "north-boundary-megawall",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    5,
+                    -80
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    160,
+                    11,
+                    2
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "material-3"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cuboid"
+                }
+              }
+            }
+          },
+          {
+            "id": "south-boundary-megawall",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    5,
+                    80
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    160,
+                    11,
+                    2
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "material-3"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cuboid"
+                }
+              }
+            }
+          },
+          {
+            "id": "west-boundary-megawall",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -80,
+                    5,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    2,
+                    11,
+                    160
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "material-3"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cuboid"
+                }
+              }
+            }
+          },
+          {
+            "id": "east-boundary-megawall",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    80,
+                    5,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    2,
+                    11,
+                    160
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "material-3"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cuboid"
+                }
+              }
+            }
+          },
+          {
+            "id": "central-sunken-courtyard",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    -0.15,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    34,
+                    0.35,
+                    34
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "material-4"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cuboid"
+                }
+              }
+            }
+          },
+          {
+            "id": "central-crosswalk-north-south",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.02,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    7,
+                    0.08,
+                    112
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "material-5"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cuboid"
+                }
+              }
+            }
+          },
+          {
+            "id": "central-crosswalk-east-west",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.04,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    112,
+                    0.08,
+                    7
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "material-6"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cuboid"
+                }
+              }
+            }
+          },
+          {
+            "id": "low-service-bunker-1",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -48,
+                    2.2,
+                    68
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    8,
+                    4.4,
+                    9
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "material-7"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cuboid"
+                }
+              }
+            }
+          },
+          {
+            "id": "low-service-bunker-2",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -36,
+                    2.2,
+                    68
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    8,
+                    4.4,
+                    9
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "material-8"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cuboid"
+                }
+              }
+            }
+          },
+          {
+            "id": "low-service-bunker-3",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -24,
+                    2.2,
+                    68
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    8,
+                    4.4,
+                    9
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "material-7"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cuboid"
+                }
+              }
+            }
+          },
+          {
+            "id": "low-service-bunker-5",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    2.2,
+                    68
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    8,
+                    4.4,
+                    9
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "material-7"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cuboid"
+                }
+              }
+            }
+          },
+          {
+            "id": "low-service-bunker-7",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    24,
+                    2.2,
+                    68
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    8,
+                    4.4,
+                    9
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "material-7"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cuboid"
+                }
+              }
+            }
+          },
+          {
+            "id": "low-service-bunker-8",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    36,
+                    2.2,
+                    68
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    8,
+                    4.4,
+                    9
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "material-8"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cuboid"
+                }
+              }
+            }
+          },
+          {
+            "id": "low-service-bunker-9",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    48,
+                    2.2,
+                    68
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    8,
+                    4.4,
+                    9
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "material-7"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cuboid"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-plaza-joint-x--60",
+            "name": "poured concrete plaza expansion joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -60,
+                    0.012,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.1,
+                    0.022,
+                    158
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-plaza-joint-z--60",
+            "name": "poured concrete plaza expansion joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.012,
+                    -60
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    158,
+                    0.022,
+                    0.1
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-plaza-joint-x--40",
+            "name": "poured concrete plaza expansion joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -40,
+                    0.012,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.1,
+                    0.022,
+                    158
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-plaza-joint-z--40",
+            "name": "poured concrete plaza expansion joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.012,
+                    -40
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    158,
+                    0.022,
+                    0.1
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-plaza-joint-x--20",
+            "name": "poured concrete plaza expansion joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -20,
+                    0.012,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.1,
+                    0.022,
+                    158
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-plaza-joint-z--20",
+            "name": "poured concrete plaza expansion joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.012,
+                    -20
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    158,
+                    0.022,
+                    0.1
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-plaza-joint-x-20",
+            "name": "poured concrete plaza expansion joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    20,
+                    0.012,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.1,
+                    0.022,
+                    158
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-plaza-joint-z-20",
+            "name": "poured concrete plaza expansion joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.012,
+                    20
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    158,
+                    0.022,
+                    0.1
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-plaza-joint-x-40",
+            "name": "poured concrete plaza expansion joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    40,
+                    0.012,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.1,
+                    0.022,
+                    158
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-plaza-joint-z-40",
+            "name": "poured concrete plaza expansion joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.012,
+                    40
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    158,
+                    0.022,
+                    0.1
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-plaza-joint-x-60",
+            "name": "poured concrete plaza expansion joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    60,
+                    0.012,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.1,
+                    0.022,
+                    158
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-plaza-joint-z-60",
+            "name": "poured concrete plaza expansion joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.012,
+                    60
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    158,
+                    0.022,
+                    0.1
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-spine-joint-ns--48",
+            "name": "north-south processional slab joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.067,
+                    -48
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    7.05,
+                    0.014,
+                    0.09
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-spine-joint-ew--48",
+            "name": "east-west processional slab joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -48,
+                    0.087,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.09,
+                    0.014,
+                    7.05
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-spine-joint-ns--36",
+            "name": "north-south processional slab joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.067,
+                    -36
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    7.05,
+                    0.014,
+                    0.09
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-spine-joint-ew--36",
+            "name": "east-west processional slab joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -36,
+                    0.087,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.09,
+                    0.014,
+                    7.05
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-spine-joint-ns--24",
+            "name": "north-south processional slab joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.067,
+                    -24
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    7.05,
+                    0.014,
+                    0.09
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-spine-joint-ew--24",
+            "name": "east-west processional slab joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -24,
+                    0.087,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.09,
+                    0.014,
+                    7.05
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-spine-joint-ns--12",
+            "name": "north-south processional slab joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.067,
+                    -12
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    7.05,
+                    0.014,
+                    0.09
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-spine-joint-ew--12",
+            "name": "east-west processional slab joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -12,
+                    0.087,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.09,
+                    0.014,
+                    7.05
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-spine-joint-ns-12",
+            "name": "north-south processional slab joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.067,
+                    12
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    7.05,
+                    0.014,
+                    0.09
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-spine-joint-ew-12",
+            "name": "east-west processional slab joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    12,
+                    0.087,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.09,
+                    0.014,
+                    7.05
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-spine-joint-ns-24",
+            "name": "north-south processional slab joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.067,
+                    24
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    7.05,
+                    0.014,
+                    0.09
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-spine-joint-ew-24",
+            "name": "east-west processional slab joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    24,
+                    0.087,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.09,
+                    0.014,
+                    7.05
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-spine-joint-ns-36",
+            "name": "north-south processional slab joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.067,
+                    36
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    7.05,
+                    0.014,
+                    0.09
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-spine-joint-ew-36",
+            "name": "east-west processional slab joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    36,
+                    0.087,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.09,
+                    0.014,
+                    7.05
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-spine-joint-ns-48",
+            "name": "north-south processional slab joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.067,
+                    48
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    7.05,
+                    0.014,
+                    0.09
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-spine-joint-ew-48",
+            "name": "east-west processional slab joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    48,
+                    0.087,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.09,
+                    0.014,
+                    7.05
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-drain-west",
+            "name": "west linear drainage channel",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -4.08,
+                    0.045,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.28,
+                    0.045,
+                    112
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-drain"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-drain-east",
+            "name": "east linear drainage channel",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    4.08,
+                    0.045,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.28,
+                    0.045,
+                    112
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-drain"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-drain-north",
+            "name": "north linear drainage channel",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.065,
+                    -4.08
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    112,
+                    0.045,
+                    0.28
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-drain"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-drain-south",
+            "name": "south linear drainage channel",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.065,
+                    4.08
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    112,
+                    0.045,
+                    0.28
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-drain"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-courtyard-joint-n",
+            "name": "sunken courtyard north isolation joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.04,
+                    -17.1
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    34.4,
+                    0.035,
+                    0.16
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-courtyard-joint-s",
+            "name": "sunken courtyard south isolation joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.04,
+                    17.1
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    34.4,
+                    0.035,
+                    0.16
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-courtyard-joint-w",
+            "name": "sunken courtyard west isolation joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -17.1,
+                    0.04,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.16,
+                    0.035,
+                    34.4
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-courtyard-joint-e",
+            "name": "sunken courtyard east isolation joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    17.1,
+                    0.04,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.16,
+                    0.035,
+                    34.4
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-repair-patch-0",
+            "name": "flush concrete repair pour",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -29,
+                    0.018,
+                    20
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    10,
+                    0.025,
+                    7
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-patch"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-repair-patch-1",
+            "name": "flush concrete repair pour",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    31,
+                    0.018,
+                    22
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    13,
+                    0.025,
+                    6
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-patch"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-repair-patch-2",
+            "name": "flush concrete repair pour",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -42,
+                    0.018,
+                    -15
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    9,
+                    0.025,
+                    11
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-patch"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-repair-patch-3",
+            "name": "flush concrete repair pour",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    45,
+                    0.018,
+                    -27
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    12,
+                    0.025,
+                    8
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-patch"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-service-grate-0",
+            "name": "recessed rectangular service grate",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -11,
+                    0.035,
+                    27
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    2.5,
+                    0.035,
+                    1.15
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-drain"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-service-grate-0-slot-0",
+            "name": "service grate drainage slot",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -11.9,
+                    0.057,
+                    27
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.1,
+                    0.012,
+                    0.92
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-service-grate-0-slot-1",
+            "name": "service grate drainage slot",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -11.540000000000001,
+                    0.057,
+                    27
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.1,
+                    0.012,
+                    0.92
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-service-grate-0-slot-2",
+            "name": "service grate drainage slot",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -11.18,
+                    0.057,
+                    27
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.1,
+                    0.012,
+                    0.92
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-service-grate-0-slot-3",
+            "name": "service grate drainage slot",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -10.82,
+                    0.057,
+                    27
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.1,
+                    0.012,
+                    0.92
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-service-grate-0-slot-4",
+            "name": "service grate drainage slot",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -10.46,
+                    0.057,
+                    27
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.1,
+                    0.012,
+                    0.92
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-service-grate-0-slot-5",
+            "name": "service grate drainage slot",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -10.100000000000001,
+                    0.057,
+                    27
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.1,
+                    0.012,
+                    0.92
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-service-grate-1",
+            "name": "recessed rectangular service grate",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    13,
+                    0.035,
+                    -25
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    2.5,
+                    0.035,
+                    1.15
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-drain"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-service-grate-1-slot-0",
+            "name": "service grate drainage slot",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    12.1,
+                    0.057,
+                    -25
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.1,
+                    0.012,
+                    0.92
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-service-grate-1-slot-1",
+            "name": "service grate drainage slot",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    12.459999999999999,
+                    0.057,
+                    -25
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.1,
+                    0.012,
+                    0.92
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-service-grate-1-slot-2",
+            "name": "service grate drainage slot",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    12.82,
+                    0.057,
+                    -25
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.1,
+                    0.012,
+                    0.92
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-service-grate-1-slot-3",
+            "name": "service grate drainage slot",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    13.18,
+                    0.057,
+                    -25
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.1,
+                    0.012,
+                    0.92
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-service-grate-1-slot-4",
+            "name": "service grate drainage slot",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    13.54,
+                    0.057,
+                    -25
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.1,
+                    0.012,
+                    0.92
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-service-grate-1-slot-5",
+            "name": "service grate drainage slot",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    13.899999999999999,
+                    0.057,
+                    -25
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.1,
+                    0.012,
+                    0.92
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-service-grate-2",
+            "name": "recessed rectangular service grate",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    29,
+                    0.035,
+                    10
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    2.5,
+                    0.035,
+                    1.15
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-drain"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-service-grate-2-slot-0",
+            "name": "service grate drainage slot",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    28.1,
+                    0.057,
+                    10
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.1,
+                    0.012,
+                    0.92
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-service-grate-2-slot-1",
+            "name": "service grate drainage slot",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    28.46,
+                    0.057,
+                    10
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.1,
+                    0.012,
+                    0.92
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-service-grate-2-slot-2",
+            "name": "service grate drainage slot",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    28.82,
+                    0.057,
+                    10
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.1,
+                    0.012,
+                    0.92
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-service-grate-2-slot-3",
+            "name": "service grate drainage slot",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    29.18,
+                    0.057,
+                    10
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.1,
+                    0.012,
+                    0.92
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-service-grate-2-slot-4",
+            "name": "service grate drainage slot",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    29.540000000000003,
+                    0.057,
+                    10
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.1,
+                    0.012,
+                    0.92
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-service-grate-2-slot-5",
+            "name": "service grate drainage slot",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    29.900000000000002,
+                    0.057,
+                    10
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.1,
+                    0.012,
+                    0.92
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-service-grate-3",
+            "name": "recessed rectangular service grate",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -31,
+                    0.035,
+                    -30
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    2.5,
+                    0.035,
+                    1.15
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-drain"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-service-grate-3-slot-0",
+            "name": "service grate drainage slot",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -31.9,
+                    0.057,
+                    -30
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.1,
+                    0.012,
+                    0.92
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-service-grate-3-slot-1",
+            "name": "service grate drainage slot",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -31.54,
+                    0.057,
+                    -30
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.1,
+                    0.012,
+                    0.92
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-service-grate-3-slot-2",
+            "name": "service grate drainage slot",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -31.18,
+                    0.057,
+                    -30
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.1,
+                    0.012,
+                    0.92
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-service-grate-3-slot-3",
+            "name": "service grate drainage slot",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -30.82,
+                    0.057,
+                    -30
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.1,
+                    0.012,
+                    0.92
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-service-grate-3-slot-4",
+            "name": "service grate drainage slot",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -30.459999999999997,
+                    0.057,
+                    -30
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.1,
+                    0.012,
+                    0.92
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          },
+          {
+            "id": "ground-detail-service-grate-3-slot-5",
+            "name": "service grate drainage slot",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -30.099999999999998,
+                    0.057,
+                    -30
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "args": [
+                    0.1,
+                    0.012,
+                    0.92
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "ground-joint"
+                }
+              }
+            }
+          }
+        ]
+      },
       {
         "id": "brutalist-directional-sun",
         "components": {
@@ -36,23 +3440,12 @@
                 35,
                 77,
                 28
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "directionalLight": {
             "type": "DirectionalLight",
             "properties": {
-              "color": "#ffffff",
               "intensity": 1.3,
               "targetOffset": [
                 -35,
@@ -64,12 +3457,10 @@
               "shadowCameraBottom": -100,
               "shadowCameraLeft": -100,
               "shadowCameraRight": 100,
-              "shadowBias": 0,
               "shadowNormalBias": 0.3
             }
           }
-        },
-        "children": []
+        }
       },
       {
         "id": "e69b978f-feda-46cf-bec8-a02cda4bc3b6",
@@ -81,9 +3472,7 @@
           },
           "environment": {
             "type": "Environment",
-            "properties": {
-              "intensity": 1
-            }
+            "properties": {}
           },
           "ambientlight": {
             "type": "AmbientLight",
@@ -104,20 +3493,12 @@
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "emitClickEvent": false,
-                  "clickEventName": ""
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "sphere",
-                  "args": [
-                    1,
-                    32,
-                    16
-                  ]
+                  "geometryType": "sphere"
                 }
               },
               "material": {
@@ -126,442 +3507,9 @@
                   "materialId": "material"
                 }
               }
-            },
-            "children": []
+            }
           }
         ]
-      },
-      {
-        "id": "brutalist-ground-plaza",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                -0.5,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {}
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                160,
-                1,
-                160
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialId": "material-2"
-            }
-          },
-          "crashcatPhysics": {
-            "type": "CrashcatPhysics",
-            "properties": {
-              "type": "fixed",
-              "colliders": "cuboid"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "north-boundary-megawall",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                5,
-                -80
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {}
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                160,
-                11,
-                2
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialId": "material-3"
-            }
-          },
-          "crashcatPhysics": {
-            "type": "CrashcatPhysics",
-            "properties": {
-              "type": "fixed",
-              "colliders": "cuboid"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "south-boundary-megawall",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                5,
-                80
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {}
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                160,
-                11,
-                2
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialId": "material-3"
-            }
-          },
-          "crashcatPhysics": {
-            "type": "CrashcatPhysics",
-            "properties": {
-              "type": "fixed",
-              "colliders": "cuboid"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "west-boundary-megawall",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -80,
-                5,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {}
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                2,
-                11,
-                160
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialId": "material-3"
-            }
-          },
-          "crashcatPhysics": {
-            "type": "CrashcatPhysics",
-            "properties": {
-              "type": "fixed",
-              "colliders": "cuboid"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "east-boundary-megawall",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                80,
-                5,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {}
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                2,
-                11,
-                160
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialId": "material-3"
-            }
-          },
-          "crashcatPhysics": {
-            "type": "CrashcatPhysics",
-            "properties": {
-              "type": "fixed",
-              "colliders": "cuboid"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "central-sunken-courtyard",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                -0.15,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {}
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                34,
-                0.35,
-                34
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialId": "material-4"
-            }
-          },
-          "crashcatPhysics": {
-            "type": "CrashcatPhysics",
-            "properties": {
-              "type": "fixed",
-              "colliders": "cuboid"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "central-crosswalk-north-south",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                0.02,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {}
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                7,
-                0.08,
-                112
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialId": "material-5"
-            }
-          },
-          "crashcatPhysics": {
-            "type": "CrashcatPhysics",
-            "properties": {
-              "type": "fixed",
-              "colliders": "cuboid"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "central-crosswalk-east-west",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                0.04,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {}
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                112,
-                0.08,
-                7
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialId": "material-6"
-            }
-          },
-          "crashcatPhysics": {
-            "type": "CrashcatPhysics",
-            "properties": {
-              "type": "fixed",
-              "colliders": "cuboid"
-            }
-          }
-        },
-        "children": []
       },
       {
         "id": "enterable-cube-west-placement",
@@ -578,11 +3526,6 @@
                 0,
                 1.5707963267948966,
                 0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
@@ -592,8 +3535,7 @@
               "url": "/prefabs/brutalist-enterable-cube.json"
             }
           }
-        },
-        "children": []
+        }
       },
       {
         "id": "enterable-cube-east-placement",
@@ -624,8 +3566,7 @@
               "url": "/prefabs/brutalist-enterable-cube.json"
             }
           }
-        },
-        "children": []
+        }
       },
       {
         "id": "cube-building-west-placement",
@@ -637,11 +3578,6 @@
                 -51,
                 0,
                 -42
-              ],
-              "rotation": [
-                0,
-                0,
-                0
               ],
               "scale": [
                 1,
@@ -656,8 +3592,7 @@
               "url": "/prefabs/brutalist-cube-building.json"
             }
           }
-        },
-        "children": []
+        }
       },
       {
         "id": "cube-building-north-placement",
@@ -669,11 +3604,6 @@
                 -19.5,
                 0,
                 -33
-              ],
-              "rotation": [
-                0,
-                0,
-                0
               ],
               "scale": [
                 1.3,
@@ -688,8 +3618,7 @@
               "url": "/prefabs/brutalist-cube-building.json"
             }
           }
-        },
-        "children": []
+        }
       },
       {
         "id": "cube-building-east-placement",
@@ -720,8 +3649,7 @@
               "url": "/prefabs/brutalist-cube-building.json"
             }
           }
-        },
-        "children": []
+        }
       },
       {
         "id": "cube-building-south-placement",
@@ -733,11 +3661,6 @@
                 50.5,
                 0,
                 46
-              ],
-              "rotation": [
-                0,
-                0,
-                0
               ],
               "scale": [
                 1.45,
@@ -752,8 +3675,7 @@
               "url": "/prefabs/brutalist-cube-building.json"
             }
           }
-        },
-        "children": []
+        }
       },
       {
         "id": "cube-stack-west-placement",
@@ -784,8 +3706,7 @@
               "url": "/prefabs/brutalist-cube-building.json"
             }
           }
-        },
-        "children": []
+        }
       },
       {
         "id": "cube-stack-inner-placement",
@@ -797,11 +3718,6 @@
                 -21.5,
                 0,
                 -1
-              ],
-              "rotation": [
-                0,
-                0,
-                0
               ],
               "scale": [
                 1.1,
@@ -816,8 +3732,7 @@
               "url": "/prefabs/brutalist-cube-building.json"
             }
           }
-        },
-        "children": []
+        }
       },
       {
         "id": "cube-stack-east-placement",
@@ -848,8 +3763,7 @@
               "url": "/prefabs/brutalist-cube-building.json"
             }
           }
-        },
-        "children": []
+        }
       },
       {
         "id": "cyl-tower-nw-placement",
@@ -861,11 +3775,6 @@
                 -62,
                 0,
                 -62
-              ],
-              "rotation": [
-                0,
-                0,
-                0
               ],
               "scale": [
                 1.15,
@@ -880,8 +3789,7 @@
               "url": "/prefabs/brutalist-cylinder-tower.json"
             }
           }
-        },
-        "children": []
+        }
       },
       {
         "id": "cyl-tower-n-placement",
@@ -912,8 +3820,7 @@
               "url": "/prefabs/brutalist-cylinder-tower.json"
             }
           }
-        },
-        "children": []
+        }
       },
       {
         "id": "cyl-tower-ne-placement",
@@ -944,8 +3851,7 @@
               "url": "/prefabs/brutalist-cylinder-tower.json"
             }
           }
-        },
-        "children": []
+        }
       },
       {
         "id": "cyl-tower-w-placement",
@@ -976,8 +3882,7 @@
               "url": "/prefabs/brutalist-cylinder-tower.json"
             }
           }
-        },
-        "children": []
+        }
       },
       {
         "id": "cyl-tower-e-placement",
@@ -1008,8 +3913,7 @@
               "url": "/prefabs/brutalist-cylinder-tower.json"
             }
           }
-        },
-        "children": []
+        }
       },
       {
         "id": "cyl-tower-sw-placement",
@@ -1040,8 +3944,7 @@
               "url": "/prefabs/brutalist-cylinder-tower.json"
             }
           }
-        },
-        "children": []
+        }
       },
       {
         "id": "cyl-tower-s-placement",
@@ -1072,8 +3975,7 @@
               "url": "/prefabs/brutalist-cylinder-tower.json"
             }
           }
-        },
-        "children": []
+        }
       },
       {
         "id": "cyl-tower-se-placement",
@@ -1104,8 +4006,7 @@
               "url": "/prefabs/brutalist-cylinder-tower.json"
             }
           }
-        },
-        "children": []
+        }
       },
       {
         "id": "viaduct-west-placement",
@@ -1117,16 +4018,6 @@
                 -53.5,
                 0,
                 -6
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
@@ -1136,8 +4027,7 @@
               "url": "/prefabs/brutalist-viaduct-span.json"
             }
           }
-        },
-        "children": []
+        }
       },
       {
         "id": "viaduct-east-placement",
@@ -1149,16 +4039,6 @@
                 44,
                 0,
                 -2
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
@@ -1168,386 +4048,7 @@
               "url": "/prefabs/brutalist-viaduct-span.json"
             }
           }
-        },
-        "children": []
-      },
-      {
-        "id": "low-service-bunker-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -48,
-                2.2,
-                68
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {}
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                8,
-                4.4,
-                9
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialId": "material-7"
-            }
-          },
-          "crashcatPhysics": {
-            "type": "CrashcatPhysics",
-            "properties": {
-              "type": "fixed",
-              "colliders": "cuboid"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "low-service-bunker-2",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -36,
-                2.2,
-                68
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {}
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                8,
-                4.4,
-                9
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialId": "material-8"
-            }
-          },
-          "crashcatPhysics": {
-            "type": "CrashcatPhysics",
-            "properties": {
-              "type": "fixed",
-              "colliders": "cuboid"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "low-service-bunker-3",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -24,
-                2.2,
-                68
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {}
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                8,
-                4.4,
-                9
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialId": "material-7"
-            }
-          },
-          "crashcatPhysics": {
-            "type": "CrashcatPhysics",
-            "properties": {
-              "type": "fixed",
-              "colliders": "cuboid"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "low-service-bunker-5",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                2.2,
-                68
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {}
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                8,
-                4.4,
-                9
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialId": "material-7"
-            }
-          },
-          "crashcatPhysics": {
-            "type": "CrashcatPhysics",
-            "properties": {
-              "type": "fixed",
-              "colliders": "cuboid"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "low-service-bunker-7",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                24,
-                2.2,
-                68
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {}
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                8,
-                4.4,
-                9
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialId": "material-7"
-            }
-          },
-          "crashcatPhysics": {
-            "type": "CrashcatPhysics",
-            "properties": {
-              "type": "fixed",
-              "colliders": "cuboid"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "low-service-bunker-8",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                36,
-                2.2,
-                68
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {}
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                8,
-                4.4,
-                9
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialId": "material-8"
-            }
-          },
-          "crashcatPhysics": {
-            "type": "CrashcatPhysics",
-            "properties": {
-              "type": "fixed",
-              "colliders": "cuboid"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "low-service-bunker-9",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                48,
-                2.2,
-                68
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {}
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                8,
-                4.4,
-                9
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialId": "material-7"
-            }
-          },
-          "crashcatPhysics": {
-            "type": "CrashcatPhysics",
-            "properties": {
-              "type": "fixed",
-              "colliders": "cuboid"
-            }
-          }
-        },
-        "children": []
+        }
       },
       {
         "id": "spawn-indicator",
@@ -1564,11 +4065,6 @@
                 -1.57,
                 0,
                 0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
@@ -1592,8 +4088,7 @@
               "materialId": "material-9"
             }
           }
-        },
-        "children": []
+        }
       },
       {
         "id": "mid-skywalk",
@@ -1606,16 +4101,6 @@
                 -25,
                 13.5,
                 -36.5
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
@@ -1625,8 +4110,7 @@
               "url": "/prefabs/brutalist-skywalk.json"
             }
           }
-        },
-        "children": []
+        }
       },
       {
         "id": "upper-skywalk",
@@ -1639,11 +4123,6 @@
                 12,
                 30.5,
                 -38.5
-              ],
-              "rotation": [
-                0,
-                0,
-                0
               ],
               "scale": [
                 1.25,
@@ -1658,8 +4137,7 @@
               "url": "/prefabs/brutalist-skywalk.json"
             }
           }
-        },
-        "children": []
+        }
       },
       {
         "id": "ec0adba6-09a8-4b4c-af40-f7817ec5d64d",
@@ -1677,146 +4155,15 @@
                 -0.23820312500000002,
                 0,
                 0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "camera": {
             "type": "Camera",
-            "properties": {
-              "projection": "perspective",
-              "fov": 50,
-              "near": 0.1,
-              "zoom": 1,
-              "far": 1000,
-              "orthographicSize": 10
-            }
+            "properties": {}
           }
-        },
-        "children": []
+        }
       }
     ]
-  },
-  "materials": {
-    "material": {
-      "materialType": "basic",
-      "color": "#ff0a0a",
-      "toneMapped": true,
-      "wireframe": false,
-      "transparent": false,
-      "opacity": 1,
-      "sizeAttenuation": true,
-      "offset": [
-        0,
-        0
-      ],
-      "metalness": 0,
-      "roughness": 1,
-      "side": "BackSide",
-      "texture": "/textures/water1.png"
-    },
-    "material-2": {
-      "color": "#d8e6f9",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        40,
-        40
-      ],
-      "minFilter": "NearestFilter",
-      "magFilter": "NearestFilter",
-      "roughness": 1
-    },
-    "material-3": {
-      "color": "#83867e",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        40,
-        4
-      ],
-      "minFilter": "NearestFilter",
-      "magFilter": "NearestFilter",
-      "roughness": 0.94,
-      "metalness": 0.02
-    },
-    "material-4": {
-      "color": "#d5c0ad",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        10,
-        10
-      ],
-      "minFilter": "NearestFilter",
-      "magFilter": "NearestFilter",
-      "roughness": 0.86
-    },
-    "material-5": {
-      "color": "#f7fbff",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        2,
-        28
-      ],
-      "minFilter": "NearestFilter",
-      "magFilter": "NearestFilter",
-      "roughness": 0.86
-    },
-    "material-6": {
-      "color": "#f7fbff",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        28,
-        2
-      ],
-      "minFilter": "NearestFilter",
-      "magFilter": "NearestFilter",
-      "roughness": 0.86
-    },
-    "material-7": {
-      "color": "#a7a9a2",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        4,
-        2
-      ],
-      "minFilter": "NearestFilter",
-      "magFilter": "NearestFilter",
-      "roughness": 0.94,
-      "metalness": 0.02
-    },
-    "material-8": {
-      "color": "#90938d",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        4,
-        2
-      ],
-      "minFilter": "NearestFilter",
-      "magFilter": "NearestFilter",
-      "roughness": 0.94,
-      "metalness": 0.02
-    },
-    "material-9": {
-      "color": "#d3d5ca",
-      "texture": "/textures/proto32/symbol_cross.png",
-      "repeat": true,
-      "repeatCount": [
-        1,
-        1
-      ],
-      "minFilter": "NearestFilter",
-      "magFilter": "NearestFilter",
-      "roughness": 0.86
-    }
   }
 }

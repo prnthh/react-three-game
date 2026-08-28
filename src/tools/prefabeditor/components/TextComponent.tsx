@@ -129,16 +129,25 @@ function TextComponentView({ properties, children }: ComponentViewProps<TextProp
 
 const TextComponent: Component<TextProperties> = {
     name: 'Text',
+    renderWhenDisabled: true,
     Editor: TextComponentEditor,
     View: TextComponentView,
-    defaultProperties: {
-        text: 'Hello World',
-        color: '#888888',
-        font: '/fonts/NotoSans-Regular.ttf',
-        size: 0.5,
-        depth: 0,
-        width: 5,
-        align: 'center',
+    properties: {
+        text: { type: 'string', default: 'Hello World' },
+        color: { type: 'color', default: '#888888' },
+        font: { type: 'string', default: '/fonts/NotoSans-Regular.ttf' },
+        size: { default: 0.5, min: 0.01, step: 0.1 },
+        depth: { default: 0, min: 0, step: 0.1 },
+        width: { default: 5, min: 0, step: 0.5 },
+        align: {
+            type: 'select',
+            default: 'center',
+            options: [
+                { value: 'left', label: 'Left' },
+                { value: 'center', label: 'Center' },
+                { value: 'right', label: 'Right' },
+            ],
+        },
     }
 };
 

@@ -145,7 +145,6 @@ function createInstancedNode(index: number): GameObject {
                 type: "Model",
                 properties: {
                     filename: "models/environment/tree.glb",
-                    instanced: true,
                     repeat: false,
                 },
             },

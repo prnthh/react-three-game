@@ -153,14 +153,14 @@ const ElevatorMover: Component<ElevatorMoverProperties> = {
     name: "ElevatorMover",
     Editor: ElevatorMoverEditor,
     View: ElevatorMoverView,
-    defaultProperties: {
-        contactEventName: DEFAULT_CONTACT_EVENT_NAME,
-        triggerEntityId: "",
-        travelDistance: DEFAULT_TRAVEL_DISTANCE,
-        moveSpeed: DEFAULT_MOVE_SPEED,
-        startDelay: DEFAULT_START_DELAY,
-        returnDelay: DEFAULT_RETURN_DELAY,
-        returnDuration: DEFAULT_RETURN_DURATION,
+    properties: {
+        contactEventName: { type: "string", default: DEFAULT_CONTACT_EVENT_NAME },
+        triggerEntityId: { type: "string", default: "" },
+        travelDistance: { default: DEFAULT_TRAVEL_DISTANCE },
+        moveSpeed: { default: DEFAULT_MOVE_SPEED },
+        startDelay: { default: DEFAULT_START_DELAY },
+        returnDelay: { default: DEFAULT_RETURN_DELAY },
+        returnDuration: { default: DEFAULT_RETURN_DURATION },
     },
 };
 

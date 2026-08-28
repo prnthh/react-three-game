@@ -14,6 +14,7 @@ export type StagePoint = [number, number, number];
 
 export type StageInteractionProperties = {
     action?: "dialogue" | "transition";
+    animation?: string;
     page1?: string;
     page2?: string;
     sensorRadius?: number;
@@ -67,14 +68,22 @@ function StageInteractionView({ properties, children }: ComponentViewProps<Stage
 const StageInteractionComponent: Component<StageInteractionProperties> = {
     name: "StageInteraction",
     View: StageInteractionView,
-    defaultProperties: {
-        action: "dialogue",
-        page1: "",
-        page2: "",
-        sensorRadius: 0.8,
-        sensorHalfHeight: 1,
-        enterEventName: DEFAULT_ENTER_EVENT,
-        exitEventName: DEFAULT_EXIT_EVENT,
+    properties: {
+        action: {
+            type: "select",
+            default: "dialogue",
+            options: [
+                { value: "dialogue", label: "Dialogue" },
+                { value: "transition", label: "Transition" },
+            ],
+        },
+        page1: { type: "string", default: "" },
+        page2: { type: "string", default: "" },
+        animation: { type: "string", default: "" },
+        sensorRadius: { default: 0.8 },
+        sensorHalfHeight: { default: 1 },
+        enterEventName: { type: "string", default: DEFAULT_ENTER_EVENT },
+        exitEventName: { type: "string", default: DEFAULT_EXIT_EVENT },
     },
 };
 

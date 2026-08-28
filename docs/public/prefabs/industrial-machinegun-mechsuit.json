@@ -1,29 +1,63 @@
 {
   "id": "machinegun-mechsuit",
   "name": "Industrial Machinegun Mech",
+  "materials": {
+    "material": {
+      "color": "#1b2634",
+      "roughness": 0.62,
+      "metalness": 0.32
+    },
+    "material-2": {
+      "color": "#223047",
+      "roughness": 0.62,
+      "metalness": 0.32
+    },
+    "material-3": {
+      "color": "#2c3b4d",
+      "roughness": 0.62,
+      "metalness": 0.32
+    },
+    "material-4": {
+      "color": "#111827",
+      "roughness": 0.62,
+      "metalness": 0.32
+    },
+    "material-5": {
+      "color": "#243244",
+      "roughness": 0.62,
+      "metalness": 0.32
+    },
+    "material-6": {
+      "color": "#737a80",
+      "roughness": 0.52,
+      "metalness": 0.45
+    },
+    "material-7": {
+      "color": "#111827",
+      "roughness": 0.68,
+      "metalness": 0.24
+    },
+    "material-8": {
+      "materialType": "basic",
+      "color": "#ffb020",
+      "transparent": true,
+      "opacity": 0,
+      "toneMapped": false,
+      "depthWrite": false
+    },
+    "material-9": {
+      "color": "#3f4650",
+      "roughness": 0.78,
+      "metalness": 0.08
+    }
+  },
   "root": {
     "id": "machinegun-mechsuit-root",
     "name": "machinegun mech root",
     "components": {
       "transform": {
         "type": "Transform",
-        "properties": {
-          "position": [
-            0,
-            0,
-            0
-          ],
-          "rotation": [
-            0,
-            0,
-            0
-          ],
-          "scale": [
-            1,
-            1,
-            1
-          ]
-        }
+        "properties": {}
       },
       "data": {
         "type": "Data",
@@ -51,21 +85,13 @@
                 -0.10783959738373575,
                 0,
                 0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "camera": {
             "type": "Camera",
             "properties": {
-              "projection": "perspective",
               "fov": 48,
-              "near": 0.1,
-              "zoom": 1,
               "far": 260
             }
           },
@@ -82,7 +108,8 @@
               }
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "mech-left-sill-rail",
@@ -100,25 +127,16 @@
                 0.04,
                 0,
                 -0.04
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.14,
                 0.16,
@@ -132,7 +150,8 @@
               "materialId": "material"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "mech-right-sill-rail",
@@ -150,25 +169,16 @@
                 0.04,
                 0,
                 0.04
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.14,
                 0.16,
@@ -182,7 +192,8 @@
               "materialId": "material"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "mech-front-lower-crossbar",
@@ -195,30 +206,16 @@
                 0,
                 3.05,
                 6.18
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 4.05,
                 0.14,
@@ -232,7 +229,8 @@
               "materialId": "material"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "mech-front-upper-crossbar",
@@ -245,30 +243,16 @@
                 0,
                 5.82,
                 6.78
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 4.1,
                 0.14,
@@ -282,7 +266,8 @@
               "materialId": "material-2"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "mech-left-front-pillar",
@@ -300,25 +285,16 @@
                 0,
                 0,
                 -0.12
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.14,
                 2.15,
@@ -332,7 +308,8 @@
               "materialId": "material-2"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "mech-right-front-pillar",
@@ -350,25 +327,16 @@
                 0,
                 0,
                 0.12
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.14,
                 2.15,
@@ -382,7 +350,8 @@
               "materialId": "material-2"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "mech-left-roof-rail",
@@ -400,25 +369,16 @@
                 0.03,
                 0,
                 -0.02
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.13,
                 0.13,
@@ -432,7 +392,8 @@
               "materialId": "material-2"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "mech-right-roof-rail",
@@ -450,25 +411,16 @@
                 0.03,
                 0,
                 0.02
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.13,
                 0.13,
@@ -482,7 +434,8 @@
               "materialId": "material-2"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "mech-rear-roof-crossbar",
@@ -495,30 +448,16 @@
                 0,
                 5.7,
                 10.18
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 3.15,
                 0.13,
@@ -532,7 +471,8 @@
               "materialId": "material-2"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "mech-left-diagonal-brace",
@@ -550,25 +490,16 @@
                 0.34,
                 0.08,
                 -0.05
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.12,
                 0.12,
@@ -582,7 +513,8 @@
               "materialId": "material-3"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "mech-right-diagonal-brace",
@@ -600,25 +532,16 @@
                 0.34,
                 -0.08,
                 0.05
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.12,
                 0.12,
@@ -632,7 +555,8 @@
               "materialId": "material-3"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "mech-gun-cradle",
@@ -645,30 +569,16 @@
                 0,
                 2.28,
                 5.96
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 1.55,
                 0.42,
@@ -682,7 +592,8 @@
               "materialId": "material-4"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "mech-left-gun-support",
@@ -700,25 +611,16 @@
                 0.48,
                 0,
                 -0.18
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.16,
                 1.12,
@@ -732,7 +634,8 @@
               "materialId": "material-5"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "mech-right-gun-support",
@@ -750,25 +653,16 @@
                 0.48,
                 0,
                 0.18
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 0.16,
                 1.12,
@@ -782,7 +676,8 @@
               "materialId": "material-5"
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "machinegun-barrel",
@@ -800,19 +695,12 @@
                 1.535,
                 0,
                 0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "castShadow": true,
-              "receiveShadow": true,
               "emitClickEvent": true,
               "clickEventName": "machinegun:barrel-click"
             }
@@ -871,25 +759,12 @@
                     0,
                     -1.62,
                     0
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -909,7 +784,8 @@
                   "materialId": "material-7"
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "muzzle-flash",
@@ -921,11 +797,6 @@
                   "position": [
                     0,
                     -1.9,
-                    0
-                  ],
-                  "rotation": [
-                    0,
-                    0,
                     0
                   ],
                   "scale": [
@@ -960,7 +831,8 @@
                   "materialId": "material-8"
                 }
               }
-            }
+            },
+            "children": []
           },
           {
             "id": "cooling-jacket-top",
@@ -973,30 +845,16 @@
                     0,
                     -0.2,
                     0.25
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
                   "args": [
                     0.2,
                     1.64,
@@ -1010,68 +868,11 @@
                   "materialId": "material-9"
                 }
               }
-            }
+            },
+            "children": []
           }
         ]
       }
     ]
-  },
-  "materials": {
-    "material": {
-      "materialType": "standard",
-      "color": "#1b2634",
-      "roughness": 0.62,
-      "metalness": 0.32
-    },
-    "material-2": {
-      "materialType": "standard",
-      "color": "#223047",
-      "roughness": 0.62,
-      "metalness": 0.32
-    },
-    "material-3": {
-      "materialType": "standard",
-      "color": "#2c3b4d",
-      "roughness": 0.62,
-      "metalness": 0.32
-    },
-    "material-4": {
-      "materialType": "standard",
-      "color": "#111827",
-      "roughness": 0.62,
-      "metalness": 0.32
-    },
-    "material-5": {
-      "materialType": "standard",
-      "color": "#243244",
-      "roughness": 0.62,
-      "metalness": 0.32
-    },
-    "material-6": {
-      "materialType": "standard",
-      "color": "#737a80",
-      "roughness": 0.52,
-      "metalness": 0.45
-    },
-    "material-7": {
-      "materialType": "standard",
-      "color": "#111827",
-      "roughness": 0.68,
-      "metalness": 0.24
-    },
-    "material-8": {
-      "materialType": "basic",
-      "color": "#ffb020",
-      "transparent": true,
-      "opacity": 0,
-      "toneMapped": false,
-      "depthWrite": false
-    },
-    "material-9": {
-      "materialType": "standard",
-      "color": "#3f4650",
-      "roughness": 0.78,
-      "metalness": 0.08
-    }
   }
 }

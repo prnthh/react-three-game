@@ -148,7 +148,11 @@ const TransformComponent: Component<TransformProperties> = {
     name: 'Transform',
     disableSiblingComposition: true,
     Editor: TransformComponentEditor,
-    defaultProperties: {}
+    properties: {
+        position: { type: 'vector3', default: [0, 0, 0] },
+        rotation: { type: 'vector3', default: [0, 0, 0] },
+        scale: { type: 'vector3', default: [1, 1, 1] },
+    }
 };
 
 export default TransformComponent;

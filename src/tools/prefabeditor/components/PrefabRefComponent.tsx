@@ -1,8 +1,10 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import type { ThreeEvent } from '@react-three/fiber';
 import type { Component, ComponentEditorProps, ComponentViewProps } from './ComponentRegistry';
 import type { Prefab } from '../types';
-import { usePrefab } from '../SceneContext';
+import { RuntimeNodeIdScope, useNode, usePrefab } from '../SceneContext';
 import { useEditorRef } from '../EditorContext';
+import { useEditSelection } from '../SelectionRuntime';
 import { scopePrefabMaterials } from '../prefab';
 import { withBasePath } from '../utils';
 import { base, colors } from '../styles';
@@ -22,9 +24,16 @@ async function fetchJson<T>(url: string): Promise<T> {
     return response.json() as Promise<T>;
 }
 
-function PrefabRefView({ properties, children }: ComponentViewProps<PrefabRefProperties>) {
+function PrefabRefView({ properties, enabled, children }: ComponentViewProps<PrefabRefProperties>) {
     const { basePath } = usePrefab();
+    const { editMode, nodeId } = useNode();
+    const selectEditorNode = useEditSelection();
     const [loadedPrefab, setLoadedPrefab] = useState<Prefab | null>(null);
+    const selectPlacement = useCallback((event: ThreeEvent<MouseEvent>) => {
+        if (event.delta > 4) return;
+        event.stopPropagation();
+        selectEditorNode?.(nodeId);
+    }, [nodeId, selectEditorNode]);
 
     const resolvedUrl = properties.url ? withBasePath(basePath, properties.url) : '';
 
@@ -51,9 +60,13 @@ function PrefabRefView({ properties, children }: ComponentViewProps<PrefabRefPro
     return (
         <>
             {loadedPrefab && (
-                <Suspense fallback={null}>
-                    <PrefabRoot data={loadedPrefab} basePath={basePath} />
-                </Suspense>
+                <group onClick={editMode && selectEditorNode ? selectPlacement : undefined}>
+                    <Suspense fallback={null}>
+                        <RuntimeNodeIdScope prefix={nodeId}>
+                            <PrefabRoot data={loadedPrefab} basePath={basePath} enabled={enabled} />
+                        </RuntimeNodeIdScope>
+                    </Suspense>
+                </group>
             )}
             {children}
         </>
@@ -141,10 +154,11 @@ function PrefabRefEditor({ node, properties, update }: ComponentEditorProps<Pref
 
 const PrefabRefComponent: Component<PrefabRefProperties> = {
     name: 'PrefabRef',
+    renderWhenDisabled: true,
     Editor: PrefabRefEditor,
     View: PrefabRefView,
-    defaultProperties: {
-        url: '',
+    properties: {
+        url: { type: 'string', default: '' },
     },
 };
 

@@ -10,6 +10,7 @@ import { createNodeInteractionHandlers } from "./usePointerEvents";
 import type { NodeInteractionEvent, NodeInteractionEventType } from "./usePointerEvents";
 import { useModelAsset } from "./assetRuntime";
 import { scheduleObjectRaycast } from "../../shared/raycast";
+import { useCompileObject } from "../../shared/GameCanvas";
 
 export type RepeatAxisConfig = {
     axis: 'x' | 'y' | 'z';
@@ -172,7 +173,7 @@ export function GameInstanceProvider({
             <group onClick={onEditClick}>
                 {children}
 
-                {Object.entries(instancesByModelPath).map(([modelPath, instances]) => (
+                {Object.entries(instancesByModelPath).map(([modelPath, instances]) => instances.length > 1 && (
                     <InstancedModelBatch
                         key={modelPath}
                         modelPath={modelPath}
@@ -199,6 +200,7 @@ function InstancedModelBatch({
     modelPath: string;
     instances: InstanceData[];
 }) {
+    const groupRef = useRef<Group>(null);
     const model = useModelAsset(modelPath);
     const meshes = useMemo(() => {
         if (!model) return {};
@@ -219,6 +221,7 @@ function InstancedModelBatch({
     useEffect(() => () => {
         Object.values(meshes).forEach(mesh => mesh.geometry.dispose());
     }, [meshes]);
+    useCompileObject(groupRef, meshes);
 
     const raycastEnabled = editMode || instances.some(instance => instance.clickEnabled);
     useEffect(() => {
@@ -231,7 +234,16 @@ function InstancedModelBatch({
     if (Object.keys(meshes).length === 0) return null;
 
     return (
-        <Merged meshes={meshes} castShadow receiveShadow>
+        <group ref={groupRef}>
+          <Merged
+            meshes={meshes}
+            castShadow
+            receiveShadow
+            // Drei fills these matrices after the InstancedMesh is created, so Three's
+            // object-level frustum bound can represent only the source mesh. A stale
+            // bound would make one model part cull every copy in the batch.
+            frustumCulled={false}
+        >
             {(instancesMap: Record<string, ComponentType<object>>) => (
                 <InstancedGroup
                     instances={instances}
@@ -242,7 +254,8 @@ function InstancedModelBatch({
                     editMode={editMode}
                 />
             )}
-        </Merged>
+          </Merged>
+        </group>
     );
 }
 
@@ -261,14 +274,9 @@ function InstancedGroup({
         () => Object.entries(instancesMap).map(([partKey, Component]) => ({ partKey, Component })),
         [instancesMap],
     );
-    const visibleInstances = useMemo(
-        () => instances.filter(instance => instance.visible !== false),
-        [instances]
-    );
-
     return (
         <>
-            {visibleInstances.map(inst => (
+            {instances.map(inst => (
                 <InstanceGroupItem
                     key={inst.id}
                     instance={inst}
@@ -323,6 +331,7 @@ function InstanceGroupItem({
     return (
         <group
             ref={groupRef}
+            visible={instance.visible !== false}
             position={instance.position}
             rotation={instance.rotation}
             scale={instance.scale}
@@ -337,6 +346,19 @@ function InstanceGroupItem({
 export function useInstanceCheck(id: string): boolean {
     const store = useContext(GameInstanceContext) ?? EMPTY_INSTANCE_STORE;
     return useStore(store, state => Boolean(state.instancesById[id] || state.instanceIdsBySourceId[id]));
+}
+
+export function useIsModelPathInstanced(modelPath?: string): boolean {
+    const store = useContext(GameInstanceContext) ?? EMPTY_INSTANCE_STORE;
+    return useStore(store, state => {
+        if (!modelPath) return false;
+        let count = 0;
+        for (const id in state.instancesById) {
+            const instance = state.instancesById[id];
+            if (instance.modelPath === modelPath && ++count > 1) return true;
+        }
+        return false;
+    });
 }
 
 export function GameInstanceBatch({

@@ -142,14 +142,14 @@ const AdvancingTargetComponent: Component<AdvancingTargetProperties> = {
     name: "AdvancingTarget",
     Editor: AdvancingTargetEditor,
     View: AdvancingTargetView,
-    defaultProperties: {
-        speed: DEFAULT_SPEED,
-        resetZ: DEFAULT_RESET_Z,
-        breachZ: DEFAULT_BREACH_Z,
-        idleColor: DEFAULT_IDLE_COLOR,
-        hitColor: DEFAULT_HIT_COLOR,
-        hitEventName: DEFAULT_HIT_EVENT,
-        breachEventName: DEFAULT_BREACH_EVENT,
+    properties: {
+        speed: { default: DEFAULT_SPEED },
+        resetZ: { default: DEFAULT_RESET_Z },
+        breachZ: { default: DEFAULT_BREACH_Z },
+        idleColor: { type: "color", default: DEFAULT_IDLE_COLOR },
+        hitColor: { type: "color", default: DEFAULT_HIT_COLOR },
+        hitEventName: { type: "string", default: DEFAULT_HIT_EVENT },
+        breachEventName: { type: "string", default: DEFAULT_BREACH_EVENT },
     },
 };
 

@@ -210,9 +210,9 @@ const QuakeBrushComponent: Component = {
     name: "QuakeBrush",
     Editor: EmptyEditor,
     View: QuakeBrushView,
-    defaultProperties: {
-        faces: [],
-        roughness: 0.8,
+    properties: {
+        faces: { type: "array", default: [] },
+        roughness: { default: 0.8 },
     },
 };
 

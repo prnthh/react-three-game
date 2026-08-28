@@ -47,14 +47,9 @@ export const starterPrefab: Prefab = {
   name: "Starter Scene",
   materials: {
     ground: {
-      name: "Ground",
-      materialType: "standard",
       color: "#5b7f46",
-      roughness: 1,
     },
     ball: {
-      name: "Ball",
-      materialType: "standard",
       color: "#f97316",
       roughness: 0.45,
       metalness: 0.1,
@@ -71,12 +66,11 @@ export const starterPrefab: Prefab = {
             properties: {
               position: [0, 4, 9],
               rotation: [-0.3, 0, 0],
-              scale: [1, 1, 1],
             },
           },
           camera: {
             type: "Camera",
-            properties: { projection: "perspective", fov: 50 },
+            properties: {},
           },
         },
       },
@@ -86,14 +80,12 @@ export const starterPrefab: Prefab = {
           transform: {
             type: "Transform",
             properties: {
-              position: [0, 0, 0],
               rotation: [-Math.PI / 2, 0, 0],
-              scale: [1, 1, 1],
             },
           },
           mesh: {
             type: "Mesh",
-            properties: { receiveShadow: true },
+            properties: {},
           },
           geometry: {
             type: "Geometry",
@@ -112,17 +104,15 @@ export const starterPrefab: Prefab = {
             type: "Transform",
             properties: {
               position: [0, 1, 0],
-              rotation: [0, 0, 0],
-              scale: [1, 1, 1],
             },
           },
           mesh: {
             type: "Mesh",
-            properties: { castShadow: true, receiveShadow: true },
+            properties: {},
           },
           geometry: {
             type: "Geometry",
-            properties: { geometryType: "sphere", args: [1, 32, 16] },
+            properties: { geometryType: "sphere" },
           },
           material: {
             type: "Material",
@@ -180,7 +170,11 @@ Components compose using the same parent-child model as R3F:
 | Attachment | `Geometry`, `BufferGeometry`, `Material` | Geometry and material attachment |
 | Wrapper | `Sound`, `Data`, `PrefabRef`, custom components | Behavior around the composed subtree |
 
+Component properties are sparse. Each registered component defines its property names, types, and defaults; prefab JSON only stores values that differ from those defaults.
+
 `Material` selects a definition from `Prefab.materials` by `materialId`. Every entity using the same id receives the same native material. Updating that material updates every user.
+
+Material definitions are sparse: omit `materials` when the built-in white material is enough, and only store values that differ from runtime defaults. Standard materials therefore need no `materialType`; `{ color: "#f97316" }` is a complete definition. Use `materialType` only for `basic` or `sprite` materials.
 
 `BufferGeometry` accepts flat numeric `positions`, `indices`, `normals`, and `uvs` arrays for procedural authored meshes.
 
@@ -333,7 +327,18 @@ const Rotator: Component<RotatorProperties> = {
   name: "Rotator",
   Editor: RotatorEditor,
   View: RotatorView,
-  defaultProperties: { speed: 1, axis: "y" },
+  properties: {
+    speed: { default: 1, step: 0.1 },
+    axis: {
+      type: "select",
+      default: "y",
+      options: [
+        { value: "x", label: "X" },
+        { value: "y", label: "Y" },
+        { value: "z", label: "Z" },
+      ],
+    },
+  },
 };
 
 registerComponent(Rotator);
@@ -345,10 +350,42 @@ Use it in any prefab node:
 {
   "rotator": {
     "type": "Rotator",
-    "properties": { "speed": 1.5, "axis": "y" }
+    "properties": { "speed": 1.5 }
   }
 }
 ```
+
+Component properties are sparse too. Each registered component defines every property’s type and default; prefab JSON only needs values that differ. The editor and runtime resolve the complete property object from that schema.
+
+Numeric definitions infer `type: "number"`, so `{ default: 1, min: 0, max: 10, step: 0.1 }` is sufficient. Other property types remain explicit.
+Select definitions include `options: { value, label }[]`, keeping serialized values and their editor-facing labels in the component schema.
+
+A mod is an ES module whose imports install its components and runtime wrappers:
+
+```tsx
+// mods/combat.ts
+import {
+  registerComponent,
+  registerRuntimeWrapper,
+} from "react-three-game";
+
+registerComponent(PlayerComponent);
+registerComponent(EnemyComponent);
+registerRuntimeWrapper(CombatRuntime);
+```
+
+Import the mod before mounting the scene:
+
+```tsx
+await import("./mods/combat");
+```
+
+Registered wrappers receive the rendered prefab as `children`. The first wrapper
+registered is the outermost wrapper. Re-registering the same wrapper is a no-op.
+
+Nested prefabs inherit their parent's material pool. A matching material definition
+reuses the parent instance even when its document-local ID differs. A
+local ID can safely use a different definition without colliding with its parent.
 
 ## 7. Compose prefab documents
 

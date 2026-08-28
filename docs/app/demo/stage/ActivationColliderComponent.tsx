@@ -124,12 +124,12 @@ const bubbleStyles: Record<string, CSSProperties> = {
 const ActivationColliderComponent: Component<ActivationColliderProperties> = {
     name: "ActivationCollider",
     View: ActivationColliderView,
-    defaultProperties: {
-        targetNodeId: DEFAULT_TARGET_NODE,
-        enterEventName: DEFAULT_ENTER_EVENT,
-        exitEventName: DEFAULT_EXIT_EVENT,
-        moods: DEFAULT_MOODS,
-        bubbleHeight: DEFAULT_BUBBLE_HEIGHT,
+    properties: {
+        targetNodeId: { type: "string", default: DEFAULT_TARGET_NODE },
+        enterEventName: { type: "string", default: DEFAULT_ENTER_EVENT },
+        exitEventName: { type: "string", default: DEFAULT_EXIT_EVENT },
+        moods: { type: "string[]", default: DEFAULT_MOODS },
+        bubbleHeight: { default: DEFAULT_BUBBLE_HEIGHT },
     },
 };
 

@@ -86,10 +86,10 @@ const OrbMover: Component<OrbMoverProperties> = {
     name: "OrbMover",
     Editor: OrbMoverEditor,
     View: OrbMoverView,
-    defaultProperties: {
-        speed: DEFAULT_SPEED,
-        velocityX: 1,
-        velocityZ: 0,
+    properties: {
+        speed: { default: DEFAULT_SPEED },
+        velocityX: { default: 1 },
+        velocityZ: { default: 0 },
     },
 };
 

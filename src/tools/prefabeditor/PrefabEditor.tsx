@@ -218,10 +218,6 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
         return () => unsubscribe();
     }, [prefabStore, selectedId]);
 
-    const selectedIsInstanced = Boolean(
-        selectedId && findComponentEntry(getNode(selectedId), "Model")?.[1].properties?.instanced,
-    );
-
     const applyHistory = useCallback((index: number) => {
         detachTransformControls();
         prefabStore.getState().restoreState(history[index]);
@@ -506,8 +502,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
                                                     object={object}
                                                     mode={transformMode}
                                                     space={transformMode === "translate" ? "world" : "local"}
-                                                    onObjectChange={selectedIsInstanced ? handleTransformChange : undefined}
-                                                    onMouseUp={selectedIsInstanced ? undefined : handleTransformChange}
+                                                    onMouseUp={handleTransformChange}
                                                     translationSnap={positionSnap > 0 ? positionSnap : undefined}
                                                     rotationSnap={rotationSnap > 0 ? rotationSnap : undefined}
                                                     scaleSnap={scaleSnap > 0 ? scaleSnap : undefined}

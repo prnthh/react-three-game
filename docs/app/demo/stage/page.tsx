@@ -2,8 +2,8 @@
 
 import { useFrame, useThree } from "@react-three/fiber";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { findComponent, GameCanvas, gameEvents, PrefabEditorMode, PrefabRoot, registerComponent, usePrefab, useScene } from "react-three-game";
-import type { ContactEventPayload } from "react-three-game";
+import { CAMERA_POSITION_ROUTE_HANDLE, findComponent, GameCanvas, gameEvents, PrefabEditorMode, PrefabRoot, registerComponent, usePrefab, useScene } from "react-three-game";
+import type { CameraPositionRoute, ContactEventPayload } from "react-three-game";
 import { CrashcatPhysicsComponent, CrashcatRuntime } from "react-three-game/plugins/crashcat";
 import AnimationMixer from "./components/AnimationMixer";
 import SkinnedMesh, { type SkinnedMeshRef } from "./components/SkinnedMesh";
@@ -12,7 +12,7 @@ import ActivationColliderComponent from "./ActivationColliderComponent";
 import StageInteractionComponent, { type StageInteractionProperties, type StagePoint } from "./StageInteractionComponent";
 import { officeScene, STAGE_SCENES } from "./scenes";
 import type { StageScene } from "./scenes/types";
-import { OrthographicCamera, PerspectiveCamera, Quaternion, Vector3, type Group } from "three";
+import { AnimationMixer as ThreeAnimationMixer, LoopOnce, OrthographicCamera, PerspectiveCamera, Quaternion, Vector3, type AnimationClip, type Group, type Object3D } from "three";
 import type { AnimationAction } from "three";
 
 registerComponent(CrashcatPhysicsComponent);
@@ -26,12 +26,19 @@ const INTERACTION_ENTER_EVENT = "stage:interaction-enter";
 const INTERACTION_EXIT_EVENT = "stage:interaction-exit";
 const WALK_SPEED = 1.55;
 const ARRIVAL_DISTANCE = 0.08;
-const CAMERA_DEAD_ZONE_X = 0.4;
+const CAMERA_DEAD_ZONE = 0.4;
 const CAMERA_FOLLOW_SPEED = 8;
 const UP = new Vector3(0, 1, 0);
+const CAMERA_RIGHT = new Vector3(1, 0, 0);
 
 type PendingInteraction = { nodeId: string; properties: StageInteractionProperties };
 type Dialogue = { nodeId: string; pages: string[]; page: number; visible: number };
+type TransitionAnimationRequest = {
+    nodeId: string;
+    animation: string;
+    targetScene: StageScene;
+    spawn: StagePoint;
+};
 
 function interactionPages(properties: StageInteractionProperties) {
     return [properties.page1, properties.page2].filter((page): page is string => Boolean(page?.trim()));
@@ -58,36 +65,130 @@ function PlayerCameraFollow() {
     const worldPosition = useRef(new Vector3());
     const viewPosition = useRef(new Vector3());
     const projectedPosition = useRef(new Vector3());
+    const cameraWorldPosition = useRef(new Vector3());
+    const routedWorldPosition = useRef(new Vector3());
+    const cameraRight = useRef(new Vector3());
+    const cameraUp = useRef(new Vector3());
+    const cameraWorldQuaternion = useRef(new Quaternion());
 
     useFrame((_, delta) => {
         if (mode !== PrefabEditorMode.Play) return;
         const player = prefab.getObject(PLAYER_COLLIDER_ID);
         if (!player) return;
+        const positionRoute = prefab.getHandle<CameraPositionRoute>("stage-camera", CAMERA_POSITION_ROUTE_HANDLE);
+        if (!positionRoute) return;
 
         player.getWorldPosition(worldPosition.current);
         camera.updateMatrixWorld();
         projectedPosition.current.copy(worldPosition.current).project(camera);
 
         const projectedX = projectedPosition.current.x;
-        if (Math.abs(projectedX) <= CAMERA_DEAD_ZONE_X) return;
+        const projectedY = projectedPosition.current.y;
+        if (Math.abs(projectedX) <= CAMERA_DEAD_ZONE && Math.abs(projectedY) <= CAMERA_DEAD_ZONE) return;
 
         viewPosition.current.copy(worldPosition.current).applyMatrix4(camera.matrixWorldInverse);
         let halfWidth = 0;
+        let halfHeight = 0;
         if (camera instanceof PerspectiveCamera) {
-            halfWidth = -viewPosition.current.z
-                * Math.tan(camera.fov * Math.PI / 360)
-                * camera.aspect
-                / camera.zoom;
+            halfHeight = -viewPosition.current.z * Math.tan(camera.fov * Math.PI / 360) / camera.zoom;
+            halfWidth = halfHeight * camera.aspect;
         } else if (camera instanceof OrthographicCamera) {
             halfWidth = (camera.right - camera.left) / (2 * camera.zoom);
+            halfHeight = (camera.top - camera.bottom) / (2 * camera.zoom);
         }
-        if (halfWidth <= 0) return;
+        if (halfWidth <= 0 || halfHeight <= 0) return;
 
-        const boundary = Math.sign(projectedX) * CAMERA_DEAD_ZONE_X;
-        const targetOffset = (projectedX - boundary) * halfWidth;
-        camera.position.x += targetOffset * (1 - Math.exp(-CAMERA_FOLLOW_SPEED * delta));
-        camera.updateMatrixWorld();
+        const offsetX = Math.abs(projectedX) > CAMERA_DEAD_ZONE
+            ? (projectedX - Math.sign(projectedX) * CAMERA_DEAD_ZONE) * halfWidth
+            : 0;
+        const offsetY = Math.abs(projectedY) > CAMERA_DEAD_ZONE
+            ? (projectedY - Math.sign(projectedY) * CAMERA_DEAD_ZONE) * halfHeight
+            : 0;
+
+        camera.getWorldPosition(cameraWorldPosition.current);
+        camera.getWorldQuaternion(cameraWorldQuaternion.current);
+        cameraRight.current.copy(CAMERA_RIGHT).applyQuaternion(cameraWorldQuaternion.current);
+        cameraUp.current.copy(UP).applyQuaternion(cameraWorldQuaternion.current);
+        routedWorldPosition.current
+            .copy(cameraWorldPosition.current)
+            .addScaledVector(cameraRight.current, offsetX)
+            .addScaledVector(cameraUp.current, offsetY);
+        positionRoute.setWorldPosition(
+            routedWorldPosition.current,
+            1 - Math.exp(-CAMERA_FOLLOW_SPEED * delta),
+        );
     }, -2);
+
+    return null;
+}
+
+function findAnimation(object: Object3D, name: string) {
+    let result: { root: Object3D; clip: AnimationClip } | null = null;
+    object.traverse((candidate) => {
+        if (result) return;
+        const clip = candidate.animations.find((animation) => animation.name === name);
+        if (clip) result = { root: candidate, clip };
+    });
+    return result as { root: Object3D; clip: AnimationClip } | null;
+}
+
+function AnimatedSceneTransition({
+    request,
+    onComplete,
+}: {
+    request: TransitionAnimationRequest | null;
+    onComplete: (request: TransitionAnimationRequest) => void;
+}) {
+    const prefab = usePrefab();
+    const mixerRef = useRef<ThreeAnimationMixer | null>(null);
+    const remainingRef = useRef(0);
+    const activeRequestRef = useRef<TransitionAnimationRequest | null>(null);
+    const onCompleteRef = useRef(onComplete);
+    onCompleteRef.current = onComplete;
+
+    useEffect(() => {
+        mixerRef.current?.stopAllAction();
+        mixerRef.current = null;
+        activeRequestRef.current = null;
+        remainingRef.current = 0;
+        if (!request) return;
+
+        const door = prefab.getObject(request.nodeId);
+        const animation = door ? findAnimation(door, request.animation) : null;
+        if (!animation) {
+            console.warn(`Animation "${request.animation}" was not found on transition node "${request.nodeId}".`);
+            const timer = window.setTimeout(() => onCompleteRef.current(request), 0);
+            return () => window.clearTimeout(timer);
+        }
+
+        const mixer = new ThreeAnimationMixer(animation.root);
+        const action = mixer.clipAction(animation.clip, animation.root);
+        action.reset().setLoop(LoopOnce, 1);
+        action.clampWhenFinished = true;
+        action.play();
+        mixerRef.current = mixer;
+        activeRequestRef.current = request;
+        remainingRef.current = animation.clip.duration;
+
+        return () => {
+            mixer.stopAllAction();
+            mixer.uncacheRoot(animation.root);
+        };
+    }, [prefab, request]);
+
+    useFrame((_, delta) => {
+        const mixer = mixerRef.current;
+        const activeRequest = activeRequestRef.current;
+        if (!mixer || !activeRequest) return;
+
+        mixer.update(delta);
+        remainingRef.current -= delta;
+        if (remainingRef.current > 0) return;
+
+        mixerRef.current = null;
+        activeRequestRef.current = null;
+        onCompleteRef.current(activeRequest);
+    }, -1);
 
     return null;
 }
@@ -209,7 +310,9 @@ export default function StageDemo() {
     const [playerDestination, setPlayerDestination] = useState<StagePoint | null>(null);
     const pendingInteractionRef = useRef<PendingInteraction | null>(null);
     const activeInteractionSensorsRef = useRef(new Set<string>());
+    const transitionInProgressRef = useRef(false);
     const [dialogue, setDialogue] = useState<Dialogue | null>(null);
+    const [transitionAnimation, setTransitionAnimation] = useState<TransitionAnimationRequest | null>(null);
 
     const dialogueText = dialogue?.pages[dialogue.page] ?? "";
     const debugStateRef = useRef({ activeScene, playerSpawn, playerDestination, dialogue, dialogueText });
@@ -250,6 +353,7 @@ export default function StageDemo() {
     }, []);
 
     const activateInteraction = useCallback((interaction: PendingInteraction) => {
+        if (transitionInProgressRef.current) return;
         pendingInteractionRef.current = null;
         setPlayerDestination(null);
 
@@ -265,9 +369,21 @@ export default function StageDemo() {
         const targetScene = STAGE_SCENES.find((scene) => scene.prefab === transition.prefab);
         if (!targetScene) return;
 
-        setActiveScene(targetScene);
-        setPlayerSpawn(transition.spawn);
+        transitionInProgressRef.current = true;
+        setTransitionAnimation({
+            nodeId: interaction.nodeId,
+            animation: interaction.properties.animation?.trim() || "open",
+            targetScene,
+            spawn: transition.spawn,
+        });
     }, [activeScene]);
+
+    const completeTransition = useCallback((request: TransitionAnimationRequest) => {
+        setActiveScene(request.targetScene);
+        setPlayerSpawn(request.spawn);
+        setTransitionAnimation(null);
+        transitionInProgressRef.current = false;
+    }, []);
 
     useEffect(() => {
         const stopEnter = gameEvents.on(INTERACTION_ENTER_EVENT, (payload) => {
@@ -334,6 +450,7 @@ export default function StageDemo() {
                     }}
                 >
                     <CrashcatRuntime>
+                        <AnimatedSceneTransition request={transitionAnimation} onComplete={completeTransition} />
                         <PlayerCameraFollow />
                         <PlayerCharacter
                             key={activeScene.id}

@@ -76,11 +76,11 @@ const SquishComponent: Component<SquishProperties> = {
             </MaterialOverridesProvider>
         );
     },
-    defaultProperties: {
-        amount: DEFAULT_AMOUNT,
-        speed: DEFAULT_SPEED,
-        bulge: DEFAULT_BULGE,
-        lift: DEFAULT_LIFT,
+    properties: {
+        amount: { default: DEFAULT_AMOUNT },
+        speed: { default: DEFAULT_SPEED },
+        bulge: { default: DEFAULT_BULGE },
+        lift: { default: DEFAULT_LIFT },
     },
 };
 

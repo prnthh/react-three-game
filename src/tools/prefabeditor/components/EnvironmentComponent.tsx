@@ -39,7 +39,10 @@ const EnvironmentComponent: Component<EnvironmentProperties> = {
         </FieldGroup>
     ),
     View: EnvironmentView,
-    defaultProperties: {},
+    properties: {
+        intensity: { default: 1, min: 0, step: 0.1 },
+        resolution: { default: 256, min: 64, step: 64 },
+    },
 };
 
 export default EnvironmentComponent;

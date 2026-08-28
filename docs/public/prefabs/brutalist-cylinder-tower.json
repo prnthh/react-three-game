@@ -1,28 +1,66 @@
 {
   "id": "brutalist-cylinder-tower",
-  "name": "Brutalist Cylinder Tower",
+  "name": "Cantilevered Brutalist Service Tower",
+  "materials": {
+    "concrete": {
+      "name": "concrete",
+      "color": "#727978",
+      "texture": "/textures/floor/terrain/snow-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        12,
+        12
+      ],
+      "roughness": 0.98,
+      "metalness": 0.01
+    },
+    "concrete-dark": {
+      "name": "concrete",
+      "color": "#454b4d",
+      "texture": "/textures/floor/terrain/snow-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        8,
+        8
+      ],
+      "roughness": 0.99
+    },
+    "concrete-light": {
+      "name": "concrete",
+      "color": "#909594",
+      "texture": "/textures/floor/terrain/snow-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        10,
+        3
+      ],
+      "roughness": 0.97
+    },
+    "window-recess": {
+      "name": "glass",
+      "color": "#111a1d",
+      "roughness": 0.38,
+      "metalness": 0.18
+    },
+    "window-dirty": {
+      "name": "glass",
+      "color": "#28363a",
+      "roughness": 0.52,
+      "metalness": 0.12
+    },
+    "metal": {
+      "name": "metal",
+      "color": "#3f4749",
+      "roughness": 0.62,
+      "metalness": 0.52
+    }
+  },
   "root": {
     "id": "brutalist-cylinder-tower-root",
     "components": {
       "transform": {
         "type": "Transform",
-        "properties": {
-          "position": [
-            0,
-            0,
-            0
-          ],
-          "rotation": [
-            0,
-            0,
-            0
-          ],
-          "scale": [
-            1,
-            1,
-            1
-          ]
-        }
+        "properties": {}
       }
     },
     "children": [
@@ -34,18 +72,8 @@
             "properties": {
               "position": [
                 0,
-                15,
+                17,
                 0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
@@ -56,81 +84,24 @@
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "cylinder",
               "args": [
-                5.2,
-                5.2,
-                30,
-                32
+                10.5,
+                34,
+                10.5
               ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material"
+              "materialId": "concrete"
             }
           },
           "crashcatPhysics": {
             "type": "CrashcatPhysics",
             "properties": {
               "type": "fixed",
-              "colliders": "hull"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cylinder-tower-crown",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                30.9,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {}
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "cylinder",
-              "args": [
-                6.2,
-                6.2,
-                1.8,
-                32
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialId": "material-2"
-            }
-          },
-          "crashcatPhysics": {
-            "type": "CrashcatPhysics",
-            "properties": {
-              "type": "fixed",
-              "colliders": "hull"
+              "colliders": "cuboid"
             }
           }
         },
@@ -144,18 +115,8 @@
             "properties": {
               "position": [
                 0,
-                1,
+                1.1,
                 0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
@@ -166,26 +127,67 @@
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "cylinder",
               "args": [
-                6.4,
-                6.4,
-                2,
-                32
+                13,
+                2.2,
+                13
               ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-3"
+              "materialId": "concrete-dark"
             }
           },
           "crashcatPhysics": {
             "type": "CrashcatPhysics",
             "properties": {
               "type": "fixed",
-              "colliders": "hull"
+              "colliders": "cuboid"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "cylinder-tower-crown",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                34.7,
+                0
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                11.8,
+                1.4,
+                11.8
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete-light"
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "cuboid"
             }
           }
         },
@@ -199,18 +201,8 @@
             "properties": {
               "position": [
                 0,
-                2.2,
-                5.3
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
+                2.3,
+                6.1
               ]
             }
           },
@@ -221,18 +213,17 @@
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
-                4.5,
-                4.4,
-                2.6
+                6.2,
+                4.2,
+                3.1
               ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-4"
+              "materialId": "concrete-dark"
             }
           },
           "crashcatPhysics": {
@@ -246,25 +237,15 @@
         "children": []
       },
       {
-        "id": "cylinder-tower-window-slit-a",
+        "id": "cylinder-tower-entry-void",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
                 0,
-                12,
-                5.22
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
+                1.65,
+                5.34
               ]
             }
           },
@@ -275,18 +256,53 @@
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
-                1,
-                12,
-                0.12
+                2.4,
+                2.7,
+                0.16
               ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-5"
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "cylinder-tower-cantilever",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                3.2,
+                24,
+                2.4
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                8.4,
+                8,
+                7.5
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete"
             }
           },
           "crashcatPhysics": {
@@ -300,25 +316,15 @@
         "children": []
       },
       {
-        "id": "cylinder-tower-window-slit-b",
+        "id": "cylinder-tower-cantilever-underside",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
-                5.22,
-                18,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
+                3.2,
+                19.8,
+                2.4
               ]
             }
           },
@@ -329,18 +335,53 @@
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
-                0.12,
-                12,
-                1
+                9.2,
+                0.5,
+                8.3
               ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-5"
+              "materialId": "concrete-dark"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "cylinder-tower-roof-house",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                36.35,
+                0
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                4.2,
+                2.3,
+                4.2
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete-dark"
             }
           },
           "crashcatPhysics": {
@@ -348,77 +389,2502 @@
             "properties": {
               "type": "fixed",
               "colliders": "cuboid"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "cylinder-tower-antenna",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                40.45,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0.18,
+                0.18,
+                6,
+                10
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "metal"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-front-window-0-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -2.4,
+                5,
+                5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-back-window-0-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -2.4,
+                5,
+                -5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-front-window-0-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                2.4,
+                5,
+                5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-back-window-0-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                2.4,
+                5,
+                -5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-floor-shelf-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                5.5600000000000005,
+                5.48
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                10.9,
+                0.18,
+                0.62
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete-light"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-front-window-1-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -2.4,
+                7.7,
+                5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-back-window-1-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -2.4,
+                7.7,
+                -5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-front-window-1-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                2.4,
+                7.7,
+                5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-back-window-1-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                2.4,
+                7.7,
+                -5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-floor-shelf-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                8.26,
+                5.48
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                10.9,
+                0.18,
+                0.62
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete-light"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-front-window-2-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -2.4,
+                10.4,
+                5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-back-window-2-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -2.4,
+                10.4,
+                -5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-front-window-2-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                2.4,
+                10.4,
+                5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-back-window-2-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                2.4,
+                10.4,
+                -5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-floor-shelf-2",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                10.96,
+                5.48
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                10.9,
+                0.18,
+                0.62
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete-light"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-front-window-3-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -2.4,
+                13.100000000000001,
+                5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-back-window-3-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -2.4,
+                13.100000000000001,
+                -5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-front-window-3-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                2.4,
+                13.100000000000001,
+                5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-back-window-3-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                2.4,
+                13.100000000000001,
+                -5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-floor-shelf-3",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                13.660000000000002,
+                5.48
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                10.9,
+                0.18,
+                0.62
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete-light"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-front-window-4-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -2.4,
+                15.8,
+                5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-back-window-4-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -2.4,
+                15.8,
+                -5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-front-window-4-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                2.4,
+                15.8,
+                5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-back-window-4-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                2.4,
+                15.8,
+                -5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-floor-shelf-4",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                16.36,
+                5.48
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                10.9,
+                0.18,
+                0.62
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete-light"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-front-window-5-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -2.4,
+                18.5,
+                5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-back-window-5-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -2.4,
+                18.5,
+                -5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-front-window-5-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                2.4,
+                18.5,
+                5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-back-window-5-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                2.4,
+                18.5,
+                -5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-floor-shelf-5",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                19.06,
+                5.48
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                10.9,
+                0.18,
+                0.62
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete-light"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-front-window-6-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -2.4,
+                21.200000000000003,
+                5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-back-window-6-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -2.4,
+                21.200000000000003,
+                -5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-front-window-6-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                2.4,
+                21.200000000000003,
+                5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-back-window-6-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                2.4,
+                21.200000000000003,
+                -5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-floor-shelf-6",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                21.76,
+                5.48
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                10.9,
+                0.18,
+                0.62
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete-light"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-front-window-7-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -2.4,
+                23.900000000000002,
+                5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-back-window-7-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -2.4,
+                23.900000000000002,
+                -5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-front-window-7-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                2.4,
+                23.900000000000002,
+                5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-back-window-7-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                2.4,
+                23.900000000000002,
+                -5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-floor-shelf-7",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                24.46,
+                5.48
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                10.9,
+                0.18,
+                0.62
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete-light"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-front-window-8-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -2.4,
+                26.6,
+                5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-back-window-8-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -2.4,
+                26.6,
+                -5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-front-window-8-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                2.4,
+                26.6,
+                5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-back-window-8-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                2.4,
+                26.6,
+                -5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-floor-shelf-8",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                27.16,
+                5.48
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                10.9,
+                0.18,
+                0.62
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete-light"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-front-window-9-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -2.4,
+                29.3,
+                5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-back-window-9-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -2.4,
+                29.3,
+                -5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-front-window-9-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                2.4,
+                29.3,
+                5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-back-window-9-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                2.4,
+                29.3,
+                -5.34
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                2.4,
+                0.72,
+                0.16
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-dirty"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-floor-shelf-9",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                29.86,
+                5.48
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                10.9,
+                0.18,
+                0.62
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete-light"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-east-slit-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                5.34,
+                6.3,
+                -1.7
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                0.16,
+                0.68,
+                2
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-west-slit-0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -5.34,
+                5.1,
+                1.7
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                0.16,
+                0.68,
+                2
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-east-slit-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                5.34,
+                9.2,
+                -1.7
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                0.16,
+                0.68,
+                2
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-west-slit-1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -5.34,
+                8,
+                1.7
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                0.16,
+                0.68,
+                2
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-east-slit-2",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                5.34,
+                12.1,
+                -1.7
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                0.16,
+                0.68,
+                2
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-west-slit-2",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -5.34,
+                10.899999999999999,
+                1.7
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                0.16,
+                0.68,
+                2
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-east-slit-3",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                5.34,
+                15,
+                -1.7
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                0.16,
+                0.68,
+                2
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-west-slit-3",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -5.34,
+                13.799999999999999,
+                1.7
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                0.16,
+                0.68,
+                2
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-east-slit-4",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                5.34,
+                17.9,
+                -1.7
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                0.16,
+                0.68,
+                2
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-west-slit-4",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -5.34,
+                16.7,
+                1.7
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                0.16,
+                0.68,
+                2
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-east-slit-5",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                5.34,
+                20.8,
+                -1.7
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                0.16,
+                0.68,
+                2
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-west-slit-5",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -5.34,
+                19.6,
+                1.7
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                0.16,
+                0.68,
+                2
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-east-slit-6",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                5.34,
+                23.7,
+                -1.7
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                0.16,
+                0.68,
+                2
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-west-slit-6",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -5.34,
+                22.5,
+                1.7
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                0.16,
+                0.68,
+                2
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-east-slit-7",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                5.34,
+                26.6,
+                -1.7
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                0.16,
+                0.68,
+                2
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-west-slit-7",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -5.34,
+                25.4,
+                1.7
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                0.16,
+                0.68,
+                2
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-east-slit-8",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                5.34,
+                29.5,
+                -1.7
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                0.16,
+                0.68,
+                2
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tower-west-slit-8",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -5.34,
+                28.299999999999997,
+                1.7
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                0.16,
+                0.68,
+                2
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "window-recess"
             }
           }
         },
         "children": []
       }
     ]
-  },
-  "materials": {
-    "material": {
-      "color": "#a8aaa4",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        6,
-        10
-      ],
-      "minFilter": "NearestFilter",
-      "magFilter": "NearestFilter",
-      "roughness": 0.94,
-      "metalness": 0.02
-    },
-    "material-2": {
-      "color": "#777a74",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        6,
-        1
-      ],
-      "minFilter": "NearestFilter",
-      "magFilter": "NearestFilter",
-      "roughness": 0.94,
-      "metalness": 0.02
-    },
-    "material-3": {
-      "color": "#888b84",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        6,
-        1
-      ],
-      "minFilter": "NearestFilter",
-      "magFilter": "NearestFilter",
-      "roughness": 0.94,
-      "metalness": 0.02
-    },
-    "material-4": {
-      "color": "#91948d",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        2,
-        2
-      ],
-      "minFilter": "NearestFilter",
-      "magFilter": "NearestFilter",
-      "roughness": 0.94,
-      "metalness": 0.02
-    },
-    "material-5": {
-      "color": "#686c66",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        1,
-        5
-      ],
-      "minFilter": "NearestFilter",
-      "magFilter": "NearestFilter",
-      "roughness": 0.86
-    }
   }
 }

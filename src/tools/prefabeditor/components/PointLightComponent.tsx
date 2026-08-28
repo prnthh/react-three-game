@@ -126,9 +126,22 @@ function PointLightView({ properties, children }: ComponentViewProps<PointLightP
 
 const PointLightComponent: Component<PointLightProperties> = {
     name: 'PointLight',
+    renderWhenDisabled: true,
     Editor: PointLightComponentEditor,
     View: PointLightView,
-    defaultProperties: {},
+    properties: {
+        color: { type: 'color', default: pointLightDefaults.color },
+        intensity: { default: pointLightDefaults.intensity, min: 0, step: 0.1 },
+        distance: { default: pointLightDefaults.distance, min: 0, step: 1 },
+        decay: { default: pointLightDefaults.decay, min: 0, step: 0.1 },
+        castShadow: { type: 'boolean', default: pointLightDefaults.castShadow },
+        shadowMapSize: { default: pointLightDefaults.shadowMapSize, min: MIN_SHADOW_MAP_SIZE, max: MAX_SHADOW_MAP_SIZE, step: 128 },
+        shadowBias: { default: pointLightDefaults.shadowBias, min: -1, max: 1 },
+        shadowNormalBias: { default: pointLightDefaults.shadowNormalBias, min: -1, max: 1 },
+        shadowAutoUpdate: { type: 'boolean', default: pointLightDefaults.shadowAutoUpdate },
+        shadowCameraNear: { default: pointLightDefaults.shadowCameraNear, min: 0.001, step: 0.1 },
+        shadowCameraFar: { default: pointLightDefaults.shadowCameraFar, min: 0.1, step: 1 },
+    },
 };
 
 export default PointLightComponent;

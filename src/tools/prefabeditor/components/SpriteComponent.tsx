@@ -85,13 +85,14 @@ function SpriteComponentView({ properties, children }: ComponentViewProps<Sprite
 
 const SpriteComponent: Component<SpriteProps> = {
     name: 'Sprite',
+    renderWhenDisabled: true,
     disableSiblingComposition: 'object',
     Editor: SpriteComponentEditor,
     View: SpriteComponentView,
-    defaultProperties: {
-        center: [0.5, 0.5],
-        emitClickEvent: false,
-        clickEventName: 'node:click',
+    properties: {
+        center: { type: 'vector2', default: [0.5, 0.5] },
+        emitClickEvent: { type: 'boolean', default: false },
+        clickEventName: { type: 'string', default: 'node:click' },
     },
 };
 

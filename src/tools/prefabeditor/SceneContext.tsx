@@ -84,9 +84,11 @@ export interface PrefabApi extends PrefabRegistry {
 export const SceneContext = createContext<Scene | null>(null);
 export const PrefabContext = createContext<PrefabApi | null>(null);
 const NodeContext = createContext<NodeApi | null>(null);
+const RuntimeNodeIdPrefixContext = createContext("");
 
 export interface NodeApi {
     nodeId: string;
+    runtimeNodeId: string;
     editMode?: boolean;
     isSelected?: boolean;
     nodeInteractionHandlers?: NodeInteractionHandlers;
@@ -145,15 +147,24 @@ export function NodeScope({
     children: ReactNode;
 }) {
     const prefab = usePrefab();
+    const runtimeNodeIdPrefix = useContext(RuntimeNodeIdPrefixContext);
+    const runtimeNodeId = runtimeNodeIdPrefix ? `${runtimeNodeIdPrefix}/${nodeId}` : nodeId;
     const value = useMemo<NodeApi>(() => ({
         nodeId,
+        runtimeNodeId,
         editMode,
         isSelected,
         nodeInteractionHandlers,
         worldPosition,
         getObject: <T extends Object3D = Object3D>() => prefab.getObject(nodeId) as T | null,
         getHandle: <T = unknown,>(kind: string) => prefab.getHandle<T>(nodeId, kind),
-    }), [editMode, isSelected, nodeId, nodeInteractionHandlers, prefab, worldPosition]);
+    }), [editMode, isSelected, nodeId, nodeInteractionHandlers, prefab, runtimeNodeId, worldPosition]);
 
     return <NodeContext.Provider value={value}>{children}</NodeContext.Provider>;
+}
+
+export function RuntimeNodeIdScope({ prefix, children }: { prefix: string; children: ReactNode }) {
+    const parentPrefix = useContext(RuntimeNodeIdPrefixContext);
+    const value = parentPrefix ? `${parentPrefix}/${prefix}` : prefix;
+    return <RuntimeNodeIdPrefixContext.Provider value={value}>{children}</RuntimeNodeIdPrefixContext.Provider>;
 }

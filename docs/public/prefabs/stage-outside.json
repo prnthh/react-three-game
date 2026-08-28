@@ -1,29 +1,140 @@
 {
   "id": "stage-outside",
   "name": "Stage Junkyard Exterior",
+  "materials": {
+    "yard-dirt": {
+      "color": "#68543c",
+      "roughness": 0.98
+    },
+    "yard-gravel": {
+      "color": "#81715c",
+      "roughness": 0.98
+    },
+    "sky": {
+      "materialType": "basic",
+      "side": "BackSide",
+      "texture": "/textures/skybox/skybox3.jpg"
+    },
+    "office-brick": {
+      "color": "#9b5f3e",
+      "roughness": 0.92
+    },
+    "office-trim": {
+      "color": "#d0b98e",
+      "roughness": 0.9
+    },
+    "office-foundation": {
+      "color": "#625d55",
+      "roughness": 0.96
+    },
+    "roof": {
+      "color": "#292b2c",
+      "roughness": 0.88
+    },
+    "glass": {
+      "color": "#335363",
+      "roughness": 0.28,
+      "metalness": 0.12
+    },
+    "fence": {
+      "color": "#9aa3a6",
+      "roughness": 0.58,
+      "metalness": 0.48,
+      "transparent": true,
+      "opacity": 0.42
+    },
+    "fence-metal": {
+      "color": "#687276",
+      "roughness": 0.58,
+      "metalness": 0.52
+    },
+    "rust": {
+      "color": "#873d25",
+      "roughness": 0.96,
+      "metalness": 0.12
+    },
+    "rust-light": {
+      "color": "#b26538",
+      "roughness": 0.94,
+      "metalness": 0.08
+    },
+    "car-dark": {
+      "color": "#24282a",
+      "roughness": 0.82,
+      "metalness": 0.2
+    },
+    "rubber": {
+      "color": "#17191a",
+      "roughness": 0.98
+    },
+    "hub": {
+      "color": "#8d8e8b",
+      "roughness": 0.5,
+      "metalness": 0.5
+    },
+    "trash": {
+      "color": "#53656c",
+      "roughness": 0.76,
+      "metalness": 0.38
+    },
+    "junk": {
+      "color": "#77736b",
+      "roughness": 0.88,
+      "metalness": 0.24
+    },
+    "junk-dark": {
+      "color": "#42484a",
+      "roughness": 0.82,
+      "metalness": 0.32
+    },
+    "road": {
+      "color": "#303438",
+      "roughness": 0.96
+    },
+    "curb": {
+      "color": "#a09d96",
+      "roughness": 0.92
+    },
+    "pavement": {
+      "color": "#928d83",
+      "roughness": 0.94
+    },
+    "pavement-joint": {
+      "color": "#6f6c66",
+      "roughness": 0.98
+    },
+    "line": {
+      "color": "#d6c66f",
+      "roughness": 0.8
+    },
+    "puddle": {
+      "color": "#263c44",
+      "roughness": 0.2,
+      "metalness": 0.08
+    },
+    "paper": {
+      "color": "#d9cfb2",
+      "roughness": 0.96
+    },
+    "warning": {
+      "color": "#d39a35",
+      "roughness": 0.84
+    },
+    "invisible": {
+      "materialType": "basic",
+      "color": "#60a5fa",
+      "transparent": true,
+      "opacity": 0.08,
+      "depthWrite": false
+    }
+  },
   "root": {
     "id": "stage-root",
     "name": "junkyard root",
     "components": {
       "transform": {
         "type": "Transform",
-        "properties": {
-          "position": [
-            0,
-            0,
-            0
-          ],
-          "rotation": [
-            0,
-            0,
-            0
-          ],
-          "scale": [
-            1,
-            1,
-            1
-          ]
-        }
+        "properties": {}
       }
     },
     "children": [
@@ -36,29 +147,23 @@
             "properties": {
               "position": [
                 0.3,
-                2.45,
-                6.6
+                2.65,
+                7
               ],
               "rotation": [
-                -0.36,
+                -0.37,
                 0.03,
                 0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "camera": {
             "type": "Camera",
             "properties": {
-              "projection": "perspective",
               "fov": 58,
-              "near": 0.1,
               "far": 120,
-              "zoom": 1
+              "lockY": true,
+              "lockZ": true
             }
           }
         },
@@ -68,11 +173,15 @@
         "id": "stage-ambient-fill",
         "name": "cool outdoor fill",
         "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {}
+          },
           "ambientLight": {
             "type": "AmbientLight",
             "properties": {
               "color": "#c9dcff",
-              "intensity": 1.25
+              "intensity": 1.15
             }
           }
         },
@@ -89,16 +198,6 @@
                 -3.8,
                 5.4,
                 5.2
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
@@ -106,7 +205,7 @@
             "type": "DirectionalLight",
             "properties": {
               "color": "#ffe5ba",
-              "intensity": 1.8,
+              "intensity": 1.9,
               "targetOffset": [
                 3.4,
                 -5.1,
@@ -114,12 +213,11 @@
               ],
               "castShadow": true,
               "shadowMapSize": 2048,
-              "shadowCameraTop": 8,
-              "shadowCameraBottom": -8,
-              "shadowCameraLeft": -8,
-              "shadowCameraRight": 8,
-              "shadowCameraNear": 0.5,
-              "shadowCameraFar": 50,
+              "shadowCameraTop": 10,
+              "shadowCameraBottom": -10,
+              "shadowCameraLeft": -12,
+              "shadowCameraRight": 12,
+              "shadowCameraFar": 60,
               "shadowBias": 0.001,
               "shadowNormalBias": 0.02
             }
@@ -129,25 +227,15 @@
       },
       {
         "id": "stage-floor",
-        "name": "packed dirt yard",
+        "name": "expanded packed dirt ground and walkable surface",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
-                0,
+                8,
                 -0.05,
-                -3.5
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
+                -1
               ]
             }
           },
@@ -155,7 +243,6 @@
             "type": "Mesh",
             "properties": {
               "castShadow": false,
-              "receiveShadow": true,
               "emitClickEvent": true,
               "clickEventName": "stage:floor-click"
             }
@@ -165,16 +252,16 @@
             "properties": {
               "geometryType": "box",
               "args": [
-                22,
+                34,
                 0.1,
-                25
+                20
               ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material"
+              "materialId": "yard-dirt"
             }
           }
         },
@@ -182,20 +269,21 @@
       },
       {
         "id": "stage-environment",
-        "name": "overcast junkyard environment",
+        "name": "shared skybox background and outdoor environment",
         "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {}
+          },
           "environment": {
             "type": "Environment",
-            "properties": {
-              "intensity": 0.65,
-              "resolution": 128
-            }
+            "properties": {}
           }
         },
         "children": [
           {
             "id": "stage-environment-sky",
-            "name": "muted evening sky",
+            "name": "shared photographic sky sphere",
             "components": {
               "transform": {
                 "type": "Transform",
@@ -204,16 +292,6 @@
                     0,
                     0,
                     0
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
@@ -229,16 +307,16 @@
                 "properties": {
                   "geometryType": "sphere",
                   "args": [
-                    30,
-                    24,
-                    12
+                    45,
+                    32,
+                    18
                   ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "material-2"
+                  "materialId": "sky"
                 }
               }
             },
@@ -248,108 +326,1148 @@
       },
       {
         "id": "stage-office-exterior",
-        "name": "small office building",
+        "name": "constructed yard office",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
-                -2.85,
-                1.05,
-                -2.75
+                -3.05,
+                0,
+                -3.45
               ],
               "rotation": [
                 0,
-                0.06,
+                0.035,
                 0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                3.2,
-                2.1,
-                1.65
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialId": "material-3"
             }
           }
         },
         "children": [
           {
-            "id": "stage-office-exterior-door",
-            "name": "outside office door",
+            "id": "stage-office-foundation",
+            "name": "raised concrete office foundation",
             "components": {
               "transform": {
                 "type": "Transform",
                 "properties": {
                   "position": [
-                    0.95,
-                    -0.25,
-                    0.86
-                  ],
-                  "rotation": [
                     0,
-                    0,
+                    0.125,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true,
-                  "emitClickEvent": true,
-                  "clickEventName": "stage:door-click"
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
                   "geometryType": "box",
                   "args": [
-                    0.72,
-                    1.35,
-                    0.1
+                    4.05,
+                    0.25,
+                    2.35
                   ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "material-4"
+                  "materialId": "office-foundation"
                 }
               },
-              "stageInteraction": {
-                "type": "StageInteraction",
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
                 "properties": {
-                  "action": "transition"
+                  "type": "fixed",
+                  "colliders": "cuboid"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-office-front-left-pier",
+            "name": "front wall left pier",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -1.6125,
+                    1.75,
+                    1.06
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.575,
+                    3,
+                    0.18
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "office-brick"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cuboid"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-office-front-window-door-pier",
+            "name": "front wall center pier",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.15,
+                    1.75,
+                    1.06
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.65,
+                    3,
+                    0.18
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "office-brick"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cuboid"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-office-front-right-pier",
+            "name": "front wall right pier",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    1.6625,
+                    1.75,
+                    1.06
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.475,
+                    3,
+                    0.18
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "office-brick"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cuboid"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-office-front-window-low",
+            "name": "wall below office window",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.75,
+                    0.65,
+                    1.06
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    1.15,
+                    0.8,
+                    0.18
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "office-brick"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cuboid"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-office-front-window-high",
+            "name": "wall above office window",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.75,
+                    2.75,
+                    1.06
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    1.15,
+                    1,
+                    0.18
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "office-brick"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cuboid"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-office-front-door-lintel",
+            "name": "wall above office door",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.95,
+                    2.775,
+                    1.06
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.95,
+                    0.95,
+                    0.18
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "office-brick"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cuboid"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-office-back-wall",
+            "name": "office rear wall",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    1.75,
+                    -1.06
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    3.8,
+                    3,
+                    0.18
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "office-brick"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cuboid"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-office-left-wall",
+            "name": "office left wall",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -1.9,
+                    1.75,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.18,
+                    3,
+                    2.12
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "office-brick"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cuboid"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-office-right-wall",
+            "name": "office right wall",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    1.9,
+                    1.75,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.18,
+                    3,
+                    2.12
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "office-brick"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cuboid"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-office-roof",
+            "name": "shallow tar roof",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    3.36,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    4.25,
+                    0.22,
+                    2.55
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "roof"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-office-front-fascia",
+            "name": "front roof fascia",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    3.27,
+                    1.24
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    4.25,
+                    0.28,
+                    0.16
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "office-trim"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-office-door-step",
+            "name": "concrete entrance step",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.95,
+                    0.08,
+                    1.39
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    1.25,
+                    0.16,
+                    0.55
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "office-foundation"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-office-window",
+            "name": "framed yard office window",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.75,
+                    1.65,
+                    1.17
+                  ]
+                }
+              }
+            },
+            "children": [
+              {
+                "id": "stage-office-window-glass",
+                "name": "recessed office glass",
+                "components": {
+                  "transform": {
+                    "type": "Transform",
+                    "properties": {
+                      "position": [
+                        0,
+                        0,
+                        -0.035
+                      ]
+                    }
+                  },
+                  "mesh": {
+                    "type": "Mesh",
+                    "properties": {}
+                  },
+                  "geometry": {
+                    "type": "Geometry",
+                    "properties": {
+                      "geometryType": "box",
+                      "args": [
+                        1.04,
+                        1.08,
+                        0.04
+                      ]
+                    }
+                  },
+                  "material": {
+                    "type": "Material",
+                    "properties": {
+                      "materialId": "glass"
+                    }
+                  }
+                },
+                "children": []
+              },
+              {
+                "id": "stage-office-window-left-jamb",
+                "name": "window left jamb",
+                "components": {
+                  "transform": {
+                    "type": "Transform",
+                    "properties": {
+                      "position": [
+                        -0.575,
+                        0,
+                        0
+                      ]
+                    }
+                  },
+                  "mesh": {
+                    "type": "Mesh",
+                    "properties": {}
+                  },
+                  "geometry": {
+                    "type": "Geometry",
+                    "properties": {
+                      "geometryType": "box",
+                      "args": [
+                        0.1,
+                        1.22,
+                        0.12
+                      ]
+                    }
+                  },
+                  "material": {
+                    "type": "Material",
+                    "properties": {
+                      "materialId": "office-trim"
+                    }
+                  }
+                },
+                "children": []
+              },
+              {
+                "id": "stage-office-window-right-jamb",
+                "name": "window right jamb",
+                "components": {
+                  "transform": {
+                    "type": "Transform",
+                    "properties": {
+                      "position": [
+                        0.575,
+                        0,
+                        0
+                      ]
+                    }
+                  },
+                  "mesh": {
+                    "type": "Mesh",
+                    "properties": {}
+                  },
+                  "geometry": {
+                    "type": "Geometry",
+                    "properties": {
+                      "geometryType": "box",
+                      "args": [
+                        0.1,
+                        1.22,
+                        0.12
+                      ]
+                    }
+                  },
+                  "material": {
+                    "type": "Material",
+                    "properties": {
+                      "materialId": "office-trim"
+                    }
+                  }
+                },
+                "children": []
+              },
+              {
+                "id": "stage-office-window-head",
+                "name": "window head",
+                "components": {
+                  "transform": {
+                    "type": "Transform",
+                    "properties": {
+                      "position": [
+                        0,
+                        0.585,
+                        0
+                      ]
+                    }
+                  },
+                  "mesh": {
+                    "type": "Mesh",
+                    "properties": {}
+                  },
+                  "geometry": {
+                    "type": "Geometry",
+                    "properties": {
+                      "geometryType": "box",
+                      "args": [
+                        1.25,
+                        0.1,
+                        0.12
+                      ]
+                    }
+                  },
+                  "material": {
+                    "type": "Material",
+                    "properties": {
+                      "materialId": "office-trim"
+                    }
+                  }
+                },
+                "children": []
+              },
+              {
+                "id": "stage-office-window-sill",
+                "name": "window sill",
+                "components": {
+                  "transform": {
+                    "type": "Transform",
+                    "properties": {
+                      "position": [
+                        0,
+                        -0.59,
+                        0.04
+                      ]
+                    }
+                  },
+                  "mesh": {
+                    "type": "Mesh",
+                    "properties": {}
+                  },
+                  "geometry": {
+                    "type": "Geometry",
+                    "properties": {
+                      "geometryType": "box",
+                      "args": [
+                        1.34,
+                        0.12,
+                        0.26
+                      ]
+                    }
+                  },
+                  "material": {
+                    "type": "Material",
+                    "properties": {
+                      "materialId": "office-trim"
+                    }
+                  }
+                },
+                "children": []
+              },
+              {
+                "id": "stage-office-window-mullion",
+                "name": "window mullion",
+                "components": {
+                  "transform": {
+                    "type": "Transform",
+                    "properties": {
+                      "position": [
+                        0,
+                        0,
+                        0.055
+                      ]
+                    }
+                  },
+                  "mesh": {
+                    "type": "Mesh",
+                    "properties": {}
+                  },
+                  "geometry": {
+                    "type": "Geometry",
+                    "properties": {
+                      "geometryType": "box",
+                      "args": [
+                        0.07,
+                        1.02,
+                        0.08
+                      ]
+                    }
+                  },
+                  "material": {
+                    "type": "Material",
+                    "properties": {
+                      "materialId": "office-trim"
+                    }
+                  }
+                },
+                "children": []
+              },
+              {
+                "id": "stage-office-window-transom",
+                "name": "window transom",
+                "components": {
+                  "transform": {
+                    "type": "Transform",
+                    "properties": {
+                      "position": [
+                        0,
+                        0.08,
+                        0.055
+                      ]
+                    }
+                  },
+                  "mesh": {
+                    "type": "Mesh",
+                    "properties": {}
+                  },
+                  "geometry": {
+                    "type": "Geometry",
+                    "properties": {
+                      "geometryType": "box",
+                      "args": [
+                        1.02,
+                        0.07,
+                        0.08
+                      ]
+                    }
+                  },
+                  "material": {
+                    "type": "Material",
+                    "properties": {
+                      "materialId": "office-trim"
+                    }
+                  }
+                },
+                "children": []
+              }
+            ]
+          },
+          {
+            "id": "stage-office-door-frame",
+            "name": "fitted exterior door frame",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.95,
+                    0.25,
+                    1.17
+                  ]
+                }
+              }
+            },
+            "children": [
+              {
+                "id": "stage-office-exterior-door",
+                "name": "animated outside office door",
+                "components": {
+                  "transform": {
+                    "type": "Transform",
+                    "properties": {
+                      "scale": [
+                        0.77,
+                        0.87,
+                        0.86
+                      ]
+                    }
+                  },
+                  "model": {
+                    "type": "Model",
+                    "properties": {
+                      "filename": "models/environment/office-exit-door.glb",
+                      "emitClickEvent": true,
+                      "clickEventName": "stage:door-click"
+                    }
+                  },
+                  "stageInteraction": {
+                    "type": "StageInteraction",
+                    "properties": {
+                      "action": "transition",
+                      "animation": "open",
+                      "sensorRadius": 0.78
+                    }
+                  }
+                },
+                "children": []
+              },
+              {
+                "id": "stage-office-door-jamb-left",
+                "name": "exterior left jamb",
+                "components": {
+                  "transform": {
+                    "type": "Transform",
+                    "properties": {
+                      "position": [
+                        -0.52,
+                        1.09,
+                        0
+                      ]
+                    }
+                  },
+                  "mesh": {
+                    "type": "Mesh",
+                    "properties": {}
+                  },
+                  "geometry": {
+                    "type": "Geometry",
+                    "properties": {
+                      "geometryType": "box",
+                      "args": [
+                        0.12,
+                        2.18,
+                        0.2
+                      ]
+                    }
+                  },
+                  "material": {
+                    "type": "Material",
+                    "properties": {
+                      "materialId": "office-trim"
+                    }
+                  }
+                },
+                "children": []
+              },
+              {
+                "id": "stage-office-door-jamb-right",
+                "name": "exterior right jamb",
+                "components": {
+                  "transform": {
+                    "type": "Transform",
+                    "properties": {
+                      "position": [
+                        0.52,
+                        1.09,
+                        0
+                      ]
+                    }
+                  },
+                  "mesh": {
+                    "type": "Mesh",
+                    "properties": {}
+                  },
+                  "geometry": {
+                    "type": "Geometry",
+                    "properties": {
+                      "geometryType": "box",
+                      "args": [
+                        0.12,
+                        2.18,
+                        0.2
+                      ]
+                    }
+                  },
+                  "material": {
+                    "type": "Material",
+                    "properties": {
+                      "materialId": "office-trim"
+                    }
+                  }
+                },
+                "children": []
+              },
+              {
+                "id": "stage-office-door-head",
+                "name": "exterior door head",
+                "components": {
+                  "transform": {
+                    "type": "Transform",
+                    "properties": {
+                      "position": [
+                        0,
+                        2.11,
+                        0
+                      ]
+                    }
+                  },
+                  "mesh": {
+                    "type": "Mesh",
+                    "properties": {}
+                  },
+                  "geometry": {
+                    "type": "Geometry",
+                    "properties": {
+                      "geometryType": "box",
+                      "args": [
+                        1.16,
+                        0.14,
+                        0.2
+                      ]
+                    }
+                  },
+                  "material": {
+                    "type": "Material",
+                    "properties": {
+                      "materialId": "office-trim"
+                    }
+                  }
+                },
+                "children": []
+              }
+            ]
+          },
+          {
+            "id": "stage-office-sign-board",
+            "name": "weathered office sign board",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.95,
+                    2.78,
+                    1.19
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    1.3,
+                    0.34,
+                    0.08
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "office-trim"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-office-sign-lettering",
+            "name": "office sign dark inset",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.95,
+                    2.78,
+                    1.24
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    1.05,
+                    0.14,
+                    0.025
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "roof"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-office-downpipe",
+            "name": "roof drainage downpipe",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -1.72,
+                    1.55,
+                    1.18
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.055,
+                    0.065,
+                    2.75,
+                    10
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "fence-metal"
                 }
               }
             },
@@ -358,136 +1476,709 @@
         ]
       },
       {
-        "id": "stage-chainlink-back",
-        "name": "back fence",
+        "id": "stage-yard-fence",
+        "name": "supported chain-link yard fence",
         "components": {
           "transform": {
             "type": "Transform",
-            "properties": {
-              "position": [
-                -1,
-                0.9,
-                -4.05
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                8.9,
-                1.8,
-                0.08
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialId": "material-5"
-            }
+            "properties": {}
           }
         },
-        "children": []
-      },
-      {
-        "id": "stage-chainlink-left",
-        "name": "left fence",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -5.35,
-                0.9,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
+        "children": [
+          {
+            "id": "stage-chainlink-back",
+            "name": "back chain-link mesh",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    1.2,
+                    -5.05
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    10.4,
+                    1.85,
+                    0.035
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "fence"
+                }
+              }
+            },
+            "children": []
           },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
+          {
+            "id": "stage-chainlink-left",
+            "name": "left chain-link mesh",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -5.35,
+                    1.2,
+                    -0.3
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.035,
+                    1.85,
+                    9.5
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "fence"
+                }
+              }
+            },
+            "children": []
           },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                0.08,
-                1.8,
-                8.1
-              ]
-            }
+          {
+            "id": "stage-fence-back-top-rail",
+            "name": "back fence top rail",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    2.14,
+                    -5.05
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    1.5707963267948966
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.035,
+                    0.035,
+                    10.4,
+                    10
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "fence-metal"
+                }
+              }
+            },
+            "children": []
           },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialId": "material-5"
-            }
+          {
+            "id": "stage-fence-left-top-rail",
+            "name": "left fence top rail",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -5.35,
+                    2.14,
+                    -0.3
+                  ],
+                  "rotation": [
+                    1.5707963267948966,
+                    0,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.035,
+                    0.035,
+                    9.5,
+                    10
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "fence-metal"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-fence-back-post-0",
+            "name": "galvanized back fence post",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -5.2,
+                    1.175,
+                    -5.05
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.055,
+                    0.065,
+                    2.35,
+                    10
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "fence-metal"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cylinder"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-fence-back-post-1",
+            "name": "galvanized back fence post",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -3.12,
+                    1.175,
+                    -5.05
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.055,
+                    0.065,
+                    2.35,
+                    10
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "fence-metal"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cylinder"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-fence-back-post-2",
+            "name": "galvanized back fence post",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -1.04,
+                    1.175,
+                    -5.05
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.055,
+                    0.065,
+                    2.35,
+                    10
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "fence-metal"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cylinder"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-fence-back-post-3",
+            "name": "galvanized back fence post",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    1.04,
+                    1.175,
+                    -5.05
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.055,
+                    0.065,
+                    2.35,
+                    10
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "fence-metal"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cylinder"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-fence-back-post-4",
+            "name": "galvanized back fence post",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    3.12,
+                    1.175,
+                    -5.05
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.055,
+                    0.065,
+                    2.35,
+                    10
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "fence-metal"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cylinder"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-fence-back-post-5",
+            "name": "galvanized back fence post",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    5.2,
+                    1.175,
+                    -5.05
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.055,
+                    0.065,
+                    2.35,
+                    10
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "fence-metal"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cylinder"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-fence-left-post-0",
+            "name": "galvanized side fence post",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -5.35,
+                    1.175,
+                    -4.85
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.055,
+                    0.065,
+                    2.35,
+                    10
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "fence-metal"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cylinder"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-fence-left-post-1",
+            "name": "galvanized side fence post",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -5.35,
+                    1.175,
+                    -2.55
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.055,
+                    0.065,
+                    2.35,
+                    10
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "fence-metal"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cylinder"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-fence-left-post-2",
+            "name": "galvanized side fence post",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -5.35,
+                    1.175,
+                    -0.25
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.055,
+                    0.065,
+                    2.35,
+                    10
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "fence-metal"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cylinder"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-fence-left-post-3",
+            "name": "galvanized side fence post",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -5.35,
+                    1.175,
+                    2.05
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.055,
+                    0.065,
+                    2.35,
+                    10
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "fence-metal"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cylinder"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-fence-left-post-4",
+            "name": "galvanized side fence post",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -5.35,
+                    1.175,
+                    4.35
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.055,
+                    0.065,
+                    2.35,
+                    10
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "fence-metal"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cylinder"
+                }
+              }
+            },
+            "children": []
           }
-        },
-        "children": []
+        ]
       },
       {
         "id": "stage-scrap-car",
-        "name": "rusted car shell",
+        "name": "rusted getaway car body",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
-                2.55,
-                0.34,
-                -1.45
+                2,
+                0.62,
+                -2.35
               ],
               "rotation": [
                 0,
-                -0.32,
+                -0.28,
                 0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "castShadow": true,
-              "receiveShadow": true,
               "emitClickEvent": true,
               "clickEventName": "stage:inspect-car"
             }
@@ -497,16 +2188,16 @@
             "properties": {
               "geometryType": "box",
               "args": [
-                1.9,
-                0.68,
-                1.05
+                2.25,
+                0.5,
+                1.12
               ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-6"
+              "materialId": "rust"
             }
           },
           "stageInteraction": {
@@ -514,41 +2205,823 @@
             "properties": {
               "action": "dialogue",
               "page1": "A once-proud getaway car, retired after its dashboard developed root access and locked the driver out.",
-              "page2": "The glove box still contains a hypothetical CAN-bus séance kit. It asks the engine control unit questions through interpretive blinking."
+              "page2": "The glove box still contains a hypothetical CAN-bus séance kit. It asks the engine control unit questions through interpretive blinking.",
+              "sensorRadius": 0.95
             }
           }
         },
-        "children": []
+        "children": [
+          {
+            "id": "stage-scrap-car-collider",
+            "name": "separate fixed collider for the interactive scrap car",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "visible": false,
+                  "castShadow": false,
+                  "receiveShadow": false
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    2.25,
+                    0.5,
+                    1.12
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "invisible"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cuboid"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-scrap-car-hood",
+            "name": "dented car hood",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.68,
+                    0.34,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0.03
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.92,
+                    0.16,
+                    1
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "rust-light"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-scrap-car-cabin",
+            "name": "crushed car cabin",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.25,
+                    0.52,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    -0.03
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    1.25,
+                    0.62,
+                    0.9
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "rust"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-scrap-car-roof",
+            "name": "buckled car roof",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.27,
+                    0.86,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0.02,
+                    -0.025
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    1.12,
+                    0.12,
+                    0.94
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "rust-light"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-scrap-car-windshield",
+            "name": "dirty front windshield",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.4,
+                    0.58,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    -0.36
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.04,
+                    0.43,
+                    0.76
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "glass"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-scrap-car-side-window-front",
+            "name": "broken front side window",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.05,
+                    0.58,
+                    0.47
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    -0.04
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.48,
+                    0.34,
+                    0.035
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "glass"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-scrap-car-side-window-rear",
+            "name": "dirty rear side window",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.51,
+                    0.58,
+                    0.47
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    -0.04
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.46,
+                    0.34,
+                    0.035
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "glass"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-scrap-car-door-skin",
+            "name": "rusted side door skin",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.24,
+                    0.07,
+                    0.58
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.7,
+                    0.38,
+                    0.04
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "rust-light"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-scrap-car-bumper",
+            "name": "crooked steel bumper",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    1.18,
+                    0.02,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0.05,
+                    -0.04
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.16,
+                    0.16,
+                    1.2
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "hub"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-scrap-car-wheel-front-left",
+            "name": "rusted car wheel assembly",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.86,
+                    -0.24,
+                    0.43
+                  ]
+                }
+              }
+            },
+            "children": [
+              {
+                "id": "stage-scrap-car-wheel-front-left-tire",
+                "name": "collapsed rubber tire",
+                "components": {
+                  "transform": {
+                    "type": "Transform",
+                    "properties": {
+                      "position": [
+                        0,
+                        0,
+                        0
+                      ]
+                    }
+                  },
+                  "mesh": {
+                    "type": "Mesh",
+                    "properties": {}
+                  },
+                  "geometry": {
+                    "type": "Geometry",
+                    "properties": {
+                      "geometryType": "torus",
+                      "args": [
+                        0.31,
+                        0.11,
+                        7,
+                        14
+                      ]
+                    }
+                  },
+                  "material": {
+                    "type": "Material",
+                    "properties": {
+                      "materialId": "rubber"
+                    }
+                  }
+                },
+                "children": []
+              },
+              {
+                "id": "stage-scrap-car-wheel-front-left-hub",
+                "name": "exposed steel wheel hub",
+                "components": {
+                  "transform": {
+                    "type": "Transform",
+                    "properties": {
+                      "position": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "rotation": [
+                        1.5707963267948966,
+                        0,
+                        0
+                      ]
+                    }
+                  },
+                  "mesh": {
+                    "type": "Mesh",
+                    "properties": {}
+                  },
+                  "geometry": {
+                    "type": "Geometry",
+                    "properties": {
+                      "geometryType": "cylinder",
+                      "args": [
+                        0.17,
+                        0.17,
+                        0.12,
+                        10
+                      ]
+                    }
+                  },
+                  "material": {
+                    "type": "Material",
+                    "properties": {
+                      "materialId": "hub"
+                    }
+                  }
+                },
+                "children": []
+              }
+            ]
+          },
+          {
+            "id": "stage-scrap-car-wheel-front-right",
+            "name": "rusted car wheel assembly",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.86,
+                    -0.24,
+                    0.43
+                  ]
+                }
+              }
+            },
+            "children": [
+              {
+                "id": "stage-scrap-car-wheel-front-right-tire",
+                "name": "collapsed rubber tire",
+                "components": {
+                  "transform": {
+                    "type": "Transform",
+                    "properties": {
+                      "position": [
+                        0,
+                        0,
+                        0
+                      ]
+                    }
+                  },
+                  "mesh": {
+                    "type": "Mesh",
+                    "properties": {}
+                  },
+                  "geometry": {
+                    "type": "Geometry",
+                    "properties": {
+                      "geometryType": "torus",
+                      "args": [
+                        0.31,
+                        0.11,
+                        7,
+                        14
+                      ]
+                    }
+                  },
+                  "material": {
+                    "type": "Material",
+                    "properties": {
+                      "materialId": "rubber"
+                    }
+                  }
+                },
+                "children": []
+              },
+              {
+                "id": "stage-scrap-car-wheel-front-right-hub",
+                "name": "exposed steel wheel hub",
+                "components": {
+                  "transform": {
+                    "type": "Transform",
+                    "properties": {
+                      "position": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "rotation": [
+                        1.5707963267948966,
+                        0,
+                        0
+                      ]
+                    }
+                  },
+                  "mesh": {
+                    "type": "Mesh",
+                    "properties": {}
+                  },
+                  "geometry": {
+                    "type": "Geometry",
+                    "properties": {
+                      "geometryType": "cylinder",
+                      "args": [
+                        0.17,
+                        0.17,
+                        0.12,
+                        10
+                      ]
+                    }
+                  },
+                  "material": {
+                    "type": "Material",
+                    "properties": {
+                      "materialId": "hub"
+                    }
+                  }
+                },
+                "children": []
+              }
+            ]
+          },
+          {
+            "id": "stage-scrap-car-wheel-rear-left",
+            "name": "rusted car wheel assembly",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.86,
+                    -0.24,
+                    -0.43
+                  ]
+                }
+              }
+            },
+            "children": [
+              {
+                "id": "stage-scrap-car-wheel-rear-left-tire",
+                "name": "collapsed rubber tire",
+                "components": {
+                  "transform": {
+                    "type": "Transform",
+                    "properties": {
+                      "position": [
+                        0,
+                        0,
+                        0
+                      ]
+                    }
+                  },
+                  "mesh": {
+                    "type": "Mesh",
+                    "properties": {}
+                  },
+                  "geometry": {
+                    "type": "Geometry",
+                    "properties": {
+                      "geometryType": "torus",
+                      "args": [
+                        0.31,
+                        0.11,
+                        7,
+                        14
+                      ]
+                    }
+                  },
+                  "material": {
+                    "type": "Material",
+                    "properties": {
+                      "materialId": "rubber"
+                    }
+                  }
+                },
+                "children": []
+              },
+              {
+                "id": "stage-scrap-car-wheel-rear-left-hub",
+                "name": "exposed steel wheel hub",
+                "components": {
+                  "transform": {
+                    "type": "Transform",
+                    "properties": {
+                      "position": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "rotation": [
+                        1.5707963267948966,
+                        0,
+                        0
+                      ]
+                    }
+                  },
+                  "mesh": {
+                    "type": "Mesh",
+                    "properties": {}
+                  },
+                  "geometry": {
+                    "type": "Geometry",
+                    "properties": {
+                      "geometryType": "cylinder",
+                      "args": [
+                        0.17,
+                        0.17,
+                        0.12,
+                        10
+                      ]
+                    }
+                  },
+                  "material": {
+                    "type": "Material",
+                    "properties": {
+                      "materialId": "hub"
+                    }
+                  }
+                },
+                "children": []
+              }
+            ]
+          },
+          {
+            "id": "stage-scrap-car-wheel-rear-right",
+            "name": "rusted car wheel assembly",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.86,
+                    -0.24,
+                    -0.43
+                  ]
+                }
+              }
+            },
+            "children": [
+              {
+                "id": "stage-scrap-car-wheel-rear-right-tire",
+                "name": "collapsed rubber tire",
+                "components": {
+                  "transform": {
+                    "type": "Transform",
+                    "properties": {
+                      "position": [
+                        0,
+                        0,
+                        0
+                      ]
+                    }
+                  },
+                  "mesh": {
+                    "type": "Mesh",
+                    "properties": {}
+                  },
+                  "geometry": {
+                    "type": "Geometry",
+                    "properties": {
+                      "geometryType": "torus",
+                      "args": [
+                        0.31,
+                        0.11,
+                        7,
+                        14
+                      ]
+                    }
+                  },
+                  "material": {
+                    "type": "Material",
+                    "properties": {
+                      "materialId": "rubber"
+                    }
+                  }
+                },
+                "children": []
+              },
+              {
+                "id": "stage-scrap-car-wheel-rear-right-hub",
+                "name": "exposed steel wheel hub",
+                "components": {
+                  "transform": {
+                    "type": "Transform",
+                    "properties": {
+                      "position": [
+                        0,
+                        0,
+                        0
+                      ],
+                      "rotation": [
+                        1.5707963267948966,
+                        0,
+                        0
+                      ]
+                    }
+                  },
+                  "mesh": {
+                    "type": "Mesh",
+                    "properties": {}
+                  },
+                  "geometry": {
+                    "type": "Geometry",
+                    "properties": {
+                      "geometryType": "cylinder",
+                      "args": [
+                        0.17,
+                        0.17,
+                        0.12,
+                        10
+                      ]
+                    }
+                  },
+                  "material": {
+                    "type": "Material",
+                    "properties": {
+                      "materialId": "hub"
+                    }
+                  }
+                },
+                "children": []
+              }
+            ]
+          }
+        ]
       },
       {
         "id": "stage-trashcan",
-        "name": "network operations trashcan",
+        "name": "ribbed galvanized operations trashcan",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
-                3.75,
-                0.52,
-                -0.15
-              ],
-              "rotation": [
-                0,
-                -0.12,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
+                3.65,
+                0.46,
+                -0.55
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "castShadow": true,
-              "receiveShadow": true,
               "emitClickEvent": true,
               "clickEventName": "stage:inspect-trashcan"
             }
@@ -558,17 +3031,17 @@
             "properties": {
               "geometryType": "cylinder",
               "args": [
-                0.42,
+                0.43,
                 0.34,
-                1.04,
-                20
+                0.92,
+                18
               ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-7"
+              "materialId": "trash"
             }
           },
           "stageInteraction": {
@@ -576,93 +3049,732 @@
             "properties": {
               "action": "dialogue",
               "page1": "The trashcan is full of shredded one-time pads, expired access badges, and a banana peel with suspiciously good opsec.",
-              "page2": "At the bottom: an esoteric refuse-collection chip that exfiltrates nothing except the smell. A flawless threat model."
+              "page2": "At the bottom: an esoteric refuse-collection chip that exfiltrates nothing except the smell. A flawless threat model.",
+              "sensorRadius": 0.72
             }
           }
         },
-        "children": []
+        "children": [
+          {
+            "id": "stage-trashcan-collider",
+            "name": "separate fixed collider for the interactive trashcan",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "visible": false,
+                  "castShadow": false,
+                  "receiveShadow": false
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.43,
+                    0.34,
+                    0.92,
+                    18
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "invisible"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cylinder"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-trashcan-top-rim",
+            "name": "trashcan rolled top rim",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.46,
+                    0
+                  ],
+                  "rotation": [
+                    1.5707963267948966,
+                    0,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "torus",
+                  "args": [
+                    0.43,
+                    0.025,
+                    6,
+                    18
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "fence-metal"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-trashcan-bottom-rim",
+            "name": "trashcan rolled bottom rim",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    -0.44,
+                    0
+                  ],
+                  "rotation": [
+                    1.5707963267948966,
+                    0,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "torus",
+                  "args": [
+                    0.34,
+                    0.025,
+                    6,
+                    18
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "fence-metal"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-trashcan-lid",
+            "name": "domed trashcan lid",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.56,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.08,
+                    0.48,
+                    0.16,
+                    18
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "trash"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-trashcan-handle",
+            "name": "trashcan lid handle",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.71,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.055,
+                    0.055,
+                    0.13,
+                    10
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "fence-metal"
+                }
+              }
+            },
+            "children": []
+          }
+        ]
       },
       {
         "id": "stage-tire-stack",
-        "name": "tire stack",
+        "name": "individual discarded tire stack",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
-                4,
-                0.42,
-                1.25
+                4.3,
+                0,
+                1
               ],
               "rotation": [
                 0,
-                0.16,
+                0.12,
                 0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "cylinder",
-              "args": [
-                0.45,
-                0.45,
-                0.84,
-                28
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialId": "material-8"
             }
           }
         },
-        "children": []
+        "children": [
+          {
+            "id": "stage-tire-0",
+            "name": "discarded rubber tire",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.14,
+                    0
+                  ],
+                  "rotation": [
+                    1.5707963267948966,
+                    0,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "torus",
+                  "args": [
+                    0.39,
+                    0.13,
+                    8,
+                    16
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "rubber"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-tire-1",
+            "name": "discarded rubber tire",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.03,
+                    0.36,
+                    -0.02
+                  ],
+                  "rotation": [
+                    1.5707963267948966,
+                    0,
+                    0.08
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "torus",
+                  "args": [
+                    0.39,
+                    0.13,
+                    8,
+                    16
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "rubber"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-tire-2",
+            "name": "discarded rubber tire",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.5800000000000001,
+                    -0.04
+                  ],
+                  "rotation": [
+                    1.5707963267948966,
+                    0,
+                    0.16
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "torus",
+                  "args": [
+                    0.39,
+                    0.13,
+                    8,
+                    16
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "rubber"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-tire-3",
+            "name": "discarded rubber tire",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.03,
+                    0.8,
+                    -0.06
+                  ],
+                  "rotation": [
+                    1.5707963267948966,
+                    0,
+                    0.24
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "torus",
+                  "args": [
+                    0.39,
+                    0.13,
+                    8,
+                    16
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "rubber"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-tire-rim",
+            "name": "loose wheel rim",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.08,
+                    0.2,
+                    0.1
+                  ],
+                  "rotation": [
+                    1.5707963267948966,
+                    0,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.23,
+                    0.23,
+                    0.12,
+                    12
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "hub"
+                }
+              }
+            },
+            "children": []
+          }
+        ]
       },
       {
         "id": "stage-junk-pile",
-        "name": "angular junk pile",
+        "name": "sorted angular salvage pile",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
-                0.95,
-                0.28,
-                2.25
+                2.2,
+                0,
+                2.15
               ],
               "rotation": [
                 0,
-                0.42,
+                0.22,
                 0
-              ],
-              "scale": [
-                1,
-                1,
-                1
+              ]
+            }
+          }
+        },
+        "children": [
+          {
+            "id": "stage-junk-crate",
+            "name": "collapsed timber salvage crate",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.25,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    1.25,
+                    0.5,
+                    0.85
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "junk"
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cuboid"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-junk-sheet",
+            "name": "bent sheet metal panel",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.05,
+                    0.62,
+                    0
+                  ],
+                  "rotation": [
+                    0.06,
+                    0.18,
+                    -0.11
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    1.05,
+                    0.08,
+                    0.72
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "rust-light"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-junk-beam-left",
+            "name": "left steel offcut",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.36,
+                    0.62,
+                    0
+                  ],
+                  "rotation": [
+                    0.2,
+                    -0.28,
+                    0.16
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.16,
+                    0.18,
+                    1.35
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "junk-dark"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-junk-beam-right",
+            "name": "right steel offcut",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.34,
+                    0.7,
+                    0.02
+                  ],
+                  "rotation": [
+                    -0.15,
+                    0.3,
+                    -0.12
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.14,
+                    0.16,
+                    1.2
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "rust"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-junk-pipe",
+            "name": "salvaged pipe section",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.18,
+                    0.55,
+                    0.08
+                  ],
+                  "rotation": [
+                    1.5707963267948966,
+                    0.25,
+                    0.1
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.12,
+                    0.12,
+                    1.25,
+                    10
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "fence-metal"
+                }
+              }
+            },
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "stage-yard-gravel-apron",
+        "name": "compacted gravel office apron",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -2.2,
+                0.012,
+                -1.65
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "castShadow": true,
-              "receiveShadow": true
+              "castShadow": false
             }
           },
           "geometry": {
@@ -670,20 +3782,289 @@
             "properties": {
               "geometryType": "box",
               "args": [
-                1.35,
-                0.56,
-                1
+                5.6,
+                0.018,
+                2.1
               ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-9"
+              "materialId": "yard-gravel"
             }
           }
         },
         "children": []
+      },
+      {
+        "id": "stage-yard-puddle",
+        "name": "shallow rain puddle",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0.4,
+                0.016,
+                -0.8
+              ],
+              "scale": [
+                1.5,
+                1,
+                0.55
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "castShadow": false
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0.75,
+                0.75,
+                0.012,
+                32
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "puddle"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "stage-yard-paper-0",
+        "name": "discarded case paper",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                1.1,
+                0.018,
+                0.5
+              ],
+              "rotation": [
+                0,
+                0.4,
+                0
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.28,
+                0.008,
+                0.2
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "paper"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "stage-yard-paper-1",
+        "name": "windblown receipt",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -0.2,
+                0.018,
+                1.6
+              ],
+              "rotation": [
+                0,
+                -0.25,
+                0
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                0.22,
+                0.008,
+                0.14
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "paper"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "stage-warning-barrier",
+        "name": "striped yard barrier",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -4.4,
+                0,
+                1.65
+              ]
+            }
+          }
+        },
+        "children": [
+          {
+            "id": "stage-warning-barrier-rail",
+            "name": "painted warning rail",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.72,
+                    0
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    -0.04
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    1.5,
+                    0.14,
+                    0.12
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "warning"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-warning-barrier-left-leg",
+            "name": "barrier left support",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.58,
+                    0.36,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.12,
+                    0.72,
+                    0.12
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "office-trim"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-warning-barrier-right-leg",
+            "name": "barrier right support",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.58,
+                    0.36,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.12,
+                    0.72,
+                    0.12
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "office-trim"
+                }
+              }
+            },
+            "children": []
+          }
+        ]
       },
       {
         "id": "stage-background-trees",
@@ -691,35 +4072,19 @@
         "components": {
           "transform": {
             "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                0,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ]
-            }
+            "properties": {}
           }
         },
         "children": [
           {
             "id": "stage-tree-left-far",
-            "name": "left far tree",
+            "name": "left-far background tree",
             "components": {
               "transform": {
                 "type": "Transform",
                 "properties": {
                   "position": [
-                    -7.2,
+                    -6.6,
                     0,
                     -7.2
                   ],
@@ -738,8 +4103,7 @@
               "model": {
                 "type": "Model",
                 "properties": {
-                  "filename": "models/environment/tree.glb",
-                  "instanced": true
+                  "filename": "models/environment/tree.glb"
                 }
               }
             },
@@ -747,19 +4111,19 @@
           },
           {
             "id": "stage-tree-left-back",
-            "name": "left back tree",
+            "name": "left-back background tree",
             "components": {
               "transform": {
                 "type": "Transform",
                 "properties": {
                   "position": [
-                    -5.5,
+                    -4.6,
                     0,
-                    -12.5
+                    -9.2
                   ],
                   "rotation": [
                     0,
-                    -0.22000000000000003,
+                    -0.22,
                     0
                   ],
                   "scale": [
@@ -772,8 +4136,7 @@
               "model": {
                 "type": "Model",
                 "properties": {
-                  "filename": "models/environment/tree.glb",
-                  "instanced": true
+                  "filename": "models/environment/tree.glb"
                 }
               }
             },
@@ -781,23 +4144,23 @@
           },
           {
             "id": "stage-tree-right-back",
-            "name": "right back tree",
+            "name": "right-back background tree",
             "components": {
               "transform": {
                 "type": "Transform",
                 "properties": {
                   "position": [
-                    4,
+                    4.6,
                     0,
-                    -11
+                    -9
                   ],
                   "rotation": [
                     0,
-                    0.12000000000000027,
+                    0.12,
                     0
                   ],
                   "scale": [
-                    0.6499999999999999,
+                    0.65,
                     0.76,
                     0.69
                   ]
@@ -806,8 +4169,7 @@
               "model": {
                 "type": "Model",
                 "properties": {
-                  "filename": "models/environment/tree.glb",
-                  "instanced": true
+                  "filename": "models/environment/tree.glb"
                 }
               }
             },
@@ -815,15 +4177,15 @@
           },
           {
             "id": "stage-tree-right-far",
-            "name": "right far tree",
+            "name": "right-far background tree",
             "components": {
               "transform": {
                 "type": "Transform",
                 "properties": {
                   "position": [
-                    0.5,
+                    1.5,
                     0,
-                    -7.5
+                    -7.4
                   ],
                   "rotation": [
                     0,
@@ -840,8 +4202,7 @@
               "model": {
                 "type": "Model",
                 "properties": {
-                  "filename": "models/environment/tree.glb",
-                  "instanced": true
+                  "filename": "models/environment/tree.glb"
                 }
               }
             },
@@ -851,54 +4212,58 @@
       },
       {
         "id": "stage-road",
-        "name": "service road",
+        "name": "service road with fitted curbs",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
-                7.8,
+                13.2,
                 0.01,
-                0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
+                3
               ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false,
-              "receiveShadow": true
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "box",
-              "args": [
-                4.4,
-                0.08,
-                18
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialId": "material-10"
             }
           }
         },
         "children": [
+          {
+            "id": "stage-road-surface",
+            "name": "worn asphalt service road",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    18,
+                    0.08,
+                    4.4
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "road"
+                }
+              }
+            },
+            "children": []
+          },
           {
             "id": "stage-road-yard-curb",
             "name": "yard side curb",
@@ -907,44 +4272,31 @@
                 "type": "Transform",
                 "properties": {
                   "position": [
-                    -2.18,
+                    0,
                     0.1,
-                    0
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
+                    -2.2
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
-                "properties": {
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
                   "geometryType": "box",
                   "args": [
-                    0.18,
-                    0.18,
-                    18
+                    18,
+                    0.2,
+                    0.2
                   ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "material-11"
+                  "materialId": "curb"
                 }
               }
             },
@@ -952,32 +4304,359 @@
           },
           {
             "id": "stage-road-outer-curb",
-            "name": "outer curb",
+            "name": "outer road curb",
             "components": {
               "transform": {
                 "type": "Transform",
                 "properties": {
                   "position": [
-                    2.18,
+                    0,
                     0.1,
+                    2.2
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    18,
+                    0.2,
+                    0.2
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "curb"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-road-line-0",
+            "name": "broken center lane marking",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -7,
+                    0.055,
                     0
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
               "mesh": {
                 "type": "Mesh",
                 "properties": {
-                  "castShadow": true,
+                  "castShadow": false,
+                  "receiveShadow": false
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    2.25,
+                    0.015,
+                    0.1
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "line"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-road-line-1",
+            "name": "broken center lane marking",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -3.5,
+                    0.055,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": false
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    2.25,
+                    0.015,
+                    0.1
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "line"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-road-line-2",
+            "name": "broken center lane marking",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.055,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": false
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    2.25,
+                    0.015,
+                    0.1
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "line"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-road-line-3",
+            "name": "broken center lane marking",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    3.5,
+                    0.055,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": false
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    2.25,
+                    0.015,
+                    0.1
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "line"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-road-line-4",
+            "name": "broken center lane marking",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    7,
+                    0.055,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": false
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    2.25,
+                    0.015,
+                    0.1
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "line"
+                }
+              }
+            },
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "stage-roadside-pavement",
+        "name": "fitted roadside pavement",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                13.2,
+                0.06,
+                0.1
+              ]
+            }
+          }
+        },
+        "children": [
+          {
+            "id": "stage-roadside-pavement-slab",
+            "name": "continuous concrete pavement between road and building",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    18,
+                    0.12,
+                    1.4
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "pavement"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-roadside-pavement-back-edge",
+            "name": "pavement rear edge fitted to the building line",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.07,
+                    -0.66
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    18,
+                    0.08,
+                    0.08
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "pavement-joint"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-roadside-pavement-joint-1",
+            "name": "pavement expansion joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -7,
+                    0.065,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
                   "receiveShadow": true
                 }
               },
@@ -986,42 +4665,32 @@
                 "properties": {
                   "geometryType": "box",
                   "args": [
-                    0.18,
-                    0.18,
-                    18
+                    0.035,
+                    0.01,
+                    1.28
                   ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "material-12"
+                  "materialId": "pavement-joint"
                 }
               }
             },
             "children": []
           },
           {
-            "id": "stage-road-line-near",
-            "name": "near lane marking",
+            "id": "stage-roadside-pavement-joint-2",
+            "name": "pavement expansion joint",
             "components": {
               "transform": {
                 "type": "Transform",
                 "properties": {
                   "position": [
-                    0,
+                    -5,
                     0.065,
-                    5.8
-                  ],
-                  "rotation": [
-                    0,
-                    0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
@@ -1029,7 +4698,7 @@
                 "type": "Mesh",
                 "properties": {
                   "castShadow": false,
-                  "receiveShadow": false
+                  "receiveShadow": true
                 }
               },
               "geometry": {
@@ -1037,42 +4706,32 @@
                 "properties": {
                   "geometryType": "box",
                   "args": [
-                    0.1,
-                    0.015,
-                    2.3
+                    0.035,
+                    0.01,
+                    1.28
                   ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "material-13"
+                  "materialId": "pavement-joint"
                 }
               }
             },
             "children": []
           },
           {
-            "id": "stage-road-line-center",
-            "name": "center lane marking",
+            "id": "stage-roadside-pavement-joint-3",
+            "name": "pavement expansion joint",
             "components": {
               "transform": {
                 "type": "Transform",
                 "properties": {
                   "position": [
-                    0,
+                    -3,
                     0.065,
-                    1.8
-                  ],
-                  "rotation": [
-                    0,
-                    0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
@@ -1080,7 +4739,7 @@
                 "type": "Mesh",
                 "properties": {
                   "castShadow": false,
-                  "receiveShadow": false
+                  "receiveShadow": true
                 }
               },
               "geometry": {
@@ -1088,42 +4747,32 @@
                 "properties": {
                   "geometryType": "box",
                   "args": [
-                    0.1,
-                    0.015,
-                    2.3
+                    0.035,
+                    0.01,
+                    1.28
                   ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "material-13"
+                  "materialId": "pavement-joint"
                 }
               }
             },
             "children": []
           },
           {
-            "id": "stage-road-line-back",
-            "name": "back lane marking",
+            "id": "stage-roadside-pavement-joint-4",
+            "name": "pavement expansion joint",
             "components": {
               "transform": {
                 "type": "Transform",
                 "properties": {
                   "position": [
-                    0,
+                    -1,
                     0.065,
-                    -2.2
-                  ],
-                  "rotation": [
-                    0,
-                    0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
@@ -1131,7 +4780,7 @@
                 "type": "Mesh",
                 "properties": {
                   "castShadow": false,
-                  "receiveShadow": false
+                  "receiveShadow": true
                 }
               },
               "geometry": {
@@ -1139,42 +4788,32 @@
                 "properties": {
                   "geometryType": "box",
                   "args": [
-                    0.1,
-                    0.015,
-                    2.3
+                    0.035,
+                    0.01,
+                    1.28
                   ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "material-13"
+                  "materialId": "pavement-joint"
                 }
               }
             },
             "children": []
           },
           {
-            "id": "stage-road-line-far",
-            "name": "far lane marking",
+            "id": "stage-roadside-pavement-joint-5",
+            "name": "pavement expansion joint",
             "components": {
               "transform": {
                 "type": "Transform",
                 "properties": {
                   "position": [
-                    0,
+                    1,
                     0.065,
-                    -6.2
-                  ],
-                  "rotation": [
-                    0,
-                    0,
                     0
-                  ],
-                  "scale": [
-                    1,
-                    1,
-                    1
                   ]
                 }
               },
@@ -1182,7 +4821,7 @@
                 "type": "Mesh",
                 "properties": {
                   "castShadow": false,
-                  "receiveShadow": false
+                  "receiveShadow": true
                 }
               },
               "geometry": {
@@ -1190,22 +4829,168 @@
                 "properties": {
                   "geometryType": "box",
                   "args": [
-                    0.1,
-                    0.015,
-                    2.3
+                    0.035,
+                    0.01,
+                    1.28
                   ]
                 }
               },
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "material-13"
+                  "materialId": "pavement-joint"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-roadside-pavement-joint-6",
+            "name": "pavement expansion joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    3,
+                    0.065,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.035,
+                    0.01,
+                    1.28
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "pavement-joint"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-roadside-pavement-joint-7",
+            "name": "pavement expansion joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    5,
+                    0.065,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.035,
+                    0.01,
+                    1.28
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "pavement-joint"
+                }
+              }
+            },
+            "children": []
+          },
+          {
+            "id": "stage-roadside-pavement-joint-8",
+            "name": "pavement expansion joint",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    7,
+                    0.065,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "box",
+                  "args": [
+                    0.035,
+                    0.01,
+                    1.28
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "pavement-joint"
                 }
               }
             },
             "children": []
           }
         ]
+      },
+      {
+        "id": "stage-background-building-right",
+        "name": "roadside works building set behind pavement",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                11.5,
+                0,
+                -3.4
+              ]
+            }
+          },
+          "model": {
+            "type": "Model",
+            "properties": {
+              "filename": "models/environment/background-building-right.glb"
+            }
+          }
+        },
+        "children": []
       },
       {
         "id": "stage-player-collider",
@@ -1219,16 +5004,6 @@
                 -0.9,
                 0.85,
                 -0.35
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
@@ -1255,7 +5030,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-14"
+              "materialId": "invisible"
             }
           },
           "crashcatPhysics": {
@@ -1264,89 +5039,12 @@
               "type": "kinematicPosition",
               "colliders": "cylinder",
               "cylinderRadius": 0.32,
-              "cylinderHalfHeight": 0.85,
-              "sensor": false
+              "cylinderHalfHeight": 0.85
             }
           }
         },
         "children": []
       }
     ]
-  },
-  "materials": {
-    "material": {
-      "color": "#6d5b45",
-      "roughness": 0.96,
-      "metalness": 0
-    },
-    "material-2": {
-      "materialType": "basic",
-      "color": "#7890a0",
-      "side": "BackSide"
-    },
-    "material-3": {
-      "color": "#9b6a42",
-      "roughness": 0.9,
-      "metalness": 0
-    },
-    "material-4": {
-      "color": "#29556d",
-      "roughness": 0.82,
-      "metalness": 0
-    },
-    "material-5": {
-      "color": "#aab2b5",
-      "roughness": 0.55,
-      "metalness": 0.35,
-      "transparent": true,
-      "opacity": 0.58
-    },
-    "material-6": {
-      "color": "#8a3f25",
-      "roughness": 0.97,
-      "metalness": 0.15
-    },
-    "material-7": {
-      "color": "#51636a",
-      "roughness": 0.76,
-      "metalness": 0.38
-    },
-    "material-8": {
-      "color": "#1f2325",
-      "roughness": 0.92,
-      "metalness": 0
-    },
-    "material-9": {
-      "color": "#747168",
-      "roughness": 0.88,
-      "metalness": 0.25
-    },
-    "material-10": {
-      "color": "#34383b",
-      "roughness": 0.94,
-      "metalness": 0
-    },
-    "material-11": {
-      "color": "#a3a09a",
-      "roughness": 0.9,
-      "metalness": 0
-    },
-    "material-12": {
-      "color": "#8d8b86",
-      "roughness": 0.9,
-      "metalness": 0
-    },
-    "material-13": {
-      "color": "#d9c675",
-      "roughness": 0.82,
-      "metalness": 0
-    },
-    "material-14": {
-      "materialType": "basic",
-      "color": "#60a5fa",
-      "transparent": true,
-      "opacity": 0.08,
-      "depthWrite": false
-    }
   }
 }

@@ -1,6 +1,4 @@
-import { registerBuiltinComponents } from "./tools/prefabeditor/components";
-
-registerBuiltinComponents();
+import "./tools/prefabeditor/components";
 
 export { default as GameCanvas } from "./shared/GameCanvas";
 export type { GameCanvasProps } from "./shared/GameCanvas";
@@ -44,12 +42,25 @@ export type {
 	NodePointerEventPayload,
 } from "./tools/prefabeditor/GameEvents";
 
-export { registerComponent } from "./tools/prefabeditor/components/ComponentRegistry";
+export {
+	getAllComponentDefs,
+	getComponentDefaultProperties,
+	getComponentDef,
+	registerComponent,
+	resolveComponentProperties,
+} from "./tools/prefabeditor/components/ComponentRegistry";
 export type {
 	Component,
+	ComponentPropertyDefinition,
+	ComponentPropertyDefinitions,
+	ComponentPropertyOption,
+	ComponentPropertyType,
 	ComponentViewProps,
 	NodeInteractionHandlers,
 } from "./tools/prefabeditor/components/ComponentRegistry";
+
+export { registerRuntimeWrapper } from "./tools/prefabeditor/RuntimeWrapperRegistry";
+export type { RuntimeWrapper } from "./tools/prefabeditor/RuntimeWrapperRegistry";
 
 export {
 	denormalizePrefab,
@@ -90,6 +101,9 @@ export type {
 
 export { MaterialOverridesProvider, useMaterialOverrides } from "./tools/prefabeditor/components/MaterialComponent";
 export type { MaterialOverrides } from "./tools/prefabeditor/components/MaterialComponent";
+
+export { CAMERA_POSITION_ROUTE_HANDLE } from "./tools/prefabeditor/components/CameraComponent";
+export type { CameraPositionRoute } from "./tools/prefabeditor/components/CameraComponent";
 
 export {
 	float,

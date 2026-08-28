@@ -260,7 +260,7 @@ export function CrashcatRuntime({ debug = false, children }: { debug?: boolean; 
     return (
         <>
             {children}
-            {debugState && mode === PrefabEditorMode.Edit
+            {debugState
                 ? <primitive object={debugState.object3d} />
                 : null}
         </>

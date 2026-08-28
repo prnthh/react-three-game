@@ -1,6 +1,7 @@
 import { ModelPicker } from '../../assetviewer/page';
-import { useEffect, useMemo } from 'react';
-import { Mesh, Texture } from 'three';
+import { useEffect, useMemo, useRef } from 'react';
+import { Mesh, Texture, type Object3D } from 'three';
+import { useCompileObject } from '../../../shared/GameCanvas';
 import { assetRef, assetRefs } from './ComponentRegistry';
 import type { Component, ComponentEditorProps, ComponentViewProps } from './ComponentRegistry';
 import { BooleanField, FieldGroup, Label, ListEditor, NumberInput, SelectInput, StringField } from './Input';
@@ -30,7 +31,6 @@ type RepeatAxis = {
 
 type ModelProperties = {
     filename?: string;
-    instanced?: boolean;
     emitClickEvent?: boolean;
     clickEventName?: string;
     repeat?: boolean;
@@ -219,49 +219,34 @@ function ModelComponentEditor({ properties, node, update }: ComponentEditorProps
                 Decompose Model
             </button>
             <BooleanField
-                name="instanced"
-                label="Instanced"
+                name="emitClickEvent"
+                label="Emit Click Event"
                 values={properties}
                 onChange={update}
                 fallback={false}
             />
-            {!properties.instanced ? (
-                <>
-                    <BooleanField
-                        name="emitClickEvent"
-                        label="Emit Click Event"
-                        values={properties}
-                        onChange={update}
-                        fallback={false}
-                    />
-                    {properties.emitClickEvent ? (
-                        <StringField
-                            name="clickEventName"
-                            label="Click Event Name"
-                            values={properties}
-                            onChange={update}
-                            placeholder="node:click"
-                        />
-                    ) : null}
-                </>
+            {properties.emitClickEvent ? (
+                <StringField
+                    name="clickEventName"
+                    label="Click Event Name"
+                    values={properties}
+                    onChange={update}
+                    placeholder="node:click"
+                />
             ) : null}
-            {properties.instanced && (
-                <>
-                    <BooleanField
-                        name="repeat"
-                        label="Repeat"
-                        values={properties}
-                        onChange={update}
-                        fallback={false}
-                    />
-                    {properties.repeat && (
-                        <RepeatAxisEditor
-                            axes={repeatAxes}
-                            onChange={(nextAxes) => update({ repeatAxes: nextAxes })}
-                            positionSnap={positionSnap}
-                        />
-                    )}
-                </>
+            <BooleanField
+                name="repeat"
+                label="Repeat"
+                values={properties}
+                onChange={update}
+                fallback={false}
+            />
+            {properties.repeat && (
+                <RepeatAxisEditor
+                    axes={repeatAxes}
+                    onChange={(nextAxes) => update({ repeatAxes: nextAxes })}
+                    positionSnap={positionSnap}
+                />
             )}
         </FieldGroup>
     );
@@ -274,10 +259,11 @@ function ModelComponentView({ properties, children }: ComponentViewProps<ModelPr
     const interactive = Boolean(nodeInteractionHandlers);
     const resolvedFilename = properties.filename ? withBasePath(basePath, properties.filename) : properties.filename;
     const sourceModel = useModelAsset(resolvedFilename);
+    const modelRef = useRef<Object3D>(null);
 
     // Clone model once and set up shadows - memoized to avoid cloning on every render
     const clonedModel = useMemo(() => {
-        if (!sourceModel || !properties.filename || properties.instanced) return null;
+        if (!sourceModel || !properties.filename) return null;
         const clone = sourceModel.clone();
         clone.traverse((obj) => {
             if (obj instanceof Mesh) {
@@ -286,24 +272,32 @@ function ModelComponentView({ properties, children }: ComponentViewProps<ModelPr
             }
         });
         return clone;
-    }, [properties.filename, properties.instanced, sourceModel]);
+    }, [properties.filename, sourceModel]);
 
     useEffect(() => {
         if (!editMode && !interactive) return;
         scheduleObjectRaycast(clonedModel);
     }, [clonedModel, editMode, interactive]);
+    useCompileObject(modelRef, clonedModel);
 
     if (!clonedModel) return <>{children}</>;
 
-    return <primitive object={clonedModel}>{children}</primitive>;
+    return <primitive ref={modelRef} object={clonedModel}>{children}</primitive>;
 }
 
 const ModelComponent: Component<ModelProperties> = {
     name: 'Model',
+    renderWhenDisabled: true,
     disableSiblingComposition: 'object',
     Editor: ModelComponentEditor,
     View: ModelComponentView,
-    defaultProperties: {},
+    properties: {
+        filename: { type: 'string', default: '' },
+        emitClickEvent: { type: 'boolean', default: false },
+        clickEventName: { type: 'string', default: '' },
+        repeat: { type: 'boolean', default: false },
+        repeatAxes: { type: 'array', default: [{ axis: 'x', count: 1, offset: 1 }] },
+    },
     getAssetRefs: (properties) => assetRefs(assetRef('model', properties.filename)),
 };
 

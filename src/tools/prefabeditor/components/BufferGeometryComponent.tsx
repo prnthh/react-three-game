@@ -198,17 +198,18 @@ function BufferGeometryComponentView({ properties, children }: ComponentViewProp
 
 const BufferGeometryComponent: Component<BufferGeometryProperties> = {
     name: 'BufferGeometry',
+    renderWhenDisabled: true,
     attachment: true,
     disableSiblingComposition: 'geometry',
     Editor: BufferGeometryComponentEditor,
     View: BufferGeometryComponentView,
-    defaultProperties: {
-        positions: DEFAULT_TRIANGLE_POSITIONS,
-        indices: DEFAULT_TRIANGLE_INDICES,
-        normals: [],
-        uvs: DEFAULT_TRIANGLE_UVS,
-        groups: [],
-        computeVertexNormals: true,
+    properties: {
+        positions: { type: 'number[]', default: DEFAULT_TRIANGLE_POSITIONS },
+        indices: { type: 'number[]', default: DEFAULT_TRIANGLE_INDICES },
+        normals: { type: 'number[]', default: [] },
+        uvs: { type: 'number[]', default: DEFAULT_TRIANGLE_UVS },
+        groups: { type: 'array', default: [] },
+        computeVertexNormals: { type: 'boolean', default: true },
     },
 };
 

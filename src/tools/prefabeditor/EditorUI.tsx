@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { GameObject as GameObjectType } from "./types";
 import EditorTree from './EditorTree';
-import { canAddComponentToNode, getAllComponentDefs, getNextComponentKey } from './components/ComponentRegistry';
+import { canAddComponentToNode, getAllComponentDefs, getNextComponentKey, resolveComponentProperties } from './components/ComponentRegistry';
 import { createComponentData } from './prefab';
 import { useEditorRef } from './EditorContext';
 import { base, colors, inspector, componentCard } from './styles';
@@ -132,7 +132,7 @@ function NodeInspector({
                         {def.Editor && (
                             <def.Editor
                                 node={node}
-                                properties={comp.properties}
+								properties={resolveComponentProperties(def, comp.properties)}
                                 update={(patch) => updateNode(n => ({
                                     ...n,
                                     components: {

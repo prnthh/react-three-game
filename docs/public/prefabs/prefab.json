@@ -1,6 +1,17 @@
 {
   "id": "prefab-1",
   "name": "Test Prefab",
+  "materials": {
+    "material": {
+      "side": "BackSide",
+      "texture": "/textures/proto32/grey.png",
+      "repeat": true,
+      "repeatCount": [
+        20,
+        20
+      ]
+    }
+  },
   "root": {
     "id": "root",
     "components": {
@@ -11,16 +22,6 @@
             0,
             -1,
             0
-          ],
-          "rotation": [
-            0,
-            0,
-            0
-          ],
-          "scale": [
-            1,
-            1,
-            1
           ]
         }
       }
@@ -36,24 +37,13 @@
                 -0.002398446146583577,
                 0.22432376058196543,
                 -3.5750580772655187
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "model": {
             "type": "Model",
             "properties": {
-              "filename": "models/environment/servers.glb",
-              "instanced": false
+              "filename": "models/environment/servers.glb"
             }
           },
           "crashcatPhysics": {
@@ -76,27 +66,17 @@
                 0,
                 8.871986382193196,
                 0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
           "spotLight": {
             "type": "SpotLight",
             "properties": {
-              "color": "#ffffff",
               "intensity": 100
             }
           }
-        }
+        },
+        "children": []
       },
       {
         "id": "89f03c13-9569-48ae-b33e-ebf23f920d48",
@@ -109,16 +89,6 @@
                 0,
                 25,
                 0
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ],
-              "scale": [
-                1,
-                1,
-                1
               ]
             }
           },
@@ -129,7 +99,6 @@
           "geometry": {
             "type": "Geometry",
             "properties": {
-              "geometryType": "box",
               "args": [
                 50,
                 50,
@@ -150,25 +119,9 @@
               "colliders": "trimesh"
             }
           }
-        }
+        },
+        "children": []
       }
     ]
-  },
-  "materials": {
-    "material": {
-      "color": "#ffffff",
-      "wireframe": false,
-      "transparent": false,
-      "opacity": 1,
-      "metalness": 0,
-      "roughness": 1,
-      "side": "BackSide",
-      "texture": "/textures/proto32/grey.png",
-      "repeat": true,
-      "repeatCount": [
-        20,
-        20
-      ]
-    }
   }
 }

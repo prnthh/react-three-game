@@ -176,9 +176,26 @@ function SpotLightView({ properties, children }: ComponentViewProps<SpotLightPro
 
 const SpotLightComponent: Component<SpotLightProperties> = {
     name: 'SpotLight',
+    renderWhenDisabled: true,
     Editor: SpotLightComponentEditor,
     View: SpotLightView,
-    defaultProperties: {},
+    properties: {
+        color: { type: 'color', default: spotLightDefaults.color },
+        intensity: { default: spotLightDefaults.intensity, min: 0, step: 0.1 },
+        angle: { default: spotLightDefaults.angle, min: 0, max: Math.PI / 2, step: 0.05 },
+        penumbra: { default: spotLightDefaults.penumbra, min: 0, max: 1, step: 0.05 },
+        distance: { default: spotLightDefaults.distance, min: 0, step: 1 },
+        decay: { default: spotLightDefaults.decay, min: 0, step: 0.1 },
+        castShadow: { type: 'boolean', default: spotLightDefaults.castShadow },
+        shadowMapSize: { default: spotLightDefaults.shadowMapSize, min: MIN_SHADOW_MAP_SIZE, max: MAX_SHADOW_MAP_SIZE, step: 128 },
+        shadowBias: { default: spotLightDefaults.shadowBias, min: -1, max: 1 },
+        shadowNormalBias: { default: spotLightDefaults.shadowNormalBias, min: -1, max: 1 },
+        shadowAutoUpdate: { type: 'boolean', default: spotLightDefaults.shadowAutoUpdate },
+        shadowCameraNear: { default: spotLightDefaults.shadowCameraNear, min: 0.001, step: 0.1 },
+        shadowCameraFar: { default: spotLightDefaults.shadowCameraFar, min: 0.1, step: 1 },
+        targetOffset: { type: 'vector3', default: spotLightDefaults.targetOffset },
+        map: { type: 'string', default: spotLightDefaults.map },
+    },
     getAssetRefs: (properties) => assetRefs(assetRef('texture', properties.map)),
 };
 

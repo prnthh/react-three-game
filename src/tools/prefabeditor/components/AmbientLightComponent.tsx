@@ -33,9 +33,13 @@ function AmbientLightComponentView({ properties, children }: ComponentViewProps<
 
 const AmbientLightComponent: Component<AmbientLightProperties> = {
     name: 'AmbientLight',
+    renderWhenDisabled: true,
     Editor: AmbientLightComponentEditor,
     View: AmbientLightComponentView,
-    defaultProperties: {},
+    properties: {
+        color: { type: 'color', default: ambientLightDefaults.color },
+        intensity: { default: ambientLightDefaults.intensity, min: 0, step: 0.1 },
+    },
 };
 
 export default AmbientLightComponent;

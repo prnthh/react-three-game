@@ -1,7 +1,4 @@
-import { registerBuiltinComponentEditors } from "./tools/prefabeditor/components";
 import "./index";
-
-registerBuiltinComponentEditors();
 
 export type { ComponentEditorProps } from "./tools/prefabeditor/components/ComponentRegistry";
 

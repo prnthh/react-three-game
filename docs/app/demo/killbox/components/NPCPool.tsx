@@ -91,18 +91,22 @@ const AXIS_X = new Vector3(1, 0, 0);
 const AXIS_Y = new Vector3(0, 1, 0);
 const AXIS_Z = new Vector3(0, 0, 1);
 
-const DEFAULT_NPCS: NPCData[] = [
-    { id: "zombie-1", position: [-15, -4, -7] },
-    { id: "zombie-2", position: [-8, -4, -17] },
-    { id: "zombie-3", position: [2, -4, -25] },
-    { id: "zombie-4", position: [12, -4, -14] },
-    { id: "zombie-5", position: [18, -4, -3] },
-    { id: "zombie-6", position: [16, -4, 12] },
-    { id: "zombie-7", position: [7, -4, 22] },
-    { id: "zombie-8", position: [-4, -4, 26] },
-    { id: "zombie-9", position: [-15, -4, 17] },
-    { id: "zombie-10", position: [-21, -4, 5] },
+const DEFAULT_NPC_LAYOUT = [
+    { id: "zombie-1", x: -15, z: -7 },
+    { id: "zombie-2", x: -8, z: -17 },
+    { id: "zombie-3", x: 2, z: -25 },
+    { id: "zombie-4", x: 12, z: -14 },
+    { id: "zombie-5", x: 18, z: -3 },
+    { id: "zombie-6", x: 16, z: 12 },
+    { id: "zombie-7", x: 7, z: 22 },
+    { id: "zombie-8", x: -4, z: 26 },
+    { id: "zombie-9", x: -15, z: 17 },
+    { id: "zombie-10", x: -21, z: 5 },
 ];
+
+function createDefaultNPCs(spawnHeight: number): NPCData[] {
+    return DEFAULT_NPC_LAYOUT.map(({ id, x, z }) => ({ id, position: [x, spawnHeight, z] }));
+}
 
 export type NPCBodyPart = "head" | "torso" | "hips"
     | "leftUpperArm" | "leftLowerArm" | "rightUpperArm" | "rightLowerArm"
@@ -213,6 +217,7 @@ export type NPCPoolRef = {
 type NPCPoolProps = {
     playerRef: RefObject<FirstPersonPlayerRef | null>;
     initialNPCs?: readonly NPCData[];
+    defaultSpawnHeight?: number;
     loadDistance?: number;
     unloadDistance?: number;
     debug?: boolean;
@@ -783,7 +788,8 @@ function NPCInstance({
 
 const NPCPool = forwardRef<NPCPoolRef, NPCPoolProps>(function NPCPool({
     playerRef,
-    initialNPCs = DEFAULT_NPCS,
+    initialNPCs,
+    defaultSpawnHeight = -4,
     loadDistance = DEFAULT_LOAD_DISTANCE,
     unloadDistance = DEFAULT_UNLOAD_DISTANCE,
     debug = false,
@@ -791,7 +797,9 @@ const NPCPool = forwardRef<NPCPoolRef, NPCPoolProps>(function NPCPool({
     const { mode } = useScene();
     const api = useCrashcat();
     const { scene, animations } = useGLTF(MODEL_PATH) as LoadedCharacter;
-    const [records] = useState(() => new Map(initialNPCs.map(npc => [npc.id, createStoredNPC(npc)])));
+    const [records] = useState(() => new Map(
+        (initialNPCs ?? createDefaultNPCs(defaultSpawnHeight)).map(npc => [npc.id, createStoredNPC(npc)]),
+    ));
     const runtimesRef = useRef(new Map<string, NPCRuntime>());
     const [activeIds, setActiveIds] = useState<Set<string>>(() => new Set());
     const [, setPoolRevision] = useState(0);

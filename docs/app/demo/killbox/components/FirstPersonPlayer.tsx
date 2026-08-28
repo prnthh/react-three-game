@@ -82,6 +82,7 @@ export type FirstPersonPlayerProps = {
     halfHeightOfCylinder?: number;
     maxSpeed?: number;
     groundAccel?: number;
+    airAccel?: number;
     friction?: number;
     jumpSpeed?: number;
     footstepEventName?: string;
@@ -96,6 +97,7 @@ export type FirstPersonPlayerProps = {
     targetDistance?: number;
     npcDamage?: number;
     onAimTargetChange?: (canHit: boolean) => void;
+    pointerLockSelector?: string;
     children?: React.ReactNode;
 };
 
@@ -202,6 +204,7 @@ const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProp
     halfHeightOfCylinder = 0.45,
     maxSpeed = 7,
     groundAccel = 18,
+    airAccel = 6,
     friction = 10,
     jumpSpeed = 6.5,
     footstepEventName = "player:footstep",
@@ -216,6 +219,7 @@ const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProp
     targetDistance = DEFAULT_TARGET_DISTANCE,
     npcDamage = DEFAULT_NPC_DAMAGE,
     onAimTargetChange,
+    pointerLockSelector,
     children,
 }, ref) {
     const scene = useScene();
@@ -489,13 +493,12 @@ const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProp
                 lastSupportBodyIdRef.current = null;
             }
 
-            if (grounded) {
-                if (hasMovementInput) {
-                    moveVectorToward(planarVelocity, desiredPlanarSpeed, groundAccel * PLAYER_FIXED_STEP);
-                } else {
-                    planarVelocity.multiplyScalar(Math.exp(-friction * PLAYER_FIXED_STEP));
-                    if (planarVelocity.lengthSq() < 1e-6) planarVelocity.set(0, 0, 0);
-                }
+            if (hasMovementInput) {
+                const acceleration = grounded ? groundAccel : airAccel;
+                moveVectorToward(planarVelocity, desiredPlanarSpeed, acceleration * PLAYER_FIXED_STEP);
+            } else if (grounded) {
+                planarVelocity.multiplyScalar(Math.exp(-friction * PLAYER_FIXED_STEP));
+                if (planarVelocity.lengthSq() < 1e-6) planarVelocity.set(0, 0, 0);
             }
 
             const currentVelocityY = character.linearVelocity[1];
@@ -589,7 +592,7 @@ const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProp
             <group position={[0, cameraHeight, 0]}>
                 <group ref={cameraSwayRef}>
                     <PerspectiveCamera makeDefault fov={90} near={0.1} far={1000} />
-                    <PointerLockControls makeDefault />
+                    <PointerLockControls makeDefault selector={pointerLockSelector} />
                 </group>
 
                 <GrabArms />

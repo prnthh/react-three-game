@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { PrefabEditorMode, registerComponent, type Prefab } from "react-three-game";
 import { PrefabEditor, type PrefabEditorRef } from "react-three-game/editor";
 import { CrashcatPhysicsComponent, CrashcatRuntime } from "react-three-game/plugins/crashcat";
-import initialWorld from "../../../public/prefabs/game-level.json";
+import initialWorld from "../../../public/prefabs/street.json";
 
 import PrefabSelector from "../../components/PrefabSelector";
 import FirstPersonPlayer, { type FirstPersonPlayerRef } from "./components/FirstPersonPlayer";
@@ -23,12 +23,14 @@ const WEAPONS = [
     { name: "Sniper", range: 120 },
 ] as const;
 
+const GAME_CANVAS_ID = "killbox-game-canvas";
+
 export default function Home() {
     const editorRef = useRef<PrefabEditorRef>(null);
     const playerRef = useRef<FirstPersonPlayerRef>(null);
     const npcPoolRef = useRef<NPCPoolRef>(null);
     const [selectedPrefab, setSelectedPrefab] = useState<Prefab>(initialWorld as unknown as Prefab);
-    const [selectedPrefabName, setSelectedPrefabName] = useState("game-level");
+    const [selectedPrefabName, setSelectedPrefabName] = useState("street");
     const [selectedWeaponIndex, setSelectedWeaponIndex] = useState(0);
     const weaponWheelTimeRef = useRef(0);
     const crosshairRef = useRef<HTMLDivElement>(null);
@@ -70,18 +72,26 @@ export default function Home() {
                 basePath={BASE_PATH}
                 prefab={selectedPrefab}
                 mode={PrefabEditorMode.Play}
+                canvasProps={{ id: GAME_CANVAS_ID }}
             >
                 <CrashcatRuntime debug>
                     <FirstPersonPlayer
-                        key={selectedPrefabName}
+                        key={`player-${selectedPrefabName}`}
                         ref={playerRef}
                         spawnPosition={playerSpawn}
                         npcPoolRef={npcPoolRef}
                         targetDistance={selectedWeapon.range}
                         onAimTargetChange={updateCrosshair}
+                        pointerLockSelector={`#${GAME_CANVAS_ID}`}
                     />
-                    {selectedPrefabName === "game-level" && (
-                        <NPCPool ref={npcPoolRef} playerRef={playerRef} debug />
+                    {(selectedPrefabName === "street" || selectedPrefabName === "game-level") && (
+                        <NPCPool
+                            key={`npc-pool-${selectedPrefabName}`}
+                            ref={npcPoolRef}
+                            playerRef={playerRef}
+                            defaultSpawnHeight={selectedPrefabName === "game-level" ? -4 : 0}
+                            debug
+                        />
                     )}
                 </CrashcatRuntime>
             </PrefabEditor>

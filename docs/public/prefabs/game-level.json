@@ -11,10 +11,11 @@
       "name": "concrete",
       "color": "#626967",
       "texture": "/textures/floor/terrain/snow-512.jpg",
+      "normalMapTexture": "/textures/floor/terrain/snow-512-normal.png",
       "repeat": true,
       "repeatCount": [
         32,
-        32
+        64
       ],
       "roughness": 0.98,
       "metalness": 0.01
@@ -23,6 +24,7 @@
       "name": "concrete",
       "color": "#4a5051",
       "texture": "/textures/floor/terrain/snow-512.jpg",
+      "normalMapTexture": "/textures/floor/terrain/snow-512-normal.png",
       "repeat": true,
       "repeatCount": [
         32,
@@ -35,6 +37,7 @@
       "name": "concrete",
       "color": "#505858",
       "texture": "/textures/floor/terrain/snow-512.jpg",
+      "normalMapTexture": "/textures/floor/terrain/snow-512-normal.png",
       "repeat": true,
       "repeatCount": [
         10,
@@ -46,6 +49,7 @@
       "name": "concrete",
       "color": "#767d7b",
       "texture": "/textures/floor/terrain/snow-512.jpg",
+      "normalMapTexture": "/textures/floor/terrain/snow-512-normal.png",
       "repeat": true,
       "repeatCount": [
         2,
@@ -57,6 +61,7 @@
       "name": "concrete",
       "color": "#767d7b",
       "texture": "/textures/floor/terrain/snow-512.jpg",
+      "normalMapTexture": "/textures/floor/terrain/snow-512-normal.png",
       "repeat": true,
       "repeatCount": [
         28,
@@ -68,6 +73,7 @@
       "name": "concrete",
       "color": "#626867",
       "texture": "/textures/floor/terrain/snow-512.jpg",
+      "normalMapTexture": "/textures/floor/terrain/snow-512-normal.png",
       "repeat": true,
       "repeatCount": [
         4,
@@ -79,6 +85,7 @@
       "name": "concrete",
       "color": "#4b5253",
       "texture": "/textures/floor/terrain/snow-512.jpg",
+      "normalMapTexture": "/textures/floor/terrain/snow-512-normal.png",
       "repeat": true,
       "repeatCount": [
         4,
@@ -94,27 +101,17 @@
       "magFilter": "NearestFilter",
       "roughness": 0.86
     },
-    "ground-joint": {
-      "name": "default",
-      "color": "#252b2c",
-      "roughness": 1
-    },
     "ground-patch": {
       "name": "concrete",
       "color": "#747b79",
       "texture": "/textures/floor/terrain/snow-512.jpg",
+      "normalMapTexture": "/textures/floor/terrain/snow-512-normal.png",
       "repeat": true,
       "repeatCount": [
         4,
         3
       ],
       "roughness": 0.99
-    },
-    "ground-drain": {
-      "name": "metal",
-      "color": "#252c2e",
-      "roughness": 0.72,
-      "metalness": 0.42
     }
   },
   "root": {
@@ -221,14 +218,10 @@
       },
       {
         "id": "brutalist-static-geometry",
-        "name": "static geometry (merged)",
+        "name": "static geometry",
         "components": {
           "transform": {
             "type": "Transform",
-            "properties": {}
-          },
-          "mergedMesh": {
-            "type": "MergedMesh",
             "properties": {}
           }
         },
@@ -242,7 +235,7 @@
                   "position": [
                     0,
                     -0.5,
-                    0
+                    -80
                   ]
                 }
               },
@@ -256,7 +249,7 @@
                   "args": [
                     160,
                     1,
-                    160
+                    320
                   ]
                 }
               },
@@ -284,7 +277,7 @@
                   "position": [
                     0,
                     5,
-                    -80
+                    -240
                   ]
                 }
               },
@@ -368,7 +361,7 @@
                   "position": [
                     -80,
                     5,
-                    0
+                    -80
                   ]
                 }
               },
@@ -382,7 +375,7 @@
                   "args": [
                     2,
                     11,
-                    160
+                    320
                   ]
                 }
               },
@@ -410,7 +403,7 @@
                   "position": [
                     80,
                     5,
-                    0
+                    -80
                   ]
                 }
               },
@@ -424,7 +417,7 @@
                   "args": [
                     2,
                     11,
-                    160
+                    320
                   ]
                 }
               },
@@ -494,7 +487,7 @@
                   "position": [
                     0,
                     0.02,
-                    0
+                    -80
                   ]
                 }
               },
@@ -508,7 +501,7 @@
                   "args": [
                     7,
                     0.08,
-                    112
+                    272
                   ]
                 }
               },
@@ -864,1410 +857,6 @@
             }
           },
           {
-            "id": "ground-detail-plaza-joint-x--60",
-            "name": "poured concrete plaza expansion joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    -60,
-                    0.012,
-                    0
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.1,
-                    0.022,
-                    158
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-plaza-joint-z--60",
-            "name": "poured concrete plaza expansion joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    0,
-                    0.012,
-                    -60
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    158,
-                    0.022,
-                    0.1
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-plaza-joint-x--40",
-            "name": "poured concrete plaza expansion joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    -40,
-                    0.012,
-                    0
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.1,
-                    0.022,
-                    158
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-plaza-joint-z--40",
-            "name": "poured concrete plaza expansion joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    0,
-                    0.012,
-                    -40
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    158,
-                    0.022,
-                    0.1
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-plaza-joint-x--20",
-            "name": "poured concrete plaza expansion joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    -20,
-                    0.012,
-                    0
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.1,
-                    0.022,
-                    158
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-plaza-joint-z--20",
-            "name": "poured concrete plaza expansion joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    0,
-                    0.012,
-                    -20
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    158,
-                    0.022,
-                    0.1
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-plaza-joint-x-20",
-            "name": "poured concrete plaza expansion joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    20,
-                    0.012,
-                    0
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.1,
-                    0.022,
-                    158
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-plaza-joint-z-20",
-            "name": "poured concrete plaza expansion joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    0,
-                    0.012,
-                    20
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    158,
-                    0.022,
-                    0.1
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-plaza-joint-x-40",
-            "name": "poured concrete plaza expansion joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    40,
-                    0.012,
-                    0
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.1,
-                    0.022,
-                    158
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-plaza-joint-z-40",
-            "name": "poured concrete plaza expansion joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    0,
-                    0.012,
-                    40
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    158,
-                    0.022,
-                    0.1
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-plaza-joint-x-60",
-            "name": "poured concrete plaza expansion joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    60,
-                    0.012,
-                    0
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.1,
-                    0.022,
-                    158
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-plaza-joint-z-60",
-            "name": "poured concrete plaza expansion joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    0,
-                    0.012,
-                    60
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    158,
-                    0.022,
-                    0.1
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-spine-joint-ns--48",
-            "name": "north-south processional slab joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    0,
-                    0.067,
-                    -48
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    7.05,
-                    0.014,
-                    0.09
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-spine-joint-ew--48",
-            "name": "east-west processional slab joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    -48,
-                    0.087,
-                    0
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.09,
-                    0.014,
-                    7.05
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-spine-joint-ns--36",
-            "name": "north-south processional slab joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    0,
-                    0.067,
-                    -36
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    7.05,
-                    0.014,
-                    0.09
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-spine-joint-ew--36",
-            "name": "east-west processional slab joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    -36,
-                    0.087,
-                    0
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.09,
-                    0.014,
-                    7.05
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-spine-joint-ns--24",
-            "name": "north-south processional slab joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    0,
-                    0.067,
-                    -24
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    7.05,
-                    0.014,
-                    0.09
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-spine-joint-ew--24",
-            "name": "east-west processional slab joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    -24,
-                    0.087,
-                    0
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.09,
-                    0.014,
-                    7.05
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-spine-joint-ns--12",
-            "name": "north-south processional slab joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    0,
-                    0.067,
-                    -12
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    7.05,
-                    0.014,
-                    0.09
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-spine-joint-ew--12",
-            "name": "east-west processional slab joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    -12,
-                    0.087,
-                    0
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.09,
-                    0.014,
-                    7.05
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-spine-joint-ns-12",
-            "name": "north-south processional slab joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    0,
-                    0.067,
-                    12
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    7.05,
-                    0.014,
-                    0.09
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-spine-joint-ew-12",
-            "name": "east-west processional slab joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    12,
-                    0.087,
-                    0
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.09,
-                    0.014,
-                    7.05
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-spine-joint-ns-24",
-            "name": "north-south processional slab joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    0,
-                    0.067,
-                    24
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    7.05,
-                    0.014,
-                    0.09
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-spine-joint-ew-24",
-            "name": "east-west processional slab joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    24,
-                    0.087,
-                    0
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.09,
-                    0.014,
-                    7.05
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-spine-joint-ns-36",
-            "name": "north-south processional slab joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    0,
-                    0.067,
-                    36
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    7.05,
-                    0.014,
-                    0.09
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-spine-joint-ew-36",
-            "name": "east-west processional slab joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    36,
-                    0.087,
-                    0
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.09,
-                    0.014,
-                    7.05
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-spine-joint-ns-48",
-            "name": "north-south processional slab joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    0,
-                    0.067,
-                    48
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    7.05,
-                    0.014,
-                    0.09
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-spine-joint-ew-48",
-            "name": "east-west processional slab joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    48,
-                    0.087,
-                    0
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.09,
-                    0.014,
-                    7.05
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-drain-west",
-            "name": "west linear drainage channel",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    -4.08,
-                    0.045,
-                    0
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.28,
-                    0.045,
-                    112
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-drain"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-drain-east",
-            "name": "east linear drainage channel",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    4.08,
-                    0.045,
-                    0
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.28,
-                    0.045,
-                    112
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-drain"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-drain-north",
-            "name": "north linear drainage channel",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    0,
-                    0.065,
-                    -4.08
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    112,
-                    0.045,
-                    0.28
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-drain"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-drain-south",
-            "name": "south linear drainage channel",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    0,
-                    0.065,
-                    4.08
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    112,
-                    0.045,
-                    0.28
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-drain"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-courtyard-joint-n",
-            "name": "sunken courtyard north isolation joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    0,
-                    0.04,
-                    -17.1
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    34.4,
-                    0.035,
-                    0.16
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-courtyard-joint-s",
-            "name": "sunken courtyard south isolation joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    0,
-                    0.04,
-                    17.1
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    34.4,
-                    0.035,
-                    0.16
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-courtyard-joint-w",
-            "name": "sunken courtyard west isolation joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    -17.1,
-                    0.04,
-                    0
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.16,
-                    0.035,
-                    34.4
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-courtyard-joint-e",
-            "name": "sunken courtyard east isolation joint",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    17.1,
-                    0.04,
-                    0
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.16,
-                    0.035,
-                    34.4
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
             "id": "ground-detail-repair-patch-0",
             "name": "flush concrete repair pour",
             "components": {
@@ -2284,8 +873,7 @@
               "mesh": {
                 "type": "Mesh",
                 "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
+                  "castShadow": false
                 }
               },
               "geometry": {
@@ -2323,8 +911,7 @@
               "mesh": {
                 "type": "Mesh",
                 "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
+                  "castShadow": false
                 }
               },
               "geometry": {
@@ -2362,8 +949,7 @@
               "mesh": {
                 "type": "Mesh",
                 "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
+                  "castShadow": false
                 }
               },
               "geometry": {
@@ -2401,8 +987,7 @@
               "mesh": {
                 "type": "Mesh",
                 "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
+                  "castShadow": false
                 }
               },
               "geometry": {
@@ -2419,1098 +1004,6 @@
                 "type": "Material",
                 "properties": {
                   "materialId": "ground-patch"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-service-grate-0",
-            "name": "recessed rectangular service grate",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    -11,
-                    0.035,
-                    27
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    2.5,
-                    0.035,
-                    1.15
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-drain"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-service-grate-0-slot-0",
-            "name": "service grate drainage slot",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    -11.9,
-                    0.057,
-                    27
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.1,
-                    0.012,
-                    0.92
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-service-grate-0-slot-1",
-            "name": "service grate drainage slot",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    -11.540000000000001,
-                    0.057,
-                    27
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.1,
-                    0.012,
-                    0.92
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-service-grate-0-slot-2",
-            "name": "service grate drainage slot",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    -11.18,
-                    0.057,
-                    27
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.1,
-                    0.012,
-                    0.92
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-service-grate-0-slot-3",
-            "name": "service grate drainage slot",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    -10.82,
-                    0.057,
-                    27
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.1,
-                    0.012,
-                    0.92
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-service-grate-0-slot-4",
-            "name": "service grate drainage slot",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    -10.46,
-                    0.057,
-                    27
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.1,
-                    0.012,
-                    0.92
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-service-grate-0-slot-5",
-            "name": "service grate drainage slot",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    -10.100000000000001,
-                    0.057,
-                    27
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.1,
-                    0.012,
-                    0.92
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-service-grate-1",
-            "name": "recessed rectangular service grate",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    13,
-                    0.035,
-                    -25
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    2.5,
-                    0.035,
-                    1.15
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-drain"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-service-grate-1-slot-0",
-            "name": "service grate drainage slot",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    12.1,
-                    0.057,
-                    -25
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.1,
-                    0.012,
-                    0.92
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-service-grate-1-slot-1",
-            "name": "service grate drainage slot",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    12.459999999999999,
-                    0.057,
-                    -25
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.1,
-                    0.012,
-                    0.92
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-service-grate-1-slot-2",
-            "name": "service grate drainage slot",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    12.82,
-                    0.057,
-                    -25
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.1,
-                    0.012,
-                    0.92
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-service-grate-1-slot-3",
-            "name": "service grate drainage slot",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    13.18,
-                    0.057,
-                    -25
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.1,
-                    0.012,
-                    0.92
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-service-grate-1-slot-4",
-            "name": "service grate drainage slot",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    13.54,
-                    0.057,
-                    -25
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.1,
-                    0.012,
-                    0.92
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-service-grate-1-slot-5",
-            "name": "service grate drainage slot",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    13.899999999999999,
-                    0.057,
-                    -25
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.1,
-                    0.012,
-                    0.92
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-service-grate-2",
-            "name": "recessed rectangular service grate",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    29,
-                    0.035,
-                    10
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    2.5,
-                    0.035,
-                    1.15
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-drain"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-service-grate-2-slot-0",
-            "name": "service grate drainage slot",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    28.1,
-                    0.057,
-                    10
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.1,
-                    0.012,
-                    0.92
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-service-grate-2-slot-1",
-            "name": "service grate drainage slot",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    28.46,
-                    0.057,
-                    10
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.1,
-                    0.012,
-                    0.92
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-service-grate-2-slot-2",
-            "name": "service grate drainage slot",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    28.82,
-                    0.057,
-                    10
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.1,
-                    0.012,
-                    0.92
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-service-grate-2-slot-3",
-            "name": "service grate drainage slot",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    29.18,
-                    0.057,
-                    10
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.1,
-                    0.012,
-                    0.92
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-service-grate-2-slot-4",
-            "name": "service grate drainage slot",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    29.540000000000003,
-                    0.057,
-                    10
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.1,
-                    0.012,
-                    0.92
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-service-grate-2-slot-5",
-            "name": "service grate drainage slot",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    29.900000000000002,
-                    0.057,
-                    10
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.1,
-                    0.012,
-                    0.92
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-service-grate-3",
-            "name": "recessed rectangular service grate",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    -31,
-                    0.035,
-                    -30
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    2.5,
-                    0.035,
-                    1.15
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-drain"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-service-grate-3-slot-0",
-            "name": "service grate drainage slot",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    -31.9,
-                    0.057,
-                    -30
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.1,
-                    0.012,
-                    0.92
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-service-grate-3-slot-1",
-            "name": "service grate drainage slot",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    -31.54,
-                    0.057,
-                    -30
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.1,
-                    0.012,
-                    0.92
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-service-grate-3-slot-2",
-            "name": "service grate drainage slot",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    -31.18,
-                    0.057,
-                    -30
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.1,
-                    0.012,
-                    0.92
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-service-grate-3-slot-3",
-            "name": "service grate drainage slot",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    -30.82,
-                    0.057,
-                    -30
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.1,
-                    0.012,
-                    0.92
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-service-grate-3-slot-4",
-            "name": "service grate drainage slot",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    -30.459999999999997,
-                    0.057,
-                    -30
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.1,
-                    0.012,
-                    0.92
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
-                }
-              }
-            }
-          },
-          {
-            "id": "ground-detail-service-grate-3-slot-5",
-            "name": "service grate drainage slot",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    -30.099999999999998,
-                    0.057,
-                    -30
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "args": [
-                    0.1,
-                    0.012,
-                    0.92
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "ground-joint"
                 }
               }
             }
@@ -3550,9 +1043,9 @@
             "type": "Transform",
             "properties": {
               "position": [
-                23.5,
+                34,
                 0,
-                -0.5
+                0
               ],
               "rotation": [
                 0,
@@ -3607,9 +1100,9 @@
             "type": "Transform",
             "properties": {
               "position": [
-                -19.5,
+                -0.5,
                 0,
-                -33
+                -145.5
               ],
               "scale": [
                 1.3,
@@ -3633,14 +1126,9 @@
             "type": "Transform",
             "properties": {
               "position": [
-                42.5,
+                22.5,
                 0,
-                -43
-              ],
-              "rotation": [
-                0,
-                -0.17999999999999988,
-                0
+                -72
               ],
               "scale": [
                 1.1,
@@ -3721,9 +1209,9 @@
             "type": "Transform",
             "properties": {
               "position": [
-                -21.5,
+                -34,
                 0,
-                -1
+                -1.5
               ],
               "scale": [
                 1.1,
@@ -3772,46 +1260,15 @@
         }
       },
       {
-        "id": "cyl-tower-nw-placement",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -62,
-                0,
-                -62
-              ],
-              "scale": [
-                1.15,
-                1,
-                1.15
-              ]
-            }
-          },
-          "prefab": {
-            "type": "PrefabRef",
-            "properties": {
-              "url": "/prefabs/brutalist-cylinder-tower.json"
-            }
-          }
-        }
-      },
-      {
         "id": "cyl-tower-n-placement",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
-                -0.5,
+                -21.5,
                 0,
-                -64
-              ],
-              "rotation": [
-                0,
-                0.20000000000000004,
-                0
+                -69
               ],
               "scale": [
                 1.35,
@@ -3835,13 +1292,13 @@
             "type": "Transform",
             "properties": {
               "position": [
-                65.5,
+                63,
                 0,
-                -28.5
+                -45
               ],
               "rotation": [
                 0,
-                -0.3,
+                -1.5707963267948966,
                 0
               ],
               "scale": [
@@ -3897,19 +1354,19 @@
             "type": "Transform",
             "properties": {
               "position": [
-                22.5,
+                50,
                 0,
-                -65
+                -73
               ],
               "rotation": [
                 0,
-                -0.5999999999999999,
+                -0.7853981633974485,
                 0
               ],
               "scale": [
-                1.2,
+                1.2000000000000006,
                 1.1,
-                1.2
+                1.2000000000000006
               ]
             }
           },
@@ -4042,9 +1499,14 @@
             "type": "Transform",
             "properties": {
               "position": [
-                44,
                 0,
-                -2
+                -0.5,
+                -6.5
+              ],
+              "rotation": [
+                0,
+                1.5707963267948966,
+                0
               ]
             }
           },
@@ -4104,9 +1566,9 @@
             "type": "Transform",
             "properties": {
               "position": [
-                -25,
-                13.5,
-                -36.5
+                0,
+                41.5,
+                -74
               ]
             }
           },
@@ -4119,20 +1581,24 @@
         }
       },
       {
-        "id": "upper-skywalk",
-        "name": "upper-skywalk",
+        "id": "background-cube-west",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
-                12,
-                30.5,
-                -38.5
+                -49,
+                0,
+                -112
+              ],
+              "rotation": [
+                0,
+                0.12,
+                0
               ],
               "scale": [
-                1.25,
-                1,
+                1.2,
+                1.75,
                 1
               ]
             }
@@ -4140,7 +1606,162 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "url": "/prefabs/brutalist-skywalk.json"
+              "url": "/prefabs/brutalist-cube-building.json"
+            }
+          }
+        }
+      },
+      {
+        "id": "background-cylinder-center",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                50.5,
+                0,
+                -121
+              ],
+              "rotation": [
+                0,
+                -0.25,
+                0
+              ],
+              "scale": [
+                1.4,
+                1.9,
+                1.4
+              ]
+            }
+          },
+          "prefab": {
+            "type": "PrefabRef",
+            "properties": {
+              "url": "/prefabs/brutalist-cylinder-tower.json"
+            }
+          }
+        }
+      },
+      {
+        "id": "background-cube-east",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                25.5,
+                0,
+                -202.5
+              ],
+              "rotation": [
+                0,
+                -0.14000000000000004,
+                0
+              ],
+              "scale": [
+                1.15,
+                1.55,
+                0.9999999999999998
+              ]
+            }
+          },
+          "prefab": {
+            "type": "PrefabRef",
+            "properties": {
+              "url": "/prefabs/brutalist-cube-building.json"
+            }
+          }
+        }
+      },
+      {
+        "id": "horizon-cylinder-west",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -60.5,
+                0,
+                -76
+              ],
+              "rotation": [
+                0,
+                0.35,
+                0
+              ],
+              "scale": [
+                1.2,
+                1.6,
+                1.2
+              ]
+            }
+          },
+          "prefab": {
+            "type": "PrefabRef",
+            "properties": {
+              "url": "/prefabs/brutalist-cylinder-tower.json"
+            }
+          }
+        }
+      },
+      {
+        "id": "horizon-cube-center",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -21.5,
+                0,
+                -205
+              ],
+              "rotation": [
+                0,
+                0.07999999999999995,
+                0
+              ],
+              "scale": [
+                1.4000000000000006,
+                2.35,
+                1.1
+              ]
+            }
+          },
+          "prefab": {
+            "type": "PrefabRef",
+            "properties": {
+              "url": "/prefabs/brutalist-cube-building.json"
+            }
+          }
+        }
+      },
+      {
+        "id": "horizon-cylinder-east",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                52,
+                0,
+                -188
+              ],
+              "rotation": [
+                0,
+                -0.45,
+                0
+              ],
+              "scale": [
+                1.25,
+                1.7,
+                1.25
+              ]
+            }
+          },
+          "prefab": {
+            "type": "PrefabRef",
+            "properties": {
+              "url": "/prefabs/brutalist-cylinder-tower.json"
             }
           }
         }

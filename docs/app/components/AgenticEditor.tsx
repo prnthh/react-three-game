@@ -465,9 +465,6 @@ Geometry args:
 Model:
 {"model":{"type":"Model","properties":{"filename":"/models/environment/tree.glb"}}}
 
-Merge all compatible descendant meshes under one parent:
-{"mergedMesh":{"type":"MergedMesh","properties":{"enabled":true,"castShadow":true,"receiveShadow":true}}}
-
 Camera:
 {"camera":{"type":"Camera","properties":{"projection":"perspective","fov":50,"near":0.1,"far":1000,"lockX":false,"lockY":false,"lockZ":false}}}
 

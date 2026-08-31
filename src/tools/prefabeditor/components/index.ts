@@ -8,7 +8,6 @@ import GeometryComponent from "./GeometryComponent";
 import InteriorMapComponent from "./InteriorMapComponent";
 import MaterialComponent from "./MaterialComponent";
 import MeshComponent from "./MeshComponent";
-import MergedMeshComponent from "./MergedMeshComponent";
 import ModelComponent from "./ModelComponent";
 import PointLightComponent from "./PointLightComponent";
 import PrefabRefComponent from "./PrefabRefComponent";
@@ -25,7 +24,6 @@ import type { Component } from "./ComponentRegistry";
 const builtInComponents: Component<any>[] = [
 	TransformComponent,
 	MeshComponent,
-	MergedMeshComponent,
 
 	// Geometry components
 	GeometryComponent,

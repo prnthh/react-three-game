@@ -1,4 +1,4 @@
-import { acceleratedRaycast, CENTER, MeshBVH } from 'three-mesh-bvh';
+import { acceleratedRaycast, MeshBVH } from 'three-mesh-bvh';
 import {
     BufferAttribute,
     BufferGeometry,
@@ -8,7 +8,7 @@ import {
     type Object3D,
 } from 'three';
 
-const MIN_BVH_VERTICES = 96;
+const MIN_BVH_TRIANGLES = 32;
 let installed = false;
 let queueScheduled = false;
 
@@ -36,11 +36,10 @@ function getAttributeVersion(attribute: BufferAttribute | InterleavedBufferAttri
 
 function readRevision(geometry: AnyBufferGeometry): GeometryRevision | null {
     const position = geometry.getAttribute('position');
-    if (
-        (!(position instanceof BufferAttribute) && !(position instanceof InterleavedBufferAttribute))
-        || position.count < MIN_BVH_VERTICES
-    ) return null;
+    if (!(position instanceof BufferAttribute) && !(position instanceof InterleavedBufferAttribute)) return null;
     const index = geometry.getIndex();
+    const triangleCount = Math.floor((index?.count ?? position.count) / 3);
+    if (triangleCount < MIN_BVH_TRIANGLES) return null;
     return {
         position,
         positionVersion: getAttributeVersion(position),
@@ -75,9 +74,9 @@ function flushGeometryQueue(deadline?: IdleDeadline) {
         }
 
         geometry.boundsTree = new MeshBVH(geometry, {
+            // Models and repeated instances commonly share geometry. Keep its
+            // index stable instead of letting the BVH reorder it in place.
             indirect: true,
-            strategy: CENTER,
-            targetLeafSize: 12,
         }) as unknown as NonNullable<typeof geometry.boundsTree>;
         builtRevisions.set(geometry, currentRevision);
         processed += 1;

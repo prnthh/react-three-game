@@ -1,6 +1,6 @@
-import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from 'react';
 import { Color, FrontSide, Vector3, type Texture } from 'three';
-import { MeshBasicNodeMaterial } from 'three/webgpu';
+import { MeshStandardNodeMaterial } from 'three/webgpu';
 import {
     cameraPosition,
     min,
@@ -30,8 +30,6 @@ export type InteriorMapProperties = {
 };
 
 const DEFAULT_TEXTURE = '/textures/interiors/cubemap-faces2.webp';
-export const BLACK_LOADING_MATERIAL = new MeshBasicNodeMaterial({ color: '#000000', side: FrontSide, toneMapped: false });
-BLACK_LOADING_MATERIAL.name = 'Loading';
 
 /**
  * Builds a camera-correct interior cube ray in object space. The atlas layout is:
@@ -90,10 +88,10 @@ export function createInteriorMapNode(
     return texture(atlas, cubeAtlasUv).rgb.mul(uniform(new Color(tint)));
 }
 
-type InteriorMapMaterial = MeshBasicNodeMaterial;
+type InteriorMapMaterial = MeshStandardNodeMaterial;
 const InteriorMapMaterialContext = createContext<Map<string, InteriorMapMaterial> | null>(null);
 
-/** Shares identical interior shaders across every nested prefab in one viewer tree. */
+/** Owns one live material per interior configuration for the whole viewer tree. */
 export function InteriorMapMaterialProvider({ children }: { children: ReactNode }) {
     const inherited = useContext(InteriorMapMaterialContext);
     const owned = useRef<Map<string, InteriorMapMaterial> | null>(null);
@@ -101,31 +99,39 @@ export function InteriorMapMaterialProvider({ children }: { children: ReactNode 
 
     useEffect(() => () => {
         owned.current?.forEach(material => material.dispose());
-    }, [inherited]);
+    }, []);
 
     if (inherited) return children;
     return <InteriorMapMaterialContext.Provider value={owned.current}>{children}</InteriorMapMaterialContext.Provider>;
 }
 
-function useInteriorMapMaterial(atlas: Texture | null, roomSize: [number, number, number], tint: string) {
+function useInteriorMapMaterial(atlas: Texture | null, texturePath: string, roomSize: [number, number, number], tint: string) {
     const materials = useContext(InteriorMapMaterialContext);
     if (!materials) throw new Error('InteriorMap must be used inside <PrefabRoot>');
     const width = Math.max(0.001, roomSize[0]);
     const height = Math.max(0.001, roomSize[1]);
     const depth = Math.max(0.001, roomSize[2]);
     const tintKey = useMemo(() => new Color(tint).getHexString(), [tint]);
-    const signature = atlas ? `${atlas.uuid}:${width}:${height}:${depth}:${tintKey}` : '';
-
-    return useMemo(() => {
-        if (!atlas) return BLACK_LOADING_MATERIAL;
+    const signature = `${texturePath}:${width}:${height}:${depth}:${tintKey}`;
+    const material = useMemo(() => {
         const existing = materials.get(signature);
         if (existing) return existing;
-        const value = new MeshBasicNodeMaterial({ side: FrontSide, toneMapped: true });
-        value.name = `InteriorMap:${signature}`;
-        value.colorNode = createInteriorMapNode(atlas, [width, height, depth], `#${tintKey}`);
+        const value = new MeshStandardNodeMaterial({ color: '#000000', side: FrontSide, toneMapped: false });
+        value.name = 'InteriorMap';
         materials.set(signature, value);
         return value;
-    }, [atlas, depth, height, materials, signature, tintKey, width]);
+    }, [materials, signature]);
+
+    useLayoutEffect(() => {
+        if (!atlas || material.userData.interiorAtlas === atlas.uuid) return;
+        material.color.set('#ffffff');
+        material.colorNode = createInteriorMapNode(atlas, [width, height, depth], `#${tintKey}`);
+        material.toneMapped = true;
+        material.userData.interiorAtlas = atlas.uuid;
+        material.needsUpdate = true;
+    }, [atlas, depth, height, material, tintKey, width]);
+
+    return material;
 }
 
 function InteriorMapEditor({ properties, update }: ComponentEditorProps<InteriorMapProperties>) {
@@ -163,7 +169,7 @@ function InteriorMapView({ properties, children }: ComponentViewProps<InteriorMa
     const atlas = useTextureAsset(texturePath);
     const roomSize = properties.roomSize ?? [1, 1, 2.5];
     const tint = properties.color ?? '#ffffff';
-    const material = useInteriorMapMaterial(atlas, roomSize, tint);
+    const material = useInteriorMapMaterial(atlas, texturePath, roomSize, tint);
 
     return <>
         <primitive object={material} attach={properties.attach ?? 'material'} dispose={null} />

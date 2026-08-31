@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { SoundPicker } from '../../assetviewer/page';
 import { useAssetRuntime, useSoundAssetRevision } from '../assetRuntime';
 import { useNode } from '../SceneContext';
 import { gameEvents, type ContactEventPayload, type NodePointerEventPayload } from '../GameEvents';
@@ -371,17 +370,7 @@ const SoundComponent: Component<SoundProperties> = {
         minVolume: { default: 0.9 },
         maxVolume: { default: 1 },
     },
-    getAssetRefs: (properties) => {
-        const refs: { type: 'sound'; path: string }[] = [];
-        if (Array.isArray(properties.clips)) {
-            properties.clips.forEach((clip: unknown) => {
-                if (typeof clip === 'string' && clip.trim().length > 0) {
-                    refs.push({ type: 'sound', path: clip });
-                }
-            });
-        }
-        return refs;
-    },
 };
 
 export default SoundComponent;
+import { SoundPicker } from '../../assetviewer/page';

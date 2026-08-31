@@ -1,0 +1,25 @@
+{
+  "id": "killbox-player",
+  "name": "Killbox Player",
+  "root": {
+    "id": "player",
+    "name": "Player",
+    "components": {
+      "transform": {
+        "type": "Transform",
+        "properties": {}
+      },
+      "controller": {
+        "type": "KillboxPlayer",
+        "properties": {
+          "radius": 0.35,
+          "halfHeightOfCylinder": 0.45,
+          "maxSpeed": 7,
+          "jumpSpeed": 6.5,
+          "cameraHeight": 0.54
+        }
+      }
+    },
+    "children": []
+  }
+}

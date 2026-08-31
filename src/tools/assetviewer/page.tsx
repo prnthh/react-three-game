@@ -1,6 +1,6 @@
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, View, PerspectiveCamera } from "@react-three/drei";
-import { Suspense, useEffect, useLayoutEffect, useState, useRef } from "react";
+import { useEffect, useLayoutEffect, useState, useRef } from "react";
 import { createPortal } from 'react-dom';
 import { Material, Mesh, Texture, TextureLoader } from "three";
 import type { Object3D } from "three";
@@ -400,12 +400,10 @@ function ModelCard({
                 {isInView ? (
                     <View style={{ width: '100%', height: '100%' }}>
                         <PerspectiveCamera makeDefault position={[0, 1, 3]} fov={50} />
-                        <Suspense fallback={null}>
-                            <ambientLight intensity={1} />
-                            <pointLight position={[5, 5, 5]} intensity={0.5} />
-                            <ModelPreview url={fullPath} onError={() => setError(true)} />
-                            <OrbitControls enableZoom={false} />
-                        </Suspense>
+                        <ambientLight intensity={1} />
+                        <pointLight position={[5, 5, 5]} intensity={0.5} />
+                        <ModelPreview url={fullPath} onError={() => setError(true)} />
+                        <OrbitControls enableZoom={false} />
                     </View>
                 ) : null}
             </div>

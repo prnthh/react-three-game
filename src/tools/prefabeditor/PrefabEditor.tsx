@@ -1,7 +1,8 @@
 import { OrbitControls, TransformControls, useHelper } from "@react-three/drei";
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, forwardRef, useImperativeHandle } from "react";
-import { BoxHelper } from "three";
-import type { Object3D, Texture } from "three";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, forwardRef, useImperativeHandle } from "react";
+import { BoxHelper, Plane, Vector2, Vector3 } from "three";
+import type { Intersection, Object3D, Sprite, Texture } from "three";
+import type { RootState } from "@react-three/fiber";
 import { findComponentEntry } from "./types";
 import type { GameObject, Prefab } from "./types";
 import GameCanvas from "../../shared/GameCanvas";
@@ -16,11 +17,80 @@ import { base, toolbar } from "./styles";
 import { computeParentWorldMatrix, decompose, exportGLB as exportGLBFile, exportGLBData, focusCameraOnObject, isExternalPath, withBasePath } from "./utils";
 import type { ExportGLBOptions } from "./utils";
 import { loadDroppedAssets } from "../dragdrop";
+import { resolveManifestAssetPath } from "../dragdrop/modelLoader";
 import { createPrefabStore, type PrefabStoreState, PrefabStoreProvider } from "./prefabStore";
 import type { PrefabState } from "./prefab";
 import type { OrbitControls as OrbitControlsImpl, TransformControls as TransformControlsImpl } from 'three-stdlib';
 import { decomposeModelToPrefabNodes, hasCollisionMeshConventions } from "./modelPrefab";
 import { EditorContext, EditorRefContext, type PrefabEditorRef } from "./EditorContext";
+
+type Vec3 = [number, number, number];
+const DROP_POINTER = new Vector2();
+const DROP_GROUND = new Plane(new Vector3(0, 1, 0), 0);
+const DROP_INTERSECTIONS: Intersection<Object3D>[] = [];
+function loadModelManifest(basePath: string) {
+    const url = withBasePath(basePath, "/models/manifest.json");
+    return fetch(url)
+        .then(response => response.ok ? response.json() : [])
+        .then(data => Array.isArray(data) ? data.filter((path): path is string => typeof path === 'string') : [])
+        .catch(() => []);
+}
+
+function raycastDropPosition(event: DragEvent, state: RootState, target: Vector3) {
+    const bounds = state.gl.domElement.getBoundingClientRect();
+    DROP_POINTER.set(
+        ((event.clientX - bounds.left) / bounds.width) * 2 - 1,
+        -((event.clientY - bounds.top) / bounds.height) * 2 + 1,
+    );
+    state.raycaster.setFromCamera(DROP_POINTER, state.camera);
+    DROP_INTERSECTIONS.length = 0;
+    state.raycaster.intersectObject(state.scene, true, DROP_INTERSECTIONS);
+
+    for (let index = 0; index < DROP_INTERSECTIONS.length; index += 1) {
+        const intersection = DROP_INTERSECTIONS[index];
+        if (hasPrefabNodeAncestor(intersection.object)) {
+            target.copy(intersection.point);
+            return true;
+        }
+    }
+
+    return state.raycaster.ray.intersectPlane(DROP_GROUND, target) !== null;
+}
+
+function hasPrefabNodeAncestor(object: Object3D) {
+    let current: Object3D | null = object;
+    while (current) {
+        if (typeof current.userData.prefabNodeId === 'string') return true;
+        current = current.parent;
+    }
+    return false;
+}
+
+function offsetNodePosition(node: GameObject, offset: Vec3): GameObject {
+    const transformEntry = findComponentEntry(node, 'Transform');
+    const key = transformEntry?.[0] ?? 'transform';
+    const component = transformEntry?.[1] ?? { type: 'Transform', properties: {} };
+    const position = component.properties.position ?? [0, 0, 0];
+    return {
+        ...node,
+        components: {
+            ...node.components,
+            [key]: {
+                ...component,
+                properties: {
+                    ...component.properties,
+                    position: [position[0] + offset[0], position[1] + offset[1], position[2] + offset[2]],
+                },
+            },
+        },
+    };
+}
+
+function DropPreview({ previewRef }: { previewRef: React.RefObject<Sprite | null> }) {
+    return <sprite ref={previewRef} visible={false} scale={[0.75, 0.75, 0.75]} raycast={() => null}>
+        <spriteMaterial color="#48dff2" opacity={0.72} transparent depthTest={false} />
+    </sprite>;
+}
 
 function isObjectAttachedToRoot(root: Object3D | null | undefined, object: Object3D | null | undefined) {
     if (!root || !object) return false;
@@ -41,7 +111,9 @@ export function resolvePrefabAssetPath(basePath: string, file: string) {
 }
 
 export function getPrefabAssetRef(assetRef: string, folder: "models" | "textures" | "sound") {
-    return isExternalPath(assetRef) ? assetRef : `${folder}/${assetRef}`;
+    const normalized = assetRef.replace(/^\.\//, '').replace(/^\//, '');
+    if (isExternalPath(assetRef) || normalized.startsWith(`${folder}/`)) return assetRef;
+    return `${folder}/${assetRef}`;
 }
 
 function SelectionHelper({ object }: { object: Object3D | null }) {
@@ -101,9 +173,22 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
     const providedPrefabRef = useRef(prefab);
     const runtimeRef = useRef<AssetRuntime | null>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const canvasStateRef = useRef<RootState | null>(null);
+    const dropPreviewRef = useRef<Sprite | null>(null);
+    const modelManifestRef = useRef<string[]>([]);
+    const dropPositionRef = useRef(new Vector3());
+    const hasDropPositionRef = useRef(false);
     const controlsRef = useRef<OrbitControlsImpl | null>(null);
     const transformControlsRef = useRef<TransformControlsImpl | null>(null);
     const isEditMode = mode === PrefabEditorMode.Edit;
+
+    useEffect(() => {
+        let active = true;
+        void loadModelManifest(basePath).then(files => {
+            if (active) modelManifestRef.current = files;
+        });
+        return () => { active = false; };
+    }, [basePath]);
     const detachTransformControls = useCallback(() => {
         transformControlsRef.current?.detach();
     }, []);
@@ -112,7 +197,6 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
     const getNode = useCallback((nodeId: string) => prefabStore.getState().nodesById[nodeId] ?? null, [prefabStore]);
     const getRoot = useCallback(() => prefabRegistry.getObject(prefabStore.getState().rootId), [prefabRegistry, prefabStore]);
     const getObject = prefabRegistry.getObject;
-    const getHandle = prefabRegistry.getHandle;
     const getModel = useCallback((path: string) => runtimeRef.current?.getModel(withBasePath(basePath, path)) ?? null, [basePath]);
 
     // History stores normalized state snapshots. Because store mutations use
@@ -195,7 +279,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
         setHistoryIndex(0);
     }, [detachTransformControls, prefabStore]);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (providedPrefabRef.current === prefab) return;
         providedPrefabRef.current = prefab;
         loadPrefab(prefab);
@@ -328,13 +412,105 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
         });
     };
 
-    // --- Drag & drop files to add nodes ---
+    const toRootLocalPosition = useCallback((worldPosition: Vector3): Vec3 => {
+        const point = worldPosition.clone();
+        const root = getRoot();
+        if (root) {
+            root.updateWorldMatrix(true, false);
+            root.worldToLocal(point);
+        }
+        return [point.x, point.y, point.z];
+    }, [getRoot]);
+
+    const addParsedModel = useCallback((
+        model: Object3D,
+        filename: string,
+        file: File,
+        position: Vec3,
+        replaceId?: string,
+    ) => {
+        const runtime = runtimeRef.current;
+        const path = getPrefabAssetRef(filename, 'models');
+        runtime?.registerModel(withBasePath(basePath, path), model);
+        if (!hasCollisionMeshConventions(model)) {
+            if (!replaceId) {
+                const node = offsetNodePosition(createModelNode(path, file.name.replace(/\.[^.]+$/, '')), position);
+                mutate(s => s.addChild(s.rootId, node));
+                setSelectedId(node.id);
+            }
+            return;
+        }
+
+        const modelName = file.name.replace(/\.[^.]+$/, '');
+        const modelIdPrefix = modelName.replace(/[^\w-]+/g, '-') || 'model';
+        const textureRefs = new Map<string, Texture>();
+        const decomposed = decomposeModelToPrefabNodes(model, {
+            idPrefix: modelIdPrefix,
+            getTexturePath: (texture, usage) => {
+                const key = `embedded/${modelIdPrefix}/${usage}/${texture.uuid}`;
+                textureRefs.set(key, texture);
+                return key;
+            },
+        });
+        textureRefs.forEach((texture, texturePath) => {
+            runtime?.registerTexture(withBasePath(basePath, texturePath), texture);
+        });
+        const node = offsetNodePosition({
+            ...decomposed.root,
+            name: modelName || decomposed.root.name,
+        }, position);
+        mutate(s => {
+            Object.entries(decomposed.materials).forEach(([id, material]) => s.setMaterial(id, material));
+            if (replaceId && s.nodesById[replaceId]) s.replaceNode(replaceId, node);
+            else s.addChild(s.rootId, node);
+        });
+        setSelectedId(node.id);
+    }, [basePath, mutate]);
+
+    const addImageNode = useCallback((filename: string, file: File, position: Vec3) => {
+        const path = getPrefabAssetRef(filename, 'textures');
+        const name = file.name.replace(/\.[^.]+$/, '');
+        const materialId = `material-${crypto.randomUUID()}`;
+        const node = offsetNodePosition(createImageNode(path, materialId, name), position);
+        mutate(s => {
+            s.setMaterial(materialId, {
+                ...createDefaultMaterial(),
+                name,
+                materialType: 'basic',
+                texture: path,
+                transparent: true,
+            });
+            s.addChild(s.rootId, node);
+        });
+        setSelectedId(node.id);
+    }, [mutate]);
+
+    // Dragging only supplies a world position. Asset suspension belongs to the
+    // Model component, so dropped and JSON-authored models behave identically.
     useEffect(() => {
         if (!enableWindowDrop || !isEditMode) return;
+
+        function clearDropPreview() {
+            hasDropPositionRef.current = false;
+            const preview = dropPreviewRef.current;
+            if (preview) preview.visible = false;
+            canvasStateRef.current?.invalidate();
+        }
 
         function handleDragOver(e: DragEvent) {
             e.preventDefault();
             e.stopPropagation();
+            const canvasState = canvasStateRef.current;
+            if (!canvasState) return;
+            const position = dropPositionRef.current;
+            if (!raycastDropPosition(e, canvasState, position)) return;
+            hasDropPositionRef.current = true;
+            const preview = dropPreviewRef.current;
+            if (preview) {
+                preview.position.copy(position);
+                preview.visible = true;
+            }
+            canvasState.invalidate();
         }
 
         function handleDrop(e: DragEvent) {
@@ -342,62 +518,74 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
             e.stopPropagation();
 
             const runtime = runtimeRef.current;
+            const canvasState = canvasStateRef.current;
+            const worldPosition = dropPositionRef.current;
+            if (canvasState) {
+                hasDropPositionRef.current = raycastDropPosition(
+                    e,
+                    canvasState,
+                    worldPosition,
+                ) || hasDropPositionRef.current;
+            }
+            if (!runtime || !hasDropPositionRef.current) {
+                clearDropPreview();
+                return;
+            }
+            const position = toRootLocalPosition(worldPosition);
+            const pendingModels = new Map<File, string>();
+            const pendingModelPaths = new Map<File, string>();
 
-            void loadDroppedAssets(e.dataTransfer, {
-                onModelLoaded: (model, filename, file) => {
-                    const path = getPrefabAssetRef(filename, 'models');
-                    runtime?.registerModel(withBasePath(basePath, path), model);
-                    const modelName = file.name.replace(/\.[^.]+$/, '');
-                    const modelIdPrefix = modelName.replace(/[^\w-]+/g, '-') || 'model';
-
-                    if (hasCollisionMeshConventions(model)) {
-                        const textureRefs = new Map<string, Texture>();
-                        const decomposed = decomposeModelToPrefabNodes(model, {
-                            idPrefix: modelIdPrefix,
-                            getTexturePath: (texture, usage) => {
-                                const key = `embedded/${modelIdPrefix}/${usage}/${texture.uuid}`;
-                                textureRefs.set(key, texture);
-                                return key;
-                            },
-                        });
-                        textureRefs.forEach((texture, path) => { runtime?.registerTexture(withBasePath(basePath, path), texture); });
-                        Object.entries(decomposed.materials).forEach(([id, material]) => setMaterial(id, material));
-                        add({
-                            ...decomposed.root,
-                            name: modelName || decomposed.root.name,
-                        });
-                        return;
-                    }
-
-                    add(createModelNode(path, modelName));
+            const loading = loadDroppedAssets(e.dataTransfer, {
+                onModelLoadStart: (source, filename, file) => {
+                    const manifestPath = resolveManifestAssetPath(modelManifestRef.current, filename);
+                    const path = manifestPath ?? getPrefabAssetRef(filename, 'models');
+                    const node = offsetNodePosition(createModelNode(path, file.name.replace(/\.[^.]+$/, '')), position);
+                    pendingModels.set(file, node.id);
+                    pendingModelPaths.set(file, path);
+                    mutate(s => s.addChild(s.rootId, node));
+                    setSelectedId(node.id);
+                    void runtime.loadModel(withBasePath(basePath, path), () => source);
+                    clearDropPreview();
                 },
-                onTextureLoaded: (texture, filename, file) => {
+                onModelLoaded: (model, filename, file) => {
+                    const path = pendingModelPaths.get(file) ?? filename;
+                    const resolved = runtime.getModel(withBasePath(basePath, path)) ?? model;
+                    addParsedModel(resolved, path, file, position, pendingModels.get(file));
+                },
+                onTextureLoadStart: (source, filename, file) => {
                     const path = getPrefabAssetRef(filename, 'textures');
-                    runtime?.registerTexture(withBasePath(basePath, path), texture);
-                    const name = file.name.replace(/\.[^.]+$/, '');
-                    const materialId = `material-${crypto.randomUUID()}`;
-                    setMaterial(materialId, {
-                        ...createDefaultMaterial(),
-                        name,
-                        materialType: 'basic',
-                        texture: path,
-                        transparent: true,
-                    });
-                    add(createImageNode(path, materialId, name));
+                    addImageNode(filename, file, position);
+                    void runtime.loadTexture(withBasePath(basePath, path), () => source);
+                    clearDropPreview();
                 },
                 onLoadError: error => {
                     console.error('Drop asset error:', error);
                 },
             });
+            const clearPreview = () => {
+                clearDropPreview();
+            };
+            void loading.then(clearPreview, error => {
+                console.error('Drop asset error:', error);
+                clearPreview();
+            });
+        }
+
+        function handleDragLeave(e: DragEvent) {
+            if (e.clientX > 0 && e.clientY > 0 && e.clientX < window.innerWidth && e.clientY < window.innerHeight) return;
+            clearDropPreview();
         }
 
         window.addEventListener('dragover', handleDragOver);
+        window.addEventListener('dragleave', handleDragLeave);
         window.addEventListener('drop', handleDrop);
         return () => {
             window.removeEventListener('dragover', handleDragOver);
+            window.removeEventListener('dragleave', handleDragLeave);
             window.removeEventListener('drop', handleDrop);
+            clearDropPreview();
         };
-    }, [add, basePath, isEditMode, enableWindowDrop, setMaterial]);
+    }, [addImageNode, addParsedModel, basePath, enableWindowDrop, isEditMode, mutate, toRootLocalPosition]);
 
     const prefabValue = useMemo<PrefabApi>(() => ({
         ...prefabRegistry,
@@ -407,7 +595,6 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
         basePath,
         get: getNode,
         getObject,
-        getHandle,
         getModel,
         getMaterial: (id) => prefabStore.getState().materials[id] ?? null,
         add,
@@ -421,7 +608,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
         addModel: (path, model) => runtimeRef.current?.registerModel(withBasePath(basePath, path), model),
         addTexture: (path, texture) => runtimeRef.current?.registerTexture(withBasePath(basePath, path), texture),
         addSound: (path, sound) => runtimeRef.current?.registerSound(withBasePath(basePath, path), sound),
-    }), [add, basePath, duplicate, getHandle, getModel, getNode, getObject, getRoot, move, prefabRegistry, prefabStore, remove, replace, replaceNode, setMaterial, update]);
+    }), [add, basePath, duplicate, getModel, getNode, getObject, getRoot, move, prefabRegistry, prefabStore, remove, replace, replaceNode, setMaterial, update]);
     const sceneValue = useMemo<Scene>(() => ({
         get root() { return prefabValue.root; },
         mode,
@@ -444,6 +631,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
 
     const handleCanvasCreated = useCallback((state: Parameters<NonNullable<React.ComponentProps<typeof GameCanvas>["onCreated"]>>[0]) => {
         canvasRef.current = state.gl.domElement as HTMLCanvasElement;
+        canvasStateRef.current = state;
         canvasProps?.onCreated?.(state);
     }, [canvasProps]);
 
@@ -488,6 +676,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
                         >
                             {children}
                         </PrefabRoot>
+                        <DropPreview previewRef={dropPreviewRef} />
 
                         {isEditMode && (
                             <>

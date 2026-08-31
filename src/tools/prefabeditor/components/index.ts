@@ -5,19 +5,19 @@ import DataComponent from "./DataComponent";
 import DirectionalLightComponent from "./DirectionalLightComponent";
 import EnvironmentComponent from "./EnvironmentComponent";
 import GeometryComponent from "./GeometryComponent";
-import MaterialComponent, { MaterialRuntimeProvider } from "./MaterialComponent";
+import InteriorMapComponent from "./InteriorMapComponent";
+import MaterialComponent from "./MaterialComponent";
 import MeshComponent from "./MeshComponent";
 import MergedMeshComponent from "./MergedMeshComponent";
 import ModelComponent from "./ModelComponent";
 import PointLightComponent from "./PointLightComponent";
 import PrefabRefComponent from "./PrefabRefComponent";
 import SoundComponent from "./SoundComponent";
+import AnimatedModelComponent from "./AnimatedModelComponent";
 import SpotLightComponent from "./SpotLightComponent";
 import SpriteComponent from "./SpriteComponent";
 import TextComponent from "./TextComponent";
 import TransformComponent from "./TransformComponent";
-import { AudioRuntimeProvider } from "../AudioRuntime";
-import { registerRuntimeWrapper } from "../RuntimeWrapperRegistry";
 import { registerComponent } from "./ComponentRegistry";
 import type { Component } from "./ComponentRegistry";
 
@@ -31,11 +31,13 @@ const builtInComponents: Component<any>[] = [
 	GeometryComponent,
 	BufferGeometryComponent,
 	ModelComponent,
+	AnimatedModelComponent,
 	SpriteComponent,
 	TextComponent,
 
 	// Material components
 	MaterialComponent,
+	InteriorMapComponent,
 
 	// Light components
 	SpotLightComponent,
@@ -52,5 +54,3 @@ const builtInComponents: Component<any>[] = [
 ];
 
 builtInComponents.forEach(registerComponent);
-registerRuntimeWrapper(MaterialRuntimeProvider);
-registerRuntimeWrapper(AudioRuntimeProvider);

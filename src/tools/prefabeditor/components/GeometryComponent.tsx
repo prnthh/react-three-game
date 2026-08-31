@@ -1,4 +1,5 @@
 import type { Component, ComponentEditorProps, ComponentViewProps } from "./ComponentRegistry";
+import { createElement } from "react";
 import { useNode } from "../SceneContext";
 import { FieldGroup, NumberField, SelectField } from "./Input";
 import { scheduleGeometryRaycast } from "../../../shared/raycast";
@@ -59,6 +60,11 @@ function getDefaultArgs(geometryType: string) {
     return (GEOMETRY_ARGS[geometryType]?.fields ?? []).map(field => field.defaultValue);
 }
 
+const GEOMETRY_ELEMENTS = {
+    box: 'boxGeometry', sphere: 'sphereGeometry', plane: 'planeGeometry',
+    cylinder: 'cylinderGeometry', torus: 'torusGeometry',
+} as const;
+
 function GeometryComponentEditor({ properties, update }: ComponentEditorProps<GeometryProperties>) {
     const geometryType = properties.geometryType ?? 'box';
     const schema = GEOMETRY_ARGS[geometryType] ?? GEOMETRY_ARGS.box;
@@ -115,32 +121,11 @@ function GeometryComponentEditor({ properties, update }: ComponentEditorProps<Ge
 function GeometryComponentView({ properties, children }: ComponentViewProps<GeometryProperties>) {
     const { editMode, nodeInteractionHandlers } = useNode();
     const { geometryType, args = [] } = properties;
-    const geometryKey = `${geometryType ?? 'box'}:${JSON.stringify(args)}`;
-    const onGeometryUpdate = editMode || nodeInteractionHandlers
-        ? scheduleGeometryRaycast
-        : undefined;
-
-    let geometry: React.ReactNode;
-    switch (geometryType) {
-        case "box":
-            geometry = <boxGeometry key={geometryKey} args={args as [number, number, number]} onUpdate={onGeometryUpdate} />;
-            break;
-        case "sphere":
-            geometry = <sphereGeometry key={geometryKey} args={args as [number, number?, number?]} onUpdate={onGeometryUpdate} />;
-            break;
-        case "plane":
-            geometry = <planeGeometry key={geometryKey} args={args as [number, number]} onUpdate={onGeometryUpdate} />;
-            break;
-        case "cylinder":
-            geometry = <cylinderGeometry key={geometryKey} args={args as [number, number, number, number?]} onUpdate={onGeometryUpdate} />;
-            break;
-        case "torus":
-            geometry = <torusGeometry key={geometryKey} args={args as [number, number?, number?, number?]} onUpdate={onGeometryUpdate} />;
-            break;
-        default:
-            geometry = <boxGeometry key="box:[1,1,1]" args={[1, 1, 1]} onUpdate={onGeometryUpdate} />;
-    }
-
+    const type = geometryType && geometryType in GEOMETRY_ELEMENTS ? geometryType as keyof typeof GEOMETRY_ELEMENTS : 'box';
+    const geometry = createElement(GEOMETRY_ELEMENTS[type], {
+        args: args.length ? args : getDefaultArgs(type),
+        onUpdate: editMode || nodeInteractionHandlers ? scheduleGeometryRaycast : undefined,
+    });
     return <>{geometry}{children}</>;
 }
 
@@ -148,7 +133,7 @@ const GeometryComponent: Component<GeometryProperties> = {
     name: 'Geometry',
     renderWhenDisabled: true,
     attachment: true,
-    disableSiblingComposition: 'geometry',
+    attach: 'geometry',
     Editor: GeometryComponentEditor,
     View: GeometryComponentView,
     properties: {

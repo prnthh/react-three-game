@@ -1,21 +1,6 @@
 import type { FC } from "react";
 import type { GameObject } from "../types";
 
-export type AssetRef = { type: "model" | "texture" | "sound"; path: string };
-
-export function assetRef(
-	type: AssetRef["type"],
-	path: unknown,
-): AssetRef | null {
-	return typeof path === "string" ? { type, path } : null;
-}
-
-export function assetRefs(
-	...refs: Array<AssetRef | null | undefined>
-): AssetRef[] {
-	return refs.filter((ref): ref is AssetRef => ref != null);
-}
-
 /** Props every component View receives from the renderer. */
 export interface ComponentViewProps<P = Record<string, unknown>> {
 	/** This component's own data from the prefab JSON. */
@@ -49,7 +34,12 @@ export type ComponentPropertyType =
 
 type ComponentPropertyDefault<T> = T | ((properties: Record<string, any>) => T);
 
-type NumberPropertyDefinition<T> = {
+type ComponentPropertyEditor = {
+	/** Inspector label. Property names are humanized when omitted. */
+	label?: string;
+};
+
+type NumberPropertyDefinition<T> = ComponentPropertyEditor & {
 	type?: "number";
 	default: ComponentPropertyDefault<T>;
 	min?: number;
@@ -62,13 +52,13 @@ export type ComponentPropertyOption<T = string> = {
 	label: string;
 };
 
-type SelectPropertyDefinition<T> = {
+type SelectPropertyDefinition<T> = ComponentPropertyEditor & {
 	type: "select";
 	default: ComponentPropertyDefault<T>;
 	options: readonly ComponentPropertyOption<Extract<NonNullable<T>, string>>[];
 };
 
-type TypedPropertyDefinition<T> = {
+type TypedPropertyDefinition<T> = ComponentPropertyEditor & {
 	type: Exclude<ComponentPropertyType, "number" | "select">;
 	default: ComponentPropertyDefault<T>;
 };
@@ -90,16 +80,16 @@ export interface Component<P extends object = Record<string, any>> {
 	name: string;
 	/** Keep this render-graph component mounted for preparation while its node is disabled. */
 	renderWhenDisabled?: boolean;
+	/** Request the node's composed world position in the runtime node scope. */
+	usesWorldPosition?: boolean;
 	/** Render beside children so R3F can attach this object to the enclosing component. */
 	attachment?: boolean;
-	/** Set when this component occupies a single slot on a node. Use a string to share a slot across component types. */
-	disableSiblingComposition?: boolean | string;
+	/** R3F-style attachment target. Components with the same target are mutually exclusive on a node. */
+	attach?: string;
 	Editor?: FC<ComponentEditorProps<P>>;
 	/** Serializable property contract and the source of runtime/editor defaults. */
 	properties: ComponentPropertyDefinitions<P>;
 	View?: FC<ComponentViewProps<P>>;
-	/** Declare which asset paths this component references (for asset loading). */
-	getAssetRefs?: (properties: P) => AssetRef[];
 }
 
 const REGISTRY: Record<string, Component<any>> = {};
@@ -140,21 +130,14 @@ export function resolveComponentProperties<P extends object>(
 	return { ...getComponentDefaultProperties(component, properties), ...properties } as P;
 }
 
-export function getSiblingCompositionSlot(componentName: string, disableSiblingComposition: boolean | string | undefined) {
-	if (!disableSiblingComposition) return null;
-	return typeof disableSiblingComposition === "string" ? disableSiblingComposition : componentName;
-}
-
 export function canAddComponentToNode(node: GameObject, component: Component<any> | undefined, allComponents = REGISTRY) {
 	if (!component) return false;
-
-	const slot = getSiblingCompositionSlot(component.name, component.disableSiblingComposition);
-	if (!slot) return true;
+	const attach = component.attach;
+	if (!attach) return true;
 
 	return !Object.values(node.components ?? {}).some(entry => {
 		if (!entry?.type) return false;
-		const sibling = allComponents[entry.type];
-		return getSiblingCompositionSlot(entry.type, sibling?.disableSiblingComposition) === slot;
+		return allComponents[entry.type]?.attach === attach;
 	});
 }
 
@@ -170,12 +153,4 @@ export function getNextComponentKey(node: GameObject, componentName: string) {
 	}
 
 	return nextKey;
-}
-
-export function getComponentAssetRefs(
-	componentType: string,
-	properties: Record<string, unknown>,
-): AssetRef[] {
-	const component = REGISTRY[componentType];
-	return component?.getAssetRefs?.(properties) ?? [];
 }

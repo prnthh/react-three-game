@@ -1,16 +1,16 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { ThreeEvent } from '@react-three/fiber';
 import type { Component, ComponentEditorProps, ComponentViewProps } from './ComponentRegistry';
 import type { Prefab } from '../types';
 import { RuntimeNodeIdScope, useNode, usePrefab } from '../SceneContext';
 import { useEditorRef } from '../EditorContext';
 import { useEditSelection } from '../SelectionRuntime';
-import { scopePrefabMaterials } from '../prefab';
+import { normalizePrefab, scopePrefabMaterials, type PrefabState } from '../prefab';
+import { createPrefabStore, type PrefabStoreApi } from '../prefabStore';
 import { withBasePath } from '../utils';
 import { base, colors } from '../styles';
 import { FieldGroup, Label } from './Input';
-
-const PrefabRoot = lazy(() => import('../PrefabRoot'));
+import { PrefabRoot } from '../PrefabRoot';
 
 type PrefabRefProperties = {
     url?: string;
@@ -24,53 +24,52 @@ async function fetchJson<T>(url: string): Promise<T> {
     return response.json() as Promise<T>;
 }
 
+const pendingPrefabs = new Map<string, Promise<PrefabState>>();
+
+function loadPrefab(url: string) {
+    const current = pendingPrefabs.get(url);
+    if (current) return current;
+    const request = fetchJson<Prefab>(url).then(normalizePrefab);
+    pendingPrefabs.set(url, request);
+    void request.then(
+        () => pendingPrefabs.delete(url),
+        () => pendingPrefabs.delete(url),
+    );
+    return request;
+}
+
 function PrefabRefView({ properties, enabled, children }: ComponentViewProps<PrefabRefProperties>) {
     const { basePath } = usePrefab();
     const { editMode, nodeId } = useNode();
     const selectEditorNode = useEditSelection();
-    const [loadedPrefab, setLoadedPrefab] = useState<Prefab | null>(null);
+    const [store, setStore] = useState<PrefabStoreApi | null>(null);
+    const url = properties.url ? withBasePath(basePath, properties.url) : '';
+
+    useEffect(() => {
+        let active = true;
+        setStore(null);
+        if (url) void loadPrefab(url).then(value => {
+            if (active) setStore(createPrefabStore(value));
+        }).catch(error => console.warn('[PrefabRef] Failed to load:', url, error));
+        return () => { active = false; };
+    }, [url]);
+
     const selectPlacement = useCallback((event: ThreeEvent<MouseEvent>) => {
         if (event.delta > 4) return;
         event.stopPropagation();
         selectEditorNode?.(nodeId);
     }, [nodeId, selectEditorNode]);
 
-    const resolvedUrl = properties.url ? withBasePath(basePath, properties.url) : '';
-
-    useEffect(() => {
-        if (!resolvedUrl) {
-            setLoadedPrefab(null);
-            return;
-        }
-
-        let cancelled = false;
-
-        void fetchJson<Prefab>(resolvedUrl)
-            .then((data) => {
-                if (!cancelled) setLoadedPrefab(data);
-            })
-            .catch((err) => {
-                if (!cancelled) setLoadedPrefab(null);
-                console.warn('[PrefabRef] Failed to load:', resolvedUrl, err);
-            });
-
-        return () => { cancelled = true; };
-    }, [resolvedUrl]);
-
-    return (
-        <>
-            {loadedPrefab && (
-                <group onClick={editMode && selectEditorNode ? selectPlacement : undefined}>
-                    <Suspense fallback={null}>
-                        <RuntimeNodeIdScope prefix={nodeId}>
-                            <PrefabRoot data={loadedPrefab} basePath={basePath} enabled={enabled} />
-                        </RuntimeNodeIdScope>
-                    </Suspense>
-                </group>
-            )}
-            {children}
-        </>
-    );
+    return <>
+        {store && (
+            <group onClick={editMode && selectEditorNode ? selectPlacement : undefined}>
+                <RuntimeNodeIdScope prefix={nodeId}>
+                    <PrefabRoot store={store} basePath={basePath} enabled={enabled} />
+                </RuntimeNodeIdScope>
+            </group>
+        )}
+        {children}
+    </>;
 }
 
 function PrefabRefEditor({ node, properties, update }: ComponentEditorProps<PrefabRefProperties>) {

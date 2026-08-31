@@ -207,6 +207,115 @@
             }
           }
         }
+      },
+      {
+        "id": "street-npc-manager",
+        "name": "NPC Manager",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {}
+          },
+          "npcManager": {
+            "type": "NPCManager",
+            "properties": {
+              "scale": 0.92,
+              "maxHp": 200,
+              "speed": 1.15,
+              "ragdollLifetime": 8
+            }
+          }
+        }
+      },
+      {
+        "id": "street-npc-1",
+        "name": "NPC 1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [-15, 0, -7]
+            }
+          },
+          "prefab": {
+            "type": "PrefabRef",
+            "properties": {
+              "url": "/prefabs/npc.json"
+            }
+          }
+        }
+      },
+      {
+        "id": "street-npc-2",
+        "name": "NPC 2",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [-8, 0, -17]
+            }
+          },
+          "prefab": {
+            "type": "PrefabRef",
+            "properties": {
+              "url": "/prefabs/npc.json"
+            }
+          }
+        }
+      },
+      {
+        "id": "street-npc-3",
+        "name": "NPC 3",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [2, 0, -25]
+            }
+          },
+          "prefab": {
+            "type": "PrefabRef",
+            "properties": {
+              "url": "/prefabs/npc.json"
+            }
+          }
+        }
+      },
+      {
+        "id": "street-npc-4",
+        "name": "NPC 4",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [12, 0, -14]
+            }
+          },
+          "prefab": {
+            "type": "PrefabRef",
+            "properties": {
+              "url": "/prefabs/npc.json"
+            }
+          }
+        }
+      },
+      {
+        "id": "street-npc-5",
+        "name": "NPC 5",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [18, 0, -3]
+            }
+          },
+          "prefab": {
+            "type": "PrefabRef",
+            "properties": {
+              "url": "/prefabs/npc.json"
+            }
+          }
+        }
       }
     ]
   }

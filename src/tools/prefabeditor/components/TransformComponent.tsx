@@ -146,7 +146,7 @@ function TransformComponentEditor({ properties, update }: ComponentEditorProps<T
 
 const TransformComponent: Component<TransformProperties> = {
     name: 'Transform',
-    disableSiblingComposition: true,
+    attach: 'transform',
     Editor: TransformComponentEditor,
     properties: {
         position: { type: 'vector3', default: [0, 0, 0] },

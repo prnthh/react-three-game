@@ -4,8 +4,6 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import { useNode, useNodeObject, useGameEvent } from "react-three-game";
 import type { Component, ComponentViewProps, ContactEventPayload } from "react-three-game";
-import { FieldRenderer } from "react-three-game/editor";
-import type { ComponentEditorProps, FieldDefinition } from "react-three-game/editor";
 
 const DEFAULT_SPEED = 1.2;
 const COLLISION_EVENT_NAME = "orb:collision";
@@ -20,25 +18,9 @@ type OrbCollisionPayload = ContactEventPayload & {
     collisionNormal?: [number, number, number];
 };
 
-const orbMoverFields = [
-    { name: "speed", type: "number", label: "Speed", min: 0, step: 0.1 },
-    { name: "velocityX", type: "number", label: "Velocity X", step: 0.1 },
-    { name: "velocityZ", type: "number", label: "Velocity Z", step: 0.1 },
-] satisfies FieldDefinition<OrbMoverProperties>[];
-
 function normalizeVelocity(x = 0, z = 0) {
     const magnitude = Math.hypot(x, z);
     return magnitude <= Number.EPSILON ? { x: 1, z: 0 } : { x: x / magnitude, z: z / magnitude };
-}
-
-function OrbMoverEditor({ properties, update }: ComponentEditorProps<OrbMoverProperties>) {
-    return (
-        <FieldRenderer
-            fields={orbMoverFields}
-            values={properties}
-            onChange={update}
-        />
-    );
 }
 
 function OrbMoverView({ properties, children }: ComponentViewProps<OrbMoverProperties>) {
@@ -84,12 +66,11 @@ function OrbMoverView({ properties, children }: ComponentViewProps<OrbMoverPrope
 
 const OrbMover: Component<OrbMoverProperties> = {
     name: "OrbMover",
-    Editor: OrbMoverEditor,
     View: OrbMoverView,
     properties: {
-        speed: { default: DEFAULT_SPEED },
-        velocityX: { default: 1 },
-        velocityZ: { default: 0 },
+        speed: { default: DEFAULT_SPEED, min: 0, step: 0.1 },
+        velocityX: { default: 1, step: 0.1 },
+        velocityZ: { default: 0, step: 0.1 },
     },
 };
 

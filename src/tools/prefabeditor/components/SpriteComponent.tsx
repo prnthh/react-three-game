@@ -86,7 +86,7 @@ function SpriteComponentView({ properties, children }: ComponentViewProps<Sprite
 const SpriteComponent: Component<SpriteProps> = {
     name: 'Sprite',
     renderWhenDisabled: true,
-    disableSiblingComposition: 'object',
+    attach: 'object',
     Editor: SpriteComponentEditor,
     View: SpriteComponentView,
     properties: {

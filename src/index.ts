@@ -1,4 +1,5 @@
 import "./tools/prefabeditor/components";
+export * from "./core";
 
 export { default as GameCanvas } from "./shared/GameCanvas";
 export type { GameCanvasProps } from "./shared/GameCanvas";
@@ -17,10 +18,14 @@ export {
 	useScene,
 	usePrefab,
 	useNode,
-	useNodeHandle,
+	useSceneComponents,
 	useNodeObject,
+	useRegisterNodeComponent,
+	createNodeComponentType,
 } from "./tools/prefabeditor/SceneContext";
-export type { LiveRef, NodeApi, PrefabApi, PrefabNode, Scene } from "./tools/prefabeditor/SceneContext";
+export { ANIMATED_MODEL_COMPONENT } from "./tools/prefabeditor/components/AnimatedModelComponent";
+export type { AnimatedModelHandle, AnimatedModelProperties } from "./tools/prefabeditor/components/AnimatedModelComponent";
+export type { LiveRef, NodeApi, NodeComponentType, PrefabApi, PrefabNode, Scene, SceneComponent } from "./tools/prefabeditor/SceneContext";
 export { SceneProvider } from "./tools/prefabeditor/SceneProvider";
 
 export type {
@@ -43,45 +48,6 @@ export type {
 } from "./tools/prefabeditor/GameEvents";
 
 export {
-	getAllComponentDefs,
-	getComponentDefaultProperties,
-	getComponentDef,
-	registerComponent,
-	resolveComponentProperties,
-} from "./tools/prefabeditor/components/ComponentRegistry";
-export type {
-	Component,
-	ComponentPropertyDefinition,
-	ComponentPropertyDefinitions,
-	ComponentPropertyOption,
-	ComponentPropertyType,
-	ComponentViewProps,
-	NodeInteractionHandlers,
-} from "./tools/prefabeditor/components/ComponentRegistry";
-
-export { registerRuntimeWrapper } from "./tools/prefabeditor/RuntimeWrapperRegistry";
-export type { RuntimeWrapper } from "./tools/prefabeditor/RuntimeWrapperRegistry";
-
-export {
-	denormalizePrefab,
-	createModelNode,
-	createImageNode,
-} from "./tools/prefabeditor/prefab";
-export type {
-	Prefab,
-	PrefabMaterial,
-	PrefabMaterialType,
-	MaterialComponentProperties,
-	GameObject,
-	ComponentData,
-} from "./tools/prefabeditor/types";
-export {
-	findComponent,
-	findComponentEntry,
-	hasComponent,
-} from "./tools/prefabeditor/types";
-
-export {
 	loadModel,
 	loadSound,
 	loadTexture,
@@ -101,8 +67,10 @@ export type {
 
 export { MaterialOverridesProvider, useMaterialOverrides } from "./tools/prefabeditor/components/MaterialComponent";
 export type { MaterialOverrides } from "./tools/prefabeditor/components/MaterialComponent";
+export { createInteriorMapNode } from "./tools/prefabeditor/components/InteriorMapComponent";
+export type { InteriorMapProperties } from "./tools/prefabeditor/components/InteriorMapComponent";
 
-export { CAMERA_POSITION_ROUTE_HANDLE } from "./tools/prefabeditor/components/CameraComponent";
+export { CAMERA_POSITION_ROUTE_COMPONENT } from "./tools/prefabeditor/components/CameraComponent";
 export type { CameraPositionRoute } from "./tools/prefabeditor/components/CameraComponent";
 
 export {

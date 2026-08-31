@@ -36,18 +36,6 @@
       ],
       "roughness": 0.97
     },
-    "window-recess": {
-      "name": "glass",
-      "color": "#111a1d",
-      "roughness": 0.38,
-      "metalness": 0.18
-    },
-    "window-dirty": {
-      "name": "glass",
-      "color": "#28363a",
-      "roughness": 0.52,
-      "metalness": 0.12
-    },
     "metal": {
       "name": "metal",
       "color": "#3f4749",
@@ -459,15 +447,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-recess"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -483,6 +476,11 @@
                 -2.4,
                 5,
                 -5.34
+              ],
+              "rotation": [
+                0,
+                3.141592653589793,
+                0
               ]
             }
           },
@@ -495,15 +493,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-dirty"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -531,15 +534,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-recess"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -555,6 +563,11 @@
                 2.4,
                 5,
                 -5.34
+              ],
+              "rotation": [
+                0,
+                3.141592653589793,
+                0
               ]
             }
           },
@@ -567,15 +580,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-dirty"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -639,15 +657,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-recess"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -663,6 +686,11 @@
                 -2.4,
                 7.7,
                 -5.34
+              ],
+              "rotation": [
+                0,
+                3.141592653589793,
+                0
               ]
             }
           },
@@ -675,15 +703,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-dirty"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -711,15 +744,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-recess"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -735,6 +773,11 @@
                 2.4,
                 7.7,
                 -5.34
+              ],
+              "rotation": [
+                0,
+                3.141592653589793,
+                0
               ]
             }
           },
@@ -747,15 +790,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-dirty"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -819,15 +867,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-recess"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -843,6 +896,11 @@
                 -2.4,
                 10.4,
                 -5.34
+              ],
+              "rotation": [
+                0,
+                3.141592653589793,
+                0
               ]
             }
           },
@@ -855,15 +913,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-dirty"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -891,15 +954,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-recess"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -915,6 +983,11 @@
                 2.4,
                 10.4,
                 -5.34
+              ],
+              "rotation": [
+                0,
+                3.141592653589793,
+                0
               ]
             }
           },
@@ -927,15 +1000,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-dirty"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -999,15 +1077,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-recess"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -1023,6 +1106,11 @@
                 -2.4,
                 13.100000000000001,
                 -5.34
+              ],
+              "rotation": [
+                0,
+                3.141592653589793,
+                0
               ]
             }
           },
@@ -1035,15 +1123,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-dirty"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -1071,15 +1164,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-recess"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -1095,6 +1193,11 @@
                 2.4,
                 13.100000000000001,
                 -5.34
+              ],
+              "rotation": [
+                0,
+                3.141592653589793,
+                0
               ]
             }
           },
@@ -1107,15 +1210,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-dirty"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -1179,15 +1287,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-recess"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -1203,6 +1316,11 @@
                 -2.4,
                 15.8,
                 -5.34
+              ],
+              "rotation": [
+                0,
+                3.141592653589793,
+                0
               ]
             }
           },
@@ -1215,15 +1333,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-dirty"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -1251,15 +1374,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-recess"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -1275,6 +1403,11 @@
                 2.4,
                 15.8,
                 -5.34
+              ],
+              "rotation": [
+                0,
+                3.141592653589793,
+                0
               ]
             }
           },
@@ -1287,15 +1420,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-dirty"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -1359,15 +1497,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-recess"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -1383,6 +1526,11 @@
                 -2.4,
                 18.5,
                 -5.34
+              ],
+              "rotation": [
+                0,
+                3.141592653589793,
+                0
               ]
             }
           },
@@ -1395,15 +1543,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-dirty"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -1431,15 +1584,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-recess"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -1455,6 +1613,11 @@
                 2.4,
                 18.5,
                 -5.34
+              ],
+              "rotation": [
+                0,
+                3.141592653589793,
+                0
               ]
             }
           },
@@ -1467,15 +1630,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-dirty"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -1539,15 +1707,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-recess"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -1563,6 +1736,11 @@
                 -2.4,
                 21.200000000000003,
                 -5.34
+              ],
+              "rotation": [
+                0,
+                3.141592653589793,
+                0
               ]
             }
           },
@@ -1575,15 +1753,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-dirty"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -1611,15 +1794,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-recess"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -1635,6 +1823,11 @@
                 2.4,
                 21.200000000000003,
                 -5.34
+              ],
+              "rotation": [
+                0,
+                3.141592653589793,
+                0
               ]
             }
           },
@@ -1647,15 +1840,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-dirty"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -1719,15 +1917,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-recess"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -1743,6 +1946,11 @@
                 -2.4,
                 23.900000000000002,
                 -5.34
+              ],
+              "rotation": [
+                0,
+                3.141592653589793,
+                0
               ]
             }
           },
@@ -1755,15 +1963,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-dirty"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -1791,15 +2004,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-recess"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -1815,6 +2033,11 @@
                 2.4,
                 23.900000000000002,
                 -5.34
+              ],
+              "rotation": [
+                0,
+                3.141592653589793,
+                0
               ]
             }
           },
@@ -1827,15 +2050,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-dirty"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -1899,15 +2127,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-recess"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -1923,6 +2156,11 @@
                 -2.4,
                 26.6,
                 -5.34
+              ],
+              "rotation": [
+                0,
+                3.141592653589793,
+                0
               ]
             }
           },
@@ -1935,15 +2173,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-dirty"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -1971,15 +2214,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-recess"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -1995,6 +2243,11 @@
                 2.4,
                 26.6,
                 -5.34
+              ],
+              "rotation": [
+                0,
+                3.141592653589793,
+                0
               ]
             }
           },
@@ -2007,15 +2260,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-dirty"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -2079,15 +2337,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-recess"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -2103,6 +2366,11 @@
                 -2.4,
                 29.3,
                 -5.34
+              ],
+              "rotation": [
+                0,
+                3.141592653589793,
+                0
               ]
             }
           },
@@ -2115,15 +2383,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-dirty"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -2151,15 +2424,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-recess"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },
@@ -2175,6 +2453,11 @@
                 2.4,
                 29.3,
                 -5.34
+              ],
+              "rotation": [
+                0,
+                3.141592653589793,
+                0
               ]
             }
           },
@@ -2187,15 +2470,20 @@
             "properties": {
               "args": [
                 2.4,
-                0.72,
-                0.16
-              ]
+                0.72
+              ],
+              "geometryType": "plane"
             }
           },
-          "material": {
-            "type": "Material",
+          "interiormap": {
+            "type": "InteriorMap",
             "properties": {
-              "materialId": "window-dirty"
+              "texture": "/textures/interiors/cubemap-faces2.webp",
+              "roomSize": [
+                2.4,
+                0.72,
+                2.5
+              ]
             }
           }
         },

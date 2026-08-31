@@ -596,6 +596,7 @@ function CrashcatRagdollView({
 
 const CrashcatRagdollComponent: Component<CrashcatRagdollComponentProperties> = {
     name: "CrashcatRagdoll",
+    usesWorldPosition: true,
     Editor: CrashcatRagdollEditor,
     View: CrashcatRagdollView,
     properties: {

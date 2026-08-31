@@ -1,6 +1,6 @@
-import { GameCanvas, PrefabRoot } from "react-three-game";
+import { GameCanvas, PrefabRoot } from "react-three-game/viewer";
 import { useState, useEffect } from "react";
-import type { Prefab } from "react-three-game";
+import type { Prefab } from "react-three-game/core";
 import { withBasePath, BASE_PATH } from "../basePath";
 
 export default function DemoApp() {
@@ -13,7 +13,6 @@ export default function DemoApp() {
     return (
         <div className="absolute inset-0 -z-1 h-full w-full">
             <GameCanvas>
-                <ambientLight intensity={0.8} />
                 {prefab && <PrefabRoot basePath={BASE_PATH} data={prefab} />}
             </GameCanvas>
         </div>

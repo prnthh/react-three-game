@@ -1,12 +1,10 @@
 import {
-	getComponentAssetRefs,
 	getComponentDefaultProperties,
 	getComponentDef,
 } from "./components/ComponentRegistry";
 import type { ComponentData, GameObject, MaterialComponentProperties, Prefab, PrefabMaterial } from "./types";
 
 export type PrefabNodeRecord = Omit<GameObject, "children">;
-export type PrefabAssetRefCounts = Record<string, number>;
 
 export interface PrefabState {
 	prefabId?: string;
@@ -16,7 +14,6 @@ export interface PrefabState {
 	nodesById: Record<string, PrefabNodeRecord>;
 	childIdsById: Record<string, string[]>;
 	parentIdById: Record<string, string | null>;
-	assetRefCounts: PrefabAssetRefCounts;
 }
 
 export const DEFAULT_MATERIAL_ID = "default";
@@ -157,66 +154,6 @@ function createComponentMap(
 
 function getNodeNameFromPath(path: string, name?: string) {
 	return name ?? path.replace(/^.*[\/]/, "").replace(/\.[^.]+$/, "");
-}
-
-function sameStringArrays(left: string[], right: string[]) {
-	if (left.length !== right.length) return false;
-	return left.every((value, index) => value === right[index]);
-}
-
-function getAssetRefs(node?: Pick<GameObject, "components"> | null) {
-	const refs: string[] = [];
-
-	Object.values(node?.components ?? {}).forEach((component) => {
-		if (!component?.type) return;
-
-		for (const ref of getComponentAssetRefs(
-			component.type,
-			component.properties ?? {},
-		)) {
-			refs.push(`${ref.type}:${ref.path}`);
-		}
-	});
-
-	return refs.sort();
-}
-
-function addAssetRefs(assetRefCounts: PrefabAssetRefCounts, refs: string[]) {
-	refs.forEach((ref) => {
-		assetRefCounts[ref] = (assetRefCounts[ref] ?? 0) + 1;
-	});
-}
-
-function removeAssetRefs(assetRefCounts: PrefabAssetRefCounts, refs: string[]) {
-	refs.forEach((ref) => {
-		const nextCount = (assetRefCounts[ref] ?? 0) - 1;
-		if (nextCount > 0) {
-			assetRefCounts[ref] = nextCount;
-			return;
-		}
-
-		delete assetRefCounts[ref];
-	});
-}
-
-function getMaterialAssetRefs(material: PrefabMaterial) {
-	return [material.texture, material.normalMapTexture]
-		.filter((path): path is string => typeof path === "string" && path.length > 0)
-		.map((path) => `texture:${path}`);
-}
-
-function createAssetRefCounts(
-	nodesById: Record<string, PrefabNodeRecord>,
-	materials: Record<string, PrefabMaterial>,
-) {
-	const assetRefCounts: PrefabAssetRefCounts = {};
-	Object.values(nodesById).forEach((node) => {
-		addAssetRefs(assetRefCounts, getAssetRefs(node));
-	});
-	Object.values(materials).forEach((material) => {
-		addAssetRefs(assetRefCounts, getMaterialAssetRefs(material));
-	});
-	return assetRefCounts;
 }
 
 function denormalizeNode(
@@ -373,8 +310,6 @@ export function normalizePrefab(prefab: Prefab): PrefabState {
 	insertSubtree(prefab.root, null, nodesById, childIdsById, parentIdById);
 
 	const materials = normalizeMaterials(prefab.materials);
-	const assetRefCounts = createAssetRefCounts(nodesById, materials);
-
 	return {
 		prefabId: prefab.id,
 		prefabName: prefab.name,
@@ -383,20 +318,6 @@ export function normalizePrefab(prefab: Prefab): PrefabState {
 		nodesById,
 		childIdsById,
 		parentIdById,
-		assetRefCounts,
-	};
-}
-
-export function createPrefabPatch(
-	state: PrefabState,
-	patch: Partial<PrefabState>,
-	nextAssetRefCounts = state.assetRefCounts,
-): Partial<PrefabState> {
-	const assetRefsChanged = nextAssetRefCounts !== state.assetRefCounts;
-
-	return {
-		...patch,
-		...(assetRefsChanged ? { assetRefCounts: nextAssetRefCounts } : null),
 	};
 }
 
@@ -414,17 +335,6 @@ export function denormalizePrefab(
 		...(Object.keys(materials).length > 0 ? { materials } : null),
 		root: denormalizeNode(state.rootId, state.nodesById, state.childIdsById),
 	};
-}
-
-export function updateMaterialAssetRefs(
-	assetRefCounts: PrefabAssetRefCounts,
-	current: PrefabMaterial | undefined,
-	next: PrefabMaterial,
-) {
-	const nextAssetRefCounts = { ...assetRefCounts };
-	if (current) removeAssetRefs(nextAssetRefCounts, getMaterialAssetRefs(current));
-	addAssetRefs(nextAssetRefCounts, getMaterialAssetRefs(next));
-	return nextAssetRefCounts;
 }
 
 export function collectSubtreeIds(
@@ -512,41 +422,4 @@ export function isDescendant(
 	}
 
 	return false;
-}
-
-export function updateAssetRefsForNodeChange(
-	assetRefCounts: PrefabAssetRefCounts,
-	currentNode: PrefabNodeRecord,
-	nextNode: PrefabNodeRecord,
-) {
-	const currentRefs = getAssetRefs(currentNode);
-	const nextRefs = getAssetRefs(nextNode);
-
-	if (sameStringArrays(currentRefs, nextRefs)) {
-		return assetRefCounts;
-	}
-
-	const nextAssetRefCounts = { ...assetRefCounts };
-
-	removeAssetRefs(nextAssetRefCounts, currentRefs);
-	addAssetRefs(nextAssetRefCounts, nextRefs);
-	return nextAssetRefCounts;
-}
-
-export function collectSubtreeAssetRefs(node: GameObject): string[] {
-	const refs = getAssetRefs(node);
-	node.children?.forEach((child) => {
-		refs.push(...collectSubtreeAssetRefs(child));
-	});
-	return refs;
-}
-
-export function collectAssetRefsForIds(
-	ids: string[],
-	nodesById: Record<string, PrefabNodeRecord>,
-) {
-	return ids.reduce<string[]>((refs, id) => {
-		refs.push(...getAssetRefs(nodesById[id]));
-		return refs;
-	}, []);
 }

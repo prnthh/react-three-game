@@ -1,6 +1,3 @@
-import { useRef } from 'react';
-import type { Mesh } from 'three';
-import { useCompileObject } from '../../../shared/GameCanvas';
 import type { Component, ComponentEditorProps, ComponentViewProps } from './ComponentRegistry';
 import { BooleanField, FieldGroup, StringField } from './Input';
 
@@ -31,12 +28,9 @@ function MeshEditor({ properties, update }: ComponentEditorProps<MeshProperties>
 }
 
 function MeshView({ properties, children }: ComponentViewProps<MeshProperties>) {
-    const ref = useRef<Mesh>(null);
-    useCompileObject(ref);
     const visible = properties.visible !== false;
     return (
         <mesh
-            ref={ref}
             visible={visible}
             castShadow={visible && properties.castShadow !== false}
             receiveShadow={visible && properties.receiveShadow !== false}
@@ -49,7 +43,7 @@ function MeshView({ properties, children }: ComponentViewProps<MeshProperties>) 
 const MeshComponent: Component<MeshProperties> = {
     name: 'Mesh',
     renderWhenDisabled: true,
-    disableSiblingComposition: 'object',
+    attach: 'object',
     Editor: MeshEditor,
     View: MeshView,
     properties: {

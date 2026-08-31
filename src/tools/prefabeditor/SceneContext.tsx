@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useSyncExternalStore, type ReactNode } from "react";
 import type { Object3D, Texture } from "three";
 import type { GameObject, Prefab, PrefabMaterial } from "./types";
 import type { NodeInteractionHandlers } from "./usePointerEvents";
@@ -13,15 +13,72 @@ export type PrefabNode = Omit<GameObject, "children">;
 export interface PrefabRegistry {
     registerObject(id: string, object: Object3D | null): void;
     subscribeObject(id: string, listener: () => void): () => void;
-    registerHandle(id: string, kind: string, handle: unknown): void;
     getObject(id: string): Object3D | null;
-    getHandle<T = unknown>(id: string, kind: string): T | null;
+}
+
+declare const NODE_COMPONENT_VALUE: unique symbol;
+export type NodeComponentType<T> = symbol & { readonly [NODE_COMPONENT_VALUE]?: T };
+
+export type SceneComponent<T> = Readonly<{
+    nodeId: string;
+    value: T;
+}>;
+
+const EMPTY_SCENE_COMPONENTS: readonly SceneComponent<never>[] = [];
+
+export interface NodeComponentRegistry {
+    register<T>(nodeId: string, type: NodeComponentType<T>, value: T | null): void;
+    getAll<T>(type: NodeComponentType<T>): readonly SceneComponent<T>[];
+    subscribe<T>(type: NodeComponentType<T>, listener: () => void): () => void;
+}
+
+export function createNodeComponentType<T>(name: string): NodeComponentType<T> {
+    return Symbol(name) as NodeComponentType<T>;
+}
+
+export function createNodeComponentRegistry(): NodeComponentRegistry {
+    const components = new Map<symbol, Map<string, unknown>>();
+    const snapshots = new Map<symbol, readonly SceneComponent<unknown>[]>();
+    const listeners = new Map<symbol, Set<() => void>>();
+    return {
+        register(nodeId, type, value) {
+            const values = components.get(type);
+            if ((values?.get(nodeId) ?? null) === value) return;
+            if (value == null) {
+                values?.delete(nodeId);
+                if (values?.size === 0) components.delete(type);
+            } else if (values) {
+                values.set(nodeId, value);
+            } else {
+                components.set(type, new Map([[nodeId, value]]));
+            }
+            const current = components.get(type);
+            snapshots.set(type, current
+                ? Array.from(current, ([registeredNodeId, registeredValue]) => ({
+                    nodeId: registeredNodeId,
+                    value: registeredValue,
+                }))
+                : []);
+            listeners.get(type)?.forEach(listener => listener());
+        },
+        getAll: <T,>(type: NodeComponentType<T>) => (
+            (snapshots.get(type) as readonly SceneComponent<T>[] | undefined) ?? EMPTY_SCENE_COMPONENTS
+        ),
+        subscribe(type, listener) {
+            const typeListeners = listeners.get(type) ?? new Set<() => void>();
+            typeListeners.add(listener);
+            listeners.set(type, typeListeners);
+            return () => {
+                typeListeners.delete(listener);
+                if (typeListeners.size === 0) listeners.delete(type);
+            };
+        },
+    };
 }
 
 export function createPrefabRegistry(): PrefabRegistry {
     const objects = new Map<string, Object3D>();
     const listeners = new Map<string, Set<() => void>>();
-    const handles = new Map<string, Map<string, unknown>>();
 
     return {
         registerObject(id, object) {
@@ -39,21 +96,7 @@ export function createPrefabRegistry(): PrefabRegistry {
                 if (nodeListeners.size === 0) listeners.delete(id);
             };
         },
-        registerHandle(id, kind, handle) {
-            const nodeHandles = handles.get(id);
-            if (handle == null) {
-                nodeHandles?.delete(kind);
-                if (nodeHandles?.size === 0) handles.delete(id);
-            } else if (nodeHandles) {
-                nodeHandles.set(kind, handle);
-            } else {
-                handles.set(id, new Map([[kind, handle]]));
-            }
-        },
         getObject: id => objects.get(id) ?? null,
-        getHandle: <T = unknown,>(id: string, kind: string) => (
-            (handles.get(id)?.get(kind) as T | undefined) ?? null
-        ),
     };
 }
 
@@ -83,6 +126,7 @@ export interface PrefabApi extends PrefabRegistry {
 
 export const SceneContext = createContext<Scene | null>(null);
 export const PrefabContext = createContext<PrefabApi | null>(null);
+export const NodeComponentContext = createContext<NodeComponentRegistry | null>(null);
 const NodeContext = createContext<NodeApi | null>(null);
 const RuntimeNodeIdPrefixContext = createContext("");
 
@@ -94,7 +138,6 @@ export interface NodeApi {
     nodeInteractionHandlers?: NodeInteractionHandlers;
     worldPosition?: [number, number, number];
     getObject<T extends Object3D = Object3D>(): T | null;
-    getHandle<T = unknown>(kind: string): T | null;
 }
 
 export interface LiveRef<T> { readonly current: T | null; }
@@ -121,14 +164,39 @@ export function useNode() {
     return node;
 }
 
+function useNodeComponentRegistry() {
+    const registry = useContext(NodeComponentContext);
+    if (!registry) throw new Error("Node component registry is unavailable outside PrefabRoot");
+    return registry;
+}
+
+export function useRegisterNodeComponent<T>(type: NodeComponentType<T>, value: T | null) {
+    const { runtimeNodeId } = useNode();
+    const registry = useNodeComponentRegistry();
+    useLayoutEffect(() => {
+        registry.register(runtimeNodeId, type, value);
+    }, [registry, runtimeNodeId, type, value]);
+    useLayoutEffect(() => () => {
+        registry.register(runtimeNodeId, type, null);
+    }, [registry, runtimeNodeId, type]);
+}
+
+export function useSceneComponents<T>(type: NodeComponentType<T>): readonly SceneComponent<T>[] {
+    const registry = useNodeComponentRegistry();
+    const subscribe = useCallback(
+        (listener: () => void) => registry.subscribe(type, listener),
+        [registry, type],
+    );
+    const getSnapshot = useCallback(
+        () => registry.getAll(type),
+        [registry, type],
+    );
+    return useSyncExternalStore(subscribe, getSnapshot, () => EMPTY_SCENE_COMPONENTS);
+}
+
 export function useNodeObject<T extends Object3D = Object3D>(): LiveRef<T> {
     const { getObject } = useNode();
     return useMemo(() => ({ get current() { return getObject<T>(); } }), [getObject]);
-}
-
-export function useNodeHandle<T = unknown>(kind: string): LiveRef<T> {
-    const { getHandle } = useNode();
-    return useMemo(() => ({ get current() { return getHandle<T>(kind); } }), [getHandle, kind]);
 }
 
 export function NodeScope({
@@ -157,7 +225,6 @@ export function NodeScope({
         nodeInteractionHandlers,
         worldPosition,
         getObject: <T extends Object3D = Object3D>() => prefab.getObject(nodeId) as T | null,
-        getHandle: <T = unknown,>(kind: string) => prefab.getHandle<T>(nodeId, kind),
     }), [editMode, isSelected, nodeId, nodeInteractionHandlers, prefab, runtimeNodeId, worldPosition]);
 
     return <NodeContext.Provider value={value}>{children}</NodeContext.Provider>;

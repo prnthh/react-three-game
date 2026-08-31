@@ -4,7 +4,9 @@ import type { LoadedModel, LoadedSound, LoadedTexture } from "./modelLoader";
 import { canParseModelFile, canParseSoundFile, canParseTextureFile, parseModelFromFile, parseSoundFromFile, parseTextureFromFile } from "./modelLoader";
 
 export interface AssetLoadOptions {
+    onModelLoadStart?: (model: Promise<LoadedModel>, filename: string, file: File) => void | Promise<void>;
     onModelLoaded?: (model: LoadedModel, filename: string, file: File) => void | Promise<void>;
+    onTextureLoadStart?: (texture: Promise<LoadedTexture>, filename: string, file: File) => void | Promise<void>;
     onTextureLoaded?: (texture: LoadedTexture, filename: string, file: File) => void | Promise<void>;
     onSoundLoaded?: (sound: LoadedSound, filename: string, file: File) => void | Promise<void>;
     onUnhandledFile?: (file: File) => void | Promise<void>;
@@ -172,10 +174,10 @@ export async function loadUrl(url: string, options: AssetLoadOptions) {
 
 export async function loadFiles(
     files: File[],
-    { onModelLoaded, onTextureLoaded, onSoundLoaded, onUnhandledFile, onFilesLoaded, onLoadError }: AssetLoadOptions,
+    { onModelLoadStart, onModelLoaded, onTextureLoadStart, onTextureLoaded, onSoundLoaded, onUnhandledFile, onFilesLoaded, onLoadError }: AssetLoadOptions,
 ) {
     await Promise.all(
-        files.map(file => loadFile(file, { onModelLoaded, onTextureLoaded, onSoundLoaded, onUnhandledFile, onLoadError })),
+        files.map(file => loadFile(file, { onModelLoadStart, onModelLoaded, onTextureLoadStart, onTextureLoaded, onSoundLoaded, onUnhandledFile, onLoadError })),
     );
 
     await onFilesLoaded?.(files);
@@ -183,7 +185,7 @@ export async function loadFiles(
 
 async function loadFile(
     file: File,
-    { onModelLoaded, onTextureLoaded, onSoundLoaded, onUnhandledFile, onLoadError }: AssetLoadOptions,
+    { onModelLoadStart, onModelLoaded, onTextureLoadStart, onTextureLoaded, onSoundLoaded, onUnhandledFile, onLoadError }: AssetLoadOptions,
     assetRef = file.name,
 ) {
     const shouldParseModel = canParseModelFile(file);
@@ -191,37 +193,37 @@ async function loadFile(
     const shouldParseSound = canParseSoundFile(file);
 
     if (shouldParseModel) {
-        const result = await parseModelFromFile(file);
+        const load = parseModelFromFile(file).then(result => {
+            if (result.success && result.model) return result.model;
+            throw result.error ?? new Error(`Failed to parse ${file.name}`);
+        });
+        await onModelLoadStart?.(load, assetRef, file);
 
-        if (result.success && result.model) {
-            await onModelLoaded?.(result.model, assetRef, file);
+        try {
+            await onModelLoaded?.(await load, assetRef, file);
+            return;
+        } catch (error) {
+            if (onLoadError) await onLoadError(error, assetRef, file);
+            else console.error("Model parse error:", error);
             return;
         }
-
-        if (onLoadError) {
-            await onLoadError(result.error, assetRef, file);
-            return;
-        }
-
-        console.error("Model parse error:", result.error);
-        return;
     }
 
     if (shouldParseTexture) {
-        const result = await parseTextureFromFile(file);
+        const load = parseTextureFromFile(file).then(result => {
+            if (result.success && result.texture) return result.texture;
+            throw result.error ?? new Error(`Failed to parse ${file.name}`);
+        });
+        await onTextureLoadStart?.(load, assetRef, file);
 
-        if (result.success && result.texture) {
-            await onTextureLoaded?.(result.texture, assetRef, file);
+        try {
+            await onTextureLoaded?.(await load, assetRef, file);
+            return;
+        } catch (error) {
+            if (onLoadError) await onLoadError(error, assetRef, file);
+            else console.error("Texture parse error:", error);
             return;
         }
-
-        if (onLoadError) {
-            await onLoadError(result.error, assetRef, file);
-            return;
-        }
-
-        console.error("Texture parse error:", result.error);
-        return;
     }
 
     if (shouldParseSound) {
@@ -253,8 +255,10 @@ function reportFileLoadError(error: unknown) {
 function createLoadHandlers(options: AssetLoadOptions) {
     return {
         onFilesLoaded: options.onFilesLoaded,
+        onModelLoadStart: options.onModelLoadStart,
         onModelLoaded: options.onModelLoaded,
         onSoundLoaded: options.onSoundLoaded,
+        onTextureLoadStart: options.onTextureLoadStart,
         onTextureLoaded: options.onTextureLoaded,
         onUnhandledFile: options.onUnhandledFile,
         onLoadError: options.onLoadError,

@@ -1,4 +1,4 @@
-import { memo, MouseEvent, useCallback, useState } from 'react';
+import { memo, MouseEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { base, colors, tree } from './styles';
 import { useEditorContext, useEditorRef } from './EditorContext';
 import { Dropdown } from './Dropdown';
@@ -29,6 +29,52 @@ export default function EditorTree({
     const [collapsed, setCollapsed] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [contextMenu, setContextMenu] = useState<TreeContextMenuState>(null);
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const autoScrollFrameRef = useRef<number | null>(null);
+    const autoScrollSpeedRef = useRef(0);
+
+    const stopAutoScroll = useCallback(() => {
+        autoScrollSpeedRef.current = 0;
+        if (autoScrollFrameRef.current !== null) {
+            cancelAnimationFrame(autoScrollFrameRef.current);
+            autoScrollFrameRef.current = null;
+        }
+    }, []);
+
+    const updateAutoScroll = useCallback((clientY: number) => {
+        const scroller = scrollRef.current;
+        if (!scroller || scroller.scrollHeight <= scroller.clientHeight) {
+            stopAutoScroll();
+            return;
+        }
+
+        const rect = scroller.getBoundingClientRect();
+        const edgeSize = Math.min(48, rect.height / 3);
+        const maxSpeed = 12;
+        let speed = 0;
+        if (clientY < rect.top + edgeSize) {
+            speed = -maxSpeed * (1 - Math.max(0, clientY - rect.top) / edgeSize);
+        } else if (clientY > rect.bottom - edgeSize) {
+            speed = maxSpeed * (1 - Math.max(0, rect.bottom - clientY) / edgeSize);
+        }
+
+        autoScrollSpeedRef.current = speed;
+        if (speed === 0 || autoScrollFrameRef.current !== null) return;
+
+        const tick = () => {
+            const currentScroller = scrollRef.current;
+            const currentSpeed = autoScrollSpeedRef.current;
+            if (!currentScroller || currentSpeed === 0) {
+                autoScrollFrameRef.current = null;
+                return;
+            }
+            currentScroller.scrollTop += currentSpeed;
+            autoScrollFrameRef.current = requestAnimationFrame(tick);
+        };
+        autoScrollFrameRef.current = requestAnimationFrame(tick);
+    }, [stopAutoScroll]);
+
+    useEffect(() => stopAutoScroll, [stopAutoScroll]);
 
     const toggleCollapse = (e: MouseEvent, id: string) => {
         e.stopPropagation();
@@ -122,6 +168,13 @@ export default function EditorTree({
         if (!draggedId || draggedId === targetId) return;
         e.preventDefault();
         editor.move(draggedId, targetId, getDropPosition(e, isRoot));
+        stopAutoScroll();
+        setDraggedId(null);
+        setDropTarget(null);
+    };
+
+    const handleDragEnd = () => {
+        stopAutoScroll();
         setDraggedId(null);
         setDropTarget(null);
     };
@@ -197,7 +250,27 @@ export default function EditorTree({
                                 }}
                             />
                         </div>
-                        <div style={tree.scroll}>
+                        <div
+                            ref={scrollRef}
+                            style={tree.scroll}
+                            onDragOver={(e) => {
+                                if (!draggedId) return;
+                                e.preventDefault();
+                                e.stopPropagation();
+                                updateAutoScroll(e.clientY);
+                            }}
+                            onDrop={(e) => {
+                                if (!draggedId) return;
+                                e.stopPropagation();
+                                stopAutoScroll();
+                            }}
+                            onDragLeave={(e) => {
+                                const relatedTarget = e.relatedTarget;
+                                if (!(relatedTarget instanceof Node) || !e.currentTarget.contains(relatedTarget)) {
+                                    stopAutoScroll();
+                                }
+                            }}
+                        >
                             <TreeNode
                                 nodeId={rootId}
                                 depth={0}
@@ -212,7 +285,7 @@ export default function EditorTree({
                                 onDragOver={handleDragOver}
                                 onDragLeave={handleDragLeave}
                                 onDrop={handleDrop}
-                                onDragEnd={() => { setDraggedId(null); setDropTarget(null); }}
+                                onDragEnd={handleDragEnd}
                                 renderTreeNodeMenu={renderTreeNodeMenu}
                                 onToggleDisabled={handleToggleDisabled}
                                 setSelectedId={setSelectedId}

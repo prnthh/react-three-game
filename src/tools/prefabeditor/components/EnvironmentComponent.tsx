@@ -1,7 +1,7 @@
 import { Environment } from '@react-three/drei';
+import { useVisualAssetRevision } from '../assetRuntime';
 import type { Component, ComponentViewProps } from './ComponentRegistry';
 import { FieldGroup, NumberField } from './Input';
-import { useVisualAssetRevision } from '../assetRuntime';
 
 type EnvironmentProperties = {
     intensity?: number;
@@ -31,13 +31,11 @@ function EnvironmentView({
 
 const EnvironmentComponent: Component<EnvironmentProperties> = {
     name: 'Environment',
-    disableSiblingComposition: true,
-    Editor: ({ properties, update }) => (
-        <FieldGroup>
-            <NumberField name="intensity" label="Intensity" values={properties} onChange={update} min={0} step={0.1} fallback={1} />
-            <NumberField name="resolution" label="Resolution" values={properties} onChange={update} min={64} step={64} fallback={256} />
-        </FieldGroup>
-    ),
+    attach: 'environment',
+    Editor: ({ properties, update }) => <FieldGroup>
+        <NumberField name="intensity" label="Intensity" values={properties} onChange={update} min={0} step={0.1} fallback={1} />
+        <NumberField name="resolution" label="Resolution" values={properties} onChange={update} min={64} step={64} fallback={256} />
+    </FieldGroup>,
     View: EnvironmentView,
     properties: {
         intensity: { default: 1, min: 0, step: 0.1 },

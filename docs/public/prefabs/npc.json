@@ -1,0 +1,27 @@
+{
+  "id": "killbox-npc",
+  "name": "Killbox NPC",
+  "root": {
+    "id": "npc",
+    "name": "NPC",
+    "components": {
+      "transform": {
+        "type": "Transform",
+        "properties": {}
+      },
+      "animatedModel": {
+        "type": "AnimatedModel",
+        "properties": {
+          "filename": "/models/human/onimilio.glb",
+          "animationState": "idle",
+          "fadeDuration": 0.18,
+          "castShadow": true,
+          "receiveShadow": true,
+          "frustumCulled": false,
+          "autoUpdate": false
+        }
+      }
+    },
+    "children": []
+  }
+}

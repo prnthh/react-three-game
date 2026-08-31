@@ -1,16 +1,12 @@
-import { ModelPicker } from '../../assetviewer/page';
-import { useEffect, useMemo, useRef } from 'react';
-import { Mesh, Texture, type Object3D } from 'three';
-import { useCompileObject } from '../../../shared/GameCanvas';
-import { assetRef, assetRefs } from './ComponentRegistry';
+import { Merged } from '@react-three/drei';
+import { Suspense, useEffect, useMemo, type ComponentType } from 'react';
+import { Matrix4, Mesh, SkinnedMesh, Texture, type Object3D } from 'three';
 import type { Component, ComponentEditorProps, ComponentViewProps } from './ComponentRegistry';
 import { BooleanField, FieldGroup, Label, ListEditor, NumberInput, SelectInput, StringField } from './Input';
-import { useModelAsset } from '../assetRuntime';
+import { useSuspenseModelAsset } from '../assetRuntime';
 import { useNode } from '../SceneContext';
 import type { ComponentData } from '../types';
 import { useEditorContext, useEditorRef } from '../EditorContext';
-import { getRepeatAxesFromModelProperties, normalizeRepeatAxes } from '../InstanceProvider';
-import type { RepeatAxisConfig } from '../InstanceProvider';
 import { base, colors, ui } from '../styles';
 import { decomposeModelToPrefabNodes } from '../modelPrefab';
 import { withBasePath } from '../runtimeUtils';
@@ -28,6 +24,63 @@ type RepeatAxis = {
     count: number;
     offset: number;
 };
+
+type RepeatAxisConfig = {
+    axis: 'x' | 'y' | 'z';
+    count: number;
+    offset: number;
+};
+
+const DEFAULT_REPEAT_AXES: RepeatAxisConfig[] = [{ axis: 'x', count: 1, offset: 1 }];
+
+function normalizeRepeatAxes(value: unknown): RepeatAxisConfig[] {
+    if (!Array.isArray(value)) return DEFAULT_REPEAT_AXES;
+    const seen = new Set<string>();
+    const axes: RepeatAxisConfig[] = [];
+    for (const entry of value) {
+        if (!entry || typeof entry !== 'object') continue;
+        const { axis, count, offset } = entry as Partial<RepeatAxisConfig>;
+        if ((axis !== 'x' && axis !== 'y' && axis !== 'z') || seen.has(axis)) continue;
+        seen.add(axis);
+        axes.push({
+            axis,
+            count: Number.isFinite(Number(count)) ? Math.max(1, Math.floor(Number(count))) : 1,
+            offset: Number.isFinite(Number(offset)) ? Number(offset) : 1,
+        });
+    }
+    return axes.length ? axes : DEFAULT_REPEAT_AXES;
+}
+
+function getRepeatPositions(properties: ModelProperties): [number, number, number][] {
+    if (!properties.repeat) return [];
+    const counts: [number, number, number] = [1, 1, 1];
+    const offsets: [number, number, number] = [0, 0, 0];
+    for (const entry of normalizeRepeatAxes(properties.repeatAxes)) {
+        const index = entry.axis === 'x' ? 0 : entry.axis === 'y' ? 1 : 2;
+        counts[index] = entry.count;
+        offsets[index] = entry.offset;
+    }
+    const positions: [number, number, number][] = [];
+    for (let x = 0; x < counts[0]; x++) {
+        for (let y = 0; y < counts[1]; y++) {
+            for (let z = 0; z < counts[2]; z++) {
+                positions.push([x * offsets[0], y * offsets[1], z * offsets[2]]);
+            }
+        }
+    }
+    return positions;
+}
+
+function canInstance(model: Object3D) {
+    if (model.animations.length) return false;
+    let hasMesh = false;
+    let hasSkinnedMesh = false;
+    model.traverse(object => {
+        if (object instanceof SkinnedMesh) hasSkinnedMesh = true;
+        else if (object instanceof Mesh) hasMesh = true;
+    });
+    return hasMesh && !hasSkinnedMesh;
+}
 
 type ModelProperties = {
     filename?: string;
@@ -147,7 +200,7 @@ function ModelComponentEditor({ properties, node, update }: ComponentEditorProps
     const { positionSnap } = useEditorContext();
     const editor = useEditorRef();
     const { basePath } = editor;
-    const repeatAxes = getRepeatAxesFromModelProperties(properties);
+    const repeatAxes = normalizeRepeatAxes(properties.repeatAxes);
     const filename = properties.filename;
     const canDecompose = Boolean(filename);
 
@@ -252,43 +305,89 @@ function ModelComponentEditor({ properties, node, update }: ComponentEditorProps
     );
 }
 
-// View for Model component
-function ModelComponentView({ properties, children }: ComponentViewProps<ModelProperties>) {
-    const { editMode, nodeInteractionHandlers } = useNode();
-    const { basePath } = usePrefab();
-    const interactive = Boolean(nodeInteractionHandlers);
-    const resolvedFilename = properties.filename ? withBasePath(basePath, properties.filename) : properties.filename;
-    const sourceModel = useModelAsset(resolvedFilename);
-    const modelRef = useRef<Object3D>(null);
-
-    // Clone model once and set up shadows - memoized to avoid cloning on every render
-    const clonedModel = useMemo(() => {
-        if (!sourceModel || !properties.filename) return null;
-        const clone = sourceModel.clone();
-        clone.traverse((obj) => {
-            if (obj instanceof Mesh) {
-                obj.castShadow = true;
-                obj.receiveShadow = true;
+function ClonedModel({ source, interactive, editMode }: { source: Object3D; interactive: boolean; editMode?: boolean }) {
+    const model = useMemo(() => {
+        const clone = source.clone();
+        clone.traverse(object => {
+            if (object instanceof Mesh) {
+                object.castShadow = true;
+                object.receiveShadow = true;
             }
         });
         return clone;
-    }, [properties.filename, sourceModel]);
+    }, [source]);
 
     useEffect(() => {
+        if (editMode || interactive) scheduleObjectRaycast(model);
+    }, [editMode, interactive, model]);
+    return <primitive object={model} />;
+}
+
+function RepeatedModel({ source, positions, interactive, editMode }: {
+    source: Object3D;
+    positions: [number, number, number][];
+    interactive: boolean;
+    editMode?: boolean;
+}) {
+    const meshes = useMemo(() => {
+        const result: Record<string, Mesh> = {};
+        source.updateWorldMatrix(false, true);
+        const rootInverse = new Matrix4().copy(source.matrixWorld).invert();
+        let index = 0;
+        source.traverse(object => {
+            if (!(object instanceof Mesh)) return;
+            const geometry = object.geometry.clone();
+            geometry.applyMatrix4(object.matrixWorld.clone().premultiply(rootInverse));
+            result[`part${index++}`] = new Mesh(geometry, object.material);
+        });
+        return result;
+    }, [source]);
+
+    useEffect(() => () => {
+        Object.values(meshes).forEach(mesh => mesh.geometry.dispose());
+    }, [meshes]);
+    useEffect(() => {
         if (!editMode && !interactive) return;
-        scheduleObjectRaycast(clonedModel);
-    }, [clonedModel, editMode, interactive]);
-    useCompileObject(modelRef, clonedModel);
+        Object.values(meshes).forEach(scheduleObjectRaycast);
+    }, [editMode, interactive, meshes]);
+    return <group>
+        <Merged meshes={meshes} castShadow receiveShadow frustumCulled={false}>
+            {(instances: Record<string, ComponentType<object>>) => {
+                const InstanceParts = Object.values(instances);
+                return positions.map((position, index) => (
+                    <group key={index} position={position}>
+                        {InstanceParts.map((Part, partIndex) => <Part key={partIndex} />)}
+                    </group>
+                ));
+            }}
+        </Merged>
+    </group>;
+}
 
-    if (!clonedModel) return <>{children}</>;
+function LoadedModel({ properties }: { properties: ModelProperties }) {
+    const { basePath } = usePrefab();
+    const { editMode, nodeInteractionHandlers } = useNode();
+    const interactive = Boolean(nodeInteractionHandlers);
+    const path = properties.filename ? withBasePath(basePath, properties.filename) : '';
+    const sourceModel = useSuspenseModelAsset(path);
+    const positions = useMemo(() => getRepeatPositions(properties), [properties.repeat, properties.repeatAxes]);
+    const model = sourceModel && (positions.length > 1 && canInstance(sourceModel)
+        ? <RepeatedModel source={sourceModel} positions={positions} interactive={interactive} editMode={editMode} />
+        : <ClonedModel source={sourceModel} interactive={interactive} editMode={editMode} />);
+    return model;
+}
 
-    return <primitive ref={modelRef} object={clonedModel}>{children}</primitive>;
+function ModelComponentView({ properties, children }: ComponentViewProps<ModelProperties>) {
+    return <>
+        <Suspense fallback={null}><LoadedModel properties={properties} /></Suspense>
+        {children}
+    </>;
 }
 
 const ModelComponent: Component<ModelProperties> = {
     name: 'Model',
     renderWhenDisabled: true,
-    disableSiblingComposition: 'object',
+    attach: 'object',
     Editor: ModelComponentEditor,
     View: ModelComponentView,
     properties: {
@@ -298,7 +397,7 @@ const ModelComponent: Component<ModelProperties> = {
         repeat: { type: 'boolean', default: false },
         repeatAxes: { type: 'array', default: [{ axis: 'x', count: 1, offset: 1 }] },
     },
-    getAssetRefs: (properties) => assetRefs(assetRef('model', properties.filename)),
 };
 
 export default ModelComponent;
+import { ModelPicker } from '../../assetviewer/page';

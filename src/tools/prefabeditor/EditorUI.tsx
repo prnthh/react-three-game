@@ -2,10 +2,46 @@ import { useState } from 'react';
 import { GameObject as GameObjectType } from "./types";
 import EditorTree from './EditorTree';
 import { canAddComponentToNode, getAllComponentDefs, getNextComponentKey, resolveComponentProperties } from './components/ComponentRegistry';
+import type { Component } from './components/ComponentRegistry';
+import { FieldRenderer, type FieldDefinition } from './components/Input';
 import { createComponentData } from './prefab';
 import { useEditorRef } from './EditorContext';
 import { base, colors, inspector, componentCard } from './styles';
 import { usePrefabStore } from './prefabStore';
+
+function humanizePropertyName(name: string) {
+    return name
+        .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+        .replace(/^./, character => character.toUpperCase());
+}
+
+function DefaultComponentEditor({
+    component,
+    properties,
+    update,
+}: {
+    component: Component;
+    properties: Record<string, unknown>;
+    update: (patch: Record<string, unknown>) => void;
+}) {
+    const fields: FieldDefinition<Record<string, unknown>>[] = [];
+    for (const [name, definition] of Object.entries(component.properties)) {
+        const type = definition.type ?? 'number';
+        if (type !== 'number' && type !== 'string' && type !== 'boolean' && type !== 'color' && type !== 'select' && type !== 'vector3') continue;
+        fields.push({
+            name,
+            type,
+            label: definition.label ?? humanizePropertyName(name),
+            ...('min' in definition ? { min: definition.min } : null),
+            ...('max' in definition ? { max: definition.max } : null),
+            ...('step' in definition ? { step: definition.step } : null),
+            ...('options' in definition ? { options: [...definition.options] } : null),
+        } as FieldDefinition<Record<string, unknown>>);
+    }
+    return fields.length > 0
+        ? <FieldRenderer fields={fields} values={properties} onChange={update} />
+        : null;
+}
 
 function EditorUI({
     selectedId,
@@ -129,10 +165,22 @@ function NodeInspector({
                                 ✕
                             </button>
                         </div>
-                        {def.Editor && (
+                        {def.Editor ? (
                             <def.Editor
                                 node={node}
 								properties={resolveComponentProperties(def, comp.properties)}
+                                update={(patch) => updateNode(n => ({
+                                    ...n,
+                                    components: {
+                                        ...n.components,
+                                        [key]: { ...comp, properties: { ...comp.properties, ...patch } }
+                                    }
+                                }))}
+                            />
+                        ) : (
+                            <DefaultComponentEditor
+                                component={def}
+                                properties={resolveComponentProperties(def, comp.properties)}
                                 update={(patch) => updateNode(n => ({
                                     ...n,
                                     components: {

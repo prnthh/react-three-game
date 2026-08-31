@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { withBasePath } from "../basePath";
 
@@ -44,6 +44,7 @@ export default function PrefabSelector<T>({
     className = "bg-white text-black",
 }: PrefabSelectorProps<T>) {
     const [prefabNames, setPrefabNames] = useState<string[]>([]);
+    const selectionRequest = useRef<AbortController | null>(null);
 
     useEffect(() => {
         let cancelled = false;
@@ -75,6 +76,7 @@ export default function PrefabSelector<T>({
 
         return () => {
             cancelled = true;
+            selectionRequest.current?.abort();
         };
     }, []);
 
@@ -90,7 +92,10 @@ export default function PrefabSelector<T>({
                     return;
                 }
 
-                void fetch(withBasePath(`/prefabs/${prefabName}.json`))
+                selectionRequest.current?.abort();
+                const request = new AbortController();
+                selectionRequest.current = request;
+                void fetch(withBasePath(`/prefabs/${prefabName}.json`), { signal: request.signal })
                     .then((response) => {
                         if (!response.ok) {
                             throw new Error(`Failed to load prefab ${prefabName} (${response.status})`);
@@ -98,7 +103,13 @@ export default function PrefabSelector<T>({
 
                         return response.json() as Promise<T>;
                     })
-                    .then((prefab) => onSelect(prefab, prefabName));
+                    .then((prefab) => {
+                        if (selectionRequest.current === request) onSelect(prefab, prefabName);
+                    })
+                    .catch(error => {
+                        if (error instanceof DOMException && error.name === "AbortError") return;
+                        console.error(`[PrefabSelector] Failed to load ${prefabName}:`, error);
+                    });
             }}
         >
             <option value="">- select prefab -</option>

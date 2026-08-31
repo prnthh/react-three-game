@@ -67,6 +67,38 @@ function normalizeModelPath(name: string) {
     return name.split(/[?#]/, 1)[0].toLowerCase();
 }
 
+function normalizeManifestPath(path: string) {
+    try {
+        path = new URL(path, "http://asset.local").pathname;
+    } catch {
+        // A filename is also a valid lookup hint.
+    }
+    try {
+        path = decodeURIComponent(path);
+    } catch {
+        // Keep malformed URI text usable as a literal filename.
+    }
+    return normalizeModelPath(path).replace(/\\/g, "/");
+}
+
+/** Resolve an authored manifest path without guessing between duplicate names. */
+export function resolveManifestAssetPath(files: string[], hint: string) {
+    const normalizedHint = normalizeManifestPath(hint);
+    for (let index = 0; index < files.length; index += 1) {
+        if (normalizeManifestPath(files[index]) === normalizedHint) return files[index];
+    }
+
+    const basename = normalizedHint.slice(normalizedHint.lastIndexOf("/") + 1);
+    let match: string | null = null;
+    for (let index = 0; index < files.length; index += 1) {
+        const candidate = normalizeManifestPath(files[index]);
+        if (candidate.slice(candidate.lastIndexOf("/") + 1) !== basename) continue;
+        if (match) return null;
+        match = files[index];
+    }
+    return match;
+}
+
 function getModelFileKind(name: string): ModelFileKind | null {
     const normalizedName = normalizeModelPath(name);
 

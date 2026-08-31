@@ -1,9 +1,16 @@
 "use client";
 
-import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type RefObject } from "react";
-import { PrefabEditorMode, useScene } from "react-three-game";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import {
+    ANIMATED_MODEL_COMPONENT,
+    createNodeComponentType,
+    PrefabEditorMode,
+    useRegisterNodeComponent,
+    useScene,
+    useSceneComponents,
+} from "react-three-game";
+import type { AnimatedModelHandle, Component, ComponentViewProps, SceneComponent } from "react-three-game";
 import {
     box,
     capsule,
@@ -22,11 +29,8 @@ import {
 } from "crashcat";
 import { quat, vec3, type Vec3 } from "mathcat";
 import {
-    type AnimationAction,
-    AnimationMixer,
     Bone,
     Box3,
-    LoopRepeat,
     Matrix4,
     Mesh,
     MeshBasicMaterial,
@@ -34,18 +38,14 @@ import {
     Ray,
     Raycaster,
     Vector3,
-    type AnimationClip,
-    type Group,
     type Object3D,
 } from "three";
-import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
 
-import { withBasePath } from "../../../basePath";
-import type { FirstPersonPlayerRef } from "./FirstPersonPlayer";
+import { getActivePlayer, PLAYER_CONTROLLER_COMPONENT } from "./FirstPersonPlayer";
 import { useCrashcat, type CrashcatApi } from "react-three-game/plugins/crashcat";
 
-const NPC_SCALE = 0.92;
-const NPC_SPEED = 1.15;
+const DEFAULT_NPC_SCALE = 0.92;
+const DEFAULT_NPC_SPEED = 1.15;
 const NPC_STOP_DISTANCE = 1.5;
 const NPC_IDLE_MIN_DURATION = 1.5;
 const NPC_IDLE_MAX_DURATION = 4;
@@ -53,7 +53,6 @@ const NPC_WANDER_MIN_DISTANCE = 2.5;
 const NPC_WANDER_MAX_DISTANCE = 6;
 const NPC_WANDER_GOAL_DISTANCE = 0.45;
 const NPC_WANDER_TIMEOUT = 9;
-const NPC_ANIMATION_FADE_DURATION = 0.18;
 const NPC_TURN_RESPONSE = 6.5;
 const NPC_HITBOX_SYNC_INTERVAL = 1 / 30;
 const NPC_NAVIGATION_RADIUS = 0.34;
@@ -63,10 +62,9 @@ const NPC_NAVIGATION_SPACING = NPC_NAVIGATION_RADIUS * 2 + 0.08;
 const NPC_OBSTACLE_PROBE_LENGTH = 1.35;
 const NPC_OBSTACLE_TURN_ANGLE = Math.PI * 0.38;
 const DEFAULT_NPC_HP = 200;
-const RAGDOLL_LIFETIME = 8;
-const DEFAULT_LOAD_DISTANCE = 20;
-const DEFAULT_UNLOAD_DISTANCE = 24;
-const MODEL_PATH = withBasePath("/models/human/onimilio.glb");
+const DEFAULT_RAGDOLL_LIFETIME = 8;
+const NPC_RAGDOLL_MAX_LINEAR_VELOCITY = 10;
+const NPC_RAGDOLL_MAX_ANGULAR_VELOCITY = 14;
 const partStart = new Vector3();
 const partEnd = new Vector3();
 const partDirection = new Vector3();
@@ -80,6 +78,8 @@ const bodyMatrix = new Matrix4();
 const inverseBodyMatrix = new Matrix4();
 const localHitPoint = new Vector3();
 const worldHitPoint = new Vector3();
+const objectWorldPosition = new Vector3();
+const objectLocalPosition = new Vector3();
 const localRay = new Ray();
 const unitScale = new Vector3(1, 1, 1);
 const localBodyBox = new Box3();
@@ -90,23 +90,6 @@ const navigationProbeDirection: [number, number, number] = [0, 0, 1];
 const AXIS_X = new Vector3(1, 0, 0);
 const AXIS_Y = new Vector3(0, 1, 0);
 const AXIS_Z = new Vector3(0, 0, 1);
-
-const DEFAULT_NPC_LAYOUT = [
-    { id: "zombie-1", x: -15, z: -7 },
-    { id: "zombie-2", x: -8, z: -17 },
-    { id: "zombie-3", x: 2, z: -25 },
-    { id: "zombie-4", x: 12, z: -14 },
-    { id: "zombie-5", x: 18, z: -3 },
-    { id: "zombie-6", x: 16, z: 12 },
-    { id: "zombie-7", x: 7, z: 22 },
-    { id: "zombie-8", x: -4, z: 26 },
-    { id: "zombie-9", x: -15, z: 17 },
-    { id: "zombie-10", x: -21, z: 5 },
-];
-
-function createDefaultNPCs(spawnHeight: number): NPCData[] {
-    return DEFAULT_NPC_LAYOUT.map(({ id, x, z }) => ({ id, position: [x, spawnHeight, z] }));
-}
 
 export type NPCBodyPart = "head" | "torso" | "hips"
     | "leftUpperArm" | "leftLowerArm" | "rightUpperArm" | "rightLowerArm"
@@ -135,17 +118,17 @@ const BODY_PARTS: Record<NPCBodyPart, BodyPartDefinition> = {
 };
 const BODY_PART_ENTRIES = Object.entries(BODY_PARTS) as Array<[NPCBodyPart, BodyPartDefinition]>;
 
-type LoadedCharacter = {
-    scene: Group;
-    animations: AnimationClip[];
-};
-
 type NPCState = "idle" | "wander" | "chase" | "dead";
 type NPCAnimState = "idle" | "walk";
 
 export type NPCData = {
     id: string;
     position: readonly [number, number, number];
+    model: AnimatedModelHandle;
+    scale?: number;
+    speed?: number;
+    ragdollLifetime?: number;
+    debugRagdoll?: boolean;
     maxHp?: number;
     hp?: number;
 };
@@ -162,6 +145,11 @@ type StoredNPC = {
     randomState: number;
     hp: number;
     maxHp: number;
+    model: AnimatedModelHandle;
+    scale: number;
+    speed: number;
+    ragdollLifetime: number;
+    debugRagdoll: boolean;
     avoidanceSign: -1 | 1;
     hitParts: Set<NPCBodyPart>;
     hiddenParts: Set<NPCBodyPart>;
@@ -183,7 +171,10 @@ type BoneBinding = {
 type NPCRuntime = {
     data: StoredNPC;
     root: Object3D;
-    mixer: AnimationMixer;
+    model: AnimatedModelHandle;
+    localPosition: Vector3;
+    localQuaternion: Quaternion;
+    localScale: Vector3;
     boneRestTransforms: Map<Bone, BoneRestTransform>;
     bindings: Map<NPCBodyPart, BoneBinding>;
     bodies: Map<NPCBodyPart, RigidBody>;
@@ -193,9 +184,6 @@ type NPCRuntime = {
     navigationBlocked: boolean;
     hitboxSyncAccumulator: number;
     constraints: SwingTwistConstraint[];
-    idleAction: AnimationAction | null;
-    walkAction: AnimationAction | null;
-    action: AnimationAction | null;
 };
 
 export type NPCHit = {
@@ -206,21 +194,50 @@ export type NPCHit = {
     bodyPart: NPCBodyPart;
 };
 
-export type NPCPoolRef = {
-    addNPC: (npc: NPCData) => boolean;
-    removeNPC: (id: string) => boolean;
-    getNPC: (id: string) => NPCData | null;
+/** Runtime API exposed by the mounted NPCManager scene component. */
+export type NPCManagerRef = {
     raycast: (raycaster: Raycaster, maxDistance: number) => NPCHit | null;
     damage: (hit: NPCHit, amount: number) => void;
 };
 
-type NPCPoolProps = {
-    playerRef: RefObject<FirstPersonPlayerRef | null>;
-    initialNPCs?: readonly NPCData[];
-    defaultSpawnHeight?: number;
-    loadDistance?: number;
-    unloadDistance?: number;
-    debug?: boolean;
+type NPCSystemProps = {
+    models: readonly SceneComponent<AnimatedModelHandle>[];
+    settings: NPCManagerProperties;
+};
+
+type NPCManagerProperties = {
+    scale?: number;
+    maxHp?: number;
+    speed?: number;
+    ragdollLifetime?: number;
+    debugRagdoll?: boolean;
+};
+
+export const NPC_MANAGER_COMPONENT = createNodeComponentType<NPCManagerRef>("NPCManager");
+
+function NPCManagerView({ properties, children }: ComponentViewProps<NPCManagerProperties>) {
+    const { mode } = useScene();
+    const players = useSceneComponents(PLAYER_CONTROLLER_COMPONENT);
+    const models = useSceneComponents(ANIMATED_MODEL_COMPONENT);
+    const [manager, setManager] = useState<NPCManagerRef | null>(null);
+    useRegisterNodeComponent(NPC_MANAGER_COMPONENT, manager);
+    const playing = mode === PrefabEditorMode.Play;
+    return <>
+        {playing && players.length > 0 ? <NPCSystem ref={setManager} models={models} settings={properties} /> : null}
+        {children}
+    </>;
+}
+
+export const NPCManagerComponent: Component<NPCManagerProperties> = {
+    name: "NPCManager",
+    View: NPCManagerView,
+    properties: {
+        scale: { default: DEFAULT_NPC_SCALE, min: 0.01, step: 0.05 },
+        maxHp: { default: DEFAULT_NPC_HP, label: "Max HP", min: 1, step: 10 },
+        speed: { default: DEFAULT_NPC_SPEED, label: "Move Speed", min: 0, step: 0.1 },
+        ragdollLifetime: { default: DEFAULT_RAGDOLL_LIFETIME, label: "Ragdoll Reset Delay", min: 0, step: 0.5 },
+        debugRagdoll: { type: "boolean", default: false, label: "Debug Ragdoll Colliders" },
+    },
 };
 
 function scaleDownBoneBranch(bone: Bone) {
@@ -300,6 +317,11 @@ function createStoredNPC(npc: NPCData): StoredNPC {
         randomState: hashNPCId(npc.id),
         hp,
         maxHp,
+        model: npc.model,
+        scale: Math.max(0.01, npc.scale ?? DEFAULT_NPC_SCALE),
+        speed: Math.max(0, npc.speed ?? DEFAULT_NPC_SPEED),
+        ragdollLifetime: Math.max(0, npc.ragdollLifetime ?? DEFAULT_RAGDOLL_LIFETIME),
+        debugRagdoll: npc.debugRagdoll ?? false,
         avoidanceSign: [...npc.id].reduce((sum, character) => sum + character.charCodeAt(0), 0) % 2 === 0 ? 1 : -1,
         hitParts: new Set(),
         hiddenParts: new Set(),
@@ -308,35 +330,23 @@ function createStoredNPC(npc: NPCData): StoredNPC {
     return data;
 }
 
-function selectIdleClip(animations: AnimationClip[]) {
-    return animations.find(clip => /^idle$/i.test(clip.name))
-        ?? animations.find(clip => /idle|stand|breath/i.test(clip.name));
-}
-
-function selectWalkClip(animations: AnimationClip[]) {
-    return animations.find(clip => /^walk$/i.test(clip.name))
-        ?? animations.find(clip => /walk|run/i.test(clip.name));
-}
-
 function setNPCAnimState(runtime: NPCRuntime, animState: NPCAnimState, immediate = false) {
+    if (runtime.data.animState === animState && !immediate) return;
     runtime.data.animState = animState;
-    const nextAction = animState === "idle" ? runtime.idleAction : runtime.walkAction;
-    const previousAction = runtime.action;
-    if (!nextAction) {
-        previousAction?.stop();
-        runtime.action = null;
-        return;
-    }
-    if (nextAction === previousAction && !immediate) return;
+    runtime.model.setAnimationState(animState, immediate);
+}
 
-    if (immediate) {
-        previousAction?.stop();
-        nextAction.reset().setEffectiveWeight(1).play();
+function setObjectWorldPosition(object: Object3D, position: Vector3) {
+    const parent = object.parent;
+    if (!parent) {
+        object.position.copy(position);
     } else {
-        previousAction?.fadeOut(NPC_ANIMATION_FADE_DURATION);
-        nextAction.reset().fadeIn(NPC_ANIMATION_FADE_DURATION).play();
+        parent.updateWorldMatrix(true, false);
+        objectLocalPosition.copy(position);
+        parent.worldToLocal(objectLocalPosition);
+        object.position.copy(objectLocalPosition);
     }
-    runtime.action = nextAction;
+    object.updateMatrixWorld(true);
 }
 
 function resetRuntime(runtime: NPCRuntime) {
@@ -354,8 +364,7 @@ function resetRuntime(runtime: NPCRuntime) {
         bone.quaternion.copy(transform.quaternion);
         bone.scale.copy(transform.scale);
     });
-    root.position.copy(data.position);
-    root.visible = true;
+    setObjectWorldPosition(root, data.position);
     setNPCAnimState(runtime, "idle", true);
     root.updateMatrixWorld(true);
 }
@@ -372,10 +381,10 @@ function getTangent(axis: Vec3): Vec3 {
     return vec3.normalize(tangent, tangent);
 }
 
-function createNPCBodies(api: CrashcatApi, id: string) {
+function createNPCBodies(api: CrashcatApi, id: string, scale: number) {
     const bodies = new Map<NPCBodyPart, RigidBody>();
     for (const [part, definition] of BODY_PART_ENTRIES) {
-        const halfExtents = definition.halfExtents.map(value => value * NPC_SCALE) as [number, number, number];
+        const halfExtents = definition.halfExtents.map(value => value * scale) as [number, number, number];
         const nodeId = `${id}-${part}`;
         const body = rigidBody.create(api.world, {
             shape: box.create({
@@ -388,9 +397,11 @@ function createNPCBodies(api: CrashcatApi, id: string) {
             position: vec3.create(),
             quaternion: quat.create(),
             collideKinematicVsNonDynamic: false,
-            linearDamping: 0.08,
-            angularDamping: 0.08,
-            userData: { nodeId },
+            linearDamping: 0.24,
+            angularDamping: 0.65,
+            maxLinearVelocity: NPC_RAGDOLL_MAX_LINEAR_VELOCITY,
+            maxAngularVelocity: NPC_RAGDOLL_MAX_ANGULAR_VELOCITY,
+            userData: { nodeId, ragdoll: true },
         });
         api.register(nodeId, body, { motionType: MotionType.KINEMATIC, sensor: false });
         bodies.set(part, body);
@@ -408,9 +419,9 @@ function createNPCNavigationBody(api: CrashcatApi, runtime: NPCRuntime) {
         objectLayer: api.movingObjectLayer,
         motionType: MotionType.KINEMATIC,
         position: [
-            runtime.root.position.x,
-            runtime.root.position.y + NPC_NAVIGATION_CENTER_HEIGHT,
-            runtime.root.position.z,
+            runtime.data.position.x,
+            runtime.data.position.y + NPC_NAVIGATION_CENTER_HEIGHT,
+            runtime.data.position.z,
         ],
         quaternion: [0, 0, 0, 1],
         collideKinematicVsNonDynamic: true,
@@ -425,23 +436,23 @@ function syncNavigationBody(runtime: NPCRuntime, api: CrashcatApi) {
     const body = runtime.navigationBody;
     if (!body) return;
     rigidBody.setPosition(api.world, body, [
-        runtime.root.position.x,
-        runtime.root.position.y + NPC_NAVIGATION_CENTER_HEIGHT,
-        runtime.root.position.z,
+        runtime.data.position.x,
+        runtime.data.position.y + NPC_NAVIGATION_CENTER_HEIGHT,
+        runtime.data.position.z,
     ], true);
 }
 
 function disableNavigationBody(runtime: NPCRuntime, api: CrashcatApi) {
     const body = runtime.navigationBody;
     if (!body) return;
-    rigidBody.setPosition(api.world, body, [runtime.root.position.x, -1000, runtime.root.position.z], true);
+    rigidBody.setPosition(api.world, body, [runtime.data.position.x, -1000, runtime.data.position.z], true);
 }
 
 function hasNavigationObstacle(runtime: NPCRuntime, api: CrashcatApi, direction: Vector3) {
     if (!runtime.navigationFilter) return false;
-    navigationProbeOrigin[0] = runtime.root.position.x + direction.x * (NPC_NAVIGATION_RADIUS + 0.04);
-    navigationProbeOrigin[1] = runtime.root.position.y + NPC_NAVIGATION_CENTER_HEIGHT;
-    navigationProbeOrigin[2] = runtime.root.position.z + direction.z * (NPC_NAVIGATION_RADIUS + 0.04);
+    navigationProbeOrigin[0] = runtime.data.position.x + direction.x * (NPC_NAVIGATION_RADIUS + 0.04);
+    navigationProbeOrigin[1] = runtime.data.position.y + NPC_NAVIGATION_CENTER_HEIGHT;
+    navigationProbeOrigin[2] = runtime.data.position.z + direction.z * (NPC_NAVIGATION_RADIUS + 0.04);
     navigationProbeDirection[0] = direction.x;
     navigationProbeDirection[1] = 0;
     navigationProbeDirection[2] = direction.z;
@@ -524,6 +535,10 @@ function createNPCConstraints(runtime: NPCRuntime, api: CrashcatApi) {
         const parentAxis = BODY_PARTS[definition.parent].axis === "x"
             ? vec3.fromValues(1, 0, 0)
             : vec3.fromValues(0, 1, 0);
+        const swingLimit = part === "head" ? Math.PI / 5
+            : part === "torso" ? Math.PI / 6
+                : part.includes("Arm") ? Math.PI / 2.8
+                    : Math.PI / 4;
         constraints.push(swingTwistConstraint.create(api.world, {
             bodyIdA: body.id,
             bodyIdB: parentBody.id,
@@ -534,8 +549,8 @@ function createNPCConstraints(runtime: NPCRuntime, api: CrashcatApi) {
             twistAxis2: parentAxis,
             planeAxis2: getTangent(parentAxis),
             space: ConstraintSpace.LOCAL,
-            normalHalfConeAngle: part.includes("Arm") ? Math.PI / 2.8 : Math.PI / 4,
-            planeHalfConeAngle: part.includes("Arm") ? Math.PI / 2.8 : Math.PI / 4,
+            normalHalfConeAngle: swingLimit,
+            planeHalfConeAngle: swingLimit,
             twistMinAngle: -Math.PI / 8,
             twistMaxAngle: Math.PI / 8,
         }));
@@ -543,11 +558,39 @@ function createNPCConstraints(runtime: NPCRuntime, api: CrashcatApi) {
     return constraints;
 }
 
+function clampMotionVector(value: Vec3, maximum: number) {
+    const lengthSq = value[0] * value[0] + value[1] * value[1] + value[2] * value[2];
+    if (!Number.isFinite(lengthSq)) {
+        vec3.set(value, 0, 0, 0);
+    } else if (lengthSq > maximum * maximum) {
+        vec3.scale(value, value, maximum / Math.sqrt(lengthSq));
+    }
+}
+
+function stabilizeRagdollMotion(runtime: NPCRuntime) {
+    for (const body of runtime.bodies.values()) {
+        const motion = body.motionProperties;
+        clampMotionVector(motion.linearVelocity, NPC_RAGDOLL_MAX_LINEAR_VELOCITY);
+        clampMotionVector(motion.angularVelocity, NPC_RAGDOLL_MAX_ANGULAR_VELOCITY);
+
+        const rotation = body.quaternion;
+        const lengthSq = rotation[0] * rotation[0] + rotation[1] * rotation[1]
+            + rotation[2] * rotation[2] + rotation[3] * rotation[3];
+        if (!Number.isFinite(lengthSq) || lengthSq < 1e-8) {
+            quat.identity(rotation);
+            vec3.set(motion.linearVelocity, 0, 0, 0);
+            vec3.set(motion.angularVelocity, 0, 0, 0);
+        } else if (Math.abs(1 - lengthSq) > 1e-5) {
+            quat.normalize(rotation, rotation);
+        }
+    }
+}
+
 function activateRagdoll(runtime: NPCRuntime, api: CrashcatApi) {
     if (runtime.data.state === "dead") return;
     captureBoneOffsets(runtime);
     runtime.constraints = createNPCConstraints(runtime, api);
-    runtime.action?.stop();
+    runtime.model.stop();
     for (const body of runtime.bodies.values()) {
         rigidBody.setMotionType(api.world, body, MotionType.DYNAMIC, true);
         rigidBody.setLinearVelocity(api.world, body, [0, 0, 0]);
@@ -632,7 +675,7 @@ function NPCDebugColliders({ runtime }: { runtime: NPCRuntime }) {
                 }}
                 renderOrder={1000}
             >
-                <boxGeometry args={definition.halfExtents.map(value => value * NPC_SCALE * 2) as [number, number, number]} />
+                <boxGeometry args={definition.halfExtents.map(value => value * runtime.data.scale * 2) as [number, number, number]} />
                 <meshBasicMaterial
                     color="#00ff88"
                     depthTest={false}
@@ -655,33 +698,32 @@ function NPCDebugColliders({ runtime }: { runtime: NPCRuntime }) {
 
 function NPCInstance({
     data,
-    source,
-    animations,
     register,
-    debug,
 }: {
     data: StoredNPC;
-    source: Object3D;
-    animations: AnimationClip[];
     register: (runtime: NPCRuntime | null, id: string) => void;
-    debug: boolean;
+}) {
+    return <LoadedNPCInstance data={data} model={data.model} register={register} />;
+}
+
+function LoadedNPCInstance({
+    data,
+    model,
+    register,
+}: {
+    data: StoredNPC;
+    model: AnimatedModelHandle;
+    register: (runtime: NPCRuntime | null, id: string) => void;
 }) {
     const api = useCrashcat();
     const runtime = useMemo<NPCRuntime>(() => {
-        // Skeleton clones share geometry, textures, and materials while retaining independent bones.
-        const root = cloneSkeleton(source);
-        const mixer = new AnimationMixer(root);
+        const root = model.object;
+        const localPosition = root.position.clone();
+        const localQuaternion = root.quaternion.clone();
+        const localScale = root.scale.clone();
         const bones = new Map<string, Bone>();
         const boneRestTransforms = new Map<Bone, BoneRestTransform>();
-        root.name = data.id;
-        root.position.copy(data.position);
-        root.scale.setScalar(NPC_SCALE);
         root.traverse((object) => {
-            if (object instanceof Mesh) {
-                object.castShadow = true;
-                object.receiveShadow = true;
-                object.frustumCulled = false;
-            }
             if (object instanceof Bone) {
                 bones.set(object.name, object);
                 boneRestTransforms.set(object, {
@@ -708,7 +750,10 @@ function NPCInstance({
         const nextRuntime: NPCRuntime = {
             data,
             root,
-            mixer,
+            model,
+            localPosition,
+            localQuaternion,
+            localScale,
             boneRestTransforms,
             bindings,
             bodies: new Map<NPCBodyPart, RigidBody>(),
@@ -718,29 +763,18 @@ function NPCInstance({
             navigationBlocked: false,
             hitboxSyncAccumulator: 0,
             constraints: [],
-            idleAction: null,
-            walkAction: null,
-            action: null,
         };
-        applyHitPartScales(nextRuntime);
         return nextRuntime;
-    }, [data, source]);
+    }, [data, model]);
 
-    // The instance handle owns mutable mixer and physics resources for its loaded lifetime.
+    // The instance owns physics resources while AnimatedModel owns rendering and animation.
     /* eslint-disable react-hooks/immutability */
     useEffect(() => {
         if (!api) return;
-        const idleClip = selectIdleClip(animations);
-        const walkClip = selectWalkClip(animations);
-        runtime.idleAction = idleClip
-            ? runtime.mixer.clipAction(idleClip, runtime.root).setLoop(LoopRepeat, Infinity)
-            : null;
-        runtime.walkAction = walkClip
-            ? runtime.mixer.clipAction(walkClip, runtime.root).setLoop(LoopRepeat, Infinity)
-            : null;
+        setObjectWorldPosition(runtime.root, data.position);
         setNPCAnimState(runtime, "idle", true);
-        runtime.mixer.update(0);
-        runtime.bodies = createNPCBodies(api, data.id);
+        runtime.model.update(0);
+        runtime.bodies = createNPCBodies(api, data.id, data.scale);
         runtime.navigationBody = createNPCNavigationBody(api, runtime);
         runtime.navigationFilter = filter.forWorld(api.world);
         filter.copy(runtime.navigationFilter, api.queryFilter);
@@ -761,99 +795,66 @@ function NPCInstance({
                 data.hitParts.clear();
                 data.hiddenParts.clear();
             } else {
-                data.position.copy(runtime.root.position);
+                runtime.root.getWorldPosition(objectWorldPosition);
+                data.position.copy(objectWorldPosition);
             }
             runtime.constraints.forEach(constraint => swingTwistConstraint.remove(api.world, constraint));
             BODY_PART_ENTRIES.forEach(([part]) => api.unregister(`${data.id}-${part}`));
             api.unregister(`${data.id}-navigation`);
             runtime.navigationBody = null;
             runtime.navigationFilter = null;
-            runtime.idleAction = null;
-            runtime.walkAction = null;
-            runtime.action = null;
             register(null, data.id);
-            runtime.mixer.stopAllAction();
-            runtime.mixer.uncacheRoot(runtime.root);
+            runtime.model.stop();
+            runtime.boneRestTransforms.forEach((transform, bone) => {
+                bone.position.copy(transform.position);
+                bone.quaternion.copy(transform.quaternion);
+                bone.scale.copy(transform.scale);
+            });
+            runtime.model.setAnimationState("idle", true);
+            runtime.model.update(0);
+            runtime.root.position.copy(runtime.localPosition);
+            runtime.root.quaternion.copy(runtime.localQuaternion);
+            runtime.root.scale.copy(runtime.localScale);
+            runtime.root.updateMatrixWorld(true);
         };
-    }, [animations, api, data, register, runtime]);
+    }, [api, data, register, runtime]);
     /* eslint-enable react-hooks/immutability */
 
     return (
         <>
-            <primitive object={runtime.root} />
-            {debug ? <NPCDebugColliders runtime={runtime} /> : null}
+            {data.debugRagdoll ? <NPCDebugColliders runtime={runtime} /> : null}
         </>
     );
 }
 
-const NPCPool = forwardRef<NPCPoolRef, NPCPoolProps>(function NPCPool({
-    playerRef,
-    initialNPCs,
-    defaultSpawnHeight = -4,
-    loadDistance = DEFAULT_LOAD_DISTANCE,
-    unloadDistance = DEFAULT_UNLOAD_DISTANCE,
-    debug = false,
-}, ref) {
-    const { mode } = useScene();
+const NPCSystem = forwardRef<NPCManagerRef, NPCSystemProps>(function NPCSystem({ models, settings }, ref) {
     const api = useCrashcat();
-    const { scene, animations } = useGLTF(MODEL_PATH) as LoadedCharacter;
-    const [records] = useState(() => new Map(
-        (initialNPCs ?? createDefaultNPCs(defaultSpawnHeight)).map(npc => [npc.id, createStoredNPC(npc)]),
-    ));
+    const [npcs] = useState(() => models.map(({ nodeId: id, value: model }) => {
+        model.object.updateWorldMatrix(true, false);
+        model.object.getWorldPosition(objectWorldPosition);
+        return createStoredNPC({
+            id,
+            position: [objectWorldPosition.x, objectWorldPosition.y, objectWorldPosition.z],
+            model,
+            scale: settings.scale,
+            maxHp: settings.maxHp,
+            speed: settings.speed,
+            ragdollLifetime: settings.ragdollLifetime,
+            debugRagdoll: settings.debugRagdoll,
+        });
+    }));
     const runtimesRef = useRef(new Map<string, NPCRuntime>());
-    const [activeIds, setActiveIds] = useState<Set<string>>(() => new Set());
-    const [, setPoolRevision] = useState(0);
     const playerPositionRef = useRef(new Vector3());
     const movementRef = useRef(new Vector3());
     const separationRef = useRef(new Vector3());
     const nextPositionRef = useRef(new Vector3());
-    const activationTimerRef = useRef(0);
 
     const register = useCallback((runtime: NPCRuntime | null, id: string) => {
         if (runtime) runtimesRef.current.set(id, runtime);
         else runtimesRef.current.delete(id);
     }, []);
 
-    const refreshActiveNPCs = useCallback((playerPosition: Vector3) => {
-        setActiveIds((current) => {
-            const next = new Set<string>();
-            records.forEach((npc, id) => {
-                const threshold = current.has(id) ? unloadDistance : loadDistance;
-                if (npc.position.distanceToSquared(playerPosition) <= threshold * threshold) next.add(id);
-            });
-            if (next.size === current.size && [...next].every(id => current.has(id))) return current;
-            return next;
-        });
-    }, [loadDistance, records, unloadDistance]);
-
     useImperativeHandle(ref, () => ({
-        addNPC: (npc) => {
-            if (!npc.id || records.has(npc.id)) return false;
-            records.set(npc.id, createStoredNPC(npc));
-            setPoolRevision(revision => revision + 1);
-            return true;
-        },
-        removeNPC: (id) => {
-            const removed = records.delete(id);
-            if (removed) {
-                setActiveIds(current => {
-                    const next = new Set(current);
-                    next.delete(id);
-                    return next;
-                });
-                setPoolRevision(revision => revision + 1);
-            }
-            return removed;
-        },
-        getNPC: (id) => {
-            const npc = records.get(id);
-            return npc ? {
-                id: npc.id,
-                position: npc.position.toArray() as [number, number, number],
-                hp: npc.hp,
-                maxHp: npc.maxHp,
-            } : null;
-        },
         raycast: (aimRaycaster, maxDistance) => {
             let closestHit: NPCHit | null = null;
             for (const runtime of runtimesRef.current.values()) {
@@ -863,8 +864,9 @@ const NPCPool = forwardRef<NPCPoolRef, NPCPoolProps>(function NPCPool({
                     const body = runtime.bodies.get(bodyPart);
                     if (!body) continue;
                     const halfExtents = definition.halfExtents;
-                    localBodyBox.min.set(-halfExtents[0] * NPC_SCALE, -halfExtents[1] * NPC_SCALE, -halfExtents[2] * NPC_SCALE);
-                    localBodyBox.max.set(halfExtents[0] * NPC_SCALE, halfExtents[1] * NPC_SCALE, halfExtents[2] * NPC_SCALE);
+                    const scale = runtime.data.scale;
+                    localBodyBox.min.set(-halfExtents[0] * scale, -halfExtents[1] * scale, -halfExtents[2] * scale);
+                    localBodyBox.max.set(halfExtents[0] * scale, halfExtents[1] * scale, halfExtents[2] * scale);
                     partStart.set(body.position[0], body.position[1], body.position[2]);
                     partQuaternion.set(body.quaternion[0], body.quaternion[1], body.quaternion[2], body.quaternion[3]);
                     bodyMatrix.compose(partStart, partQuaternion, unitScale);
@@ -898,25 +900,21 @@ const NPCPool = forwardRef<NPCPoolRef, NPCPoolProps>(function NPCPool({
                 setNPCAnimState(runtime, "walk");
             }
         },
-    }), [api, records]);
+    }), [api]);
 
     useFrame((_, delta) => {
-        if (mode !== PrefabEditorMode.Play || !api) return;
-        const playerPosition = playerRef.current?.getBody()?.position;
+        if (!api) return;
+        const playerPosition = getActivePlayer()?.getBody()?.position;
         if (!playerPosition) return;
         playerPositionRef.current.set(playerPosition[0], playerPosition[1], playerPosition[2]);
-        activationTimerRef.current -= delta;
-        if (activationTimerRef.current <= 0) {
-            refreshActiveNPCs(playerPositionRef.current);
-            activationTimerRef.current = 0.2;
-        }
 
         for (const runtime of runtimesRef.current.values()) {
-            const { data, root, mixer } = runtime;
+            const { data, root, model } = runtime;
             data.stateTime += delta;
             if (data.state === "dead") {
+                stabilizeRagdollMotion(runtime);
                 syncBonesFromRagdoll(runtime);
-                if (data.stateTime >= RAGDOLL_LIFETIME) {
+                if (data.stateTime >= data.ragdollLifetime) {
                     deactivateRagdoll(runtime, api);
                     resetRuntime(runtime);
                     syncAnimatedColliders(runtime, api);
@@ -926,19 +924,19 @@ const NPCPool = forwardRef<NPCPoolRef, NPCPoolProps>(function NPCPool({
             }
 
             if (data.state === "idle" && data.stateTime >= data.idleDuration) {
-                requestWanderGoal(data, root.position);
+                requestWanderGoal(data, data.position);
             }
 
             let stopDistance = NPC_STOP_DISTANCE;
             if (data.state === "wander") {
-                movementRef.current.copy(data.wanderTarget).sub(root.position);
+                movementRef.current.copy(data.wanderTarget).sub(data.position);
                 movementRef.current.y = 0;
                 stopDistance = NPC_WANDER_GOAL_DISTANCE;
                 if (movementRef.current.lengthSq() <= stopDistance * stopDistance || data.stateTime >= NPC_WANDER_TIMEOUT) {
                     enterIdle(data);
                 }
             } else if (data.state === "chase") {
-                movementRef.current.copy(playerPositionRef.current).sub(root.position);
+                movementRef.current.copy(playerPositionRef.current).sub(data.position);
                 movementRef.current.y = 0;
             }
 
@@ -960,7 +958,7 @@ const NPCPool = forwardRef<NPCPoolRef, NPCPoolProps>(function NPCPool({
 
                 for (const other of runtimesRef.current.values()) {
                     if (other === runtime || other.data.state === "dead") continue;
-                    separationRef.current.copy(root.position).sub(other.root.position);
+                    separationRef.current.copy(data.position).sub(other.data.position);
                     separationRef.current.y = 0;
                     const separationDistance = separationRef.current.length();
                     if (separationDistance <= 1e-4 || separationDistance >= NPC_NAVIGATION_SPACING * 1.5) continue;
@@ -976,10 +974,10 @@ const NPCPool = forwardRef<NPCPoolRef, NPCPoolProps>(function NPCPool({
                 movementRef.current.set(Math.sin(root.rotation.y), 0, Math.cos(root.rotation.y));
                 runtime.navigationDirection.copy(movementRef.current);
 
-                nextPositionRef.current.copy(root.position).addScaledVector(movementRef.current, NPC_SPEED * delta);
+                nextPositionRef.current.copy(data.position).addScaledVector(movementRef.current, data.speed * delta);
                 for (const other of runtimesRef.current.values()) {
                     if (other === runtime || other.data.state === "dead") continue;
-                    separationRef.current.copy(nextPositionRef.current).sub(other.root.position);
+                    separationRef.current.copy(nextPositionRef.current).sub(other.data.position);
                     separationRef.current.y = 0;
                     const separationDistance = separationRef.current.length();
                     if (separationDistance >= NPC_NAVIGATION_SPACING) continue;
@@ -993,20 +991,14 @@ const NPCPool = forwardRef<NPCPoolRef, NPCPoolProps>(function NPCPool({
                         NPC_NAVIGATION_SPACING - separationDistance,
                     );
                 }
-                root.position.copy(nextPositionRef.current);
-                data.position.copy(root.position);
+                data.position.copy(nextPositionRef.current);
+                setObjectWorldPosition(root, data.position);
             }
-            mixer.update(delta);
+            model.update(delta);
             syncAnimatedCollidersAtFixedRate(runtime, api, delta);
             syncNavigationBody(runtime, api);
         }
     });
 
-    if (mode !== PrefabEditorMode.Play) return null;
-    return <>{[...activeIds].map(id => {
-        const data = records.get(id);
-        return data ? <NPCInstance key={id} data={data} source={scene} animations={animations} register={register} debug={debug} /> : null;
-    })}</>;
+    return <>{npcs.map(data => <NPCInstance key={data.id} data={data} register={register} />)}</>;
 });
-
-export default NPCPool;

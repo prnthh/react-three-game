@@ -3,8 +3,6 @@
 import { useRef } from "react";
 import { useNode, useNodeObject, useGameEvent } from "react-three-game";
 import type { Component, ComponentViewProps, ContactEventPayload } from "react-three-game";
-import { FieldRenderer } from "react-three-game/editor";
-import type { ComponentEditorProps, FieldDefinition } from "react-three-game/editor";
 import { useFrame } from "@react-three/fiber";
 
 const DEFAULT_CONTACT_EVENT_NAME = "elevator:contact";
@@ -25,24 +23,6 @@ type ElevatorMoverProperties = {
     returnDelay?: number;
     returnDuration?: number;
 };
-
-const elevatorMoverFields = [
-    {
-        name: "contactEventName",
-        type: "string",
-        label: "Contact Event",
-    },
-    { name: "triggerEntityId", type: "string", label: "Trigger Entity" },
-    { name: "travelDistance", type: "number", label: "Travel Distance", step: 0.1 },
-    { name: "moveSpeed", type: "number", label: "Move Speed", min: 0.01, step: 0.1 },
-    { name: "startDelay", type: "number", label: "Start Delay", min: 0, step: 0.1 },
-    { name: "returnDelay", type: "number", label: "Return Delay", min: 0, step: 0.1 },
-    { name: "returnDuration", type: "number", label: "Return Duration", min: 0.01, step: 0.1 },
-] satisfies FieldDefinition<ElevatorMoverProperties>[];
-
-function ElevatorMoverEditor({ properties, update }: ComponentEditorProps<ElevatorMoverProperties>) {
-    return <FieldRenderer fields={elevatorMoverFields} values={properties} onChange={update} />;
-}
 
 function ElevatorMoverView({ properties, children }: ComponentViewProps<ElevatorMoverProperties>) {
     const { editMode, nodeId } = useNode();
@@ -151,16 +131,15 @@ function ElevatorMoverView({ properties, children }: ComponentViewProps<Elevator
 
 const ElevatorMover: Component<ElevatorMoverProperties> = {
     name: "ElevatorMover",
-    Editor: ElevatorMoverEditor,
     View: ElevatorMoverView,
     properties: {
-        contactEventName: { type: "string", default: DEFAULT_CONTACT_EVENT_NAME },
-        triggerEntityId: { type: "string", default: "" },
-        travelDistance: { default: DEFAULT_TRAVEL_DISTANCE },
-        moveSpeed: { default: DEFAULT_MOVE_SPEED },
-        startDelay: { default: DEFAULT_START_DELAY },
-        returnDelay: { default: DEFAULT_RETURN_DELAY },
-        returnDuration: { default: DEFAULT_RETURN_DURATION },
+        contactEventName: { type: "string", default: DEFAULT_CONTACT_EVENT_NAME, label: "Contact Event" },
+        triggerEntityId: { type: "string", default: "", label: "Trigger Entity" },
+        travelDistance: { default: DEFAULT_TRAVEL_DISTANCE, step: 0.1 },
+        moveSpeed: { default: DEFAULT_MOVE_SPEED, min: 0.01, step: 0.1 },
+        startDelay: { default: DEFAULT_START_DELAY, min: 0, step: 0.1 },
+        returnDelay: { default: DEFAULT_RETURN_DELAY, min: 0, step: 0.1 },
+        returnDuration: { default: DEFAULT_RETURN_DURATION, min: 0.01, step: 0.1 },
     },
 };
 

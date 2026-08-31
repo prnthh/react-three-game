@@ -4,9 +4,8 @@ import type { ThreeElement } from '@react-three/fiber';
 import type { Component, ComponentEditorProps, ComponentViewProps } from './ComponentRegistry';
 import { FieldRenderer, Label, NumberInput } from './Input';
 import type { FieldDefinition } from './Input';
-import { useTextureAsset, useVisualAssetRevision } from '../assetRuntime';
-import { useNodeObject, usePrefab } from '../SceneContext';
-import { useCompileObject } from '../../../shared/GameCanvas';
+import { useTextureAsset } from '../assetRuntime';
+import { usePrefab } from '../SceneContext';
 import { useEditorRef } from '../EditorContext';
 import { usePrefabStore } from '../prefabStore';
 import { compactPrefabMaterial, createDefaultMaterial, DEFAULT_MATERIAL_ID } from '../prefab';
@@ -200,21 +199,17 @@ extend({
     SpriteNodeMaterial,
 });
 
-type SharedMaterial = MeshBasicNodeMaterial | MeshStandardNodeMaterial | SpriteNodeMaterial;
+type RuntimeMaterial = MeshBasicNodeMaterial | MeshStandardNodeMaterial | SpriteNodeMaterial;
 
 type SharedMaterials = {
-    byId: ReadonlyMap<string, SharedMaterial>;
-    pool: ReadonlyMap<string, SharedMaterial>;
+    byId: ReadonlyMap<string, RuntimeMaterial>;
+    pool: ReadonlyMap<string, RuntimeMaterial>;
 };
 
-const EMPTY_SHARED_MATERIALS: SharedMaterials = {
-    byId: new Map(),
-    pool: new Map(),
-};
-
+const EMPTY_SHARED_MATERIALS: SharedMaterials = { byId: new Map(), pool: new Map() };
 const SharedMaterialsContext = createContext<SharedMaterials>(EMPTY_SHARED_MATERIALS);
 
-function createMaterial(type: PrefabMaterialType = 'standard'): SharedMaterial {
+function createMaterial(type: PrefabMaterialType = 'standard'): RuntimeMaterial {
     if (type === 'basic') return new MeshBasicNodeMaterial();
     if (type === 'sprite') return new SpriteNodeMaterial();
     return new MeshStandardNodeMaterial();
@@ -229,11 +224,8 @@ function getMaterialSignature(material: PrefabMaterial, basePath: string) {
     }).sort(([left], [right]) => left.localeCompare(right)));
 }
 
-function ConfiguredSharedMaterial({
-    material,
-    properties,
-}: {
-    material: SharedMaterial;
+function ConfiguredSharedMaterial({ material, properties }: {
+    material: RuntimeMaterial;
     properties: PrefabMaterial;
 }) {
     const { basePath } = usePrefab();
@@ -255,7 +247,6 @@ function ConfiguredSharedMaterial({
     useLayoutEffect(() => {
         applyMaterialProperties(material, properties, map, normalMap, EMPTY_MATERIAL_OVERRIDES);
     }, [map, material, normalMap, properties]);
-
     return null;
 }
 
@@ -263,34 +254,29 @@ export function MaterialRuntimeProvider({ children }: { children: ReactNode }) {
     const materials = usePrefabStore(state => state.materials);
     const { basePath } = usePrefab();
     const inherited = useContext(SharedMaterialsContext);
-    const entries = useMemo(
-        () => Object.entries(materials).map(([id, properties]) => ({
-            id,
-            properties,
-            signature: getMaterialSignature(properties, basePath),
-        })),
-        [basePath, materials],
-    );
+    const entries = useMemo(() => Object.entries(materials).map(([id, properties]) => ({
+        id,
+        properties,
+        signature: getMaterialSignature(properties, basePath),
+    })), [basePath, materials]);
     const localEntries = entries.filter(({ signature }) => !inherited.pool.has(signature));
     const instanceKey = JSON.stringify(localEntries
         .map(({ id, properties }) => [id, properties.materialType ?? 'standard'])
         .sort(([left], [right]) => left.localeCompare(right)));
-    const instances = useMemo(() => new Map(
-        localEntries.map(({ id, properties }) => [
-            id,
-            createMaterial(properties.materialType),
-        ]),
-    ), [instanceKey]);
+    const instances = useMemo(() => new Map(localEntries.map(({ id, properties }) => {
+        const material = createMaterial(properties.materialType);
+        applyMaterialProperties(material, properties, undefined, undefined, EMPTY_MATERIAL_OVERRIDES);
+        return [id, material];
+    })), [instanceKey]);
     const sharedMaterials = useMemo<SharedMaterials>(() => {
         const pool = new Map(inherited.pool);
-        const byId = new Map<string, SharedMaterial>();
+        const byId = new Map<string, RuntimeMaterial>();
         entries.forEach(({ id, signature }) => {
             const material = inherited.pool.get(signature) ?? instances.get(id);
             if (!material) return;
             byId.set(id, material);
             if (!pool.has(signature)) pool.set(signature, material);
         });
-
         return { byId, pool };
     }, [entries, inherited.pool, instances]);
 
@@ -300,18 +286,14 @@ export function MaterialRuntimeProvider({ children }: { children: ReactNode }) {
 
     return <SharedMaterialsContext.Provider value={sharedMaterials}>
         {localEntries.map(({ id, properties }) => (
-            <ConfiguredSharedMaterial
-                key={id}
-                material={instances.get(id)!}
-                properties={properties}
-            />
+            <ConfiguredSharedMaterial key={id} material={instances.get(id)!} properties={properties} />
         ))}
         {children}
     </SharedMaterialsContext.Provider>;
 }
 
 function applyMaterialProperties(
-    material: SharedMaterial,
+    material: RuntimeMaterial,
     properties: PrefabMaterial,
     map: Texture | null | undefined,
     normalMap: Texture | null | undefined,
@@ -321,6 +303,7 @@ function applyMaterialProperties(
     const common = {
         name: properties.name ?? '',
         color: properties.color ?? '#ffffff',
+        visible: (!properties.texture || !!map) && (!properties.normalMapTexture || !!normalMap),
         toneMapped: properties.toneMapped ?? true,
         transparent: properties.transparent ?? materialType === 'sprite',
         opacity: properties.opacity ?? 1,
@@ -703,13 +686,8 @@ function MaterialComponentView({ properties, children }: ComponentViewProps<Mate
     const materialType = material.materialType ?? 'standard';
     const overrides = useMaterialOverrides();
     const ownsMaterial = Object.keys(overrides).length > 0;
-    const localMaterial = useMemo(
-        () => ownsMaterial ? createMaterial(materialType) : null,
-        [materialType, ownsMaterial],
-    );
+    const localMaterial = useMemo(() => ownsMaterial ? createMaterial(materialType) : null, [materialType, ownsMaterial]);
     const resolvedMaterial = localMaterial ?? sharedMaterial;
-    const nodeObject = useNodeObject();
-    const assetRevision = useVisualAssetRevision();
 
     useEffect(() => () => localMaterial?.dispose(), [localMaterial]);
     useLayoutEffect(() => {
@@ -718,12 +696,8 @@ function MaterialComponentView({ properties, children }: ComponentViewProps<Mate
         applyProps(localMaterial, overrides);
         localMaterial.needsUpdate = true;
     }, [localMaterial, material, overrides, sharedMaterial]);
-    useCompileObject(nodeObject, assetRevision + (resolvedMaterial?.version ?? 0));
-
     return <>
-        {resolvedMaterial ? (
-            <primitive object={resolvedMaterial as Material} attach={properties.attach ?? 'material'} dispose={null} />
-        ) : null}
+        {resolvedMaterial ? <primitive object={resolvedMaterial as Material} attach={properties.attach ?? 'material'} dispose={null} /> : null}
         {children}
     </>;
 }

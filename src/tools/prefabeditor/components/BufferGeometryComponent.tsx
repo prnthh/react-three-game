@@ -198,10 +198,10 @@ function BufferGeometryComponentView({ properties, children }: ComponentViewProp
 
 const BufferGeometryComponent: Component<BufferGeometryProperties> = {
     name: 'BufferGeometry',
+    Editor: BufferGeometryComponentEditor,
     renderWhenDisabled: true,
     attachment: true,
-    disableSiblingComposition: 'geometry',
-    Editor: BufferGeometryComponentEditor,
+    attach: 'geometry',
     View: BufferGeometryComponentView,
     properties: {
         positions: { type: 'number[]', default: DEFAULT_TRIANGLE_POSITIONS },

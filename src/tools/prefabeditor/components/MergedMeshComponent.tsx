@@ -4,8 +4,7 @@ import type { Group } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 import { scheduleObjectRaycast } from '../../../shared/raycast';
-import { useCompileObject } from '../../../shared/GameCanvas';
-import { useVisualAssetRevision } from '../assetRuntime';
+import { useModelAssetRevision } from '../assetRuntime';
 import { useNode } from '../SceneContext';
 import { usePrefabStore } from '../prefabStore';
 import type { PrefabStoreState } from '../prefabStore';
@@ -53,7 +52,7 @@ function MergedMeshView({ properties, children }: ComponentViewProps<MergedMeshP
     const hiddenMeshes = useMemo(() => new Map<Mesh, HiddenMesh>(), []);
     const nodesById = usePrefabStore(state => state.nodesById);
     const childIdsById = usePrefabStore(state => state.childIdsById);
-    const assetRevision = useVisualAssetRevision();
+    const modelRevision = useModelAssetRevision();
     const { editMode, nodeInteractionHandlers } = useNode();
     const enabled = properties.enabled !== false;
 
@@ -118,8 +117,7 @@ function MergedMeshView({ properties, children }: ComponentViewProps<MergedMeshP
             }
             mesh.visible = false;
         });
-    }, [assetRevision, childIdsById, editMode, enabled, hiddenMeshes, nodeInteractionHandlers, nodesById, properties.castShadow, properties.receiveShadow]);
-    useCompileObject(mergedRef, assetRevision);
+    }, [modelRevision, childIdsById, editMode, enabled, hiddenMeshes, nodeInteractionHandlers, nodesById, properties.castShadow, properties.receiveShadow]);
 
     useLayoutEffect(() => () => {
         const group = groupRef.current;
@@ -137,7 +135,7 @@ function MergedMeshView({ properties, children }: ComponentViewProps<MergedMeshP
 const MergedMeshComponent: Component<MergedMeshProperties> = {
     name: 'MergedMesh',
     renderWhenDisabled: true,
-    disableSiblingComposition: 'object',
+    attach: 'object',
     Editor: MergedMeshEditor,
     View: MergedMeshView,
     properties: {

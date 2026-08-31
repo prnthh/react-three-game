@@ -2,8 +2,8 @@
 
 import { useFrame, useThree } from "@react-three/fiber";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CAMERA_POSITION_ROUTE_HANDLE, findComponent, GameCanvas, gameEvents, PrefabEditorMode, PrefabRoot, registerComponent, usePrefab, useScene } from "react-three-game";
-import type { CameraPositionRoute, ContactEventPayload } from "react-three-game";
+import { CAMERA_POSITION_ROUTE_COMPONENT, findComponent, GameCanvas, gameEvents, PrefabEditorMode, PrefabRoot, registerComponent, usePrefab, useScene, useSceneComponents } from "react-three-game";
+import type { ContactEventPayload } from "react-three-game";
 import { CrashcatPhysicsComponent, CrashcatRuntime } from "react-three-game/plugins/crashcat";
 import AnimationMixer from "./components/AnimationMixer";
 import SkinnedMesh, { type SkinnedMeshRef } from "./components/SkinnedMesh";
@@ -61,6 +61,13 @@ function findAnimationName(actionNames: string[], preferred: "idle" | "walk") {
 function PlayerCameraFollow() {
     const { mode } = useScene();
     const prefab = usePrefab();
+    const cameraRoutes = useSceneComponents(CAMERA_POSITION_ROUTE_COMPONENT);
+    const positionRoute = useMemo(() => {
+        for (let index = 0; index < cameraRoutes.length; index += 1) {
+            if (cameraRoutes[index].nodeId === 'stage-camera') return cameraRoutes[index].value;
+        }
+        return null;
+    }, [cameraRoutes]);
     const camera = useThree((state) => state.camera);
     const worldPosition = useRef(new Vector3());
     const viewPosition = useRef(new Vector3());
@@ -75,7 +82,6 @@ function PlayerCameraFollow() {
         if (mode !== PrefabEditorMode.Play) return;
         const player = prefab.getObject(PLAYER_COLLIDER_ID);
         if (!player) return;
-        const positionRoute = prefab.getHandle<CameraPositionRoute>("stage-camera", CAMERA_POSITION_ROUTE_HANDLE);
         if (!positionRoute) return;
 
         player.getWorldPosition(worldPosition.current);

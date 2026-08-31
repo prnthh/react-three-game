@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { PrefabEditor } from "react-three-game/editor";
-import type { Prefab } from "react-three-game";
+import type { Prefab } from "react-three-game/core";
 
 import { BASE_PATH, withBasePath } from "../basePath";
 import PrefabSelector from "../components/PrefabSelector";

@@ -1,4 +1,3 @@
-import { assetRef, assetRefs } from "./ComponentRegistry";
 import type { Component, ComponentEditorProps, ComponentViewProps } from "./ComponentRegistry";
 import { useHelper } from "@react-three/drei";
 import { useMemo, useRef } from "react";
@@ -196,7 +195,6 @@ const SpotLightComponent: Component<SpotLightProperties> = {
         targetOffset: { type: 'vector3', default: spotLightDefaults.targetOffset },
         map: { type: 'string', default: spotLightDefaults.map },
     },
-    getAssetRefs: (properties) => assetRefs(assetRef('texture', properties.map)),
 };
 
 export default SpotLightComponent;

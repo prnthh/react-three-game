@@ -2,23 +2,18 @@ import { Fragment, createContext, createElement, type ReactNode, useContext } fr
 import { subscribeWithSelector } from "zustand/middleware";
 import { useStore } from "zustand";
 import { createStore, type Mutate, type StoreApi } from "zustand/vanilla";
+import { useShallow } from "zustand/react/shallow";
 
 import { GameObject, Prefab, PrefabMaterial } from "./types";
 import {
-    collectAssetRefsForIds,
-    collectSubtreeAssetRefs,
     collectSubtreeIds,
     cloneSubtree,
-    createPrefabPatch,
     denormalizePrefab,
     insertSubtree,
     isDescendant,
     normalizePrefab,
     PrefabState,
-    PrefabAssetRefCounts,
     PrefabNodeRecord,
-    updateAssetRefsForNodeChange,
-    updateMaterialAssetRefs,
 } from "./prefab";
 
 export interface PrefabStoreState extends PrefabState {
@@ -41,30 +36,11 @@ export type PrefabStoreApi = Mutate<
 const PrefabStoreContext = createContext<PrefabStoreApi | null>(null);
 const EMPTY_CHILD_IDS: string[] = [];
 
-function addAssetRefs(assetRefCounts: PrefabAssetRefCounts, refs: string[]) {
-    refs.forEach(ref => {
-        assetRefCounts[ref] = (assetRefCounts[ref] ?? 0) + 1;
-    });
-}
-
-function removeAssetRefs(assetRefCounts: PrefabAssetRefCounts, refs: string[]) {
-    refs.forEach(ref => {
-        const nextCount = (assetRefCounts[ref] ?? 0) - 1;
-        if (nextCount > 0) {
-            assetRefCounts[ref] = nextCount;
-            return;
-        }
-
-        delete assetRefCounts[ref];
-    });
-}
-
 function cloneGraphState(state: PrefabStoreState) {
     return {
         nodesById: { ...state.nodesById },
         childIdsById: { ...state.childIdsById },
         parentIdById: { ...state.parentIdById },
-        assetRefCounts: { ...state.assetRefCounts },
     };
 }
 
@@ -74,8 +50,6 @@ function removeSubtreeFromGraph(
     next: ReturnType<typeof cloneGraphState>,
 ) {
     const ids = collectSubtreeIds(id, state.childIdsById);
-
-    removeAssetRefs(next.assetRefCounts, collectAssetRefsForIds(ids, state.nodesById));
 
     ids.forEach(nodeId => {
         delete next.nodesById[nodeId];
@@ -92,7 +66,6 @@ function insertSubtreeIntoGraph(
     next: ReturnType<typeof cloneGraphState>,
 ) {
     insertSubtree(node, parentId, next.nodesById, next.childIdsById, next.parentIdById);
-    addAssetRefs(next.assetRefCounts, collectSubtreeAssetRefs(node));
 }
 
 export function PrefabStoreProvider({
@@ -134,9 +107,18 @@ export function usePrefabChildIds(nodeId: string | null | undefined) {
     return usePrefabStore(state => nodeId ? state.childIdsById[nodeId] ?? EMPTY_CHILD_IDS : EMPTY_CHILD_IDS);
 }
 
-export function createPrefabStore(prefab: Prefab): PrefabStoreApi {
+/** Read a render node and its children through one store subscription. */
+export function usePrefabRenderNode(nodeId: string) {
+    return useStore(usePrefabStoreApi(), useShallow(state => [
+        state.nodesById[nodeId] ?? null,
+        state.childIdsById[nodeId] ?? EMPTY_CHILD_IDS,
+    ] as const));
+}
+
+export function createPrefabStore(prefab: Prefab | PrefabState): PrefabStoreApi {
+    const initialState = 'nodesById' in prefab ? prefab : normalizePrefab(prefab);
     return createStore<PrefabStoreState>()(subscribeWithSelector((set, get) => ({
-        ...normalizePrefab(prefab),
+        ...initialState,
         replacePrefab: (nextPrefab) => {
             set(normalizePrefab(nextPrefab));
         },
@@ -149,7 +131,6 @@ export function createPrefabStore(prefab: Prefab): PrefabStoreApi {
                 nodesById: snapshot.nodesById,
                 childIdsById: snapshot.childIdsById,
                 parentIdById: snapshot.parentIdById,
-                assetRefCounts: snapshot.assetRefCounts,
             });
         },
         updateNode: (id, update) => {
@@ -160,20 +141,17 @@ export function createPrefabStore(prefab: Prefab): PrefabStoreApi {
             const nextNode = update(node);
             if (nextNode === node) return;
 
-            const nextAssetRefCounts = updateAssetRefsForNodeChange(state.assetRefCounts, node, nextNode);
-
-            set(createPrefabPatch(state, {
+            set({
                 nodesById: { ...state.nodesById, [id]: nextNode },
-            }, nextAssetRefCounts));
+            });
         },
         setMaterial: (id, material) => {
             const state = get();
             const current = state.materials[id];
             if (current === material) return;
-            const nextAssetRefCounts = updateMaterialAssetRefs(state.assetRefCounts, current, material);
-            set(createPrefabPatch(state, {
+            set({
                 materials: { ...state.materials, [id]: material },
-            }, nextAssetRefCounts));
+            });
         },
         replaceNode: (id, node) => {
             const state = get();
@@ -197,7 +175,7 @@ export function createPrefabStore(prefab: Prefab): PrefabStoreApi {
                 next.childIdsById[parentId] = (next.childIdsById[parentId] ?? []).map(childId => childId === id ? node.id : childId);
             }
 
-            set(createPrefabPatch(state, patch, next.assetRefCounts));
+            set(patch);
         },
         addChild: (parentId, node) => {
             const state = get();
@@ -208,11 +186,11 @@ export function createPrefabStore(prefab: Prefab): PrefabStoreApi {
             insertSubtreeIntoGraph(node, parentId, next);
             next.childIdsById[parentId] = [...(next.childIdsById[parentId] ?? []), node.id];
 
-            set(createPrefabPatch(state, {
+            set({
                 nodesById: next.nodesById,
                 childIdsById: next.childIdsById,
                 parentIdById: next.parentIdById,
-            }, next.assetRefCounts));
+            });
         },
         deleteNode: (id) => {
             const state = get();
@@ -226,11 +204,11 @@ export function createPrefabStore(prefab: Prefab): PrefabStoreApi {
             removeSubtreeFromGraph(id, state, next);
             next.childIdsById[parentId] = (next.childIdsById[parentId] ?? []).filter(childId => childId !== id);
 
-            set(createPrefabPatch(state, {
+            set({
                 nodesById: next.nodesById,
                 childIdsById: next.childIdsById,
                 parentIdById: next.parentIdById,
-            }, next.assetRefCounts));
+            });
         },
         duplicateNode: (id) => {
             const state = get();
@@ -255,14 +233,11 @@ export function createPrefabStore(prefab: Prefab): PrefabStoreApi {
             }
             nextChildIdsById[parentId] = siblings;
 
-            const nextAssetRefCounts = { ...state.assetRefCounts };
-            addAssetRefs(nextAssetRefCounts, collectAssetRefsForIds(collectSubtreeIds(id, state.childIdsById), state.nodesById));
-
-            set(createPrefabPatch(state, {
+            set({
                 nodesById: nextNodesById,
                 childIdsById: nextChildIdsById,
                 parentIdById: nextParentIdById,
-            }, nextAssetRefCounts));
+            });
 
             return duplicatedRootId;
         },
@@ -298,10 +273,10 @@ export function createPrefabStore(prefab: Prefab): PrefabStoreApi {
                 nextChildIdsById[destinationParentId] = destinationChildren;
             }
 
-            set(createPrefabPatch(state, {
+            set({
                 childIdsById: nextChildIdsById,
                 parentIdById: nextParentIdById,
-            }));
+            });
         },
     })));
 }

@@ -19,6 +19,7 @@ import {
 } from "crashcat";
 import { debugRenderer } from "crashcat/three";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import type { Object3D } from "three";
 import { gameEvents } from "../../tools/prefabeditor/GameEvents";
 import type { ContactEventPayload } from "../../tools/prefabeditor/GameEvents";
 import { PrefabEditorMode, useScene } from "../../tools/prefabeditor/SceneContext";
@@ -154,7 +155,8 @@ export function CrashcatRuntime({ debug = false, children }: { debug?: boolean; 
     const bodiesRef = useRef(new Map<string, BodyEntry>());
     const bodyByIdRef = useRef(new Map<number, BodyMeta>());
     const apiRef = useRef<CrashcatApi | null>(null);
-    const [debugState] = useState(() => debug ? createDebugState() : null);
+    const debugStateRef = useRef<ReturnType<typeof createDebugState> | null>(null);
+    const [debugObject, setDebugObject] = useState<Object3D | null>(null);
 
     const listener = useMemo<Listener>(() => ({
         onContactAdded: (bodyA, bodyB, manifold) => {
@@ -193,6 +195,9 @@ export function CrashcatRuntime({ debug = false, children }: { debug?: boolean; 
         const queryFilter = filter.forWorld(world);
         const bodies = bodiesRef.current;
         const bodyById = bodyByIdRef.current;
+        const runtimeDebugState = debug ? createDebugState() : null;
+        debugStateRef.current = runtimeDebugState;
+        setDebugObject(runtimeDebugState?.object3d ?? null);
 
         const unregister = (nodeId: string) => {
             const entry = bodies.get(nodeId);
@@ -221,16 +226,18 @@ export function CrashcatRuntime({ debug = false, children }: { debug?: boolean; 
         setCrashcatApi(runtimeApi);
 
         return () => {
+            apiRef.current = null;
+            if (crashcatApi === runtimeApi) setCrashcatApi(null);
             for (const entry of bodies.values()) {
                 rigidBody.remove(world, entry.body);
             }
-            apiRef.current = null;
-            if (crashcatApi === runtimeApi) setCrashcatApi(null);
             bodies.clear();
             bodyById.clear();
-            if (debugState) debugRenderer.dispose(debugState);
+            if (debugStateRef.current === runtimeDebugState) debugStateRef.current = null;
+            setDebugObject(current => current === runtimeDebugState?.object3d ? null : current);
+            if (runtimeDebugState) debugRenderer.dispose(runtimeDebugState);
         };
-    }, [debugState]);
+    }, [debug]);
 
     useFrame((_, delta) => {
         const runtimeApi = apiRef.current;
@@ -254,14 +261,15 @@ export function CrashcatRuntime({ debug = false, children }: { debug?: boolean; 
             }
         }
 
+        const debugState = debugStateRef.current;
         if (debugState) debugRenderer.update(debugState, world);
     }, -1);
 
     return (
         <>
             {children}
-            {debugState
-                ? <primitive object={debugState.object3d} />
+            {debugObject
+                ? <primitive object={debugObject} dispose={null} />
                 : null}
         </>
     );

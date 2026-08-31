@@ -1,6 +1,6 @@
 import { useContext, useMemo, useState, type ReactNode } from "react";
 
-import { createPrefabRegistry, PrefabContext, PrefabEditorMode, SceneContext } from "./SceneContext";
+import { createNodeComponentRegistry, createPrefabRegistry, NodeComponentContext, PrefabContext, PrefabEditorMode, SceneContext } from "./SceneContext";
 import type { PrefabApi, Scene } from "./SceneContext";
 import { useAssetRuntime } from "./assetRuntime";
 import type { PrefabStoreApi } from "./prefabStore";
@@ -18,8 +18,10 @@ export interface SceneProviderProps {
 /** Owns a prefab document scope and creates the scene only at the outermost root. */
 export function SceneProvider({ store, scene, prefab, editMode, basePath = "", children }: SceneProviderProps) {
     const parentScene = useContext(SceneContext);
+    const parentComponents = useContext(NodeComponentContext);
     const runtime = useAssetRuntime();
     const [registry] = useState(createPrefabRegistry);
+    const [components] = useState(() => parentComponents ?? createNodeComponentRegistry());
 
     const localPrefab = useMemo<PrefabApi>(() => ({
         ...registry,
@@ -52,6 +54,8 @@ export function SceneProvider({ store, scene, prefab, editMode, basePath = "", c
     const resolvedScene = parentScene ?? scene ?? localScene;
 
     return <SceneContext.Provider value={resolvedScene}>
-        <PrefabContext.Provider value={resolvedPrefab}>{children}</PrefabContext.Provider>
+        <NodeComponentContext.Provider value={components}>
+            <PrefabContext.Provider value={resolvedPrefab}>{children}</PrefabContext.Provider>
+        </NodeComponentContext.Provider>
     </SceneContext.Provider>;
 }

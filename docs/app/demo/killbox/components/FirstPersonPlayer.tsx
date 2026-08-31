@@ -3,13 +3,14 @@
 import { PerspectiveCamera, PointerLockControls } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { CastRayStatus, capsule, castRay, createClosestCastRayCollector, createDefaultCastRaySettings, filter, kcc, rigidBody, MotionQuality, MotionType, type Filter, type RigidBody, type World } from "crashcat";
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, type RefObject } from "react";
-import { gameEvents, PrefabEditorMode, soundManager, usePrefab, useScene } from "react-three-game";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, type RefObject } from "react";
+import { createNodeComponentType, gameEvents, PrefabEditorMode, soundManager, useNode, usePrefab, useRegisterNodeComponent, useScene, useSceneComponents } from "react-three-game";
+import type { Component, ComponentViewProps } from "react-three-game";
 import { useCrashcat } from "react-three-game/plugins/crashcat";
 import { MathUtils, Quaternion, Raycaster, Vector2, Vector3 } from "three";
 import type { Camera, Group, Intersection, Material, Object3D } from "three";
 import { withBasePath } from "../../../basePath";
-import type { NPCPoolRef } from "./NPCPool";
+import type { NPCManagerRef } from "./NPCManager";
 
 const DEFAULT_FLOOR_MATERIAL_NAME = "default";
 const DEFAULT_FOOTSTEP_CLIPS = ["/sound/hit.mp3", "/sound/hit2.mp3"] as const;
@@ -22,6 +23,10 @@ const DEFAULT_GRAB_RANGE = 8;
 const DEFAULT_GRAB_STRENGTH = 18;
 const DEFAULT_GRAB_MAX_SPEED = 14;
 const DEFAULT_LAUNCH_SPEED = 18;
+const RAGDOLL_GRAB_STRENGTH = 10;
+const RAGDOLL_GRAB_MAX_SPEED = 6;
+const RAGDOLL_LAUNCH_SPEED = 10;
+const RAGDOLL_ANGULAR_RETENTION = 0.25;
 const DEFAULT_TARGET_DISTANCE = 30;
 const DEFAULT_NPC_DAMAGE = 100;
 const CAMERA_SWAY_AMOUNT = 0.045;
@@ -57,6 +62,10 @@ const grabTargetPosition = new Vector3();
 const grabBodyPosition = new Vector3();
 const grabVelocity = new Vector3();
 const grabQuaternion = new Quaternion();
+const grabLinearVelocity: [number, number, number] = [0, 0, 0];
+const grabAngularVelocity: [number, number, number] = [0, 0, 0];
+const grabRotation: [number, number, number, number] = [0, 0, 0, 1];
+const zeroGrabVelocity: [number, number, number] = [0, 0, 0];
 const cameraWorldQuaternion = new Quaternion();
 const supportCurrentPosition = new Vector3();
 const supportRelativePosition = new Vector3();
@@ -69,6 +78,10 @@ const supportRayOrigin: [number, number, number] = [0, 0, 0];
 const supportVelocity: [number, number, number] = [0, 0, 0];
 const supportRotatedPosition: [number, number, number] = [0, 0, 0];
 const playerBodyPosition: [number, number, number] = [0, 0, 0];
+
+function isRagdollBody(body: RigidBody) {
+    return (body.userData as { ragdoll?: unknown } | null)?.ragdoll === true;
+}
 const playerBodyQuaternion: [number, number, number, number] = [0, 0, 0, 1];
 const playerBodyVelocity: [number, number, number] = [0, 0, 0];
 
@@ -93,7 +106,7 @@ export type FirstPersonPlayerProps = {
     defaultFootstepClips?: readonly string[];
     cameraHeight?: number;
     spawnPosition?: [number, number, number];
-    npcPoolRef?: RefObject<NPCPoolRef | null>;
+    npcManager?: NPCManagerRef | null;
     targetDistance?: number;
     npcDamage?: number;
     onAimTargetChange?: (canHit: boolean) => void;
@@ -107,10 +120,91 @@ export interface FirstPersonPlayerRef {
     getSimulationTick: () => number;
 }
 
+let activePlayer: FirstPersonPlayerRef | null = null;
+
+export function getActivePlayer() {
+    return activePlayer;
+}
+
+function setActivePlayer(player: FirstPersonPlayerRef | null) {
+    activePlayer = player;
+}
+
 export type FootstepMaterialSound = {
     materialName: string;
     clips: readonly string[];
 };
+
+type PlayerControllerProperties = {
+    radius?: number;
+    halfHeightOfCylinder?: number;
+    maxSpeed?: number;
+    jumpSpeed?: number;
+    cameraHeight?: number;
+};
+
+export type PlayerRegistration = PlayerControllerProperties & {
+    getPosition(): [number, number, number];
+};
+
+export const PLAYER_CONTROLLER_COMPONENT = createNodeComponentType<PlayerRegistration>("KillboxPlayer");
+
+function PlayerControllerView({ properties, children }: ComponentViewProps<PlayerControllerProperties>) {
+    const { getObject } = useNode();
+    const { mode } = useScene();
+    const registration = useMemo<PlayerRegistration>(() => ({
+        ...properties,
+        getPosition: () => {
+            const object = getObject();
+            if (!object) return [0, 0, 0];
+            object.updateWorldMatrix(true, false);
+            object.getWorldPosition(groupPosition);
+            return [groupPosition.x, groupPosition.y, groupPosition.z];
+        },
+    }), [getObject, properties]);
+    useRegisterNodeComponent(PLAYER_CONTROLLER_COMPONENT, registration);
+    return <>
+        {mode === PrefabEditorMode.Edit ? (
+            <mesh position={[0, properties.halfHeightOfCylinder ?? 0.45, 0]} renderOrder={1000}>
+                <capsuleGeometry args={[properties.radius ?? 0.35, (properties.halfHeightOfCylinder ?? 0.45) * 2, 8, 12]} />
+                <meshBasicMaterial color="#3bd6ff" depthTest={false} transparent opacity={0.8} wireframe />
+            </mesh>
+        ) : null}
+        {children}
+    </>;
+}
+
+export const PlayerControllerComponent: Component<PlayerControllerProperties> = {
+    name: "KillboxPlayer",
+    View: PlayerControllerView,
+    properties: {
+        radius: { default: 0.35, min: 0.05, step: 0.05 },
+        halfHeightOfCylinder: { default: 0.45, label: "Body Half Height", min: 0.05, step: 0.05 },
+        maxSpeed: { default: 7, min: 0, step: 0.5 },
+        jumpSpeed: { default: 6.5, min: 0, step: 0.5 },
+        cameraHeight: { default: 0.54, step: 0.05 },
+    },
+};
+
+type PlayerRuntimeProps = Omit<FirstPersonPlayerProps,
+    "radius" | "halfHeightOfCylinder" | "maxSpeed" | "jumpSpeed" | "cameraHeight" | "spawnPosition"
+>;
+
+export function PlayerRuntime(props: PlayerRuntimeProps) {
+    const players = useSceneComponents(PLAYER_CONTROLLER_COMPONENT);
+    const player = players[0]?.value;
+    if (!player) return null;
+    return <FirstPersonPlayer
+        {...props}
+        ref={setActivePlayer}
+        radius={player.radius}
+        halfHeightOfCylinder={player.halfHeightOfCylinder}
+        maxSpeed={player.maxSpeed}
+        jumpSpeed={player.jumpSpeed}
+        cameraHeight={player.cameraHeight}
+        spawnPosition={player.getPosition()}
+    />;
+}
 
 function moveVectorToward(current: Vector3, target: Vector3, maxDelta: number) {
     planarVelocityDelta.copy(target).sub(current);
@@ -215,7 +309,7 @@ const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProp
     defaultFootstepClips = DEFAULT_FOOTSTEP_CLIPS,
     cameraHeight = 0.54,
     spawnPosition = [0, 1.3, 6],
-    npcPoolRef,
+    npcManager,
     targetDistance = DEFAULT_TARGET_DISTANCE,
     npcDamage = DEFAULT_NPC_DAMAGE,
     onAimTargetChange,
@@ -597,7 +691,7 @@ const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProp
 
                 <GrabArms />
                 <NPCAimSystem
-                    npcPoolRef={npcPoolRef}
+                    npcManager={npcManager}
                     playerBodyRef={playerBodyRef}
                     maxDistance={targetDistance}
                     damage={npcDamage}
@@ -613,14 +707,14 @@ const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProp
 export default FirstPersonPlayer;
 
 type NPCAimSystemProps = {
-    npcPoolRef?: RefObject<NPCPoolRef | null>;
+    npcManager?: NPCManagerRef | null;
     playerBodyRef: RefObject<RigidBody | null>;
     maxDistance: number;
     damage: number;
     onTargetChange?: (canHit: boolean) => void;
 };
 
-function NPCAimSystem({ npcPoolRef, playerBodyRef, maxDistance, damage, onTargetChange }: NPCAimSystemProps) {
+function NPCAimSystem({ npcManager, playerBodyRef, maxDistance, damage, onTargetChange }: NPCAimSystemProps) {
     const { mode } = useScene();
     const runtime = useCrashcat();
     const cameraRef = useRef<Camera | null>(null);
@@ -639,11 +733,10 @@ function NPCAimSystem({ npcPoolRef, playerBodyRef, maxDistance, damage, onTarget
     }, [onTargetChange]);
 
     const findVisibleTarget = useCallback((camera: Camera) => {
-        const npcPool = npcPoolRef?.current;
-        if (!npcPool) return null;
+        if (!npcManager) return null;
 
         aimRaycaster.setFromCamera(centerScreen, camera);
-        const npcHit = npcPool.raycast(aimRaycaster, maxDistance);
+        const npcHit = npcManager.raycast(aimRaycaster, maxDistance);
         if (!npcHit) return null;
 
         const world = runtime?.world;
@@ -667,7 +760,7 @@ function NPCAimSystem({ npcPoolRef, playerBodyRef, maxDistance, damage, onTarget
         castRay(world, aimPhysicsCollector, aimPhysicsSettings, aimPhysicsOrigin, aimPhysicsDirection, npcHit.distance, aimFilterRef.current);
         if (aimPhysicsCollector.hit.status !== CastRayStatus.COLLIDING) return npcHit;
         return Number(aimPhysicsCollector.hit.bodyIdB) === npcHit.bodyId ? npcHit : null;
-    }, [maxDistance, npcPoolRef, runtime]);
+    }, [maxDistance, npcManager, runtime]);
 
     useEffect(() => {
         if (mode !== PrefabEditorMode.Play) {
@@ -677,11 +770,10 @@ function NPCAimSystem({ npcPoolRef, playerBodyRef, maxDistance, damage, onTarget
 
         const handleMouseDown = (event: MouseEvent) => {
             if (event.button !== 0) return;
-            const npcPool = npcPoolRef?.current;
             const camera = cameraRef.current;
-            if (!npcPool || !camera) return;
+            if (!npcManager || !camera) return;
             const hit = findVisibleTarget(camera);
-            if (hit) npcPool.damage(hit, damage);
+            if (hit) npcManager.damage(hit, damage);
         };
 
         window.addEventListener("mousedown", handleMouseDown);
@@ -689,7 +781,7 @@ function NPCAimSystem({ npcPoolRef, playerBodyRef, maxDistance, damage, onTarget
             window.removeEventListener("mousedown", handleMouseDown);
             updateTarget(false);
         };
-    }, [damage, findVisibleTarget, mode, npcPoolRef, updateTarget]);
+    }, [damage, findVisibleTarget, mode, npcManager, updateTarget]);
 
     useFrame((state) => {
         cameraRef.current = state.camera;
@@ -786,10 +878,13 @@ const GrabArms = () => {
         if (body && launch) {
             camera.getWorldDirection(forwardVector);
             forwardVector.normalize();
-            grabVelocity.copy(forwardVector).multiplyScalar(DEFAULT_LAUNCH_SPEED);
+            grabVelocity.copy(forwardVector).multiplyScalar(
+                isRagdollBody(body) ? RAGDOLL_LAUNCH_SPEED : DEFAULT_LAUNCH_SPEED,
+            );
             grabVelocity.add(planarVelocityVector);
-            rigidBody.setAngularVelocity(world, body, [0, 0, 0]);
-            rigidBody.setLinearVelocity(world, body, [grabVelocity.x, grabVelocity.y, grabVelocity.z]);
+            rigidBody.setAngularVelocity(world, body, zeroGrabVelocity);
+            grabVelocity.toArray(grabLinearVelocity);
+            rigidBody.setLinearVelocity(world, body, grabLinearVelocity);
         }
 
         restoreGrabbedMotionQuality();
@@ -886,18 +981,30 @@ const GrabArms = () => {
             return;
         }
 
+        const ragdoll = isRagdollBody(grabbedBody);
         grabVelocity
             .copy(grabTargetPosition)
             .sub(grabBodyPosition)
-            .multiplyScalar(DEFAULT_GRAB_STRENGTH);
+            .multiplyScalar(ragdoll ? RAGDOLL_GRAB_STRENGTH : DEFAULT_GRAB_STRENGTH);
 
-        if (grabVelocity.lengthSq() > DEFAULT_GRAB_MAX_SPEED * DEFAULT_GRAB_MAX_SPEED) {
-            grabVelocity.setLength(DEFAULT_GRAB_MAX_SPEED);
+        const maxGrabSpeed = ragdoll ? RAGDOLL_GRAB_MAX_SPEED : DEFAULT_GRAB_MAX_SPEED;
+        if (grabVelocity.lengthSq() > maxGrabSpeed * maxGrabSpeed) {
+            grabVelocity.setLength(maxGrabSpeed);
         }
 
-        rigidBody.setAngularVelocity(world, grabbedBody, [0, 0, 0]);
-        rigidBody.setQuaternion(world, grabbedBody, [grabQuaternion.x, grabQuaternion.y, grabQuaternion.z, grabQuaternion.w], true);
-        rigidBody.setLinearVelocity(world, grabbedBody, [grabVelocity.x, grabVelocity.y, grabVelocity.z]);
+        if (ragdoll) {
+            const angularVelocity = grabbedBody.motionProperties.angularVelocity;
+            grabAngularVelocity[0] = angularVelocity[0] * RAGDOLL_ANGULAR_RETENTION;
+            grabAngularVelocity[1] = angularVelocity[1] * RAGDOLL_ANGULAR_RETENTION;
+            grabAngularVelocity[2] = angularVelocity[2] * RAGDOLL_ANGULAR_RETENTION;
+            rigidBody.setAngularVelocity(world, grabbedBody, grabAngularVelocity);
+        } else {
+            rigidBody.setAngularVelocity(world, grabbedBody, zeroGrabVelocity);
+            grabQuaternion.toArray(grabRotation);
+            rigidBody.setQuaternion(world, grabbedBody, grabRotation, true);
+        }
+        grabVelocity.toArray(grabLinearVelocity);
+        rigidBody.setLinearVelocity(world, grabbedBody, grabLinearVelocity);
     }, -2);
 
     return null;

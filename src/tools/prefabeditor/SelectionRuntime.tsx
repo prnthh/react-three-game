@@ -1,5 +1,4 @@
-import { createContext, useContext, useLayoutEffect, useState, type ReactNode } from "react";
-import { useStore } from "zustand";
+import { createContext, useContext, useLayoutEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { createStore, type StoreApi } from "zustand/vanilla";
 
 type SelectionState = { selectedId: string | null };
@@ -7,6 +6,8 @@ type SelectionHandler = (nodeId: string | null) => void;
 const SelectionContext = createContext<StoreApi<SelectionState> | null>(null);
 const EditSelectionContext = createContext<SelectionHandler | null>(null);
 const EMPTY_SELECTION_STORE = createStore<SelectionState>(() => ({ selectedId: null }));
+const EMPTY_SUBSCRIBE = () => () => {};
+const FALSE_SNAPSHOT = () => false;
 
 /** Keeps selection reactive without threading it through every scene node. */
 export function SelectionRuntimeProvider({
@@ -34,9 +35,13 @@ export function SelectionRuntimeProvider({
     );
 }
 
-export function useNodeSelected(nodeId: string) {
+export function useNodeSelected(nodeId: string, enabled = true) {
     const store = useContext(SelectionContext) ?? EMPTY_SELECTION_STORE;
-    return useStore(store, state => state.selectedId === nodeId);
+    return useSyncExternalStore(
+        enabled ? store.subscribe : EMPTY_SUBSCRIBE,
+        enabled ? () => store.getState().selectedId === nodeId : FALSE_SNAPSHOT,
+        FALSE_SNAPSHOT,
+    );
 }
 
 export function useEditSelection() {

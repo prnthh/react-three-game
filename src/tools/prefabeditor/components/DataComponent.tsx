@@ -113,8 +113,8 @@ function DataComponentEditor({ properties, update }: ComponentEditorProps<DataCo
 
 const DataComponent: Component<DataComponentProperties> = {
     name: 'Data',
-    disableSiblingComposition: true,
     Editor: DataComponentEditor,
+    attach: 'data',
     properties: {
         data: { type: 'object', default: {} },
     },

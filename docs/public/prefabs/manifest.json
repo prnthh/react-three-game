@@ -1,5 +1,7 @@
 [
 	"/prefabs/street.json",
+	"/prefabs/npc.json",
+	"/prefabs/player.json",
 	"/prefabs/game-level.json",
 	"/prefabs/stage.json",
 	"/prefabs/machinegun-level-outdoor.json",

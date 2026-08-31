@@ -1,16 +1,16 @@
 import { OrthographicCamera, PerspectiveCamera } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import { MathUtils, Vector3, type Camera } from 'three';
-import { useNode, usePrefab } from '../SceneContext';
+import { createNodeComponentType, useNode, useRegisterNodeComponent } from '../SceneContext';
 import type { Component, ComponentEditorProps, ComponentViewProps } from './ComponentRegistry';
 import { BooleanField, FieldGroup, NumberField, SelectField } from './Input';
-
-export const CAMERA_POSITION_ROUTE_HANDLE = 'camera-position-route';
 
 export interface CameraPositionRoute {
     setWorldPosition(position: Vector3, alpha?: number): void;
 }
+
+export const CAMERA_POSITION_ROUTE_COMPONENT = createNodeComponentType<CameraPositionRoute>('CameraPositionRoute');
 
 const CAMERA_PROJECTION_OPTIONS = [
     { value: 'perspective', label: 'Perspective' },
@@ -114,8 +114,7 @@ function CameraComponentEditor({ properties, update }: ComponentEditorProps<Came
 }
 
 function CameraComponentView({ properties, children }: ComponentViewProps<CameraProperties>) {
-    const { editMode, nodeId } = useNode();
-    const prefab = usePrefab();
+    const { editMode } = useNode();
     const { size } = useThree();
     const merged = { ...cameraDefaults, ...properties };
     const projection = merged.projection ?? cameraDefaults.projection;
@@ -172,11 +171,7 @@ function CameraComponentView({ properties, children }: ComponentViewProps<Camera
         },
     }), [lockX, lockY, lockZ]);
 
-    useEffect(() => {
-        if (editMode) return;
-        prefab.registerHandle(nodeId, CAMERA_POSITION_ROUTE_HANDLE, positionRoute);
-        return () => prefab.registerHandle(nodeId, CAMERA_POSITION_ROUTE_HANDLE, null);
-    }, [editMode, nodeId, positionRoute, prefab]);
+    useRegisterNodeComponent(CAMERA_POSITION_ROUTE_COMPONENT, editMode ? null : positionRoute);
 
     if (editMode) return (
         <group>

@@ -151,6 +151,8 @@ Passing a new `data` object loads that prefab. Runtime children can be composed 
 </PrefabRoot>
 ```
 
+Models with explicit `repeat` settings use GPU instancing. Ordinary model nodes stay independent, and animated or skinned assets remain on the normal model path.
+
 ## 3. Understand component composition
 
 Components compose using the same parent-child model as R3F:
@@ -162,6 +164,8 @@ Components compose using the same parent-child model as R3F:
   {children}
 </mesh>
 ```
+
+A component definition may set an R3F-style attachment target such as `attach: "object"`, `attach: "geometry"`, or `attach: "material"`. Only one component may occupy the same attachment target on a node.
 
 | Role | Built-ins | Result |
 |---|---|---|
@@ -246,7 +250,8 @@ function GameRuntime() {
 | `usePrefab()` | Current document, live node registry, materials, assets, mutations |
 | `useNode()` | Current component node id, mode, selection, interaction handlers |
 | `useNodeObject<T>()` | Live ref for the current node object |
-| `useNodeHandle<T>(kind)` | Live ref for a current-node capability |
+| `useRegisterNodeComponent(type, value)` | Publish a typed capability from the current node |
+| `useSceneComponents(type)` | Reactively query matching capabilities in the mounted scene |
 | `useAssetRuntime()` | Shared loaded model, texture, and sound cache |
 
 Prefab document operations:
@@ -254,7 +259,6 @@ Prefab document operations:
 ```ts
 prefab.get(id);
 prefab.getObject(id);
-prefab.getHandle(id, kind);
 prefab.getModel(path);
 prefab.getMaterial(materialId);
 
@@ -281,34 +285,11 @@ import {
   type Component,
   type ComponentViewProps,
 } from "react-three-game";
-import {
-  FieldRenderer,
-  type ComponentEditorProps,
-  type FieldDefinition,
-} from "react-three-game/editor";
 
 type RotatorProperties = {
   speed?: number;
   axis?: "x" | "y" | "z";
 };
-
-const fields = [
-  { name: "speed", type: "number", label: "Speed", step: 0.1 },
-  {
-    name: "axis",
-    type: "select",
-    label: "Axis",
-    options: [
-      { value: "x", label: "X" },
-      { value: "y", label: "Y" },
-      { value: "z", label: "Z" },
-    ],
-  },
-] satisfies FieldDefinition<RotatorProperties>[];
-
-function RotatorEditor({ properties, update }: ComponentEditorProps<RotatorProperties>) {
-  return <FieldRenderer fields={fields} values={properties} onChange={update} />;
-}
 
 function RotatorView({ properties, children }: ComponentViewProps<RotatorProperties>) {
   const { editMode } = useNode();
@@ -325,7 +306,6 @@ function RotatorView({ properties, children }: ComponentViewProps<RotatorPropert
 
 const Rotator: Component<RotatorProperties> = {
   name: "Rotator",
-  Editor: RotatorEditor,
   View: RotatorView,
   properties: {
     speed: { default: 1, step: 0.1 },
@@ -355,33 +335,42 @@ Use it in any prefab node:
 }
 ```
 
-Component properties are sparse too. Each registered component defines every property’s type and default; prefab JSON only needs values that differ. The editor and runtime resolve the complete property object from that schema.
+Component properties are sparse too. Each registered component defines every property’s type and default; prefab JSON only needs values that differ. The editor builds the default inspector from that same schema, while complex components can still provide a custom `Editor`.
 
 Numeric definitions infer `type: "number"`, so `{ default: 1, min: 0, max: 10, step: 0.1 }` is sufficient. Other property types remain explicit.
 Select definitions include `options: { value, label }[]`, keeping serialized values and their editor-facing labels in the component schema.
 
-A mod is an ES module whose imports install its components and runtime wrappers:
+Components can expose typed runtime capabilities to scene systems without a demo-specific context or registry:
 
 ```tsx
-// mods/combat.ts
+import { useMemo } from "react";
 import {
-  registerComponent,
-  registerRuntimeWrapper,
+  createNodeComponentType,
+  useRegisterNodeComponent,
+  useSceneComponents,
+  type ComponentViewProps,
 } from "react-three-game";
 
-registerComponent(PlayerComponent);
-registerComponent(EnemyComponent);
-registerRuntimeWrapper(CombatRuntime);
+type Health = { damage(amount: number): void };
+const HEALTH = createNodeComponentType<Health>("Health");
+
+function HealthView({ children }: ComponentViewProps) {
+  const health = useMemo<Health>(() => {
+    let hp = 100;
+    return { damage: amount => { hp = Math.max(0, hp - amount); } };
+  }, []);
+  useRegisterNodeComponent(HEALTH, health);
+  return <>{children}</>;
+}
+
+function CombatSystem() {
+  const actors = useSceneComponents(HEALTH);
+  // actors updates only when matching nodes mount, unmount, or replace the capability.
+  return null;
+}
 ```
 
-Import the mod before mounting the scene:
-
-```tsx
-await import("./mods/combat");
-```
-
-Registered wrappers receive the rendered prefab as `children`. The first wrapper
-registered is the outermost wrapper. Re-registering the same wrapper is a no-op.
+Mount scene systems explicitly as children of `PrefabRoot` or `PrefabEditor`.
 
 Nested prefabs inherit their parent's material pool. A matching material definition
 reuses the parent instance even when its document-local ID differs. A

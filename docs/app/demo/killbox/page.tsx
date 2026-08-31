@@ -1,21 +1,62 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { PrefabEditorMode, registerComponent, type Prefab } from "react-three-game";
+import { PrefabEditorMode, registerComponent, useSceneComponents, type GameObject, type Prefab } from "react-three-game";
 import { PrefabEditor, type PrefabEditorRef } from "react-three-game/editor";
 import { CrashcatPhysicsComponent, CrashcatRuntime } from "react-three-game/plugins/crashcat";
 import initialWorld from "../../../public/prefabs/street.json";
 
 import PrefabSelector from "../../components/PrefabSelector";
-import FirstPersonPlayer, { type FirstPersonPlayerRef } from "./components/FirstPersonPlayer";
+import {
+    PlayerControllerComponent,
+    PlayerRuntime,
+} from "./components/FirstPersonPlayer";
 import ElevatorMover from "./components/ElevatorMover";
 import OrbMover from "./components/OrbMover";
-import NPCPool, { type NPCPoolRef } from "./components/NPCPool";
+import { NPC_MANAGER_COMPONENT, NPCManagerComponent } from "./components/NPCManager";
 import { BASE_PATH } from "../../basePath";
 
 registerComponent(CrashcatPhysicsComponent);
 registerComponent(ElevatorMover);
 registerComponent(OrbMover);
+registerComponent(NPCManagerComponent);
+registerComponent(PlayerControllerComponent);
+
+const PLAYER_PREFAB_URL = "/prefabs/player.json";
+const PLAYER_SPAWN_ID = "killbox-player-spawn";
+
+function containsPlayer(node: GameObject): boolean {
+    if (node.id === PLAYER_SPAWN_ID) return true;
+    for (const component of Object.values(node.components ?? {})) {
+        if (component?.type === "KillboxPlayer") return true;
+        if (component?.type === "PrefabRef" && component.properties.url === PLAYER_PREFAB_URL) return true;
+    }
+    return node.children?.some(containsPlayer) ?? false;
+}
+
+function injectPlayer(prefab: Prefab, prefabName: string): Prefab {
+    if (containsPlayer(prefab.root)) return prefab;
+    const position: [number, number, number] = prefabName === "game-level"
+        ? [0, -3.15, 3]
+        : [0, 1.3, 6];
+    return {
+        ...prefab,
+        root: {
+            ...prefab.root,
+            children: [
+                ...(prefab.root.children ?? []),
+                {
+                    id: PLAYER_SPAWN_ID,
+                    name: "Player Spawn",
+                    components: {
+                        transform: { type: "Transform", properties: { position } },
+                        prefab: { type: "PrefabRef", properties: { url: PLAYER_PREFAB_URL } },
+                    },
+                },
+            ],
+        },
+    };
+}
 
 const WEAPONS = [
     { name: "Crowbar", range: 2.5 },
@@ -25,11 +66,25 @@ const WEAPONS = [
 
 const GAME_CANVAS_ID = "killbox-game-canvas";
 
+function KillboxPlayerRuntime({
+    targetDistance,
+    onAimTargetChange,
+}: {
+    targetDistance: number;
+    onAimTargetChange: (canHit: boolean) => void;
+}) {
+    const managers = useSceneComponents(NPC_MANAGER_COMPONENT);
+    return <PlayerRuntime
+        npcManager={managers[0]?.value}
+        targetDistance={targetDistance}
+        onAimTargetChange={onAimTargetChange}
+        pointerLockSelector={`#${GAME_CANVAS_ID}`}
+    />;
+}
+
 export default function Home() {
     const editorRef = useRef<PrefabEditorRef>(null);
-    const playerRef = useRef<FirstPersonPlayerRef>(null);
-    const npcPoolRef = useRef<NPCPoolRef>(null);
-    const [selectedPrefab, setSelectedPrefab] = useState<Prefab>(initialWorld as unknown as Prefab);
+    const [selectedPrefab, setSelectedPrefab] = useState<Prefab>(() => injectPlayer(initialWorld as unknown as Prefab, "street"));
     const [selectedPrefabName, setSelectedPrefabName] = useState("street");
     const [selectedWeaponIndex, setSelectedWeaponIndex] = useState(0);
     const weaponWheelTimeRef = useRef(0);
@@ -37,9 +92,6 @@ export default function Home() {
     const updateCrosshair = useCallback((canHit: boolean) => {
         if (crosshairRef.current) crosshairRef.current.style.color = canHit ? "#ef4444" : "#ffffff";
     }, []);
-    const playerSpawn: [number, number, number] = selectedPrefabName === "game-level"
-        ? [0, -3.15, 3]
-        : [0, 1.3, 6];
     const selectedWeapon = WEAPONS[selectedWeaponIndex];
 
     useEffect(() => {
@@ -71,28 +123,15 @@ export default function Home() {
                 ref={editorRef}
                 basePath={BASE_PATH}
                 prefab={selectedPrefab}
-                mode={PrefabEditorMode.Play}
+                mode={PrefabEditorMode.Edit}
                 canvasProps={{ id: GAME_CANVAS_ID }}
             >
-                <CrashcatRuntime debug>
-                    <FirstPersonPlayer
+                <CrashcatRuntime>
+                    <KillboxPlayerRuntime
                         key={`player-${selectedPrefabName}`}
-                        ref={playerRef}
-                        spawnPosition={playerSpawn}
-                        npcPoolRef={npcPoolRef}
                         targetDistance={selectedWeapon.range}
                         onAimTargetChange={updateCrosshair}
-                        pointerLockSelector={`#${GAME_CANVAS_ID}`}
                     />
-                    {(selectedPrefabName === "street" || selectedPrefabName === "game-level") && (
-                        <NPCPool
-                            key={`npc-pool-${selectedPrefabName}`}
-                            ref={npcPoolRef}
-                            playerRef={playerRef}
-                            defaultSpawnHeight={selectedPrefabName === "game-level" ? -4 : 0}
-                            debug
-                        />
-                    )}
                 </CrashcatRuntime>
             </PrefabEditor>
             <div
@@ -108,11 +147,11 @@ export default function Home() {
             >
                 {selectedWeapon.name}
             </div>
-            <div className="fixed top-2 left-1/2 -translate-x-1/2 z-2">
+            <div className="fixed bottom-4 right-4 z-20">
                 <PrefabSelector
                     selectedName={selectedPrefabName}
                     onSelect={(prefab: Prefab, prefabName) => {
-                        setSelectedPrefab(prefab);
+                        setSelectedPrefab(injectPlayer(prefab, prefabName));
                         setSelectedPrefabName(prefabName);
                     }}
                 />

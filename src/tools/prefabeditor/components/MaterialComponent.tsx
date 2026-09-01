@@ -651,7 +651,7 @@ function MaterialComponentEditor({
         />
         <button
             type="button"
-            style={{ ...base.header, marginTop: 4 }}
+            style={{ ...base.header, borderRadius: base.btn.borderRadius, marginTop: 4 }}
             onClick={() => setSettingsOpen(open => !open)}
             aria-expanded={settingsOpen}
         >

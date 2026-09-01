@@ -3,7 +3,7 @@ import { DoubleSide } from 'three';
 import { base, colors, ui } from '../styles';
 import { FieldGroup, FieldRow, NumberInput } from './Input';
 
-export const MIN_SHADOW_MAP_SIZE = 128;
+export const MIN_SHADOW_MAP_SIZE = 64;
 export const MAX_SHADOW_MAP_SIZE = 2048;
 
 /** A small, raycastable Unity-style scene gizmo for otherwise invisible lights. */

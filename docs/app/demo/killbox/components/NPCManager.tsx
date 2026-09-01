@@ -119,7 +119,7 @@ const BODY_PARTS: Record<NPCBodyPart, BodyPartDefinition> = {
 const BODY_PART_ENTRIES = Object.entries(BODY_PARTS) as Array<[NPCBodyPart, BodyPartDefinition]>;
 
 type NPCState = "idle" | "wander" | "chase" | "dead";
-type NPCAnimState = "idle" | "walk";
+type NPCAnimState = "idle" | "walk" | "run";
 
 export type NPCData = {
     id: string;
@@ -897,7 +897,7 @@ const NPCSystem = forwardRef<NPCManagerRef, NPCSystemProps>(function NPCSystem({
                 activateRagdoll(runtime, api);
             } else {
                 runtime.data.state = "chase";
-                setNPCAnimState(runtime, "walk");
+                setNPCAnimState(runtime, "run");
             }
         },
     }), [api]);
@@ -943,7 +943,7 @@ const NPCSystem = forwardRef<NPCManagerRef, NPCSystemProps>(function NPCSystem({
             const distance = movementRef.current.length();
             runtime.navigationBlocked = false;
             const shouldMove = data.state !== "idle" && distance > stopDistance;
-            setNPCAnimState(runtime, data.state === "idle" ? "idle" : "walk");
+            setNPCAnimState(runtime, data.state === "idle" ? "idle" : data.state === "chase" ? "run" : "walk");
             if (shouldMove) {
                 movementRef.current.normalize();
                 runtime.navigationDirection.copy(movementRef.current);

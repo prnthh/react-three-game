@@ -85,7 +85,7 @@ export default function Home() {
         <div className="text-center font-bold">
           <h1 className="metal-title mb-2">REACT-THREE-GAME</h1>
           <div className="metal-subtitle mt-1">
-            JSON prefab documents for React Three Fiber
+            high performance 3D game engine
           </div>
         </div>
 

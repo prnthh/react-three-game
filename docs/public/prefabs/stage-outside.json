@@ -161,7 +161,12 @@
             "type": "Camera",
             "properties": {
               "fov": 58,
-              "far": 120,
+              "far": 120
+            }
+          },
+          "stageCameraRoute": {
+            "type": "StageCameraRoute",
+            "properties": {
               "lockY": true,
               "lockZ": true
             }

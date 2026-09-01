@@ -6,7 +6,7 @@ import type { Component } from './components/ComponentRegistry';
 import { FieldRenderer, type FieldDefinition } from './components/Input';
 import { createComponentData } from './prefab';
 import { useEditorRef } from './EditorContext';
-import { base, colors, inspector, componentCard } from './styles';
+import { base, colors, inspector, componentCard, radii } from './styles';
 import { usePrefabStore } from './prefabStore';
 
 function humanizePropertyName(name: string) {
@@ -85,7 +85,7 @@ function EditorUI({
             )}
         </div>
 
-        <div style={{ position: 'absolute', top: 8, left: 8, zIndex: 20 }}>
+        <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 20 }}>
             <EditorTree
                 selectedId={selectedId}
                 setSelectedId={setSelectedId}
@@ -115,8 +115,8 @@ function NodeInspector({
     return <div style={inspector.content}>
         {/* Node Name */}
         <div style={base.section}>
-            <div style={{ display: "flex", marginBottom: 4, alignItems: 'center', gap: 4 }}>
-                <div style={{ fontSize: 10, color: colors.textDim, wordBreak: 'break-all', background: colors.bgLight, padding: '2px 4px', flex: 1, fontFamily: 'monospace', minHeight: 18, boxSizing: 'border-box' }}>
+            <div style={{ display: "flex", marginBottom: 6, alignItems: 'center', gap: 6 }}>
+                <div style={{ fontSize: 10, color: colors.textDim, wordBreak: 'break-all', background: colors.bgInput, padding: '5px 7px', flex: 1, fontFamily: 'monospace', minHeight: 26, boxSizing: 'border-box', borderRadius: radii.control, border: `1px solid ${colors.borderFaint}` }}>
                     {node.id}
                 </div>
                 <button style={{ ...base.btn, ...base.btnDanger, minWidth: 22, padding: '2px 4px' }}
@@ -138,7 +138,7 @@ function NodeInspector({
 
         {/* Components */}
         <div style={base.section}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                 <div style={base.label}>Components</div>
             </div>
 
@@ -151,8 +151,8 @@ function NodeInspector({
 
                 return (
                     <div key={key} style={componentCard.container}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
-                            <div style={{ fontSize: 11, fontWeight: 500 }}>{key}</div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 }}>
+                            <div style={{ fontSize: 11, fontWeight: 650, color: colors.text }}>{key}</div>
                             <button
                                 type="button"
                                 style={{ ...base.btn, padding: '2px 4px', minWidth: 20 }}
@@ -205,7 +205,6 @@ function NodeInspector({
                             flex: 1,
                             background: colors.bgInput,
                             border: `1px solid ${colors.border}`,
-                            minHeight: 22,
                         }}
                         value={addType}
                         onChange={e => setAddType(e.target.value)}

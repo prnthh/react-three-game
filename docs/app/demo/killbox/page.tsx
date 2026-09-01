@@ -16,12 +16,6 @@ import OrbMover from "./components/OrbMover";
 import { NPC_MANAGER_COMPONENT, NPCManagerComponent } from "./components/NPCManager";
 import { BASE_PATH } from "../../basePath";
 
-registerComponent(CrashcatPhysicsComponent);
-registerComponent(ElevatorMover);
-registerComponent(OrbMover);
-registerComponent(NPCManagerComponent);
-registerComponent(PlayerControllerComponent);
-
 const PLAYER_PREFAB_URL = "/prefabs/player.json";
 const PLAYER_SPAWN_ID = "killbox-player-spawn";
 
@@ -83,6 +77,12 @@ function KillboxPlayerRuntime({
 }
 
 export default function Home() {
+    registerComponent(CrashcatPhysicsComponent);
+    registerComponent(ElevatorMover);
+    registerComponent(OrbMover);
+    registerComponent(NPCManagerComponent);
+    registerComponent(PlayerControllerComponent);
+
     const editorRef = useRef<PrefabEditorRef>(null);
     const [selectedPrefab, setSelectedPrefab] = useState<Prefab>(() => injectPlayer(initialWorld as unknown as Prefab, "street"));
     const [selectedPrefabName, setSelectedPrefabName] = useState("street");

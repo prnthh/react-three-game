@@ -189,7 +189,12 @@
             "type": "Camera",
             "properties": {
               "fov": 64,
-              "far": 100,
+              "far": 100
+            }
+          },
+          "stageCameraRoute": {
+            "type": "StageCameraRoute",
+            "properties": {
               "lockY": true,
               "lockZ": true
             }
@@ -9068,6 +9073,118 @@
         ]
       },
       {
+        "id": "stage-office-npc",
+        "name": "rigged office partner",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                1.25,
+                0,
+                -0.1
+              ],
+              "rotation": [
+                0,
+                -0.25,
+                0
+              ],
+              "scale": [
+                0.92,
+                0.92,
+                0.92
+              ]
+            }
+          },
+          "animatedModel": {
+            "type": "AnimatedModel",
+            "properties": {
+              "filename": "models/human/mixamo-anatomical-character.fbx",
+              "animationState": "idle",
+              "castShadow": true,
+              "receiveShadow": true,
+              "frustumCulled": false,
+              "emitClickEvent": true,
+              "clickEventName": "stage:talk-to-partner"
+            }
+          },
+          "stageInteraction": {
+            "type": "StageInteraction",
+            "properties": {
+              "action": "dialogue",
+              "activationNodeId": "stage-office-npc-trigger",
+              "page1": "I traced the signal through three dead relays. Someone wants us to find the source.",
+              "page2": "Check the junkyard. And try not to antagonize anything with more antennas than sense."
+            }
+          }
+        },
+        "children": [
+          {
+            "id": "stage-office-npc-trigger",
+            "name": "partner dialogue trigger",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.85,
+                    0
+                  ]
+                }
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {
+                  "visible": false,
+                  "castShadow": false,
+                  "receiveShadow": false
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.95,
+                    0.95,
+                    1.7,
+                    32
+                  ]
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "material-24"
+                }
+              },
+              "activationCollider": {
+                "type": "ActivationCollider",
+                "properties": {
+                  "targetNodeId": "stage-player-collider",
+                  "enterEventName": "stage:interaction-enter",
+                  "exitEventName": "stage:interaction-exit",
+                  "bubbleHeight": 1.35
+                }
+              },
+              "crashcatPhysics": {
+                "type": "CrashcatPhysics",
+                "properties": {
+                  "type": "fixed",
+                  "colliders": "cylinder",
+                  "cylinderRadius": 0.95,
+                  "cylinderHalfHeight": 0.85,
+                  "sensor": true,
+                  "sensorEnterEventName": "stage:interaction-enter",
+                  "sensorExitEventName": "stage:interaction-exit"
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
         "id": "stage-player-collider",
         "name": "player physics cylinder",
         "hidden": true,
@@ -9115,61 +9232,6 @@
               "colliders": "cylinder",
               "cylinderRadius": 0.32,
               "cylinderHalfHeight": 0.85
-            }
-          }
-        }
-      },
-      {
-        "id": "stage-activation-collider",
-        "name": "partner activation cylinder",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                1.25,
-                0.85,
-                -0.1
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "visible": false,
-              "castShadow": false,
-              "receiveShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "cylinder",
-              "args": [
-                0.95,
-                0.95,
-                1.7,
-                32
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialId": "material-24"
-            }
-          },
-          "activationCollider": {
-            "type": "ActivationCollider",
-            "properties": {}
-          },
-          "crashcatPhysics": {
-            "type": "CrashcatPhysics",
-            "properties": {
-              "colliders": "cylinder",
-              "cylinderRadius": 0.95,
-              "cylinderHalfHeight": 0.85,
-              "sensor": true
             }
           }
         }

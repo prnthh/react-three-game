@@ -32,6 +32,8 @@ const spotLightDefaults = {
     shadowMapSize: 512,
     shadowBias: 0,
     shadowNormalBias: 0,
+    shadowIntensity: 1,
+    shadowRadius: 1,
     shadowAutoUpdate: true,
     shadowCameraNear: 0.5,
     shadowCameraFar: 500,
@@ -87,6 +89,8 @@ function SpotLightComponentEditor({ properties, update }: ComponentEditorProps<S
                         />
                         <ShadowBiasField name="shadowBias" label="Bias" values={values} onChange={update} fallback={0} />
                         <ShadowBiasField name="shadowNormalBias" label="Normal Bias" values={values} onChange={update} fallback={0} />
+                        <NumberField name="shadowIntensity" label="Opacity" values={values} onChange={update} min={0} max={1} step={0.05} fallback={1} />
+                        <NumberField name="shadowRadius" label="Softness" values={values} onChange={update} min={0} step={0.25} fallback={1} />
                         <NumberField name="shadowCameraNear" label="Near" values={values} onChange={update} min={0.001} step={0.1} fallback={0.5} />
                         <NumberField name="shadowCameraFar" label="Far" values={values} onChange={update} min={0.1} step={1} fallback={500} />
                     </>
@@ -119,6 +123,8 @@ function SpotLightView({ properties, children }: ComponentViewProps<SpotLightPro
         // mapped props
         "shadow-bias": merged.shadowBias,
         "shadow-normalBias": merged.shadowNormalBias,
+        "shadow-intensity": merged.shadowIntensity,
+        "shadow-radius": merged.shadowRadius,
         "shadow-autoUpdate": merged.shadowAutoUpdate,
         "shadow-camera-near": merged.shadowCameraNear,
         "shadow-camera-far": merged.shadowCameraFar,
@@ -189,6 +195,8 @@ const SpotLightComponent: Component<SpotLightProperties> = {
         shadowMapSize: { default: spotLightDefaults.shadowMapSize, min: MIN_SHADOW_MAP_SIZE, max: MAX_SHADOW_MAP_SIZE, step: 128 },
         shadowBias: { default: spotLightDefaults.shadowBias, min: -1, max: 1 },
         shadowNormalBias: { default: spotLightDefaults.shadowNormalBias, min: -1, max: 1 },
+        shadowIntensity: { default: spotLightDefaults.shadowIntensity, min: 0, max: 1, step: 0.05 },
+        shadowRadius: { default: spotLightDefaults.shadowRadius, min: 0, step: 0.25 },
         shadowAutoUpdate: { type: 'boolean', default: spotLightDefaults.shadowAutoUpdate },
         shadowCameraNear: { default: spotLightDefaults.shadowCameraNear, min: 0.001, step: 0.1 },
         shadowCameraFar: { default: spotLightDefaults.shadowCameraFar, min: 0.1, step: 1 },

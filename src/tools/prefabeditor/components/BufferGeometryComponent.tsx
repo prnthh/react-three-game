@@ -1,8 +1,6 @@
 import type { Component, ComponentEditorProps, ComponentViewProps } from "./ComponentRegistry";
-import { useNode } from "../SceneContext";
 import { BooleanField, FieldGroup } from "./Input";
 import { base, ui } from "../styles";
-import { scheduleGeometryRaycast } from "../../../shared/raycast";
 
 type NumericArray = number[];
 type GeometryGroup = { start: number; count: number; materialIndex?: number };
@@ -156,7 +154,6 @@ function BufferGeometryComponentEditor({ properties, update }: ComponentEditorPr
 }
 
 function BufferGeometryComponentView({ properties, children }: ComponentViewProps<BufferGeometryProperties>) {
-    const { editMode, nodeInteractionHandlers } = useNode();
     const positions = normalizeNumberArray(properties.positions, DEFAULT_TRIANGLE_POSITIONS);
     const indices = normalizeNumberArray(properties.indices, DEFAULT_TRIANGLE_INDICES);
     const normals = normalizeNumberArray(properties.normals, []);
@@ -177,9 +174,6 @@ function BufferGeometryComponentView({ properties, children }: ComponentViewProp
             }
             geometry.computeBoundingBox();
             geometry.computeBoundingSphere();
-            if (editMode || nodeInteractionHandlers) {
-                scheduleGeometryRaycast(geometry);
-            }
         }}>
             <bufferAttribute attach="attributes-position" args={[new Float32Array(positions), 3]} />
             {indexArray ? (

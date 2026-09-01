@@ -10,9 +10,6 @@ import {
 } from "react-three-game/plugins/crashcat";
 import { BASE_PATH } from "../../basePath";
 
-registerComponent(CrashcatPhysicsComponent);
-registerComponent(CrashcatRagdollComponent);
-
 const ragdollDemoPrefab: Prefab = {
     id: "ragdoll-demo",
     name: "Ragdoll Demo",
@@ -155,6 +152,9 @@ function DemoBindings() {
 }
 
 export default function RagdollDemo() {
+    registerComponent(CrashcatPhysicsComponent);
+    registerComponent(CrashcatRagdollComponent);
+
     return (
         <main className="h-screen w-screen bg-slate-950">
             <PrefabEditor basePath={BASE_PATH} prefab={ragdollDemoPrefab} mode={PrefabEditorMode.Play}>

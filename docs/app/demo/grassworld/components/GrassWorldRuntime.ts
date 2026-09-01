@@ -1,7 +1,7 @@
-import { createContext, createElement, useContext, useRef, type MutableRefObject, type ReactNode } from "react";
+import { useState, type MutableRefObject } from "react";
+import { createNodeComponentType, useSceneComponents } from "react-three-game";
 import {
 	Color,
-	Matrix4,
 	PerspectiveCamera,
 	Scene,
 	Texture,
@@ -13,29 +13,20 @@ import type { WebGPURenderer } from "three/webgpu";
 
 export type PlayerRuntime = {
 	position: Vector3;
-	grounded: boolean;
-	chunk: Vector2;
 };
 
-const PlayerRuntimeContext = createContext<MutableRefObject<PlayerRuntime> | null>(null);
+export const GRASS_WORLD_PLAYER_COMPONENT = createNodeComponentType<PlayerRuntime>("GrassWorldPlayer");
 
-export function GrassWorldRuntimeProvider({ children }: { children: ReactNode }) {
-	const runtime = useRef<PlayerRuntime>({
+export function usePlayerRuntime(): MutableRefObject<PlayerRuntime> {
+	const players = useSceneComponents(GRASS_WORLD_PLAYER_COMPONENT);
+	const [fallback] = useState<PlayerRuntime>(() => ({
 		position: new Vector3(),
-		grounded: false,
-		chunk: new Vector2(),
-	});
-	return createElement(PlayerRuntimeContext.Provider, { value: runtime }, children);
-}
-
-export function usePlayerRuntime() {
-	const runtime = useContext(PlayerRuntimeContext);
-	if (!runtime) throw new Error("usePlayerRuntime must be used within GrassWorldRuntimeProvider");
-	return runtime;
+	}));
+	return { current: players[0]?.value ?? fallback };
 }
 
 export const assetManager = {
-	resources: {} as Record<string, any>,
+	resources: {} as Record<string, Texture>,
 };
 
 export const sceneManager = {
@@ -53,12 +44,20 @@ export const worldConfig = {
 	halfMapSize: 256,
 };
 
-const noopFolder: any = {
+type DebugFolder = {
+	expanded: boolean;
+	addFolder: (options?: unknown) => DebugFolder;
+	addBinding: (...args: unknown[]) => { on: (...args: unknown[]) => undefined };
+};
+
+const noopFolder: DebugFolder = {
 	expanded: false,
-	addFolder: (_options?: unknown) => noopFolder,
+	addFolder: () => noopFolder,
 	addBinding: () => ({ on: () => undefined }),
 };
-export const debugManager = { panel: { addFolder: (_options?: unknown) => noopFolder } };
+export const debugManager: { panel: Pick<DebugFolder, "addFolder"> } = {
+	panel: { addFolder: () => noopFolder },
+};
 
 export const lightingManager = {
 	sunDirection: new Vector3(-1, -1, -1).normalize(),

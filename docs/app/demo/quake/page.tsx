@@ -7,9 +7,9 @@ import { parseQuakeMap, quakeMapToPrefab } from "./quakeMapParser";
 import QuakeBrushComponent from "./QuakeBrushComponent";
 import { withBasePath, BASE_PATH } from "../../basePath";
 
-registerComponent(QuakeBrushComponent);
-
 export default function QuakeMapDemo() {
+    registerComponent(QuakeBrushComponent);
+
     const [mapPrefab, setMapPrefab] = useState<Prefab | null>(null);
     const [loading, setLoading] = useState(true);
 

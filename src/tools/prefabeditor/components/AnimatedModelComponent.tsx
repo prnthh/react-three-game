@@ -3,9 +3,8 @@ import { Suspense, useCallback, useEffect, useMemo, useRef } from 'react';
 import { AnimationMixer, LoopRepeat, Mesh, type AnimationAction, type AnimationClip, type Object3D } from 'three';
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 
-import { scheduleObjectRaycast } from '../../../shared/raycast';
 import { useSuspenseModelAsset } from '../assetRuntime';
-import { createNodeComponentType, useNode, usePrefab, useRegisterNodeComponent } from '../SceneContext';
+import { createNodeComponentType, usePrefab, useRegisterNodeComponent } from '../SceneContext';
 import { useEditorRef } from '../EditorContext';
 import { withBasePath } from '../runtimeUtils';
 import type { Component, ComponentEditorProps, ComponentViewProps } from './ComponentRegistry';
@@ -14,6 +13,7 @@ import { BooleanField, FieldGroup, NumberField, StringField } from './Input';
 export interface AnimatedModelHandle {
     readonly object: Object3D;
     readonly animations: readonly AnimationClip[];
+    readonly animationStates: readonly string[];
     readonly animationState: string;
     setAnimationState(state: string, immediate?: boolean): void;
     stop(): void;
@@ -30,11 +30,8 @@ export type AnimatedModelProperties = {
     receiveShadow?: boolean;
     frustumCulled?: boolean;
     autoUpdate?: boolean;
-};
-
-const STATE_ALIASES: Record<string, readonly string[]> = {
-    idle: ['idle', 'stand', 'breath'],
-    walk: ['walk', 'run'],
+    emitClickEvent?: boolean;
+    clickEventName?: string;
 };
 
 function findAction(state: string, clips: readonly AnimationClip[], actions: readonly AnimationAction[]) {
@@ -42,12 +39,6 @@ function findAction(state: string, clips: readonly AnimationClip[], actions: rea
     if (!normalized) return null;
     for (let index = 0; index < clips.length; index += 1) {
         if (clips[index].name.toLowerCase() === normalized) return actions[index] ?? null;
-    }
-    const terms = STATE_ALIASES[normalized] ?? [normalized];
-    for (let termIndex = 0; termIndex < terms.length; termIndex += 1) {
-        for (let index = 0; index < clips.length; index += 1) {
-            if (clips[index].name.toLowerCase().includes(terms[termIndex])) return actions[index] ?? null;
-        }
     }
     return null;
 }
@@ -62,6 +53,10 @@ function AnimatedModelEditor({ node, properties, update }: ComponentEditorProps<
         <BooleanField name="receiveShadow" label="Receive Shadow" values={properties} onChange={update} fallback />
         <BooleanField name="frustumCulled" label="Frustum Culling" values={properties} onChange={update} fallback={false} />
         <BooleanField name="autoUpdate" label="Auto Update" values={properties} onChange={update} fallback />
+        <BooleanField name="emitClickEvent" label="Emit Click Event" values={properties} onChange={update} fallback={false} />
+        {properties.emitClickEvent ? (
+            <StringField name="clickEventName" label="Click Event Name" values={properties} onChange={update} placeholder="node:click" />
+        ) : null}
     </FieldGroup>;
 }
 
@@ -71,7 +66,6 @@ function AutoAnimationUpdate({ mixer }: { mixer: AnimationMixer }) {
 }
 
 function LoadedAnimatedModel({ properties, enabled, path }: { properties: AnimatedModelProperties; enabled: boolean; path: string }) {
-    const { editMode, nodeInteractionHandlers } = useNode();
     const source = useSuspenseModelAsset(path);
     const currentActionRef = useRef<AnimationAction | null>(null);
     const stateRef = useRef(properties.animationState ?? '');
@@ -99,16 +93,18 @@ function LoadedAnimatedModel({ properties, enabled, path }: { properties: Animat
     const stop = useCallback(() => {
         mixer?.stopAllAction();
         currentActionRef.current = null;
+        stateRef.current = '';
     }, [mixer]);
     const setAnimationState = useCallback((state: string, immediate = false) => {
-        stateRef.current = state;
         const next = findAction(state, clips, actions);
         const previous = currentActionRef.current;
         if (!next) {
             previous?.stop();
             currentActionRef.current = null;
+            stateRef.current = '';
             return;
         }
+        stateRef.current = next.getClip().name;
         if (next === previous && next.isRunning() && !immediate) return;
         const fadeDuration = Math.max(0, properties.fadeDuration ?? 0.18);
         if (immediate) previous?.stop();
@@ -121,6 +117,7 @@ function LoadedAnimatedModel({ properties, enabled, path }: { properties: Animat
     const handle = useMemo<AnimatedModelHandle | null>(() => object && mixer ? ({
         object,
         animations: clips,
+        animationStates: clips.map(clip => clip.name),
         get animationState() { return stateRef.current; },
         setAnimationState,
         stop,
@@ -134,11 +131,6 @@ function LoadedAnimatedModel({ properties, enabled, path }: { properties: Animat
         handle.update(0);
     }, [clips, handle, properties.animationState]);
     useEffect(() => () => { mixer?.stopAllAction(); }, [mixer]);
-    useEffect(() => {
-        if (!editMode && !nodeInteractionHandlers) return;
-        scheduleObjectRaycast(object);
-    }, [editMode, nodeInteractionHandlers, object]);
-
     if (!object || !mixer) return null;
     return <>
         <primitive object={object} />
@@ -169,6 +161,8 @@ const AnimatedModelComponent: Component<AnimatedModelProperties> = {
         receiveShadow: { type: 'boolean', default: true },
         frustumCulled: { type: 'boolean', default: false },
         autoUpdate: { type: 'boolean', default: true },
+        emitClickEvent: { type: 'boolean', default: false },
+        clickEventName: { type: 'string', default: '' },
     },
 };
 

@@ -1,10 +1,19 @@
 import { Canvas, extend, CanvasProps } from "@react-three/fiber";
 import { WebGPURenderer, MeshBasicNodeMaterial, MeshStandardNodeMaterial, SpriteNodeMaterial, PCFShadowMap } from "three/webgpu";
 import { WebGPURendererParameters } from "three/src/renderers/webgpu/WebGPURenderer.Nodes.js";
+import type { ColorSpace, ShadowMapType, ToneMapping } from "three";
 import { Loader } from "@react-three/drei";
-import { installBVHRaycasting } from "./raycast";
+import { useLayoutEffect, useRef, useState } from "react";
 import { AssetRuntimeProvider } from "../tools/prefabeditor/assetRuntime";
 import { AudioRuntimeProvider } from "../tools/prefabeditor/AudioRuntime";
+import {
+    claimComponentRegistrations,
+    registerOwnedComponents,
+    restoreComponentRegistrations,
+    unregisterComponentRegistrations,
+    type Component,
+} from "../tools/prefabeditor/components/ComponentRegistry";
+import { builtInComponents } from "../tools/prefabeditor/components";
 
 extend({
     MeshBasicNodeMaterial: MeshBasicNodeMaterial,
@@ -12,15 +21,38 @@ extend({
     SpriteNodeMaterial: SpriteNodeMaterial,
 });
 
-installBVHRaycasting();
-
 export interface GameCanvasProps extends Omit<CanvasProps, 'children'> {
     loader?: boolean;
     children: React.ReactNode;
     glConfig?: WebGPURendererParameters;
+    rendererConfig?: {
+        outputColorSpace?: ColorSpace;
+        toneMapping?: ToneMapping;
+        toneMappingExposure?: number;
+        shadowMapType?: ShadowMapType;
+    };
 }
 
-export default function GameCanvas({ loader = false, children, glConfig, onCreated, raycaster, style, ...props }: GameCanvasProps) {
+export default function GameCanvas({ loader = false, children, glConfig, rendererConfig, onCreated, raycaster, style, ...props }: GameCanvasProps) {
+    const owner = useRef(Symbol("game-components"));
+    const ownedComponents = useRef<readonly Component<any>[] | null>(null);
+    const [ready, setReady] = useState(false);
+
+    useLayoutEffect(() => {
+        registerOwnedComponents(owner.current, builtInComponents);
+        if (ownedComponents.current === null) {
+            ownedComponents.current = claimComponentRegistrations(owner.current);
+        } else {
+            restoreComponentRegistrations(owner.current, ownedComponents.current);
+        }
+        setReady(true);
+        return () => {
+            unregisterComponentRegistrations(owner.current);
+        };
+    }, []);
+
+    if (!ready) return null;
+
     return <>
         <Canvas
             style={{
@@ -33,7 +65,7 @@ export default function GameCanvas({ loader = false, children, glConfig, onCreat
             }}
             shadows={{ type: PCFShadowMap }}
             dpr={[1, 1.5]}
-            raycaster={{ firstHitOnly: true, ...raycaster }}
+            raycaster={raycaster}
             gl={async ({ canvas }) => {
                 const renderer = new WebGPURenderer({
                     canvas: canvas as HTMLCanvasElement,
@@ -42,6 +74,10 @@ export default function GameCanvas({ loader = false, children, glConfig, onCreat
                     antialias: true,
                     ...glConfig,
                 });
+                if (rendererConfig?.outputColorSpace !== undefined) renderer.outputColorSpace = rendererConfig.outputColorSpace;
+                if (rendererConfig?.toneMapping !== undefined) renderer.toneMapping = rendererConfig.toneMapping;
+                if (rendererConfig?.toneMappingExposure !== undefined) renderer.toneMappingExposure = Math.max(0, rendererConfig.toneMappingExposure);
+                if (rendererConfig?.shadowMapType !== undefined) renderer.shadowMap.type = rendererConfig.shadowMapType;
                 await renderer.init();
                 return renderer;
             }}
@@ -57,4 +93,5 @@ export default function GameCanvas({ loader = false, children, glConfig, onCreat
             {loader ? <Loader /> : null}
         </Canvas>
     </>;
+
 }

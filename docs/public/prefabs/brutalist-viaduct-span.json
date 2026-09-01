@@ -69,7 +69,9 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {}
+            "properties": {
+              "instanced": true
+            }
           },
           "geometry": {
             "type": "Geometry",
@@ -112,7 +114,9 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {}
+            "properties": {
+              "instanced": true
+            }
           },
           "geometry": {
             "type": "Geometry",
@@ -155,7 +159,9 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {}
+            "properties": {
+              "instanced": true
+            }
           },
           "geometry": {
             "type": "Geometry",
@@ -198,7 +204,9 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {}
+            "properties": {
+              "instanced": true
+            }
           },
           "geometry": {
             "type": "Geometry",
@@ -241,7 +249,9 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {}
+            "properties": {
+              "instanced": true
+            }
           },
           "geometry": {
             "type": "Geometry",
@@ -284,7 +294,9 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {}
+            "properties": {
+              "instanced": true
+            }
           },
           "geometry": {
             "type": "Geometry",
@@ -327,7 +339,9 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {}
+            "properties": {
+              "instanced": true
+            }
           },
           "geometry": {
             "type": "Geometry",
@@ -370,7 +384,9 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {}
+            "properties": {
+              "instanced": true
+            }
           },
           "geometry": {
             "type": "Geometry",
@@ -413,7 +429,9 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {}
+            "properties": {
+              "instanced": true
+            }
           },
           "geometry": {
             "type": "Geometry",
@@ -456,7 +474,9 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {}
+            "properties": {
+              "instanced": true
+            }
           },
           "geometry": {
             "type": "Geometry",
@@ -499,7 +519,9 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {}
+            "properties": {
+              "instanced": true
+            }
           },
           "geometry": {
             "type": "Geometry",

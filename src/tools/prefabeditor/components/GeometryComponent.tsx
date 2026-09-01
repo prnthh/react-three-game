@@ -1,8 +1,7 @@
 import type { Component, ComponentEditorProps, ComponentViewProps } from "./ComponentRegistry";
-import { createElement } from "react";
-import { useNode } from "../SceneContext";
+import { useLayoutEffect, useMemo } from "react";
+import { BoxGeometry, CylinderGeometry, PlaneGeometry, SphereGeometry, TorusGeometry, type BufferGeometry } from "three";
 import { FieldGroup, NumberField, SelectField } from "./Input";
-import { scheduleGeometryRaycast } from "../../../shared/raycast";
 
 const GEOMETRY_ARGS: Record<string, {
     fields: Array<{
@@ -65,6 +64,43 @@ const GEOMETRY_ELEMENTS = {
     cylinder: 'cylinderGeometry', torus: 'torusGeometry',
 } as const;
 
+type SharedGeometryEntry = { geometry: BufferGeometry; references: number };
+const sharedGeometries = new Map<string, SharedGeometryEntry>();
+
+function createGeometry(type: keyof typeof GEOMETRY_ELEMENTS, args: number[]) {
+    if (type === 'sphere') return new SphereGeometry(args[0], args[1], args[2]);
+    if (type === 'plane') return new PlaneGeometry(args[0], args[1]);
+    if (type === 'cylinder') return new CylinderGeometry(args[0], args[1], args[2], args[3]);
+    if (type === 'torus') return new TorusGeometry(args[0], args[1], args[2], args[3]);
+    return new BoxGeometry(args[0], args[1], args[2]);
+}
+
+function useSharedGeometry(type: keyof typeof GEOMETRY_ELEMENTS, args: number[]) {
+    const signature = `${type}:${JSON.stringify(args)}`;
+    const entry = useMemo(() => {
+        const existing = sharedGeometries.get(signature);
+        if (existing) return existing;
+        const geometry = createGeometry(type, args);
+        geometry.userData.prefabGeometrySignature = signature;
+        const created = { geometry, references: 0 };
+        sharedGeometries.set(signature, created);
+        return created;
+    }, [signature, type]);
+
+    useLayoutEffect(() => {
+        entry.references += 1;
+        return () => {
+            entry.references -= 1;
+            queueMicrotask(() => {
+                if (entry.references > 0 || sharedGeometries.get(signature) !== entry) return;
+                sharedGeometries.delete(signature);
+                entry.geometry.dispose();
+            });
+        };
+    }, [entry, signature]);
+    return entry.geometry;
+}
+
 function GeometryComponentEditor({ properties, update }: ComponentEditorProps<GeometryProperties>) {
     const geometryType = properties.geometryType ?? 'box';
     const schema = GEOMETRY_ARGS[geometryType] ?? GEOMETRY_ARGS.box;
@@ -119,14 +155,11 @@ function GeometryComponentEditor({ properties, update }: ComponentEditorProps<Ge
 
 // View for Geometry component
 function GeometryComponentView({ properties, children }: ComponentViewProps<GeometryProperties>) {
-    const { editMode, nodeInteractionHandlers } = useNode();
     const { geometryType, args = [] } = properties;
     const type = geometryType && geometryType in GEOMETRY_ELEMENTS ? geometryType as keyof typeof GEOMETRY_ELEMENTS : 'box';
-    const geometry = createElement(GEOMETRY_ELEMENTS[type], {
-        args: args.length ? args : getDefaultArgs(type),
-        onUpdate: editMode || nodeInteractionHandlers ? scheduleGeometryRaycast : undefined,
-    });
-    return <>{geometry}{children}</>;
+    const resolvedArgs = args.length ? args : getDefaultArgs(type);
+    const geometry = useSharedGeometry(type, resolvedArgs);
+    return <><primitive object={geometry} attach="geometry" dispose={null} />{children}</>;
 }
 
 const GeometryComponent: Component<GeometryProperties> = {

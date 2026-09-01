@@ -1,6 +1,5 @@
-import { Merged } from '@react-three/drei';
-import { Suspense, useEffect, useMemo, type ComponentType } from 'react';
-import { Matrix4, Mesh, SkinnedMesh, Texture, type Object3D } from 'three';
+import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Matrix4, Mesh, SkinnedMesh, Texture, type BufferGeometry, type Material, type Object3D } from 'three';
 import type { Component, ComponentEditorProps, ComponentViewProps } from './ComponentRegistry';
 import { BooleanField, FieldGroup, Label, ListEditor, NumberInput, SelectInput, StringField } from './Input';
 import { useSuspenseModelAsset } from '../assetRuntime';
@@ -10,8 +9,8 @@ import { useEditorContext, useEditorRef } from '../EditorContext';
 import { base, colors, ui } from '../styles';
 import { decomposeModelToPrefabNodes } from '../modelPrefab';
 import { withBasePath } from '../runtimeUtils';
-import { scheduleObjectRaycast } from '../../../shared/raycast';
 import { usePrefab } from '../SceneContext';
+import { useMeshInstanceRegistration } from '../MeshInstanceProvider';
 
 const AXIS_OPTIONS = [
     { value: 'x', label: 'X' },
@@ -305,7 +304,7 @@ function ModelComponentEditor({ properties, node, update }: ComponentEditorProps
     );
 }
 
-function ClonedModel({ source, interactive, editMode }: { source: Object3D; interactive: boolean; editMode?: boolean }) {
+function ClonedModel({ source }: { source: Object3D }) {
     const model = useMemo(() => {
         const clone = source.clone();
         clone.traverse(object => {
@@ -317,63 +316,98 @@ function ClonedModel({ source, interactive, editMode }: { source: Object3D; inte
         return clone;
     }, [source]);
 
-    useEffect(() => {
-        if (editMode || interactive) scheduleObjectRaycast(model);
-    }, [editMode, interactive, model]);
     return <primitive object={model} />;
 }
 
-function RepeatedModel({ source, positions, interactive, editMode }: {
+type RepeatedModelPart = {
+    geometry: BufferGeometry;
+    material: Material | Material[];
+    castShadow: boolean;
+    receiveShadow: boolean;
+};
+
+function RepeatedMesh({
+    id,
+    part,
+    position,
+    instanced,
+}: {
+    id: string;
+    part: RepeatedModelPart;
+    position: [number, number, number];
+    instanced: boolean;
+}) {
+    const [mesh, setMesh] = useState<Mesh | null>(null);
+    useMeshInstanceRegistration(id, mesh, instanced);
+    return <group position={position}>
+        <mesh
+            ref={setMesh}
+            geometry={part.geometry}
+            material={part.material}
+            castShadow={part.castShadow}
+            receiveShadow={part.receiveShadow}
+            frustumCulled={false}
+        />
+    </group>;
+}
+
+function RepeatedModel({ source, positions, interactive }: {
     source: Object3D;
     positions: [number, number, number][];
     interactive: boolean;
-    editMode?: boolean;
 }) {
-    const meshes = useMemo(() => {
-        const result: Record<string, Mesh> = {};
+    const { runtimeNodeId, isSelected } = useNode();
+    const parts = useMemo(() => {
+        const result: RepeatedModelPart[] = [];
         source.updateWorldMatrix(false, true);
         const rootInverse = new Matrix4().copy(source.matrixWorld).invert();
-        let index = 0;
         source.traverse(object => {
             if (!(object instanceof Mesh)) return;
             const geometry = object.geometry.clone();
             geometry.applyMatrix4(object.matrixWorld.clone().premultiply(rootInverse));
-            result[`part${index++}`] = new Mesh(geometry, object.material);
+            geometry.userData.prefabGeometrySignature = `repeated-model:${source.uuid}:${object.uuid}`;
+            result.push({
+                geometry,
+                material: object.material,
+                castShadow: true,
+                receiveShadow: true,
+            });
         });
         return result;
     }, [source]);
 
     useEffect(() => () => {
-        Object.values(meshes).forEach(mesh => mesh.geometry.dispose());
-    }, [meshes]);
-    useEffect(() => {
-        if (!editMode && !interactive) return;
-        Object.values(meshes).forEach(scheduleObjectRaycast);
-    }, [editMode, interactive, meshes]);
+        parts.forEach(part => part.geometry.dispose());
+    }, [parts]);
+
+    const instanced = !interactive && !isSelected;
     return <group>
-        <Merged meshes={meshes} castShadow receiveShadow frustumCulled={false}>
-            {(instances: Record<string, ComponentType<object>>) => {
-                const InstanceParts = Object.values(instances);
-                return positions.map((position, index) => (
-                    <group key={index} position={position}>
-                        {InstanceParts.map((Part, partIndex) => <Part key={partIndex} />)}
-                    </group>
-                ));
-            }}
-        </Merged>
+        {positions.map((position, instanceIndex) => (
+            <group key={instanceIndex}>
+                {parts.map((part, partIndex) => (
+                    <RepeatedMesh
+                        key={partIndex}
+                        id={`${runtimeNodeId}:repeat:${instanceIndex}:${partIndex}`}
+                        part={part}
+                        position={position}
+                        instanced={instanced}
+                    />
+                ))}
+            </group>
+        ))}
     </group>;
 }
 
 function LoadedModel({ properties }: { properties: ModelProperties }) {
     const { basePath } = usePrefab();
-    const { editMode, nodeInteractionHandlers } = useNode();
+    const { nodeInteractionHandlers } = useNode();
     const interactive = Boolean(nodeInteractionHandlers);
     const path = properties.filename ? withBasePath(basePath, properties.filename) : '';
     const sourceModel = useSuspenseModelAsset(path);
     const positions = useMemo(() => getRepeatPositions(properties), [properties.repeat, properties.repeatAxes]);
     const model = sourceModel && (positions.length > 1 && canInstance(sourceModel)
-        ? <RepeatedModel source={sourceModel} positions={positions} interactive={interactive} editMode={editMode} />
-        : <ClonedModel source={sourceModel} interactive={interactive} editMode={editMode} />);
+        ? <RepeatedModel source={sourceModel} positions={positions} interactive={interactive} />
+        : <ClonedModel source={sourceModel} />);
     return model;
 }
 

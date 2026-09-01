@@ -15,6 +15,7 @@ export type StagePoint = [number, number, number];
 export type StageInteractionProperties = {
     action?: "dialogue" | "transition";
     animation?: string;
+    activationNodeId?: string;
     page1?: string;
     page2?: string;
     sensorRadius?: number;
@@ -31,6 +32,8 @@ function StageInteractionView({ properties, children }: ComponentViewProps<Stage
     const { nodeId, getObject } = useNode();
 
     useEffect(() => {
+        const activationNodeId = properties.activationNodeId?.trim();
+        if (activationNodeId && activationNodeId !== nodeId) return;
         const object = getObject();
         if (!api || !object) return;
 
@@ -60,7 +63,7 @@ function StageInteractionView({ properties, children }: ComponentViewProps<Stage
         });
 
         return () => api.unregister(nodeId);
-    }, [api, getObject, nodeId, properties.enterEventName, properties.exitEventName, properties.sensorHalfHeight, properties.sensorRadius]);
+    }, [api, getObject, nodeId, properties.activationNodeId, properties.enterEventName, properties.exitEventName, properties.sensorHalfHeight, properties.sensorRadius]);
 
     return <>{children}</>;
 }
@@ -80,6 +83,7 @@ const StageInteractionComponent: Component<StageInteractionProperties> = {
         page1: { type: "string", default: "" },
         page2: { type: "string", default: "" },
         animation: { type: "string", default: "" },
+        activationNodeId: { type: "string", default: "" },
         sensorRadius: { default: 0.8 },
         sensorHalfHeight: { default: 1 },
         enterEventName: { type: "string", default: DEFAULT_ENTER_EVENT },

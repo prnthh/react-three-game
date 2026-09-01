@@ -3,6 +3,7 @@
 	"/prefabs/npc.json",
 	"/prefabs/player.json",
 	"/prefabs/game-level.json",
+	"/prefabs/city-chunk.json",
 	"/prefabs/stage.json",
 	"/prefabs/machinegun-level-outdoor.json",
 	"/prefabs/machinegun-level-ridge.json",

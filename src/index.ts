@@ -1,4 +1,3 @@
-import "./tools/prefabeditor/components";
 export * from "./core";
 
 export { default as GameCanvas } from "./shared/GameCanvas";
@@ -33,6 +32,7 @@ export type {
 } from "./tools/prefabeditor/assetRuntime";
 export {
 	useAssetRuntime,
+	useTextureAsset,
 	AssetRuntimeProvider,
 } from "./tools/prefabeditor/assetRuntime";
 
@@ -67,11 +67,14 @@ export type {
 
 export { MaterialOverridesProvider, useMaterialOverrides } from "./tools/prefabeditor/components/MaterialComponent";
 export type { MaterialOverrides } from "./tools/prefabeditor/components/MaterialComponent";
-export { createInteriorMapNode } from "./tools/prefabeditor/components/InteriorMapComponent";
-export type { InteriorMapProperties } from "./tools/prefabeditor/components/InteriorMapComponent";
+export { CAMERA_DEFAULTS } from "./tools/prefabeditor/components/CameraComponent";
+export type { CameraProjection, CameraProperties } from "./tools/prefabeditor/components/CameraComponent";
 
-export { CAMERA_POSITION_ROUTE_COMPONENT } from "./tools/prefabeditor/components/CameraComponent";
-export type { CameraPositionRoute } from "./tools/prefabeditor/components/CameraComponent";
+export {
+	MESH_INSTANCING_MATERIAL_FACTORY,
+	MESH_INSTANCE_MATERIALS_CHANGED_EVENT,
+} from "./tools/prefabeditor/MeshInstanceProvider";
+export type { MeshInstancingMaterialFactory } from "./tools/prefabeditor/MeshInstanceProvider";
 
 export {
 	float,

@@ -1,19 +1,14 @@
 import type { Component, ComponentEditorProps } from "./ComponentRegistry";
 import { Label, Vector3Input } from "./Input";
 import { useEditorContext } from "../EditorContext";
-import { colors } from "../styles";
+import { base, colors, radii } from "../styles";
 
 const buttonStyle = {
+    ...base.btn,
     padding: '2px 6px',
     background: colors.bgSurface,
-    color: colors.text,
-    border: `1px solid ${colors.border}`,
-    borderRadius: 0,
-    cursor: 'pointer',
-    font: 'inherit',
     fontSize: 11,
     flex: 1,
-    minHeight: 22,
 };
 
 function TransformModeSelector({
@@ -63,6 +58,7 @@ const snapLockBtnStyle: React.CSSProperties = {
     fontSize: 12,
     lineHeight: 1,
     color: colors.textMuted,
+    borderRadius: radii.control,
 };
 
 type TransformProperties = {

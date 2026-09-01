@@ -11,10 +11,7 @@ import {
 } from "../editorComponents";
 import { STAGE_SCENES } from "../scenes";
 import type { StageScene } from "../scenes/types";
-
-registerComponent(CrashcatPhysicsComponent);
-registerComponent(ActivationColliderEditorComponent);
-registerComponent(StageInteractionEditorComponent);
+import StageCameraRouteComponent from "../StageCameraRouteComponent";
 
 function countNodes(scene: StageScene) {
     let count = 0;
@@ -27,6 +24,11 @@ function countNodes(scene: StageScene) {
 }
 
 export default function StageEditor() {
+    registerComponent(CrashcatPhysicsComponent);
+    registerComponent(ActivationColliderEditorComponent);
+    registerComponent(StageInteractionEditorComponent);
+    registerComponent(StageCameraRouteComponent);
+
     const [selectedScene, setSelectedScene] = useState<StageScene | null>(null);
 
     return (

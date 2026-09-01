@@ -35,10 +35,6 @@ const TARGET_HIT_EVENT = "target:hit";
 const TARGET_BREACH_EVENT = "target:breach";
 const TARGET_HIT_SOUNDS = ["/sound/hit.mp3", "/sound/hit2.mp3"];
 
-registerComponent(AdvancingTargetComponent);
-registerComponent(IndustrialMachineGunComponent);
-registerComponent(CrashcatPhysicsComponent);
-
 type Vec3 = [number, number, number];
 
 type AtmosphereConfig = {
@@ -278,6 +274,10 @@ function RoundHud({ level, stats }: { level: LevelData; stats: CombatStats }) {
 }
 
 export default function PhysicsDemo() {
+    registerComponent(AdvancingTargetComponent);
+    registerComponent(IndustrialMachineGunComponent);
+    registerComponent(CrashcatPhysicsComponent);
+
     const [levelIndex, setLevelIndex] = useState<number | null>(null);
     const [stats, setStats] = useState<CombatStats>(() => createInitialStats());
     const roundAdvanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);

@@ -5,7 +5,7 @@ import DataComponent from "./DataComponent";
 import DirectionalLightComponent from "./DirectionalLightComponent";
 import EnvironmentComponent from "./EnvironmentComponent";
 import GeometryComponent from "./GeometryComponent";
-import InteriorMapComponent from "./InteriorMapComponent";
+import HemisphereLightComponent from "./HemisphereLightComponent";
 import MaterialComponent from "./MaterialComponent";
 import MeshComponent from "./MeshComponent";
 import ModelComponent from "./ModelComponent";
@@ -17,11 +17,10 @@ import SpotLightComponent from "./SpotLightComponent";
 import SpriteComponent from "./SpriteComponent";
 import TextComponent from "./TextComponent";
 import TransformComponent from "./TransformComponent";
-import { registerComponent } from "./ComponentRegistry";
 import type { Component } from "./ComponentRegistry";
 
-// This order controls how components are displayed in the editor.
-const builtInComponents: Component<any>[] = [
+// GameCanvas installs these for its lifetime. This order controls their editor display.
+export const builtInComponents: readonly Component<any>[] = [
 	TransformComponent,
 	MeshComponent,
 
@@ -35,12 +34,12 @@ const builtInComponents: Component<any>[] = [
 
 	// Material components
 	MaterialComponent,
-	InteriorMapComponent,
 
 	// Light components
 	SpotLightComponent,
 	PointLightComponent,
 	DirectionalLightComponent,
+	HemisphereLightComponent,
 	AmbientLightComponent,
 
 	// Other components
@@ -50,5 +49,3 @@ const builtInComponents: Component<any>[] = [
 	DataComponent,
 	PrefabRefComponent,
 ];
-
-builtInComponents.forEach(registerComponent);

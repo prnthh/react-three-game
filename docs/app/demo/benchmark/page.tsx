@@ -6,8 +6,6 @@ import { PrefabEditor, type PrefabEditorRef } from "react-three-game/editor";
 import { CrashcatPhysicsComponent, CrashcatRuntime } from "react-three-game/plugins/crashcat";
 import { BASE_PATH } from "../../basePath";
 
-registerComponent(CrashcatPhysicsComponent);
-
 const TEST_COUNT = 100;
 const ROOT_ID = "benchmark-root";
 const BENCH_DELAY_MS = 2000;
@@ -233,6 +231,8 @@ function waitForFrames(count = 2) {
 }
 
 export default function BenchmarkPage() {
+    registerComponent(CrashcatPhysicsComponent);
+
     const editorRef = useRef<PrefabEditorRef>(null);
     const hasAutoStartedRef = useRef(false);
     const isRunningRef = useRef(false);

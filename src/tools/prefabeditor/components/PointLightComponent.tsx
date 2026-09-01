@@ -25,6 +25,8 @@ const pointLightDefaults = {
     shadowMapSize: 512,
     shadowBias: 0,
     shadowNormalBias: 0,
+    shadowIntensity: 1,
+    shadowRadius: 1,
     shadowAutoUpdate: true,
     shadowCameraNear: 0.5,
     shadowCameraFar: 500,
@@ -61,6 +63,8 @@ function PointLightComponentEditor({ properties, update }: ComponentEditorProps<
                         />
                         <ShadowBiasField name="shadowBias" label="Bias" values={values} onChange={update} fallback={0} />
                         <ShadowBiasField name="shadowNormalBias" label="Normal Bias" values={values} onChange={update} fallback={0} />
+                        <NumberField name="shadowIntensity" label="Opacity" values={values} onChange={update} min={0} max={1} step={0.05} fallback={1} />
+                        <NumberField name="shadowRadius" label="Softness" values={values} onChange={update} min={0} step={0.25} fallback={1} />
                         <NumberField name="shadowCameraNear" label="Near" values={values} onChange={update} min={0.001} step={0.1} fallback={0.5} />
                         <NumberField name="shadowCameraFar" label="Far" values={values} onChange={update} min={0.1} step={1} fallback={500} />
                     </>
@@ -85,6 +89,8 @@ function PointLightView({ properties, children }: ComponentViewProps<PointLightP
         castShadow: merged.castShadow,
         "shadow-bias": merged.shadowBias,
         "shadow-normalBias": merged.shadowNormalBias,
+        "shadow-intensity": merged.shadowIntensity,
+        "shadow-radius": merged.shadowRadius,
         "shadow-autoUpdate": merged.shadowAutoUpdate,
         "shadow-camera-near": merged.shadowCameraNear,
         "shadow-camera-far": merged.shadowCameraFar,
@@ -138,6 +144,8 @@ const PointLightComponent: Component<PointLightProperties> = {
         shadowMapSize: { default: pointLightDefaults.shadowMapSize, min: MIN_SHADOW_MAP_SIZE, max: MAX_SHADOW_MAP_SIZE, step: 128 },
         shadowBias: { default: pointLightDefaults.shadowBias, min: -1, max: 1 },
         shadowNormalBias: { default: pointLightDefaults.shadowNormalBias, min: -1, max: 1 },
+        shadowIntensity: { default: pointLightDefaults.shadowIntensity, min: 0, max: 1, step: 0.05 },
+        shadowRadius: { default: pointLightDefaults.shadowRadius, min: 0, step: 0.25 },
         shadowAutoUpdate: { type: 'boolean', default: pointLightDefaults.shadowAutoUpdate },
         shadowCameraNear: { default: pointLightDefaults.shadowCameraNear, min: 0.001, step: 0.1 },
         shadowCameraFar: { default: pointLightDefaults.shadowCameraFar, min: 0.1, step: 1 },

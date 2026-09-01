@@ -93,9 +93,91 @@ export interface Component<P extends object = Record<string, any>> {
 }
 
 const REGISTRY: Record<string, Component<any>> = {};
+type ComponentRegistration = {
+	component: Component<any>;
+	owner?: symbol;
+};
+const REGISTRATION_STACKS: Record<string, ComponentRegistration[]> = {};
+
+function addRegistration(component: Component<any>, owner?: symbol, beneathExisting = false) {
+	const registration: ComponentRegistration = { component, owner };
+	const registrations = REGISTRATION_STACKS[component.name] ?? [];
+	if (beneathExisting) registrations.unshift(registration);
+	else registrations.push(registration);
+	REGISTRATION_STACKS[component.name] = registrations;
+	REGISTRY[component.name] = registrations[registrations.length - 1].component;
+	return registration;
+}
+
+function removeRegistration(registration: ComponentRegistration) {
+	const currentRegistrations = REGISTRATION_STACKS[registration.component.name];
+	if (!currentRegistrations) return;
+	const index = currentRegistrations.indexOf(registration);
+	if (index < 0) return;
+	currentRegistrations.splice(index, 1);
+	const previous = currentRegistrations[currentRegistrations.length - 1]?.component;
+	if (previous) {
+		REGISTRY[registration.component.name] = previous;
+	} else {
+		delete REGISTRATION_STACKS[registration.component.name];
+		delete REGISTRY[registration.component.name];
+	}
+}
 
 export function registerComponent(component: Component<any>) {
-	REGISTRY[component.name] = component;
+	const existing = REGISTRATION_STACKS[component.name]?.find(registration => registration.component === component);
+	if (existing) return () => {};
+	const registration = addRegistration(component);
+	let registered = true;
+	return () => {
+		if (!registered) return;
+		registered = false;
+		removeRegistration(registration);
+	};
+}
+
+/** @internal Assigns newly registered application/mod components to one mounted game. */
+export function claimComponentRegistrations(owner: symbol) {
+	const components: Component<any>[] = [];
+	Object.values(REGISTRATION_STACKS).forEach(registrations => {
+		registrations.forEach(registration => {
+			if (registration.owner) return;
+			registration.owner = owner;
+			components.push(registration.component);
+		});
+	});
+	return components;
+}
+
+/** @internal Installs viewer-owned definitions below application/mod overrides. */
+export function registerOwnedComponents(owner: symbol, components: readonly Component<any>[]) {
+	const builtInNames = new Set(components.map(component => component.name));
+	const applicationNames = Object.keys(REGISTRY).filter(name => !builtInNames.has(name));
+	components.forEach(component => addRegistration(component, owner, true));
+
+	// Keep the viewer's deliberate built-in order ahead of application additions.
+	const orderedNames = [...components.map(component => component.name), ...applicationNames];
+	Object.keys(REGISTRY).forEach(name => delete REGISTRY[name]);
+	orderedNames.forEach(name => {
+		const active = REGISTRATION_STACKS[name]?.[REGISTRATION_STACKS[name].length - 1]?.component;
+		if (active) REGISTRY[name] = active;
+	});
+}
+
+/** @internal Restores a game registration after React's development effect replay. */
+export function restoreComponentRegistrations(owner: symbol, components: readonly Component<any>[]) {
+	components.forEach(component => addRegistration(component, owner));
+}
+
+/** @internal Removes only registrations owned by the unmounted game. */
+export function unregisterComponentRegistrations(owner: symbol) {
+	const owned: ComponentRegistration[] = [];
+	Object.values(REGISTRATION_STACKS).forEach(registrations => {
+		registrations.forEach(registration => {
+			if (registration.owner === owner) owned.push(registration);
+		});
+	});
+	owned.forEach(removeRegistration);
 }
 
 export function getComponentDef(name: string): Component<any> | undefined {

@@ -81,7 +81,6 @@
 		"vite": ">=8.0.16"
 	},
 	"dependencies": {
-		"three-mesh-bvh": "^0.9.14",
 		"zustand": ">=5.0.14"
 	}
 }

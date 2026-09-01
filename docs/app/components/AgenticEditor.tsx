@@ -466,7 +466,7 @@ Model:
 {"model":{"type":"Model","properties":{"filename":"/models/environment/tree.glb"}}}
 
 Camera:
-{"camera":{"type":"Camera","properties":{"projection":"perspective","fov":50,"near":0.1,"far":1000,"lockX":false,"lockY":false,"lockZ":false}}}
+{"camera":{"type":"Camera","properties":{"projection":"perspective","fov":50,"near":0.1,"far":1000}}}
 
 Directional light:
 {"light":{"type":"DirectionalLight","properties":{"color":"#ffffff","intensity":2,"castShadow":true,"targetOffset":[0,-5,-5]}}}

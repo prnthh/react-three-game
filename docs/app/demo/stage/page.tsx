@@ -2,7 +2,7 @@
 
 import { useFrame, useThree } from "@react-three/fiber";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CAMERA_POSITION_ROUTE_COMPONENT, findComponent, GameCanvas, gameEvents, PrefabEditorMode, PrefabRoot, registerComponent, usePrefab, useScene, useSceneComponents } from "react-three-game";
+import { findComponent, GameCanvas, gameEvents, PrefabEditorMode, PrefabRoot, registerComponent, usePrefab, useScene, useSceneComponents } from "react-three-game";
 import type { ContactEventPayload } from "react-three-game";
 import { CrashcatPhysicsComponent, CrashcatRuntime } from "react-three-game/plugins/crashcat";
 import AnimationMixer from "./components/AnimationMixer";
@@ -14,10 +14,7 @@ import { officeScene, STAGE_SCENES } from "./scenes";
 import type { StageScene } from "./scenes/types";
 import { AnimationMixer as ThreeAnimationMixer, LoopOnce, OrthographicCamera, PerspectiveCamera, Quaternion, Vector3, type AnimationClip, type Group, type Object3D } from "three";
 import type { AnimationAction } from "three";
-
-registerComponent(CrashcatPhysicsComponent);
-registerComponent(ActivationColliderComponent);
-registerComponent(StageInteractionComponent);
+import StageCameraRouteComponent, { STAGE_CAMERA_POSITION_ROUTE } from "./StageCameraRouteComponent";
 
 const ONIMILIO_MODEL = withBasePath("/models/human/onimilio.glb");
 const PLAYER_COLLIDER_ID = "stage-player-collider";
@@ -31,7 +28,11 @@ const CAMERA_FOLLOW_SPEED = 8;
 const UP = new Vector3(0, 1, 0);
 const CAMERA_RIGHT = new Vector3(1, 0, 0);
 
-type PendingInteraction = { nodeId: string; properties: StageInteractionProperties };
+type PendingInteraction = {
+    nodeId: string;
+    activationNodeId: string;
+    properties: StageInteractionProperties;
+};
 type Dialogue = { nodeId: string; pages: string[]; page: number; visible: number };
 type TransitionAnimationRequest = {
     nodeId: string;
@@ -61,7 +62,7 @@ function findAnimationName(actionNames: string[], preferred: "idle" | "walk") {
 function PlayerCameraFollow() {
     const { mode } = useScene();
     const prefab = usePrefab();
-    const cameraRoutes = useSceneComponents(CAMERA_POSITION_ROUTE_COMPONENT);
+    const cameraRoutes = useSceneComponents(STAGE_CAMERA_POSITION_ROUTE);
     const positionRoute = useMemo(() => {
         for (let index = 0; index < cameraRoutes.length; index += 1) {
             if (cameraRoutes[index].nodeId === 'stage-camera') return cameraRoutes[index].value;
@@ -311,6 +312,11 @@ function PlayerCharacter({
 }
 
 export default function StageDemo() {
+    registerComponent(CrashcatPhysicsComponent);
+    registerComponent(ActivationColliderComponent);
+    registerComponent(StageInteractionComponent);
+    registerComponent(StageCameraRouteComponent);
+
     const [activeScene, setActiveScene] = useState<StageScene>(officeScene);
     const [playerSpawn, setPlayerSpawn] = useState<StagePoint>(officeScene.playerStart);
     const [playerDestination, setPlayerDestination] = useState<StagePoint | null>(null);
@@ -363,7 +369,7 @@ export default function StageDemo() {
         pendingInteractionRef.current = null;
         setPlayerDestination(null);
 
-        if (interaction.properties.action === "dialogue") {
+        if ((interaction.properties.action ?? "dialogue") === "dialogue") {
             const pages = interactionPages(interaction.properties);
             if (pages.length > 0) setDialogue({ nodeId: interaction.nodeId, pages, page: 0, visible: 0 });
             return;
@@ -398,7 +404,7 @@ export default function StageDemo() {
             activeInteractionSensorsRef.current.add(contact.sourceNodeId);
 
             const interaction = pendingInteractionRef.current;
-            if (interaction?.nodeId === contact.sourceNodeId) activateInteraction(interaction);
+            if (interaction?.activationNodeId === contact.sourceNodeId) activateInteraction(interaction);
         });
         const stopExit = gameEvents.on(INTERACTION_EXIT_EVENT, (payload) => {
             const contact = payload as ContactEventPayload;
@@ -437,10 +443,11 @@ export default function StageDemo() {
                         const interaction = findComponent(node, "StageInteraction")?.properties as StageInteractionProperties | undefined;
                         if (interaction) {
                             const objectPosition = event.object.getWorldPosition(new Vector3());
-                            const pendingInteraction = { nodeId: node.id, properties: interaction };
+                            const activationNodeId = interaction.activationNodeId?.trim() || node.id;
+                            const pendingInteraction = { nodeId: node.id, activationNodeId, properties: interaction };
                             pendingInteractionRef.current = pendingInteraction;
                             setDialogue(null);
-                            if (activeInteractionSensorsRef.current.has(node.id)) {
+                            if (activeInteractionSensorsRef.current.has(activationNodeId)) {
                                 activateInteraction(pendingInteraction);
                                 return;
                             }

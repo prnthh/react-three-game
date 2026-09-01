@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { colors, ui } from '../styles';
+import { base, colors, fonts, ui } from '../styles';
 import { usePrefabStore } from '../prefabStore';
 
 // ============================================================================
@@ -99,25 +99,17 @@ export type FieldDefinition<Values extends object> =
 
 const styles = {
     input: {
+        ...base.input,
         width: '80px',
-        backgroundColor: colors.bgInput,
-        border: `1px solid ${colors.border}`,
         padding: '2px 4px',
-        fontSize: '11px',
-        color: colors.text,
-        fontFamily: 'monospace',
-        outline: 'none',
+        fontSize: 11,
+        fontFamily: fonts.mono,
         textAlign: 'right',
-        borderRadius: 0,
     } as React.CSSProperties,
     label: {
+        ...base.label,
         display: 'block',
-        fontSize: '10px',
-        color: colors.textMuted,
-        textTransform: 'uppercase',
         letterSpacing: '0.05em',
-        marginBottom: 2,
-        fontWeight: 500,
     } as React.CSSProperties,
 };
 
@@ -445,7 +437,7 @@ export function Vector3Input({
                             gap: 4,
                             backgroundColor: colors.bgInput,
                             border: `1px solid ${colors.border}`,
-                            borderRadius: 0,
+                            borderRadius: base.input.borderRadius,
                             padding: '2px 4px',
                             minHeight: 22,
                             cursor: 'ew-resize',
@@ -525,7 +517,7 @@ export function ColorInput({
                         width: 48,
                         backgroundColor: colors.bgInput,
                         border: `1px solid ${colors.border}`,
-                        borderRadius: 0,
+                        borderRadius: base.input.borderRadius,
                         cursor: 'pointer',
                         padding: 1,
                         flexShrink: 0,
@@ -613,7 +605,7 @@ function SearchSuggestionList({
                     maxHeight: 160,
                     overflowY: 'auto',
                     border: 'none',
-                    borderRadius: 0,
+                    borderRadius: base.input.borderRadius,
                     background: colors.bgSurface,
                     padding: 2,
                 }}
@@ -631,7 +623,7 @@ function SearchSuggestionList({
                             alignItems: 'flex-start',
                             gap: 2,
                             border: 'none',
-                            borderRadius: 0,
+                            borderRadius: base.btn.borderRadius,
                             background: colors.bgSurface,
                             color: colors.text,
                             padding: '4px 6px',
@@ -732,6 +724,7 @@ export function BooleanInput({
                     height: 16,
                     width: 16,
                     accentColor: colors.accent,
+                    borderRadius: base.input.borderRadius,
                     cursor: 'pointer',
                 }}
                 checked={value}

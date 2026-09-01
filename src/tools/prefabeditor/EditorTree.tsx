@@ -5,8 +5,23 @@ import { Dropdown } from './Dropdown';
 import { FileMenu, TreeContextMenu, TreeContextMenuState, TreeNodeMenu } from './EditorTreeMenus';
 import { createEmptyNode } from './prefab';
 import { PrefabStoreState, usePrefabChildIds, usePrefabNode, usePrefabRootId, usePrefabStore, usePrefabStoreApi } from './prefabStore';
+import { hasComponent } from './types';
 
 type DropPosition = 'before' | 'inside';
+
+function PrefabBoxIcon() {
+    return (
+        <span
+            title="Prefab reference"
+            style={{ display: 'inline-flex', marginRight: 5, opacity: 0.65, flexShrink: 0 }}
+        >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                <path d="M1.5 3.25 6 1l4.5 2.25v5.5L6 11 1.5 8.75v-5.5Z" stroke="currentColor" strokeWidth="1" strokeLinejoin="round" />
+                <path d="m1.75 3.4 4.25 2 4.25-2M6 5.4V11" stroke="currentColor" strokeWidth="1" strokeLinejoin="round" />
+            </svg>
+        </span>
+    );
+}
 
 export default function EditorTree({
     selectedId,
@@ -186,7 +201,7 @@ export default function EditorTree({
 
     return (
         <>
-            <div style={{ ...tree.panel, width: collapsed ? 'auto' : 224 }}>
+            <div style={{ ...tree.panel, width: collapsed ? 'auto' : 240 }}>
                 <div style={base.header}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }} onClick={() => setCollapsed(!collapsed)}>
                         <span>{collapsed ? '▶' : '▼'}</span>
@@ -237,7 +252,7 @@ export default function EditorTree({
                 </div>
                 {!collapsed && (
                     <>
-                        <div style={{ padding: '4px 4px', borderBottom: `1px solid ${colors.borderLight}` }}>
+                        <div style={{ padding: 7, borderBottom: `1px solid ${colors.borderLight}`, background: colors.bg }}>
                             <input
                                 type="text"
                                 placeholder="Search nodes..."
@@ -246,7 +261,6 @@ export default function EditorTree({
                                 onClick={(e) => e.stopPropagation()}
                                 style={{
                                     ...base.input,
-                                    padding: '4px 8px',
                                 }}
                             />
                         </div>
@@ -292,7 +306,7 @@ export default function EditorTree({
                             />
                         </div>
                         <div style={{
-                            padding: 4,
+                            padding: 7,
                             borderTop: `1px solid ${colors.borderLight}`,
                             background: colors.bgLight,
                         }}>
@@ -370,6 +384,7 @@ const TreeNode = memo(function TreeNode({
     const isDropTarget = dropTarget?.id === nodeId;
     const showDropBefore = isDropTarget && dropTarget?.position === 'before';
     const showDropInside = isDropTarget && dropTarget?.position === 'inside';
+    const isPrefabReference = hasComponent(node, 'PrefabRef');
 
     return (
         <div>
@@ -383,7 +398,8 @@ const TreeNode = memo(function TreeNode({
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     borderTop: showDropBefore ? `2px solid ${colors.accent}` : undefined,
-                    boxShadow: showDropInside ? `inset 0 0 0 1px ${colors.accentBorder}` : undefined,
+                    outline: showDropInside ? `1px solid ${colors.accentBorder}` : undefined,
+                    outlineOffset: showDropInside ? -1 : undefined,
                 }}
                 draggable={!isRoot}
                 onClick={(e) => { e.stopPropagation(); setSelectedId(nodeId); }}
@@ -412,6 +428,7 @@ const TreeNode = memo(function TreeNode({
                         {isCollapsed ? '▶' : '▼'}
                     </span>
                     {!isRoot && <span style={{ marginRight: 4, opacity: 0.4 }}>⋮⋮</span>}
+                    {isPrefabReference && <PrefabBoxIcon />}
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {node.name ?? node.id}
                     </span>

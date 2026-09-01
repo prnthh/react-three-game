@@ -17,7 +17,7 @@ import { SceneProvider } from "./SceneProvider";
 import { SelectionRuntimeProvider, useNodeSelected } from "./SelectionRuntime";
 import { AudioRuntimeProvider } from "./AudioRuntime";
 import { MaterialRuntimeProvider } from "./components/MaterialComponent";
-import { InteriorMapMaterialProvider } from "./components/InteriorMapComponent";
+import { MeshInstanceProvider } from "./MeshInstanceProvider";
 import {
     createNodeInteractionHandlers,
     type NodeInteractionEvent,
@@ -119,9 +119,9 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>((props, ref) => {
                     <AudioRuntimeProvider>
                         <SelectionRuntimeProvider selectedId={selectedId} select={bodyProps.onSelect}>
                             <MaterialRuntimeProvider>
-                                <InteriorMapMaterialProvider>
+                                <MeshInstanceProvider>
                                     <PrefabRootBody ref={ref} {...bodyProps} />
-                                </InteriorMapMaterialProvider>
+                                </MeshInstanceProvider>
                             </MaterialRuntimeProvider>
                         </SelectionRuntimeProvider>
                     </AudioRuntimeProvider>
@@ -129,6 +129,7 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>((props, ref) => {
             </AssetRuntimeProvider>
         </PrefabStoreProvider>
     );
+
 });
 
 const PrefabRootBody = memo(forwardRef<Scene, PrefabRootProps>(({ onSelect, onPointerEvent, onEditNodeClick, basePath = "", enabled = true, children }, ref) => {

@@ -151,7 +151,27 @@ Passing a new `data` object loads that prefab. Runtime children can be composed 
 </PrefabRoot>
 ```
 
-Models with explicit `repeat` settings use GPU instancing. Ordinary model nodes stay independent, and animated or skinned assets remain on the normal model path.
+Models with explicit `repeat` settings feed their static mesh parts into the same scene-level instancing registry as `Mesh` components marked `instanced`. Ordinary model nodes stay independent, and animated or skinned assets remain on the normal model path.
+
+### Renderer configuration
+
+`rendererConfig` directly configures Three.js presentation properties without reaching through `onCreated`. Render pipelines and post-processing remain application runtime code because they take ownership of the render pass.
+
+```tsx
+import { ACESFilmicToneMapping, SRGBColorSpace } from "three";
+import {
+  GameCanvas,
+  PrefabRoot,
+} from "react-three-game";
+
+<GameCanvas rendererConfig={{
+  outputColorSpace: SRGBColorSpace,
+  toneMapping: ACESFilmicToneMapping,
+  toneMappingExposure: 0.9,
+}}>
+  <PrefabRoot data={starterPrefab} />
+</GameCanvas>
+```
 
 ## 3. Understand component composition
 
@@ -279,6 +299,7 @@ Prefab mutations represent authored changes. Native `Object3D` mutation represen
 ```tsx
 import { useFrame } from "@react-three/fiber";
 import {
+  GameCanvas,
   registerComponent,
   useNode,
   useNodeObject,
@@ -321,7 +342,10 @@ const Rotator: Component<RotatorProperties> = {
   },
 };
 
-registerComponent(Rotator);
+export function Game() {
+  registerComponent(Rotator);
+  return <GameCanvas>{/* game scene */}</GameCanvas>;
+}
 ```
 
 Use it in any prefab node:
@@ -334,6 +358,8 @@ Use it in any prefab node:
   }
 }
 ```
+
+Call `registerComponent` from the exported game root. `GameCanvas` installs the engine built-ins through the same game-context lifecycle. Registrations are retained while that context is mounted and released with it; changing prefab data does not affect registration.
 
 Component properties are sparse too. Each registered component defines every property’s type and default; prefab JSON only needs values that differ. The editor builds the default inspector from that same schema, while complex components can still provide a custom `Editor`.
 
@@ -422,17 +448,22 @@ Pointer-enabled object component:
 Crashcat physics stays in its plugin entrypoint:
 
 ```tsx
-import { registerComponent } from "react-three-game";
+import { GameCanvas, registerComponent } from "react-three-game";
 import {
   CrashcatPhysicsComponent,
   CrashcatRuntime,
 } from "react-three-game/plugins/crashcat";
 
-registerComponent(CrashcatPhysicsComponent);
-
-<PrefabRoot data={physicsPrefab}>
-  <CrashcatRuntime />
-</PrefabRoot>
+export function PhysicsGame() {
+  registerComponent(CrashcatPhysicsComponent);
+  return (
+    <GameCanvas>
+      <PrefabRoot data={physicsPrefab}>
+        <CrashcatRuntime />
+      </PrefabRoot>
+    </GameCanvas>
+  );
+}
 ```
 
 ## Package exports

@@ -43,6 +43,7 @@ export { decomposeModelToPrefabNodes } from "./tools/prefabeditor/modelPrefab";
 export type { DecomposeModelOptions, DecomposedPrefabNodes } from "./tools/prefabeditor/modelPrefab";
 
 export type { FieldDefinition } from "./tools/prefabeditor/components/Input";
+export { editorTheme } from "./tools/prefabeditor/styles";
 export { loadFiles } from "./tools/dragdrop/DragDropLoader";
 export type { AssetLoadOptions } from "./tools/dragdrop/DragDropLoader";
 

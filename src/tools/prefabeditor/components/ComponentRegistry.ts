@@ -93,98 +93,16 @@ export interface Component<P extends object = Record<string, any>> {
 }
 
 const REGISTRY: Record<string, Component<any>> = {};
-type ComponentRegistration = {
-	component: Component<any>;
-	scope: ComponentScopeState | null;
-};
-export type ComponentScopeState = {
-	mounted: boolean;
-	registrations: Set<ComponentRegistration>;
-};
-const REGISTRATION_STACKS: Record<string, ComponentRegistration[]> = {};
-let activeScope: ComponentScopeState | null = null;
-let adoptionScheduled = false;
-
-function addRegistration(component: Component<any>, scope: ComponentScopeState | null = null, beneathExisting = false) {
-	const registration: ComponentRegistration = { component, scope };
-	const registrations = REGISTRATION_STACKS[component.name] ?? [];
-	if (beneathExisting) registrations.unshift(registration);
-	else registrations.push(registration);
-	REGISTRATION_STACKS[component.name] = registrations;
-	REGISTRY[component.name] = registrations[registrations.length - 1].component;
-	scope?.registrations.add(registration);
-	return registration;
-}
-
-function removeRegistration(registration: ComponentRegistration) {
-	const currentRegistrations = REGISTRATION_STACKS[registration.component.name];
-	if (!currentRegistrations) return;
-	const index = currentRegistrations.indexOf(registration);
-	if (index < 0) return;
-	currentRegistrations.splice(index, 1);
-	const previous = currentRegistrations[currentRegistrations.length - 1]?.component;
-	if (previous) {
-		REGISTRY[registration.component.name] = previous;
-	} else {
-		delete REGISTRATION_STACKS[registration.component.name];
-		delete REGISTRY[registration.component.name];
-	}
-	registration.scope?.registrations.delete(registration);
-	registration.scope = null;
-}
-
-function adoptPendingRegistrations(scope: ComponentScopeState) {
-	if (!scope.mounted) return;
-	Object.values(REGISTRATION_STACKS).forEach(registrations => {
-		registrations.forEach(registration => {
-			if (registration.scope) return;
-			registration.scope = scope;
-			scope.registrations.add(registration);
-		});
-	});
-}
-
-function schedulePendingAdoption() {
-	if (adoptionScheduled) return;
-	adoptionScheduled = true;
-	queueMicrotask(() => {
-		adoptionScheduled = false;
-		if (activeScope) adoptPendingRegistrations(activeScope);
-	});
-}
 
 export function registerComponent(component: Component<any>) {
-	const existing = REGISTRATION_STACKS[component.name]?.find(registration => registration.component === component);
-	if (existing) return;
-	addRegistration(component);
-	schedulePendingAdoption();
+	REGISTRY[component.name] = component;
 }
 
-/** @internal Stable storage retained by one GameCanvas across React effect replays. */
-export function createComponentScopeState(): ComponentScopeState {
-	return { mounted: false, registrations: new Set() };
-}
-
-/** @internal Mounts the single active game registry and owns late registrations. */
-export function mountComponentScope(
-	builtIns: readonly Component<any>[],
-	state: ComponentScopeState,
-) {
-	state.mounted = true;
-	activeScope = state;
-	if (state.registrations.size === 0) {
-		builtIns.forEach(component => addRegistration(component, state, true));
-		adoptPendingRegistrations(state);
-	}
-
-	return () => {
-		state.mounted = false;
-		if (activeScope === state) activeScope = null;
-		queueMicrotask(() => {
-			if (state.mounted) return;
-			[...state.registrations].reverse().forEach(removeRegistration);
-		});
-	};
+/** @internal Install engine defaults without replacing runtime plugins. */
+export function registerBuiltInComponents(components: readonly Component<any>[]) {
+	components.forEach(component => {
+		if (!REGISTRY[component.name]) REGISTRY[component.name] = component;
+	});
 }
 
 export function getComponentDef(name: string): Component<any> | undefined {

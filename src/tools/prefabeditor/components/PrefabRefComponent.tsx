@@ -5,13 +5,13 @@ import type { Prefab } from '../types';
 import { RuntimeNodeIdScope, useNode, usePrefab } from '../SceneContext';
 import { useEditorRef } from '../EditorContext';
 import { useEditSelection } from '../SelectionRuntime';
-import { normalizePrefab, scopePrefabMaterials, type PrefabState } from '../prefab';
+import { scopePrefabMaterials } from '../prefab';
 import { createPrefabStore, type PrefabStoreApi } from '../prefabStore';
 import { withBasePath } from '../utils';
 import { base, colors } from '../styles';
 import { FieldGroup, Label } from './Input';
 import { PrefabRoot } from '../PrefabRoot';
-import { useTrackSceneLoad } from '../assetRuntime';
+import { useLoadPrefab } from '../assetRuntime';
 
 type PrefabRefProperties = {
     url?: string;
@@ -25,33 +25,22 @@ async function fetchJson<T>(url: string): Promise<T> {
     return response.json() as Promise<T>;
 }
 
-const prefabCache = new Map<string, Promise<PrefabState>>();
-
-function loadPrefab(url: string) {
-    const current = prefabCache.get(url);
-    if (current) return current;
-    const request = fetchJson<Prefab>(url).then(normalizePrefab);
-    prefabCache.set(url, request);
-    void request.catch(() => prefabCache.delete(url));
-    return request;
-}
-
 function PrefabRefView({ properties, enabled, children }: ComponentViewProps<PrefabRefProperties>) {
     const { basePath } = usePrefab();
     const { editMode, nodeId } = useNode();
     const selectEditorNode = useEditSelection();
     const [store, setStore] = useState<PrefabStoreApi | null>(null);
-    const trackSceneLoad = useTrackSceneLoad();
+    const loadPrefab = useLoadPrefab();
     const url = properties.url ? withBasePath(basePath, properties.url) : '';
 
     useEffect(() => {
         let active = true;
         setStore(null);
-        if (url) void trackSceneLoad(loadPrefab(url)).then(value => {
+        if (url) void loadPrefab(url).then(value => {
             if (active) setStore(createPrefabStore(value));
         }).catch(error => console.warn('[PrefabRef] Failed to load:', url, error));
         return () => { active = false; };
-    }, [trackSceneLoad, url]);
+    }, [loadPrefab, url]);
 
     const selectPlacement = useCallback((event: ThreeEvent<MouseEvent>) => {
         if (event.delta > 4) return;

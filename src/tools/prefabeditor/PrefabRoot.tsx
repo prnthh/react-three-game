@@ -8,16 +8,12 @@ import type { ComponentData, GameObject as GameObjectType, Prefab } from "./type
 import type { Component } from "./components/ComponentRegistry";
 import { getComponentDef, resolveComponentProperties } from "./components/ComponentRegistry";
 import { composeTransform, decompose } from "./runtimeUtils";
-import { createPrefabStore, PrefabStoreProvider, usePrefabRenderNode, usePrefabRootId, usePrefabStore, usePrefabStoreApi } from "./prefabStore";
+import { createPrefabStore, usePrefabRenderNode, usePrefabRootId, usePrefabStore, usePrefabStoreApi } from "./prefabStore";
 import type { PrefabStoreApi } from "./prefabStore";
-import { AssetRuntimeProvider } from "./assetRuntime";
 import { gameEvents } from "./GameEvents";
-import { NodeScope, PrefabEditorMode, usePrefab, useScene, type PrefabApi, type Scene } from "./SceneContext";
+import { NodeScope, PrefabEditorMode, usePrefab, usePrefabRenderCache, useScene, type PrefabApi, type Scene } from "./SceneContext";
 import { SceneProvider } from "./SceneProvider";
-import { SelectionRuntimeProvider, useNodeSelected } from "./SelectionRuntime";
-import { AudioRuntimeProvider } from "./AudioRuntime";
-import { MaterialRuntimeProvider } from "./components/MaterialComponent";
-import { MeshInstanceProvider } from "./MeshInstanceProvider";
+import { useNodeSelected } from "./SelectionRuntime";
 import {
     createNodeInteractionHandlers,
     type NodeInteractionEvent,
@@ -113,21 +109,17 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>((props, ref) => {
     }, [data, resolvedStore, store]);
 
     return (
-        <PrefabStoreProvider store={resolvedStore}>
-            <AssetRuntimeProvider>
-                <SceneProvider store={resolvedStore} scene={props.scene} prefab={props.prefab} editMode={editMode} basePath={props.basePath}>
-                    <AudioRuntimeProvider>
-                        <SelectionRuntimeProvider selectedId={selectedId} select={bodyProps.onSelect}>
-                            <MaterialRuntimeProvider>
-                                <MeshInstanceProvider>
-                                    <PrefabRootBody ref={ref} {...bodyProps} />
-                                </MeshInstanceProvider>
-                            </MaterialRuntimeProvider>
-                        </SelectionRuntimeProvider>
-                    </AudioRuntimeProvider>
-                </SceneProvider>
-            </AssetRuntimeProvider>
-        </PrefabStoreProvider>
+        <SceneProvider
+            store={resolvedStore}
+            scene={props.scene}
+            prefab={props.prefab}
+            editMode={editMode}
+            basePath={props.basePath}
+            selectedId={selectedId}
+            onSelect={bodyProps.onSelect}
+        >
+            <PrefabRootBody ref={ref} {...bodyProps} />
+        </SceneProvider>
     );
 
 });
@@ -223,17 +215,22 @@ function StoreRootNode(props: Omit<RendererProps, "nodeId">) {
     return <GameObjectRenderer key={`${prefabId ?? ''}:${rootId}`} {...props} nodeId={rootId} />;
 }
 
-function analyzeNodeComponents(node: GameObjectType): AnalyzedNodeComponents {
+function analyzeNodeComponents(node: GameObjectType, cache: WeakMap<GameObjectType, AnalyzedNodeComponents>): AnalyzedNodeComponents {
+    const cached = cache.get(node);
+    if (cached) return cached;
+
     const componentMap = node.components ?? {};
     const composition: CompositionComponent[] = [];
     let clickEvent: ClickEventConfig = EMPTY_NODE_COMPONENTS.clickEvent;
     let transform = EMPTY_NODE_COMPONENTS.transform;
     let transformComponent: ComponentData | undefined;
     let usesWorldPosition = false;
+    let cacheable = true;
 
     for (const [key, component] of Object.entries(componentMap)) {
         if (!component?.type) continue;
         const def = getComponentDef(component.type);
+        if (!def) cacheable = false;
         const properties = resolveComponentProperties(def, component.properties);
 
         if (component.type === "Transform") {
@@ -273,13 +270,15 @@ function analyzeNodeComponents(node: GameObjectType): AnalyzedNodeComponents {
         return leftOrder - rightOrder;
     });
 
-    return {
+    const value = {
         clickEvent,
         composition,
         transform,
         transformComponent,
         usesWorldPosition,
     };
+    if (cacheable) cache.set(node, value);
+    return value;
 }
 
 function emitNodePointerEvent(
@@ -324,10 +323,11 @@ export const GameObjectRenderer = memo(function GameObjectRenderer({
     isEnabled = true,
     basePath = "",
 }: RendererProps) {
+    const analyzedNodes = usePrefabRenderCache<AnalyzedNodeComponents>();
     const [gameObject, childIds] = usePrefabRenderNode(nodeId);
     const analyzedComponents = useMemo(
-        () => gameObject ? analyzeNodeComponents(gameObject) : EMPTY_NODE_COMPONENTS,
-        [gameObject],
+        () => gameObject ? analyzeNodeComponents(gameObject, analyzedNodes) : EMPTY_NODE_COMPONENTS,
+        [analyzedNodes, gameObject],
     );
     const isSelected = useNodeSelected(nodeId, Boolean(editMode));
     const { transform, transformComponent } = analyzedComponents;

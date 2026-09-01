@@ -359,7 +359,7 @@ Use it in any prefab node:
 }
 ```
 
-Call `registerComponent` from the exported game root. `GameCanvas` installs the engine built-ins through the same game-context lifecycle. Registrations are retained while that context is mounted and released with it; changing prefab data does not affect registration.
+Call `registerComponent` from JavaScript application or plugin setup before rendering prefab data that uses it. Definitions persist across prefab and viewer remounts, while `GameCanvas` fills in missing engine built-ins.
 
 Plugins may also be loaded dynamically. Register their components before mounting or loading prefab JSON that uses them:
 
@@ -367,8 +367,6 @@ Plugins may also be loaded dynamically. Register their components before mountin
 const plugin = await import("./my-plugin.js");
 plugin.components.forEach(registerComponent);
 ```
-
-The active `GameCanvas` owns those definitions and releases them when the whole game context unmounts.
 
 Component properties are sparse too. Each registered component defines every property’s type and default; prefab JSON only needs values that differ. The editor builds the default inspector from that same schema, while complex components can still provide a custom `Editor`.
 

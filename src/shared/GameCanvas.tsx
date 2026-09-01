@@ -3,13 +3,7 @@ import { WebGPURenderer, MeshBasicNodeMaterial, MeshStandardNodeMaterial, Sprite
 import { WebGPURendererParameters } from "three/src/renderers/webgpu/WebGPURenderer.Nodes.js";
 import type { ColorSpace, ShadowMapType, ToneMapping } from "three";
 import { Loader } from "@react-three/drei";
-import { useLayoutEffect, useState } from "react";
-import { AssetRuntimeProvider } from "../tools/prefabeditor/assetRuntime";
-import { AudioRuntimeProvider } from "../tools/prefabeditor/AudioRuntime";
-import {
-	createComponentScopeState,
-    mountComponentScope,
-} from "../tools/prefabeditor/components/ComponentRegistry";
+import { registerBuiltInComponents } from "../tools/prefabeditor/components/ComponentRegistry";
 import { builtInComponents } from "../tools/prefabeditor/components";
 
 extend({
@@ -31,56 +25,40 @@ export interface GameCanvasProps extends Omit<CanvasProps, 'children'> {
 }
 
 export default function GameCanvas({ loader = false, children, glConfig, rendererConfig, onCreated, raycaster, style, ...props }: GameCanvasProps) {
-    const [componentScope] = useState(createComponentScopeState);
-    const [ready, setReady] = useState(false);
+    registerBuiltInComponents(builtInComponents);
 
-    useLayoutEffect(() => {
-        const dispose = mountComponentScope(builtInComponents, componentScope);
-        setReady(true);
-        return dispose;
-    }, [componentScope]);
+    return <Canvas
+        style={{
+            touchAction: 'none',
+            userSelect: 'none',
+            WebkitUserSelect: 'none',
+            WebkitTouchCallout: 'none',
+            WebkitTapHighlightColor: 'transparent',
+            ...style,
+        }}
+        shadows={{ type: PCFShadowMap }}
+        dpr={[1, 1.5]}
+        raycaster={raycaster}
+        gl={async ({ canvas }) => {
+            const renderer = new WebGPURenderer({
+                canvas: canvas as HTMLCanvasElement,
+                // @ts-expect-error futuristic
+                shadowMap: true,
+                antialias: true,
+                ...glConfig,
+            });
+            if (rendererConfig?.outputColorSpace !== undefined) renderer.outputColorSpace = rendererConfig.outputColorSpace;
+            if (rendererConfig?.toneMapping !== undefined) renderer.toneMapping = rendererConfig.toneMapping;
+            if (rendererConfig?.toneMappingExposure !== undefined) renderer.toneMappingExposure = Math.max(0, rendererConfig.toneMappingExposure);
+            if (rendererConfig?.shadowMapType !== undefined) renderer.shadowMap.type = rendererConfig.shadowMapType;
+            await renderer.init();
+            return renderer;
+        }}
+        onCreated={onCreated}
+        {...props}
+    >
+        {children}
 
-    if (!ready) return null;
-
-    return <>
-        <Canvas
-            style={{
-                touchAction: 'none',
-                userSelect: 'none',
-                WebkitUserSelect: 'none',
-                WebkitTouchCallout: 'none',
-                WebkitTapHighlightColor: 'transparent',
-                ...style,
-            }}
-            shadows={{ type: PCFShadowMap }}
-            dpr={[1, 1.5]}
-            raycaster={raycaster}
-            gl={async ({ canvas }) => {
-                const renderer = new WebGPURenderer({
-                    canvas: canvas as HTMLCanvasElement,
-                    // @ts-expect-error futuristic
-                    shadowMap: true,
-                    antialias: true,
-                    ...glConfig,
-                });
-                if (rendererConfig?.outputColorSpace !== undefined) renderer.outputColorSpace = rendererConfig.outputColorSpace;
-                if (rendererConfig?.toneMapping !== undefined) renderer.toneMapping = rendererConfig.toneMapping;
-                if (rendererConfig?.toneMappingExposure !== undefined) renderer.toneMappingExposure = Math.max(0, rendererConfig.toneMappingExposure);
-                if (rendererConfig?.shadowMapType !== undefined) renderer.shadowMap.type = rendererConfig.shadowMapType;
-                await renderer.init();
-                return renderer;
-            }}
-            onCreated={onCreated}
-            {...props}
-        >
-            <AssetRuntimeProvider>
-                <AudioRuntimeProvider>
-                    {children}
-                </AudioRuntimeProvider>
-            </AssetRuntimeProvider>
-
-            {loader ? <Loader /> : null}
-        </Canvas>
-    </>;
-
+        {loader ? <Loader /> : null}
+    </Canvas>;
 }

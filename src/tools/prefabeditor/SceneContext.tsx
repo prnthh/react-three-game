@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useSyncExternalStore, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 import type { Object3D, Texture } from "three";
 import type { GameObject, Prefab, PrefabMaterial } from "./types";
 import type { NodeInteractionHandlers } from "./usePointerEvents";
@@ -129,6 +129,37 @@ export const PrefabContext = createContext<PrefabApi | null>(null);
 export const NodeComponentContext = createContext<NodeComponentRegistry | null>(null);
 const NodeContext = createContext<NodeApi | null>(null);
 const RuntimeNodeIdPrefixContext = createContext("");
+const PrefabRenderCacheContext = createContext<WeakMap<GameObject, unknown> | null>(null);
+
+/** Owns one runtime-component index for the complete scene. */
+export function SceneComponentsProvider({ children }: { children: ReactNode }) {
+    const inherited = useContext(NodeComponentContext);
+    if (inherited) return children;
+    return <SceneComponentsOwner>{children}</SceneComponentsOwner>;
+}
+
+function SceneComponentsOwner({ children }: { children: ReactNode }) {
+    const [registry] = useState(createNodeComponentRegistry);
+    return <NodeComponentContext.Provider value={registry}>{children}</NodeComponentContext.Provider>;
+}
+
+/** Caches immutable component plans for every prefab definition in the scene. */
+export function PrefabRenderCacheProvider({ children }: { children: ReactNode }) {
+    const inherited = useContext(PrefabRenderCacheContext);
+    if (inherited) return children;
+    return <PrefabRenderCacheOwner>{children}</PrefabRenderCacheOwner>;
+}
+
+function PrefabRenderCacheOwner({ children }: { children: ReactNode }) {
+    const [cache] = useState(() => new WeakMap<GameObject, unknown>());
+    return <PrefabRenderCacheContext.Provider value={cache}>{children}</PrefabRenderCacheContext.Provider>;
+}
+
+export function usePrefabRenderCache<T>() {
+    const cache = useContext(PrefabRenderCacheContext);
+    if (!cache) throw new Error("Prefab render cache is unavailable outside a scene");
+    return cache as WeakMap<GameObject, T>;
+}
 
 export interface NodeApi {
     nodeId: string;

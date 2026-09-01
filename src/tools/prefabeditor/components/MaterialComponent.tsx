@@ -208,6 +208,7 @@ type SharedMaterials = {
 
 const EMPTY_SHARED_MATERIALS: SharedMaterials = { byId: new Map(), pool: new Map() };
 const SharedMaterialsContext = createContext<SharedMaterials>(EMPTY_SHARED_MATERIALS);
+const SceneMaterialPoolContext = createContext<Map<string, RuntimeMaterial> | null>(null);
 
 function createMaterial(type: PrefabMaterialType = 'standard'): RuntimeMaterial {
     if (type === 'basic') return new MeshBasicNodeMaterial();
@@ -251,9 +252,30 @@ function ConfiguredSharedMaterial({ material, properties }: {
 }
 
 export function MaterialRuntimeProvider({ children }: { children: ReactNode }) {
+    return <MaterialPoolProvider><MaterialRuntimeLayer>{children}</MaterialRuntimeLayer></MaterialPoolProvider>;
+}
+
+export function MaterialPoolProvider({ children }: { children: ReactNode }) {
+    const scenePool = useContext(SceneMaterialPoolContext);
+    if (scenePool) return children;
+    return <SceneMaterialPoolOwner>{children}</SceneMaterialPoolOwner>;
+}
+
+function SceneMaterialPoolOwner({ children }: { children: ReactNode }) {
+    const [scenePool] = useState(() => new Map<string, RuntimeMaterial>());
+
+    useEffect(() => () => scenePool.forEach(material => material.dispose()), [scenePool]);
+
+    return <SceneMaterialPoolContext.Provider value={scenePool}>
+        {children}
+    </SceneMaterialPoolContext.Provider>;
+}
+
+function MaterialRuntimeLayer({ children }: { children: ReactNode }) {
     const materials = usePrefabStore(state => state.materials);
     const { basePath } = usePrefab();
     const inherited = useContext(SharedMaterialsContext);
+    const scenePool = useContext(SceneMaterialPoolContext)!;
     const entries = useMemo(() => Object.entries(materials).map(([id, properties]) => ({
         id,
         properties,
@@ -261,13 +283,24 @@ export function MaterialRuntimeProvider({ children }: { children: ReactNode }) {
     })), [basePath, materials]);
     const localEntries = entries.filter(({ signature }) => !inherited.pool.has(signature));
     const instanceKey = JSON.stringify(localEntries
-        .map(({ id, properties }) => [id, properties.materialType ?? 'standard'])
+        .map(({ id, signature }) => [id, signature])
         .sort(([left], [right]) => left.localeCompare(right)));
-    const instances = useMemo(() => new Map(localEntries.map(({ id, properties }) => {
-        const material = createMaterial(properties.materialType);
-        applyMaterialProperties(material, properties, undefined, undefined, EMPTY_MATERIAL_OVERRIDES);
-        return [id, material];
-    })), [instanceKey]);
+    const { instances, ownedInstances } = useMemo(() => {
+        const nextInstances = new Map<string, RuntimeMaterial>();
+        const nextOwnedInstances = new Set<RuntimeMaterial>();
+        localEntries.forEach(({ id, properties, signature }) => {
+            const pooled = !properties.texture && !properties.normalMapTexture;
+            let material = pooled ? scenePool.get(signature) : undefined;
+            if (!material) {
+                material = createMaterial(properties.materialType);
+                applyMaterialProperties(material, properties, undefined, undefined, EMPTY_MATERIAL_OVERRIDES);
+                if (pooled) scenePool.set(signature, material);
+                else nextOwnedInstances.add(material);
+            }
+            nextInstances.set(id, material);
+        });
+        return { instances: nextInstances, ownedInstances: nextOwnedInstances };
+    }, [instanceKey, scenePool]);
     const sharedMaterials = useMemo<SharedMaterials>(() => {
         const pool = new Map(inherited.pool);
         const byId = new Map<string, RuntimeMaterial>();
@@ -281,8 +314,8 @@ export function MaterialRuntimeProvider({ children }: { children: ReactNode }) {
     }, [entries, inherited.pool, instances]);
 
     useEffect(() => () => {
-        instances.forEach(material => material.dispose());
-    }, [instances]);
+        ownedInstances.forEach(material => material.dispose());
+    }, [ownedInstances]);
 
     return <SharedMaterialsContext.Provider value={sharedMaterials}>
         {localEntries.map(({ id, properties }) => (

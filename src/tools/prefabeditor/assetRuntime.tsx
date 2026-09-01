@@ -5,6 +5,8 @@ import type { Object3D, Texture } from "three";
 import { loadModel as fetchModel, loadSound as fetchSound, loadTexture as fetchTexture } from "../dragdrop";
 import type { LoadedModels, LoadedSounds, LoadedTextures } from "../dragdrop";
 import { sound as soundManager } from "../../helpers/SoundManager";
+import { normalizePrefab, type PrefabState } from "./prefab";
+import type { Prefab } from "./types";
 
 export interface AssetRuntime {
     loadModel: (path: string, source?: () => Promise<Object3D>) => Promise<void>;
@@ -19,6 +21,7 @@ export interface AssetRuntime {
 }
 
 interface InternalAssetRuntime extends AssetRuntime {
+    loadPrefab: (path: string) => Promise<PrefabState>;
     readModel: (path: string) => Object3D;
     trackLoad: <T>(promise: Promise<T>) => Promise<T>;
 }
@@ -38,6 +41,13 @@ export function useTrackSceneLoad(): InternalAssetRuntime['trackLoad'] {
     const runtime = useContext(AssetRuntimeContext);
     if (!runtime) throw new Error("useTrackSceneLoad must be used inside <PrefabRoot>");
     return runtime.trackLoad;
+}
+
+/** Load and normalize one prefab definition per scene. */
+export function useLoadPrefab(): InternalAssetRuntime['loadPrefab'] {
+    const runtime = useContext(AssetRuntimeContext);
+    if (!runtime) throw new Error("useLoadPrefab must be used inside <PrefabRoot>");
+    return runtime.loadPrefab;
 }
 
 export const AssetRuntimeContext = createContext<InternalAssetRuntime | null>(null);
@@ -146,6 +156,7 @@ export function AssetRuntimeProvider({ children, runtimeRef }: AssetRuntimeProvi
 function AssetRuntimeOwner({ children, runtimeRef }: AssetRuntimeProviderProps) {
     const [assetStore] = useState(createAssetStore);
     const [loads] = useState(() => new Map<string, Promise<void>>());
+    const [prefabLoads] = useState(() => new Map<string, Promise<PrefabState>>());
     const [loadErrors] = useState(() => new Map<string, unknown>());
     const trackLoad = useCallback(<T,>(promise: Promise<T>) => {
         queueMicrotask(() => assetStore.setState(state => ({ pendingLoads: state.pendingLoads + 1 })));
@@ -232,6 +243,17 @@ function AssetRuntimeOwner({ children, runtimeRef }: AssetRuntimeProviderProps) 
     const loadModel = useCallback((path: string, source?: () => Promise<Object3D>) => load('model', path, source), [load]);
     const loadTexture = useCallback((path: string, source?: () => Promise<Texture>) => load('texture', path, source), [load]);
     const loadSound = useCallback((path: string, source?: () => Promise<AudioBuffer>) => load('sound', path, source), [load]);
+    const loadPrefab = useCallback((path: string) => {
+        const current = prefabLoads.get(path);
+        if (current) return current;
+        const pending = trackLoad(fetch(path).then(response => {
+            if (!response.ok) throw new Error(`Request failed (${response.status}) for ${path}`);
+            return response.json() as Promise<Prefab>;
+        }).then(normalizePrefab));
+        prefabLoads.set(path, pending);
+        void pending.catch(() => prefabLoads.delete(path));
+        return pending;
+    }, [prefabLoads, trackLoad]);
     const readModel = useCallback((path: string) => {
         const model = assetStore.getState().models[path];
         if (model) return model;
@@ -242,10 +264,10 @@ function AssetRuntimeOwner({ children, runtimeRef }: AssetRuntimeProviderProps) 
     // Stable runtime: imperative readers do not re-render on asset loads.
     // Reactive consumers use the per-asset selector hooks.
     const runtime = useMemo<InternalAssetRuntime>(() => ({
-        loadModel, loadTexture, loadSound,
+        loadModel, loadTexture, loadSound, loadPrefab,
         registerModel, registerTexture, registerSound,
         getModel, getTexture, getSound, readModel, trackLoad,
-    }), [loadModel, loadTexture, loadSound, registerModel, registerTexture, registerSound, getModel, getTexture, getSound, readModel, trackLoad]);
+    }), [loadModel, loadTexture, loadSound, loadPrefab, registerModel, registerTexture, registerSound, getModel, getTexture, getSound, readModel, trackLoad]);
 
     useImperativeHandle(runtimeRef, () => runtime, [runtime]);
 

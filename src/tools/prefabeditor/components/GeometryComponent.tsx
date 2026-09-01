@@ -1,5 +1,5 @@
 import type { Component, ComponentEditorProps, ComponentViewProps } from "./ComponentRegistry";
-import { useLayoutEffect, useMemo } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { BoxGeometry, CylinderGeometry, PlaneGeometry, SphereGeometry, TorusGeometry, type BufferGeometry } from "three";
 import { FieldGroup, NumberField, SelectField } from "./Input";
 
@@ -64,8 +64,19 @@ const GEOMETRY_ELEMENTS = {
     cylinder: 'cylinderGeometry', torus: 'torusGeometry',
 } as const;
 
-type SharedGeometryEntry = { geometry: BufferGeometry; references: number };
-const sharedGeometries = new Map<string, SharedGeometryEntry>();
+const SceneGeometryPoolContext = createContext<Map<string, BufferGeometry> | null>(null);
+
+export function GeometryRuntimeProvider({ children }: { children: ReactNode }) {
+    const pool = useContext(SceneGeometryPoolContext);
+    if (pool) return children;
+    return <SceneGeometryPoolOwner>{children}</SceneGeometryPoolOwner>;
+}
+
+function SceneGeometryPoolOwner({ children }: { children: ReactNode }) {
+    const [pool] = useState(() => new Map<string, BufferGeometry>());
+    useEffect(() => () => pool.forEach(geometry => geometry.dispose()), [pool]);
+    return <SceneGeometryPoolContext.Provider value={pool}>{children}</SceneGeometryPoolContext.Provider>;
+}
 
 function createGeometry(type: keyof typeof GEOMETRY_ELEMENTS, args: number[]) {
     if (type === 'sphere') return new SphereGeometry(args[0], args[1], args[2]);
@@ -76,29 +87,16 @@ function createGeometry(type: keyof typeof GEOMETRY_ELEMENTS, args: number[]) {
 }
 
 function useSharedGeometry(type: keyof typeof GEOMETRY_ELEMENTS, args: number[]) {
+    const pool = useContext(SceneGeometryPoolContext)!;
     const signature = `${type}:${JSON.stringify(args)}`;
-    const entry = useMemo(() => {
-        const existing = sharedGeometries.get(signature);
+    return useMemo(() => {
+        const existing = pool.get(signature);
         if (existing) return existing;
         const geometry = createGeometry(type, args);
         geometry.userData.prefabGeometrySignature = signature;
-        const created = { geometry, references: 0 };
-        sharedGeometries.set(signature, created);
-        return created;
-    }, [signature, type]);
-
-    useLayoutEffect(() => {
-        entry.references += 1;
-        return () => {
-            entry.references -= 1;
-            queueMicrotask(() => {
-                if (entry.references > 0 || sharedGeometries.get(signature) !== entry) return;
-                sharedGeometries.delete(signature);
-                entry.geometry.dispose();
-            });
-        };
-    }, [entry, signature]);
-    return entry.geometry;
+        pool.set(signature, geometry);
+        return geometry;
+    }, [pool, signature, type]);
 }
 
 function GeometryComponentEditor({ properties, update }: ComponentEditorProps<GeometryProperties>) {

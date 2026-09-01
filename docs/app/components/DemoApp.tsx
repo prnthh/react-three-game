@@ -6,7 +6,6 @@ import { withBasePath, BASE_PATH } from "../basePath";
 import ConstantVelocityComponent from "./ConstantVelocityComponent";
 import PrefabGridStreamerComponent from "./PrefabGridStreamerComponent";
 import InteriorMapComponent from "./InteriorMapComponent";
-import WebGPUPostProcessing from "./WebGPUPostProcessing";
 
 function SceneLoadReporter({ onReady }: { onReady: () => void }) {
     const pendingLoads = useScenePendingLoads();
@@ -51,21 +50,7 @@ export default function DemoApp({ onReady }: { onReady: () => void }) {
             toneMapping: ACESFilmicToneMapping,
             toneMappingExposure: 1.2,
         }}>
-            {prefab && <PrefabRoot basePath={BASE_PATH} data={prefab} />}
-            {prefab && (
-                <WebGPUPostProcessing
-                    ambientOcclusion
-                    ambientOcclusionIntensity={0.3}
-                    ambientOcclusionRadius={0.35}
-                    ambientOcclusionResolutionScale={0.5}
-                    ambientOcclusionSamples={8}
-                    bloom
-                    bloomStrength={0.2}
-                    bloomRadius={0.3}
-                    bloomThreshold={1}
-                />
-            )}
-            {prefab && <SceneLoadReporter onReady={onReady} />}
+            {prefab && <PrefabRoot basePath={BASE_PATH} data={prefab}><SceneLoadReporter onReady={onReady} /></PrefabRoot>}
         </GameCanvas>
     );
 }

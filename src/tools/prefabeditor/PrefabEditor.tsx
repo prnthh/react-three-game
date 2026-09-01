@@ -23,8 +23,6 @@ import type { PrefabState } from "./prefab";
 import type { OrbitControls as OrbitControlsImpl, TransformControls as TransformControlsImpl } from 'three-stdlib';
 import { decomposeModelToPrefabNodes, hasCollisionMeshConventions } from "./modelPrefab";
 import { EditorContext, EditorRefContext, type PrefabEditorRef } from "./EditorContext";
-import { gameEvents } from "./GameEvents";
-import { MESH_INSTANCES_CHANGED_EVENT } from "./MeshInstanceProvider";
 
 type Vec3 = [number, number, number];
 const DROP_POINTER = new Vector2();
@@ -221,7 +219,6 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
         const after = prefabStore.getState();
         if (after === before) return result;
 
-        gameEvents.emit(MESH_INSTANCES_CHANGED_EVENT, null);
         if (pushHistory) recordHistory(after);
         return result;
     }, [isEditMode, prefabStore, recordHistory]);
@@ -666,7 +663,7 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
                             }
                             : canvasProps?.onPointerMissed}
                     >
-                        {isEditMode ? <gridHelper args={[10, 10]} position={[0, -1, 0]} /> : null}
+                        {isEditMode ? <gridHelper args={[10, 10]} position={[0, -0.001, 0]} /> : null}
                         <PrefabRoot
                             store={prefabStore}
                             editMode={isEditMode}
@@ -695,7 +692,6 @@ const PrefabEditor = forwardRef<PrefabEditorRef, PrefabEditorProps>(({ basePath 
                                                     mode={transformMode}
                                                     space={transformMode === "translate" ? "world" : "local"}
                                                     onMouseUp={handleTransformChange}
-                                                    onObjectChange={() => gameEvents.emit(MESH_INSTANCES_CHANGED_EVENT, null)}
                                                     translationSnap={positionSnap > 0 ? positionSnap : undefined}
                                                     rotationSnap={rotationSnap > 0 ? rotationSnap : undefined}
                                                     scaleSnap={scaleSnap > 0 ? scaleSnap : undefined}

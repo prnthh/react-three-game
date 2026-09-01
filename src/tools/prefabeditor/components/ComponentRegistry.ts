@@ -95,17 +95,24 @@ export interface Component<P extends object = Record<string, any>> {
 const REGISTRY: Record<string, Component<any>> = {};
 type ComponentRegistration = {
 	component: Component<any>;
-	owner?: symbol;
+	scope: ComponentScopeState | null;
+};
+export type ComponentScopeState = {
+	mounted: boolean;
+	registrations: Set<ComponentRegistration>;
 };
 const REGISTRATION_STACKS: Record<string, ComponentRegistration[]> = {};
+let activeScope: ComponentScopeState | null = null;
+let adoptionScheduled = false;
 
-function addRegistration(component: Component<any>, owner?: symbol, beneathExisting = false) {
-	const registration: ComponentRegistration = { component, owner };
+function addRegistration(component: Component<any>, scope: ComponentScopeState | null = null, beneathExisting = false) {
+	const registration: ComponentRegistration = { component, scope };
 	const registrations = REGISTRATION_STACKS[component.name] ?? [];
 	if (beneathExisting) registrations.unshift(registration);
 	else registrations.push(registration);
 	REGISTRATION_STACKS[component.name] = registrations;
 	REGISTRY[component.name] = registrations[registrations.length - 1].component;
+	scope?.registrations.add(registration);
 	return registration;
 }
 
@@ -122,62 +129,62 @@ function removeRegistration(registration: ComponentRegistration) {
 		delete REGISTRATION_STACKS[registration.component.name];
 		delete REGISTRY[registration.component.name];
 	}
+	registration.scope?.registrations.delete(registration);
+	registration.scope = null;
+}
+
+function adoptPendingRegistrations(scope: ComponentScopeState) {
+	if (!scope.mounted) return;
+	Object.values(REGISTRATION_STACKS).forEach(registrations => {
+		registrations.forEach(registration => {
+			if (registration.scope) return;
+			registration.scope = scope;
+			scope.registrations.add(registration);
+		});
+	});
+}
+
+function schedulePendingAdoption() {
+	if (adoptionScheduled) return;
+	adoptionScheduled = true;
+	queueMicrotask(() => {
+		adoptionScheduled = false;
+		if (activeScope) adoptPendingRegistrations(activeScope);
+	});
 }
 
 export function registerComponent(component: Component<any>) {
 	const existing = REGISTRATION_STACKS[component.name]?.find(registration => registration.component === component);
-	if (existing) return () => {};
-	const registration = addRegistration(component);
-	let registered = true;
+	if (existing) return;
+	addRegistration(component);
+	schedulePendingAdoption();
+}
+
+/** @internal Stable storage retained by one GameCanvas across React effect replays. */
+export function createComponentScopeState(): ComponentScopeState {
+	return { mounted: false, registrations: new Set() };
+}
+
+/** @internal Mounts the single active game registry and owns late registrations. */
+export function mountComponentScope(
+	builtIns: readonly Component<any>[],
+	state: ComponentScopeState,
+) {
+	state.mounted = true;
+	activeScope = state;
+	if (state.registrations.size === 0) {
+		builtIns.forEach(component => addRegistration(component, state, true));
+		adoptPendingRegistrations(state);
+	}
+
 	return () => {
-		if (!registered) return;
-		registered = false;
-		removeRegistration(registration);
+		state.mounted = false;
+		if (activeScope === state) activeScope = null;
+		queueMicrotask(() => {
+			if (state.mounted) return;
+			[...state.registrations].reverse().forEach(removeRegistration);
+		});
 	};
-}
-
-/** @internal Assigns newly registered application/mod components to one mounted game. */
-export function claimComponentRegistrations(owner: symbol) {
-	const components: Component<any>[] = [];
-	Object.values(REGISTRATION_STACKS).forEach(registrations => {
-		registrations.forEach(registration => {
-			if (registration.owner) return;
-			registration.owner = owner;
-			components.push(registration.component);
-		});
-	});
-	return components;
-}
-
-/** @internal Installs viewer-owned definitions below application/mod overrides. */
-export function registerOwnedComponents(owner: symbol, components: readonly Component<any>[]) {
-	const builtInNames = new Set(components.map(component => component.name));
-	const applicationNames = Object.keys(REGISTRY).filter(name => !builtInNames.has(name));
-	components.forEach(component => addRegistration(component, owner, true));
-
-	// Keep the viewer's deliberate built-in order ahead of application additions.
-	const orderedNames = [...components.map(component => component.name), ...applicationNames];
-	Object.keys(REGISTRY).forEach(name => delete REGISTRY[name]);
-	orderedNames.forEach(name => {
-		const active = REGISTRATION_STACKS[name]?.[REGISTRATION_STACKS[name].length - 1]?.component;
-		if (active) REGISTRY[name] = active;
-	});
-}
-
-/** @internal Restores a game registration after React's development effect replay. */
-export function restoreComponentRegistrations(owner: symbol, components: readonly Component<any>[]) {
-	components.forEach(component => addRegistration(component, owner));
-}
-
-/** @internal Removes only registrations owned by the unmounted game. */
-export function unregisterComponentRegistrations(owner: symbol) {
-	const owned: ComponentRegistration[] = [];
-	Object.values(REGISTRATION_STACKS).forEach(registrations => {
-		registrations.forEach(registration => {
-			if (registration.owner === owner) owned.push(registration);
-		});
-	});
-	owned.forEach(removeRegistration);
 }
 
 export function getComponentDef(name: string): Component<any> | undefined {

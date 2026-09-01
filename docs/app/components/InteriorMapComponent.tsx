@@ -14,9 +14,8 @@ import {
     vec4,
 } from "three/tsl";
 import {
-    gameEvents,
     MESH_INSTANCING_MATERIAL_FACTORY,
-    MESH_INSTANCE_MATERIALS_CHANGED_EVENT,
+    useInvalidateMeshInstances,
     useTextureAsset,
     type Component,
     type ComponentViewProps,
@@ -41,7 +40,12 @@ export type InteriorMapProperties = {
 };
 
 const DEFAULT_TEXTURE = "/textures/interiors/cubemap-faces2.webp";
-const materialCache = new Map<string, MeshStandardNodeMaterial>();
+type MaterialCacheEntry = {
+    material: MeshStandardNodeMaterial;
+    references: number;
+};
+
+const materialCache = new Map<string, MaterialCacheEntry>();
 
 function createInteriorMapNode(
     atlas: Parameters<typeof texture>[0],
@@ -94,13 +98,14 @@ function createInteriorMapNode(
     return texture(atlas, atlasUv).rgb.mul(uniform(new Color(tint)));
 }
 
-function getMaterial(signature: string) {
+function getMaterialEntry(signature: string) {
     const cached = materialCache.get(signature);
     if (cached) return cached;
     const material = new MeshStandardNodeMaterial({ color: "#000000", side: FrontSide, toneMapped: false });
     material.name = "DemoInteriorMap";
-    materialCache.set(signature, material);
-    return material;
+    const entry = { material, references: 0 };
+    materialCache.set(signature, entry);
+    return entry;
 }
 
 function useInteriorMapMaterial(
@@ -109,12 +114,26 @@ function useInteriorMapMaterial(
     roomSize: [number, number, number],
     tint: string,
 ) {
+    const invalidateMeshInstances = useInvalidateMeshInstances();
     const width = Math.max(0.001, roomSize[0]);
     const height = Math.max(0.001, roomSize[1]);
     const depth = Math.max(0.001, roomSize[2]);
     const tintKey = useMemo(() => new Color(tint).getHexString(), [tint]);
     const signature = `${texturePath}:${width}:${height}:${depth}:${tintKey}`;
-    const material = useMemo(() => getMaterial(signature), [signature]);
+    const entry = useMemo(() => getMaterialEntry(signature), [signature]);
+    const material = entry.material;
+
+    useLayoutEffect(() => {
+        entry.references += 1;
+        return () => {
+            entry.references -= 1;
+            queueMicrotask(() => {
+                if (entry.references > 0 || materialCache.get(signature) !== entry) return;
+                materialCache.delete(signature);
+                entry.material.dispose();
+            });
+        };
+    }, [entry, signature]);
 
     useLayoutEffect(() => {
         if (!atlas || material.userData.interiorAtlas === atlas.uuid) return;
@@ -135,8 +154,8 @@ function useInteriorMapMaterial(
         };
         material.userData[MESH_INSTANCING_MATERIAL_FACTORY] = createInstancedMaterial;
         material.needsUpdate = true;
-        gameEvents.emit(MESH_INSTANCE_MATERIALS_CHANGED_EVENT, null);
-    }, [atlas, depth, height, material, tintKey, width]);
+        invalidateMeshInstances();
+    }, [atlas, depth, height, invalidateMeshInstances, material, tintKey, width]);
 
     return material;
 }

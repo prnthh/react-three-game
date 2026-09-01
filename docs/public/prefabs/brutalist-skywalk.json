@@ -40,7 +40,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -79,7 +78,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -118,7 +116,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -157,7 +154,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -196,7 +192,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -235,7 +230,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -274,7 +268,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -313,7 +306,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -352,7 +344,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -391,7 +382,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -430,7 +420,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -469,7 +458,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -508,7 +496,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -547,7 +534,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -586,7 +572,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -625,7 +610,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -664,7 +648,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -703,7 +686,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -742,7 +724,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -781,7 +762,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -820,7 +800,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -859,7 +838,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -898,7 +876,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -937,7 +914,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -981,7 +957,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -1025,7 +1000,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -1069,7 +1043,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -1113,7 +1086,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -1157,7 +1129,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -1201,7 +1172,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -1245,7 +1215,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -1289,7 +1258,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -1333,7 +1301,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -1377,7 +1344,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {
@@ -1416,7 +1382,6 @@
           "mesh": {
             "type": "Mesh",
             "properties": {
-              "instanced": true
             }
           },
           "geometry": {

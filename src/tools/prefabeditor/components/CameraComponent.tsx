@@ -17,7 +17,7 @@ const CAMERA_PROJECTION_OPTIONS = [
     { value: 'orthographic', label: 'Orthographic' },
 ] as const;
 
-export const CAMERA_DEFAULTS = {
+const CAMERA_DEFAULTS = {
     projection: 'perspective' as CameraProjection,
     fov: 50,
     near: 0.1,
@@ -29,8 +29,8 @@ export const CAMERA_DEFAULTS = {
     filmOffset: 0,
 } as const;
 
-export type CameraProjection = typeof CAMERA_PROJECTION_OPTIONS[number]['value'];
-export type CameraProperties = {
+type CameraProjection = typeof CAMERA_PROJECTION_OPTIONS[number]['value'];
+type CameraProperties = {
     projection?: CameraProjection;
     fov?: number;
     near?: number;

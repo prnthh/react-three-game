@@ -138,13 +138,18 @@ function createInstancedNode(index: number): GameObject {
         id: `instanced-${index}`,
         name: `Instanced ${index + 1}`,
         components: {
-            transform: createTransform([x * 1.8, 0, z * 1.8]),
-            model: {
-                type: "Model",
+            transform: createTransform([x * 1.6, 0.5, z * 1.6]),
+            mesh: { type: "Mesh", properties: {} },
+            geometry: {
+                type: "Geometry",
                 properties: {
-                    filename: "models/environment/tree.glb",
-                    repeat: false,
+                    geometryType: "box",
+                    args: [1, 1, 1],
                 },
+            },
+            material: {
+                type: "Material",
+                properties: { materialId: "static" },
             },
         },
     };
@@ -253,7 +258,7 @@ export default function BenchmarkPage() {
         },
         {
             id: "instanced-100",
-            label: "Add 100 instanced objects",
+            label: "Add 100 implicitly instanced meshes",
             run: async (editor) => {
                 for (let index = 0; index < TEST_COUNT; index += 1) {
                     editor.add(createInstancedNode(index), ROOT_ID);

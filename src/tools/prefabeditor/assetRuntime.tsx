@@ -20,11 +20,24 @@ export interface AssetRuntime {
 
 interface InternalAssetRuntime extends AssetRuntime {
     readModel: (path: string) => Object3D;
+    trackLoad: <T>(promise: Promise<T>) => Promise<T>;
 }
 
 export interface AssetRuntimeProviderProps {
     children: ReactNode;
     runtimeRef?: React.MutableRefObject<AssetRuntime | null>;
+}
+
+/** Number of scene resources that are still loading. */
+export function useScenePendingLoads(): number {
+    return useStore(useAssetStore(), state => state.pendingLoads);
+}
+
+/** Register non-asset scene work, such as loading a nested prefab document. */
+export function useTrackSceneLoad(): InternalAssetRuntime['trackLoad'] {
+    const runtime = useContext(AssetRuntimeContext);
+    if (!runtime) throw new Error("useTrackSceneLoad must be used inside <PrefabRoot>");
+    return runtime.trackLoad;
 }
 
 export const AssetRuntimeContext = createContext<InternalAssetRuntime | null>(null);
@@ -43,12 +56,13 @@ interface AssetStoreState {
     soundVersions: Record<string, number>;
     modelVersion: number;
     visualVersion: number;
+    pendingLoads: number;
 }
 
 type AssetStoreApi = StoreApi<AssetStoreState>;
 
 function createAssetStore(): AssetStoreApi {
-    return createStore<AssetStoreState>(() => ({ models: {}, textures: {}, sounds: {}, soundVersions: {}, modelVersion: 0, visualVersion: 0 }));
+    return createStore<AssetStoreState>(() => ({ models: {}, textures: {}, sounds: {}, soundVersions: {}, modelVersion: 0, visualVersion: 0, pendingLoads: 0 }));
 }
 
 const AssetStoreContext = createContext<AssetStoreApi | null>(null);
@@ -133,6 +147,17 @@ function AssetRuntimeOwner({ children, runtimeRef }: AssetRuntimeProviderProps) 
     const [assetStore] = useState(createAssetStore);
     const [loads] = useState(() => new Map<string, Promise<void>>());
     const [loadErrors] = useState(() => new Map<string, unknown>());
+    const trackLoad = useCallback(<T,>(promise: Promise<T>) => {
+        queueMicrotask(() => assetStore.setState(state => ({ pendingLoads: state.pendingLoads + 1 })));
+        const settle = () => assetStore.setState(state => ({ pendingLoads: Math.max(0, state.pendingLoads - 1) }));
+        return promise.then(value => {
+            settle();
+            return value;
+        }, error => {
+            settle();
+            throw error;
+        });
+    }, [assetStore]);
 
     const registerModel = useCallback((path: string, model: Object3D) => {
         if (assetStore.getState().models[path] === model) return;
@@ -176,7 +201,7 @@ function AssetRuntimeOwner({ children, runtimeRef }: AssetRuntimeProviderProps) 
         if (current) return current;
         loadErrors.delete(key);
 
-        const pending = (source ? source() : (type === 'model' ? fetchModel(path)
+        const pending = trackLoad((source ? source() : (type === 'model' ? fetchModel(path)
             : type === 'texture' ? fetchTexture(path)
                 : fetchSound(path)).then(result => {
                     if (!result.success) throw result.error;
@@ -199,11 +224,11 @@ function AssetRuntimeOwner({ children, runtimeRef }: AssetRuntimeProviderProps) 
                 if (loaded) return;
                 loadErrors.set(key, error);
                 console.warn(`Failed to load asset: ${path}`, error);
-            });
+            }));
         loads.set(key, pending);
         void pending.then(() => loads.delete(key));
         return pending;
-    }, [assetStore, loadErrors, loads, registerModel, registerSound, registerTexture]);
+    }, [assetStore, loadErrors, loads, registerModel, registerSound, registerTexture, trackLoad]);
     const loadModel = useCallback((path: string, source?: () => Promise<Object3D>) => load('model', path, source), [load]);
     const loadTexture = useCallback((path: string, source?: () => Promise<Texture>) => load('texture', path, source), [load]);
     const loadSound = useCallback((path: string, source?: () => Promise<AudioBuffer>) => load('sound', path, source), [load]);
@@ -219,8 +244,8 @@ function AssetRuntimeOwner({ children, runtimeRef }: AssetRuntimeProviderProps) 
     const runtime = useMemo<InternalAssetRuntime>(() => ({
         loadModel, loadTexture, loadSound,
         registerModel, registerTexture, registerSound,
-        getModel, getTexture, getSound, readModel,
-    }), [loadModel, loadTexture, loadSound, registerModel, registerTexture, registerSound, getModel, getTexture, getSound, readModel]);
+        getModel, getTexture, getSound, readModel, trackLoad,
+    }), [loadModel, loadTexture, loadSound, registerModel, registerTexture, registerSound, getModel, getTexture, getSound, readModel, trackLoad]);
 
     useImperativeHandle(runtimeRef, () => runtime, [runtime]);
 

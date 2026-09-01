@@ -100,6 +100,7 @@ function PrefabGridStreamerView({ properties }: ComponentViewProps<PrefabGridStr
     const travelStepRef = useRef<GridCoordinate>([0, 0, -1]);
     const hasPreviousCameraPositionRef = useRef(false);
     const previousCameraLocalPositionRef = useRef(new Vector3());
+    const authoredTemplateRef = useRef<PrefabNode | null>(null);
 
     useEffect(() => () => {
         const templateNodeId = properties.templateNodeId?.trim();
@@ -107,6 +108,16 @@ function PrefabGridStreamerView({ properties }: ComponentViewProps<PrefabGridStr
             if (id !== templateNodeId) prefab.remove(id);
         }
         tilesRef.current.clear();
+        if (templateNodeId && authoredTemplateRef.current && prefab.get(templateNodeId)) {
+            prefab.replaceNode(templateNodeId, authoredTemplateRef.current);
+        }
+        authoredTemplateRef.current = null;
+        lastWindowKeyRef.current = null;
+        lastLayoutKeyRef.current = null;
+        lastCameraCellRef.current = null;
+        previousCellRef.current = null;
+        travelStepRef.current = [0, 0, -1];
+        hasPreviousCameraPositionRef.current = false;
     }, [mode, prefab, properties.templateNodeId]);
 
     useFrame(() => {
@@ -120,7 +131,12 @@ function PrefabGridStreamerView({ properties }: ComponentViewProps<PrefabGridStr
         const tileCenter = properties.tileCenter ?? [0, 0, 0];
         const maxTiles = Math.max(2, Math.min(3, Math.floor(properties.maxTiles ?? 3)));
         const tiles = tilesRef.current;
-        if (tiles.size === 0) tiles.set(gridKey([0, 0, 0]), templateNodeId);
+        if (tiles.size === 0) {
+            const template = prefab.get(templateNodeId);
+            if (!template) return;
+            authoredTemplateRef.current = template;
+            tiles.set(gridKey([0, 0, 0]), templateNodeId);
+        }
 
         camera.getWorldPosition(measuredCameraWorldPosition);
         measuredCameraLocalPosition.copy(measuredCameraWorldPosition);
@@ -158,6 +174,17 @@ function PrefabGridStreamerView({ properties }: ComponentViewProps<PrefabGridStr
         const desiredKeys = new Set(desiredCoordinates.map(gridKey));
         let complete = true;
 
+        // The authored template is the current center tile. Move it rather than
+        // deleting it, and recreate the trailing edge from a disposable copy.
+        const templateEntry = [...tiles.entries()].find(([, id]) => id === templateNodeId);
+        if (templateEntry?.[0] !== cameraCellKey) {
+            const displacedId = tiles.get(cameraCellKey);
+            if (displacedId && displacedId !== templateNodeId) prefab.remove(displacedId);
+            if (templateEntry) tiles.delete(templateEntry[0]);
+            setTilePosition(prefab, templateNodeId, cameraCell, tileSize);
+            tiles.set(cameraCellKey, templateNodeId);
+        }
+
         // Mount the new edge before removing the old edge so shared prefab
         // resources remain referenced throughout the handoff.
         for (const coordinate of desiredCoordinates) {
@@ -180,6 +207,7 @@ function PrefabGridStreamerView({ properties }: ComponentViewProps<PrefabGridStr
         if (!complete) return;
         for (const [key, id] of tiles) {
             if (desiredKeys.has(key)) continue;
+            if (id === templateNodeId) continue;
             prefab.remove(id);
             tiles.delete(key);
         }

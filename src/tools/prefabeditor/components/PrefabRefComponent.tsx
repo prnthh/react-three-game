@@ -11,6 +11,7 @@ import { withBasePath } from '../utils';
 import { base, colors } from '../styles';
 import { FieldGroup, Label } from './Input';
 import { PrefabRoot } from '../PrefabRoot';
+import { useTrackSceneLoad } from '../assetRuntime';
 
 type PrefabRefProperties = {
     url?: string;
@@ -24,17 +25,14 @@ async function fetchJson<T>(url: string): Promise<T> {
     return response.json() as Promise<T>;
 }
 
-const pendingPrefabs = new Map<string, Promise<PrefabState>>();
+const prefabCache = new Map<string, Promise<PrefabState>>();
 
 function loadPrefab(url: string) {
-    const current = pendingPrefabs.get(url);
+    const current = prefabCache.get(url);
     if (current) return current;
     const request = fetchJson<Prefab>(url).then(normalizePrefab);
-    pendingPrefabs.set(url, request);
-    void request.then(
-        () => pendingPrefabs.delete(url),
-        () => pendingPrefabs.delete(url),
-    );
+    prefabCache.set(url, request);
+    void request.catch(() => prefabCache.delete(url));
     return request;
 }
 
@@ -43,16 +41,17 @@ function PrefabRefView({ properties, enabled, children }: ComponentViewProps<Pre
     const { editMode, nodeId } = useNode();
     const selectEditorNode = useEditSelection();
     const [store, setStore] = useState<PrefabStoreApi | null>(null);
+    const trackSceneLoad = useTrackSceneLoad();
     const url = properties.url ? withBasePath(basePath, properties.url) : '';
 
     useEffect(() => {
         let active = true;
         setStore(null);
-        if (url) void loadPrefab(url).then(value => {
+        if (url) void trackSceneLoad(loadPrefab(url)).then(value => {
             if (active) setStore(createPrefabStore(value));
         }).catch(error => console.warn('[PrefabRef] Failed to load:', url, error));
         return () => { active = false; };
-    }, [url]);
+    }, [trackSceneLoad, url]);
 
     const selectPlacement = useCallback((event: ThreeEvent<MouseEvent>) => {
         if (event.delta > 4) return;

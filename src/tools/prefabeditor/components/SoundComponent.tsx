@@ -10,6 +10,7 @@ import { useAudioListener } from '../AudioRuntime';
 import { withBasePath } from '../runtimeUtils';
 import { usePrefab } from '../SceneContext';
 import { useEditorRef } from '../EditorContext';
+import { SoundPicker } from '../../assetviewer/page';
 
 type ClipMode = 'single' | 'random' | 'sequence';
 
@@ -373,4 +374,3 @@ const SoundComponent: Component<SoundProperties> = {
 };
 
 export default SoundComponent;
-import { SoundPicker } from '../../assetviewer/page';

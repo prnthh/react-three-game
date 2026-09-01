@@ -9,6 +9,7 @@ import { useEditorRef } from '../EditorContext';
 import { withBasePath } from '../runtimeUtils';
 import type { Component, ComponentEditorProps, ComponentViewProps } from './ComponentRegistry';
 import { BooleanField, FieldGroup, NumberField, StringField } from './Input';
+import { ModelPicker } from '../../assetviewer/page';
 
 export interface AnimatedModelHandle {
     readonly object: Object3D;
@@ -167,4 +168,3 @@ const AnimatedModelComponent: Component<AnimatedModelProperties> = {
 };
 
 export default AnimatedModelComponent;
-import { ModelPicker } from '../../assetviewer/page';

@@ -151,7 +151,7 @@ Passing a new `data` object loads that prefab. Runtime children can be composed 
 </PrefabRoot>
 ```
 
-Models with explicit `repeat` settings feed their static mesh parts into the same scene-level instancing registry as `Mesh` components marked `instanced`. Ordinary model nodes stay independent, and animated or skinned assets remain on the normal model path.
+Eligible `Mesh` components automatically join a scene-level instancing registry. It batches compatible leaf meshes while continuing to reflect their native scene transforms and visibility; `instanced: false` opts a mesh out. Models with explicit `repeat` settings feed eligible static parts into the same registry. Interactive meshes, meshes that own child objects, ordinary model nodes, and animated or skinned assets remain on the normal rendering path.
 
 ### Renderer configuration
 
@@ -361,6 +361,15 @@ Use it in any prefab node:
 
 Call `registerComponent` from the exported game root. `GameCanvas` installs the engine built-ins through the same game-context lifecycle. Registrations are retained while that context is mounted and released with it; changing prefab data does not affect registration.
 
+Plugins may also be loaded dynamically. Register their components before mounting or loading prefab JSON that uses them:
+
+```ts
+const plugin = await import("./my-plugin.js");
+plugin.components.forEach(registerComponent);
+```
+
+The active `GameCanvas` owns those definitions and releases them when the whole game context unmounts.
+
 Component properties are sparse too. Each registered component defines every property’s type and default; prefab JSON only needs values that differ. The editor builds the default inspector from that same schema, while complex components can still provide a custom `Editor`.
 
 Numeric definitions infer `type: "number"`, so `{ default: 1, min: 0, max: 10, step: 0.1 }` is sufficient. Other property types remain explicit.
@@ -397,6 +406,8 @@ function CombatSystem() {
 ```
 
 Mount scene systems explicitly as children of `PrefabRoot` or `PrefabEditor`.
+
+Migration from `0.0.112`: `useNodeHandle(kind)` and the string-keyed asset-runtime handle registry were replaced by `createNodeComponentType`, `useRegisterNodeComponent`, and `useSceneComponents`. Capabilities are now typed and scoped to the mounted scene.
 
 Nested prefabs inherit their parent's material pool. A matching material definition
 reuses the parent instance even when its document-local ID differs. A

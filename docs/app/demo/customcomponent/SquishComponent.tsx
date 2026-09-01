@@ -1,15 +1,10 @@
 import { useEffect, useMemo } from "react";
 import {
     MaterialOverridesProvider,
-    float,
-    positionLocal,
-    sin,
-    time,
-    uniform,
-    vec3,
     type Component,
     type ComponentViewProps,
 } from "react-three-game";
+import { float, positionLocal, sin, time, uniform, vec3 } from "three/tsl";
 import { FieldRenderer } from "react-three-game/editor";
 import type { ComponentEditorProps, FieldDefinition } from "react-three-game/editor";
 

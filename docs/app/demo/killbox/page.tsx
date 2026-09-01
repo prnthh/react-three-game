@@ -30,9 +30,7 @@ function containsPlayer(node: GameObject): boolean {
 
 function injectPlayer(prefab: Prefab, prefabName: string): Prefab {
     if (containsPlayer(prefab.root)) return prefab;
-    const position: [number, number, number] = prefabName === "game-level"
-        ? [0, -3.15, 3]
-        : [0, 1.3, 6];
+    const position: [number, number, number] = [0, 1, 0,];
     return {
         ...prefab,
         root: {

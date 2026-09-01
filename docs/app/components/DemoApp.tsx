@@ -1,5 +1,5 @@
-import { GameCanvas, PrefabRoot, registerComponent } from "react-three-game/viewer";
-import { useState, useEffect } from "react";
+import { GameCanvas, PrefabRoot, registerComponent, useScenePendingLoads } from "react-three-game/viewer";
+import { useCallback, useEffect, useState } from "react";
 import type { Prefab } from "react-three-game/core";
 import { ACESFilmicToneMapping, SRGBColorSpace } from "three";
 import { withBasePath, BASE_PATH } from "../basePath";
@@ -8,12 +8,32 @@ import PrefabGridStreamerComponent from "./PrefabGridStreamerComponent";
 import InteriorMapComponent from "./InteriorMapComponent";
 import WebGPUPostProcessing from "./WebGPUPostProcessing";
 
+function SceneLoadReporter({ onReady }: { onReady: () => void }) {
+    const pendingLoads = useScenePendingLoads();
+
+    useEffect(() => {
+        if (pendingLoads > 0) return;
+        let finalFrame = 0;
+        const firstFrame = requestAnimationFrame(() => {
+            finalFrame = requestAnimationFrame(onReady);
+        });
+        return () => {
+            cancelAnimationFrame(firstFrame);
+            cancelAnimationFrame(finalFrame);
+        };
+    }, [onReady, pendingLoads]);
+
+    return null;
+}
+
 export default function DemoApp() {
     registerComponent(ConstantVelocityComponent);
     registerComponent(PrefabGridStreamerComponent);
     registerComponent(InteriorMapComponent);
 
     const [prefab, setPrefab] = useState<Prefab | null>(null);
+    const [sceneReady, setSceneReady] = useState(false);
+    const handleSceneReady = useCallback(() => setSceneReady(true), []);
 
     useEffect(() => {
         let mounted = true;
@@ -48,7 +68,12 @@ export default function DemoApp() {
                         bloomThreshold={1}
                     />
                 )}
+                {prefab && <SceneLoadReporter onReady={handleSceneReady} />}
             </GameCanvas>
+            <div
+                aria-hidden="true"
+                className={`pointer-events-none absolute inset-0 z-10 bg-zinc-950/25 backdrop-blur-xl transition-opacity duration-700 ease-out ${sceneReady ? "opacity-0" : "opacity-100"}`}
+            />
         </div>
     );
 } 

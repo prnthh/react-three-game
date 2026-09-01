@@ -19,7 +19,7 @@ function MeshEditor({ properties, update }: ComponentEditorProps<MeshProperties>
         <BooleanField name="visible" label="Visible" values={properties} onChange={update} fallback />
         <BooleanField name="castShadow" label="Cast Shadow" values={properties} onChange={update} fallback />
         <BooleanField name="receiveShadow" label="Receive Shadow" values={properties} onChange={update} fallback />
-        <BooleanField name="instanced" label="Instanced" values={properties} onChange={update} fallback={false} />
+        <BooleanField name="instanced" label="Allow Instancing" values={properties} onChange={update} fallback />
         <BooleanField name="emitClickEvent" label="Emit Click Event" values={properties} onChange={update} fallback={false} />
         {properties.emitClickEvent ? (
             <StringField
@@ -40,7 +40,7 @@ function MeshView({ properties, children }: ComponentViewProps<MeshProperties>) 
     useMeshInstanceRegistration(
         runtimeNodeId,
         mesh,
-        properties.instanced === true && visible && !properties.emitClickEvent && !isSelected,
+        properties.instanced !== false && visible && !properties.emitClickEvent && !isSelected,
     );
     return (
         <mesh
@@ -64,7 +64,7 @@ const MeshComponent: Component<MeshProperties> = {
         visible: { type: 'boolean', default: true },
         castShadow: { type: 'boolean', default: true },
         receiveShadow: { type: 'boolean', default: true },
-        instanced: { type: 'boolean', default: false },
+        instanced: { type: 'boolean', default: true },
         emitClickEvent: { type: 'boolean', default: false },
         clickEventName: { type: 'string', default: '' },
     },

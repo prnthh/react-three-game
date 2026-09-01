@@ -11,6 +11,7 @@ import { decomposeModelToPrefabNodes } from '../modelPrefab';
 import { withBasePath } from '../runtimeUtils';
 import { usePrefab } from '../SceneContext';
 import { useMeshInstanceRegistration } from '../MeshInstanceProvider';
+import { ModelPicker } from '../../assetviewer/page';
 
 const AXIS_OPTIONS = [
     { value: 'x', label: 'X' },
@@ -339,16 +340,15 @@ function RepeatedMesh({
 }) {
     const [mesh, setMesh] = useState<Mesh | null>(null);
     useMeshInstanceRegistration(id, mesh, instanced);
-    return <group position={position}>
-        <mesh
-            ref={setMesh}
-            geometry={part.geometry}
-            material={part.material}
-            castShadow={part.castShadow}
-            receiveShadow={part.receiveShadow}
-            frustumCulled={false}
-        />
-    </group>;
+    return <mesh
+        ref={setMesh}
+        position={position}
+        geometry={part.geometry}
+        material={part.material}
+        castShadow={part.castShadow}
+        receiveShadow={part.receiveShadow}
+        frustumCulled={false}
+    />;
 }
 
 function RepeatedModel({ source, positions, interactive }: {
@@ -382,19 +382,15 @@ function RepeatedModel({ source, positions, interactive }: {
 
     const instanced = !interactive && !isSelected;
     return <group>
-        {positions.map((position, instanceIndex) => (
-            <group key={instanceIndex}>
-                {parts.map((part, partIndex) => (
-                    <RepeatedMesh
-                        key={partIndex}
-                        id={`${runtimeNodeId}:repeat:${instanceIndex}:${partIndex}`}
-                        part={part}
-                        position={position}
-                        instanced={instanced}
-                    />
-                ))}
-            </group>
-        ))}
+        {positions.map((position, instanceIndex) => parts.map((part, partIndex) => (
+            <RepeatedMesh
+                key={`${instanceIndex}:${partIndex}`}
+                id={`${runtimeNodeId}:repeat:${instanceIndex}:${partIndex}`}
+                part={part}
+                position={position}
+                instanced={instanced}
+            />
+        )))}
     </group>;
 }
 
@@ -434,4 +430,3 @@ const ModelComponent: Component<ModelProperties> = {
 };
 
 export default ModelComponent;
-import { ModelPicker } from '../../assetviewer/page';

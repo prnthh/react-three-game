@@ -1,11 +1,10 @@
 import type { Component, ComponentEditorProps, ComponentViewProps } from "./ComponentRegistry";
 import { useHelper } from "@react-three/drei";
-import { useEffect, useMemo, useRef } from "react";
+import { useMemo, useRef } from "react";
 import { CameraHelper, Object3D } from "three";
 import type { DirectionalLight } from "three";
 import { useNode } from "../SceneContext";
-import { BooleanField, ColorField, NumberField, NumberInput, StringField, Vector3Input } from "./Input";
-import { gameEvents } from "../GameEvents";
+import { BooleanField, ColorField, NumberField, NumberInput, Vector3Input } from "./Input";
 import {
     EditorLightGizmo,
     LightSection,
@@ -28,7 +27,6 @@ const directionalLightDefaults = {
     shadowIntensity: 1,
     shadowRadius: 1,
     shadowAutoUpdate: true,
-    shadowUpdateEvent: '',
     shadowCameraNear: 0.5,
     shadowCameraFar: 500,
     shadowCameraTop: 5,
@@ -101,15 +99,6 @@ function DirectionalLightComponentEditor({ properties, update }: ComponentEditor
                 {values.castShadow ? (
                     <>
                         <BooleanField name="shadowAutoUpdate" label="Auto Update" values={values} onChange={update} fallback={true} />
-                        {!values.shadowAutoUpdate ? (
-                            <StringField
-                                name="shadowUpdateEvent"
-                                label="Update Event"
-                                values={values}
-                                onChange={update}
-                                placeholder="scene:shadow-update"
-                            />
-                        ) : null}
                         <NumberField
                             name="shadowMapSize"
                             label="Map Size"
@@ -160,14 +149,6 @@ function DirectionalLightView({ properties, children }: ComponentViewProps<Direc
     const helperTargetRef = useRef<Object3D>(null!);
     const target = useMemo(() => new Object3D(), []);
     useShadowMapResolution(directionalLightRef, shadowMapSize);
-    useEffect(() => {
-        const eventName = merged.shadowUpdateEvent.trim();
-        if (merged.shadowAutoUpdate || !eventName) return;
-        return gameEvents.on(eventName, () => {
-            const light = directionalLightRef.current;
-            if (light) light.shadow.needsUpdate = true;
-        });
-    }, [merged.shadowAutoUpdate, merged.shadowUpdateEvent]);
 
     // Show CameraHelper only in edit mode, selected, and castShadow
     const showHelper = editMode && isSelected && merged.castShadow;
@@ -232,7 +213,6 @@ const DirectionalLightComponent: Component<DirectionalLightProperties> = {
         shadowIntensity: { default: directionalLightDefaults.shadowIntensity, min: 0, max: 1, step: 0.05 },
         shadowRadius: { default: directionalLightDefaults.shadowRadius, min: 0, step: 0.25 },
         shadowAutoUpdate: { type: 'boolean', default: directionalLightDefaults.shadowAutoUpdate },
-        shadowUpdateEvent: { type: 'string', default: directionalLightDefaults.shadowUpdateEvent },
         shadowCameraNear: { default: directionalLightDefaults.shadowCameraNear },
         shadowCameraFar: { default: directionalLightDefaults.shadowCameraFar },
         shadowCameraTop: { default: directionalLightDefaults.shadowCameraTop },

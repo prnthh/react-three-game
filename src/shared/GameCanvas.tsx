@@ -3,15 +3,12 @@ import { WebGPURenderer, MeshBasicNodeMaterial, MeshStandardNodeMaterial, Sprite
 import { WebGPURendererParameters } from "three/src/renderers/webgpu/WebGPURenderer.Nodes.js";
 import type { ColorSpace, ShadowMapType, ToneMapping } from "three";
 import { Loader } from "@react-three/drei";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { AssetRuntimeProvider } from "../tools/prefabeditor/assetRuntime";
 import { AudioRuntimeProvider } from "../tools/prefabeditor/AudioRuntime";
 import {
-    claimComponentRegistrations,
-    registerOwnedComponents,
-    restoreComponentRegistrations,
-    unregisterComponentRegistrations,
-    type Component,
+	createComponentScopeState,
+    mountComponentScope,
 } from "../tools/prefabeditor/components/ComponentRegistry";
 import { builtInComponents } from "../tools/prefabeditor/components";
 
@@ -34,22 +31,14 @@ export interface GameCanvasProps extends Omit<CanvasProps, 'children'> {
 }
 
 export default function GameCanvas({ loader = false, children, glConfig, rendererConfig, onCreated, raycaster, style, ...props }: GameCanvasProps) {
-    const owner = useRef(Symbol("game-components"));
-    const ownedComponents = useRef<readonly Component<any>[] | null>(null);
+    const [componentScope] = useState(createComponentScopeState);
     const [ready, setReady] = useState(false);
 
     useLayoutEffect(() => {
-        registerOwnedComponents(owner.current, builtInComponents);
-        if (ownedComponents.current === null) {
-            ownedComponents.current = claimComponentRegistrations(owner.current);
-        } else {
-            restoreComponentRegistrations(owner.current, ownedComponents.current);
-        }
+        const dispose = mountComponentScope(builtInComponents, componentScope);
         setReady(true);
-        return () => {
-            unregisterComponentRegistrations(owner.current);
-        };
-    }, []);
+        return dispose;
+    }, [componentScope]);
 
     if (!ready) return null;
 

@@ -1,49 +1,24 @@
 import { useFrame } from "@react-three/fiber";
-import {
-    useNodeObject,
-    type Component,
-    type ComponentViewProps,
-} from "react-three-game";
-import { FieldRenderer } from "react-three-game/editor";
-import type { ComponentEditorProps } from "react-three-game/editor";
 
-type RotationAxis = 'x' | 'y' | 'z';
-type RotatorProperties = {
+import { useNode, useNodeObject, type Component, type ComponentViewProps } from "react-three-game/viewer";
+
+export type RotationAxis = 'x' | 'y' | 'z';
+
+export type RotatorProperties = {
     speed?: number;
     axis?: RotationAxis;
 };
 
-function RotatorComponentEditor({ properties, update }: ComponentEditorProps<RotatorProperties>) {
-    return (
-        <FieldRenderer
-            fields={[
-                { name: 'speed', type: 'number', label: 'Rotation Speed', step: 0.1 },
-                {
-                    name: 'axis',
-                    type: 'select',
-                    label: 'Rotation Axis',
-                    options: [
-                        { value: 'x', label: 'X' },
-                        { value: 'y', label: 'Y' },
-                        { value: 'z', label: 'Z' },
-                    ],
-                },
-            ]}
-            values={properties}
-            onChange={update}
-        />
-    );
-}
-
 function RotatorView({ properties, children }: ComponentViewProps<RotatorProperties>) {
+    const { editMode } = useNode();
     const objectRef = useNodeObject();
 
     useFrame((_, delta) => {
         const object = objectRef.current;
-        if (!object) return;
+        if (editMode || !object) return;
 
-        const speed = properties.speed ?? 1.0;
-        const axis = properties.axis ?? 'y';
+        const speed = properties.speed;
+        const axis = properties.axis;
         object.rotation[axis] += delta * speed;
     });
 
@@ -52,12 +27,12 @@ function RotatorView({ properties, children }: ComponentViewProps<RotatorPropert
 
 const RotatorComponent: Component<RotatorProperties> = {
     name: 'Rotator',
-    Editor: RotatorComponentEditor,
     View: RotatorView,
     properties: {
-        speed: { default: 1.0 },
+        speed: { default: 1, label: "Rotation Speed", step: 0.1 },
         axis: {
             type: 'select',
+            label: 'Rotation Axis',
             default: 'y',
             options: [
                 { value: 'x', label: 'X' },

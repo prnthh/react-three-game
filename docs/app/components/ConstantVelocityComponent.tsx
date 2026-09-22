@@ -6,7 +6,7 @@ import {
     useScene,
     type Component,
     type ComponentViewProps,
-} from "react-three-game";
+} from "react-three-game/viewer";
 
 type Vector3Tuple = [number, number, number];
 
@@ -19,14 +19,14 @@ const worldDestination = new Vector3();
 const localPosition = new Vector3();
 const localDestination = new Vector3();
 
-function ConstantVelocityView({ properties }: ComponentViewProps<ConstantVelocityProperties>) {
+function ConstantVelocityView({ properties, children }: ComponentViewProps<ConstantVelocityProperties>) {
     const objectRef = useNodeObject();
     const { mode } = useScene();
 
     useFrame((_, delta) => {
         if (mode !== PrefabEditorMode.Play) return;
         const object = objectRef.current;
-        const velocity = properties.velocity ?? [0, 0, 0];
+        const velocity = properties.velocity;
         if (!object || delta <= 0 || (velocity[0] === 0 && velocity[1] === 0 && velocity[2] === 0)) return;
 
         object.getWorldPosition(worldPosition);
@@ -47,7 +47,7 @@ function ConstantVelocityView({ properties }: ComponentViewProps<ConstantVelocit
         }
     }, -20);
 
-    return null;
+    return <>{children}</>;
 }
 
 const ConstantVelocityComponent: Component<ConstantVelocityProperties> = {

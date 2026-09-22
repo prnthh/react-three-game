@@ -1,22 +1,19 @@
+import { useShadowUpdates } from '../../../runtime/lighting/shadowUpdates';
 import { useRef } from 'react';
-import { useHelper } from '@react-three/drei';
-import { PointLightHelper } from 'three';
-import type { Object3D, PointLight } from 'three';
-import { useNode } from '../SceneContext';
-import type { Component, ComponentEditorProps, ComponentViewProps } from './ComponentRegistry';
-import { BooleanField, ColorField, NumberField } from './Input';
-import {
-    EditorLightGizmo,
-    LightSection,
-    MAX_SHADOW_MAP_SIZE,
-    MIN_SHADOW_MAP_SIZE,
-    ShadowBiasField,
-    mergeWithDefaults,
-    normalizeShadowMapSize,
-    useShadowMapResolution,
-} from './lightUtils';
 
-const pointLightDefaults = {
+import { useHelper } from '@react-three/drei';
+
+import { PointLightHelper } from 'three';
+
+import type { Object3D, PointLight } from 'three';
+
+import { useNode } from '../SceneContext';
+
+import type { Component, ComponentViewProps } from './ComponentRegistry';
+
+import { EditorLightGizmo, MAX_SHADOW_MAP_SIZE, MIN_SHADOW_MAP_SIZE, mergeWithDefaults, normalizeShadowMapSize, useShadowMapResolution } from './lightUtils';
+
+export const pointLightDefaults = {
     color: '#ffffff',
     intensity: 1,
     distance: 0,
@@ -32,48 +29,7 @@ const pointLightDefaults = {
     shadowCameraFar: 500,
 };
 
-type PointLightProperties = Partial<typeof pointLightDefaults>;
-
-
-function PointLightComponentEditor({ properties, update }: ComponentEditorProps<PointLightProperties>) {
-    const values = mergeWithDefaults(pointLightDefaults, properties);
-    return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <LightSection title="Light">
-                <ColorField name="color" label="Color" values={values} onChange={update} />
-                <NumberField name="intensity" label="Intensity" values={values} onChange={update} min={0} step={0.1} fallback={1} />
-                <NumberField name="distance" label="Distance" values={values} onChange={update} min={0} step={1} fallback={0} />
-                <NumberField name="decay" label="Decay" values={values} onChange={update} min={0} step={0.1} fallback={2} />
-            </LightSection>
-            <LightSection title="Shadow">
-                <BooleanField name="castShadow" label="Cast Shadow" values={values} onChange={update} fallback={false} />
-                {values.castShadow ? (
-                    <>
-                        <BooleanField name="shadowAutoUpdate" label="Auto Update" values={values} onChange={update} fallback={true} />
-                        <NumberField
-                            name="shadowMapSize"
-                            label="Map Size"
-                            values={values}
-                            onChange={update}
-                            min={MIN_SHADOW_MAP_SIZE}
-                            max={MAX_SHADOW_MAP_SIZE}
-                            step={128}
-                            fallback={512}
-                            commitOnBlur
-                        />
-                        <ShadowBiasField name="shadowBias" label="Bias" values={values} onChange={update} fallback={0} />
-                        <ShadowBiasField name="shadowNormalBias" label="Normal Bias" values={values} onChange={update} fallback={0} />
-                        <NumberField name="shadowIntensity" label="Opacity" values={values} onChange={update} min={0} max={1} step={0.05} fallback={1} />
-                        <NumberField name="shadowRadius" label="Softness" values={values} onChange={update} min={0} step={0.25} fallback={1} />
-                        <NumberField name="shadowCameraNear" label="Near" values={values} onChange={update} min={0.001} step={0.1} fallback={0.5} />
-                        <NumberField name="shadowCameraFar" label="Far" values={values} onChange={update} min={0.1} step={1} fallback={500} />
-                    </>
-                ) : null}
-            </LightSection>
-        </div>
-    );
-}
-
+export type PointLightProperties = Partial<typeof pointLightDefaults>;
 
 function PointLightView({ properties, children }: ComponentViewProps<PointLightProperties>) {
     const { editMode, isSelected } = useNode();
@@ -98,6 +54,7 @@ function PointLightView({ properties, children }: ComponentViewProps<PointLightP
     const lightRef = useRef<PointLight>(null);
     const helperTargetRef = useRef<Object3D>(null!);
     useShadowMapResolution(lightRef, shadowMapSize);
+    useShadowUpdates(lightRef);
     const showHelper = editMode && isSelected && lightRef.current;
     if (lightRef.current) helperTargetRef.current = lightRef.current;
     useHelper(showHelper ? helperTargetRef : null, PointLightHelper, 0.5);
@@ -129,11 +86,10 @@ function PointLightView({ properties, children }: ComponentViewProps<PointLightP
     );
 }
 
-
 const PointLightComponent: Component<PointLightProperties> = {
     name: 'PointLight',
+    slot: 'object',
     renderWhenDisabled: true,
-    Editor: PointLightComponentEditor,
     View: PointLightView,
     properties: {
         color: { type: 'color', default: pointLightDefaults.color },

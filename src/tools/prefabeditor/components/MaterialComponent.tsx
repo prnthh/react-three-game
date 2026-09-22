@@ -1,40 +1,30 @@
-import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from 'react';
+import { useInvalidateMeshInstances } from "../MeshInstanceProvider";
+import { BackSide, DoubleSide, NearestFilter, NearestMipmapNearestFilter, NearestMipmapLinearFilter, LinearMipmapNearestFilter } from "three";
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
+
 import { applyProps, extend } from '@react-three/fiber';
+
 import type { ThreeElement } from '@react-three/fiber';
-import type { Component, ComponentEditorProps, ComponentViewProps } from './ComponentRegistry';
-import { FieldRenderer, Label, NumberInput } from './Input';
-import type { FieldDefinition } from './Input';
+
+import type { Component, ComponentViewProps } from './ComponentRegistry';
+
 import { useTextureAsset } from '../assetRuntime';
+
 import { usePrefab } from '../SceneContext';
-import { useEditorRef } from '../EditorContext';
+
 import { usePrefabStore } from '../prefabStore';
-import { compactPrefabMaterial, createDefaultMaterial, DEFAULT_MATERIAL_ID } from '../prefab';
-import { base, colors } from '../styles';
+
+import { compactPrefabMaterial, DEFAULT_MATERIAL_ID } from '../prefab';
+
 import type { MaterialComponentProperties, PrefabMaterial, PrefabMaterialType } from '../types';
+
 import { MeshBasicNodeMaterial, MeshStandardNodeMaterial, SpriteNodeMaterial } from 'three/webgpu';
-import { TexturePicker } from '../../assetviewer/page';
+
 import { withBasePath } from '../runtimeUtils';
-import {
-    RepeatWrapping,
-    ClampToEdgeWrapping,
-    NoColorSpace,
-    SRGBColorSpace,
-    NearestFilter,
-    LinearFilter,
-    NearestMipmapNearestFilter,
-    NearestMipmapLinearFilter,
-    LinearMipmapNearestFilter,
-    LinearMipmapLinearFilter,
-    FrontSide,
-    BackSide,
-    DoubleSide,
-} from 'three';
-import type {
-    MinificationTextureFilter,
-    MagnificationTextureFilter,
-    Material,
-    Texture,
-} from 'three';
+
+import { RepeatWrapping, ClampToEdgeWrapping, NoColorSpace, SRGBColorSpace, LinearFilter, LinearMipmapLinearFilter, FrontSide } from 'three';
+
+import type { MinificationTextureFilter, MagnificationTextureFilter, Material, Texture } from 'three';
 
 type TextureConfig = {
     colorSpace: Texture['colorSpace'];
@@ -56,54 +46,14 @@ declare module '@react-three/fiber' {
 
 export type MaterialProps = PrefabMaterial;
 
-function Vector2Editor({
-    label,
-    value,
-    onChange,
-    min,
-    max,
-    step,
-}: {
-    label: string;
-    value: [number, number] | undefined;
-    onChange: (value: [number, number]) => void;
-    min?: number;
-    max?: number;
-    step?: number;
-}) {
-    return (
-        <div style={{ display: 'flex', gap: 2 }}>
-            <div style={{ flex: 1 }}>
-                <Label>{label} X</Label>
-                <NumberInput
-                    value={value?.[0] ?? 0}
-                    onChange={x => onChange([x, value?.[1] ?? 0])}
-                    min={min}
-                    max={max}
-                    step={step}
-                    style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
-                />
-            </div>
-            <div style={{ flex: 1 }}>
-                <Label>{label} Y</Label>
-                <NumberInput
-                    value={value?.[1] ?? 0}
-                    onChange={y => onChange([value?.[0] ?? 0, y])}
-                    min={min}
-                    max={max}
-                    step={step}
-                    style={{ width: '100%', minWidth: 0, boxSizing: 'border-box' }}
-                />
-            </div>
-        </div>
-    );
-}
-
 export type MaterialOverrides = Record<string, unknown>;
 
 const EMPTY_MATERIAL_OVERRIDES: MaterialOverrides = Object.freeze({});
+
 const MaterialOverridesContext = createContext<MaterialOverrides>(EMPTY_MATERIAL_OVERRIDES);
+
 const SIDE_MAP = { FrontSide, BackSide, DoubleSide } as const;
+
 const MIN_FILTER_MAP: Record<string, MinificationTextureFilter> = {
     NearestFilter,
     LinearFilter,
@@ -112,6 +62,7 @@ const MIN_FILTER_MAP: Record<string, MinificationTextureFilter> = {
     LinearMipmapNearestFilter,
     LinearMipmapLinearFilter,
 };
+
 const MAG_FILTER_MAP: Record<string, MagnificationTextureFilter> = {
     NearestFilter,
     LinearFilter,
@@ -201,14 +152,57 @@ extend({
 
 type RuntimeMaterial = MeshBasicNodeMaterial | MeshStandardNodeMaterial | SpriteNodeMaterial;
 
-type SharedMaterials = {
-    byId: ReadonlyMap<string, RuntimeMaterial>;
-    pool: ReadonlyMap<string, RuntimeMaterial>;
+type SharedMaterials = { byId: ReadonlyMap<string, RuntimeMaterial> };
+const SharedMaterialsContext = createContext<SharedMaterials>({ byId: new Map() });
+type MaterialEntry = {
+    key: string;
+    material: Material;
+    references: number;
+    configured: boolean;
+    configuration?: { properties: PrefabMaterial; basePath: string };
 };
 
-const EMPTY_SHARED_MATERIALS: SharedMaterials = { byId: new Map(), pool: new Map() };
-const SharedMaterialsContext = createContext<SharedMaterials>(EMPTY_SHARED_MATERIALS);
-const SceneMaterialPoolContext = createContext<Map<string, RuntimeMaterial> | null>(null);
+class SceneMaterialPool {
+    readonly entries = new Map<string, MaterialEntry>();
+    private listeners = new Set<() => void>();
+    private revision = 0;
+    private scheduled = false;
+    lifetime: object | null = null;
+    subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
+    getSnapshot = () => this.revision;
+    changed = () => {
+        if (this.scheduled) return;
+        this.scheduled = true;
+        queueMicrotask(() => {
+            this.scheduled = false;
+            this.revision++;
+            this.listeners.forEach(listener => listener());
+        });
+    };
+    get(key: string, create: () => Material, configuration?: MaterialEntry['configuration']) {
+        let entry = this.entries.get(key);
+        if (!entry) {
+            entry = { key, material: create(), references: 0, configured: !configuration, configuration };
+            this.entries.set(key, entry);
+            this.changed();
+        }
+        return entry;
+    }
+    retain(entry: MaterialEntry) {
+        entry.references++;
+        return () => {
+            entry.references--;
+            queueMicrotask(() => {
+                if (entry.references > 0 || this.entries.get(entry.key) !== entry) return;
+                this.entries.delete(entry.key);
+                entry.material.dispose();
+                this.changed();
+            });
+        };
+    }
+    dispose() { this.entries.forEach(entry => entry.material.dispose()); this.entries.clear(); }
+}
+const SceneMaterialPoolContext = createContext<SceneMaterialPool | null>(null);
 
 function createMaterial(type: PrefabMaterialType = 'standard'): RuntimeMaterial {
     if (type === 'basic') return new MeshBasicNodeMaterial();
@@ -217,7 +211,7 @@ function createMaterial(type: PrefabMaterialType = 'standard'): RuntimeMaterial 
 }
 
 function getMaterialSignature(material: PrefabMaterial, basePath: string) {
-    const { texture, normalMapTexture, ...properties } = compactPrefabMaterial(material);
+    const { texture, normalMapTexture, name: _name, ...properties } = compactPrefabMaterial(material);
     return JSON.stringify(Object.entries({
         ...properties,
         ...(texture ? { texture: withBasePath(basePath, texture) } : null),
@@ -225,104 +219,87 @@ function getMaterialSignature(material: PrefabMaterial, basePath: string) {
     }).sort(([left], [right]) => left.localeCompare(right)));
 }
 
-function ConfiguredSharedMaterial({ material, properties }: {
-    material: RuntimeMaterial;
-    properties: PrefabMaterial;
-}) {
-    const { basePath } = usePrefab();
+function ConfiguredSharedMaterial({ entry, pool }: { entry: MaterialEntry; pool: SceneMaterialPool }) {
+    const { basePath, properties } = entry.configuration!;
+    const material = entry.material as RuntimeMaterial;
     const textureName = properties.texture;
     const normalMapTextureName = properties.normalMapTexture;
     const texture = useTextureAsset(textureName ? withBasePath(basePath, textureName) : textureName) ?? undefined;
     const normalMapTexture = useTextureAsset(normalMapTextureName ? withBasePath(basePath, normalMapTextureName) : normalMapTextureName) ?? undefined;
     const textureConfig = {
-        repeat: properties.repeat,
-        repeatCount: properties.repeatCount,
-        offset: properties.offset,
+        repeat: properties.repeat, repeatCount: properties.repeatCount, offset: properties.offset,
         generateMipmaps: properties.generateMipmaps !== false,
         minFilter: MIN_FILTER_MAP[properties.minFilter ?? 'LinearMipmapLinearFilter'] ?? LinearMipmapLinearFilter,
         magFilter: MAG_FILTER_MAP[properties.magFilter ?? 'LinearFilter'] ?? LinearFilter,
     };
     const map = useConfiguredTexture(texture, { ...textureConfig, colorSpace: SRGBColorSpace });
     const normalMap = useConfiguredTexture(normalMapTexture, { ...textureConfig, colorSpace: NoColorSpace });
-
     useLayoutEffect(() => {
         applyMaterialProperties(material, properties, map, normalMap, EMPTY_MATERIAL_OVERRIDES);
-    }, [map, material, normalMap, properties]);
+        entry.configured = (!textureName || !!map) && (!normalMapTextureName || !!normalMap);
+        pool.changed();
+    }, [entry, map, material, normalMap, normalMapTextureName, pool, properties, textureName]);
     return null;
 }
 
 export function MaterialRuntimeProvider({ children }: { children: ReactNode }) {
     return <MaterialPoolProvider><MaterialRuntimeLayer>{children}</MaterialRuntimeLayer></MaterialPoolProvider>;
 }
-
 export function MaterialPoolProvider({ children }: { children: ReactNode }) {
-    const scenePool = useContext(SceneMaterialPoolContext);
-    if (scenePool) return children;
+    const inherited = useContext(SceneMaterialPoolContext);
+    if (inherited) return children;
     return <SceneMaterialPoolOwner>{children}</SceneMaterialPoolOwner>;
 }
-
 function SceneMaterialPoolOwner({ children }: { children: ReactNode }) {
-    const [scenePool] = useState(() => new Map<string, RuntimeMaterial>());
-
-    useEffect(() => () => scenePool.forEach(material => material.dispose()), [scenePool]);
-
-    return <SceneMaterialPoolContext.Provider value={scenePool}>
+    const [pool] = useState(() => new SceneMaterialPool());
+    useSyncExternalStore(pool.subscribe, pool.getSnapshot, pool.getSnapshot);
+    useEffect(() => {
+        const lifetime = {};
+        pool.lifetime = lifetime;
+        return () => { queueMicrotask(() => { if (pool.lifetime === lifetime) pool.dispose(); }); };
+    }, [pool]);
+    return <SceneMaterialPoolContext.Provider value={pool}>
         {children}
+        {[...pool.entries.values()].filter(entry => entry.configuration).map(entry => (
+            <ConfiguredSharedMaterial key={entry.material.uuid} entry={entry} pool={pool} />
+        ))}
     </SceneMaterialPoolContext.Provider>;
+}
+
+/** Shared shader/material implementations use the same scene ownership as built-in materials. */
+export function useSharedMaterialResource<T extends Material>(key: string, create: () => T): T {
+    const pool = useContext(SceneMaterialPoolContext);
+    if (!pool) throw new Error('Shared materials require a scene material pool');
+    const entry = useMemo(() => pool.get(`custom:${key}`, create), [pool, key]);
+    useLayoutEffect(() => pool.retain(entry), [entry, pool]);
+    return entry.material as T;
+}
+
+export function useSceneMaterialStatus() {
+    const pool = useContext(SceneMaterialPoolContext);
+    if (!pool) throw new Error('Material status requires a scene material pool');
+    const revision = useSyncExternalStore(pool.subscribe, pool.getSnapshot, pool.getSnapshot);
+    const pending = [...pool.entries.values()].filter(entry => !entry.configured).length;
+    return { revision, pending };
 }
 
 function MaterialRuntimeLayer({ children }: { children: ReactNode }) {
     const materials = usePrefabStore(state => state.materials);
     const { basePath } = usePrefab();
-    const inherited = useContext(SharedMaterialsContext);
-    const scenePool = useContext(SceneMaterialPoolContext)!;
+    const pool = useContext(SceneMaterialPoolContext)!;
     const entries = useMemo(() => Object.entries(materials).map(([id, properties]) => ({
-        id,
-        properties,
-        signature: getMaterialSignature(properties, basePath),
-    })), [basePath, materials]);
-    const localEntries = entries.filter(({ signature }) => !inherited.pool.has(signature));
-    const instanceKey = JSON.stringify(localEntries
-        .map(({ id, signature }) => [id, signature])
-        .sort(([left], [right]) => left.localeCompare(right)));
-    const { instances, ownedInstances } = useMemo(() => {
-        const nextInstances = new Map<string, RuntimeMaterial>();
-        const nextOwnedInstances = new Set<RuntimeMaterial>();
-        localEntries.forEach(({ id, properties, signature }) => {
-            const pooled = !properties.texture && !properties.normalMapTexture;
-            let material = pooled ? scenePool.get(signature) : undefined;
-            if (!material) {
-                material = createMaterial(properties.materialType);
-                applyMaterialProperties(material, properties, undefined, undefined, EMPTY_MATERIAL_OVERRIDES);
-                if (pooled) scenePool.set(signature, material);
-                else nextOwnedInstances.add(material);
-            }
-            nextInstances.set(id, material);
-        });
-        return { instances: nextInstances, ownedInstances: nextOwnedInstances };
-    }, [instanceKey, scenePool]);
-    const sharedMaterials = useMemo<SharedMaterials>(() => {
-        const pool = new Map(inherited.pool);
-        const byId = new Map<string, RuntimeMaterial>();
-        entries.forEach(({ id, signature }) => {
-            const material = inherited.pool.get(signature) ?? instances.get(id);
-            if (!material) return;
-            byId.set(id, material);
-            if (!pool.has(signature)) pool.set(signature, material);
-        });
-        return { byId, pool };
-    }, [entries, inherited.pool, instances]);
-
-    useEffect(() => () => {
-        ownedInstances.forEach(material => material.dispose());
-    }, [ownedInstances]);
-
-    return <SharedMaterialsContext.Provider value={sharedMaterials}>
-        {localEntries.map(({ id, properties }) => (
-            <ConfiguredSharedMaterial key={id} material={instances.get(id)!} properties={properties} />
-        ))}
-        {children}
-    </SharedMaterialsContext.Provider>;
+        id, entry: pool.get(`standard:${getMaterialSignature(properties, basePath)}`, () => {
+            const material = createMaterial(properties.materialType);
+            applyMaterialProperties(material, properties, undefined, undefined, EMPTY_MATERIAL_OVERRIDES);
+            return material;
+        }, { properties, basePath }),
+    })), [basePath, materials, pool]);
+    useLayoutEffect(() => {
+        const release = entries.map(({ entry }) => pool.retain(entry));
+        return () => release.forEach(dispose => dispose());
+    }, [entries, pool]);
+    const shared = useMemo(() => ({ byId: new Map(entries.map(({ id, entry }) => [id, entry.material as RuntimeMaterial])) }), [entries]);
+    return <SharedMaterialsContext.Provider value={shared}>{children}</SharedMaterialsContext.Provider>;
 }
 
 function applyMaterialProperties(
@@ -369,348 +346,6 @@ function applyMaterialProperties(
     material.needsUpdate = true;
 }
 
-function getNewMaterialId(materials: Record<string, PrefabMaterial>) {
-    let id = 'material';
-    let index = 2;
-    while (materials[id]) id = `material-${index++}`;
-    return id;
-}
-
-function MaterialPreview({ material, basePath }: { material: PrefabMaterial; basePath: string }) {
-    const materialType = material.materialType ?? 'standard';
-    const texturePath = material.texture ? withBasePath(basePath, material.texture) : null;
-    const opacity = material.transparent ? material.opacity ?? 1 : 1;
-
-    return (
-        <div style={{
-            width: '100%',
-            aspectRatio: '1.35 / 1',
-            display: 'grid',
-            placeItems: 'center',
-            overflow: 'hidden',
-            backgroundColor: '#c8c8c8',
-            backgroundImage: 'linear-gradient(45deg, #b4b4b4 25%, transparent 25%), linear-gradient(-45deg, #b4b4b4 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #b4b4b4 75%), linear-gradient(-45deg, transparent 75%, #b4b4b4 75%)',
-            backgroundPosition: '0 0, 0 5px, 5px -5px, -5px 0',
-            backgroundSize: '10px 10px',
-            border: '1px solid ' + colors.borderFaint,
-            boxSizing: 'border-box',
-        }}>
-            <div style={{
-                position: 'relative',
-                width: materialType === 'sprite' ? '48%' : '58%',
-                aspectRatio: '1 / 1',
-                overflow: 'hidden',
-                borderRadius: materialType === 'sprite' ? 2 : '50%',
-                backgroundColor: material.color ?? '#ffffff',
-                backgroundImage: texturePath ? 'url(' + JSON.stringify(texturePath) + ')' : undefined,
-                backgroundPosition: 'center',
-                backgroundSize: 'cover',
-                backgroundBlendMode: 'multiply',
-                boxShadow: materialType === 'standard'
-                    ? 'inset -8px -9px 12px rgba(0,0,0,0.38), inset 2px 2px 3px rgba(255,255,255,0.24)'
-                    : 'inset 0 0 0 1px rgba(0,0,0,0.18)',
-                opacity,
-            }}>
-                {materialType === 'standard' && (
-                    <div style={{
-                        position: 'absolute',
-                        inset: 0,
-                        background: 'radial-gradient(circle at 33% 27%, rgba(255,255,255,0.95), rgba(255,255,255,0.28) 16%, transparent 48%)',
-                        opacity: Math.max(0.15, 1 - (material.roughness ?? 1) * 0.75),
-                    }} />
-                )}
-            </div>
-        </div>
-    );
-}
-
-function MaterialComponentEditor({
-    properties,
-    update,
-}: ComponentEditorProps<MaterialComponentProperties>) {
-    const [settingsOpen, setSettingsOpen] = useState(false);
-    const editor = useEditorRef();
-    const { basePath } = editor;
-    const materials = usePrefabStore(state => state.materials);
-    const materialIds = Object.keys(materials);
-    const materialId = properties.materialId && materials[properties.materialId]
-        ? properties.materialId
-        : materialIds[0] ?? DEFAULT_MATERIAL_ID;
-    const material = materials[materialId] ?? createDefaultMaterial();
-    const materialType = material.materialType ?? 'standard';
-    const hasTexture = !!material.texture;
-    const hasRepeat = material.repeat;
-    const isStandardMaterial = materialType === 'standard';
-    const isSpriteMaterial = materialType === 'sprite';
-    const editorValues: PrefabMaterial = {
-        name: material.name ?? '',
-        materialType,
-        color: material.color ?? '#ffffff',
-        toneMapped: material.toneMapped ?? true,
-        wireframe: material.wireframe ?? false,
-        transparent: material.transparent ?? isSpriteMaterial,
-        opacity: material.opacity ?? 1,
-        depthTest: material.depthTest ?? !isSpriteMaterial,
-        depthWrite: material.depthWrite ?? !isSpriteMaterial,
-        metalness: material.metalness ?? 0,
-        roughness: material.roughness ?? 1,
-        transmission: material.transmission ?? 0,
-        thickness: material.thickness ?? 0,
-        ior: material.ior ?? 1.5,
-        rotation: material.rotation ?? 0,
-        sizeAttenuation: material.sizeAttenuation ?? true,
-        side: material.side ?? 'FrontSide',
-        offset: material.offset ?? [0, 0],
-        ...material,
-        generateMipmaps: material.generateMipmaps ?? true,
-        minFilter: material.minFilter ?? 'LinearMipmapLinearFilter',
-        magFilter: material.magFilter ?? 'LinearFilter',
-    };
-
-    const fields: FieldDefinition<PrefabMaterial>[] = [
-        { name: 'name', type: 'string', label: 'Name' },
-        {
-            name: 'materialType',
-            type: 'select',
-            label: 'Material Type',
-            options: [
-                { value: 'standard', label: 'Standard' },
-                { value: 'basic', label: 'Basic' },
-                { value: 'sprite', label: 'Sprite' },
-            ],
-        },
-        { name: 'color', type: 'color', label: 'Color' },
-        { name: 'toneMapped', type: 'boolean', label: 'Tone Mapped' },
-    ];
-
-    if (!isSpriteMaterial) {
-        fields.push({ name: 'wireframe', type: 'boolean', label: 'Wireframe' });
-    }
-
-    fields.push(
-        { name: 'transparent', type: 'boolean', label: 'Transparent' },
-        { name: 'opacity', type: 'number', label: 'Opacity', min: 0, max: 1, step: 0.01 },
-    );
-
-    if (isSpriteMaterial) {
-        fields.push(
-            { name: 'rotation', type: 'number', label: 'Rotation', step: 0.01 },
-            { name: 'sizeAttenuation', type: 'boolean', label: 'Size Attenuation' },
-            { name: 'depthTest', type: 'boolean', label: 'Depth Test' },
-            { name: 'depthWrite', type: 'boolean', label: 'Depth Write' },
-        );
-    }
-
-    if (isStandardMaterial) {
-        fields.push(
-            { name: 'metalness', type: 'number', label: 'Metalness', min: 0, max: 1, step: 0.01 },
-            { name: 'roughness', type: 'number', label: 'Roughness', min: 0, max: 1, step: 0.01 },
-            { name: 'transmission', type: 'number', label: 'Transmission', min: 0, max: 1, step: 0.01 },
-            { name: 'thickness', type: 'number', label: 'Thickness', min: 0, step: 0.1 },
-            { name: 'ior', type: 'number', label: 'IOR (Index of Refraction)', min: 1, max: 2.333, step: 0.01 },
-        );
-    }
-
-    if (!isSpriteMaterial) {
-        fields.push({
-            name: 'side',
-            type: 'select',
-            label: 'Side',
-            options: [
-                { value: 'FrontSide', label: 'Front' },
-                { value: 'BackSide', label: 'Back' },
-                { value: 'DoubleSide', label: 'Double' },
-            ],
-        });
-    }
-
-    fields.push({
-        name: 'texture',
-        type: 'custom',
-        label: 'Texture File',
-        render: ({ value, onChange }) => (
-            <TexturePicker value={value} onChange={onChange} basePath={basePath} />
-        ),
-    });
-
-    if (hasTexture) {
-        fields.push({ name: 'repeat', type: 'boolean', label: 'Repeat Texture' });
-
-        if (hasRepeat) {
-            fields.push({
-                name: 'repeatCount',
-                type: 'custom',
-                label: 'Repeat (X, Y)',
-                render: ({ value, onChange }: { value: [number, number] | undefined; onChange: (v: [number, number]) => void }) => (
-                    <Vector2Editor label="Repeat" value={value} onChange={onChange} min={0.01} max={100} step={0.1} />
-                ),
-            });
-        }
-
-        fields.push({
-            name: 'offset',
-            type: 'custom',
-            label: 'Offset (X, Y)',
-            render: ({ value, onChange }: { value: [number, number] | undefined; onChange: (v: [number, number]) => void }) => (
-                <Vector2Editor label="Offset" value={value} onChange={onChange} step={0.01} />
-            ),
-        });
-
-        if (!isSpriteMaterial) {
-            fields.push({
-                name: 'normalMapTexture',
-                type: 'custom',
-                label: 'Normal Map',
-                render: ({ value, onChange }) => (
-                    <TexturePicker value={value} onChange={onChange} basePath={basePath} />
-                ),
-            });
-        }
-
-        if (!isSpriteMaterial && material.normalMapTexture) {
-            fields.push({
-                name: 'normalScale',
-                type: 'custom',
-                label: 'Normal Scale (X, Y)',
-                render: ({ value, onChange }: { value: [number, number] | undefined; onChange: (v: [number, number]) => void }) => (
-                    <Vector2Editor label="Normal" value={value} onChange={onChange} min={0} max={5} step={0.01} />
-                ),
-            });
-        }
-
-        fields.push(
-            { name: 'generateMipmaps', type: 'boolean', label: 'Generate Mipmaps' },
-            {
-                name: 'minFilter',
-                type: 'select',
-                label: 'Min Filter',
-                options: [
-                    { value: 'LinearMipmapLinearFilter', label: 'Linear Mipmap Linear (Default)' },
-                    { value: 'LinearFilter', label: 'Linear' },
-                    { value: 'LinearMipmapNearestFilter', label: 'Linear Mipmap Nearest' },
-                    { value: 'NearestFilter', label: 'Nearest' },
-                    { value: 'NearestMipmapNearestFilter', label: 'Nearest Mipmap Nearest' },
-                    { value: 'NearestMipmapLinearFilter', label: 'Nearest Mipmap Linear' },
-                ],
-            },
-            {
-                name: 'magFilter',
-                type: 'select',
-                label: 'Mag Filter',
-                options: [
-                    { value: 'LinearFilter', label: 'Linear (Default)' },
-                    { value: 'NearestFilter', label: 'Nearest' },
-                ],
-            },
-        );
-    }
-
-    const createMaterialEntry = () => {
-        const id = getNewMaterialId(materials);
-        editor.setMaterial(id, {});
-        update({ materialId: id });
-    };
-
-    return <>
-        <div style={base.label}>Material</div>
-        <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-            gap: 4,
-            maxHeight: 220,
-            overflowY: 'auto',
-            paddingRight: 2,
-            marginBottom: 6,
-            scrollbarWidth: 'thin',
-            scrollbarColor: colors.borderFaint + ' transparent',
-        }}>
-            {materialIds.map(id => {
-                const entry = materials[id];
-                const selected = id === materialId;
-                return (
-                    <button
-                        key={id}
-                        type="button"
-                        title={entry.name ? entry.name + ' (' + id + ')' : id}
-                        aria-pressed={selected}
-                        onClick={() => update({ materialId: id })}
-                        style={{
-                            ...base.btn,
-                            minWidth: 0,
-                            height: 'auto',
-                            padding: 3,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 3,
-                            background: selected ? colors.accentBg : colors.bgLight,
-                            borderColor: selected ? colors.accent : colors.border,
-                        }}
-                    >
-                        <MaterialPreview material={entry} basePath={basePath} />
-                        <span style={{
-                            width: '100%',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            textAlign: 'center',
-                        }}>
-                            {entry.name || id}
-                        </span>
-                    </button>
-                );
-            })}
-            <button
-                type="button"
-                title="New Material"
-                onClick={createMaterialEntry}
-                style={{
-                    ...base.btn,
-                    minWidth: 0,
-                    minHeight: 70,
-                    padding: 3,
-                    display: 'grid',
-                    placeItems: 'center',
-                    background: colors.bgLight,
-                    fontSize: 20,
-                }}
-            >
-                +
-            </button>
-        </div>
-        <FieldRenderer
-            fields={[{ name: 'attach', type: 'string', label: 'Attach' }]}
-            values={properties}
-            onChange={update}
-        />
-        <button
-            type="button"
-            style={{ ...base.header, borderRadius: base.btn.borderRadius, marginTop: 4 }}
-            onClick={() => setSettingsOpen(open => !open)}
-            aria-expanded={settingsOpen}
-        >
-            <span>Material Settings</span>
-            <span>{settingsOpen ? '▼' : '▶'}</span>
-        </button>
-        {settingsOpen && (
-            <div style={{ paddingTop: 4 }}>
-                <FieldRenderer
-                    fields={fields}
-                    values={editorValues}
-                    onChange={patch => editor.setMaterial(materialId, {
-                        ...material,
-                        ...(patch.materialType === 'sprite' && materialType !== 'sprite' ? {
-                            transparent: true,
-                            depthTest: false,
-                            depthWrite: false,
-                        } : null),
-                        ...patch,
-                    })}
-                />
-            </div>
-        )}
-    </>;
-}
-
 function MaterialComponentView({ properties, children }: ComponentViewProps<MaterialComponentProperties>) {
     const materialId = properties.materialId ?? DEFAULT_MATERIAL_ID;
     const material = usePrefabStore(state => state.materials[materialId] ?? state.materials[DEFAULT_MATERIAL_ID]);
@@ -719,8 +354,12 @@ function MaterialComponentView({ properties, children }: ComponentViewProps<Mate
     const materialType = material.materialType ?? 'standard';
     const overrides = useMaterialOverrides();
     const ownsMaterial = Object.keys(overrides).length > 0;
+    const pool = useContext(SceneMaterialPoolContext)!;
+    const materialRevision = useSyncExternalStore(pool.subscribe, () => ownsMaterial ? pool.getSnapshot() : 0, () => 0);
     const localMaterial = useMemo(() => ownsMaterial ? createMaterial(materialType) : null, [materialType, ownsMaterial]);
     const resolvedMaterial = localMaterial ?? sharedMaterial;
+    const invalidateInstances = useInvalidateMeshInstances();
+    useLayoutEffect(invalidateInstances, [resolvedMaterial, invalidateInstances]);
 
     useEffect(() => () => localMaterial?.dispose(), [localMaterial]);
     useLayoutEffect(() => {
@@ -728,18 +367,17 @@ function MaterialComponentView({ properties, children }: ComponentViewProps<Mate
         localMaterial.copy(sharedMaterial);
         applyProps(localMaterial, overrides);
         localMaterial.needsUpdate = true;
-    }, [localMaterial, material, overrides, sharedMaterial]);
+    }, [localMaterial, material, materialRevision, overrides, sharedMaterial]);
     return <>
-        {resolvedMaterial ? <primitive object={resolvedMaterial as Material} attach={properties.attach ?? 'material'} dispose={null} /> : null}
+        {resolvedMaterial ? <primitive object={resolvedMaterial as Material} attach={properties.attach} dispose={null} /> : null}
         {children}
     </>;
 }
 
 const MaterialComponent: Component<MaterialComponentProperties> = {
     name: 'Material',
+    slot: 'material',
     renderWhenDisabled: true,
-    attachment: true,
-    Editor: MaterialComponentEditor,
     View: MaterialComponentView,
     properties: {
         attach: { type: 'string', default: 'material' },

@@ -1,7 +1,7 @@
 export {
-	getAllComponentDefs,
+	getComponents,
 	getComponentDefaultProperties,
-	getComponentDef,
+	getComponent,
 	registerComponent,
 	resolveComponentProperties,
 } from "./tools/prefabeditor/components/ComponentRegistry";
@@ -25,3 +25,5 @@ export type {
 	PrefabMaterialType,
 } from "./tools/prefabeditor/types";
 export { findComponent, findComponentEntry, hasComponent } from "./tools/prefabeditor/types";
+
+export type { AssetDependency, ComponentDependency } from "./runtime/preparePrefab";

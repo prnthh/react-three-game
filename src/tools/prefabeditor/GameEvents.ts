@@ -1,3 +1,5 @@
+import type { ShadowLight } from '../../runtime/lighting/shadowUpdates';
+
 import { useCallback, useEffect } from 'react';
 
 export type GameEventHandler<TPayload = unknown> = (payload: TPayload) => void;
@@ -30,6 +32,7 @@ export type NodePointerEventPayload = {
 };
 
 export interface GameEventMap {
+    'shadows:invalidate': { lights?: readonly ShadowLight[] };
     'sensor:enter': ContactEventPayload;
     'sensor:exit': ContactEventPayload;
     'collision:enter': ContactEventPayload;

@@ -1,9 +1,11 @@
 import AmbientLightComponent from "./AmbientLightComponent";
 import BufferGeometryComponent from "./BufferGeometryComponent";
+import CameraFollowComponent from "./CameraFollowComponent";
 import CameraComponent from "./CameraComponent";
 import DataComponent from "./DataComponent";
 import DirectionalLightComponent from "./DirectionalLightComponent";
 import EnvironmentComponent from "./EnvironmentComponent";
+import FogComponent from "./FogComponent";
 import GeometryComponent from "./GeometryComponent";
 import HemisphereLightComponent from "./HemisphereLightComponent";
 import MaterialComponent from "./MaterialComponent";
@@ -44,7 +46,9 @@ export const builtInComponents: readonly Component<any>[] = [
 
 	// Other components
 	EnvironmentComponent,
+	FogComponent,
 	CameraComponent,
+	CameraFollowComponent,
 	SoundComponent,
 	DataComponent,
 	PrefabRefComponent,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import {
     addBroadphaseLayer,
     addObjectLayer,
@@ -17,6 +17,7 @@ import {
     type World,
     updateWorld,
 } from "crashcat";
+import { getPhysicsScene } from "./physicsScene";
 import { debugRenderer } from "crashcat/three";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { Object3D } from "three";
@@ -69,38 +70,9 @@ export interface CrashcatApi {
     getBody: (nodeId: string) => RigidBody | null;
 }
 
-const crashcatListeners = new Set<() => void>();
-let crashcatApi: CrashcatApi | null = null;
-
-export function observeCrashcat(listener: (api: CrashcatApi | null) => void) {
-    const notify = () => listener(crashcatApi);
-    crashcatListeners.add(notify);
-    notify();
-    return () => crashcatListeners.delete(notify);
-}
-
-export function getCrashcatApi() {
-    return crashcatApi;
-}
-
 export function useCrashcat(): CrashcatApi | null {
-    return useSyncExternalStore(
-        (listener) => {
-            crashcatListeners.add(listener);
-            return () => {
-                crashcatListeners.delete(listener);
-            };
-        },
-        () => crashcatApi,
-        () => crashcatApi,
-    );
-}
-
-function setCrashcatApi(api: CrashcatApi | null) {
-    crashcatApi = api;
-    crashcatListeners.forEach((listener) => {
-        listener();
-    });
+    const state = getPhysicsScene(useThree(state => state.scene));
+    return useSyncExternalStore(state.subscribe, state.getSnapshot, state.getSnapshot);
 }
 
 function emitPhysicsEvent(
@@ -152,6 +124,7 @@ function getBodyMeta(bodyById: Map<number, BodyMeta>, body: RigidBody): BodyMeta
 
 export function CrashcatRuntime({ debug = false, children }: { debug?: boolean; children?: React.ReactNode }) {
     const { mode } = useScene();
+    const physicsScene = getPhysicsScene(useThree(state => state.scene));
     const bodiesRef = useRef(new Map<string, BodyEntry>());
     const bodyByIdRef = useRef(new Map<number, BodyMeta>());
     const apiRef = useRef<CrashcatApi | null>(null);
@@ -195,9 +168,6 @@ export function CrashcatRuntime({ debug = false, children }: { debug?: boolean; 
         const queryFilter = filter.forWorld(world);
         const bodies = bodiesRef.current;
         const bodyById = bodyByIdRef.current;
-        const runtimeDebugState = debug ? createDebugState() : null;
-        debugStateRef.current = runtimeDebugState;
-        setDebugObject(runtimeDebugState?.object3d ?? null);
 
         const unregister = (nodeId: string) => {
             const entry = bodies.get(nodeId);
@@ -223,19 +193,28 @@ export function CrashcatRuntime({ debug = false, children }: { debug?: boolean; 
         };
 
         apiRef.current = runtimeApi;
-        setCrashcatApi(runtimeApi);
+        const unregisterRuntime = physicsScene.register(runtimeApi);
 
         return () => {
             apiRef.current = null;
-            if (crashcatApi === runtimeApi) setCrashcatApi(null);
+            unregisterRuntime();
             for (const entry of bodies.values()) {
                 rigidBody.remove(world, entry.body);
             }
             bodies.clear();
             bodyById.clear();
-            if (debugStateRef.current === runtimeDebugState) debugStateRef.current = null;
-            setDebugObject(current => current === runtimeDebugState?.object3d ? null : current);
-            if (runtimeDebugState) debugRenderer.dispose(runtimeDebugState);
+        };
+    }, [physicsScene]);
+
+    useEffect(() => {
+        if (!debug) return;
+        const state = createDebugState();
+        debugStateRef.current = state;
+        setDebugObject(state.object3d);
+        return () => {
+            debugStateRef.current = null;
+            setDebugObject(null);
+            debugRenderer.dispose(state);
         };
     }, [debug]);
 

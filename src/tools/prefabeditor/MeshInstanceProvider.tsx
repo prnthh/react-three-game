@@ -8,7 +8,6 @@ import { useEditSelection } from './SelectionRuntime';
 const HIDDEN_MATRIX = new Matrix4().makeScale(0, 0, 0);
 const IDENTITY_MATRIX = new Matrix4();
 const BATCH_PARENT_INVERSE = new Matrix4();
-const SOURCE_WORLD_MATRIX = new Matrix4();
 const INSTANCE_MATRIX = new Matrix4();
 const CURRENT_INSTANCE_MATRIX = new Matrix4();
 const INVERSE_MATRIX = new Matrix4();
@@ -19,10 +18,19 @@ export type MeshInstancingMaterialFactory = (inverseInstanceMatrix: Node<'mat4'>
 export type InstancedMeshSource = {
     id: string;
     mesh: Mesh;
-    host: Object3D | null;
 };
 
+/** Keep source geometry available to physics while the batch draws it. */
+export function hideInstancedSources(sources: InstancedMeshSource[]) {
+    const masks = sources.map(source => source.mesh.layers.mask);
+    sources.forEach(source => { source.mesh.layers.mask = 0; });
+    return () => {
+        sources.forEach((source, index) => { source.mesh.layers.mask = masks[index]; });
+    };
+}
+
 class MeshInstanceRegistry {
+    constructor(readonly isStatic = false) {}
     private sources = new Map<string, InstancedMeshSource>();
     private listeners = new Set<() => void>();
     private revision = 0;
@@ -83,7 +91,7 @@ function getMeshInstancingMaterialFactory(material: Material | Material[]) {
 
 function isHierarchyVisible(source: InstancedMeshSource) {
     if (!source.mesh.visible) return false;
-    let current: Object3D | null = source.mesh.parent ?? source.host;
+    let current: Object3D | null = source.mesh.parent;
     while (current) {
         if (!current.visible) return false;
         current = current.parent;
@@ -98,18 +106,21 @@ function getBatchKey(source: InstancedMeshSource) {
     return `${geometryKey}|${materialKey(mesh.material)}|${Number(mesh.castShadow)}|${Number(mesh.receiveShadow)}`;
 }
 
-function MeshInstanceBatch({ sources }: { sources: InstancedMeshSource[] }) {
+function MeshInstanceBatch({ sources, isStatic }: { sources: InstancedMeshSource[]; isStatic: boolean }) {
     const batchRef = useRef<InstancedMesh>(null);
+    const lastParentMatrix = useRef(new Matrix4());
+    const lastVisibility = useRef<boolean | null>(null);
     const select = useEditSelection();
     const geometry = sources[0].mesh.geometry;
     const sourceMaterial = sources[0].mesh.material;
     const materialFactory = getMeshInstancingMaterialFactory(sourceMaterial);
+    const capacity = Math.max(2, 2 ** Math.ceil(Math.log2(sources.length)));
     const inverseMatrixBuffer = useMemo(() => {
         if (!materialFactory) return null;
-        const buffer = new InstancedInterleavedBuffer(new Float32Array(sources.length * 16), 16, 1);
+        const buffer = new InstancedInterleavedBuffer(new Float32Array(capacity * 16), 16, 1);
         buffer.setUsage(DynamicDrawUsage);
         return buffer;
-    }, [materialFactory, sources.length]);
+    }, [materialFactory, capacity]);
     const inverseMatrixNode = useMemo(() => inverseMatrixBuffer ? mat4(
         instancedDynamicBufferAttribute(inverseMatrixBuffer, 'vec4', 16, 0),
         instancedDynamicBufferAttribute(inverseMatrixBuffer, 'vec4', 16, 4),
@@ -127,24 +138,24 @@ function MeshInstanceBatch({ sources }: { sources: InstancedMeshSource[] }) {
         if (material !== sourceMaterial && !Array.isArray(material)) material.dispose();
     }, [material, sourceMaterial]);
 
-    const updateMatrices = useCallback(() => {
+    const updateMatrices = useCallback((force = false) => {
         const batch = batchRef.current;
         if (!batch) return;
+        batch.count = sources.length;
         batch.parent?.updateWorldMatrix(true, false);
-        BATCH_PARENT_INVERSE.copy(batch.parent?.matrixWorld ?? IDENTITY_MATRIX).invert();
+        const parentMatrix = batch.parent?.matrixWorld ?? IDENTITY_MATRIX;
+        let visible = true;
+        for (let parent = batch.parent; parent; parent = parent.parent) visible = visible && parent.visible;
+        if (isStatic && !force && lastVisibility.current === visible && lastParentMatrix.current.equals(parentMatrix)) return;
+        lastParentMatrix.current.copy(parentMatrix);
+        lastVisibility.current = visible;
+        BATCH_PARENT_INVERSE.copy(parentMatrix).invert();
         let matricesChanged = false;
         let inverseMatricesChanged = false;
         for (let index = 0; index < sources.length; index += 1) {
             const source = sources[index];
-            if (source.mesh.parent) {
-                source.mesh.updateWorldMatrix(true, false);
-                SOURCE_WORLD_MATRIX.copy(source.mesh.matrixWorld);
-            } else if (source.host) {
-                source.mesh.updateMatrix();
-                SOURCE_WORLD_MATRIX
-                    .multiplyMatrices(source.host.matrixWorld, source.mesh.matrix);
-            }
-            INSTANCE_MATRIX.multiplyMatrices(BATCH_PARENT_INVERSE, SOURCE_WORLD_MATRIX);
+            source.mesh.updateWorldMatrix(true, false);
+            INSTANCE_MATRIX.multiplyMatrices(BATCH_PARENT_INVERSE, source.mesh.matrixWorld);
             const renderedMatrix = isHierarchyVisible(source) ? INSTANCE_MATRIX : HIDDEN_MATRIX;
             batch.getMatrixAt(index, CURRENT_INSTANCE_MATRIX);
             if (!equalsFloat32(CURRENT_INSTANCE_MATRIX, renderedMatrix)) {
@@ -162,22 +173,19 @@ function MeshInstanceBatch({ sources }: { sources: InstancedMeshSource[] }) {
                 }
             }
         }
-        if (matricesChanged) batch.instanceMatrix.needsUpdate = true;
+        if (matricesChanged) {
+            batch.instanceMatrix.needsUpdate = true;
+            // Raycasting still uses this bound even when render culling is disabled.
+            batch.computeBoundingSphere();
+        }
         if (inverseMatrixBuffer && inverseMatricesChanged) inverseMatrixBuffer.needsUpdate = true;
-    }, [inverseMatrixBuffer, sources]);
+    }, [inverseMatrixBuffer, sources, isStatic]);
 
     useFrame(() => updateMatrices());
 
     useLayoutEffect(() => {
-        updateMatrices();
-        sources.forEach(source => {
-            source.host?.remove(source.mesh);
-        });
-        return () => {
-            sources.forEach(source => {
-                if (source.host && !source.mesh.parent) source.host.add(source.mesh);
-            });
-        };
+        updateMatrices(true);
+        return hideInstancedSources(sources);
     }, [sources, updateMatrices]);
 
     const handleClick = select ? (event: ThreeEvent<MouseEvent>) => {
@@ -192,7 +200,7 @@ function MeshInstanceBatch({ sources }: { sources: InstancedMeshSource[] }) {
 
     return <instancedMesh
         ref={batchRef}
-        args={[geometry, material, sources.length]}
+        args={[geometry, material, capacity]}
         castShadow={sources[0].mesh.castShadow}
         receiveShadow={sources[0].mesh.receiveShadow}
         frustumCulled={false}
@@ -212,14 +220,15 @@ function MeshInstanceBatches({ registry }: { registry: MeshInstanceRegistry }) {
     }
 
     return <>{[...groups.entries()].map(([key, sources]) => (
-        sources.length > 1 ? <MeshInstanceBatch key={key} sources={sources} /> : null
+        sources.length > 1 ? <MeshInstanceBatch key={key} sources={sources} isStatic={registry.isStatic} /> : null
     ))}</>;
 }
 
 /** Owns one mesh bucket registry for the complete nested prefab tree. */
-export function MeshInstanceProvider({ children }: { children: ReactNode }) {
-    const inherited = useContext(MeshInstanceContext);
-    const registry = useMemo(() => inherited ?? new MeshInstanceRegistry(), [inherited]);
+export function MeshInstanceProvider({ children, isolated = false, static: isStatic = false }: { children: ReactNode; isolated?: boolean; static?: boolean }) {
+    const parent = useContext(MeshInstanceContext);
+    const inherited = isolated ? null : parent;
+    const registry = useMemo(() => inherited ?? new MeshInstanceRegistry(isStatic), [inherited, isStatic]);
     if (inherited) return children;
     return (
         <MeshInstanceContext.Provider value={registry}>
@@ -236,7 +245,6 @@ export function useMeshInstanceRegistration(id: string, mesh: Mesh | null, enabl
         return registry.register({
             id,
             mesh,
-            host: mesh.parent,
         });
     }, [enabled, id, mesh, registry]);
 }
@@ -246,4 +254,11 @@ const NOOP = () => {};
 /** Rebuilds instance batches after a custom material changes its instancing contract. */
 export function useInvalidateMeshInstances() {
     return useContext(MeshInstanceContext)?.invalidate ?? NOOP;
+}
+
+/** A committed batch revision is part of the chunk preparation lifecycle. */
+export function useMeshInstanceRevision() {
+    const registry = useContext(MeshInstanceContext);
+    if (!registry) throw new Error("Mesh instance registry is unavailable");
+    return useSyncExternalStore(registry.subscribe, registry.getSnapshot, registry.getSnapshot);
 }

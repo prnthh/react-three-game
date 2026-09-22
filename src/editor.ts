@@ -1,5 +1,3 @@
-import "./index";
-
 export type { ComponentEditorProps } from "./tools/prefabeditor/components/ComponentRegistry";
 
 export { default as PrefabEditor } from "./tools/prefabeditor/PrefabEditor";
@@ -59,3 +57,5 @@ export {
   SingleTextureViewer,
   SharedCanvas,
 } from "./tools/assetviewer/page";
+
+export { registerComponentEditor } from "./tools/prefabeditor/ComponentEditors";

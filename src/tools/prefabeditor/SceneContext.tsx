@@ -129,7 +129,6 @@ export const PrefabContext = createContext<PrefabApi | null>(null);
 export const NodeComponentContext = createContext<NodeComponentRegistry | null>(null);
 const NodeContext = createContext<NodeApi | null>(null);
 const RuntimeNodeIdPrefixContext = createContext("");
-const PrefabRenderCacheContext = createContext<WeakMap<GameObject, unknown> | null>(null);
 
 /** Owns one runtime-component index for the complete scene. */
 export function SceneComponentsProvider({ children }: { children: ReactNode }) {
@@ -143,31 +142,13 @@ function SceneComponentsOwner({ children }: { children: ReactNode }) {
     return <NodeComponentContext.Provider value={registry}>{children}</NodeComponentContext.Provider>;
 }
 
-/** Caches immutable component plans for every prefab definition in the scene. */
-export function PrefabRenderCacheProvider({ children }: { children: ReactNode }) {
-    const inherited = useContext(PrefabRenderCacheContext);
-    if (inherited) return children;
-    return <PrefabRenderCacheOwner>{children}</PrefabRenderCacheOwner>;
-}
-
-function PrefabRenderCacheOwner({ children }: { children: ReactNode }) {
-    const [cache] = useState(() => new WeakMap<GameObject, unknown>());
-    return <PrefabRenderCacheContext.Provider value={cache}>{children}</PrefabRenderCacheContext.Provider>;
-}
-
-export function usePrefabRenderCache<T>() {
-    const cache = useContext(PrefabRenderCacheContext);
-    if (!cache) throw new Error("Prefab render cache is unavailable outside a scene");
-    return cache as WeakMap<GameObject, T>;
-}
-
 export interface NodeApi {
     nodeId: string;
     runtimeNodeId: string;
+    preparing?: boolean;
     editMode?: boolean;
     isSelected?: boolean;
     nodeInteractionHandlers?: NodeInteractionHandlers;
-    worldPosition?: [number, number, number];
     getObject<T extends Object3D = Object3D>(): T | null;
 }
 
@@ -232,31 +213,32 @@ export function useNodeObject<T extends Object3D = Object3D>(): LiveRef<T> {
 
 export function NodeScope({
     nodeId,
+    preparing,
     editMode,
     isSelected,
     nodeInteractionHandlers,
-    worldPosition,
     children,
 }: {
     nodeId: string;
+    preparing?: boolean;
     editMode?: boolean;
     isSelected?: boolean;
     nodeInteractionHandlers?: NodeInteractionHandlers;
-    worldPosition?: [number, number, number];
     children: ReactNode;
 }) {
     const prefab = usePrefab();
     const runtimeNodeIdPrefix = useContext(RuntimeNodeIdPrefixContext);
     const runtimeNodeId = runtimeNodeIdPrefix ? `${runtimeNodeIdPrefix}/${nodeId}` : nodeId;
+    const getObject = useCallback(<T extends Object3D = Object3D>() => prefab.getObject(nodeId) as T | null, [prefab, nodeId]);
     const value = useMemo<NodeApi>(() => ({
         nodeId,
         runtimeNodeId,
+        preparing,
         editMode,
         isSelected,
         nodeInteractionHandlers,
-        worldPosition,
-        getObject: <T extends Object3D = Object3D>() => prefab.getObject(nodeId) as T | null,
-    }), [editMode, isSelected, nodeId, nodeInteractionHandlers, prefab, runtimeNodeId, worldPosition]);
+            getObject,
+    }), [preparing, editMode, isSelected, nodeId, nodeInteractionHandlers, getObject, runtimeNodeId]);
 
     return <NodeContext.Provider value={value}>{children}</NodeContext.Provider>;
 }

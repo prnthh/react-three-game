@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { PrefabEditorMode, registerComponent, type Prefab } from "react-three-game";
+import { PrefabEditorMode, registerComponent, type Prefab } from "react-three-game/viewer";
 import { PrefabEditor } from "react-three-game/editor";
 import {
     CrashcatPhysicsComponent,

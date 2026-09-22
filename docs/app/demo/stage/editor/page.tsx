@@ -1,17 +1,13 @@
 "use client";
 
+
 import { useState } from "react";
-import { registerComponent } from "react-three-game";
 import { PrefabEditor } from "react-three-game/editor";
-import { CrashcatPhysicsComponent, CrashcatRuntime } from "react-three-game/plugins/crashcat";
+import { CrashcatRuntime } from "react-three-game/plugins/crashcat";
 import { BASE_PATH } from "../../../basePath";
-import {
-    ActivationColliderEditorComponent,
-    StageInteractionEditorComponent,
-} from "../editorComponents";
+import "../registerComponents";
 import { STAGE_SCENES } from "../scenes";
-import type { StageScene } from "../scenes/types";
-import StageCameraRouteComponent from "../StageCameraRouteComponent";
+import type { StageScene } from "../scenes";
 
 function countNodes(scene: StageScene) {
     let count = 0;
@@ -24,11 +20,6 @@ function countNodes(scene: StageScene) {
 }
 
 export default function StageEditor() {
-    registerComponent(CrashcatPhysicsComponent);
-    registerComponent(ActivationColliderEditorComponent);
-    registerComponent(StageInteractionEditorComponent);
-    registerComponent(StageCameraRouteComponent);
-
     const [selectedScene, setSelectedScene] = useState<StageScene | null>(null);
 
     return (

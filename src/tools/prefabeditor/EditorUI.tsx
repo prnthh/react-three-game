@@ -1,7 +1,9 @@
+import { getComponentEditor } from "./ComponentEditors";
+import "./components/editors";
 import { useState } from 'react';
 import { GameObject as GameObjectType } from "./types";
 import EditorTree from './EditorTree';
-import { canAddComponentToNode, getAllComponentDefs, getNextComponentKey, resolveComponentProperties } from './components/ComponentRegistry';
+import { canAddComponentToNode, getComponents, getNextComponentKey, resolveComponentProperties } from './components/ComponentRegistry';
 import type { Component } from './components/ComponentRegistry';
 import { FieldRenderer, type FieldDefinition } from './components/Input';
 import { createComponentData } from './prefab';
@@ -38,9 +40,24 @@ function DefaultComponentEditor({
             ...('options' in definition ? { options: [...definition.options] } : null),
         } as FieldDefinition<Record<string, unknown>>);
     }
-    return fields.length > 0
-        ? <FieldRenderer fields={fields} values={properties} onChange={update} />
-        : null;
+    return <>
+        <FieldRenderer fields={fields} values={properties} onChange={update} />
+        {Object.entries(component.properties).filter(([, schema]) => schema.type === 'string[]').map(([name, schema]) => {
+            const values = (properties[name] ?? []) as string[];
+            const label = schema.label ?? humanizePropertyName(name);
+            return <div key={name} style={{ display: 'grid', gap: 6, marginTop: 8 }}>
+                <span style={base.label}>{label}</span>
+                {values.map((value, index) => <div key={index} style={{ display: 'flex', gap: 4 }}>
+                    <textarea aria-label={`${label} ${index + 1}`} value={value} rows={3}
+                        style={{ ...base.input, flex: 1, minWidth: 0, resize: 'vertical' }}
+                        onChange={event => update({ [name]: values.map((entry, i) => i === index ? event.target.value : entry) })} />
+                    <button type="button" aria-label={`Remove ${label} ${index + 1}`} style={base.btn}
+                        onClick={() => update({ [name]: values.filter((_, i) => i !== index) })}>×</button>
+                </div>)}
+                <button type="button" style={base.btn} onClick={() => update({ [name]: [...values, ''] })}>Add {label}</button>
+            </div>;
+        })}
+    </>;
 }
 
 function EditorUI({
@@ -106,7 +123,7 @@ function NodeInspector({
     updateNode: (update: (n: GameObjectType) => GameObjectType) => void;
     deleteNode: () => void;
 }) {
-    const ALL_COMPONENTS = getAllComponentDefs();
+    const ALL_COMPONENTS = getComponents();
     const allKeys = Object.keys(ALL_COMPONENTS);
     const available = allKeys.filter(k => canAddComponentToNode(node, ALL_COMPONENTS[k], ALL_COMPONENTS));
     const [preferredAddType, setAddType] = useState(available[0] || "");
@@ -144,8 +161,9 @@ function NodeInspector({
 
             {node.components && Object.entries(node.components).map(([key, comp]: [string, any]) => {
                 if (!comp) return null;
-                const def = ALL_COMPONENTS[comp.type];
-                if (!def) return <div key={key} style={{ color: colors.danger, fontSize: 11 }}>
+                const registeredComponent = ALL_COMPONENTS[comp.type];
+                const ComponentEditor = getComponentEditor(comp.type);
+                if (!registeredComponent) return <div key={key} style={{ color: colors.danger, fontSize: 11 }}>
                     Unknown: {comp.type}
                 </div>;
 
@@ -165,10 +183,10 @@ function NodeInspector({
                                 ✕
                             </button>
                         </div>
-                        {def.Editor ? (
-                            <def.Editor
+                        {ComponentEditor ? (
+                            <ComponentEditor
                                 node={node}
-								properties={resolveComponentProperties(def, comp.properties)}
+								properties={resolveComponentProperties(registeredComponent, comp.properties)}
                                 update={(patch) => updateNode(n => ({
                                     ...n,
                                     components: {
@@ -179,8 +197,8 @@ function NodeInspector({
                             />
                         ) : (
                             <DefaultComponentEditor
-                                component={def}
-                                properties={resolveComponentProperties(def, comp.properties)}
+                                component={registeredComponent}
+                                properties={resolveComponentProperties(registeredComponent, comp.properties)}
                                 update={(patch) => updateNode(n => ({
                                     ...n,
                                     components: {
@@ -217,13 +235,13 @@ function NodeInspector({
                         disabled={!addType}
                         onClick={() => {
                             if (!addType) return;
-                            const def = ALL_COMPONENTS[addType];
-                            if (def) {
+                            const registeredComponent = ALL_COMPONENTS[addType];
+                            if (registeredComponent) {
                                 updateNode(n => ({
                                     ...n,
                                     components: {
                                         ...n.components,
-                                        [getNextComponentKey(n, def.name)]: createComponentData(def.name)
+                                        [getNextComponentKey(n, registeredComponent.name)]: createComponentData(registeredComponent.name)
                                     }
                                 }));
                             }

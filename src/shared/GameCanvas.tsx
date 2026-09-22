@@ -12,10 +12,12 @@ extend({
     SpriteNodeMaterial: SpriteNodeMaterial,
 });
 
+registerBuiltInComponents(builtInComponents);
+
 export interface GameCanvasProps extends Omit<CanvasProps, 'children'> {
     loader?: boolean;
     children: React.ReactNode;
-    glConfig?: WebGPURendererParameters;
+    glConfig?: Omit<WebGPURendererParameters, 'forceWebGL' | 'getFallback'>;
     rendererConfig?: {
         outputColorSpace?: ColorSpace;
         toneMapping?: ToneMapping;
@@ -25,7 +27,6 @@ export interface GameCanvasProps extends Omit<CanvasProps, 'children'> {
 }
 
 export default function GameCanvas({ loader = false, children, glConfig, rendererConfig, onCreated, raycaster, style, ...props }: GameCanvasProps) {
-    registerBuiltInComponents(builtInComponents);
 
     return <Canvas
         style={{
@@ -40,10 +41,9 @@ export default function GameCanvas({ loader = false, children, glConfig, rendere
         dpr={[1, 1.5]}
         raycaster={raycaster}
         gl={async ({ canvas }) => {
+            if (!('gpu' in navigator)) throw new Error('react-three-game requires WebGPU.');
             const renderer = new WebGPURenderer({
                 canvas: canvas as HTMLCanvasElement,
-                // @ts-expect-error futuristic
-                shadowMap: true,
                 antialias: true,
                 ...glConfig,
             });
@@ -52,6 +52,10 @@ export default function GameCanvas({ loader = false, children, glConfig, rendere
             if (rendererConfig?.toneMappingExposure !== undefined) renderer.toneMappingExposure = Math.max(0, rendererConfig.toneMappingExposure);
             if (rendererConfig?.shadowMapType !== undefined) renderer.shadowMap.type = rendererConfig.shadowMapType;
             await renderer.init();
+            if (!('isWebGPUBackend' in renderer.backend) || !renderer.backend.isWebGPUBackend) {
+                renderer.dispose();
+                throw new Error('react-three-game requires a working WebGPU adapter.');
+            }
             return renderer;
         }}
         onCreated={onCreated}

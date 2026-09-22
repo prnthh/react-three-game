@@ -1,6 +1,6 @@
 import {
 	getComponentDefaultProperties,
-	getComponentDef,
+	getComponent,
 } from "./components/ComponentRegistry";
 import type { ComponentData, GameObject, MaterialComponentProperties, Prefab, PrefabMaterial } from "./types";
 
@@ -165,7 +165,7 @@ function denormalizeNode(
 	const { components: _components, ...nodeProperties } = node;
 	const components = Object.entries(node.components ?? {}).reduce<Record<string, ComponentData>>((result, [key, component]) => {
 		if (!component) return result;
-		const defaults = getComponentDefaultProperties(getComponentDef(component.type), component.properties);
+		const defaults = getComponentDefaultProperties(getComponent(component.type), component.properties);
 		const properties = Object.entries(component.properties ?? {}).reduce<Record<string, unknown>>((sparse, [name, value]) => {
 			if (!samePrefabValue(value, defaults[name])) sparse[name] = clonePrefabValue(value);
 			return sparse;

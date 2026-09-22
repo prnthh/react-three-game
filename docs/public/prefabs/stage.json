@@ -193,7 +193,7 @@
             }
           },
           "stageCameraRoute": {
-            "type": "StageCameraRoute",
+            "type": "StageCameraFollow",
             "properties": {
               "lockY": true,
               "lockZ": true
@@ -4699,7 +4699,14 @@
                 "properties": {
                   "action": "transition",
                   "animation": "open",
-                  "sensorRadius": 0.72
+                  "sensorRadius": 0.72,
+                  "pages": [],
+                  "targetScene": "junkyard",
+                  "spawn": [
+                    -0.9,
+                    0,
+                    -0.35
+                  ]
                 }
               }
             }
@@ -4875,9 +4882,11 @@
               "stageInteraction": {
                 "type": "StageInteraction",
                 "properties": {
-                  "page1": "The records closet is alphabetized by motive, moon phase, and snack preference.",
-                  "page2": "Opening it without a warrant would release at least three decades of dust.",
-                  "sensorRadius": 0.65
+                  "sensorRadius": 0.65,
+                  "pages": [
+                    "The records closet is alphabetized by motive, moon phase, and snack preference.",
+                    "Opening it without a warrant would release at least three decades of dust."
+                  ]
                 }
               }
             },
@@ -5793,8 +5802,10 @@
               "stageInteraction": {
                 "type": "StageInteraction",
                 "properties": {
-                  "page1": "The secure hotline only calls payphones that have not been invented yet.",
-                  "page2": "Someone left a message: 'Bring the polymorphic dongle. And snacks.'"
+                  "pages": [
+                    "The secure hotline only calls payphones that have not been invented yet.",
+                    "Someone left a message: 'Bring the polymorphic dongle. And snacks.'"
+                  ]
                 }
               }
             },
@@ -5994,8 +6005,10 @@
               "stageInteraction": {
                 "type": "StageInteraction",
                 "properties": {
-                  "page1": "A suitcase cyberdeck with a phosphor display and three keyboards. None agree on where Escape is.",
-                  "page2": "Its packet-origami chip allegedly folds a hypothetical network until two distant ports touch."
+                  "pages": [
+                    "A suitcase cyberdeck with a phosphor display and three keyboards. None agree on where Escape is.",
+                    "Its packet-origami chip allegedly folds a hypothetical network until two distant ports touch."
+                  ]
                 }
               }
             },
@@ -6946,8 +6959,10 @@
               "stageInteraction": {
                 "type": "StageInteraction",
                 "properties": {
-                  "page1": "The cabinet contains forbidden silicon: moon-phase timers and one chip labeled DO NOT LICK.",
-                  "page2": "Perfect for imaginary capers involving air-gapped vending machines."
+                  "pages": [
+                    "The cabinet contains forbidden silicon: moon-phase timers and one chip labeled DO NOT LICK.",
+                    "Perfect for imaginary capers involving air-gapped vending machines."
+                  ]
                 }
               }
             }
@@ -7659,8 +7674,10 @@
           "stageInteraction": {
             "type": "StageInteraction",
             "properties": {
-              "page1": "A spectral signal diviner. It finds ghost packets by listening for tiny apologies after missed handshakes.",
-              "page2": "The brass dial selects NORMAL, ESOTERIC, or PLAUSIBLE DENIABILITY."
+              "pages": [
+                "A spectral signal diviner. It finds ghost packets by listening for tiny apologies after missed handshakes.",
+                "The brass dial selects NORMAL, ESOTERIC, or PLAUSIBLE DENIABILITY."
+              ]
             }
           }
         },
@@ -9113,8 +9130,10 @@
             "properties": {
               "action": "dialogue",
               "activationNodeId": "stage-office-npc-trigger",
-              "page1": "I traced the signal through three dead relays. Someone wants us to find the source.",
-              "page2": "Check the junkyard. And try not to antagonize anything with more antennas than sense."
+              "pages": [
+                "I traced the signal through three dead relays. Someone wants us to find the source.",
+                "Check the junkyard. And try not to antagonize anything with more antennas than sense."
+              ]
             }
           }
         },
@@ -9186,8 +9205,7 @@
       },
       {
         "id": "stage-player-collider",
-        "name": "player physics cylinder",
-        "hidden": true,
+        "name": "Player",
         "components": {
           "transform": {
             "type": "Transform",
@@ -9199,42 +9217,46 @@
               ]
             }
           },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "visible": false,
-              "castShadow": false,
-              "receiveShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "geometryType": "cylinder",
-              "args": [
-                0.32,
-                0.32,
-                1.7,
-                24
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialId": "material-23"
-            }
-          },
           "crashcatPhysics": {
             "type": "CrashcatPhysics",
             "properties": {
               "type": "kinematicPosition",
-              "colliders": "cylinder",
-              "cylinderRadius": 0.32,
-              "cylinderHalfHeight": 0.85
+              "colliders": "capsule",
+              "capsuleRadius": 0.32,
+              "capsuleHalfHeight": 0.53
             }
           }
-        }
+        },
+        "children": [
+          {
+            "id": "stage-player-model",
+            "name": "Player model",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    -0.85,
+                    0
+                  ],
+                  "scale": [
+                    0.92,
+                    0.92,
+                    0.92
+                  ]
+                }
+              },
+              "model": {
+                "type": "AnimatedModel",
+                "properties": {
+                  "filename": "/models/human/onimilio.glb",
+                  "animationState": "idle"
+                }
+              }
+            }
+          }
+        ]
       }
     ]
   }

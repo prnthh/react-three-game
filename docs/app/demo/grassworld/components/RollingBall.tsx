@@ -5,12 +5,11 @@ import {
     PrefabEditorMode,
     useNode,
     useNodeObject,
-    usePrefab,
     useRegisterNodeComponent,
     useScene,
     type Component,
     type ComponentViewProps,
-} from "react-three-game";
+} from "react-three-game/viewer";
 import { useCrashcat } from "react-three-game/plugins/crashcat";
 import { Vector3 } from "three";
 
@@ -122,59 +121,4 @@ export const PlayerPositionSyncComponent: Component = {
     name: "GrassWorldPlayerPositionSync",
     View: PlayerPositionSyncView,
     properties: {},
-};
-
-type CameraFollowProperties = {
-    targetId?: string;
-    positionOffset?: [number, number, number];
-    targetOffset?: [number, number, number];
-    followSpeed?: number;
-};
-
-function CameraFollowView({ properties, children }: ComponentViewProps<CameraFollowProperties>) {
-    const cameraObjectRef = useNodeObject();
-    const prefab = usePrefab();
-    const { mode } = useScene();
-    const targetPosition = useRef(new Vector3());
-    const cameraWorldPosition = useRef(new Vector3());
-    const desiredWorldPosition = useRef(new Vector3());
-    const localPosition = useRef(new Vector3());
-    const lookAtPosition = useRef(new Vector3());
-
-    useFrame((_, delta) => {
-        if (mode !== PrefabEditorMode.Play) return;
-        const cameraObject = cameraObjectRef.current;
-        const targetId = properties.targetId?.trim();
-        const target = targetId ? prefab.getObject(targetId) : null;
-        if (!cameraObject || !target) return;
-
-        target.getWorldPosition(targetPosition.current);
-        const positionOffset = properties.positionOffset ?? [0, 16, 20];
-        desiredWorldPosition.current.set(positionOffset[0], positionOffset[1], positionOffset[2]).add(targetPosition.current);
-        cameraObject.getWorldPosition(cameraWorldPosition.current);
-        cameraWorldPosition.current.lerp(
-            desiredWorldPosition.current,
-            Math.min(1, (properties.followSpeed ?? 7.5) * Math.min(delta, 1 / 30)),
-        );
-        localPosition.current.copy(cameraWorldPosition.current);
-        if (cameraObject.parent) cameraObject.parent.worldToLocal(localPosition.current);
-        cameraObject.position.copy(localPosition.current);
-
-        const targetOffset = properties.targetOffset ?? [0, 1, 0];
-        lookAtPosition.current.set(targetOffset[0], targetOffset[1], targetOffset[2]).add(targetPosition.current);
-        cameraObject.lookAt(lookAtPosition.current);
-    }, 0);
-
-    return <>{children}</>;
-}
-
-export const CameraFollowComponent: Component<CameraFollowProperties> = {
-    name: "GrassWorldCameraFollow",
-    View: CameraFollowView,
-    properties: {
-        targetId: { type: "string", default: "" },
-        positionOffset: { type: "vector3", default: [0, 16, 20] },
-        targetOffset: { type: "vector3", default: [0, 1, 0] },
-        followSpeed: { default: 7.5, min: 0, step: 0.5 },
-    },
 };

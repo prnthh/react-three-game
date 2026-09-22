@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import { memo, MouseEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { base, colors, tree } from './styles';
 import { useEditorContext, useEditorRef } from './EditorContext';
@@ -194,10 +195,10 @@ export default function EditorTree({
         setDropTarget(null);
     };
 
-    const visibleIds = usePrefabStore(useCallback(
+    const visibleIds = usePrefabStore(useShallow(useCallback(
         state => searchQuery ? buildVisibleIds(state, rootId, searchQuery) : null,
         [rootId, searchQuery]
-    ));
+    )));
 
     return (
         <>
@@ -513,7 +514,7 @@ const TreeNode = memo(function TreeNode({
     );
 });
 
-function buildVisibleIds(state: Pick<PrefabStoreState, 'nodesById' | 'childIdsById'>, rootId: string, query: string) {
+export function buildVisibleIds(state: Pick<PrefabStoreState, 'nodesById' | 'childIdsById'>, rootId: string, query: string) {
     if (!query) return null;
 
     const visibleIds = new Set<string>();
@@ -524,7 +525,10 @@ function buildVisibleIds(state: Pick<PrefabStoreState, 'nodesById' | 'childIdsBy
         if (!node) return false;
 
         const selfMatches = (node.name ?? node.id).toLowerCase().includes(lowerQuery);
-        const childMatches = (state.childIdsById[nodeId] ?? []).some(visit);
+        let childMatches = false;
+        for (const childId of state.childIdsById[nodeId] ?? []) {
+            if (visit(childId)) childMatches = true;
+        }
 
         if (selfMatches || childMatches) {
             visibleIds.add(nodeId);

@@ -1,18 +1,12 @@
 "use client";
+import { NearestFilter } from "three";
 
-import { loadTexture, type Component, type ComponentViewProps } from "react-three-game";
+import { loadTexture, type Component, type ComponentViewProps } from "react-three-game/viewer";
+
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-    BufferAttribute,
-    BufferGeometry,
-    DoubleSide,
-    LinearFilter,
-    LinearMipmapLinearFilter,
-    NearestFilter,
-    RepeatWrapping,
-    SRGBColorSpace,
-    Texture,
-} from "three";
+
+import { BufferAttribute, BufferGeometry, DoubleSide, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, SRGBColorSpace, Texture } from "three";
+
 import { MeshStandardNodeMaterial } from "three/webgpu";
 
 type BrushFace = {
@@ -39,10 +33,6 @@ const magFilterMap = {
     NearestFilter,
     LinearFilter,
 } as const;
-
-function EmptyEditor() {
-    return null;
-}
 
 function buildMergedGeometry(faces: BrushFace[]) {
     const geometry = new BufferGeometry();
@@ -208,7 +198,6 @@ function QuakeBrushView({ properties, children }: ComponentViewProps<QuakeBrushP
 
 const QuakeBrushComponent: Component = {
     name: "QuakeBrush",
-    Editor: EmptyEditor,
     View: QuakeBrushView,
     properties: {
         faces: { type: "array", default: [] },

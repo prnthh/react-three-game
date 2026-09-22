@@ -16,6 +16,16 @@ function AudioRuntimeOwner({ children }: { children: ReactNode }) {
     const listener = useMemo(() => new AudioListener(), []);
 
     useEffect(() => {
+        const resume = () => { void listener.context.resume(); };
+        window.addEventListener("pointerdown", resume);
+        window.addEventListener("keydown", resume);
+        return () => {
+            window.removeEventListener("pointerdown", resume);
+            window.removeEventListener("keydown", resume);
+        };
+    }, [listener]);
+
+    useEffect(() => {
         camera.add(listener);
         return () => {
             camera.remove(listener);

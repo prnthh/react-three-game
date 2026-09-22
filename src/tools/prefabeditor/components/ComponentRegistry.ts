@@ -1,10 +1,11 @@
+import type { ComponentDependency } from "../../../runtime/preparePrefab";
 import type { FC } from "react";
 import type { GameObject } from "../types";
 
 /** Props every component View receives from the renderer. */
 export interface ComponentViewProps<P = Record<string, unknown>> {
 	/** This component's own data from the prefab JSON. */
-	properties: P;
+	properties: IsAny<P> extends true ? P : Required<P>;
 	/** False while the node is disabled; render-graph components may still prepare resources. */
 	enabled: boolean;
 	/** Children to render for components that wrap the current subtree. */
@@ -78,38 +79,45 @@ export type ComponentPropertyDefinitions<P extends object> = {
 
 export interface Component<P extends object = Record<string, any>> {
 	name: string;
+	/** Declare resources without mounting a view; paths are relative to the prefab basePath. */
+	dependencies?: (properties: P) => readonly ComponentDependency[];
 	/** Keep this render-graph component mounted for preparation while its node is disabled. */
 	renderWhenDisabled?: boolean;
-	/** Request the node's composed world position in the runtime node scope. */
-	usesWorldPosition?: boolean;
-	/** Render beside children so R3F can attach this object to the enclosing component. */
-	attachment?: boolean;
-	/** R3F-style attachment target. Components with the same target are mutually exclusive on a node. */
-	attach?: string;
-	Editor?: FC<ComponentEditorProps<P>>;
+	/** Optional node slot. Geometry/material render inside the object; other slots wrap it. */
+	slot?: 'object' | 'geometry' | 'material' | 'transform' | 'environment' | 'fog' | 'data';
 	/** Serializable property contract and the source of runtime/editor defaults. */
 	properties: ComponentPropertyDefinitions<P>;
 	View?: FC<ComponentViewProps<P>>;
 }
 
 const REGISTRY: Record<string, Component<any>> = {};
+let registryVersion = 0;
+const registryListeners = new Set<() => void>();
+export const getComponentRegistryVersion = () => registryVersion;
+export function subscribeComponentRegistry(listener: () => void) {
+    registryListeners.add(listener);
+    return () => { registryListeners.delete(listener); };
+}
 
 export function registerComponent(component: Component<any>) {
-	REGISTRY[component.name] = component;
+    if (REGISTRY[component.name] === component) return;
+    REGISTRY[component.name] = component;
+    registryVersion += 1;
+    registryListeners.forEach(listener => listener());
 }
 
 /** @internal Install engine defaults without replacing runtime plugins. */
 export function registerBuiltInComponents(components: readonly Component<any>[]) {
 	components.forEach(component => {
-		if (!REGISTRY[component.name]) REGISTRY[component.name] = component;
+		if (!REGISTRY[component.name]) registerComponent(component);
 	});
 }
 
-export function getComponentDef(name: string): Component<any> | undefined {
+export function getComponent(name: string): Component<any> | undefined {
 	return REGISTRY[name];
 }
 
-export function getAllComponentDefs(): Record<string, Component<any>> {
+export function getComponents(): Record<string, Component<any>> {
 	return { ...REGISTRY };
 }
 
@@ -139,12 +147,12 @@ export function resolveComponentProperties<P extends object>(
 
 export function canAddComponentToNode(node: GameObject, component: Component<any> | undefined, allComponents = REGISTRY) {
 	if (!component) return false;
-	const attach = component.attach;
-	if (!attach) return true;
+	const slot = component.slot;
+	if (!slot) return true;
 
 	return !Object.values(node.components ?? {}).some(entry => {
 		if (!entry?.type) return false;
-		return allComponents[entry.type]?.attach === attach;
+		return allComponents[entry.type]?.slot === slot;
 	});
 }
 

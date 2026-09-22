@@ -1,7 +1,7 @@
 "use client";
 
 import { Html } from "@react-three/drei";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import {
     gameEvents,
@@ -9,7 +9,7 @@ import {
     type Component,
     type ComponentViewProps,
     type ContactEventPayload,
-} from "react-three-game";
+} from "react-three-game/viewer";
 
 export type ActivationColliderProperties = {
     targetNodeId?: string;
@@ -35,7 +35,6 @@ function ActivationColliderView({
 }: ComponentViewProps<ActivationColliderProperties>) {
     const { nodeId, editMode } = useNode();
     const [mood, setMood] = useState<string | null>(null);
-    const activeTargetRef = useRef<string | null>(null);
     const targetNodeId = properties.targetNodeId?.trim() || DEFAULT_TARGET_NODE;
     const enterEventName = properties.enterEventName?.trim() || DEFAULT_ENTER_EVENT;
     const exitEventName = properties.exitEventName?.trim() || DEFAULT_EXIT_EVENT;
@@ -47,7 +46,6 @@ function ActivationColliderView({
     useEffect(() => {
         if (editMode) {
             setMood(null);
-            activeTargetRef.current = null;
             return;
         }
 
@@ -55,14 +53,12 @@ function ActivationColliderView({
             const event = asContactPayload(payload);
             if (event.sourceNodeId !== nodeId || event.targetNodeId !== targetNodeId) return;
 
-            activeTargetRef.current = targetNodeId;
             setMood(moods[Math.floor(Math.random() * moods.length)] ?? DEFAULT_MOODS[0]);
         });
         const unsubscribeExit = gameEvents.on(exitEventName, (payload) => {
             const event = asContactPayload(payload);
-            if (event.sourceNodeId !== nodeId || event.targetNodeId !== activeTargetRef.current) return;
+            if (event.sourceNodeId !== nodeId || event.targetNodeId !== targetNodeId) return;
 
-            activeTargetRef.current = null;
             setMood(null);
         });
 
@@ -78,7 +74,7 @@ function ActivationColliderView({
             {mood ? (
                 <Html
                     center
-                    position={[0, properties.bubbleHeight ?? DEFAULT_BUBBLE_HEIGHT, 0]}
+                    position={[0, properties.bubbleHeight, 0]}
                     style={{ pointerEvents: "none", userSelect: "none" }}
                 >
                     <div style={bubbleStyles.bubble}>

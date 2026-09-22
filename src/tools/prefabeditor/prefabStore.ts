@@ -60,14 +60,6 @@ function removeSubtreeFromGraph(
     return ids;
 }
 
-function insertSubtreeIntoGraph(
-    node: GameObject,
-    parentId: string | null,
-    next: ReturnType<typeof cloneGraphState>,
-) {
-    insertSubtree(node, parentId, next.nodesById, next.childIdsById, next.parentIdById);
-}
-
 export function PrefabStoreProvider({
     store,
     children,
@@ -139,6 +131,9 @@ export function createPrefabStore(prefab: Prefab | PrefabState): PrefabStoreApi 
             if (!node) return;
 
             const nextNode = update(node);
+            if (nextNode.id !== id || 'children' in nextNode) {
+                throw new Error("updateNode changes node properties only; use hierarchy actions to replace or move nodes");
+            }
             if (nextNode === node) return;
 
             set({
@@ -161,21 +156,13 @@ export function createPrefabStore(prefab: Prefab | PrefabState): PrefabStoreApi 
             const next = cloneGraphState(state);
 
             removeSubtreeFromGraph(id, state, next);
-            insertSubtreeIntoGraph(node, parentId, next);
+            insertSubtree(node, parentId, next.nodesById, next.childIdsById, next.parentIdById);
 
-            const patch: Partial<PrefabState> = {
-                nodesById: next.nodesById,
-                childIdsById: next.childIdsById,
-                parentIdById: next.parentIdById,
-            };
-
-            if (id === state.rootId) {
-                patch.rootId = node.id;
-            } else if (parentId) {
-                next.childIdsById[parentId] = (next.childIdsById[parentId] ?? []).map(childId => childId === id ? node.id : childId);
+            if (parentId) {
+                next.childIdsById[parentId] = next.childIdsById[parentId].map(childId => childId === id ? node.id : childId);
             }
 
-            set(patch);
+            set({ ...next, rootId: id === state.rootId ? node.id : state.rootId });
         },
         addChild: (parentId, node) => {
             const state = get();
@@ -183,14 +170,10 @@ export function createPrefabStore(prefab: Prefab | PrefabState): PrefabStoreApi 
 
             const next = cloneGraphState(state);
 
-            insertSubtreeIntoGraph(node, parentId, next);
+            insertSubtree(node, parentId, next.nodesById, next.childIdsById, next.parentIdById);
             next.childIdsById[parentId] = [...(next.childIdsById[parentId] ?? []), node.id];
 
-            set({
-                nodesById: next.nodesById,
-                childIdsById: next.childIdsById,
-                parentIdById: next.parentIdById,
-            });
+            set(next);
         },
         deleteNode: (id) => {
             const state = get();
@@ -204,11 +187,7 @@ export function createPrefabStore(prefab: Prefab | PrefabState): PrefabStoreApi 
             removeSubtreeFromGraph(id, state, next);
             next.childIdsById[parentId] = (next.childIdsById[parentId] ?? []).filter(childId => childId !== id);
 
-            set({
-                nodesById: next.nodesById,
-                childIdsById: next.childIdsById,
-                parentIdById: next.parentIdById,
-            });
+            set(next);
         },
         duplicateNode: (id) => {
             const state = get();
@@ -217,27 +196,21 @@ export function createPrefabStore(prefab: Prefab | PrefabState): PrefabStoreApi 
             const parentId = state.parentIdById[id];
             if (!parentId) return null;
 
-            const nextNodesById = { ...state.nodesById };
-            const nextChildIdsById = { ...state.childIdsById };
-            const nextParentIdById = { ...state.parentIdById };
-            const duplicatedRootId = cloneSubtree(id, parentId, state, nextNodesById, nextChildIdsById, nextParentIdById);
+            const next = cloneGraphState(state);
+            const duplicatedRootId = cloneSubtree(id, parentId, state, next.nodesById, next.childIdsById, next.parentIdById);
 
             if (!duplicatedRootId) return null;
 
-            const siblings = [...(nextChildIdsById[parentId] ?? [])];
+            const siblings = [...(next.childIdsById[parentId] ?? [])];
             const currentIndex = siblings.findIndex(childId => childId === id);
             if (currentIndex === -1) {
                 siblings.push(duplicatedRootId);
             } else {
                 siblings.splice(currentIndex + 1, 0, duplicatedRootId);
             }
-            nextChildIdsById[parentId] = siblings;
+            next.childIdsById[parentId] = siblings;
 
-            set({
-                nodesById: nextNodesById,
-                childIdsById: nextChildIdsById,
-                parentIdById: nextParentIdById,
-            });
+            set(next);
 
             return duplicatedRootId;
         },

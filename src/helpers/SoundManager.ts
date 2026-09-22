@@ -103,6 +103,10 @@ class SoundManager {
     this.buffers.set(path, buffer)
   }
 
+  removeBuffer(path: string, expected: AudioBuffer) {
+    if (this.buffers.get(path) === expected) this.buffers.delete(path)
+  }
+
   /** Load and play SFX - accepts file path directly */
   async play(
     path: string,

@@ -6,112 +6,6 @@
       "materialType": "basic",
       "side": "BackSide",
       "texture": "/textures/skybox/skybox3.jpg"
-    },
-    "material-2": {
-      "name": "concrete",
-      "color": "#626967",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "normalMapTexture": "/textures/floor/terrain/snow-512-normal.png",
-      "repeat": true,
-      "repeatCount": [
-        32,
-        64
-      ],
-      "roughness": 0.98,
-      "metalness": 0.01
-    },
-    "material-3": {
-      "name": "concrete",
-      "color": "#4a5051",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "normalMapTexture": "/textures/floor/terrain/snow-512-normal.png",
-      "repeat": true,
-      "repeatCount": [
-        32,
-        4
-      ],
-      "roughness": 0.99,
-      "metalness": 0.01
-    },
-    "material-4": {
-      "name": "concrete",
-      "color": "#505858",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "normalMapTexture": "/textures/floor/terrain/snow-512-normal.png",
-      "repeat": true,
-      "repeatCount": [
-        10,
-        10
-      ],
-      "roughness": 0.99
-    },
-    "material-5": {
-      "name": "concrete",
-      "color": "#767d7b",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "normalMapTexture": "/textures/floor/terrain/snow-512-normal.png",
-      "repeat": true,
-      "repeatCount": [
-        2,
-        28
-      ],
-      "roughness": 0.97
-    },
-    "material-6": {
-      "name": "concrete",
-      "color": "#767d7b",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "normalMapTexture": "/textures/floor/terrain/snow-512-normal.png",
-      "repeat": true,
-      "repeatCount": [
-        28,
-        2
-      ],
-      "roughness": 0.97
-    },
-    "material-7": {
-      "name": "concrete",
-      "color": "#626867",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "normalMapTexture": "/textures/floor/terrain/snow-512-normal.png",
-      "repeat": true,
-      "repeatCount": [
-        4,
-        2
-      ],
-      "roughness": 0.98
-    },
-    "material-8": {
-      "name": "concrete",
-      "color": "#4b5253",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "normalMapTexture": "/textures/floor/terrain/snow-512-normal.png",
-      "repeat": true,
-      "repeatCount": [
-        4,
-        2
-      ],
-      "roughness": 0.99
-    },
-    "material-9": {
-      "color": "#d3d5ca",
-      "texture": "/textures/proto32/symbol_cross.png",
-      "repeat": true,
-      "minFilter": "NearestFilter",
-      "magFilter": "NearestFilter",
-      "roughness": 0.86
-    },
-    "ground-patch": {
-      "name": "concrete",
-      "color": "#747b79",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "normalMapTexture": "/textures/floor/terrain/snow-512-normal.png",
-      "repeat": true,
-      "repeatCount": [
-        4,
-        3
-      ],
-      "roughness": 0.99
     }
   },
   "root": {
@@ -140,9 +34,9 @@
           "environment": {
             "type": "Environment",
             "properties": {
-              "intensity": 0.85,
-              "backgroundIntensity": 0.9,
-              "backgroundBlurriness": 0.2
+              "intensity": 0.55,
+              "backgroundIntensity": 0.75,
+              "backgroundBlurriness": 0.4
             }
           }
         },
@@ -180,10 +74,11 @@
         "name": "ambient fill",
         "components": {
           "ambientLight": {
-            "type": "AmbientLight",
+            "type": "HemisphereLight",
             "properties": {
-              "intensity": 0.65,
-              "color": "#c8d5df"
+              "skyColor": "#d5e6ed",
+              "groundColor": "#737f8b",
+              "intensity": 0.6
             }
           }
         }
@@ -204,8 +99,8 @@
           "directionalLight": {
             "type": "DirectionalLight",
             "properties": {
-              "color": "#dbe7ec",
-              "intensity": 2.25,
+              "color": "#edf3ff",
+              "intensity": 2.6,
               "targetOffset": [
                 -35,
                 -50,
@@ -221,7 +116,7 @@
               "shadowCameraRight": 65,
               "shadowBias": -0.0002,
               "shadowNormalBias": 0.04,
-              "shadowIntensity": 0.72,
+              "shadowIntensity": 0.85,
               "shadowRadius": 1.75
             }
           },
@@ -247,11 +142,11 @@
             "properties": {
               "position": [
                 0,
-                24.5,
+                19,
                 53
               ],
               "rotation": [
-                -0.23820312500000002,
+                -0.15,
                 0,
                 0
               ]
@@ -260,7 +155,7 @@
           "camera": {
             "type": "Camera",
             "properties": {
-              "fov": 62,
+              "fov": 58,
               "near": 0.25,
               "far": 350,
               "focus": 45
@@ -272,27 +167,8 @@
               "velocity": [
                 0,
                 0,
-                -6
+                -4
               ]
-            }
-          }
-        }
-      },
-      {
-        "id": "game-level-npc-manager",
-        "name": "NPC Manager",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {}
-          },
-          "npcManager": {
-            "type": "NPCManager",
-            "properties": {
-              "scale": 0.92,
-              "maxHp": 200,
-              "speed": 1.15,
-              "ragdollLifetime": 8
             }
           }
         }
@@ -309,7 +185,7 @@
             "type": "PrefabGridStreamer",
             "properties": {
               "tileSize": [
-                160,
+                0,
                 0,
                 320
               ],
@@ -319,34 +195,26 @@
                 -80
               ],
               "maxTiles": 3,
-              "templateNodeId": "city-chunk-0"
+              "url": "/prefabs/city-chunk.json",
+              "static": true
             }
           }
         },
         "children": []
       },
       {
-        "id": "city-chunk-0",
-        "name": "City Chunk 0",
+        "id": "city-fog",
+        "name": "Fog",
         "components": {
-          "transform": {
-            "type": "Transform",
+          "fog": {
+            "type": "Fog",
             "properties": {
-              "position": [
-                0,
-                0,
-                0
-              ]
-            }
-          },
-          "prefab": {
-            "type": "PrefabRef",
-            "properties": {
-              "url": "/prefabs/city-chunk.json"
+              "color": "#8fa39b",
+              "near": 130,
+              "far": 310
             }
           }
-        },
-        "children": []
+        }
       }
     ]
   }

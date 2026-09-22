@@ -1,15 +1,18 @@
 import { useFrame } from '@react-three/fiber';
+
 import { Suspense, useCallback, useEffect, useMemo, useRef } from 'react';
+
 import { AnimationMixer, LoopRepeat, Mesh, type AnimationAction, type AnimationClip, type Object3D } from 'three';
+
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 
 import { useSuspenseModelAsset } from '../assetRuntime';
+
 import { createNodeComponentType, usePrefab, useRegisterNodeComponent } from '../SceneContext';
-import { useEditorRef } from '../EditorContext';
+
 import { withBasePath } from '../runtimeUtils';
-import type { Component, ComponentEditorProps, ComponentViewProps } from './ComponentRegistry';
-import { BooleanField, FieldGroup, NumberField, StringField } from './Input';
-import { ModelPicker } from '../../assetviewer/page';
+
+import type { Component, ComponentViewProps } from './ComponentRegistry';
 
 export interface AnimatedModelHandle {
     readonly object: Object3D;
@@ -42,23 +45,6 @@ function findAction(state: string, clips: readonly AnimationClip[], actions: rea
         if (clips[index].name.toLowerCase() === normalized) return actions[index] ?? null;
     }
     return null;
-}
-
-function AnimatedModelEditor({ node, properties, update }: ComponentEditorProps<AnimatedModelProperties>) {
-    const { basePath } = useEditorRef();
-    return <FieldGroup>
-        <ModelPicker value={properties.filename} onChange={filename => update({ filename })} basePath={basePath} pickerKey={node.id} />
-        <StringField name="animationState" label="Animation State" values={properties} onChange={update} />
-        <NumberField name="fadeDuration" label="Fade Duration" values={properties} onChange={update} fallback={0.18} min={0} step={0.05} />
-        <BooleanField name="castShadow" label="Cast Shadow" values={properties} onChange={update} fallback />
-        <BooleanField name="receiveShadow" label="Receive Shadow" values={properties} onChange={update} fallback />
-        <BooleanField name="frustumCulled" label="Frustum Culling" values={properties} onChange={update} fallback={false} />
-        <BooleanField name="autoUpdate" label="Auto Update" values={properties} onChange={update} fallback />
-        <BooleanField name="emitClickEvent" label="Emit Click Event" values={properties} onChange={update} fallback={false} />
-        {properties.emitClickEvent ? (
-            <StringField name="clickEventName" label="Click Event Name" values={properties} onChange={update} placeholder="node:click" />
-        ) : null}
-    </FieldGroup>;
 }
 
 function AutoAnimationUpdate({ mixer }: { mixer: AnimationMixer }) {
@@ -149,10 +135,10 @@ function AnimatedModelView({ properties, enabled, children }: ComponentViewProps
 }
 
 const AnimatedModelComponent: Component<AnimatedModelProperties> = {
+    dependencies: properties => properties.filename ? [{ kind: 'model', path: properties.filename }] : [],
     name: 'AnimatedModel',
-    Editor: AnimatedModelEditor,
     renderWhenDisabled: true,
-    attach: 'object',
+    slot: 'object',
     View: AnimatedModelView,
     properties: {
         filename: { type: 'string', default: '' },

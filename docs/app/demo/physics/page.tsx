@@ -1,5 +1,8 @@
 "use client";
 
+import { registerComponentEditor } from "react-three-game/editor";
+import IndustrialMachineGunComponentInspector from "./IndustrialMachineGunComponent.editor";
+import AdvancingTargetComponentInspector from "./AdvancingTargetComponent.editor";
 import { Html } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -15,18 +18,19 @@ import {
     registerComponent,
     soundManager,
     type Prefab,
-} from "react-three-game";
+} from "react-three-game/viewer";
 import { PrefabEditor } from "react-three-game/editor";
 import { CrashcatPhysicsComponent, CrashcatRuntime } from "react-three-game/plugins/crashcat";
-
 import AdvancingTargetComponent from "./AdvancingTargetComponent";
 import IndustrialMachineGunComponent, { MACHINEGUN_PROJECTILE_ID_PREFIX } from "./IndustrialMachineGunComponent";
 import { withBasePath, BASE_PATH } from "../../basePath";
-
 import outdoorLevelPrefab from "../../../public/prefabs/machinegun-level-outdoor.json";
 import ridgeLevelPrefab from "../../../public/prefabs/machinegun-level-ridge.json";
 import causewayLevelPrefab from "../../../public/prefabs/machinegun-level-causeway.json";
 import mechsuitPrefab from "../../../public/prefabs/industrial-machinegun-mechsuit.json";
+
+registerComponentEditor(IndustrialMachineGunComponent, IndustrialMachineGunComponentInspector);
+registerComponentEditor(AdvancingTargetComponent, AdvancingTargetComponentInspector);
 
 const SHOT_EVENT = "machinegun:shot";
 const TRIGGER_EVENT = "machinegun:trigger";

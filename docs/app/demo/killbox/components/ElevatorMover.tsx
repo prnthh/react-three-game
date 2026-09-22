@@ -1,8 +1,8 @@
 "use client";
 
 import { useRef } from "react";
-import { useNode, useNodeObject, useGameEvent } from "react-three-game";
-import type { Component, ComponentViewProps, ContactEventPayload } from "react-three-game";
+import { useNode, useNodeObject, useGameEvent } from "react-three-game/viewer";
+import type { Component, ComponentViewProps, ContactEventPayload } from "react-three-game/viewer";
 import { useFrame } from "@react-three/fiber";
 
 const DEFAULT_CONTACT_EVENT_NAME = "elevator:contact";
@@ -25,19 +25,19 @@ type ElevatorMoverProperties = {
 };
 
 function ElevatorMoverView({ properties, children }: ComponentViewProps<ElevatorMoverProperties>) {
-    const { editMode, nodeId } = useNode();
+    const { editMode } = useNode();
     const object = useNodeObject();
     const phaseRef = useRef<ElevatorPhase>("idle");
     const waitTimerRef = useRef(0);
-    const startHeightsRef = useRef<Record<string, number>>({});
+    const startHeightRef = useRef<number | null>(null);
 
     const contactEventName = properties.contactEventName?.trim() || DEFAULT_CONTACT_EVENT_NAME;
     const triggerEntityId = properties.triggerEntityId?.trim();
-    const travelDistance = properties.travelDistance ?? DEFAULT_TRAVEL_DISTANCE;
-    const moveSpeed = properties.moveSpeed ?? DEFAULT_MOVE_SPEED;
-    const startDelay = properties.startDelay ?? DEFAULT_START_DELAY;
-    const returnDelay = properties.returnDelay ?? DEFAULT_RETURN_DELAY;
-    const returnDuration = properties.returnDuration ?? DEFAULT_RETURN_DURATION;
+    const travelDistance = properties.travelDistance;
+    const moveSpeed = properties.moveSpeed;
+    const startDelay = properties.startDelay;
+    const returnDelay = properties.returnDelay;
+    const returnDuration = properties.returnDuration;
 
     useGameEvent(contactEventName, (payload) => {
         if (editMode || !payload) {
@@ -46,19 +46,15 @@ function ElevatorMoverView({ properties, children }: ComponentViewProps<Elevator
 
         const contact = payload as ContactEventPayload;
 
-        if (contact.sourceNodeId !== nodeId) {
-            return;
-        }
-
         if (triggerEntityId && contact.targetNodeId !== triggerEntityId && contact.targetEntityId !== triggerEntityId) {
             return;
         }
 
-        if (phaseRef.current === "idle" || phaseRef.current === "descending") {
+        if (phaseRef.current === "idle") {
             phaseRef.current = startDelay > 0 ? "starting" : "ascending";
             waitTimerRef.current = startDelay;
         }
-    }, [editMode, nodeId, startDelay, triggerEntityId]);
+    }, [editMode, startDelay, triggerEntityId]);
 
     useFrame((_, delta) => {
         if (editMode || phaseRef.current === "idle") {
@@ -74,11 +70,11 @@ function ElevatorMoverView({ properties, children }: ComponentViewProps<Elevator
 
         const currentY = platformObject.position.y;
 
-        if (startHeightsRef.current[nodeId] === undefined) {
-            startHeightsRef.current[nodeId] = currentY;
+        if (startHeightRef.current === null) {
+            startHeightRef.current = currentY;
         }
 
-        const startY = startHeightsRef.current[nodeId];
+        const startY = startHeightRef.current;
         const targetY = startY + travelDistance;
         const returnSpeed = travelDistance / Math.max(returnDuration, 0.01);
 
@@ -124,7 +120,7 @@ function ElevatorMoverView({ properties, children }: ComponentViewProps<Elevator
             phaseRef.current = "idle";
             waitTimerRef.current = 0;
         }
-    });
+    }, -2);
 
     return <>{children}</>;
 }

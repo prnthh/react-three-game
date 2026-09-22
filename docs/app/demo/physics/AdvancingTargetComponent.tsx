@@ -1,18 +1,14 @@
 import { useFrame } from "@react-three/fiber";
+
 import { useEffect, useRef } from "react";
-import {
-    gameEvents,
-    useNode,
-    useNodeObject,
-    type Component,
-    type ComponentViewProps,
-} from "react-three-game";
-import { FieldRenderer } from "react-three-game/editor";
-import type { ComponentEditorProps, FieldDefinition } from "react-three-game/editor";
+
+import { gameEvents, useNode, useNodeObject, type Component, type ComponentViewProps } from "react-three-game/viewer";
+
 import type { Material, Mesh, Object3D } from "three";
+
 import { MACHINEGUN_PROJECTILE_ID_PREFIX } from "./IndustrialMachineGunComponent";
 
-type AdvancingTargetProperties = {
+export type AdvancingTargetProperties = {
     speed?: number;
     resetZ?: number;
     breachZ?: number;
@@ -23,22 +19,18 @@ type AdvancingTargetProperties = {
 };
 
 const DEFAULT_SPEED = 2.4;
-const DEFAULT_RESET_Z = -34;
-const DEFAULT_BREACH_Z = 4.4;
-const DEFAULT_IDLE_COLOR = "#facc15";
-const DEFAULT_HIT_COLOR = "#f43f5e";
-const DEFAULT_HIT_EVENT = "target:hit";
-const DEFAULT_BREACH_EVENT = "target:breach";
 
-const advancingTargetFields = [
-    { name: "speed", type: "number", label: "Speed", min: 0, step: 0.1 },
-    { name: "resetZ", type: "number", label: "Reset Z", step: 0.5 },
-    { name: "breachZ", type: "number", label: "Breach Z", step: 0.5 },
-    { name: "idleColor", type: "color", label: "Idle Color" },
-    { name: "hitColor", type: "color", label: "Hit Color" },
-    { name: "hitEventName", type: "string", label: "Hit Event" },
-    { name: "breachEventName", type: "string", label: "Breach Event" },
-] satisfies FieldDefinition<AdvancingTargetProperties>[];
+const DEFAULT_RESET_Z = -34;
+
+const DEFAULT_BREACH_Z = 4.4;
+
+const DEFAULT_IDLE_COLOR = "#facc15";
+
+const DEFAULT_HIT_COLOR = "#f43f5e";
+
+const DEFAULT_HIT_EVENT = "target:hit";
+
+const DEFAULT_BREACH_EVENT = "target:breach";
 
 function setObjectColor(object: Object3D, color: string) {
     object.traverse((child) => {
@@ -67,10 +59,6 @@ function isHitForNode(payload: unknown, nodeId: string) {
     return sourceId === nodeId
         && typeof targetId === "string"
         && targetId.startsWith(MACHINEGUN_PROJECTILE_ID_PREFIX);
-}
-
-function AdvancingTargetEditor({ properties, update }: ComponentEditorProps<AdvancingTargetProperties>) {
-    return <FieldRenderer fields={advancingTargetFields} values={properties} onChange={update} />;
 }
 
 function AdvancingTargetView({
@@ -140,7 +128,6 @@ function AdvancingTargetView({
 
 const AdvancingTargetComponent: Component<AdvancingTargetProperties> = {
     name: "AdvancingTarget",
-    Editor: AdvancingTargetEditor,
     View: AdvancingTargetView,
     properties: {
         speed: { default: DEFAULT_SPEED },

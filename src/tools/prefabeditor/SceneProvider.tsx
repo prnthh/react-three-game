@@ -1,6 +1,6 @@
 import { useContext, useMemo, useState, type ReactNode } from "react";
 
-import { createPrefabRegistry, PrefabContext, PrefabEditorMode, PrefabRenderCacheProvider, SceneComponentsProvider, SceneContext } from "./SceneContext";
+import { createPrefabRegistry, PrefabContext, PrefabEditorMode, SceneComponentsProvider, SceneContext } from "./SceneContext";
 import type { PrefabApi, Scene } from "./SceneContext";
 import { AssetRuntimeProvider, useAssetRuntime } from "./assetRuntime";
 import { AudioRuntimeProvider } from "./AudioRuntime";
@@ -43,11 +43,9 @@ function SceneProviderBody(props: SceneProviderProps) {
             <GeometryRuntimeProvider>
                 <MaterialPoolProvider>
                     <SceneComponentsProvider>
-                        <PrefabRenderCacheProvider>
-                            <MeshInstanceProvider>
-                                <PrefabScope {...props} parentScene={null} />
-                            </MeshInstanceProvider>
-                        </PrefabRenderCacheProvider>
+                        <MeshInstanceProvider>
+                            <PrefabScope {...props} parentScene={null} />
+                        </MeshInstanceProvider>
                     </SceneComponentsProvider>
                 </MaterialPoolProvider>
             </GeometryRuntimeProvider>

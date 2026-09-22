@@ -1,12 +1,16 @@
-import type { Component, ComponentEditorProps, ComponentViewProps } from "./ComponentRegistry";
-import { usePrefab } from "../SceneContext";
-import { ColorField, FieldGroup, NumberField, SelectField, StringField } from "./Input";
-import { Text } from 'three-text/three/react';
-import { useRef, useState, useCallback } from 'react';
-import { BufferGeometry, Color, Mesh } from "three";
-import { withBasePath } from "../utils";
+import type { Component, ComponentViewProps } from "./ComponentRegistry";
 
-type TextProperties = {
+import { usePrefab } from "../SceneContext";
+
+import { Text } from 'three-text/three/react';
+
+import { useRef, useState, useCallback } from 'react';
+
+import { BufferGeometry, Color, Mesh } from "three";
+
+import { withBasePath } from "../runtimeUtils";
+
+export type TextProperties = {
     text?: string;
     color?: string;
     font?: string;
@@ -15,68 +19,6 @@ type TextProperties = {
     width?: number;
     align?: 'left' | 'center' | 'right';
 };
-
-function TextComponentEditor({ properties, update }: ComponentEditorProps<TextProperties>) {
-    return (
-        <FieldGroup>
-            <StringField
-                name="text"
-                label="Text"
-                values={properties}
-                onChange={update}
-                placeholder="Enter text..."
-            />
-            <ColorField
-                name="color"
-                label="Color"
-                values={properties}
-                onChange={update}
-            />
-            <StringField
-                name="font"
-                label="Font"
-                values={properties}
-                onChange={update}
-                placeholder="/fonts/NotoSans-Regular.ttf"
-            />
-            <NumberField
-                name="size"
-                label="Size"
-                values={properties}
-                onChange={update}
-                min={0.01}
-                step={0.1}
-            />
-            <NumberField
-                name="depth"
-                label="Depth"
-                values={properties}
-                onChange={update}
-                min={0}
-                step={0.1}
-            />
-            <NumberField
-                name="width"
-                label="Width"
-                values={properties}
-                onChange={update}
-                min={0}
-                step={0.5}
-            />
-            <SelectField
-                name="align"
-                label="Align"
-                values={properties}
-                onChange={update}
-                options={[
-                    { value: 'left', label: 'Left' },
-                    { value: 'center', label: 'Center' },
-                    { value: 'right', label: 'Right' },
-                ]}
-            />
-        </FieldGroup>
-    );
-}
 
 function TextComponentView({ properties, children }: ComponentViewProps<TextProperties>) {
     const { basePath } = usePrefab();
@@ -129,8 +71,8 @@ function TextComponentView({ properties, children }: ComponentViewProps<TextProp
 
 const TextComponent: Component<TextProperties> = {
     name: 'Text',
+    slot: 'object',
     renderWhenDisabled: true,
-    Editor: TextComponentEditor,
     View: TextComponentView,
     properties: {
         text: { type: 'string', default: 'Hello World' },

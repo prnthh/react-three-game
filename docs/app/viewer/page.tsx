@@ -1,18 +1,18 @@
 "use client";
+import PrefabGridStreamerComponent from "../components/PrefabGridStreamerComponent";
+import ConstantVelocityComponent from "../components/ConstantVelocityComponent";
+import CameraShadowFollowerComponent from "../demo/grassworld/components/CameraShadowFollowerComponent";
+
 
 import { GameCanvas, PrefabRoot, registerComponent } from "react-three-game/viewer";
 import { useState } from "react";
-import { OrbitControls } from "@react-three/drei";
 import { BASE_PATH } from "../basePath";
 import type { Prefab } from "react-three-game/core";
 
 import PrefabSelector from "../components/PrefabSelector";
 import gameLevel from "../../public/prefabs/game-level.json";
-import InteriorMapComponent from "../components/InteriorMapComponent";
 
 export default function Home() {
-    registerComponent(InteriorMapComponent);
-
     const [selectedScene, setSelectedScene] = useState<Prefab>(gameLevel as unknown as Prefab);
     const [selectedPrefabName, setSelectedPrefabName] = useState("game-level");
 
@@ -24,7 +24,6 @@ export default function Home() {
                     basePath={BASE_PATH}
                     data={selectedScene}
                 />
-                <OrbitControls />
             </GameCanvas>
 
             <div className="fixed top-2 left-1/2 -translate-x-1/2 z-2">
@@ -39,3 +38,7 @@ export default function Home() {
         </main>
     );
 }
+
+registerComponent(PrefabGridStreamerComponent);
+registerComponent(ConstantVelocityComponent);
+registerComponent(CameraShadowFollowerComponent);

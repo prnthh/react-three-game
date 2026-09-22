@@ -3,46 +3,22 @@
   "name": "Brutalist Viaduct Span",
   "materials": {
     "material": {
-      "color": "#b0b2aa",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "normalMapTexture": "/textures/floor/terrain/snow-512-normal.png",
-      "repeat": true,
-      "repeatCount": [
-        4,
-        24
-      ],
-      "minFilter": "NearestFilter",
-      "magFilter": "NearestFilter",
-      "roughness": 0.94,
-      "metalness": 0.02
+      "materialType": "standard",
+      "color": "#c5bba6",
+      "roughness": 0.8,
+      "metalness": 0
     },
     "material-2": {
-      "color": "#7f827a",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "normalMapTexture": "/textures/floor/terrain/snow-512-normal.png",
-      "repeat": true,
-      "repeatCount": [
-        1,
-        24
-      ],
-      "minFilter": "NearestFilter",
-      "magFilter": "NearestFilter",
-      "roughness": 0.94,
-      "metalness": 0.02
+      "materialType": "standard",
+      "color": "#384c51",
+      "roughness": 0.8,
+      "metalness": 0
     },
     "material-3": {
-      "color": "#7c7f78",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "normalMapTexture": "/textures/floor/terrain/snow-512-normal.png",
-      "repeat": true,
-      "repeatCount": [
-        2,
-        3
-      ],
-      "minFilter": "NearestFilter",
-      "magFilter": "NearestFilter",
-      "roughness": 0.94,
-      "metalness": 0.02
+      "materialType": "standard",
+      "color": "#a66f49",
+      "roughness": 0.5,
+      "metalness": 0.25
     }
   },
   "root": {
@@ -69,8 +45,7 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
@@ -113,8 +88,7 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
@@ -157,8 +131,7 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
@@ -201,8 +174,7 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
@@ -245,8 +217,7 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
@@ -289,8 +260,7 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
@@ -333,8 +303,7 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
@@ -377,8 +346,7 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
@@ -421,8 +389,7 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
@@ -465,8 +432,7 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
@@ -509,8 +475,7 @@
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
@@ -537,6 +502,90 @@
           }
         },
         "children": []
+      },
+      {
+        "id": "deck-edge--4.23",
+        "name": "Deck Edge  4.23",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -4.23,
+                7.5,
+                0
+              ],
+              "scale": [
+                0.12,
+                0.3,
+                92
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "material-3"
+            }
+          }
+        }
+      },
+      {
+        "id": "deck-edge-4.23",
+        "name": "Deck Edge 4.23",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                4.23,
+                7.5,
+                0
+              ],
+              "scale": [
+                0.12,
+                0.3,
+                92
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "material-3"
+            }
+          }
+        }
       }
     ]
   }

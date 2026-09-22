@@ -1,27 +1,25 @@
-import type { Component, ComponentEditorProps, ComponentViewProps } from "./ComponentRegistry";
+import { useShadowUpdates } from '../../../runtime/lighting/shadowUpdates';
+import type { Component, ComponentViewProps } from "./ComponentRegistry";
+
 import { useHelper } from "@react-three/drei";
+
 import { useMemo, useRef } from "react";
-import { BooleanField, ColorField, Label, NumberField, Vector3Input } from "./Input";
+
 import { CameraHelper, Object3D, SpotLightHelper } from "three";
+
 import type { SpotLight } from "three";
+
 import { useTextureAsset } from "../assetRuntime";
+
 import { useNode } from "../SceneContext";
+
 import { usePrefab } from "../SceneContext";
-import { useEditorRef } from "../EditorContext";
-import { TexturePicker } from "../../assetviewer/page";
-import {
-    EditorLightGizmo,
-    LightSection,
-    MAX_SHADOW_MAP_SIZE,
-    MIN_SHADOW_MAP_SIZE,
-    ShadowBiasField,
-    mergeWithDefaults,
-    normalizeShadowMapSize,
-    useShadowMapResolution,
-} from "./lightUtils";
+
+import { EditorLightGizmo, MAX_SHADOW_MAP_SIZE, MIN_SHADOW_MAP_SIZE, mergeWithDefaults, normalizeShadowMapSize, useShadowMapResolution } from "./lightUtils";
+
 import { withBasePath } from "../runtimeUtils";
 
-const spotLightDefaults = {
+export const spotLightDefaults = {
     color: '#ffffff',
     intensity: 1,
     angle: Math.PI / 3,
@@ -41,64 +39,7 @@ const spotLightDefaults = {
     map: undefined as string | undefined,
 };
 
-type SpotLightProperties = Partial<typeof spotLightDefaults>;
-
-function SpotLightComponentEditor({ properties, update }: ComponentEditorProps<SpotLightProperties>) {
-    const { basePath } = useEditorRef();
-    const values = mergeWithDefaults(spotLightDefaults, properties);
-
-    return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <LightSection title="Light">
-                <ColorField name="color" label="Color" values={values} onChange={update} />
-                <NumberField name="intensity" label="Intensity" values={values} onChange={update} min={0} step={0.1} fallback={1} />
-                <NumberField name="angle" label="Angle" values={values} onChange={update} min={0} max={Math.PI / 2} step={0.05} fallback={Math.PI / 3} />
-                <NumberField name="penumbra" label="Penumbra" values={values} onChange={update} min={0} max={1} step={0.05} fallback={0} />
-                <NumberField name="distance" label="Distance" values={values} onChange={update} min={0} step={1} fallback={0} />
-                <NumberField name="decay" label="Decay" values={values} onChange={update} min={0} step={0.1} fallback={2} />
-                <Vector3Input
-                    label="Target Offset"
-                    value={values.targetOffset}
-                    onChange={targetOffset => update({ targetOffset })}
-                    snap={0.5}
-                />
-                <div>
-                    <Label>Texture Map</Label>
-                    <TexturePicker
-                        value={values.map}
-                        onChange={(map) => update({ map })}
-                        basePath={basePath}
-                    />
-                </div>
-            </LightSection>
-            <LightSection title="Shadow">
-                <BooleanField name="castShadow" label="Cast Shadow" values={values} onChange={update} fallback={false} />
-                {values.castShadow ? (
-                    <>
-                        <BooleanField name="shadowAutoUpdate" label="Auto Update" values={values} onChange={update} fallback={true} />
-                        <NumberField
-                            name="shadowMapSize"
-                            label="Map Size"
-                            values={values}
-                            onChange={update}
-                            min={MIN_SHADOW_MAP_SIZE}
-                            max={MAX_SHADOW_MAP_SIZE}
-                            step={128}
-                            fallback={512}
-                            commitOnBlur
-                        />
-                        <ShadowBiasField name="shadowBias" label="Bias" values={values} onChange={update} fallback={0} />
-                        <ShadowBiasField name="shadowNormalBias" label="Normal Bias" values={values} onChange={update} fallback={0} />
-                        <NumberField name="shadowIntensity" label="Opacity" values={values} onChange={update} min={0} max={1} step={0.05} fallback={1} />
-                        <NumberField name="shadowRadius" label="Softness" values={values} onChange={update} min={0} step={0.25} fallback={1} />
-                        <NumberField name="shadowCameraNear" label="Near" values={values} onChange={update} min={0.001} step={0.1} fallback={0.5} />
-                        <NumberField name="shadowCameraFar" label="Far" values={values} onChange={update} min={0.1} step={1} fallback={500} />
-                    </>
-                ) : null}
-            </LightSection>
-        </div>
-    );
-}
+export type SpotLightProperties = Partial<typeof spotLightDefaults>;
 
 function SpotLightView({ properties, children }: ComponentViewProps<SpotLightProperties>) {
     const { editMode, isSelected } = useNode();
@@ -135,6 +76,7 @@ function SpotLightView({ properties, children }: ComponentViewProps<SpotLightPro
     const shadowCameraHelperRef = useRef<Object3D>(null!);
     const target = useMemo(() => new Object3D(), []);
     useShadowMapResolution(spotLightRef, shadowMapSize);
+    useShadowUpdates(spotLightRef);
 
     const showHelper = editMode && isSelected;
     const showShadowHelper = showHelper && Boolean(merged.castShadow);
@@ -181,8 +123,8 @@ function SpotLightView({ properties, children }: ComponentViewProps<SpotLightPro
 
 const SpotLightComponent: Component<SpotLightProperties> = {
     name: 'SpotLight',
+    slot: 'object',
     renderWhenDisabled: true,
-    Editor: SpotLightComponentEditor,
     View: SpotLightView,
     properties: {
         color: { type: 'color', default: spotLightDefaults.color },

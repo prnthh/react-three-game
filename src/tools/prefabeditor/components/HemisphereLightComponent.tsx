@@ -1,23 +1,14 @@
-import type { Component, ComponentEditorProps, ComponentViewProps } from "./ComponentRegistry";
-import { ColorField, NumberField } from "./Input";
-import { LightSection, mergeWithDefaults } from "./lightUtils";
+import type { Component, ComponentViewProps } from "./ComponentRegistry";
 
-const hemisphereLightDefaults = {
+import { mergeWithDefaults } from "./lightUtils";
+
+export const hemisphereLightDefaults = {
     skyColor: "#ffffff",
     groundColor: "#444444",
     intensity: 1,
 };
 
-type HemisphereLightProperties = Partial<typeof hemisphereLightDefaults>;
-
-function HemisphereLightEditor({ properties, update }: ComponentEditorProps<HemisphereLightProperties>) {
-    const values = mergeWithDefaults(hemisphereLightDefaults, properties);
-    return <LightSection title="Light">
-        <ColorField name="skyColor" label="Sky Color" values={values} onChange={update} />
-        <ColorField name="groundColor" label="Ground Color" values={values} onChange={update} />
-        <NumberField name="intensity" label="Intensity" values={values} onChange={update} min={0} step={0.1} fallback={1} />
-    </LightSection>;
-}
+export type HemisphereLightProperties = Partial<typeof hemisphereLightDefaults>;
 
 function HemisphereLightView({ properties, children }: ComponentViewProps<HemisphereLightProperties>) {
     const { skyColor, groundColor, intensity } = mergeWithDefaults(hemisphereLightDefaults, properties);
@@ -29,8 +20,8 @@ function HemisphereLightView({ properties, children }: ComponentViewProps<Hemisp
 
 const HemisphereLightComponent: Component<HemisphereLightProperties> = {
     name: "HemisphereLight",
+    slot: "object",
     renderWhenDisabled: true,
-    Editor: HemisphereLightEditor,
     View: HemisphereLightView,
     properties: {
         skyColor: { type: "color", default: hemisphereLightDefaults.skyColor },

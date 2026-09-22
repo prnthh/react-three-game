@@ -1,23 +1,20 @@
-import type { Component, ComponentEditorProps, ComponentViewProps } from "./ComponentRegistry";
-import { useHelper } from "@react-three/drei";
-import { useMemo, useRef } from "react";
-import { CameraHelper, Object3D } from "three";
-import type { DirectionalLight } from "three";
-import { useNode } from "../SceneContext";
-import { BooleanField, ColorField, NumberField, NumberInput, Vector3Input } from "./Input";
-import {
-    EditorLightGizmo,
-    LightSection,
-    MAX_SHADOW_MAP_SIZE,
-    MIN_SHADOW_MAP_SIZE,
-    ShadowBiasField,
-    mergeWithDefaults,
-    normalizeShadowMapSize,
-    useShadowMapResolution,
-} from "./lightUtils";
-import { colors } from "../styles";
+import { CascadedDirectionalLight } from '../../../runtime/lighting/CascadedDirectionalLight';
+import { useShadowUpdates } from '../../../runtime/lighting/shadowUpdates';
+import type { Component, ComponentViewProps } from "./ComponentRegistry";
 
-const directionalLightDefaults = {
+import { useHelper } from "@react-three/drei";
+
+import { useMemo, useRef } from "react";
+
+import { CameraHelper, Object3D } from "three";
+
+import type { DirectionalLight } from "three";
+
+import { useNode } from "../SceneContext";
+
+import { EditorLightGizmo, mergeWithDefaults, normalizeShadowMapSize, useShadowMapResolution } from "./lightUtils";
+
+export const directionalLightDefaults = {
     color: '#ffffff',
     intensity: 1,
     castShadow: false,
@@ -27,6 +24,8 @@ const directionalLightDefaults = {
     shadowIntensity: 1,
     shadowRadius: 1,
     shadowAutoUpdate: true,
+    shadowCascades: 1,
+    shadowDistance: 100,
     shadowCameraNear: 0.5,
     shadowCameraFar: 500,
     shadowCameraTop: 5,
@@ -36,94 +35,9 @@ const directionalLightDefaults = {
     targetOffset: [0, -5, 0] as [number, number, number],
 };
 
-type DirectionalLightValues = typeof directionalLightDefaults;
-type DirectionalLightProperties = Partial<DirectionalLightValues>;
+export type DirectionalLightValues = typeof directionalLightDefaults;
 
-
-function ShadowFrustumField({ values, onChange }: { values: DirectionalLightValues; onChange: (values: Partial<DirectionalLightValues>) => void }) {
-    // Minimal, no lock UI for simplicity (can add back if needed)
-    return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: colors.textMuted, textAlign: 'left' }}>Shadow Frustum</div>
-            <div style={{ display: 'flex', gap: 8 }}>
-                <NumberInput
-                    value={values.shadowCameraTop}
-                    onChange={v => onChange({ shadowCameraTop: v })}
-                    step={0.5}
-                    style={{ width: 62, minWidth: 62, textAlign: 'center' }}
-                    label="Top"
-                />
-                <NumberInput
-                    value={values.shadowCameraBottom}
-                    onChange={v => onChange({ shadowCameraBottom: v })}
-                    step={0.5}
-                    style={{ width: 62, minWidth: 62, textAlign: 'center' }}
-                    label="Bottom"
-                />
-                <NumberInput
-                    value={values.shadowCameraLeft}
-                    onChange={v => onChange({ shadowCameraLeft: v })}
-                    step={0.5}
-                    style={{ width: 62, minWidth: 62, textAlign: 'center' }}
-                    label="Left"
-                />
-                <NumberInput
-                    value={values.shadowCameraRight}
-                    onChange={v => onChange({ shadowCameraRight: v })}
-                    step={0.5}
-                    style={{ width: 62, minWidth: 62, textAlign: 'center' }}
-                    label="Right"
-                />
-            </div>
-        </div>
-    );
-}
-
-
-function DirectionalLightComponentEditor({ properties, update }: ComponentEditorProps<DirectionalLightProperties>) {
-    const values = mergeWithDefaults(directionalLightDefaults, properties);
-    return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <LightSection title="Light">
-                <ColorField name="color" label="Color" values={values} onChange={update} />
-                <NumberField name="intensity" label="Intensity" values={values} onChange={update} min={0} step={0.1} fallback={1} />
-                <Vector3Input
-                    label="Target Offset"
-                    value={values.targetOffset}
-                    onChange={targetOffset => update({ targetOffset })}
-                    snap={0.5}
-                />
-            </LightSection>
-            <LightSection title="Shadow">
-                <BooleanField name="castShadow" label="Cast Shadow" values={values} onChange={update} fallback={false} />
-                {values.castShadow ? (
-                    <>
-                        <BooleanField name="shadowAutoUpdate" label="Auto Update" values={values} onChange={update} fallback={true} />
-                        <NumberField
-                            name="shadowMapSize"
-                            label="Map Size"
-                            values={values}
-                            onChange={update}
-                            min={MIN_SHADOW_MAP_SIZE}
-                            max={MAX_SHADOW_MAP_SIZE}
-                            step={128}
-                            fallback={512}
-                            commitOnBlur
-                        />
-                        <ShadowBiasField name="shadowBias" label="Bias" values={values} onChange={update} fallback={0} />
-                        <ShadowBiasField name="shadowNormalBias" label="Normal Bias" values={values} onChange={update} fallback={0} />
-                        <NumberField name="shadowIntensity" label="Opacity" values={values} onChange={update} min={0} max={1} step={0.05} fallback={1} />
-                        <NumberField name="shadowRadius" label="Softness" values={values} onChange={update} min={0} step={0.25} fallback={1} />
-                        <NumberField name="shadowCameraNear" label="Near" values={values} onChange={update} min={0.001} step={0.1} fallback={0.5} />
-                        <NumberField name="shadowCameraFar" label="Far" values={values} onChange={update} min={0.1} step={1} fallback={500} />
-                        <ShadowFrustumField values={values} onChange={update} />
-                    </>
-                ) : null}
-            </LightSection>
-        </div>
-    );
-}
-
+export type DirectionalLightProperties = Partial<DirectionalLightValues>;
 
 function DirectionalLightView({ properties, children }: ComponentViewProps<DirectionalLightProperties>) {
     const { editMode, isSelected } = useNode();
@@ -149,6 +63,7 @@ function DirectionalLightView({ properties, children }: ComponentViewProps<Direc
     const helperTargetRef = useRef<Object3D>(null!);
     const target = useMemo(() => new Object3D(), []);
     useShadowMapResolution(directionalLightRef, shadowMapSize);
+    useShadowUpdates(directionalLightRef);
 
     // Show CameraHelper only in edit mode, selected, and castShadow
     const showHelper = editMode && isSelected && merged.castShadow;
@@ -156,9 +71,13 @@ function DirectionalLightView({ properties, children }: ComponentViewProps<Direc
     if (shadowCamera) helperTargetRef.current = shadowCamera;
     useHelper(showHelper && shadowCamera ? helperTargetRef : null, CameraHelper);
 
+    const Light = merged.castShadow && merged.shadowCascades > 1 ? CascadedDirectionalLight : 'directionalLight';
+    const cascadeProps = Light === CascadedDirectionalLight
+        ? { cascades: merged.shadowCascades, maxFar: merged.shadowDistance } : {};
     return (
         <group>
-            <directionalLight
+            <Light
+                {...cascadeProps}
                 ref={directionalLightRef}
                 {...lightProps}
                 target={target}
@@ -189,7 +108,7 @@ function DirectionalLightView({ properties, children }: ComponentViewProps<Direc
                         </line>
                     </>
                 )}
-            </directionalLight>
+            </Light>
 
             <primitive object={target} position={merged.targetOffset} />
 
@@ -197,11 +116,10 @@ function DirectionalLightView({ properties, children }: ComponentViewProps<Direc
     );
 }
 
-
 const DirectionalLightComponent: Component<DirectionalLightProperties> = {
     name: 'DirectionalLight',
+    slot: 'object',
     renderWhenDisabled: true,
-    Editor: DirectionalLightComponentEditor,
     View: DirectionalLightView,
     properties: {
         color: { type: 'color', default: directionalLightDefaults.color },
@@ -212,6 +130,8 @@ const DirectionalLightComponent: Component<DirectionalLightProperties> = {
         shadowNormalBias: { default: directionalLightDefaults.shadowNormalBias },
         shadowIntensity: { default: directionalLightDefaults.shadowIntensity, min: 0, max: 1, step: 0.05 },
         shadowRadius: { default: directionalLightDefaults.shadowRadius, min: 0, step: 0.25 },
+        shadowCascades: { default: 1, min: 1, max: 4, step: 1 },
+        shadowDistance: { default: 100, min: 1 },
         shadowAutoUpdate: { type: 'boolean', default: directionalLightDefaults.shadowAutoUpdate },
         shadowCameraNear: { default: directionalLightDefaults.shadowCameraNear },
         shadowCameraFar: { default: directionalLightDefaults.shadowCameraFar },

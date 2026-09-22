@@ -1,12 +1,6 @@
+# Demo goals
 
-each branch of code should be benchmarked and if it has a net frame impact it should be justified
+Measure frame cost when changing rendering or simulation behavior.
 
-on demos
-the fps demos shows 
-phys event -> sound (footstep sounds)
-input event -> physics object movement (keyboard and mouse movement)
-
-the cannon demo shows
-collision event->sound (ball hits target play hit sound)
-click event->spawn physics gameobject (on click cannon spawn ball)
-click event->sound (on click play fire sound)
+- FPS demo: keyboard/mouse movement, physics, and footstep sounds.
+- Cannon demo: click to spawn a projectile and play a firing sound; play an impact sound on collision.

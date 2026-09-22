@@ -1,49 +1,68 @@
 {
   "id": "brutalist-cube-building",
-  "name": "Weathered Brutalist Housing Slab",
+  "name": "Terraced Residence",
   "materials": {
     "concrete": {
-      "name": "concrete",
-      "color": "#727978",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "normalMapTexture": "/textures/floor/terrain/snow-512-normal.png",
+      "name": "Sand-textured concrete",
+      "materialType": "standard",
+      "color": "#829abd",
+      "texture": "/textures/floor/terrain/sand-512.jpg",
       "repeat": true,
       "repeatCount": [
-        12,
-        12
+        10,
+        10
       ],
       "roughness": 0.98,
-      "metalness": 0.01
+      "metalness": 0
     },
     "concrete-dark": {
-      "name": "concrete",
-      "color": "#454b4d",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "normalMapTexture": "/textures/floor/terrain/snow-512-normal.png",
+      "name": "Sand-textured concrete",
+      "materialType": "standard",
+      "color": "#4d607c",
+      "texture": "/textures/floor/terrain/sand-512.jpg",
       "repeat": true,
       "repeatCount": [
         8,
         8
       ],
-      "roughness": 0.99
+      "roughness": 0.98,
+      "metalness": 0
     },
     "concrete-light": {
-      "name": "concrete",
-      "color": "#909594",
-      "texture": "/textures/floor/terrain/snow-512.jpg",
-      "normalMapTexture": "/textures/floor/terrain/snow-512-normal.png",
+      "name": "Sand-textured concrete",
+      "materialType": "standard",
+      "color": "#abc4e7",
+      "texture": "/textures/floor/terrain/sand-512.jpg",
       "repeat": true,
       "repeatCount": [
         10,
         3
       ],
-      "roughness": 0.97
+      "roughness": 0.98,
+      "metalness": 0
     },
     "metal": {
-      "name": "metal",
-      "color": "#3f4749",
-      "roughness": 0.62,
-      "metalness": 0.52
+      "materialType": "standard",
+      "color": "#856046",
+      "roughness": 0.45,
+      "metalness": 0.3
+    },
+    "glazing": {
+      "materialType": "standard",
+      "color": "#244b59",
+      "roughness": 0.22,
+      "metalness": 0.3
+    },
+    "warm-glazing": {
+      "materialType": "standard",
+      "color": "#c39355",
+      "roughness": 0.4,
+      "metalness": 0.15
+    },
+    "foliage": {
+      "materialType": "standard",
+      "color": "#526e50",
+      "roughness": 1
     }
   },
   "root": {
@@ -56,7 +75,610 @@
     },
     "children": [
       {
-        "id": "cube-building-core",
+        "id": "terrace-volume-0",
+        "name": "Terrace Volume 0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                4,
+                0
+              ],
+              "scale": [
+                21,
+                8,
+                20
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "terrace-eave-0",
+        "name": "Terrace Eave 0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                8.2,
+                0
+              ],
+              "scale": [
+                22,
+                0.4,
+                21
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete-light"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "ribbon-window-0--1",
+        "name": "Ribbon Window 0  1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                4.5,
+                -10.02
+              ],
+              "scale": [
+                19,
+                2.5,
+                0.08
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "glazing"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "side-window-0--1",
+        "name": "Side Window 0  1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -10.52,
+                4.5,
+                0
+              ],
+              "scale": [
+                0.08,
+                2.5,
+                16
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "glazing"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "mullion-0--1--7.0",
+        "name": "Mullion 0  1  7.0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -7,
+                4.5,
+                -10.1
+              ],
+              "scale": [
+                0.18,
+                2.7,
+                0.2
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "metal"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "mullion-0--1-0",
+        "name": "Mullion 0  1 0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                4.5,
+                -10.1
+              ],
+              "scale": [
+                0.18,
+                2.7,
+                0.2
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "metal"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "mullion-0--1-7.0",
+        "name": "Mullion 0  1 7.0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                7,
+                4.5,
+                -10.1
+              ],
+              "scale": [
+                0.18,
+                2.7,
+                0.2
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "metal"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "ribbon-window-0-1",
+        "name": "Ribbon Window 0 1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                4.5,
+                10.02
+              ],
+              "scale": [
+                19,
+                2.5,
+                0.08
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "glazing"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "side-window-0-1",
+        "name": "Side Window 0 1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                10.52,
+                4.5,
+                0
+              ],
+              "scale": [
+                0.08,
+                2.5,
+                16
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "glazing"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "mullion-0-1--7.0",
+        "name": "Mullion 0 1  7.0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -7,
+                4.5,
+                10.1
+              ],
+              "scale": [
+                0.18,
+                2.7,
+                0.2
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "metal"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "mullion-0-1-0",
+        "name": "Mullion 0 1 0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                4.5,
+                10.1
+              ],
+              "scale": [
+                0.18,
+                2.7,
+                0.2
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "metal"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "mullion-0-1-7.0",
+        "name": "Mullion 0 1 7.0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                7,
+                4.5,
+                10.1
+              ],
+              "scale": [
+                0.18,
+                2.7,
+                0.2
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "metal"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "terrace-planter-0",
+        "name": "Terrace Planter 0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                8.6,
+                8
+              ],
+              "scale": [
+                18,
+                0.7,
+                1.3
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete-dark"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "terrace-planting-0",
+        "name": "Terrace Planting 0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                9.1,
+                8
+              ],
+              "scale": [
+                17.7,
+                0.4,
+                1.1
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "foliage"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "terrace-volume-1",
+        "name": "Terrace Volume 1",
         "components": {
           "transform": {
             "type": "Transform",
@@ -64,22 +686,27 @@
               "position": [
                 0,
                 11.5,
-                0
+                -1
+              ],
+              "scale": [
+                16,
+                7,
+                16
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
+              "geometryType": "box",
               "args": [
-                18,
-                23,
-                20
+                1,
+                1,
+                1
               ]
             }
           },
@@ -88,86 +715,41 @@
             "properties": {
               "materialId": "concrete"
             }
-          },
-          "crashcatPhysics": {
-            "type": "CrashcatPhysics",
-            "properties": {
-              "type": "fixed",
-              "colliders": "cuboid"
-            }
           }
         },
         "children": []
       },
       {
-        "id": "cube-building-service-plinth",
+        "id": "terrace-eave-1",
+        "name": "Terrace Eave 1",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
                 0,
-                0.6,
-                0
+                15.2,
+                -1
+              ],
+              "scale": [
+                17,
+                0.4,
+                17
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
+              "geometryType": "box",
               "args": [
-                21,
-                1.2,
-                23
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialId": "concrete-dark"
-            }
-          },
-          "crashcatPhysics": {
-            "type": "CrashcatPhysics",
-            "properties": {
-              "type": "fixed",
-              "colliders": "cuboid"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-building-roof-cap",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                23.35,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                19.2,
-                0.8,
-                21.2
+                1,
+                1,
+                1
               ]
             }
           },
@@ -176,930 +758,600 @@
             "properties": {
               "materialId": "concrete-light"
             }
-          },
-          "crashcatPhysics": {
-            "type": "CrashcatPhysics",
-            "properties": {
-              "type": "fixed",
-              "colliders": "cuboid"
-            }
           }
         },
         "children": []
       },
       {
-        "id": "cube-building-service-spine",
+        "id": "ribbon-window-1--1",
+        "name": "Ribbon Window 1  1",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
-                -4.7,
-                12.75,
-                10.55
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                3.2,
-                25.5,
-                1.7
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialId": "concrete-dark"
-            }
-          },
-          "crashcatPhysics": {
-            "type": "CrashcatPhysics",
-            "properties": {
-              "type": "fixed",
-              "colliders": "cuboid"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-building-cantilever",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -3.4,
-                16.2,
-                11.15
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                5.8,
-                4.2,
-                3.2
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialId": "concrete"
-            }
-          },
-          "crashcatPhysics": {
-            "type": "CrashcatPhysics",
-            "properties": {
-              "type": "fixed",
-              "colliders": "cuboid"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-building-entry-canopy",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                3.8,
-                3.15,
-                11.25
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                7.2,
-                0.45,
-                3.8
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialId": "concrete-dark"
-            }
-          },
-          "crashcatPhysics": {
-            "type": "CrashcatPhysics",
-            "properties": {
-              "type": "fixed",
-              "colliders": "cuboid"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-building-entry-void",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                3.8,
-                1.65,
-                10.09
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                3.1,
+                0,
+                12,
+                -9.02
+              ],
+              "scale": [
+                14,
                 2.5,
-                0.18
+                0.08
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                1,
+                1
               ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "window-recess"
+              "materialId": "glazing"
             }
           }
         },
         "children": []
       },
       {
-        "id": "cube-front-window-0-0",
+        "id": "side-window-1--1",
+        "name": "Side Window 1  1",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
-                -6.8,
-                3.25,
-                10.09
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
+                -8.02,
+                12,
+                -1
               ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-window-0-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -3.4,
-                3.25,
-                10.09
+              "scale": [
+                0.08,
+                2.5,
+                12
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
+              "geometryType": "box",
               "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-window-0-2",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                3.25,
-                10.09
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-window-0-3",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                3.3999999999999995,
-                3.25,
-                10.09
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-window-0-4",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                6.8,
-                3.25,
-                10.09
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-eyebrow-0",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                3.8200000000000003,
-                10.27
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                16.8,
-                0.2,
-                0.6
+                1,
+                1,
+                1
               ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "concrete-light"
+              "materialId": "glazing"
             }
           }
         },
         "children": []
       },
       {
-        "id": "cube-front-window-1-0",
+        "id": "mullion-1--1--5.333333333333333",
+        "name": "Mullion 1  1  5.333333333333333",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
-                -6.8,
-                5.9,
-                10.09
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
+                -5.333333333333333,
+                12,
+                -9.1
               ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-window-1-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -3.4,
-                5.9,
-                10.09
+              "scale": [
+                0.18,
+                2.7,
+                0.2
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
+              "geometryType": "box",
               "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-window-1-2",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                5.9,
-                10.09
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-window-1-3",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                3.3999999999999995,
-                5.9,
-                10.09
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-window-1-4",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                6.8,
-                5.9,
-                10.09
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-eyebrow-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                6.47,
-                10.27
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                16.8,
-                0.2,
-                0.6
+                1,
+                1,
+                1
               ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "concrete-light"
+              "materialId": "metal"
             }
           }
         },
         "children": []
       },
       {
-        "id": "cube-front-window-2-0",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -6.8,
-                8.55,
-                10.09
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-window-2-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -3.4,
-                8.55,
-                10.09
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-window-2-2",
+        "id": "mullion-1--1-0",
+        "name": "Mullion 1  1 0",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
                 0,
-                8.55,
-                10.09
+                12,
+                -9.1
+              ],
+              "scale": [
+                0.18,
+                2.7,
+                0.2
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
+              "geometryType": "box",
               "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
+                1,
+                1,
+                1
+              ]
             }
           },
-          "interiormap": {
-            "type": "InteriorMap",
+          "material": {
+            "type": "Material",
             "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
+              "materialId": "metal"
             }
           }
         },
         "children": []
       },
       {
-        "id": "cube-front-window-2-3",
+        "id": "mullion-1--1-5.333333333333333",
+        "name": "Mullion 1  1 5.333333333333333",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
-                3.3999999999999995,
-                8.55,
-                10.09
+                5.333333333333333,
+                12,
+                -9.1
+              ],
+              "scale": [
+                0.18,
+                2.7,
+                0.2
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
+              "geometryType": "box",
               "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
+                1,
+                1,
+                1
+              ]
             }
           },
-          "interiormap": {
-            "type": "InteriorMap",
+          "material": {
+            "type": "Material",
             "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
+              "materialId": "metal"
             }
           }
         },
         "children": []
       },
       {
-        "id": "cube-front-window-2-4",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                6.8,
-                8.55,
-                10.09
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-eyebrow-2",
+        "id": "ribbon-window-1-1",
+        "name": "Ribbon Window 1 1",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
                 0,
-                9.120000000000001,
-                10.27
+                12,
+                7.02
+              ],
+              "scale": [
+                14,
+                2.5,
+                0.08
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
+              "geometryType": "box",
               "args": [
-                16.8,
-                0.2,
-                0.6
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "glazing"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "side-window-1-1",
+        "name": "Side Window 1 1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                8.02,
+                12,
+                -1
+              ],
+              "scale": [
+                0.08,
+                2.5,
+                12
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "glazing"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "mullion-1-1--5.333333333333333",
+        "name": "Mullion 1 1  5.333333333333333",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -5.333333333333333,
+                12,
+                7.1
+              ],
+              "scale": [
+                0.18,
+                2.7,
+                0.2
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "metal"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "mullion-1-1-0",
+        "name": "Mullion 1 1 0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                12,
+                7.1
+              ],
+              "scale": [
+                0.18,
+                2.7,
+                0.2
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "metal"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "mullion-1-1-5.333333333333333",
+        "name": "Mullion 1 1 5.333333333333333",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                5.333333333333333,
+                12,
+                7.1
+              ],
+              "scale": [
+                0.18,
+                2.7,
+                0.2
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "metal"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "terrace-planter-1",
+        "name": "Terrace Planter 1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                15.6,
+                5
+              ],
+              "scale": [
+                13,
+                0.7,
+                1.3
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete-dark"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "terrace-planting-1",
+        "name": "Terrace Planting 1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                16.1,
+                5
+              ],
+              "scale": [
+                12.7,
+                0.4,
+                1.1
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "foliage"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "terrace-volume-2",
+        "name": "Terrace Volume 2",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                18,
+                -2
+              ],
+              "scale": [
+                11,
+                6,
+                12
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "concrete"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "terrace-eave-2",
+        "name": "Terrace Eave 2",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                21.2,
+                -2
+              ],
+              "scale": [
+                12,
+                0.4,
+                13
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                1,
+                1
               ]
             }
           },
@@ -1113,5788 +1365,479 @@
         "children": []
       },
       {
-        "id": "cube-front-window-3-0",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -6.8,
-                11.2,
-                10.09
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-window-3-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -3.4,
-                11.2,
-                10.09
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-window-3-2",
+        "id": "ribbon-window-2--1",
+        "name": "Ribbon Window 2  1",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
                 0,
-                11.2,
-                10.09
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
+                18.5,
+                -8.02
               ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-window-3-3",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                3.3999999999999995,
-                11.2,
-                10.09
+              "scale": [
+                9,
+                2.5,
+                0.08
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
+              "geometryType": "box",
               "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-window-3-4",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                6.8,
-                11.2,
-                10.09
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-eyebrow-3",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                11.77,
-                10.27
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                16.8,
-                0.2,
-                0.6
+                1,
+                1,
+                1
               ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "concrete-light"
+              "materialId": "glazing"
             }
           }
         },
         "children": []
       },
       {
-        "id": "cube-front-window-4-0",
+        "id": "side-window-2--1",
+        "name": "Side Window 2  1",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
-                -6.8,
-                13.85,
-                10.09
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
+                -5.52,
+                18.5,
+                -2
               ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-window-4-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -3.4,
-                13.85,
-                10.09
+              "scale": [
+                0.08,
+                2.5,
+                8
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
+              "geometryType": "box",
               "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-window-4-2",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                13.85,
-                10.09
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-window-4-3",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                3.3999999999999995,
-                13.85,
-                10.09
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-window-4-4",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                6.8,
-                13.85,
-                10.09
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-eyebrow-4",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                14.42,
-                10.27
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                16.8,
-                0.2,
-                0.6
+                1,
+                1,
+                1
               ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "concrete-light"
+              "materialId": "glazing"
             }
           }
         },
         "children": []
       },
       {
-        "id": "cube-front-window-5-0",
+        "id": "mullion-2--1--3.6666666666666665",
+        "name": "Mullion 2  1  3.6666666666666665",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
-                -6.8,
-                16.5,
-                10.09
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
+                -3.6666666666666665,
+                18.5,
+                -8.1
               ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-window-5-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -3.4,
-                16.5,
-                10.09
+              "scale": [
+                0.18,
+                2.7,
+                0.2
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
+              "geometryType": "box",
               "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-window-5-2",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                16.5,
-                10.09
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-window-5-3",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                3.3999999999999995,
-                16.5,
-                10.09
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-window-5-4",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                6.8,
-                16.5,
-                10.09
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-eyebrow-5",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                17.07,
-                10.27
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                16.8,
-                0.2,
-                0.6
+                1,
+                1,
+                1
               ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "concrete-light"
+              "materialId": "metal"
             }
           }
         },
         "children": []
       },
       {
-        "id": "cube-front-window-6-0",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -6.8,
-                19.15,
-                10.09
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-window-6-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -3.4,
-                19.15,
-                10.09
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-window-6-2",
+        "id": "mullion-2--1-0",
+        "name": "Mullion 2  1 0",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
                 0,
-                19.15,
-                10.09
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
+                18.5,
+                -8.1
               ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-window-6-3",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                3.3999999999999995,
-                19.15,
-                10.09
+              "scale": [
+                0.18,
+                2.7,
+                0.2
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
+              "geometryType": "box",
               "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-window-6-4",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                6.8,
-                19.15,
-                10.09
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-front-eyebrow-6",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                19.72,
-                10.27
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                16.8,
-                0.2,
-                0.6
+                1,
+                1,
+                1
               ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "concrete-light"
+              "materialId": "metal"
             }
           }
         },
         "children": []
       },
       {
-        "id": "cube-back-window-0-0",
+        "id": "mullion-2--1-3.6666666666666665",
+        "name": "Mullion 2  1 3.6666666666666665",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
-                -6.8,
-                3.25,
-                -10.09
+                3.6666666666666665,
+                18.5,
+                -8.1
               ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
+              "scale": [
+                0.18,
+                2.7,
+                0.2
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
+              "geometryType": "box",
               "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-window-0-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -3.4,
-                3.25,
-                -10.09
-              ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-window-0-2",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                3.25,
-                -10.09
-              ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-window-0-3",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                3.3999999999999995,
-                3.25,
-                -10.09
-              ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-window-0-4",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                6.8,
-                3.25,
-                -10.09
-              ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-eyebrow-0",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                3.8200000000000003,
-                -10.27
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                16.8,
-                0.2,
-                0.6
+                1,
+                1,
+                1
               ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "concrete-light"
+              "materialId": "metal"
             }
           }
         },
         "children": []
       },
       {
-        "id": "cube-back-window-1-0",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -6.8,
-                5.9,
-                -10.09
-              ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-window-1-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -3.4,
-                5.9,
-                -10.09
-              ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-window-1-2",
+        "id": "ribbon-window-2-1",
+        "name": "Ribbon Window 2 1",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
                 0,
-                5.9,
-                -10.09
+                18.5,
+                4.02
               ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
+              "scale": [
+                9,
+                2.5,
+                0.08
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
+              "geometryType": "box",
               "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-window-1-3",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                3.3999999999999995,
-                5.9,
-                -10.09
-              ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-window-1-4",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                6.8,
-                5.9,
-                -10.09
-              ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-eyebrow-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                6.47,
-                -10.27
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                16.8,
-                0.2,
-                0.6
+                1,
+                1,
+                1
               ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "concrete-light"
+              "materialId": "glazing"
             }
           }
         },
         "children": []
       },
       {
-        "id": "cube-back-window-2-0",
+        "id": "side-window-2-1",
+        "name": "Side Window 2 1",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
-                -6.8,
-                8.55,
-                -10.09
+                5.52,
+                18.5,
+                -2
               ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
+              "scale": [
+                0.08,
+                2.5,
+                8
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
+              "geometryType": "box",
               "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-window-2-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -3.4,
-                8.55,
-                -10.09
-              ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-window-2-2",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                8.55,
-                -10.09
-              ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-window-2-3",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                3.3999999999999995,
-                8.55,
-                -10.09
-              ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-window-2-4",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                6.8,
-                8.55,
-                -10.09
-              ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-eyebrow-2",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                9.120000000000001,
-                -10.27
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                16.8,
-                0.2,
-                0.6
+                1,
+                1,
+                1
               ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "concrete-light"
+              "materialId": "glazing"
             }
           }
         },
         "children": []
       },
       {
-        "id": "cube-back-window-3-0",
+        "id": "mullion-2-1--3.6666666666666665",
+        "name": "Mullion 2 1  3.6666666666666665",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
-                -6.8,
-                11.2,
-                -10.09
+                -3.6666666666666665,
+                18.5,
+                4.1
               ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
+              "scale": [
+                0.18,
+                2.7,
+                0.2
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
+              "geometryType": "box",
               "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-window-3-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -3.4,
-                11.2,
-                -10.09
-              ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-window-3-2",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                11.2,
-                -10.09
-              ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-window-3-3",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                3.3999999999999995,
-                11.2,
-                -10.09
-              ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-window-3-4",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                6.8,
-                11.2,
-                -10.09
-              ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-eyebrow-3",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                11.77,
-                -10.27
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                16.8,
-                0.2,
-                0.6
+                1,
+                1,
+                1
               ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "concrete-light"
+              "materialId": "metal"
             }
           }
         },
         "children": []
       },
       {
-        "id": "cube-back-window-4-0",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -6.8,
-                13.85,
-                -10.09
-              ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-window-4-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -3.4,
-                13.85,
-                -10.09
-              ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-window-4-2",
+        "id": "mullion-2-1-0",
+        "name": "Mullion 2 1 0",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
                 0,
-                13.85,
-                -10.09
+                18.5,
+                4.1
               ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
+              "scale": [
+                0.18,
+                2.7,
+                0.2
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
+              "geometryType": "box",
               "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-window-4-3",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                3.3999999999999995,
-                13.85,
-                -10.09
-              ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-window-4-4",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                6.8,
-                13.85,
-                -10.09
-              ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-eyebrow-4",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                14.42,
-                -10.27
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                16.8,
-                0.2,
-                0.6
+                1,
+                1,
+                1
               ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "concrete-light"
+              "materialId": "metal"
             }
           }
         },
         "children": []
       },
       {
-        "id": "cube-back-window-5-0",
+        "id": "mullion-2-1-3.6666666666666665",
+        "name": "Mullion 2 1 3.6666666666666665",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
-                -6.8,
-                16.5,
-                -10.09
+                3.6666666666666665,
+                18.5,
+                4.1
               ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
+              "scale": [
+                0.18,
+                2.7,
+                0.2
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
+              "geometryType": "box",
               "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-window-5-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -3.4,
-                16.5,
-                -10.09
-              ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-window-5-2",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                16.5,
-                -10.09
-              ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-window-5-3",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                3.3999999999999995,
-                16.5,
-                -10.09
-              ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-window-5-4",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                6.8,
-                16.5,
-                -10.09
-              ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-eyebrow-5",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                17.07,
-                -10.27
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                16.8,
-                0.2,
-                0.6
+                1,
+                1,
+                1
               ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "concrete-light"
+              "materialId": "metal"
             }
           }
         },
         "children": []
       },
       {
-        "id": "cube-back-window-6-0",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -6.8,
-                19.15,
-                -10.09
-              ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-window-6-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -3.4,
-                19.15,
-                -10.09
-              ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-window-6-2",
+        "id": "entrance-canopy",
+        "name": "Entrance Canopy",
         "components": {
           "transform": {
             "type": "Transform",
             "properties": {
               "position": [
                 0,
-                19.15,
-                -10.09
+                3,
+                11
               ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
+              "scale": [
+                7,
+                0.4,
+                4
               ]
             }
           },
           "mesh": {
             "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
+            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
             "properties": {
+              "geometryType": "box",
               "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-window-6-3",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                3.3999999999999995,
-                19.15,
-                -10.09
-              ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-window-6-4",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                6.8,
-                19.15,
-                -10.09
-              ],
-              "rotation": [
-                0,
-                3.141592653589793,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.15,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.15,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-back-eyebrow-6",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0,
-                19.72,
-                -10.27
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                16.8,
-                0.2,
-                0.6
+                1,
+                1,
+                1
               ]
             }
           },
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "concrete-light"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-east-window-0-0",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                9.06,
-                3.25,
-                -6.2
-              ],
-              "rotation": [
-                0,
-                1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-east-window-0-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                9.06,
-                3.25,
-                -2.1000000000000005
-              ],
-              "rotation": [
-                0,
-                1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-east-window-0-2",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                9.06,
-                3.25,
-                1.9999999999999991
-              ],
-              "rotation": [
-                0,
-                1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-east-window-0-3",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                9.06,
-                3.25,
-                6.099999999999999
-              ],
-              "rotation": [
-                0,
-                1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-east-window-1-0",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                9.06,
-                5.9,
-                -6.2
-              ],
-              "rotation": [
-                0,
-                1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-east-window-1-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                9.06,
-                5.9,
-                -2.1000000000000005
-              ],
-              "rotation": [
-                0,
-                1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-east-window-1-2",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                9.06,
-                5.9,
-                1.9999999999999991
-              ],
-              "rotation": [
-                0,
-                1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-east-window-1-3",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                9.06,
-                5.9,
-                6.099999999999999
-              ],
-              "rotation": [
-                0,
-                1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-east-window-2-0",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                9.06,
-                8.55,
-                -6.2
-              ],
-              "rotation": [
-                0,
-                1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-east-window-2-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                9.06,
-                8.55,
-                -2.1000000000000005
-              ],
-              "rotation": [
-                0,
-                1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-east-window-2-2",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                9.06,
-                8.55,
-                1.9999999999999991
-              ],
-              "rotation": [
-                0,
-                1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-east-window-2-3",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                9.06,
-                8.55,
-                6.099999999999999
-              ],
-              "rotation": [
-                0,
-                1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-east-window-3-0",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                9.06,
-                11.2,
-                -6.2
-              ],
-              "rotation": [
-                0,
-                1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-east-window-3-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                9.06,
-                11.2,
-                -2.1000000000000005
-              ],
-              "rotation": [
-                0,
-                1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-east-window-3-2",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                9.06,
-                11.2,
-                1.9999999999999991
-              ],
-              "rotation": [
-                0,
-                1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-east-window-3-3",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                9.06,
-                11.2,
-                6.099999999999999
-              ],
-              "rotation": [
-                0,
-                1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-east-window-4-0",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                9.06,
-                13.85,
-                -6.2
-              ],
-              "rotation": [
-                0,
-                1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-east-window-4-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                9.06,
-                13.85,
-                -2.1000000000000005
-              ],
-              "rotation": [
-                0,
-                1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-east-window-4-2",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                9.06,
-                13.85,
-                1.9999999999999991
-              ],
-              "rotation": [
-                0,
-                1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-east-window-4-3",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                9.06,
-                13.85,
-                6.099999999999999
-              ],
-              "rotation": [
-                0,
-                1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-east-window-5-0",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                9.06,
-                16.5,
-                -6.2
-              ],
-              "rotation": [
-                0,
-                1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-east-window-5-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                9.06,
-                16.5,
-                -2.1000000000000005
-              ],
-              "rotation": [
-                0,
-                1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-east-window-5-2",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                9.06,
-                16.5,
-                1.9999999999999991
-              ],
-              "rotation": [
-                0,
-                1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-east-window-5-3",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                9.06,
-                16.5,
-                6.099999999999999
-              ],
-              "rotation": [
-                0,
-                1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-east-window-6-0",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                9.06,
-                19.15,
-                -6.2
-              ],
-              "rotation": [
-                0,
-                1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-east-window-6-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                9.06,
-                19.15,
-                -2.1000000000000005
-              ],
-              "rotation": [
-                0,
-                1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-east-window-6-2",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                9.06,
-                19.15,
-                1.9999999999999991
-              ],
-              "rotation": [
-                0,
-                1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-east-window-6-3",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                9.06,
-                19.15,
-                6.099999999999999
-              ],
-              "rotation": [
-                0,
-                1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-west-window-0-0",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -9.06,
-                3.25,
-                -6.2
-              ],
-              "rotation": [
-                0,
-                -1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-west-window-0-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -9.06,
-                3.25,
-                -2.1000000000000005
-              ],
-              "rotation": [
-                0,
-                -1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-west-window-0-2",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -9.06,
-                3.25,
-                1.9999999999999991
-              ],
-              "rotation": [
-                0,
-                -1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-west-window-0-3",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -9.06,
-                3.25,
-                6.099999999999999
-              ],
-              "rotation": [
-                0,
-                -1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-west-window-1-0",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -9.06,
-                5.9,
-                -6.2
-              ],
-              "rotation": [
-                0,
-                -1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-west-window-1-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -9.06,
-                5.9,
-                -2.1000000000000005
-              ],
-              "rotation": [
-                0,
-                -1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-west-window-1-2",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -9.06,
-                5.9,
-                1.9999999999999991
-              ],
-              "rotation": [
-                0,
-                -1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-west-window-1-3",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -9.06,
-                5.9,
-                6.099999999999999
-              ],
-              "rotation": [
-                0,
-                -1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-west-window-2-0",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -9.06,
-                8.55,
-                -6.2
-              ],
-              "rotation": [
-                0,
-                -1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-west-window-2-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -9.06,
-                8.55,
-                -2.1000000000000005
-              ],
-              "rotation": [
-                0,
-                -1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-west-window-2-2",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -9.06,
-                8.55,
-                1.9999999999999991
-              ],
-              "rotation": [
-                0,
-                -1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-west-window-2-3",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -9.06,
-                8.55,
-                6.099999999999999
-              ],
-              "rotation": [
-                0,
-                -1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-west-window-3-0",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -9.06,
-                11.2,
-                -6.2
-              ],
-              "rotation": [
-                0,
-                -1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-west-window-3-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -9.06,
-                11.2,
-                -2.1000000000000005
-              ],
-              "rotation": [
-                0,
-                -1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-west-window-3-2",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -9.06,
-                11.2,
-                1.9999999999999991
-              ],
-              "rotation": [
-                0,
-                -1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-west-window-3-3",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -9.06,
-                11.2,
-                6.099999999999999
-              ],
-              "rotation": [
-                0,
-                -1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-west-window-4-0",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -9.06,
-                13.85,
-                -6.2
-              ],
-              "rotation": [
-                0,
-                -1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-west-window-4-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -9.06,
-                13.85,
-                -2.1000000000000005
-              ],
-              "rotation": [
-                0,
-                -1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-west-window-4-2",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -9.06,
-                13.85,
-                1.9999999999999991
-              ],
-              "rotation": [
-                0,
-                -1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-west-window-4-3",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -9.06,
-                13.85,
-                6.099999999999999
-              ],
-              "rotation": [
-                0,
-                -1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-west-window-5-0",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -9.06,
-                16.5,
-                -6.2
-              ],
-              "rotation": [
-                0,
-                -1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-west-window-5-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -9.06,
-                16.5,
-                -2.1000000000000005
-              ],
-              "rotation": [
-                0,
-                -1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-west-window-5-2",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -9.06,
-                16.5,
-                1.9999999999999991
-              ],
-              "rotation": [
-                0,
-                -1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-west-window-5-3",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -9.06,
-                16.5,
-                6.099999999999999
-              ],
-              "rotation": [
-                0,
-                -1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-west-window-6-0",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -9.06,
-                19.15,
-                -6.2
-              ],
-              "rotation": [
-                0,
-                -1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-west-window-6-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -9.06,
-                19.15,
-                -2.1000000000000005
-              ],
-              "rotation": [
-                0,
-                -1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-west-window-6-2",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -9.06,
-                19.15,
-                1.9999999999999991
-              ],
-              "rotation": [
-                0,
-                -1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-west-window-6-3",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -9.06,
-                19.15,
-                6.099999999999999
-              ],
-              "rotation": [
-                0,
-                -1.5707963267948966,
-                0
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                2.05,
-                0.78
-              ],
-              "geometryType": "plane"
-            }
-          },
-          "interiormap": {
-            "type": "InteriorMap",
-            "properties": {
-              "texture": "/textures/interiors/cubemap-faces2.webp",
-              "roomSize": [
-                2.05,
-                0.78,
-                2.5
-              ]
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-building-corner-pier-nw",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -9.12,
-                12.3,
-                -10.12
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                0.75,
-                24.6,
-                0.75
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialId": "concrete-light"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-building-corner-pier-ne",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                9.12,
-                12.3,
-                -10.12
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                0.75,
-                24.6,
-                0.75
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialId": "concrete-light"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-building-corner-pier-sw",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -9.12,
-                12.3,
-                10.12
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                0.75,
-                24.6,
-                0.75
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialId": "concrete-light"
-            }
-          }
-        },
-        "children": []
-      },
-      {
-        "id": "cube-building-corner-pier-se",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                9.12,
-                12.3,
-                10.12
-              ]
-            }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-            }
-          },
-          "geometry": {
-            "type": "Geometry",
-            "properties": {
-              "args": [
-                0.75,
-                24.6,
-                0.75
-              ]
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialId": "concrete-light"
+              "materialId": "metal"
             }
           }
         },
         "children": []
       }
-    ]
+    ],
+    "name": "Terraced Residence"
   }
 }

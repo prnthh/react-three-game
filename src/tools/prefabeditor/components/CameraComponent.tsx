@@ -1,23 +1,21 @@
 import { OrthographicCamera as DreiOrthographicCamera, PerspectiveCamera as DreiPerspectiveCamera, useHelper } from '@react-three/drei';
-import { useThree } from '@react-three/fiber';
-import { useRef, type ReactNode } from 'react';
-import {
-    CameraHelper,
-    MathUtils,
-    type OrthographicCamera,
-    type PerspectiveCamera,
-} from 'three';
-import { useNode } from '../SceneContext';
-import type { Component, ComponentEditorProps, ComponentViewProps } from './ComponentRegistry';
-import { FieldGroup, NumberField, SelectField } from './Input';
-import { colors } from '../styles';
 
-const CAMERA_PROJECTION_OPTIONS = [
+import { useThree } from '@react-three/fiber';
+
+import { useRef } from 'react';
+
+import { CameraHelper, MathUtils, type OrthographicCamera, type PerspectiveCamera } from 'three';
+
+import { useNode } from '../SceneContext';
+
+import type { Component, ComponentViewProps } from './ComponentRegistry';
+
+export const CAMERA_PROJECTION_OPTIONS = [
     { value: 'perspective', label: 'Perspective' },
     { value: 'orthographic', label: 'Orthographic' },
 ] as const;
 
-const CAMERA_DEFAULTS = {
+export const CAMERA_DEFAULTS = {
     projection: 'perspective' as CameraProjection,
     fov: 50,
     near: 0.1,
@@ -29,8 +27,9 @@ const CAMERA_DEFAULTS = {
     filmOffset: 0,
 } as const;
 
-type CameraProjection = typeof CAMERA_PROJECTION_OPTIONS[number]['value'];
-type CameraProperties = {
+export type CameraProjection = typeof CAMERA_PROJECTION_OPTIONS[number]['value'];
+
+export type CameraProperties = {
     projection?: CameraProjection;
     fov?: number;
     near?: number;
@@ -42,62 +41,11 @@ type CameraProperties = {
     filmOffset?: number;
 };
 
-function CameraSection({ title, children }: { title: string; children: ReactNode }) {
-    return <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <div style={{ color: colors.textMuted, fontSize: 10, fontWeight: 650, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            {title}
-        </div>
-        {children}
-    </div>;
-}
-
-function CameraComponentEditor({ properties, update }: ComponentEditorProps<CameraProperties>) {
-    const values = { ...CAMERA_DEFAULTS, ...properties };
-    const projection = values.projection ?? CAMERA_DEFAULTS.projection;
-
-    return (
-        <FieldGroup>
-            <CameraSection title="Lens">
-                <SelectField
-                    name="projection"
-                    label="Projection"
-                    values={values}
-                    onChange={update}
-                    fallback={CAMERA_DEFAULTS.projection}
-                    options={[...CAMERA_PROJECTION_OPTIONS]}
-                />
-                {projection === 'perspective' ? <>
-                    <NumberField name="fov" label="Vertical FOV" values={values} onChange={update} fallback={CAMERA_DEFAULTS.fov} min={1} max={179} step={1} />
-                    <NumberField name="focus" label="Focus Distance" values={values} onChange={update} fallback={CAMERA_DEFAULTS.focus} min={0.001} step={0.1} />
-                    <NumberField name="filmGauge" label="Film Gauge" values={values} onChange={update} fallback={CAMERA_DEFAULTS.filmGauge} min={0.01} step={1} />
-                    <NumberField name="filmOffset" label="Lens Shift" values={values} onChange={update} fallback={CAMERA_DEFAULTS.filmOffset} step={0.1} />
-                </> : null}
-                {projection === 'orthographic' ? (
-                <NumberField
-                    name="orthographicSize"
-                    label="Ortho Size"
-                    values={values}
-                    onChange={update}
-                    fallback={CAMERA_DEFAULTS.orthographicSize}
-                    min={0.01}
-                    step={0.1}
-                />
-                ) : null}
-                <NumberField name="zoom" label="Zoom" values={values} onChange={update} fallback={CAMERA_DEFAULTS.zoom} min={0.01} step={0.1} />
-            </CameraSection>
-            <CameraSection title="Clipping">
-                <NumberField name="near" label="Near" values={values} onChange={update} fallback={CAMERA_DEFAULTS.near} min={0.001} step={0.1} />
-                <NumberField name="far" label="Far" values={values} onChange={update} fallback={CAMERA_DEFAULTS.far} min={0.1} step={1} />
-            </CameraSection>
-        </FieldGroup>
-    );
-}
-
-function CameraComponentView({ properties, children }: ComponentViewProps<CameraProperties>) {
-    const { editMode, isSelected } = useNode();
+function CameraComponentView({ properties, enabled, children }: ComponentViewProps<CameraProperties>) {
+    const { editMode, isSelected, preparing } = useNode();
     const { size } = useThree();
-    const merged = { ...CAMERA_DEFAULTS, ...properties };
-    const projection = merged.projection ?? CAMERA_DEFAULTS.projection;
+    const merged = properties;
+    const projection = merged.projection;
     const fov = MathUtils.clamp(merged.fov, 1, 179);
     const near = Math.max(0.001, merged.near);
     const zoom = Math.max(0.01, merged.zoom);
@@ -130,7 +78,7 @@ function CameraComponentView({ properties, children }: ComponentViewProps<Camera
             <group>
                 <DreiOrthographicCamera
                     ref={orthographicCameraRef}
-                    makeDefault={!editMode}
+                    makeDefault={enabled && !editMode && !preparing}
                     near={near}
                     zoom={zoom}
                     far={far}
@@ -150,7 +98,7 @@ function CameraComponentView({ properties, children }: ComponentViewProps<Camera
         <group>
             <DreiPerspectiveCamera
                 ref={perspectiveCameraRef}
-                makeDefault={!editMode}
+                makeDefault={enabled && !editMode && !preparing}
                 fov={fov}
                 near={near}
                 zoom={zoom}
@@ -167,8 +115,9 @@ function CameraComponentView({ properties, children }: ComponentViewProps<Camera
 }
 
 const CameraComponent: Component<CameraProperties> = {
+    renderWhenDisabled: true,
     name: 'Camera',
-    Editor: CameraComponentEditor,
+    slot: 'object',
     View: CameraComponentView,
     properties: {
         projection: { type: 'select', default: CAMERA_DEFAULTS.projection, options: CAMERA_PROJECTION_OPTIONS },

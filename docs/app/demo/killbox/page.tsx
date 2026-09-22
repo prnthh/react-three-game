@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { PrefabEditorMode, registerComponent, useSceneComponents, type GameObject, type Prefab } from "react-three-game";
-import { PrefabEditor, type PrefabEditorRef } from "react-three-game/editor";
+import { PrefabEditorMode, registerComponent, useSceneComponents, type GameObject, type Prefab } from "react-three-game/viewer";
+import { PrefabEditor } from "react-three-game/editor";
 import { CrashcatPhysicsComponent, CrashcatRuntime } from "react-three-game/plugins/crashcat";
-import initialWorld from "../../../public/prefabs/street.json";
+import initialWorld from "../../../public/prefabs/killbox.json";
 
 import PrefabSelector from "../../components/PrefabSelector";
 import {
@@ -28,9 +28,9 @@ function containsPlayer(node: GameObject): boolean {
     return node.children?.some(containsPlayer) ?? false;
 }
 
-function injectPlayer(prefab: Prefab, prefabName: string): Prefab {
+function injectPlayer(prefab: Prefab): Prefab {
     if (containsPlayer(prefab.root)) return prefab;
-    const position: [number, number, number] = [0, 1, 0,];
+    const position: [number, number, number] = [0, 1, 0];
     return {
         ...prefab,
         root: {
@@ -54,36 +54,40 @@ const WEAPONS = [
     { name: "Crowbar", range: 2.5 },
     { name: "Pistol", range: 35 },
     { name: "Sniper", range: 120 },
+    { name: "Gravity Gun", range: 8 },
 ] as const;
 
 const GAME_CANVAS_ID = "killbox-game-canvas";
 
 function KillboxPlayerRuntime({
     targetDistance,
+    gravityGun,
     onAimTargetChange,
 }: {
     targetDistance: number;
+    gravityGun: boolean;
     onAimTargetChange: (canHit: boolean) => void;
 }) {
     const managers = useSceneComponents(NPC_MANAGER_COMPONENT);
     return <PlayerRuntime
         npcManager={managers[0]?.value}
         targetDistance={targetDistance}
+        gravityGun={gravityGun}
         onAimTargetChange={onAimTargetChange}
         pointerLockSelector={`#${GAME_CANVAS_ID}`}
     />;
 }
 
-export default function Home() {
-    registerComponent(CrashcatPhysicsComponent);
-    registerComponent(ElevatorMover);
-    registerComponent(OrbMover);
-    registerComponent(NPCManagerComponent);
-    registerComponent(PlayerControllerComponent);
+registerComponent(CrashcatPhysicsComponent);
+registerComponent(ElevatorMover);
+registerComponent(OrbMover);
+registerComponent(NPCManagerComponent);
+registerComponent(PlayerControllerComponent);
 
-    const editorRef = useRef<PrefabEditorRef>(null);
-    const [selectedPrefab, setSelectedPrefab] = useState<Prefab>(() => injectPlayer(initialWorld as unknown as Prefab, "street"));
-    const [selectedPrefabName, setSelectedPrefabName] = useState("street");
+
+export default function KillboxDemo() {
+    const [selectedPrefab, setSelectedPrefab] = useState<Prefab>(() => injectPlayer(initialWorld as unknown as Prefab));
+    const [selectedPrefabName, setSelectedPrefabName] = useState("killbox");
     const [selectedWeaponIndex, setSelectedWeaponIndex] = useState(0);
     const weaponWheelTimeRef = useRef(0);
     const crosshairRef = useRef<HTMLDivElement>(null);
@@ -94,12 +98,14 @@ export default function Home() {
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.repeat) return;
+            if (event.repeat || !document.pointerLockElement) return;
             if (event.code === "Digit1") setSelectedWeaponIndex(0);
             if (event.code === "Digit2") setSelectedWeaponIndex(1);
             if (event.code === "Digit3") setSelectedWeaponIndex(2);
+            if (event.code === "Digit4") setSelectedWeaponIndex(3);
         };
         const handleWheel = (event: WheelEvent) => {
+            if (!document.pointerLockElement) return;
             const now = performance.now();
             if (Math.abs(event.deltaY) < 1 || now - weaponWheelTimeRef.current < 120) return;
             weaponWheelTimeRef.current = now;
@@ -118,7 +124,6 @@ export default function Home() {
     return (
         <main className="flex h-screen w-screen flex-col items-center justify-between bg-white dark:bg-black sm:items-start">
             <PrefabEditor
-                ref={editorRef}
                 basePath={BASE_PATH}
                 prefab={selectedPrefab}
                 mode={PrefabEditorMode.Edit}
@@ -128,6 +133,7 @@ export default function Home() {
                     <KillboxPlayerRuntime
                         key={`player-${selectedPrefabName}`}
                         targetDistance={selectedWeapon.range}
+                        gravityGun={selectedWeapon.name === "Gravity Gun"}
                         onAimTargetChange={updateCrosshair}
                     />
                 </CrashcatRuntime>
@@ -149,7 +155,7 @@ export default function Home() {
                 <PrefabSelector
                     selectedName={selectedPrefabName}
                     onSelect={(prefab: Prefab, prefabName) => {
-                        setSelectedPrefab(injectPlayer(prefab, prefabName));
+                        setSelectedPrefab(injectPlayer(prefab));
                         setSelectedPrefabName(prefabName);
                     }}
                 />

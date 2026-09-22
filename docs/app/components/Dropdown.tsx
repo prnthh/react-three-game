@@ -12,6 +12,8 @@ export default function Dropdown() {
     const [open, setOpen] = useState(false);
 
     const options: DemoOption[] = [
+        { label: "Interior Mapping", href: "/demo/interior" },
+        { label: "Pavilion Light Lab", href: "/demo/lights" },
         { label: "Viewer Mode", href: "/viewer" },
         { label: "Streamed World", href: "/demo/grassworld" },
         { label: "Point n Click", href: "/demo/stage" },

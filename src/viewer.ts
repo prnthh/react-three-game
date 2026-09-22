@@ -65,3 +65,18 @@ export {
 	useInvalidateMeshInstances,
 } from "./tools/prefabeditor/MeshInstanceProvider";
 export type { MeshInstancingMaterialFactory } from "./tools/prefabeditor/MeshInstanceProvider";
+
+export { PrefabInstance } from "./runtime/PrefabInstance";
+export type { PrefabInstanceProps, PrefabInstanceStatus } from "./runtime/PrefabInstance";
+export type { PreparedPrefab, PrefabPreparationOptions, AssetDependency, ComponentDependency } from "./runtime/preparePrefab";
+export { useSceneLoadStats } from "./tools/prefabeditor/assetRuntime";
+export { createPrefabStore, usePrefabStore, usePrefabStoreApi } from "./tools/prefabeditor/prefabStore";
+export type { PrefabStoreApi, PrefabStoreState } from "./tools/prefabeditor/prefabStore";
+
+export { useSharedMaterialResource } from "./tools/prefabeditor/components/MaterialComponent";
+
+export { withBasePath as resolveAssetPath } from "./tools/prefabeditor/runtimeUtils";
+
+export { CascadedDirectionalLight } from './runtime/lighting/CascadedDirectionalLight';
+export type { CascadedDirectionalLightProps } from './runtime/lighting/CascadedDirectionalLight';
+export { invalidateShadows, useShadowUpdates } from './runtime/lighting/shadowUpdates';

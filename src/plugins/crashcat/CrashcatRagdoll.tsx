@@ -1,37 +1,23 @@
 "use client";
 
 import { createPortal, useFrame, useThree } from "@react-three/fiber";
+
 import type { ThreeEvent } from "@react-three/fiber";
+
 import type { Mat3, Vec3 } from "mathcat";
+
 import { mat3, mat4, quat, vec3 } from "mathcat";
-import { useCallback, useEffect, useMemo, useRef } from "react";
-import {
-    box,
-    ConstraintSpace,
-    massProperties,
-    motionProperties,
-    MotionType,
-    rigidBody,
-    swingTwistConstraint,
-    type RigidBody,
-    type SwingTwistConstraint,
-    type World,
-} from "crashcat";
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+import { box, ConstraintSpace, massProperties, motionProperties, MotionType, rigidBody, swingTwistConstraint, type RigidBody, type SwingTwistConstraint, type World } from "crashcat";
+
 import { Mesh, Quaternion, Vector3 } from "three";
-import {
-    BooleanField,
-    FieldRenderer,
-    StringField,
-    Vector3Field,
-    type FieldDefinition,
-} from "../../tools/prefabeditor/components/Input";
-import type {
-    Component,
-    ComponentEditorProps,
-    ComponentViewProps,
-    NodeInteractionHandlers,
-} from "../../tools/prefabeditor/components/ComponentRegistry";
-import { useNode } from "../../tools/prefabeditor/SceneContext";
+
+import type { Component, ComponentViewProps, NodeInteractionHandlers } from "../../tools/prefabeditor/components/ComponentRegistry";
+
+import { useNode, useNodeObject } from "../../tools/prefabeditor/SceneContext";
+
 import { useCrashcat, type CrashcatApi } from "./CrashcatRuntime";
 
 export enum RagdollBodyPart {
@@ -90,7 +76,7 @@ export type CrashcatRagdollProps = {
     nodeInteractionHandlers?: NodeInteractionHandlers;
 };
 
-type CrashcatRagdollComponentProperties = {
+export type CrashcatRagdollComponentProperties = {
     scale?: number;
     swingAngle?: number;
     shoulderAngle?: number;
@@ -103,7 +89,9 @@ type CrashcatRagdollComponentProperties = {
 };
 
 let nextRagdollId = 0;
+
 const DEFAULT_POSITION: [number, number, number] = [0, 0, 0];
+
 const ZERO_VECTOR: [number, number, number] = [0, 0, 0];
 
 export function createRagdollSettings(
@@ -415,15 +403,8 @@ function stabilizeRagdoll(bodies: Map<RagdollBodyPart, RigidBody>, skeleton: Ske
 }
 
 const meshPosition = new Vector3();
-const meshQuaternion = new Quaternion();
 
-const ragdollFields = [
-    { name: "scale", type: "number", label: "Scale", step: 0.1 },
-    { name: "swingAngle", type: "number", label: "Swing Angle", step: 0.05 },
-    { name: "shoulderAngle", type: "number", label: "Shoulder Angle", step: 0.05 },
-    { name: "twistAngle", type: "number", label: "Twist Angle", step: 0.05 },
-    { name: "clickImpulse", type: "number", label: "Click Impulse", min: 0, step: 0.5 },
-] satisfies FieldDefinition<CrashcatRagdollComponentProperties>[];
+const meshQuaternion = new Quaternion();
 
 export function CrashcatRagdoll({
     position = DEFAULT_POSITION,
@@ -550,24 +531,23 @@ export function CrashcatRagdoll({
     );
 }
 
-function CrashcatRagdollEditor({ properties, update }: ComponentEditorProps<CrashcatRagdollComponentProperties>) {
-    return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <FieldRenderer fields={ragdollFields} values={properties} onChange={update} />
-            <BooleanField name="stabilize" label="Stabilize" values={properties} onChange={update} fallback />
-            <StringField name="color" label="Color" values={properties} onChange={update} fallback="#f97316" />
-            <Vector3Field name="initialLinearVelocity" label="Initial Linear Velocity" values={properties} onChange={update} fallback={[0, 0, 0]} />
-            <Vector3Field name="initialAngularVelocity" label="Initial Angular Velocity" values={properties} onChange={update} fallback={[0, 0, 0]} />
-        </div>
-    );
-}
-
 function CrashcatRagdollView({
     properties,
     children,
 }: ComponentViewProps<CrashcatRagdollComponentProperties>) {
     const scene = useThree((state) => state.scene);
-    const { editMode, nodeInteractionHandlers, worldPosition } = useNode();
+    const { editMode, nodeInteractionHandlers } = useNode();
+    const object = useNodeObject();
+    const [worldPosition, setWorldPosition] = useState<Vec3 | null>(null);
+    const position = useRef(new Vector3());
+    useFrame(() => {
+        if ((!editMode && worldPosition) || !object.current) return;
+        object.current.getWorldPosition(position.current);
+        const { x, y, z } = position.current;
+        if (!worldPosition || worldPosition[0] !== x || worldPosition[1] !== y || worldPosition[2] !== z) {
+            setWorldPosition([x, y, z]);
+        }
+    });
 
     return (
         <>
@@ -596,17 +576,15 @@ function CrashcatRagdollView({
 
 const CrashcatRagdollComponent: Component<CrashcatRagdollComponentProperties> = {
     name: "CrashcatRagdoll",
-    usesWorldPosition: true,
-    Editor: CrashcatRagdollEditor,
     View: CrashcatRagdollView,
     properties: {
-        scale: { default: 1.8 },
-        swingAngle: { default: Math.PI / 4 },
-        shoulderAngle: { default: Math.PI / 4 },
-        twistAngle: { default: 0 },
+        scale: { default: 1.8, step: 0.1 },
+        swingAngle: { default: Math.PI / 4, step: 0.05 },
+        shoulderAngle: { default: Math.PI / 4, step: 0.05 },
+        twistAngle: { default: 0, step: 0.05 },
         stabilize: { type: "boolean", default: true },
         color: { type: "color", default: "#f97316" },
-        clickImpulse: { default: 8 },
+        clickImpulse: { default: 8, min: 0, step: 0.5 },
         initialLinearVelocity: { type: "vector3", default: [0, 0, 0] },
         initialAngularVelocity: { type: "vector3", default: [0, 0, 0] },
     },

@@ -2,15 +2,18 @@
 
 import { PerspectiveCamera, PointerLockControls } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { CastRayStatus, capsule, castRay, createClosestCastRayCollector, createDefaultCastRaySettings, filter, kcc, rigidBody, MotionQuality, MotionType, type Filter, type RigidBody, type World } from "crashcat";
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, type RefObject } from "react";
-import { createNodeComponentType, gameEvents, PrefabEditorMode, soundManager, useNode, usePrefab, useRegisterNodeComponent, useScene, useSceneComponents } from "react-three-game";
-import type { Component, ComponentViewProps } from "react-three-game";
+import { capsule, filter, kcc, rigidBody, MotionType, type Filter, type RigidBody } from "crashcat";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef } from "react";
+import { gameEvents, PrefabEditorMode, soundManager, useNode, usePrefab, useRegisterNodeComponent, useScene, useSceneComponents } from "react-three-game/viewer";
+import type { Component, ComponentViewProps } from "react-three-game/viewer";
 import { useCrashcat } from "react-three-game/plugins/crashcat";
-import { MathUtils, Quaternion, Raycaster, Vector2, Vector3 } from "three";
-import type { Camera, Group, Intersection, Material, Object3D } from "three";
+import { MathUtils, Quaternion, Raycaster, Vector3 } from "three";
+import type { Group, Intersection, Material, Object3D } from "three";
 import { withBasePath } from "../../../basePath";
 import type { NPCManagerRef } from "./NPCManager";
+import { PLAYER_CONTROLLER_COMPONENT, type FirstPersonPlayerRef, type PlayerControllerProperties, type PlayerRegistration } from "./playerState";
+import { createPlatformSupport } from "./platformSupport";
+import { GrabArms, NPCAimSystem } from "./PlayerInteractions";
 
 const DEFAULT_FLOOR_MATERIAL_NAME = "default";
 const DEFAULT_FOOTSTEP_CLIPS = ["/sound/hit.mp3", "/sound/hit2.mp3"] as const;
@@ -18,15 +21,6 @@ const DEFAULT_FOOTSTEP_MATERIAL_SOUNDS = [
     { materialName: "concrete", clips: ["/sound/hit.mp3"] },
     { materialName: "metal", clips: ["/sound/hit2.mp3"] },
 ] as const;
-const DEFAULT_GRAB_DISTANCE = 2.75;
-const DEFAULT_GRAB_RANGE = 8;
-const DEFAULT_GRAB_STRENGTH = 18;
-const DEFAULT_GRAB_MAX_SPEED = 14;
-const DEFAULT_LAUNCH_SPEED = 18;
-const RAGDOLL_GRAB_STRENGTH = 10;
-const RAGDOLL_GRAB_MAX_SPEED = 6;
-const RAGDOLL_LAUNCH_SPEED = 10;
-const RAGDOLL_ANGULAR_RETENTION = 0.25;
 const DEFAULT_TARGET_DISTANCE = 30;
 const DEFAULT_NPC_DAMAGE = 100;
 const CAMERA_SWAY_AMOUNT = 0.045;
@@ -35,7 +29,6 @@ const GRAVITY: [number, number, number] = [0, -9.81, 0];
 const PLAYER_FIXED_STEP = 1 / 60;
 const MAX_PLAYER_CATCH_UP_DELTA = 1 / 10;
 const SUPPORT_RAY_EXTRA_DISTANCE = 0.2;
-const SUPPORT_RAY_DIRECTION: [number, number, number] = [0, -1, 0];
 const PLAYER_ID = "player";
 const forwardVector = new Vector3();
 const rightVector = new Vector3();
@@ -45,43 +38,13 @@ const planarVelocityDelta = new Vector3();
 const worldUp = new Vector3(0, 1, 0);
 const groupPosition = new Vector3();
 const identityQuaternion = new Quaternion();
-const centerScreen = new Vector2(0, 0);
-const raycaster = new Raycaster();
-const aimRaycaster = new Raycaster();
-const aimWorldPosition = new Vector3();
-const aimWorldDirection = new Vector3();
-const aimPhysicsCollector = createClosestCastRayCollector();
-const aimPhysicsSettings = createDefaultCastRaySettings();
-const aimPhysicsOrigin: [number, number, number] = [0, 0, 0];
-const aimPhysicsDirection: [number, number, number] = [0, 0, -1];
 const floorRaycaster = new Raycaster();
 const floorRayOrigin = new Vector3();
 const floorRayDirection = new Vector3(0, -1, 0);
 const floorHits: Intersection<Object3D>[] = [];
-const grabTargetPosition = new Vector3();
-const grabBodyPosition = new Vector3();
-const grabVelocity = new Vector3();
-const grabQuaternion = new Quaternion();
-const grabLinearVelocity: [number, number, number] = [0, 0, 0];
-const grabAngularVelocity: [number, number, number] = [0, 0, 0];
-const grabRotation: [number, number, number, number] = [0, 0, 0, 1];
-const zeroGrabVelocity: [number, number, number] = [0, 0, 0];
-const cameraWorldQuaternion = new Quaternion();
-const supportCurrentPosition = new Vector3();
-const supportRelativePosition = new Vector3();
-const supportCurrentQuaternion = new Quaternion();
-const supportPreviousQuaternion = new Quaternion();
-const supportDeltaQuaternion = new Quaternion();
-const supportRayCollector = createClosestCastRayCollector();
-const supportRaySettings = createDefaultCastRaySettings();
-const supportRayOrigin: [number, number, number] = [0, 0, 0];
-const supportVelocity: [number, number, number] = [0, 0, 0];
-const supportRotatedPosition: [number, number, number] = [0, 0, 0];
 const playerBodyPosition: [number, number, number] = [0, 0, 0];
 
-function isRagdollBody(body: RigidBody) {
-    return (body.userData as { ragdoll?: unknown } | null)?.ragdoll === true;
-}
+
 const playerBodyQuaternion: [number, number, number, number] = [0, 0, 0, 1];
 const playerBodyVelocity: [number, number, number] = [0, 0, 0];
 
@@ -109,51 +72,24 @@ export type FirstPersonPlayerProps = {
     npcManager?: NPCManagerRef | null;
     targetDistance?: number;
     npcDamage?: number;
+    gravityGun?: boolean;
     onAimTargetChange?: (canHit: boolean) => void;
     pointerLockSelector?: string;
     children?: React.ReactNode;
 };
-
-export interface FirstPersonPlayerRef {
-    getBody: () => RigidBody | null;
-    getGroundMaterialName: () => string;
-    getSimulationTick: () => number;
-}
-
-let activePlayer: FirstPersonPlayerRef | null = null;
-
-export function getActivePlayer() {
-    return activePlayer;
-}
-
-function setActivePlayer(player: FirstPersonPlayerRef | null) {
-    activePlayer = player;
-}
 
 export type FootstepMaterialSound = {
     materialName: string;
     clips: readonly string[];
 };
 
-type PlayerControllerProperties = {
-    radius?: number;
-    halfHeightOfCylinder?: number;
-    maxSpeed?: number;
-    jumpSpeed?: number;
-    cameraHeight?: number;
-};
-
-export type PlayerRegistration = PlayerControllerProperties & {
-    getPosition(): [number, number, number];
-};
-
-export const PLAYER_CONTROLLER_COMPONENT = createNodeComponentType<PlayerRegistration>("KillboxPlayer");
-
 function PlayerControllerView({ properties, children }: ComponentViewProps<PlayerControllerProperties>) {
     const { getObject } = useNode();
     const { mode } = useScene();
+    const playerRuntime = useRef<FirstPersonPlayerRef | null>(null);
     const registration = useMemo<PlayerRegistration>(() => ({
         ...properties,
+        runtime: playerRuntime,
         getPosition: () => {
             const object = getObject();
             if (!object) return [0, 0, 0];
@@ -165,8 +101,8 @@ function PlayerControllerView({ properties, children }: ComponentViewProps<Playe
     useRegisterNodeComponent(PLAYER_CONTROLLER_COMPONENT, registration);
     return <>
         {mode === PrefabEditorMode.Edit ? (
-            <mesh position={[0, properties.halfHeightOfCylinder ?? 0.45, 0]} renderOrder={1000}>
-                <capsuleGeometry args={[properties.radius ?? 0.35, (properties.halfHeightOfCylinder ?? 0.45) * 2, 8, 12]} />
+            <mesh position={[0, properties.halfHeightOfCylinder, 0]} renderOrder={1000}>
+                <capsuleGeometry args={[properties.radius, (properties.halfHeightOfCylinder) * 2, 8, 12]} />
                 <meshBasicMaterial color="#3bd6ff" depthTest={false} transparent opacity={0.8} wireframe />
             </mesh>
         ) : null}
@@ -193,16 +129,17 @@ type PlayerRuntimeProps = Omit<FirstPersonPlayerProps,
 export function PlayerRuntime(props: PlayerRuntimeProps) {
     const players = useSceneComponents(PLAYER_CONTROLLER_COMPONENT);
     const player = players[0]?.value;
+    const spawnPosition = useMemo(() => player?.getPosition(), [player]);
     if (!player) return null;
     return <FirstPersonPlayer
         {...props}
-        ref={setActivePlayer}
+        ref={player.runtime}
         radius={player.radius}
         halfHeightOfCylinder={player.halfHeightOfCylinder}
         maxSpeed={player.maxSpeed}
         jumpSpeed={player.jumpSpeed}
         cameraHeight={player.cameraHeight}
-        spawnPosition={player.getPosition()}
+        spawnPosition={spawnPosition}
     />;
 }
 
@@ -214,20 +151,6 @@ function moveVectorToward(current: Vector3, target: Vector3, maxDelta: number) {
         return;
     }
     current.addScaledVector(planarVelocityDelta, maxDelta / distance);
-}
-
-function getPrefabNodeId(object: Object3D | null | undefined) {
-    let current: Object3D | null | undefined = object;
-
-    while (current) {
-        if (typeof current.userData?.prefabNodeId === "string") {
-            return current.userData.prefabNodeId;
-        }
-
-        current = current.parent;
-    }
-
-    return null;
 }
 
 function getIntersectionMaterialName(intersection: Intersection<Object3D>) {
@@ -262,37 +185,6 @@ function pressed(keys: Set<string>, group: Set<string>) {
     return false;
 }
 
-function getKinematicSupportBody(world: World, queryFilter: Filter, character: ReturnType<typeof kcc.create>, grounded: boolean, halfHeightOfCylinder: number, radius: number) {
-    if (!grounded) {
-        return null;
-    }
-
-    supportRayOrigin[0] = character.position[0];
-    supportRayOrigin[1] = character.position[1];
-    supportRayOrigin[2] = character.position[2];
-
-    supportRayCollector.reset();
-    castRay(world, supportRayCollector, supportRaySettings, supportRayOrigin, SUPPORT_RAY_DIRECTION, halfHeightOfCylinder + radius + SUPPORT_RAY_EXTRA_DISTANCE, queryFilter);
-
-    if (supportRayCollector.hit.status !== CastRayStatus.COLLIDING) {
-        return null;
-    }
-
-    const body = rigidBody.get(world, supportRayCollector.hit.bodyIdB);
-    if (!body || body.motionType !== MotionType.KINEMATIC) {
-        return null;
-    }
-
-    return body;
-}
-
-function readBodyVelocity(body: RigidBody | null) {
-    supportVelocity[0] = body?.motionProperties.linearVelocity[0] ?? 0;
-    supportVelocity[1] = body?.motionProperties.linearVelocity[1] ?? 0;
-    supportVelocity[2] = body?.motionProperties.linearVelocity[2] ?? 0;
-    return supportVelocity;
-}
-
 const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProps>(function FirstPersonPlayer({
     radius = 0.35,
     halfHeightOfCylinder = 0.45,
@@ -312,6 +204,7 @@ const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProp
     npcManager,
     targetDistance = DEFAULT_TARGET_DISTANCE,
     npcDamage = DEFAULT_NPC_DAMAGE,
+    gravityGun = false,
     onAimTargetChange,
     pointerLockSelector,
     children,
@@ -324,7 +217,6 @@ const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProp
     const cameraSwayRef = useRef<Group>(null);
     const planarVelocityRef = useRef(new Vector3());
     const simulationAccumulatorRef = useRef(0);
-    const simulationTickRef = useRef(0);
     const previousSimulationPositionRef = useRef(new Vector3());
     const currentSimulationPositionRef = useRef(new Vector3());
     const groundedRef = useRef(false);
@@ -335,16 +227,13 @@ const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProp
     const jumpQueuedRef = useRef(false);
     const characterFilterRef = useRef<Filter | null>(null);
     const playerBodyRef = useRef<RigidBody | null>(null);
-    const characterBodyFilterRef = useRef((body: RigidBody) => body !== playerBodyRef.current);
-    const lastSupportBodyIdRef = useRef<number | null>(null);
-    const lastSupportQuaternionRef = useRef(new Quaternion());
+    const characterBodyFilterRef = useRef((body: RigidBody) => body !== playerBodyRef.current && !body.sensor);
+    const platformSupport = useMemo(createPlatformSupport, []);
     const nextFootstepAudioRef = useRef(0);
     const currentGroundMaterialNameRef = useRef(DEFAULT_FLOOR_MATERIAL_NAME);
 
     useImperativeHandle(ref, () => ({
         getBody: () => playerBodyRef.current,
-        getGroundMaterialName: () => currentGroundMaterialNameRef.current,
-        getSimulationTick: () => simulationTickRef.current,
     }), []);
 
     const resetPlayerState = useCallback(() => {
@@ -352,17 +241,15 @@ const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProp
         characterFilterRef.current = null;
         planarVelocityRef.current.set(0, 0, 0);
         simulationAccumulatorRef.current = 0;
-        simulationTickRef.current = 0;
         previousSimulationPositionRef.current.set(0, 0, 0);
         currentSimulationPositionRef.current.set(0, 0, 0);
         groundedRef.current = false;
         footstepTimerRef.current = 0;
         jumpQueuedRef.current = false;
         pressedKeysRef.current.clear();
-        lastSupportBodyIdRef.current = null;
-        lastSupportQuaternionRef.current.identity();
+        platformSupport.clear();
         currentGroundMaterialNameRef.current = DEFAULT_FLOOR_MATERIAL_NAME;
-    }, []);
+    }, [platformSupport]);
 
     useEffect(() => {
         if (mode === PrefabEditorMode.Play) {
@@ -376,6 +263,7 @@ const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProp
         if (mode !== PrefabEditorMode.Play) return;
 
         const setKey = (down: boolean) => (event: KeyboardEvent) => {
+            if (down && !document.pointerLockElement) return;
             if (event.code === "Space") {
                 if (down && !event.repeat) jumpQueuedRef.current = true;
                 return;
@@ -398,12 +286,14 @@ const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProp
         window.addEventListener("keydown", handleKeyDown);
         window.addEventListener("keyup", handleKeyUp);
         window.addEventListener("blur", clearInput);
+        document.addEventListener("pointerlockchange", clearInput);
         window.addEventListener("contextmenu", handleContextMenu);
 
         return () => {
             window.removeEventListener("keydown", handleKeyDown);
             window.removeEventListener("keyup", handleKeyUp);
             window.removeEventListener("blur", clearInput);
+            document.removeEventListener("pointerlockchange", clearInput);
             window.removeEventListener("contextmenu", handleContextMenu);
         };
     }, [mode]);
@@ -550,42 +440,16 @@ const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProp
         const simulationSteps = Math.floor((simulationAccumulatorRef.current + 1e-9) / PLAYER_FIXED_STEP);
         const simulatedDelta = simulationSteps * PLAYER_FIXED_STEP;
         let grounded = groundedRef.current;
-        let currentSupportVelocity = supportVelocity;
+        const carry = platformSupport.carry(world, character);
+        previousSimulationPositionRef.current.add(carry);
+        currentSimulationPositionRef.current.add(carry);
         if (simulationSteps > 0) {
-            kcc.refreshContacts(world, character, characterFilter);
+            kcc.refreshContacts(world, character, characterFilter, platformSupport.listener);
             grounded = kcc.isSupported(character);
         }
         for (let stepIndex = 0; stepIndex < simulationSteps; stepIndex += 1) {
             previousSimulationPositionRef.current.copy(currentSimulationPositionRef.current);
-            const supportBody = getKinematicSupportBody(world, characterFilter, character, grounded, halfHeightOfCylinder, radius);
-            currentSupportVelocity = readBodyVelocity(supportBody);
-
-            if (supportBody) {
-                supportCurrentPosition.set(supportBody.position[0], supportBody.position[1], supportBody.position[2]);
-                supportCurrentQuaternion.set(supportBody.quaternion[0], supportBody.quaternion[1], supportBody.quaternion[2], supportBody.quaternion[3]);
-
-                if (lastSupportBodyIdRef.current === supportBody.id) {
-                    supportDeltaQuaternion
-                        .copy(supportCurrentQuaternion)
-                        .multiply(supportPreviousQuaternion.copy(lastSupportQuaternionRef.current).invert());
-
-                    supportRelativePosition
-                        .set(character.position[0], character.position[1], character.position[2])
-                        .sub(supportCurrentPosition)
-                        .applyQuaternion(supportDeltaQuaternion)
-                        .add(supportCurrentPosition);
-
-                    supportRotatedPosition[0] = supportRelativePosition.x;
-                    supportRotatedPosition[1] = supportRelativePosition.y;
-                    supportRotatedPosition[2] = supportRelativePosition.z;
-                    kcc.setPosition(world, character, supportRotatedPosition);
-                }
-
-                lastSupportBodyIdRef.current = supportBody.id;
-                lastSupportQuaternionRef.current.copy(supportCurrentQuaternion);
-            } else {
-                lastSupportBodyIdRef.current = null;
-            }
+            platformSupport.capture(world, character);
 
             if (hasMovementInput) {
                 const acceleration = grounded ? groundAccel : airAccel;
@@ -596,33 +460,33 @@ const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProp
             }
 
             const currentVelocityY = character.linearVelocity[1];
-            if (grounded && jumpQueuedRef.current) {
-                character.linearVelocity[1] = currentSupportVelocity[1] + jumpSpeed;
+            const jumping = grounded && jumpQueuedRef.current;
+            if (jumping) {
+                character.linearVelocity[1] = (platformSupport.body?.motionProperties.linearVelocity[1] ?? 0) + jumpSpeed;
                 jumpQueuedRef.current = false;
             } else {
                 character.linearVelocity[1] = grounded
-                    ? currentSupportVelocity[1]
+                    ? 0
                     : currentVelocityY + GRAVITY[1] * PLAYER_FIXED_STEP;
             }
 
-            character.linearVelocity[0] = planarVelocity.x + currentSupportVelocity[0];
-            character.linearVelocity[2] = planarVelocity.z + currentSupportVelocity[2];
+            character.linearVelocity[0] = planarVelocity.x;
+            character.linearVelocity[2] = planarVelocity.z;
 
-            kcc.update(world, character, PLAYER_FIXED_STEP, GRAVITY, updateSettingsRef.current, undefined, characterFilter);
-            grounded = kcc.isSupported(character);
+            kcc.update(world, character, PLAYER_FIXED_STEP, GRAVITY, updateSettingsRef.current, platformSupport.listener, characterFilter);
+            grounded = !jumping && kcc.isSupported(character);
+            if (grounded) platformSupport.capture(world, character);
+            else platformSupport.clear();
             currentSimulationPositionRef.current.set(character.position[0], character.position[1], character.position[2]);
-            simulationTickRef.current += 1;
         }
         simulationAccumulatorRef.current -= simulatedDelta;
         groundedRef.current = grounded;
 
         if (!grounded) currentGroundMaterialNameRef.current = DEFAULT_FLOOR_MATERIAL_NAME;
-        const supportBody = getKinematicSupportBody(world, characterFilter, character, grounded, halfHeightOfCylinder, radius);
-        currentSupportVelocity = readBodyVelocity(supportBody);
         planarVelocityVector.set(
-            planarVelocity.x + currentSupportVelocity[0],
+            planarVelocity.x,
             0,
-            planarVelocity.z + currentSupportVelocity[2],
+            planarVelocity.z,
         );
 
         const speed = planarVelocityVector.length();
@@ -675,7 +539,7 @@ const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProp
             rigidBody.setLinearVelocity(world, playerBodyRef.current, playerBodyVelocity);
         }
 
-    }, -2);
+    }, -0.5); // After physics: carry by the platform's completed movement.
 
     if (mode !== PrefabEditorMode.Play) {
         return null;
@@ -689,14 +553,13 @@ const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProp
                     <PointerLockControls makeDefault selector={pointerLockSelector} />
                 </group>
 
-                <GrabArms />
-                <NPCAimSystem
+                {gravityGun ? <GrabArms velocity={planarVelocityRef} /> : <NPCAimSystem
                     npcManager={npcManager}
                     playerBodyRef={playerBodyRef}
                     maxDistance={targetDistance}
                     damage={npcDamage}
                     onTargetChange={onAimTargetChange}
-                />
+                />}
                 {children}
             </group>
         </group>
@@ -705,307 +568,3 @@ const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProp
 
 
 export default FirstPersonPlayer;
-
-type NPCAimSystemProps = {
-    npcManager?: NPCManagerRef | null;
-    playerBodyRef: RefObject<RigidBody | null>;
-    maxDistance: number;
-    damage: number;
-    onTargetChange?: (canHit: boolean) => void;
-};
-
-function NPCAimSystem({ npcManager, playerBodyRef, maxDistance, damage, onTargetChange }: NPCAimSystemProps) {
-    const { mode } = useScene();
-    const runtime = useCrashcat();
-    const cameraRef = useRef<Camera | null>(null);
-    const canHitRef = useRef(false);
-    const aimFilterRef = useRef<Filter | null>(null);
-    const aimBodyFilterRef = useRef((body: RigidBody) => {
-        if (body === playerBodyRef.current) return false;
-        const nodeId = (body.userData as { nodeId?: unknown } | undefined)?.nodeId;
-        return typeof nodeId !== "string" || !nodeId.endsWith("-navigation");
-    });
-
-    const updateTarget = useCallback((canHit: boolean) => {
-        if (canHitRef.current === canHit) return;
-        canHitRef.current = canHit;
-        onTargetChange?.(canHit);
-    }, [onTargetChange]);
-
-    const findVisibleTarget = useCallback((camera: Camera) => {
-        if (!npcManager) return null;
-
-        aimRaycaster.setFromCamera(centerScreen, camera);
-        const npcHit = npcManager.raycast(aimRaycaster, maxDistance);
-        if (!npcHit) return null;
-
-        const world = runtime?.world;
-        const baseFilter = runtime?.queryFilter;
-        if (!world || !baseFilter) return npcHit;
-
-        if (!aimFilterRef.current) {
-            aimFilterRef.current = filter.forWorld(world);
-            filter.copy(aimFilterRef.current, baseFilter);
-            aimFilterRef.current.bodyFilter = aimBodyFilterRef.current;
-        }
-        camera.getWorldPosition(aimWorldPosition);
-        camera.getWorldDirection(aimWorldDirection).normalize();
-        aimPhysicsOrigin[0] = aimWorldPosition.x;
-        aimPhysicsOrigin[1] = aimWorldPosition.y;
-        aimPhysicsOrigin[2] = aimWorldPosition.z;
-        aimPhysicsDirection[0] = aimWorldDirection.x;
-        aimPhysicsDirection[1] = aimWorldDirection.y;
-        aimPhysicsDirection[2] = aimWorldDirection.z;
-        aimPhysicsCollector.reset();
-        castRay(world, aimPhysicsCollector, aimPhysicsSettings, aimPhysicsOrigin, aimPhysicsDirection, npcHit.distance, aimFilterRef.current);
-        if (aimPhysicsCollector.hit.status !== CastRayStatus.COLLIDING) return npcHit;
-        return Number(aimPhysicsCollector.hit.bodyIdB) === npcHit.bodyId ? npcHit : null;
-    }, [maxDistance, npcManager, runtime]);
-
-    useEffect(() => {
-        if (mode !== PrefabEditorMode.Play) {
-            updateTarget(false);
-            return;
-        }
-
-        const handleMouseDown = (event: MouseEvent) => {
-            if (event.button !== 0) return;
-            const camera = cameraRef.current;
-            if (!npcManager || !camera) return;
-            const hit = findVisibleTarget(camera);
-            if (hit) npcManager.damage(hit, damage);
-        };
-
-        window.addEventListener("mousedown", handleMouseDown);
-        return () => {
-            window.removeEventListener("mousedown", handleMouseDown);
-            updateTarget(false);
-        };
-    }, [damage, findVisibleTarget, mode, npcManager, updateTarget]);
-
-    useFrame((state) => {
-        cameraRef.current = state.camera;
-        if (mode !== PrefabEditorMode.Play) return;
-        updateTarget(Boolean(findVisibleTarget(state.camera)));
-    }, -1);
-
-    return null;
-}
-
-const GrabArms = () => {
-    const { mode } = useScene();
-    const prefab = usePrefab();
-    const runtime = useCrashcat();
-
-    const grabbedNodeIdRef = useRef<string | null>(null);
-    const grabbedMotionQualityRef = useRef<MotionQuality | null>(null);
-    const grabbedRotationOffsetRef = useRef(new Quaternion());
-    const lastFirePressedRef = useRef(false);
-    const lastAimPressedRef = useRef(false);
-    const firePressedRef = useRef(false);
-    const aimPressedRef = useRef(false);
-
-    const resetGrabState = useCallback(() => {
-        grabbedNodeIdRef.current = null;
-        grabbedMotionQualityRef.current = null;
-        grabbedRotationOffsetRef.current.identity();
-        lastFirePressedRef.current = false;
-        lastAimPressedRef.current = false;
-        firePressedRef.current = false;
-        aimPressedRef.current = false;
-    }, []);
-
-    const restoreGrabbedMotionQuality = useCallback(() => {
-        const grabbedNodeId = grabbedNodeIdRef.current;
-        const originalMotionQuality = grabbedMotionQualityRef.current;
-
-        if (!grabbedNodeId || originalMotionQuality === null) {
-            grabbedMotionQualityRef.current = null;
-            return;
-        }
-
-        const body = runtime?.getBody(grabbedNodeId) ?? null;
-        if (body) {
-            body.motionProperties.motionQuality = originalMotionQuality;
-        }
-
-        grabbedMotionQualityRef.current = null;
-    }, [runtime]);
-
-    useEffect(() => {
-        if (mode === PrefabEditorMode.Play) {
-            return;
-        }
-
-        restoreGrabbedMotionQuality();
-        resetGrabState();
-    }, [mode, resetGrabState, restoreGrabbedMotionQuality]);
-
-    useEffect(() => {
-        if (mode !== PrefabEditorMode.Play) return;
-
-        const handleMouseDown = (event: MouseEvent) => {
-            if (event.button === 0) firePressedRef.current = true;
-            if (event.button === 2) aimPressedRef.current = true;
-        };
-        const handleMouseUp = (event: MouseEvent) => {
-            if (event.button === 0) firePressedRef.current = false;
-            if (event.button === 2) aimPressedRef.current = false;
-        };
-        const clearInput = () => {
-            firePressedRef.current = false;
-            aimPressedRef.current = false;
-        };
-
-        window.addEventListener("mousedown", handleMouseDown);
-        window.addEventListener("mouseup", handleMouseUp);
-        window.addEventListener("blur", clearInput);
-
-        return () => {
-            window.removeEventListener("mousedown", handleMouseDown);
-            window.removeEventListener("mouseup", handleMouseUp);
-            window.removeEventListener("blur", clearInput);
-        };
-    }, [mode]);
-
-    const releaseGrabbed = useCallback((world: World, camera: Camera, launch = false) => {
-        const grabbedNodeId = grabbedNodeIdRef.current;
-        if (!grabbedNodeId) {
-            return;
-        }
-
-        const body = runtime?.getBody(grabbedNodeId) ?? null;
-        if (body && launch) {
-            camera.getWorldDirection(forwardVector);
-            forwardVector.normalize();
-            grabVelocity.copy(forwardVector).multiplyScalar(
-                isRagdollBody(body) ? RAGDOLL_LAUNCH_SPEED : DEFAULT_LAUNCH_SPEED,
-            );
-            grabVelocity.add(planarVelocityVector);
-            rigidBody.setAngularVelocity(world, body, zeroGrabVelocity);
-            grabVelocity.toArray(grabLinearVelocity);
-            rigidBody.setLinearVelocity(world, body, grabLinearVelocity);
-        }
-
-        restoreGrabbedMotionQuality();
-        grabbedNodeIdRef.current = null;
-    }, [restoreGrabbedMotionQuality, runtime]);
-
-    const tryGrabTarget = useCallback((world: World, camera: Camera) => {
-        const prefabRoot = prefab.root;
-        if (!prefabRoot) return;
-
-        raycaster.setFromCamera(centerScreen, camera);
-
-        // The grab ray is camera-centered, but picking stays scoped to authored prefab content.
-        const intersections = raycaster.intersectObject(prefabRoot, true);
-        for (const intersection of intersections) {
-            const nodeId = getPrefabNodeId(intersection.object);
-            if (!nodeId) {
-                continue;
-            }
-
-            const body = runtime?.getBody(nodeId) ?? null;
-            if (!body || body.motionType !== MotionType.DYNAMIC || nodeId === PLAYER_ID) {
-                continue;
-            }
-
-            if (intersection.distance > DEFAULT_GRAB_RANGE) {
-                return;
-            }
-
-            grabbedNodeIdRef.current = nodeId;
-            grabbedMotionQualityRef.current = body.motionProperties.motionQuality;
-            body.motionProperties.motionQuality = MotionQuality.LINEAR_CAST;
-            grabQuaternion.set(body.quaternion[0], body.quaternion[1], body.quaternion[2], body.quaternion[3]);
-            camera.getWorldQuaternion(cameraWorldQuaternion);
-            grabbedRotationOffsetRef.current.copy(cameraWorldQuaternion).invert().multiply(grabQuaternion);
-            rigidBody.setAngularVelocity(world, body, [0, 0, 0]);
-            return;
-        }
-    }, [prefab.root, runtime]);
-
-    useFrame((state) => {
-        if (mode !== PrefabEditorMode.Play) {
-            return;
-        }
-
-        const world = runtime?.world;
-        if (!world) {
-            return;
-        }
-
-        const firePressed = firePressedRef.current;
-        const aimPressed = aimPressedRef.current;
-        const aimPressedThisFrame = aimPressed && !lastAimPressedRef.current;
-        const firePressedThisFrame = firePressed && !lastFirePressedRef.current;
-
-        if (aimPressedThisFrame) {
-            if (grabbedNodeIdRef.current) {
-                releaseGrabbed(world, state.camera, false);
-            } else {
-                tryGrabTarget(world, state.camera);
-            }
-        }
-
-        if (firePressedThisFrame && grabbedNodeIdRef.current) {
-            releaseGrabbed(world, state.camera, true);
-        }
-
-        lastAimPressedRef.current = aimPressed;
-        lastFirePressedRef.current = firePressed;
-
-        const grabbedNodeId = grabbedNodeIdRef.current;
-        if (!grabbedNodeId) {
-            return;
-        }
-
-        const grabbedBody = runtime?.getBody(grabbedNodeId);
-        if (!grabbedBody || grabbedBody.motionType !== MotionType.DYNAMIC) {
-            restoreGrabbedMotionQuality();
-            grabbedNodeIdRef.current = null;
-            return;
-        }
-
-        state.camera.getWorldPosition(grabTargetPosition);
-        state.camera.getWorldDirection(forwardVector);
-        forwardVector.normalize();
-        grabTargetPosition.addScaledVector(forwardVector, DEFAULT_GRAB_DISTANCE);
-        state.camera.getWorldQuaternion(cameraWorldQuaternion);
-        grabQuaternion.copy(cameraWorldQuaternion).multiply(grabbedRotationOffsetRef.current);
-
-        grabBodyPosition.set(grabbedBody.position[0], grabbedBody.position[1], grabbedBody.position[2]);
-        if (grabBodyPosition.distanceToSquared(grabTargetPosition) > DEFAULT_GRAB_RANGE * DEFAULT_GRAB_RANGE * 2.25) {
-            restoreGrabbedMotionQuality();
-            grabbedNodeIdRef.current = null;
-            return;
-        }
-
-        const ragdoll = isRagdollBody(grabbedBody);
-        grabVelocity
-            .copy(grabTargetPosition)
-            .sub(grabBodyPosition)
-            .multiplyScalar(ragdoll ? RAGDOLL_GRAB_STRENGTH : DEFAULT_GRAB_STRENGTH);
-
-        const maxGrabSpeed = ragdoll ? RAGDOLL_GRAB_MAX_SPEED : DEFAULT_GRAB_MAX_SPEED;
-        if (grabVelocity.lengthSq() > maxGrabSpeed * maxGrabSpeed) {
-            grabVelocity.setLength(maxGrabSpeed);
-        }
-
-        if (ragdoll) {
-            const angularVelocity = grabbedBody.motionProperties.angularVelocity;
-            grabAngularVelocity[0] = angularVelocity[0] * RAGDOLL_ANGULAR_RETENTION;
-            grabAngularVelocity[1] = angularVelocity[1] * RAGDOLL_ANGULAR_RETENTION;
-            grabAngularVelocity[2] = angularVelocity[2] * RAGDOLL_ANGULAR_RETENTION;
-            rigidBody.setAngularVelocity(world, grabbedBody, grabAngularVelocity);
-        } else {
-            rigidBody.setAngularVelocity(world, grabbedBody, zeroGrabVelocity);
-            grabQuaternion.toArray(grabRotation);
-            rigidBody.setQuaternion(world, grabbedBody, grabRotation, true);
-        }
-        grabVelocity.toArray(grabLinearVelocity);
-        rigidBody.setLinearVelocity(world, grabbedBody, grabLinearVelocity);
-    }, -2);
-
-    return null;
-}

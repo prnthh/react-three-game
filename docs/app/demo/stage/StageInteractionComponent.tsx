@@ -5,31 +5,32 @@ import {
     useNode,
     type Component,
     type ComponentViewProps,
-} from "react-three-game";
+} from "react-three-game/viewer";
 import { useCrashcat } from "react-three-game/plugins/crashcat";
 import { cylinder, MotionType, rigidBody } from "crashcat";
 import { Quaternion, Vector3 } from "three";
 
-export type StagePoint = [number, number, number];
+import { INTERACTION_ENTER_EVENT, INTERACTION_EXIT_EVENT, type StagePoint } from "./stage";
 
 export type StageInteractionProperties = {
     action?: "dialogue" | "transition";
     animation?: string;
     activationNodeId?: string;
-    page1?: string;
-    page2?: string;
+    pages?: string[];
+    targetScene?: string;
+    spawn?: StagePoint;
     sensorRadius?: number;
     sensorHalfHeight?: number;
     enterEventName?: string;
     exitEventName?: string;
 };
 
-const DEFAULT_ENTER_EVENT = "stage:interaction-enter";
-const DEFAULT_EXIT_EVENT = "stage:interaction-exit";
+const DEFAULT_ENTER_EVENT = INTERACTION_ENTER_EVENT;
+const DEFAULT_EXIT_EVENT = INTERACTION_EXIT_EVENT;
 
 function StageInteractionView({ properties, children }: ComponentViewProps<StageInteractionProperties>) {
     const api = useCrashcat();
-    const { nodeId, getObject } = useNode();
+    const { nodeId, runtimeNodeId, getObject } = useNode();
 
     useEffect(() => {
         const activationNodeId = properties.activationNodeId?.trim();
@@ -50,10 +51,10 @@ function StageInteractionView({ properties, children }: ComponentViewProps<Stage
             position: [position.x, position.y, position.z],
             quaternion: [quaternion.x, quaternion.y, quaternion.z, quaternion.w],
             sensor: true,
-            userData: { nodeId },
+            userData: { nodeId: runtimeNodeId },
         });
 
-        api.register(nodeId, body, {
+        api.register(runtimeNodeId, body, {
             motionType: MotionType.STATIC,
             sensor: true,
             events: {
@@ -62,8 +63,8 @@ function StageInteractionView({ properties, children }: ComponentViewProps<Stage
             },
         });
 
-        return () => api.unregister(nodeId);
-    }, [api, getObject, nodeId, properties.activationNodeId, properties.enterEventName, properties.exitEventName, properties.sensorHalfHeight, properties.sensorRadius]);
+        return () => api.unregister(runtimeNodeId);
+    }, [api, getObject, nodeId, runtimeNodeId, properties.activationNodeId, properties.enterEventName, properties.exitEventName, properties.sensorHalfHeight, properties.sensorRadius]);
 
     return <>{children}</>;
 }
@@ -80,12 +81,13 @@ const StageInteractionComponent: Component<StageInteractionProperties> = {
                 { value: "transition", label: "Transition" },
             ],
         },
-        page1: { type: "string", default: "" },
-        page2: { type: "string", default: "" },
+        pages: { type: "string[]", default: [], label: "Dialogue Pages" },
+        targetScene: { type: "string", default: "" },
+        spawn: { type: "vector3", default: [0, 0, 0] },
         animation: { type: "string", default: "" },
         activationNodeId: { type: "string", default: "" },
-        sensorRadius: { default: 0.8 },
-        sensorHalfHeight: { default: 1 },
+        sensorRadius: { default: 0.8, min: 0.05, step: 0.05 },
+        sensorHalfHeight: { default: 1, min: 0.05, step: 0.05 },
         enterEventName: { type: "string", default: DEFAULT_ENTER_EVENT },
         exitEventName: { type: "string", default: DEFAULT_EXIT_EVENT },
     },

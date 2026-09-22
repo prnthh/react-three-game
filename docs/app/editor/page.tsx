@@ -1,14 +1,16 @@
 "use client";
 
+import PrefabGridStreamerComponent from "../components/PrefabGridStreamerComponent";
+import ConstantVelocityComponent from "../components/ConstantVelocityComponent";
+import CameraShadowFollowerComponent from "../demo/grassworld/components/CameraShadowFollowerComponent";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { PrefabEditor } from "react-three-game/editor";
 import type { Prefab } from "react-three-game/core";
 import { registerComponent } from "react-three-game/core";
-
 import { BASE_PATH, withBasePath } from "../basePath";
 import PrefabSelector from "../components/PrefabSelector";
-import InteriorMapComponent from "../components/InteriorMapComponent";
+
 
 const DEFAULT_MAP = "/prefabs/game-level.json";
 const DEFAULT_CAMERA_POSITION: [number, number, number] = [0, 5, 15];
@@ -45,7 +47,6 @@ function getMapName(source: string) {
 }
 
 function EditorPage() {
-  registerComponent(InteriorMapComponent);
 
   const searchParams = useSearchParams();
   const mapSource = searchParams.get("map")?.trim() || DEFAULT_MAP;
@@ -114,3 +115,7 @@ export default function Home() {
     </Suspense>
   );
 }
+
+registerComponent(PrefabGridStreamerComponent);
+registerComponent(ConstantVelocityComponent);
+registerComponent(CameraShadowFollowerComponent);

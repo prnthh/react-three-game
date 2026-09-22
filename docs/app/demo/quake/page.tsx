@@ -1,11 +1,15 @@
 "use client";
 
+import { registerComponentEditor } from "react-three-game/editor";
+import QuakeBrushComponentInspector from "./QuakeBrushComponent.editor";
 import { useState, useEffect } from "react";
-import { registerComponent, type Prefab } from "react-three-game";
+import { registerComponent, type Prefab } from "react-three-game/viewer";
 import { PrefabEditor } from "react-three-game/editor";
 import { parseQuakeMap, quakeMapToPrefab } from "./quakeMapParser";
 import QuakeBrushComponent from "./QuakeBrushComponent";
 import { withBasePath, BASE_PATH } from "../../basePath";
+
+registerComponentEditor(QuakeBrushComponent, QuakeBrushComponentInspector);
 
 export default function QuakeMapDemo() {
     registerComponent(QuakeBrushComponent);

@@ -1,496 +1,138 @@
-# react-three-game
+# React Three Game
 
-![Prefab Editor](assets/editor.gif)
+Build WebGPU games from editable JSON scenes and React Three Fiber components.
 
-Serializable prefab documents for React Three Fiber scenes and games.
-
-Built with [three.js](https://github.com/mrdoob/three.js), [React Three Fiber](https://github.com/pmndrs/react-three-fiber), and [Drei](https://github.com/pmndrs/drei).
-
-- Website: https://prnth.com/react-three-game
-- Editor: https://prnth.com/react-three-game/editor
-- Starter: https://github.com/prnthh/react-three-game-starter
-
-## The model
-
-React Three Game has four scopes:
-
-| Scope | Purpose | API |
-|---|---|---|
-| Scene | The outer R3F scene and Edit/Play mode | `useScene()` |
-| Prefab | One serializable document with local nodes and shared materials | `usePrefab()` |
-| Node | One entity in a prefab | `useNode()`, `useNodeObject()` |
-| Component | A reusable rendering or gameplay capability | `registerComponent()` |
-
-A scene can compose many prefab documents. Child prefabs share the outer scene while keeping their node ids, materials, and mutations local to their document.
-
-## Install
-
-```bash
-npm install react-three-game @react-three/drei @react-three/fiber three
-```
-
-Crashcat physics is available from the optional plugin entrypoint:
-
-```bash
-npm install crashcat
-```
-
-## 1. Describe a prefab
-
-A prefab stores materials once and composes entities from component data.
+## Start
 
 ```tsx
-import type { Prefab } from "react-three-game";
+import { GameCanvas, PrefabRoot } from 'react-three-game/viewer';
+import type { Prefab } from 'react-three-game/core';
+import scene from './scene.json';
 
-export const starterPrefab: Prefab = {
-  id: "starter",
-  name: "Starter Scene",
-  materials: {
-    ground: {
-      color: "#5b7f46",
-    },
-    ball: {
-      color: "#f97316",
-      roughness: 0.45,
-      metalness: 0.1,
-    },
-  },
-  root: {
-    id: "root",
-    children: [
-      {
-        id: "camera",
-        components: {
-          transform: {
-            type: "Transform",
-            properties: {
-              position: [0, 4, 9],
-              rotation: [-0.3, 0, 0],
-            },
-          },
-          camera: {
-            type: "Camera",
-            properties: {},
-          },
-        },
-      },
-      {
-        id: "ground",
-        components: {
-          transform: {
-            type: "Transform",
-            properties: {
-              rotation: [-Math.PI / 2, 0, 0],
-            },
-          },
-          mesh: {
-            type: "Mesh",
-            properties: {},
-          },
-          geometry: {
-            type: "Geometry",
-            properties: { geometryType: "plane", args: [30, 30] },
-          },
-          material: {
-            type: "Material",
-            properties: { materialId: "ground" },
-          },
-        },
-      },
-      {
-        id: "ball",
-        components: {
-          transform: {
-            type: "Transform",
-            properties: {
-              position: [0, 1, 0],
-            },
-          },
-          mesh: {
-            type: "Mesh",
-            properties: {},
-          },
-          geometry: {
-            type: "Geometry",
-            properties: { geometryType: "sphere" },
-          },
-          material: {
-            type: "Material",
-            properties: { materialId: "ball" },
-          },
-        },
-      },
-    ],
-  },
-};
-```
-
-## 2. Mount the scene
-
-`GameCanvas` supplies the WebGPU R3F canvas. `PrefabRoot` mounts the document.
-
-```tsx
-import { GameCanvas, PrefabRoot } from "react-three-game";
-import { starterPrefab } from "./starterPrefab";
-
-export default function App() {
-  return (
-    <GameCanvas>
-      <ambientLight intensity={0.8} />
-      <PrefabRoot data={starterPrefab} />
-    </GameCanvas>
-  );
+export default function Game() {
+  return <GameCanvas><PrefabRoot data={scene as Prefab} /></GameCanvas>;
 }
 ```
 
-Passing a new `data` object loads that prefab. Runtime children can be composed inside `PrefabRoot`:
+Use `react-three-game/editor` for authoring:
 
 ```tsx
-<PrefabRoot data={starterPrefab}>
-  <GameRuntime />
-</PrefabRoot>
+import { PrefabEditor } from 'react-three-game/editor';
+
+<PrefabEditor prefab={scene as Prefab} />
 ```
 
-Eligible `Mesh` components automatically join a scene-level instancing registry. It batches compatible leaf meshes while continuing to reflect their native scene transforms and visibility; `instanced: false` opts a mesh out. Models with explicit `repeat` settings feed eligible static parts into the same registry. Interactive meshes, meshes that own child objects, ordinary model nodes, and animated or skinned assets remain on the normal rendering path.
+Keep the document object stable. Passing a new document reloads it. An editor ref's `save()` returns the edited document.
 
-### Renderer configuration
+## Scene JSON
 
-`rendererConfig` directly configures Three.js presentation properties without reaching through `onCreated`. Render pipelines and post-processing remain application runtime code because they take ownership of the render pass.
-
-```tsx
-import { ACESFilmicToneMapping, SRGBColorSpace } from "three";
-import {
-  GameCanvas,
-  PrefabRoot,
-} from "react-three-game";
-
-<GameCanvas rendererConfig={{
-  outputColorSpace: SRGBColorSpace,
-  toneMapping: ACESFilmicToneMapping,
-  toneMappingExposure: 0.9,
-}}>
-  <PrefabRoot data={starterPrefab} />
-</GameCanvas>
-```
-
-## 3. Understand component composition
-
-Components compose using the same parent-child model as R3F:
-
-```tsx
-<mesh>
-  <boxGeometry attach="geometry" />
-  <meshStandardMaterial attach="material" />
-  {children}
-</mesh>
-```
-
-A component definition may set an R3F-style attachment target such as `attach: "object"`, `attach: "geometry"`, or `attach: "material"`. Only one component may occupy the same attachment target on a node.
-
-| Role | Built-ins | Result |
-|---|---|---|
-| Transform | `Transform` | Outer node position, rotation, and scale |
-| Object | `Mesh`, `Model`, `Sprite`, `Text`, lights, `Camera` | Three.js object for the entity |
-| Attachment | `Geometry`, `BufferGeometry`, `Material` | Geometry and material attachment |
-| Wrapper | `Sound`, `Data`, `PrefabRef`, custom components | Behavior around the composed subtree |
-
-Component properties are sparse. Each registered component defines its property names, types, and defaults; prefab JSON only stores values that differ from those defaults.
-
-`Material` selects a definition from `Prefab.materials` by `materialId`. Every entity using the same id receives the same native material. Updating that material updates every user.
-
-Material definitions are sparse: omit `materials` when the built-in white material is enough, and only store values that differ from runtime defaults. Standard materials therefore need no `materialType`; `{ color: "#f97316" }` is a complete definition. Use `materialType` only for `basic` or `sprite` materials.
-
-`BufferGeometry` accepts flat numeric `positions`, `indices`, `normals`, and `uvs` arrays for procedural authored meshes.
-
-## 4. Add the optional editor
-
-The editor lives in its own entrypoint for optional loading and code splitting.
-
-```tsx
-import { PrefabEditor } from "react-three-game/editor";
-import { starterPrefab } from "./starterPrefab";
-
-export default function Authoring() {
-  return <PrefabEditor prefab={starterPrefab} />;
+```json
+{
+  "materials": { "orange": { "color": "#f97316" } },
+  "root": {
+    "id": "world",
+    "children": [{
+      "id": "box",
+      "components": {
+        "transform": { "type": "Transform", "properties": { "position": [0, 1, 0] } },
+        "mesh": { "type": "Mesh", "properties": {} },
+        "geometry": { "type": "Geometry", "properties": {} },
+        "material": { "type": "Material", "properties": { "materialId": "orange" } }
+      }
+    }]
+  }
 }
 ```
 
-`prefab` is the document input. Passing a new value reloads the editor. Internal edits remain active in the editor and `ref.save()` returns the current document.
+Use stable node IDs, local transforms, and radians. Keep properties sparse: the component schema supplies defaults. Material IDs are local to the document. `{ "color": "#f97316" }` is a complete standard material.
+
+A node combines behavior with an object and its geometry/material, like ordinary R3F. Child nodes form the hierarchy. Add `PrefabRef` with `{ "url": "/prefabs/room.json" }` to reuse another document. Asset paths respect `basePath`.
+
+## Add a component
+
+One file defines its properties, view, and ordinary inspector:
 
 ```tsx
-import { useRef } from "react";
-import {
-  PrefabEditor,
-  type PrefabEditorRef,
-} from "react-three-game/editor";
+import { useFrame } from '@react-three/fiber';
+import { registerComponent, useNode, useNodeObject,
+  type Component, type ComponentViewProps } from 'react-three-game/viewer';
 
-function Authoring() {
-  const editorRef = useRef<PrefabEditorRef>(null);
+type SpinProps = { speed: number };
 
-  return (
-    <>
-      <button onClick={() => console.log(editorRef.current?.save())}>Save</button>
-      <PrefabEditor ref={editorRef} prefab={starterPrefab} />
-    </>
-  );
-}
-```
-
-Camera nodes become active in Play mode. Edit mode shows camera wireframes and gives camera control to the editor.
-
-## 5. Use runtime APIs
-
-`useScene` describes the shared scene. `usePrefab` accesses the current prefab document.
-
-```tsx
-import { useFrame } from "@react-three/fiber";
-import {
-  PrefabEditorMode,
-  usePrefab,
-  useScene,
-} from "react-three-game";
-
-function GameRuntime() {
-  const scene = useScene();
-  const prefab = usePrefab();
-
-  useFrame((_, delta) => {
-    if (scene.mode !== PrefabEditorMode.Play) return;
-    const ball = prefab.getObject("ball");
-    if (ball) ball.rotation.y += delta;
-  });
-
-  return null;
-}
-```
-
-| Hook | Scope |
-|---|---|
-| `useScene()` | Shared `root` and `mode` |
-| `usePrefab()` | Current document, live node registry, materials, assets, mutations |
-| `useNode()` | Current component node id, mode, selection, interaction handlers |
-| `useNodeObject<T>()` | Live ref for the current node object |
-| `useRegisterNodeComponent(type, value)` | Publish a typed capability from the current node |
-| `useSceneComponents(type)` | Reactively query matching capabilities in the mounted scene |
-| `useAssetRuntime()` | Shared loaded model, texture, and sound cache |
-
-Prefab document operations:
-
-```ts
-prefab.get(id);
-prefab.getObject(id);
-prefab.getModel(path);
-prefab.getMaterial(materialId);
-
-prefab.add(node, parentId);
-prefab.update(id, node => nextNode);
-prefab.setMaterial(materialId, material);
-prefab.replaceNode(id, node);
-prefab.remove(id);
-prefab.duplicate(id);
-prefab.move(id, targetId, "inside");
-prefab.replace(nextPrefab);
-```
-
-Prefab mutations represent authored changes. Native `Object3D` mutation represents animation and simulation state.
-
-## 6. Register a custom component
-
-```tsx
-import { useFrame } from "@react-three/fiber";
-import {
-  GameCanvas,
-  registerComponent,
-  useNode,
-  useNodeObject,
-  type Component,
-  type ComponentViewProps,
-} from "react-three-game";
-
-type RotatorProperties = {
-  speed?: number;
-  axis?: "x" | "y" | "z";
-};
-
-function RotatorView({ properties, children }: ComponentViewProps<RotatorProperties>) {
+function SpinView({ properties, children }: ComponentViewProps<SpinProps>) {
+  const object = useNodeObject();
   const { editMode } = useNode();
-  const objectRef = useNodeObject();
-
   useFrame((_, delta) => {
-    const object = objectRef.current;
-    if (editMode || !object) return;
-    object.rotation[properties.axis ?? "y"] += delta * (properties.speed ?? 1);
+    if (!editMode && object.current) object.current.rotation.y += properties.speed * delta;
   });
-
   return <>{children}</>;
 }
 
-const Rotator: Component<RotatorProperties> = {
-  name: "Rotator",
-  View: RotatorView,
-  properties: {
-    speed: { default: 1, step: 0.1 },
-    axis: {
-      type: "select",
-      default: "y",
-      options: [
-        { value: "x", label: "X" },
-        { value: "y", label: "Y" },
-        { value: "z", label: "Z" },
-      ],
-    },
-  },
+const Spin: Component<SpinProps> = {
+  name: 'Spin',
+  properties: { speed: { default: 1, step: 0.1 } },
+  View: SpinView,
 };
-
-export function Game() {
-  registerComponent(Rotator);
-  return <GameCanvas>{/* game scene */}</GameCanvas>;
-}
+registerComponent(Spin);
 ```
 
-Use it in any prefab node:
+Register before mounting scenes. Use `{ "type": "Spin", "properties": {} }` in JSON. Views receive resolved defaults; do not repeat them in the view. Numeric fields need no `type`; other fields declare it, such as `color`, `boolean`, `string`, `vector3`, or `select` with `options`.
 
-```json
-{
-  "rotator": {
-    "type": "Rotator",
-    "properties": { "speed": 1.5 }
-  }
-}
-```
+Use the generated inspector unless custom UI is necessary. Register custom UI separately with `registerComponentEditor(component, Inspector)` from the editor entrypoint.
 
-Call `registerComponent` from JavaScript application or plugin setup before rendering prefab data that uses it. Definitions persist across prefab and viewer remounts, while `GameCanvas` fills in missing engine built-ins.
+Most behaviors need no composition metadata. Object components use `slot: 'object'`; geometry/material components use `slot: 'geometry'` or `'material'`. A slot is exclusive within a node. The view owns the actual R3F `attach` prop and renders its `children`.
 
-Plugins may also be loaded dynamically. Register their components before mounting or loading prefab JSON that uses them:
+## Runtime conventions
 
-```ts
-const plugin = await import("./my-plugin.js");
-plugin.components.forEach(registerComponent);
-```
+| Need | API |
+| --- | --- |
+| Current node object | `useNodeObject()` |
+| Node selection and edit mode | `useNode()` |
+| Current document and its objects | `usePrefab()` |
+| Shared scene and mode | `useScene()` |
+| Save an authored edit | `prefab.update()`, `add()`, `remove()`, `setMaterial()` |
+| Animate or simulate | Mutate live Three objects in `useFrame` |
+| Notify systems | `gameEvents.emit()` / `useGameEvent()` |
+| Query typed node capabilities | `useRegisterNodeComponent()` / `useSceneComponents()` |
 
-Component properties are sparse too. Each registered component defines every property’s type and default; prefab JSON only needs values that differ. The editor builds the default inspector from that same schema, while complex components can still provide a custom `Editor`.
+Mount scene systems as children of `PrefabRoot`. Nested prefabs share the scene but have their own document and node IDs.
 
-Numeric definitions infer `type: "number"`, so `{ default: 1, min: 0, max: 10, step: 0.1 }` is sufficient. Other property types remain explicit.
-Select definitions include `options: { value, label }[]`, keeping serialized values and their editor-facing labels in the component schema.
+Use one active `Camera` node. Add `CameraFollow` to follow a `targetId` in the same prefab; its offsets are world-space. Edit mode uses editor controls. `Fog` provides scene-wide color, near, and far fields; use one active fog node with far greater than near.
 
-Components can expose typed runtime capabilities to scene systems without a demo-specific context or registry:
+## Stream content
 
 ```tsx
-import { useMemo } from "react";
-import {
-  createNodeComponentType,
-  useRegisterNodeComponent,
-  useSceneComponents,
-  type ComponentViewProps,
-} from "react-three-game";
+import { AssetRuntimeProvider, PrefabInstance } from 'react-three-game/viewer';
 
-type Health = { damage(amount: number): void };
-const HEALTH = createNodeComponentType<Health>("Health");
-
-function HealthView({ children }: ComponentViewProps) {
-  const health = useMemo<Health>(() => {
-    let hp = 100;
-    return { damage: amount => { hp = Math.max(0, hp - amount); } };
-  }, []);
-  useRegisterNodeComponent(HEALTH, health);
-  return <>{children}</>;
-}
-
-function CombatSystem() {
-  const actors = useSceneComponents(HEALTH);
-  // actors updates only when matching nodes mount, unmount, or replace the capability.
-  return null;
-}
+<AssetRuntimeProvider>
+  <group position={[0, 0, -320]}>
+    <PrefabInstance id="chunk-1" url="/prefabs/chunk.json"
+      onActivate={() => console.log('Chunk active')} />
+  </group>
+</AssetRuntimeProvider>
 ```
 
-Mount scene systems explicitly as children of `PrefabRoot` or `PrefabEditor`.
+Place this inside `GameCanvas`. Share an `AssetRuntimeProvider` across sibling chunks. `PrefabInstance` loads assets and prepares rendering before showing content. Unmount to release it. `active={false}` prepares without activation; `onStatus` reports loading, compiling, ready, active, or error. Use `static` only for immutable chunks; remount to move or edit them.
 
-Migration from `0.0.112`: `useNodeHandle(kind)` and the string-keyed asset-runtime handle registry were replaced by `createNodeComponentType`, `useRegisterNodeComponent`, and `useSceneComponents`. Capabilities are now typed and scoped to the mounted scene.
+Custom asset components declare `dependencies(properties)` with `{ kind: 'texture' | 'model' | 'sound' | 'prefab', path }`. See [architecture](docs/ARCHITECTURE.md) for resource ownership and preparation.
 
-Nested prefabs inherit their parent's material pool. A matching material definition
-reuses the parent instance even when its document-local ID differs. A
-local ID can safely use a different definition without colliding with its parent.
+## Plugins and examples
 
-## 7. Compose prefab documents
+Runtime imports use `react-three-game/viewer` (also available from `react-three-game`). Types and schemas are available from `/core`; authoring UI from `/editor`.
 
-`PrefabRef` loads a reusable document inside the current scene:
+Crashcat physics uses `/plugins/crashcat`: register `CrashcatPhysicsComponent` and mount one `CrashcatRuntime` inside the scene. Inspector controls come from the component schemas; no editor-specific import is needed.
 
-```json
-{
-  "id": "room-instance",
-  "components": {
-    "prefab": {
-      "type": "PrefabRef",
-      "properties": { "url": "/prefabs/room.json" }
-    }
-  }
-}
-```
-
-The child document receives the parent scene mode and its own `usePrefab()` scope.
-
-## 8. Add pointer events and plugins
-
-Pointer-enabled object component:
-
-```json
-{
-  "mesh": {
-    "type": "Mesh",
-    "properties": {
-      "emitClickEvent": true,
-      "clickEventName": "crate:click"
-    }
-  }
-}
-```
-
-```tsx
-<PrefabRoot
-  data={starterPrefab}
-  onPointerEvent={(eventType, event, node) => {
-    if (eventType === "click") selectNode(node.id, event.point);
-  }}
-/>
-```
-
-Crashcat physics stays in its plugin entrypoint:
-
-```tsx
-import { GameCanvas, registerComponent } from "react-three-game";
-import {
-  CrashcatPhysicsComponent,
-  CrashcatRuntime,
-} from "react-three-game/plugins/crashcat";
-
-export function PhysicsGame() {
-  registerComponent(CrashcatPhysicsComponent);
-  return (
-    <GameCanvas>
-      <PrefabRoot data={physicsPrefab}>
-        <CrashcatRuntime />
-      </PrefabRoot>
-    </GameCanvas>
-  );
-}
-```
-
-## Package exports
-
-| Entry | Purpose |
-|---|---|
-| `react-three-game` | Runtime renderer, scene/prefab APIs, component registry, events, assets, types |
-| `react-three-game/editor` | Optional editor, fields, editor state, authoring utilities, asset viewers |
-| `react-three-game/plugins/crashcat` | Optional Crashcat integration |
+See [demo routes](docs/README.md), [lighting](docs/LIGHTING.md), and [interior mapping](docs/INTERIOR-MAPPING.md).
 
 ## Development
 
-```bash
+```sh
 npm run dev
+npm run test
 npm run build
-npm run release
+npm --prefix docs run build
 ```
 
-## License
+WebGPU is required. Check changed behavior in the browser and run the relevant tests. Use production builds for performance comparisons.
 
-PFYL / VPL
+License: PFYL / VPL.

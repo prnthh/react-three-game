@@ -1,0 +1,395 @@
+{
+  "id": "city-planter",
+  "name": "Courtyard Tree and Bench",
+  "materials": {
+    "stone": {
+      "name": "Sand-textured concrete",
+      "materialType": "standard",
+      "color": "#91aacb",
+      "texture": "/textures/floor/terrain/sand-512.jpg",
+      "repeat": true,
+      "repeatCount": [
+        2,
+        2
+      ],
+      "roughness": 0.98,
+      "metalness": 0
+    },
+    "soil": {
+      "materialType": "standard",
+      "color": "#353c30",
+      "roughness": 0.8,
+      "metalness": 0
+    },
+    "wood": {
+      "materialType": "standard",
+      "color": "#78513a",
+      "roughness": 0.8,
+      "metalness": 0
+    },
+    "leaves": {
+      "materialType": "standard",
+      "color": "#496d4e",
+      "roughness": 0.8,
+      "metalness": 0
+    },
+    "leaves-light": {
+      "materialType": "standard",
+      "color": "#729058",
+      "roughness": 0.8,
+      "metalness": 0
+    }
+  },
+  "root": {
+    "id": "planter-root",
+    "name": "Planter",
+    "children": [
+      {
+        "id": "planter-base",
+        "name": "Planter Base",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                0.45,
+                0
+              ],
+              "scale": [
+                4.5,
+                0.9,
+                4.5
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "stone"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "soil",
+        "name": "Soil",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                0.92,
+                0
+              ],
+              "scale": [
+                4.1,
+                0.08,
+                4.1
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "soil"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tree-trunk",
+        "name": "Tree Trunk",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                2.4,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0.22,
+                0.36,
+                3,
+                8
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "wood"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tree-crown",
+        "name": "Tree Crown",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                5,
+                0
+              ],
+              "scale": [
+                2.3,
+                2.6,
+                2.1
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                1,
+                8,
+                6
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "leaves"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "tree-crown-upper",
+        "name": "Tree Crown Upper",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0.4,
+                6.5,
+                0.2
+              ],
+              "scale": [
+                1.6,
+                1.8,
+                1.5
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                1,
+                8,
+                6
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "leaves-light"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "bench",
+        "name": "Bench",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                0.7,
+                3
+              ],
+              "scale": [
+                4.5,
+                0.25,
+                0.75
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "wood"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "bench-foot--1.6",
+        "name": "Bench Foot  1.6",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -1.6,
+                0.3,
+                3
+              ],
+              "scale": [
+                0.3,
+                0.6,
+                0.65
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "stone"
+            }
+          }
+        },
+        "children": []
+      },
+      {
+        "id": "bench-foot-1.6",
+        "name": "Bench Foot 1.6",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                1.6,
+                0.3,
+                3
+              ],
+              "scale": [
+                0.3,
+                0.6,
+                0.65
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "stone"
+            }
+          }
+        },
+        "children": []
+      }
+    ],
+    "components": {}
+  }
+}

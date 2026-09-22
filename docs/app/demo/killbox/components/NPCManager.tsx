@@ -9,8 +9,8 @@ import {
     useRegisterNodeComponent,
     useScene,
     useSceneComponents,
-} from "react-three-game";
-import type { AnimatedModelHandle, Component, ComponentViewProps, SceneComponent } from "react-three-game";
+} from "react-three-game/viewer";
+import type { AnimatedModelHandle, Component, ComponentViewProps, SceneComponent } from "react-three-game/viewer";
 import {
     box,
     capsule,
@@ -41,7 +41,7 @@ import {
     type Object3D,
 } from "three";
 
-import { getActivePlayer, PLAYER_CONTROLLER_COMPONENT } from "./FirstPersonPlayer";
+import { PLAYER_CONTROLLER_COMPONENT, type PlayerRegistration } from "./playerState";
 import { useCrashcat, type CrashcatApi } from "react-three-game/plugins/crashcat";
 
 const DEFAULT_NPC_SCALE = 0.92;
@@ -201,6 +201,7 @@ export type NPCManagerRef = {
 };
 
 type NPCSystemProps = {
+    player: PlayerRegistration;
     models: readonly SceneComponent<AnimatedModelHandle>[];
     settings: NPCManagerProperties;
 };
@@ -223,7 +224,7 @@ function NPCManagerView({ properties, children }: ComponentViewProps<NPCManagerP
     useRegisterNodeComponent(NPC_MANAGER_COMPONENT, manager);
     const playing = mode === PrefabEditorMode.Play;
     return <>
-        {playing && players.length > 0 ? <NPCSystem ref={setManager} models={models} settings={properties} /> : null}
+        {playing && players.length > 0 ? <NPCSystem ref={setManager} player={players[0].value} models={models} settings={properties} /> : null}
         {children}
     </>;
 }
@@ -827,7 +828,7 @@ function LoadedNPCInstance({
     );
 }
 
-const NPCSystem = forwardRef<NPCManagerRef, NPCSystemProps>(function NPCSystem({ models, settings }, ref) {
+const NPCSystem = forwardRef<NPCManagerRef, NPCSystemProps>(function NPCSystem({ models, settings, player }, ref) {
     const api = useCrashcat();
     const [npcs] = useState(() => models.map(({ nodeId: id, value: model }) => {
         model.object.updateWorldMatrix(true, false);
@@ -904,7 +905,7 @@ const NPCSystem = forwardRef<NPCManagerRef, NPCSystemProps>(function NPCSystem({
 
     useFrame((_, delta) => {
         if (!api) return;
-        const playerPosition = getActivePlayer()?.getBody()?.position;
+        const playerPosition = player.runtime.current?.getBody()?.position;
         if (!playerPosition) return;
         playerPositionRef.current.set(playerPosition[0], playerPosition[1], playerPosition[2]);
 

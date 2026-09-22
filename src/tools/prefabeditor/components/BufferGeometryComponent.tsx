@@ -1,11 +1,10 @@
-import type { Component, ComponentEditorProps, ComponentViewProps } from "./ComponentRegistry";
-import { BooleanField, FieldGroup } from "./Input";
-import { base, ui } from "../styles";
+import type { Component, ComponentViewProps } from "./ComponentRegistry";
 
-type NumericArray = number[];
-type GeometryGroup = { start: number; count: number; materialIndex?: number };
+export type NumericArray = number[];
 
-interface BufferGeometryProperties {
+export type GeometryGroup = { start: number; count: number; materialIndex?: number };
+
+export interface BufferGeometryProperties {
     positions?: NumericArray;
     indices?: NumericArray;
     normals?: NumericArray;
@@ -14,20 +13,21 @@ interface BufferGeometryProperties {
     computeVertexNormals?: boolean;
 }
 
-const DEFAULT_TRIANGLE_POSITIONS = [
+export const DEFAULT_TRIANGLE_POSITIONS = [
     0, 0, 0,
     1, 0, 0,
     0, 1, 0,
 ];
 
-const DEFAULT_TRIANGLE_INDICES = [0, 1, 2];
-const DEFAULT_TRIANGLE_UVS = [
+export const DEFAULT_TRIANGLE_INDICES = [0, 1, 2];
+
+export const DEFAULT_TRIANGLE_UVS = [
     0, 0,
     1, 0,
     0, 1,
 ];
 
-function isFiniteNumberArray(value: unknown): value is NumericArray {
+export function isFiniteNumberArray(value: unknown): value is NumericArray {
     return Array.isArray(value) && value.every(entry => typeof entry === 'number' && Number.isFinite(entry));
 }
 
@@ -43,114 +43,14 @@ function isGeometryGroupArray(value: unknown): value is GeometryGroup[] {
     });
 }
 
-function normalizeNumberArray(value: unknown, fallback: NumericArray) {
+export function normalizeNumberArray(value: unknown, fallback: NumericArray) {
     return isFiniteNumberArray(value) ? value : fallback;
-}
-
-function toAttributeText(value: unknown, fallback: NumericArray) {
-    return JSON.stringify(normalizeNumberArray(value, fallback));
-}
-
-function parseArrayInput(raw: string) {
-    const trimmed = raw.trim();
-    if (!trimmed) return [];
-
-    const parsed = JSON.parse(trimmed);
-    if (!isFiniteNumberArray(parsed)) {
-        throw new Error('Expected a JSON array of numbers');
-    }
-
-    return parsed;
 }
 
 function getIndexArray(indices: NumericArray) {
     if (indices.length === 0) return null;
     const maxIndex = Math.max(...indices);
     return maxIndex > 65535 ? new Uint32Array(indices) : new Uint16Array(indices);
-}
-
-function BufferArrayField({
-    label,
-    value,
-    fallback,
-    onChange,
-    rows = 4,
-}: {
-    label: string;
-    value: unknown;
-    fallback: NumericArray;
-    onChange: (next: NumericArray) => void;
-    rows?: number;
-}) {
-    return (
-        <label style={{ display: 'grid', gap: 4 }}>
-            <span style={{ ...base.label, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                {label}
-            </span>
-            <textarea
-                rows={rows}
-                spellCheck={false}
-                defaultValue={toAttributeText(value, fallback)}
-                onBlur={(event) => {
-                    try {
-                        onChange(parseArrayInput(event.target.value));
-                        event.target.setCustomValidity('');
-                    } catch {
-                        event.target.setCustomValidity('Expected a JSON array of numbers');
-                        event.target.reportValidity();
-                    }
-                }}
-                style={{
-                    ...ui.monoTextInput,
-                    width: '100%',
-                    minHeight: rows * 18,
-                    padding: '4px 6px',
-                    outline: 'none',
-                    resize: 'vertical',
-                    boxSizing: 'border-box',
-                }}
-            />
-        </label>
-    );
-}
-
-function BufferGeometryComponentEditor({ properties, update }: ComponentEditorProps<BufferGeometryProperties>) {
-    return (
-        <FieldGroup>
-            <BufferArrayField
-                label="Positions"
-                value={properties.positions}
-                fallback={DEFAULT_TRIANGLE_POSITIONS}
-                rows={5}
-                onChange={(positions) => update({ positions })}
-            />
-            <BufferArrayField
-                label="Indices"
-                value={properties.indices}
-                fallback={DEFAULT_TRIANGLE_INDICES}
-                onChange={(indices) => update({ indices })}
-            />
-            <BufferArrayField
-                label="Normals"
-                value={properties.normals}
-                fallback={[]}
-                onChange={(normals) => update({ normals })}
-            />
-            <BufferArrayField
-                label="UVs"
-                value={properties.uvs}
-                fallback={DEFAULT_TRIANGLE_UVS}
-                onChange={(uvs) => update({ uvs })}
-            />
-            <BooleanField
-                name="computeVertexNormals"
-                label="Compute Normals"
-                values={properties}
-                onChange={update}
-                fallback={true}
-            />
-        </FieldGroup>
-    );
 }
 
 function BufferGeometryComponentView({ properties, children }: ComponentViewProps<BufferGeometryProperties>) {
@@ -192,10 +92,8 @@ function BufferGeometryComponentView({ properties, children }: ComponentViewProp
 
 const BufferGeometryComponent: Component<BufferGeometryProperties> = {
     name: 'BufferGeometry',
-    Editor: BufferGeometryComponentEditor,
     renderWhenDisabled: true,
-    attachment: true,
-    attach: 'geometry',
+    slot: 'geometry',
     View: BufferGeometryComponentView,
     properties: {
         positions: { type: 'number[]', default: DEFAULT_TRIANGLE_POSITIONS },

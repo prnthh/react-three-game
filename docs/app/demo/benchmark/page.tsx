@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { PrefabEditorMode, registerComponent, type GameObject, type Prefab } from "react-three-game";
+import { PrefabEditorMode, registerComponent, type GameObject, type Prefab } from "react-three-game/viewer";
 import { PrefabEditor, type PrefabEditorRef } from "react-three-game/editor";
 import { CrashcatPhysicsComponent, CrashcatRuntime } from "react-three-game/plugins/crashcat";
 import { BASE_PATH } from "../../basePath";

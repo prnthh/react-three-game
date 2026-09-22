@@ -1,8 +1,11 @@
 import { useState } from 'react';
+
 import type { Mesh } from 'three';
-import type { Component, ComponentEditorProps, ComponentViewProps } from './ComponentRegistry';
-import { BooleanField, FieldGroup, StringField } from './Input';
+
+import type { Component, ComponentViewProps } from './ComponentRegistry';
+
 import { useNode } from '../SceneContext';
+
 import { useMeshInstanceRegistration } from '../MeshInstanceProvider';
 
 export type MeshProperties = {
@@ -13,25 +16,6 @@ export type MeshProperties = {
     emitClickEvent?: boolean;
     clickEventName?: string;
 };
-
-function MeshEditor({ properties, update }: ComponentEditorProps<MeshProperties>) {
-    return <FieldGroup>
-        <BooleanField name="visible" label="Visible" values={properties} onChange={update} fallback />
-        <BooleanField name="castShadow" label="Cast Shadow" values={properties} onChange={update} fallback />
-        <BooleanField name="receiveShadow" label="Receive Shadow" values={properties} onChange={update} fallback />
-        <BooleanField name="instanced" label="Allow Instancing" values={properties} onChange={update} fallback />
-        <BooleanField name="emitClickEvent" label="Emit Click Event" values={properties} onChange={update} fallback={false} />
-        {properties.emitClickEvent ? (
-            <StringField
-                name="clickEventName"
-                label="Click Event Name"
-                values={properties}
-                onChange={update}
-                placeholder="node:click"
-            />
-        ) : null}
-    </FieldGroup>;
-}
 
 function MeshView({ properties, children }: ComponentViewProps<MeshProperties>) {
     const { runtimeNodeId, isSelected } = useNode();
@@ -57,8 +41,7 @@ function MeshView({ properties, children }: ComponentViewProps<MeshProperties>) 
 const MeshComponent: Component<MeshProperties> = {
     name: 'Mesh',
     renderWhenDisabled: true,
-    attach: 'object',
-    Editor: MeshEditor,
+    slot: 'object',
     View: MeshView,
     properties: {
         visible: { type: 'boolean', default: true },

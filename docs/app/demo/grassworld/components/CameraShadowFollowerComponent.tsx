@@ -7,7 +7,7 @@ import {
     useScene,
     type Component,
     type ComponentViewProps,
-} from "react-three-game";
+} from "react-three-game/viewer";
 
 type CameraShadowFollowerProperties = {
     interval?: number;

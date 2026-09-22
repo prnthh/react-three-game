@@ -1,9 +1,11 @@
-import type { Component, ComponentEditorProps, ComponentViewProps } from "./ComponentRegistry";
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { BoxGeometry, CylinderGeometry, PlaneGeometry, SphereGeometry, TorusGeometry, type BufferGeometry } from "three";
-import { FieldGroup, NumberField, SelectField } from "./Input";
+import { useInvalidateMeshInstances } from "../MeshInstanceProvider";
+import type { Component, ComponentViewProps } from "./ComponentRegistry";
 
-const GEOMETRY_ARGS: Record<string, {
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from "react";
+
+import { BoxGeometry, CylinderGeometry, PlaneGeometry, SphereGeometry, TorusGeometry, type BufferGeometry } from "three";
+
+export const GEOMETRY_ARGS: Record<string, {
     fields: Array<{
         name: string;
         label: string;
@@ -50,12 +52,12 @@ const GEOMETRY_ARGS: Record<string, {
     },
 };
 
-type GeometryProperties = {
+export type GeometryProperties = {
     geometryType?: string;
     args?: number[];
 };
 
-function getDefaultArgs(geometryType: string) {
+export function getDefaultArgs(geometryType: string) {
     return (GEOMETRY_ARGS[geometryType]?.fields ?? []).map(field => field.defaultValue);
 }
 
@@ -99,73 +101,20 @@ function useSharedGeometry(type: keyof typeof GEOMETRY_ELEMENTS, args: number[])
     }, [pool, signature, type]);
 }
 
-function GeometryComponentEditor({ properties, update }: ComponentEditorProps<GeometryProperties>) {
-    const geometryType = properties.geometryType ?? 'box';
-    const schema = GEOMETRY_ARGS[geometryType] ?? GEOMETRY_ARGS.box;
-    const args = properties.args ?? getDefaultArgs(geometryType);
-
-    // Handle geometry type change to reset args
-    const handleChange = (newValues: Partial<GeometryProperties>) => {
-        if (typeof newValues.geometryType === 'string' && newValues.geometryType !== geometryType) {
-            update({ geometryType: newValues.geometryType, args: getDefaultArgs(newValues.geometryType) });
-        } else {
-            update(newValues);
-        }
-    };
-
-    const updateArg = (index: number, value: number) => {
-        const next = [...args];
-        next[index] = value;
-        update({ args: next });
-    };
-
-    return (
-        <FieldGroup>
-            <SelectField
-                name="geometryType"
-                label="Type"
-                values={properties}
-                onChange={handleChange}
-                options={[
-                    { value: 'box', label: 'Box' },
-                    { value: 'sphere', label: 'Sphere' },
-                    { value: 'plane', label: 'Plane' },
-                    { value: 'cylinder', label: 'Cylinder' },
-                    { value: 'torus', label: 'Torus' },
-                ]}
-            />
-            {schema.fields.map((field, index) => (
-                <NumberField
-                    key={field.name}
-                    name={field.name}
-                    label={field.label}
-                    values={{ [field.name]: args[index] ?? field.defaultValue }}
-                    onChange={(next) => updateArg(index, next[field.name] ?? field.defaultValue)}
-                    fallback={field.defaultValue}
-                    min={field.min}
-                    step={field.step}
-                />
-            ))}
-        </FieldGroup>
-    );
-}
-
-
-// View for Geometry component
 function GeometryComponentView({ properties, children }: ComponentViewProps<GeometryProperties>) {
     const { geometryType, args = [] } = properties;
     const type = geometryType && geometryType in GEOMETRY_ELEMENTS ? geometryType as keyof typeof GEOMETRY_ELEMENTS : 'box';
     const resolvedArgs = args.length ? args : getDefaultArgs(type);
     const geometry = useSharedGeometry(type, resolvedArgs);
+    const invalidateInstances = useInvalidateMeshInstances();
+    useLayoutEffect(invalidateInstances, [geometry, invalidateInstances]);
     return <><primitive object={geometry} attach="geometry" dispose={null} />{children}</>;
 }
 
 const GeometryComponent: Component<GeometryProperties> = {
     name: 'Geometry',
     renderWhenDisabled: true,
-    attachment: true,
-    attach: 'geometry',
-    Editor: GeometryComponentEditor,
+    slot: 'geometry',
     View: GeometryComponentView,
     properties: {
         geometryType: {

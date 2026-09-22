@@ -1,6 +1,6 @@
 "use client";
 
-import { PrefabEditorMode, registerComponent, type Prefab } from "react-three-game";
+import { PrefabEditorMode, registerComponent, type Prefab } from "react-three-game/viewer";
 import { PrefabEditor } from "react-three-game/editor";
 import {
     CrashcatPhysicsComponent,
@@ -9,10 +9,8 @@ import {
 
 import GrassWorld, { terrainHeight } from "./GrassWorld";
 import { BASE_PATH } from "../../basePath";
-import CameraShadowFollowerComponent from "./components/CameraShadowFollowerComponent";
 import {
     BallInputComponent,
-    CameraFollowComponent,
     PlayerPositionSyncComponent,
 } from "./components/RollingBall";
 
@@ -143,7 +141,7 @@ const grassWorldPrefab: Prefab = {
                         },
                     },
                     follow: {
-                        type: "GrassWorldCameraFollow",
+                        type: "CameraFollow",
                         properties: {
                             targetId: "grassworld-ball",
                             positionOffset: [0, 16, 20],
@@ -186,23 +184,12 @@ const grassWorldPrefab: Prefab = {
                             intensity: 0.8,
                             targetOffset: [-10, -10, -10],
                             castShadow: true,
-                            shadowMapSize: 64,
+                            shadowMapSize: 1024,
+                            shadowCascades: 2,
+                            shadowDistance: 60,
                             shadowIntensity: 0.85,
-                            shadowCameraLeft: -1,
-                            shadowCameraRight: 1,
-                            shadowCameraTop: 1,
-                            shadowCameraBottom: -1,
-                            shadowCameraNear: 0.01,
-                            shadowCameraFar: 30,
-                            shadowNormalBias: 0.1,
-                            shadowBias: -0.001,
-                        },
-                    },
-                    cameraShadowFollower: {
-                        type: "CameraShadowFollower",
-                        properties: {
-                            interval: 0.1,
-                            offset: [10, -6, -10],
+                            shadowNormalBias: 0.025,
+                            shadowBias: -0.0001,
                         },
                     },
                 },
@@ -221,11 +208,6 @@ const grassWorldConfig = {
 };
 
 export default function GrassWorldDemo() {
-    registerComponent(CrashcatPhysicsComponent);
-    registerComponent(CameraShadowFollowerComponent);
-    registerComponent(BallInputComponent);
-    registerComponent(PlayerPositionSyncComponent);
-    registerComponent(CameraFollowComponent);
 
     return (
         <main className="h-screen w-screen bg-sky-300">
@@ -257,3 +239,7 @@ export default function GrassWorldDemo() {
         </main>
     );
 }
+
+registerComponent(CrashcatPhysicsComponent);
+registerComponent(BallInputComponent);
+registerComponent(PlayerPositionSyncComponent);

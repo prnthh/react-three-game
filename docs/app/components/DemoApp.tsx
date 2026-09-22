@@ -1,56 +1,44 @@
-import { GameCanvas, PrefabRoot, registerComponent, useScenePendingLoads } from "react-three-game/viewer";
-import { useEffect, useState } from "react";
-import type { Prefab } from "react-three-game/core";
-import { ACESFilmicToneMapping, SRGBColorSpace } from "three";
-import { withBasePath, BASE_PATH } from "../basePath";
-import ConstantVelocityComponent from "./ConstantVelocityComponent";
-import PrefabGridStreamerComponent from "./PrefabGridStreamerComponent";
-import InteriorMapComponent from "./InteriorMapComponent";
+import { GameCanvas, PrefabRoot, registerComponent, type PrefabInstanceStatus } from 'react-three-game/viewer';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { Prefab } from 'react-three-game/core';
+import { ACESFilmicToneMapping, SRGBColorSpace } from 'three';
+import { withBasePath, BASE_PATH } from '../basePath';
+import ConstantVelocityComponent from './ConstantVelocityComponent';
+import PrefabGridStreamerComponent, { DemoChunkStatusContext } from './PrefabGridStreamerComponent';
+import CameraShadowFollowerComponent from '../demo/grassworld/components/CameraShadowFollowerComponent';
 
-function SceneLoadReporter({ onReady }: { onReady: () => void }) {
-    const pendingLoads = useScenePendingLoads();
-
-    useEffect(() => {
-        if (pendingLoads > 0) return;
-        let finalFrame = 0;
-        const firstFrame = requestAnimationFrame(() => {
-            finalFrame = requestAnimationFrame(onReady);
-        });
-        return () => {
-            cancelAnimationFrame(firstFrame);
-            cancelAnimationFrame(finalFrame);
-        };
-    }, [onReady, pendingLoads]);
-
-    return null;
-}
+registerComponent(ConstantVelocityComponent);
+registerComponent(PrefabGridStreamerComponent);
+registerComponent(CameraShadowFollowerComponent);
 
 export default function DemoApp({ onReady }: { onReady: () => void }) {
-    registerComponent(ConstantVelocityComponent);
-    registerComponent(PrefabGridStreamerComponent);
-    registerComponent(InteriorMapComponent);
-
     const [prefab, setPrefab] = useState<Prefab | null>(null);
-
+    const [error, setError] = useState<string | null>(null);
+    const notified = useRef(false);
+    const status = useCallback((value: PrefabInstanceStatus) => {
+        if (value.phase === 'error') setError(String(value.error));
+        if (value.phase === 'active' && !notified.current) {
+            notified.current = true;
+            performance.measure('home:first-chunk-active', { start: 'home:load-start' });
+            onReady();
+        }
+    }, [onReady]);
     useEffect(() => {
-        let mounted = true;
-        fetch(withBasePath('/prefabs/game-level.json'))
-            .then(r => r.json())
-            .then(data => {
-                if (mounted) setPrefab(data);
+        const controller = new AbortController();
+        performance.mark('home:load-start');
+        void fetch(withBasePath('/prefabs/game-level.json'), { signal: controller.signal })
+            .then(response => {
+                if (!response.ok) throw new Error(`Scene request failed (${response.status})`);
+                return response.json();
+            }).then(setPrefab).catch(error => {
+                if (!controller.signal.aborted) setError(String(error));
             });
-        return () => {
-            mounted = false;
-        };
+        return () => controller.abort();
     }, []);
-
-    return (
-        <GameCanvas rendererConfig={{
-            outputColorSpace: SRGBColorSpace,
-            toneMapping: ACESFilmicToneMapping,
-            toneMappingExposure: 1.2,
-        }}>
-            {prefab && <PrefabRoot basePath={BASE_PATH} data={prefab}><SceneLoadReporter onReady={onReady} /></PrefabRoot>}
+    if (error) return <div role="alert" className="absolute bottom-4 left-4 text-sm text-red-300">Scene failed to load: {error}</div>;
+    return <DemoChunkStatusContext.Provider value={status}>
+        <GameCanvas rendererConfig={{ outputColorSpace: SRGBColorSpace, toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1.2 }}>
+            {prefab && <PrefabRoot basePath={BASE_PATH} data={prefab} />}
         </GameCanvas>
-    );
+    </DemoChunkStatusContext.Provider>;
 }

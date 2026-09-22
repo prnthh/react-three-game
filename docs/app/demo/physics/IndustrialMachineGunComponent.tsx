@@ -1,22 +1,16 @@
 import { useFrame } from "@react-three/fiber";
+
 import type { ThreeEvent } from "@react-three/fiber";
+
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-    gameEvents,
-    soundManager,
-    useNode,
-    useNodeObject,
-    usePrefab,
-    type Component,
-    type ComponentViewProps,
-    type GameObject,
-} from "react-three-game";
-import { FieldRenderer } from "react-three-game/editor";
-import type { ComponentEditorProps, FieldDefinition } from "react-three-game/editor";
+
+import { gameEvents, soundManager, useNode, useNodeObject, usePrefab, type Component, type ComponentViewProps, type GameObject } from "react-three-game/viewer";
+
 import { Quaternion, Vector3, type Material, type Mesh, type Object3D } from "three";
+
 import { withBasePath } from "../../basePath";
 
-type IndustrialMachineGunProperties = {
+export type IndustrialMachineGunProperties = {
     barrelId?: string;
     fireRate?: number;
     projectileSpeed?: number;
@@ -44,30 +38,55 @@ type LiveProjectile = {
 };
 
 const fireDirection = new Vector3();
+
 const firePosition = new Vector3();
+
 const fireQuaternion = new Quaternion();
+
 const fireRight = new Vector3();
+
 const fireUp = new Vector3();
+
 const WORLD_UP = new Vector3(0, 1, 0);
+
 const LOCAL_RIGHT = new Vector3(1, 0, 0);
+
 const aimYawQuaternion = new Quaternion();
+
 const aimPitchQuaternion = new Quaternion();
+
 const aimComposedQuaternion = new Quaternion();
+
 const DEFAULT_SHOT_EVENT = "machinegun:shot";
+
 const DEFAULT_TRIGGER_EVENT = "machinegun:trigger";
+
 const DEFAULT_PROJECTILE_COUNT_EVENT = "machinegun:projectiles";
+
 const DEFAULT_FIRE_RATE = 12;
+
 const DEFAULT_PROJECTILE_SPEED = 82;
+
 const DEFAULT_PROJECTILE_RADIUS = 0.11;
+
 const DEFAULT_PROJECTILE_LIFETIME = 1.3;
+
 const DEFAULT_MUZZLE_OFFSET = 1.95;
+
 const DEFAULT_SPREAD = 0.018;
+
 const DEFAULT_YAW_RANGE = 0.7;
+
 const DEFAULT_PITCH_RANGE = 0.38;
+
 const DEFAULT_AIM_SMOOTHING = 9;
+
 const DEFAULT_RECOIL_KICK = 0.045;
+
 const DEFAULT_RECOIL_RETURN = 11;
+
 const DEFAULT_FIRE_VOLUME = 0.18;
+
 export const MACHINEGUN_PROJECTILE_ID_PREFIX = "machinegun-projectile-";
 
 function setMuzzleFlashObject(object: Object3D | null, intensity: number) {
@@ -89,31 +108,6 @@ function setMuzzleFlashObject(object: Object3D | null, intensity: number) {
             entry.needsUpdate = true;
         });
     });
-}
-
-const machineGunFields = [
-    { name: "barrelId", type: "node", label: "Barrel" },
-    { name: "fireRate", type: "number", label: "Fire Rate", min: 1, step: 1 },
-    { name: "projectileSpeed", type: "number", label: "Projectile Speed", min: 1, step: 1 },
-    { name: "projectileRadius", type: "number", label: "Projectile Radius", min: 0.02, step: 0.01 },
-    { name: "projectileLifetime", type: "number", label: "Projectile Lifetime", min: 0.2, step: 0.1 },
-    { name: "muzzleOffset", type: "number", label: "Muzzle Offset", step: 0.1 },
-    { name: "muzzleFlashId", type: "node", label: "Muzzle Flash" },
-    { name: "spread", type: "number", label: "Spread", min: 0, step: 0.001 },
-    { name: "shotEventName", type: "string", label: "Shot Event" },
-    { name: "triggerEventName", type: "string", label: "Trigger Event" },
-    { name: "projectileCountEventName", type: "string", label: "Projectile Count Event" },
-    { name: "aimYawRange", type: "number", label: "Aim Yaw Range", min: 0, step: 0.01 },
-    { name: "aimPitchRange", type: "number", label: "Aim Pitch Range", min: 0, step: 0.01 },
-    { name: "aimSmoothing", type: "number", label: "Aim Smoothing", min: 1, step: 0.5 },
-    { name: "recoilKick", type: "number", label: "Recoil Kick", min: 0, step: 0.01 },
-    { name: "recoilReturn", type: "number", label: "Recoil Return", min: 0.1, step: 0.1 },
-    { name: "fireSound", type: "string", label: "Fire Sound" },
-    { name: "fireVolume", type: "number", label: "Fire Volume", min: 0, max: 1, step: 0.05 },
-] satisfies FieldDefinition<IndustrialMachineGunProperties>[];
-
-function IndustrialMachineGunEditor({ properties, update }: ComponentEditorProps<IndustrialMachineGunProperties>) {
-    return <FieldRenderer fields={machineGunFields} values={properties} onChange={update} />;
 }
 
 function createProjectileNode(
@@ -498,7 +492,6 @@ function IndustrialMachineGunView({
 
 const IndustrialMachineGunComponent: Component<IndustrialMachineGunProperties> = {
     name: "IndustrialMachineGun",
-    Editor: IndustrialMachineGunEditor,
     View: IndustrialMachineGunView,
     properties: {
         barrelId: { type: "string", default: "" },

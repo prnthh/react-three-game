@@ -2,8 +2,8 @@
 
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
-import { useNode, useNodeObject, useGameEvent } from "react-three-game";
-import type { Component, ComponentViewProps, ContactEventPayload } from "react-three-game";
+import { useNode, useNodeObject, useGameEvent } from "react-three-game/viewer";
+import type { Component, ComponentViewProps, ContactEventPayload } from "react-three-game/viewer";
 
 const DEFAULT_SPEED = 1.2;
 const COLLISION_EVENT_NAME = "orb:collision";
@@ -24,19 +24,19 @@ function normalizeVelocity(x = 0, z = 0) {
 }
 
 function OrbMoverView({ properties, children }: ComponentViewProps<OrbMoverProperties>) {
-    const { editMode, nodeId } = useNode();
+    const { editMode, runtimeNodeId } = useNode();
     const object = useNodeObject();
-    const velocityRef = useRef(normalizeVelocity(properties.velocityX ?? 1, properties.velocityZ ?? 0));
+    const velocityRef = useRef(normalizeVelocity(properties.velocityX, properties.velocityZ));
 
-    const speed = properties.speed ?? DEFAULT_SPEED;
+    const speed = properties.speed;
 
     useEffect(() => {
-        velocityRef.current = normalizeVelocity(properties.velocityX ?? 1, properties.velocityZ ?? 0);
+        velocityRef.current = normalizeVelocity(properties.velocityX, properties.velocityZ);
     }, [properties.velocityX, properties.velocityZ]);
 
     useGameEvent(COLLISION_EVENT_NAME, (payload) => {
         const normal = (payload as OrbCollisionPayload | null)?.collisionNormal;
-        if (editMode || (payload as OrbCollisionPayload | null)?.sourceNodeId !== nodeId || !normal) return;
+        if (editMode || (payload as OrbCollisionPayload | null)?.sourceEntityId !== runtimeNodeId || !normal) return;
 
         const normalX = normal[0];
         const normalZ = normal[2];
@@ -50,7 +50,7 @@ function OrbMoverView({ properties, children }: ComponentViewProps<OrbMoverPrope
             velocityRef.current.x - 2 * dot * normalizedX,
             velocityRef.current.z - 2 * dot * normalizedZ,
         );
-    }, [editMode, nodeId]);
+    }, [editMode, runtimeNodeId]);
 
     useFrame((_, delta) => {
         if (editMode) return;
@@ -59,7 +59,7 @@ function OrbMoverView({ properties, children }: ComponentViewProps<OrbMoverPrope
         orb.position.x += velocityRef.current.x * speed * delta;
         orb.position.z += velocityRef.current.z * speed * delta;
         orb.updateMatrixWorld(true);
-    });
+    }, -2);
 
     return <>{children}</>;
 }

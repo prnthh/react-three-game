@@ -1,39 +1,26 @@
 import { useEffect, useMemo } from "react";
-import {
-    MaterialOverridesProvider,
-    type Component,
-    type ComponentViewProps,
-} from "react-three-game";
+
+import { MaterialOverridesProvider, type Component, type ComponentViewProps } from "react-three-game/viewer";
+
 import { float, positionLocal, sin, time, uniform, vec3 } from "three/tsl";
-import { FieldRenderer } from "react-three-game/editor";
-import type { ComponentEditorProps, FieldDefinition } from "react-three-game/editor";
 
 const DEFAULT_AMOUNT = 0.3;
+
 const DEFAULT_SPEED = 3.5;
+
 const DEFAULT_BULGE = 0.45;
+
 const DEFAULT_LIFT = 0.18;
 
-type SquishProperties = {
+export type SquishProperties = {
     amount?: number;
     speed?: number;
     bulge?: number;
     lift?: number;
 };
 
-const squishFields = [
-    { name: "amount", type: "number", label: "Amount", min: 0, max: 0.95, step: 0.01 },
-    { name: "speed", type: "number", label: "Speed", min: 0.1, step: 0.1 },
-    { name: "bulge", type: "number", label: "Bulge", min: 0, max: 2, step: 0.01 },
-    { name: "lift", type: "number", label: "Lift", min: 0, max: 1, step: 0.01 },
-] satisfies FieldDefinition<SquishProperties>[];
-
-function SquishComponentEditor({ properties, update }: ComponentEditorProps<SquishProperties>) {
-    return <FieldRenderer fields={squishFields} values={properties} onChange={update} />;
-}
-
 const SquishComponent: Component<SquishProperties> = {
     name: "Squish",
-    Editor: SquishComponentEditor,
     View: function SquishView({ properties, children }: ComponentViewProps<SquishProperties>) {
         const amountNode = useMemo(() => uniform(DEFAULT_AMOUNT), []);
         const speedNode = useMemo(() => uniform(DEFAULT_SPEED), []);
@@ -54,10 +41,10 @@ const SquishComponent: Component<SquishProperties> = {
         }, [amountNode, speedNode, bulgeNode, liftNode]);
 
         useEffect(() => {
-            amountNode.value = properties.amount ?? DEFAULT_AMOUNT;
-            speedNode.value = properties.speed ?? DEFAULT_SPEED;
-            bulgeNode.value = properties.bulge ?? DEFAULT_BULGE;
-            liftNode.value = properties.lift ?? DEFAULT_LIFT;
+            amountNode.value = properties.amount;
+            speedNode.value = properties.speed;
+            bulgeNode.value = properties.bulge;
+            liftNode.value = properties.lift;
         }, [properties.amount, properties.speed, properties.bulge, properties.lift, amountNode, speedNode, bulgeNode, liftNode]);
 
         const overrides = useMemo(() => ({
@@ -72,10 +59,10 @@ const SquishComponent: Component<SquishProperties> = {
         );
     },
     properties: {
-        amount: { default: DEFAULT_AMOUNT },
-        speed: { default: DEFAULT_SPEED },
-        bulge: { default: DEFAULT_BULGE },
-        lift: { default: DEFAULT_LIFT },
+        amount: { default: DEFAULT_AMOUNT, min: 0, max: 0.95, step: 0.01 },
+        speed: { default: DEFAULT_SPEED, min: 0.1, step: 0.1 },
+        bulge: { default: DEFAULT_BULGE, min: 0, max: 2, step: 0.01 },
+        lift: { default: DEFAULT_LIFT, min: 0, max: 1, step: 0.01 },
     },
 };
 

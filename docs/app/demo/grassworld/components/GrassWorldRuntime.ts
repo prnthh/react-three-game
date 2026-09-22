@@ -1,5 +1,5 @@
 import { useState, type MutableRefObject } from "react";
-import { createNodeComponentType, useSceneComponents } from "react-three-game";
+import { createNodeComponentType, useSceneComponents } from "react-three-game/viewer";
 import {
 	Color,
 	PerspectiveCamera,

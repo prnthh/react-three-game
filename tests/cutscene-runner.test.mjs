@@ -86,3 +86,30 @@ test('closeup flag selects the speaking character and restores on line end and d
     active.dispose(); assert.equal(shots.at(-1), null);
     assert.throws(() => parseScript([{ ...dialogue, closeup: 'yes' }]), /closeup/);
 });
+
+test('audio toggle retries blocked playback and keeps mute preference across lines', async () => {
+    let blocked = true;
+    const clips = [], states = [], captions = [];
+    const actor = { position: () => [0, 0, 0], place() {}, face() {}, animate() {}, update() {}, reset() {} };
+    const runner = new Runner(parseScript([{ ...dialogue, audioSrc: '/voice.wav' }, { ...dialogue, audioSrc: '/next.wav' }]), { a: actor }, () => {
+        const clip = { ...audioMock(), plays: 0, play() {
+            this.plays++;
+            if (blocked) return Promise.reject(new Error('blocked'));
+            this.onplaying?.(); return Promise.resolve();
+        } };
+        clips.push(clip); return clip;
+    }, caption => captions.push(caption), false, () => {}, state => states.push(state));
+    runner.tick(0.05); await Promise.resolve();
+    assert.equal(runner.audioState, 'blocked');
+    blocked = false;
+    runner.setAudioEnabled(true);
+    assert.equal(clips[0].plays, 2); assert.equal(clips[0].muted, false);
+    runner.tick(0.1); assert.equal(captions.length, 1);
+    runner.setAudioEnabled(false);
+    assert.equal(clips[0].muted, true); assert.equal(runner.audioState, 'muted');
+    clips[0].onended(); runner.tick(0.01); runner.tick(0.01);
+    assert.equal(clips[1].muted, true);
+    runner.setAudioEnabled(true);
+    assert.equal(clips[1].muted, false); assert.equal(runner.audioState, 'on');
+    runner.dispose();
+});

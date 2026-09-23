@@ -7,6 +7,7 @@ export interface Actor {
     update(delta: number): void;
     reset(): void;
 }
+export type AudioState = 'on' | 'muted' | 'blocked';
 export type Caption = { character?: string; text: string } | null;
 
 /** Executes commands in order. Only dialogue and walkto wait before advancing. */
@@ -18,8 +19,31 @@ export class Runner {
     private audioActive = false;
     private audioDone = false;
     private disposed = false;
-    constructor(private script: Script, private actors: Record<string, Actor>, private makeAudio: (src: string) => HTMLAudioElement, private caption: (value: Caption) => void, private loop = true, private focus: (character: string | null) => void = () => {}) {}
+    private muted = false;
+    audioState: AudioState = 'on';
+    constructor(private script: Script, private actors: Record<string, Actor>, private makeAudio: (src: string) => HTMLAudioElement, private caption: (value: Caption) => void, private loop = true, private focus: (character: string | null) => void = () => {}, private onAudioState: (state: AudioState) => void = () => {}) {}
 
+    private reportAudio(state: AudioState) {
+        this.audioState = state;
+        this.onAudioState(state);
+    }
+    setAudioEnabled(enabled: boolean) {
+        this.muted = !enabled;
+        if (this.audio) this.audio.muted = this.muted;
+        this.reportAudio(enabled ? 'on' : 'muted');
+        // Called synchronously from the button's user gesture to unlock playback.
+        if (enabled && this.audio && !this.audioDone) this.playAudio();
+    }
+    private playAudio() {
+        const audio = this.audio;
+        if (!audio) return;
+        this.audioActive = true;
+        void audio.play().catch(() => {
+            if (this.audio !== audio || this.disposed) return;
+            this.audioActive = false;
+            this.reportAudio(this.muted ? 'muted' : 'blocked');
+        });
+    }
     private stopAudio() {
         if (!this.audio) return;
         this.audio.pause();
@@ -34,12 +58,11 @@ export class Runner {
         if (!command.audioSrc) return;
         const audio = this.makeAudio(command.audioSrc);
         this.audio = audio;
-        audio.onplaying = () => { this.audioActive = true; };
+        audio.muted = this.muted;
+        audio.onplaying = () => { this.audioActive = true; this.reportAudio(this.muted ? 'muted' : 'on'); };
         audio.onended = () => { this.audioDone = true; };
         audio.onerror = () => { this.audioActive = false; audio.pause(); };
-        void audio.play().catch(() => {
-            if (this.audio === audio && !this.disposed) this.audioActive = false;
-        });
+        this.playAudio();
     }
     private next() {
         if (this.script[this.index].type === 'dialogue') { this.focus(null); this.caption(null); }

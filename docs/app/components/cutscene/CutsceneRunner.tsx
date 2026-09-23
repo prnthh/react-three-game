@@ -20,9 +20,19 @@ function Playback({ script, channel, loop }: { script: Script; channel: string; 
     const [bindings] = useState(() => new Map<string, GameObjectHandle>());
     const [ids] = useState(() => characterIds(script));
     const runner = useRef<Runner | null>(null);
+    const audioEnabled = useRef(true);
     const getThree = useThree(state => state.get);
     const [shot] = useState(() => new SpeakerCamera());
-    useEffect(() => () => { runner.current?.dispose(); runner.current = null; }, []);
+    useEffect(() => {
+        const off = events.on(`${channel}:audio`, value => {
+            if (typeof value === 'boolean') {
+                audioEnabled.current = value;
+                runner.current?.setAudioEnabled(value);
+            }
+            events.emit(`${channel}:audio-state`, runner.current?.audioState ?? (audioEnabled.current ? 'on' : 'muted'));
+        });
+        return () => { off(); runner.current?.dispose(); runner.current = null; };
+    }, [channel, events]);
     useFrame((_, delta) => {
         if (!runner.current) {
             const actors: Record<string, Actor> = Object.create(null);
@@ -60,7 +70,8 @@ function Playback({ script, channel, loop }: { script: Script; channel: string; 
                 const object = binding?.transform;
                 const model = binding?.getComponent(ANIMATED_MODEL_COMPONENT);
                 if (object && model) shot.focus(getThree().camera, object, model.object);
-            });
+            }, state => events.emit(`${channel}:audio-state`, state));
+            runner.current.setAudioEnabled(audioEnabled.current);
             events.emit(`${channel}:dialogue`, null);
         }
         runner.current.tick(delta);

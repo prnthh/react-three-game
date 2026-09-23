@@ -7,7 +7,7 @@ import { GameCanvas, GameEventsProvider, PrefabRoot, registerComponent, useGameE
 import { BASE_PATH } from '../../basePath';
 import CutsceneRunner from '../../components/cutscene/CutsceneRunner';
 import scene from '../../../public/prefabs/infinite-tv.json';
-import type { Caption } from '../../components/cutscene/Runner';
+import type { AudioState, Caption } from '../../components/cutscene/Runner';
 
 registerComponent(CutsceneRunner);
 
@@ -15,6 +15,23 @@ const buttonStyle: CSSProperties = {
     padding: '8px 12px', borderRadius: 6, background: '#0009',
     color: '#fff', font: '14px system-ui', textDecoration: 'none',
 };
+
+function AudioButton() {
+    const events = useGameEvents();
+    const [state, setState] = useState<AudioState>('on');
+    useEffect(() => {
+        const off = events.on('infinite-tv:audio-state', value => setState(value as AudioState));
+        events.emit('infinite-tv:audio', 'status');
+        return off;
+    }, [events]);
+    return <button
+        type="button"
+        aria-label={state === 'on' ? 'Mute audio' : 'Enable audio'}
+        title="Enable or mute dialogue audio. If the browser tab itself is muted, unmute it in the browser."
+        onClick={() => events.emit('infinite-tv:audio', state !== 'on')}
+        style={{ ...buttonStyle, pointerEvents: 'auto', border: 0, cursor: 'pointer' }}
+    >{state === 'on' ? 'Audio on' : state === 'muted' ? 'Audio off' : 'Enable audio'}</button>;
+}
 
 function Captions() {
     const events = useGameEvents();
@@ -42,10 +59,13 @@ export default function InfiniteTV() {
             <Loader />
             <nav aria-label="Demo navigation" style={{
                 position: 'absolute', top: 'max(16px, env(safe-area-inset-top))', left: 16, right: 16,
-                display: 'flex', justifyContent: 'space-between', pointerEvents: 'none',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', pointerEvents: 'none',
             }}>
                 <Link href="/" style={{ ...buttonStyle, pointerEvents: 'auto' }}>← Back</Link>
-                <Link href="/demo/infinite-tv/editor" style={{ ...buttonStyle, pointerEvents: 'auto' }}>Edit</Link>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                    <Link href="/demo/infinite-tv/editor" style={{ ...buttonStyle, pointerEvents: 'auto' }}>Edit</Link>
+                    <AudioButton />
+                </div>
             </nav>
             <Captions />
         </main>

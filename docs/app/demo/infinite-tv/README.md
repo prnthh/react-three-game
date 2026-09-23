@@ -25,7 +25,7 @@ Characters must have an AnimatedModel with `autoUpdate: false`. Initial poses co
 
 CutsceneRunner properties: `source`, `channel` (default `infinite-tv`), and `loop` (default true). Looping restores the prefab poses before replaying. Edit mode does not execute the script; Play mode does. Leaving playback stops audio and restores the original poses.
 
-The broadcast only subscribes to `<channel>:dialogue` when captions change. There are no playback controls, character cards, counters, progress calculations, or periodic status snapshots. Fetch/validation errors appear in the caption area.
+The broadcast only subscribes to `<channel>:dialogue` when captions change. The Audio button below Edit toggles dialogue sound and retries blocked autoplay. A browser-level tab mute must be cleared in the browser. There are no character cards, counters, progress calculations, or periodic status snapshots. Fetch/validation errors appear in the caption area.
 
 Export JSON from the editor and replace the prefab file to persist set edits. Tests: `node --import ./tests/register.mjs --test tests/cutscene-runner.test.mjs`.
 

@@ -84,13 +84,15 @@
     "character": "tv-milo",
     "text": "What’s its plan?",
     "durationMs": 2700,
-    "closeup": true
+    "closeup": true,
+    "audioSrc": "/sound/infinite-tv/05-milo.wav"
   },
   {
     "type": "dialogue",
     "character": "tv-june",
     "text": "Stay here. Get taller. Quietly take over the apartment.",
-    "durationMs": 4500
+    "durationMs": 4500,
+    "audioSrc": "/sound/infinite-tv/06-june.wav"
   },
   {
     "type": "animation",
@@ -121,7 +123,8 @@
     "type": "dialogue",
     "character": "tv-milo",
     "text": "Honestly, that’s better than my plan.",
-    "durationMs": 3600
+    "durationMs": 3600,
+    "audioSrc": "/sound/infinite-tv/07-milo.wav"
   },
   {
     "type": "animation",
@@ -152,14 +155,16 @@
     "type": "dialogue",
     "character": "tv-june",
     "text": "Your plan was to invent a mug that keeps coffee warm.",
-    "durationMs": 4500
+    "durationMs": 4500,
+    "audioSrc": "/sound/infinite-tv/08-june.wav"
   },
   {
     "type": "dialogue",
     "character": "tv-milo",
     "text": "A tiny sweater. For the mug. The technology is almost there.",
     "durationMs": 5000,
-    "closeup": true
+    "closeup": true,
+    "audioSrc": "/sound/infinite-tv/09-milo.wav"
   },
   {
     "type": "animation",
@@ -190,19 +195,22 @@
     "type": "dialogue",
     "character": "tv-june",
     "text": "Well, we have all evening.",
-    "durationMs": 3400
+    "durationMs": 3400,
+    "audioSrc": "/sound/infinite-tv/10-june.wav"
   },
   {
     "type": "dialogue",
     "character": "tv-milo",
     "text": "How long has it been evening?",
-    "durationMs": 3500
+    "durationMs": 3500,
+    "audioSrc": "/sound/infinite-tv/11-milo.wav"
   },
   {
     "type": "dialogue",
     "character": "tv-june",
     "text": "Don’t worry about it. What were you saying?",
     "durationMs": 4500,
-    "closeup": true
+    "closeup": true,
+    "audioSrc": "/sound/infinite-tv/12-june.wav"
   }
 ]

@@ -30,3 +30,43 @@ The broadcast only subscribes to `<channel>:dialogue` when captions change. Ther
 Export JSON from the editor and replace the prefab file to persist set edits. Tests: `node --import ./tests/register.mjs --test tests/cutscene-runner.test.mjs`.
 
 CutsceneRunner is registered inline in each viewer/editor entry point; there is no separate registration module.
+
+## Generate voices with Voicebox
+
+Local server: `http://127.0.0.1:17493`. These profile IDs belong to this installation; use `GET /profiles` to look them up on another server.
+
+| Character | Voice profile | `profile_id` |
+| --- | --- | --- |
+| Milo | guybrush threepwood | `e431e9f5-0a88-45c4-9dae-8d67b535f642` |
+| June | duck professor spy fox | `e6364395-26b2-4372-b237-f7835af9abef` |
+
+Generate a line with `POST /generate`, substituting the profile ID and dialogue text:
+
+```sh
+curl --fail-with-body http://127.0.0.1:17493/generate \
+  -H 'Content-Type: application/json' \
+  --data-binary @- <<'JSON'
+{
+  "profile_id": "e431e9f5-0a88-45c4-9dae-8d67b535f642",
+  "text": "Do you ever get the feeling we've had this conversation before?",
+  "language": "en",
+  "engine": "qwen",
+  "model_size": "1.7B",
+  "seed": 42,
+  "personality": false
+}
+JSON
+```
+
+The response contains an `id` and may initially report `status: "generating"`. Stream its status until `completed`, then download the WAV (replace `GENERATION_ID` with that response ID):
+
+```sh
+curl -N http://127.0.0.1:17493/generate/GENERATION_ID/status
+
+curl --fail-with-body http://127.0.0.1:17493/audio/GENERATION_ID \
+  -o docs/public/sound/infinite-tv/01-milo.wav
+```
+
+Set the dialogue command's `audioSrc` to `/sound/infinite-tv/01-milo.wav`. For June, use the Duck Professor profile ID and a corresponding filename. `personality: false` preserves the supplied dialogue rather than rewriting it.
+
+[Voicebox generation API documentation](https://docs.voicebox.sh/developer/tts-generation)

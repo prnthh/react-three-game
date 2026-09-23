@@ -29,14 +29,16 @@
     "character": "tv-milo",
     "text": "Do you ever get the feeling we’ve had this conversation before?",
     "durationMs": 5200,
-    "closeup": true
+    "closeup": true,
+    "audioSrc": "/sound/infinite-tv/01-milo.wav"
   },
   {
     "type": "dialogue",
     "character": "tv-june",
     "text": "With you? That narrows it down to about four conversations.",
     "durationMs": 4800,
-    "closeup": true
+    "closeup": true,
+    "audioSrc": "/sound/infinite-tv/02-june.wav"
   },
   {
     "type": "animation",
@@ -67,13 +69,15 @@
     "type": "dialogue",
     "character": "tv-milo",
     "text": "No, I mean this exact room. This exact evening. That suspiciously perfect plant.",
-    "durationMs": 6000
+    "durationMs": 6000,
+    "audioSrc": "/sound/infinite-tv/03-milo.wav"
   },
   {
     "type": "dialogue",
     "character": "tv-june",
     "text": "Leave the plant out of this. It’s the only one of us with a five-year plan.",
-    "durationMs": 5700
+    "durationMs": 5700,
+    "audioSrc": "/sound/infinite-tv/04-june.wav"
   },
   {
     "type": "dialogue",

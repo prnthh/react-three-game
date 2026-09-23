@@ -1,4 +1,5 @@
 "use client";
+import CutsceneRunner from "../components/cutscene/CutsceneRunner";
 
 import PrefabGridStreamerComponent from "../components/PrefabGridStreamerComponent";
 import ConstantVelocityComponent from "../components/ConstantVelocityComponent";
@@ -119,3 +120,4 @@ export default function Home() {
 registerComponent(PrefabGridStreamerComponent);
 registerComponent(ConstantVelocityComponent);
 registerComponent(CameraShadowFollowerComponent);
+registerComponent(CutsceneRunner);

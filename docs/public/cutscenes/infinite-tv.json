@@ -1,0 +1,204 @@
+[
+  {
+    "type": "animation",
+    "character": "tv-milo",
+    "name": "walk"
+  },
+  {
+    "type": "walkto",
+    "character": "tv-milo",
+    "position": [
+      -1.5,
+      0,
+      1.5
+    ],
+    "speed": 0.9
+  },
+  {
+    "type": "animation",
+    "character": "tv-milo",
+    "name": "idle"
+  },
+  {
+    "type": "lookat",
+    "character": "tv-milo",
+    "target": "tv-june"
+  },
+  {
+    "type": "dialogue",
+    "character": "tv-milo",
+    "text": "Do you ever get the feeling we’ve had this conversation before?",
+    "durationMs": 5200,
+    "closeup": true
+  },
+  {
+    "type": "dialogue",
+    "character": "tv-june",
+    "text": "With you? That narrows it down to about four conversations.",
+    "durationMs": 4800,
+    "closeup": true
+  },
+  {
+    "type": "animation",
+    "character": "tv-milo",
+    "name": "walk"
+  },
+  {
+    "type": "walkto",
+    "character": "tv-milo",
+    "position": [
+      -2,
+      0,
+      0.6
+    ],
+    "speed": 0.9
+  },
+  {
+    "type": "animation",
+    "character": "tv-milo",
+    "name": "idle"
+  },
+  {
+    "type": "lookat",
+    "character": "tv-milo",
+    "target": "tv-june"
+  },
+  {
+    "type": "dialogue",
+    "character": "tv-milo",
+    "text": "No, I mean this exact room. This exact evening. That suspiciously perfect plant.",
+    "durationMs": 6000
+  },
+  {
+    "type": "dialogue",
+    "character": "tv-june",
+    "text": "Leave the plant out of this. It’s the only one of us with a five-year plan.",
+    "durationMs": 5700
+  },
+  {
+    "type": "dialogue",
+    "character": "tv-milo",
+    "text": "What’s its plan?",
+    "durationMs": 2700,
+    "closeup": true
+  },
+  {
+    "type": "dialogue",
+    "character": "tv-june",
+    "text": "Stay here. Get taller. Quietly take over the apartment.",
+    "durationMs": 4500
+  },
+  {
+    "type": "animation",
+    "character": "tv-milo",
+    "name": "walk"
+  },
+  {
+    "type": "walkto",
+    "character": "tv-milo",
+    "position": [
+      -1.05,
+      0,
+      0.8
+    ],
+    "speed": 0.9
+  },
+  {
+    "type": "animation",
+    "character": "tv-milo",
+    "name": "idle"
+  },
+  {
+    "type": "lookat",
+    "character": "tv-milo",
+    "target": "tv-june"
+  },
+  {
+    "type": "dialogue",
+    "character": "tv-milo",
+    "text": "Honestly, that’s better than my plan.",
+    "durationMs": 3600
+  },
+  {
+    "type": "animation",
+    "character": "tv-june",
+    "name": "walk"
+  },
+  {
+    "type": "walkto",
+    "character": "tv-june",
+    "position": [
+      1.8,
+      0,
+      1.4
+    ],
+    "speed": 0.9
+  },
+  {
+    "type": "animation",
+    "character": "tv-june",
+    "name": "idle"
+  },
+  {
+    "type": "lookat",
+    "character": "tv-june",
+    "target": "tv-milo"
+  },
+  {
+    "type": "dialogue",
+    "character": "tv-june",
+    "text": "Your plan was to invent a mug that keeps coffee warm.",
+    "durationMs": 4500
+  },
+  {
+    "type": "dialogue",
+    "character": "tv-milo",
+    "text": "A tiny sweater. For the mug. The technology is almost there.",
+    "durationMs": 5000,
+    "closeup": true
+  },
+  {
+    "type": "animation",
+    "character": "tv-june",
+    "name": "walk"
+  },
+  {
+    "type": "walkto",
+    "character": "tv-june",
+    "position": [
+      1.05,
+      0,
+      0.8
+    ],
+    "speed": 0.9
+  },
+  {
+    "type": "animation",
+    "character": "tv-june",
+    "name": "idle"
+  },
+  {
+    "type": "lookat",
+    "character": "tv-june",
+    "target": "tv-milo"
+  },
+  {
+    "type": "dialogue",
+    "character": "tv-june",
+    "text": "Well, we have all evening.",
+    "durationMs": 3400
+  },
+  {
+    "type": "dialogue",
+    "character": "tv-milo",
+    "text": "How long has it been evening?",
+    "durationMs": 3500
+  },
+  {
+    "type": "dialogue",
+    "character": "tv-june",
+    "text": "Don’t worry about it. What were you saying?",
+    "durationMs": 4500,
+    "closeup": true
+  }
+]

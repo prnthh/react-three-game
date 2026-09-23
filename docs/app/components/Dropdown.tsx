@@ -12,6 +12,7 @@ export default function Dropdown() {
     const [open, setOpen] = useState(false);
 
     const options: DemoOption[] = [
+        { label: "Infinite TV", href: "/demo/infinite-tv" },
         { label: "Interior Mapping", href: "/demo/interior" },
         { label: "Pavilion Light Lab", href: "/demo/lights" },
         { label: "Viewer Mode", href: "/viewer" },

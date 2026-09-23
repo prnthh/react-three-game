@@ -1,4 +1,5 @@
 "use client";
+import CutsceneRunner from "../components/cutscene/CutsceneRunner";
 import PrefabGridStreamerComponent from "../components/PrefabGridStreamerComponent";
 import ConstantVelocityComponent from "../components/ConstantVelocityComponent";
 import CameraShadowFollowerComponent from "../demo/grassworld/components/CameraShadowFollowerComponent";
@@ -42,3 +43,4 @@ export default function Home() {
 registerComponent(PrefabGridStreamerComponent);
 registerComponent(ConstantVelocityComponent);
 registerComponent(CameraShadowFollowerComponent);
+registerComponent(CutsceneRunner);

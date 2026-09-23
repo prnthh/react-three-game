@@ -142,6 +142,21 @@ Place this inside `GameCanvas`. Its runtime is shared automatically across roots
 
 Custom asset components declare `dependencies(properties)` with `{ kind: 'texture' | 'model' | 'sound' | 'prefab', path }`. See [architecture](docs/ARCHITECTURE.md) for resource ownership and preparation.
 
+## Audio
+
+The shared sound manager plays looping background music and overlapping one-off sounds:
+
+```ts
+import { soundManager } from 'react-three-game/viewer';
+
+void soundManager.playMusic('/sound/music.wav', { volume: 0.3 });
+// Call directly from a click/tap handler to also unlock audio blocked on page load.
+void soundManager.play('/sound/click.wav');
+soundManager.stopMusic();
+```
+
+Music and one-off sounds share an audio context, so playing a sound after interaction also resumes queued music. `play()` returns a handle with `stop()` and accepts an `onEnded` callback. Master, music, and sound-effect volume controls are available through `setMasterVolume()`, `setMusicVolume()`, and `setSfxVolume()`.
+
 ## Plugins and examples
 
 Runtime imports use `react-three-game/viewer` (also available from `react-three-game`). Types and schemas are available from `/core`; authoring UI from `/editor`.

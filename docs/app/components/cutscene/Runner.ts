@@ -1,3 +1,4 @@
+import type { SoundManager, SoundPlayback } from 'react-three-game/viewer';
 import type { Point, Script } from './script';
 export interface Actor {
     position(): Point;
@@ -15,54 +16,45 @@ export class Runner {
     private index = 0;
     private started = false;
     private elapsed = 0;
-    private audio: HTMLAudioElement | null = null;
+    private audio: SoundPlayback | null = null;
     private audioActive = false;
+    private voiceRequest = 0;
     private audioDone = false;
     private disposed = false;
     private muted = false;
     audioState: AudioState = 'on';
-    constructor(private script: Script, private actors: Record<string, Actor>, private makeAudio: (src: string) => HTMLAudioElement, private caption: (value: Caption) => void, private loop = true, private focus: (character: string | null) => void = () => {}, private onAudioState: (state: AudioState) => void = () => {}) {}
+    constructor(private script: Script, private actors: Record<string, Actor>, private sound: Pick<SoundManager, 'play' | 'resume' | 'isRunning' | 'setMasterVolume'>, private caption: (value: Caption) => void, private loop = true, private focus: (character: string | null) => void = () => {}, private onAudioState: (state: AudioState) => void = () => {}, private resolveAudioSrc: (src: string) => string = src => src) {}
 
     private reportAudio(state: AudioState) {
+        if (this.audioState === state) return;
         this.audioState = state;
         this.onAudioState(state);
     }
     setAudioEnabled(enabled: boolean) {
         this.muted = !enabled;
-        if (this.audio) this.audio.muted = this.muted;
-        this.reportAudio(enabled ? 'on' : 'muted');
-        // Called synchronously from the button's user gesture to unlock playback.
-        if (enabled && this.audio && !this.audioDone) this.playAudio();
-    }
-    private playAudio() {
-        const audio = this.audio;
-        if (!audio) return;
-        this.audioActive = true;
-        void audio.play().catch(() => {
-            if (this.audio !== audio || this.disposed) return;
-            this.audioActive = false;
-            this.reportAudio(this.muted ? 'muted' : 'blocked');
-        });
+        this.sound.setMasterVolume(enabled ? 1 : 0);
+        void this.sound.resume();
+        this.reportAudio(!enabled ? 'muted' : this.sound.isRunning ? 'on' : 'blocked');
     }
     private stopAudio() {
-        if (!this.audio) return;
-        this.audio.pause();
-        this.audio.onended = this.audio.onerror = this.audio.onplaying = null;
-        this.audio.removeAttribute('src');
-        this.audio.load();
+        this.voiceRequest++;
+        this.audio?.stop();
         this.audio = null;
     }
     private startDialogue(command: Extract<Script[number], { type: 'dialogue' }>) {
         this.focus(command.closeup ? command.character : null);
         this.caption({ character: command.character, text: command.text });
         if (!command.audioSrc) return;
-        const audio = this.makeAudio(command.audioSrc);
-        this.audio = audio;
-        audio.muted = this.muted;
-        audio.onplaying = () => { this.audioActive = true; this.reportAudio(this.muted ? 'muted' : 'on'); };
-        audio.onended = () => { this.audioDone = true; };
-        audio.onerror = () => { this.audioActive = false; audio.pause(); };
-        this.playAudio();
+        const request = ++this.voiceRequest;
+        this.audioActive = true;
+        void this.sound.play(this.resolveAudioSrc(command.audioSrc), {
+            onEnded: () => { if (request === this.voiceRequest) this.audioDone = true; },
+        }).then(audio => {
+            if (request !== this.voiceRequest || this.disposed) { audio.stop(); return; }
+            this.audio = audio;
+        }).catch(() => {
+            if (request === this.voiceRequest && !this.disposed) this.audioActive = false;
+        });
     }
     private next() {
         if (this.script[this.index].type === 'dialogue') { this.focus(null); this.caption(null); }
@@ -75,6 +67,7 @@ export class Runner {
     }
     tick(delta: number) {
         if (this.disposed) return;
+        this.reportAudio(this.muted ? 'muted' : this.sound.isRunning ? 'on' : 'blocked');
         const dt = Math.max(0, Math.min(delta, 0.1));
         // Bound immediate commands so even a script with no waits cannot spin.
         for (let count = 0; count < this.script.length; count++) {

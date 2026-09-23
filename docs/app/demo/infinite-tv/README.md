@@ -19,13 +19,13 @@ Replace `docs/public/cutscenes/infinite-tv.json` and reload, or change the Cutsc
 - `animation` sets a clip and continues immediately. It remains active until another animation command changes it. Missing clips fall back to idle/the first clip.
 - `walkto` faces and moves toward a local position, waiting until arrival. `speed` defaults to 1.2 units/second. Use animation commands before and after it to select walking/idle clips.
 - `lookat` turns toward another node ID or a coordinate `[x, y, z]`, then continues immediately.
-- `dialogue` displays a caption and waits. Set `closeup: true` to cut to a front-facing speaker shot for that line; omitted or false keeps the room view. The camera frames the model using its current facing direction and restores the authored camera when the line ends or playback is unloaded. Optional `audioSrc` plays a voice clip and advances on completion. Missing/blocked audio uses `durationMs`, or a reading duration based on text length if omitted.
+- `dialogue` displays a caption and waits. Set `closeup: true` to cut to a front-facing speaker shot for that line; omitted or false keeps the room view. The camera frames the model using its current facing direction and restores the authored camera when the line ends or playback is unloaded. Optional `audioSrc` plays a voice clip through the shared sound manager and advances on completion. Missing or failed audio uses `durationMs`, or a reading duration based on text length if omitted. Autoplay-blocked dialogue waits for audio to be enabled.
 
 Characters must have an AnimatedModel with `autoUpdate: false`. Initial poses come from the prefab. All characters should share the same parent coordinate space. Walking uses straight paths without obstacle avoidance.
 
 CutsceneRunner properties: `source`, `channel` (default `infinite-tv`), and `loop` (default true). Looping restores the prefab poses before replaying. Edit mode does not execute the script; Play mode does. Leaving playback stops audio and restores the original poses.
 
-The broadcast only subscribes to `<channel>:dialogue` when captions change. The Audio button below Edit toggles dialogue sound and retries blocked autoplay. A browser-level tab mute must be cleared in the browser. There are no character cards, counters, progress calculations, or periodic status snapshots. Fetch/validation errors appear in the caption area.
+The broadcast only subscribes to `<channel>:dialogue` when captions change. The Audio button below Edit toggles master sound and resumes the shared audio context, including any queued background music. A browser-level tab mute must be cleared in the browser. There are no character cards, counters, progress calculations, or periodic status snapshots. Fetch/validation errors appear in the caption area.
 
 Export JSON from the editor and replace the prefab file to persist set edits. Tests: `node --import ./tests/register.mjs --test tests/cutscene-runner.test.mjs`.
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { ANIMATED_MODEL_COMPONENT, PrefabEditorMode, useGameEvents, useGameObject, usePrefab, useScene, type Component, type ComponentViewProps, type GameObjectHandle } from 'react-three-game/viewer';
+import { ANIMATED_MODEL_COMPONENT, PrefabEditorMode, soundManager, useGameEvents, useGameObject, usePrefab, useScene, type Component, type ComponentViewProps, type GameObjectHandle } from 'react-three-game/viewer';
 import { characterIds, parseScript, type Script } from './script';
 import { Runner, type Actor } from './Runner';
 import { SpeakerCamera } from './SpeakerCamera';
@@ -27,6 +27,8 @@ function Playback({ script, channel, loop }: { script: Script; channel: string; 
         const off = events.on(`${channel}:audio`, value => {
             if (typeof value === 'boolean') {
                 audioEnabled.current = value;
+                soundManager.setMasterVolume(value ? 1 : 0);
+                void soundManager.resume();
                 runner.current?.setAudioEnabled(value);
             }
             events.emit(`${channel}:audio-state`, runner.current?.audioState ?? (audioEnabled.current ? 'on' : 'muted'));
@@ -64,13 +66,13 @@ function Playback({ script, channel, loop }: { script: Script; channel: string; 
                     },
                 };
             }
-            runner.current = new Runner(script, actors, src => new Audio(resolve(prefab.basePath, src)), caption => events.emit(`${channel}:dialogue`, caption), loop, id => {
+            runner.current = new Runner(script, actors, soundManager, caption => events.emit(`${channel}:dialogue`, caption), loop, id => {
                 if (!id) { shot.restore(); return; }
                 const binding = bindings.get(id);
                 const object = binding?.transform;
                 const model = binding?.getComponent(ANIMATED_MODEL_COMPONENT);
                 if (object && model) shot.focus(getThree().camera, object, model.object);
-            }, state => events.emit(`${channel}:audio-state`, state));
+            }, state => events.emit(`${channel}:audio-state`, state), src => resolve(prefab.basePath, src));
             runner.current.setAudioEnabled(audioEnabled.current);
             events.emit(`${channel}:dialogue`, null);
         }

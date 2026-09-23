@@ -5,7 +5,8 @@ export type { GameCanvasProps } from "./shared/GameCanvas";
 
 export { ground } from "./helpers";
 export type { GroundOptions, Vec3 } from "./helpers";
-export { sound as soundManager } from "./helpers/SoundManager";
+export { sound as soundManager, SoundManager } from "./helpers/SoundManager";
+export type { SoundOptions, SoundPlayback } from "./helpers/SoundManager";
 
 export { default as PrefabRoot } from "./tools/prefabeditor/PrefabRoot";
 export type { PrefabRootProps } from "./tools/prefabeditor/PrefabRoot";

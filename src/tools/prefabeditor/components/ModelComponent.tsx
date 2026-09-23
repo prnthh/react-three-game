@@ -6,7 +6,7 @@ import type { Component, ComponentViewProps } from './ComponentRegistry';
 
 import { useSuspenseModelAsset } from '../assetRuntime';
 
-import { useNode } from '../SceneContext';
+import { useGameObject, useNode } from '../SceneContext';
 
 import { withBasePath } from '../runtimeUtils';
 
@@ -130,7 +130,8 @@ function RepeatedModel({ source, positions, interactive }: {
     positions: [number, number, number][];
     interactive: boolean;
 }) {
-    const { runtimeNodeId, isSelected } = useNode();
+    const { isSelected } = useNode();
+    const { id: runtimeNodeId } = useGameObject();
     const parts = useMemo(() => {
         const result: RepeatedModelPart[] = [];
         source.updateWorldMatrix(false, true);

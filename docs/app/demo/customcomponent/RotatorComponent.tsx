@@ -1,6 +1,6 @@
 import { useFrame } from "@react-three/fiber";
 
-import { useNode, useNodeObject, type Component, type ComponentViewProps } from "react-three-game/viewer";
+import { useNode, useGameObject, type Component, type ComponentViewProps } from "react-three-game/viewer";
 
 export type RotationAxis = 'x' | 'y' | 'z';
 
@@ -11,10 +11,10 @@ export type RotatorProperties = {
 
 function RotatorView({ properties, children }: ComponentViewProps<RotatorProperties>) {
     const { editMode } = useNode();
-    const objectRef = useNodeObject();
+    const objectRef = useGameObject();
 
     useFrame((_, delta) => {
-        const object = objectRef.current;
+        const object = objectRef.transform;
         if (editMode || !object) return;
 
         const speed = properties.speed;

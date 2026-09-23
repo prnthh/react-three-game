@@ -1,5 +1,7 @@
 "use client";
 
+import { importCollisionModel } from "react-three-game/plugins/crashcat";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PrefabEditorMode, registerComponent, useSceneComponents, type GameObject, type Prefab } from "react-three-game/viewer";
 import { PrefabEditor } from "react-three-game/editor";
@@ -124,6 +126,7 @@ export default function KillboxDemo() {
     return (
         <main className="flex h-screen w-screen flex-col items-center justify-between bg-white dark:bg-black sm:items-start">
             <PrefabEditor
+                importModel={importCollisionModel}
                 basePath={BASE_PATH}
                 prefab={selectedPrefab}
                 mode={PrefabEditorMode.Edit}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useStore } from "zustand";
 
@@ -8,7 +8,7 @@ import { type Component, type ComponentViewProps } from "../../tools/prefabedito
 
 import { useModelAsset } from "../../tools/prefabeditor/assetRuntime";
 
-import { useNode, usePrefab } from "../../tools/prefabeditor/SceneContext";
+import { createNodeComponentType, useGameObject, useNode, usePrefab, useRegisterNodeComponent } from "../../tools/prefabeditor/SceneContext";
 
 import { usePrefabStoreApi } from "../../tools/prefabeditor/prefabStore";
 
@@ -24,6 +24,8 @@ import { useCrashcat, type CrashcatApi, type CrashcatBodySync } from "./Crashcat
 
 import { createShapeForObject } from "./collisionShapes";
 import { moveKinematicBody } from "./kinematic";
+
+export const RIGID_BODY_COMPONENT = createNodeComponentType<RigidBody>("RigidBody");
 
 export type CrashcatPhysicsProperties = {
     type?: "fixed" | "dynamic" | "kinematicPosition" | "kinematicVelocity";
@@ -138,6 +140,7 @@ function createAndRegisterBody(
     }
 
     api.register(nodeId, body, {
+        object,
         motionType,
         sensor: Boolean(physics.sensor),
         events: {
@@ -152,8 +155,12 @@ function createAndRegisterBody(
 }
 
 function CrashcatPhysicsView({ properties, children }: ComponentViewProps<CrashcatPhysicsProperties>) {
-    const { nodeId, runtimeNodeId, getObject } = useNode();
+    const { nodeId } = useNode();
+    const gameObject = useGameObject();
+    const runtimeNodeId = gameObject.id;
     const api = useCrashcat();
+    const [body, setBody] = useState<RigidBody | null>(null);
+    useRegisterNodeComponent(RIGID_BODY_COMPONENT, body);
     const { basePath } = usePrefab();
     const store = usePrefabStoreApi();
     const node = useStore(store, useCallback(state => state.nodesById[nodeId], [nodeId]));
@@ -173,7 +180,7 @@ function CrashcatPhysicsView({ properties, children }: ComponentViewProps<Crashc
         // Rebuild from current geometry when authored node data or its model changes.
         void loadedModel;
         if (!api) return;
-        const object = getObject();
+        const object = gameObject.transform;
         if (!object) return;
 
         const motionType = toMotionType(physics);
@@ -181,13 +188,13 @@ function CrashcatPhysicsView({ properties, children }: ComponentViewProps<Crashc
 
         if (physics.type === "kinematicPosition") {
             sync.beforeStep = (body, delta) => {
-                const currentObject = getObject();
+                const currentObject = gameObject.transform;
                 if (!currentObject) return;
                 syncObjectToBody(api.world, body, currentObject, syncPositionRef.current, syncQuaternionRef.current, delta);
             };
         } else if (motionType !== MotionType.STATIC) {
             sync.afterStep = (body) => {
-                const currentObject = getObject();
+                const currentObject = gameObject.transform;
                 if (!currentObject) return;
 
                 if (bodyTransformChanged(body, lastPositionRef.current, lastQuaternionRef.current)) {
@@ -199,13 +206,16 @@ function CrashcatPhysicsView({ properties, children }: ComponentViewProps<Crashc
             };
         }
 
-        createAndRegisterBody(api, runtimeNodeId, object, physics, sync);
+        setBody(createAndRegisterBody(api, runtimeNodeId, object, physics, sync));
         lastPositionRef.current = null;
         lastQuaternionRef.current = null;
-        return () => api.unregister(runtimeNodeId);
+        return () => {
+            setBody(null);
+            api.unregister(runtimeNodeId);
+        };
     }, [
         api,
-        getObject,
+        gameObject,
         runtimeNodeId,
         physics,
         node,

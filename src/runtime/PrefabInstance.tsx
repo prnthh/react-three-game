@@ -1,13 +1,13 @@
-import { MaterialPoolProvider, useSceneMaterialStatus } from "../tools/prefabeditor/components/MaterialComponent";
+import { useSceneMaterialStatus } from "../tools/prefabeditor/components/MaterialComponent";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useThree } from '@react-three/fiber';
 import { Group } from 'three';
 import type { WebGPURenderer } from 'three/webgpu';
 import { PrefabRoot } from '../tools/prefabeditor/PrefabRoot';
 import { createPrefabStore } from '../tools/prefabeditor/prefabStore';
-import { AssetRuntimeProvider, useAssetRuntime, useScenePendingLoads } from '../tools/prefabeditor/assetRuntime';
+import { useAssetRuntime } from '../tools/prefabeditor/assetRuntime';
 import { MeshInstanceProvider, useMeshInstanceRevision } from '../tools/prefabeditor/MeshInstanceProvider';
-import { RuntimeNodeIdScope } from '../tools/prefabeditor/SceneContext';
+import { SceneRuntime } from './SceneRuntime';
 import type { PreparedPrefab } from './preparePrefab';
 
 export type PrefabInstanceStatus =
@@ -31,7 +31,7 @@ export interface PrefabInstanceProps {
 
 /** Load a shared definition, build an isolated instance, compile it, then activate gameplay. */
 export function PrefabInstance(props: PrefabInstanceProps) {
-    return <AssetRuntimeProvider><MaterialPoolProvider><InstanceResource key={`${props.id}:${props.basePath ?? ''}:${props.url}:${!!props.static}`} {...props} /></MaterialPoolProvider></AssetRuntimeProvider>;
+    return <SceneRuntime><InstanceResource key={`${props.id}:${props.basePath ?? ''}:${props.url}:${!!props.static}`} {...props} /></SceneRuntime>;
 }
 
 function InstanceResource(props: PrefabInstanceProps) {
@@ -53,9 +53,7 @@ function InstanceResource(props: PrefabInstanceProps) {
         return () => { controller.abort(); resource?.release(); };
     }, [props.basePath, props.url, runtime]);
     if (!prepared) return null;
-    return <RuntimeNodeIdScope prefix={props.id}>
-        <InstanceMount {...props} prepared={prepared} />
-    </RuntimeNodeIdScope>;
+    return <InstanceMount {...props} prepared={prepared} />;
 }
 
 // Three's compiler temporarily changes renderer state; serialize preparation per renderer.
@@ -77,19 +75,18 @@ function InstanceMount(props: PrefabInstanceProps & { prepared: PreparedPrefab }
     </primitive>;
 }
 
-function InstanceView({ prepared, active = true, static: isStatic = false, basePath, onStatus, onActivate, children, container }: PrefabInstanceProps & { prepared: PreparedPrefab; container: Group }) {
+function InstanceView({ id, prepared, active = true, static: isStatic = false, basePath, onStatus, onActivate, children, container }: PrefabInstanceProps & { prepared: PreparedPrefab; container: Group }) {
     const store = useMemo(() => createPrefabStore(prepared.document), [prepared]);
     const { gl, camera, scene, invalidate } = useThree();
     const revision = useMeshInstanceRevision();
-    const pendingLoads = useScenePendingLoads();
-    const { revision: materialRevision, pending: pendingMaterials } = useSceneMaterialStatus();
+    const { pending: pendingMaterials } = useSceneMaterialStatus(container);
     const [compiled, setCompiled] = useState(false);
     const [compileMs, setCompileMs] = useState(0);
     const callbacks = useRef({ onStatus, onActivate });
     callbacks.current = { onStatus, onActivate };
 
     useEffect(() => {
-        if (compiled || pendingLoads > 0 || pendingMaterials > 0) return;
+        if (compiled || pendingMaterials > 0) return;
         let cancelled = false;
         callbacks.current.onStatus?.({ phase: 'compiling', loadMs: prepared.durationMs });
         void enqueueCompilation(gl as unknown as WebGPURenderer, async () => {
@@ -119,7 +116,7 @@ function InstanceView({ prepared, active = true, static: isStatic = false, baseP
             if (!cancelled) callbacks.current.onStatus?.({ phase: 'error', error });
         });
         return () => { cancelled = true; };
-    }, [camera, compiled, container, isStatic, gl, invalidate, pendingLoads, pendingMaterials, materialRevision, prepared, revision, scene]);
+    }, [camera, compiled, container, isStatic, gl, invalidate, pendingMaterials, prepared, revision, scene]);
 
     useEffect(() => {
         if (!compiled) return;
@@ -129,8 +126,5 @@ function InstanceView({ prepared, active = true, static: isStatic = false, baseP
 
     useEffect(() => { container.visible = compiled && active; invalidate(); }, [active, compiled, container, invalidate]);
 
-    return <>
-        <PrefabRoot store={store} basePath={basePath} enabled={compiled && active} preparing={!compiled} />
-        {children}
-    </>;
+    return <PrefabRoot id={id} store={store} basePath={basePath} enabled={compiled && active} preparing={!compiled}>{children}</PrefabRoot>;
 }

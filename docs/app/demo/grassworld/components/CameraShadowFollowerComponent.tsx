@@ -3,7 +3,7 @@ import { useCallback, useLayoutEffect, useRef } from "react";
 import { DirectionalLight, Vector3, type Object3D } from "three";
 import {
     PrefabEditorMode,
-    useNodeObject,
+    useGameObject,
     useScene,
     type Component,
     type ComponentViewProps,
@@ -29,7 +29,7 @@ function findDirectionalLight(object: Object3D | null) {
 }
 
 function CameraShadowFollowerView({ properties, children }: ComponentViewProps<CameraShadowFollowerProperties>) {
-    const objectRef = useNodeObject();
+    const objectRef = useGameObject();
     const { mode } = useScene();
     const camera = useThree(state => state.camera);
     const elapsedRef = useRef(0);
@@ -54,7 +54,7 @@ function CameraShadowFollowerView({ properties, children }: ComponentViewProps<C
 
     useFrame((_, delta) => {
         if (mode !== PrefabEditorMode.Play) return;
-        const object = objectRef.current;
+        const object = objectRef.transform;
         if (!object) return;
         const light = lightRef.current?.parent ? lightRef.current : findDirectionalLight(object);
         if (!light) return;

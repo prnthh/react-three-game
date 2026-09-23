@@ -1,7 +1,7 @@
 export type { ComponentEditorProps } from "./tools/prefabeditor/components/ComponentRegistry";
 
-export { default as PrefabEditor } from "./tools/prefabeditor/PrefabEditor";
-export type { PrefabEditorProps, PrefabEditorRef } from "./tools/prefabeditor/PrefabEditor";
+export { default as PrefabEditor, PrefabEditorProvider, PrefabEditorScene, PrefabEditorPanel } from "./tools/prefabeditor/PrefabEditor";
+export type { PrefabEditorProps, PrefabEditorProviderProps, PrefabEditorRef } from "./tools/prefabeditor/PrefabEditor";
 
 export { useEditorContext, useEditorRef } from "./tools/prefabeditor/EditorContext";
 export type { EditorContextType } from "./tools/prefabeditor/EditorContext";

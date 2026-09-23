@@ -153,6 +153,7 @@ extend({
 type RuntimeMaterial = MeshBasicNodeMaterial | MeshStandardNodeMaterial | SpriteNodeMaterial;
 
 type SharedMaterials = { byId: ReadonlyMap<string, RuntimeMaterial> };
+const materialSources = new WeakMap<Material, Material>();
 const SharedMaterialsContext = createContext<SharedMaterials>({ byId: new Map() });
 type MaterialEntry = {
     key: string;
@@ -275,12 +276,22 @@ export function useSharedMaterialResource<T extends Material>(key: string, creat
     return entry.material as T;
 }
 
-export function useSceneMaterialStatus() {
+export function useSceneMaterialStatus(root: import("three").Object3D) {
     const pool = useContext(SceneMaterialPoolContext);
     if (!pool) throw new Error('Material status requires a scene material pool');
     const revision = useSyncExternalStore(pool.subscribe, pool.getSnapshot, pool.getSnapshot);
-    const pending = [...pool.entries.values()].filter(entry => !entry.configured).length;
-    return { revision, pending };
+    return { revision, pending: getPendingMaterialCount(root, pool.entries.values()) };
+}
+
+/** Count only materials used by this instance, including local override copies. */
+export function getPendingMaterialCount(root: import("three").Object3D, entries: Iterable<Pick<MaterialEntry, 'material' | 'configured'>>) {
+    const used = new Set<Material>();
+    root.traverse(object => {
+        const material = (object as import("three").Mesh).material;
+        if (Array.isArray(material)) material.forEach(value => used.add(materialSources.get(value) ?? value));
+        else if (material) used.add(materialSources.get(material) ?? material);
+    });
+    return [...entries].filter(entry => used.has(entry.material) && !entry.configured).length;
 }
 
 function MaterialRuntimeLayer({ children }: { children: ReactNode }) {
@@ -364,6 +375,7 @@ function MaterialComponentView({ properties, children }: ComponentViewProps<Mate
     useEffect(() => () => localMaterial?.dispose(), [localMaterial]);
     useLayoutEffect(() => {
         if (!localMaterial || !sharedMaterial) return;
+        materialSources.set(localMaterial, sharedMaterial);
         localMaterial.copy(sharedMaterial);
         applyProps(localMaterial, overrides);
         localMaterial.needsUpdate = true;

@@ -9,3 +9,5 @@ Open `/demo/stage` to play or `/demo/stage/editor` to edit the office and junkya
 - `page.tsx` coordinates clicks, dialogue and scene changes. `DialogueBox` owns text reveal; `AnimatedSceneTransition` plays door animations.
 
 Add a scene to `scenes.ts`. A door's `targetScene` matches its scene ID; `spawn` gives the player's arrival position. Custom components register once in `registerComponents.ts`; inspectors come from their schemas.
+
+The editor route composes `PrefabEditorProvider`, `GameCanvas`, `PrefabEditorScene`, and `PrefabEditorPanel`, just as a separate game project can.

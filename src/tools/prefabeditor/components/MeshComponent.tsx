@@ -4,7 +4,7 @@ import type { Mesh } from 'three';
 
 import type { Component, ComponentViewProps } from './ComponentRegistry';
 
-import { useNode } from '../SceneContext';
+import { useGameObject, useNode } from '../SceneContext';
 
 import { useMeshInstanceRegistration } from '../MeshInstanceProvider';
 
@@ -18,7 +18,8 @@ export type MeshProperties = {
 };
 
 function MeshView({ properties, children }: ComponentViewProps<MeshProperties>) {
-    const { runtimeNodeId, isSelected } = useNode();
+    const { isSelected } = useNode();
+    const { id: runtimeNodeId } = useGameObject();
     const [mesh, setMesh] = useState<Mesh | null>(null);
     const visible = properties.visible !== false;
     useMeshInstanceRegistration(

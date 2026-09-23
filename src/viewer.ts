@@ -18,13 +18,13 @@ export {
 	usePrefab,
 	useNode,
 	useSceneComponents,
-	useNodeObject,
+	useGameObject,
 	useRegisterNodeComponent,
 	createNodeComponentType,
 } from "./tools/prefabeditor/SceneContext";
 export { ANIMATED_MODEL_COMPONENT } from "./tools/prefabeditor/components/AnimatedModelComponent";
 export type { AnimatedModelHandle, AnimatedModelProperties } from "./tools/prefabeditor/components/AnimatedModelComponent";
-export type { LiveRef, NodeApi, NodeComponentType, PrefabApi, PrefabNode, Scene, SceneComponent } from "./tools/prefabeditor/SceneContext";
+export type { NodeApi, NodeComponentType, PrefabApi, PrefabNode, Scene, SceneComponent } from "./tools/prefabeditor/SceneContext";
 export { SceneProvider } from "./tools/prefabeditor/SceneProvider";
 
 export type { AssetRuntime } from "./tools/prefabeditor/assetRuntime";
@@ -35,8 +35,9 @@ export {
 	AssetRuntimeProvider,
 } from "./tools/prefabeditor/assetRuntime";
 
-export { gameEvents, useGameEvent } from "./tools/prefabeditor/GameEvents";
+export { GameEventsProvider, createGameEvents, useGameEvents, useGameEvent } from "./tools/prefabeditor/GameEvents";
 export type {
+	GameEvents,
 	ContactEventPayload,
 	GameEventHandler,
 	GameEventMap,
@@ -79,4 +80,8 @@ export { withBasePath as resolveAssetPath } from "./tools/prefabeditor/runtimeUt
 
 export { CascadedDirectionalLight } from './runtime/lighting/CascadedDirectionalLight';
 export type { CascadedDirectionalLightProps } from './runtime/lighting/CascadedDirectionalLight';
-export { invalidateShadows, useShadowUpdates } from './runtime/lighting/shadowUpdates';
+export { useInvalidateShadows, useShadowUpdates } from './runtime/lighting/shadowUpdates';
+
+export { SceneRuntime } from "./runtime/SceneRuntime";
+
+export type { GameObjectHandle } from "./tools/prefabeditor/gameObject";

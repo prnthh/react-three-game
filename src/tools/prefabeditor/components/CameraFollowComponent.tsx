@@ -1,7 +1,7 @@
 import { useFrame } from '@react-three/fiber';
 import { useRef } from 'react';
 import { Vector3 } from 'three';
-import { PrefabEditorMode, useNodeObject, usePrefab, useScene } from '../SceneContext';
+import { PrefabEditorMode, useGameObject, useScene } from '../SceneContext';
 import type { Component, ComponentViewProps } from './ComponentRegistry';
 
 export type CameraFollowProperties = {
@@ -12,8 +12,8 @@ export type CameraFollowProperties = {
 };
 
 function CameraFollowView({ properties, children }: ComponentViewProps<CameraFollowProperties>) {
-    const cameraObjectRef = useNodeObject();
-    const prefab = usePrefab();
+    const camera = useGameObject();
+    const targetObject = useGameObject(properties.targetId.trim());
     const { mode } = useScene();
     const targetPosition = useRef(new Vector3());
     const cameraWorldPosition = useRef(new Vector3());
@@ -23,9 +23,8 @@ function CameraFollowView({ properties, children }: ComponentViewProps<CameraFol
 
     useFrame((_, delta) => {
         if (mode !== PrefabEditorMode.Play) return;
-        const cameraObject = cameraObjectRef.current;
-        const targetId = properties.targetId?.trim();
-        const target = targetId ? prefab.getObject(targetId) : null;
+        const cameraObject = camera.transform;
+        const target = targetObject.transform;
         if (!cameraObject || !target) return;
 
         target.getWorldPosition(targetPosition.current);

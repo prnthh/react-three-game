@@ -1,3 +1,4 @@
+import { SceneRuntime } from "../runtime/SceneRuntime";
 import { Canvas, extend, CanvasProps } from "@react-three/fiber";
 import { WebGPURenderer, MeshBasicNodeMaterial, MeshStandardNodeMaterial, SpriteNodeMaterial, PCFShadowMap } from "three/webgpu";
 import { WebGPURendererParameters } from "three/src/renderers/webgpu/WebGPURenderer.Nodes.js";
@@ -61,7 +62,7 @@ export default function GameCanvas({ loader = false, children, glConfig, rendere
         onCreated={onCreated}
         {...props}
     >
-        {children}
+        <SceneRuntime>{children}</SceneRuntime>
 
         {loader ? <Loader /> : null}
     </Canvas>;

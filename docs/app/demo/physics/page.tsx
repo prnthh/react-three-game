@@ -1,5 +1,7 @@
 "use client";
 
+import { importCollisionModel } from "react-three-game/plugins/crashcat";
+
 import { registerComponentEditor } from "react-three-game/editor";
 import IndustrialMachineGunComponentInspector from "./IndustrialMachineGunComponent.editor";
 import AdvancingTargetComponentInspector from "./AdvancingTargetComponent.editor";
@@ -12,7 +14,7 @@ import {
     Vector3,
 } from "three";
 import {
-    gameEvents,
+    GameEventsProvider, useGameEvents, type ContactEventPayload,
     PrefabEditorMode,
     PrefabRoot,
     registerComponent,
@@ -22,7 +24,7 @@ import {
 import { PrefabEditor } from "react-three-game/editor";
 import { CrashcatPhysicsComponent, CrashcatRuntime } from "react-three-game/plugins/crashcat";
 import AdvancingTargetComponent from "./AdvancingTargetComponent";
-import IndustrialMachineGunComponent, { MACHINEGUN_PROJECTILE_ID_PREFIX } from "./IndustrialMachineGunComponent";
+import IndustrialMachineGunComponent from "./IndustrialMachineGunComponent";
 import { withBasePath, BASE_PATH } from "../../basePath";
 import outdoorLevelPrefab from "../../../public/prefabs/machinegun-level-outdoor.json";
 import ridgeLevelPrefab from "../../../public/prefabs/machinegun-level-ridge.json";
@@ -177,6 +179,7 @@ function ShotTracer({ shot }: { shot: ShotFx }) {
 }
 
 function BattlefieldEffects() {
+    const gameEvents = useGameEvents();
     const [shots, setShots] = useState<ShotFx[]>([]);
 
     useEffect(() => {
@@ -277,7 +280,8 @@ function RoundHud({ level, stats }: { level: LevelData; stats: CombatStats }) {
     );
 }
 
-export default function PhysicsDemo() {
+function PhysicsDemoContent() {
+    const gameEvents = useGameEvents();
     registerComponent(AdvancingTargetComponent);
     registerComponent(IndustrialMachineGunComponent);
     registerComponent(CrashcatPhysicsComponent);
@@ -294,7 +298,7 @@ export default function PhysicsDemo() {
     useEffect(() => {
         if (!selectedLevel) return;
         setStats(createInitialStats());
-    }, [selectedLevel]);
+    }, [gameEvents, selectedLevel]);
 
     useEffect(() => {
         if (!selectedLevel || stats.roundHits < selectedLevel.data.hitGoal) return undefined;
@@ -338,9 +342,8 @@ export default function PhysicsDemo() {
             setStats((current) => ({ ...current, liveRounds: activeProjectileCount }));
         });
         const stopHit = gameEvents.on(TARGET_HIT_EVENT, (payload: unknown) => {
-            const detail = payload as { targetNodeId?: unknown } | null;
-            if (typeof detail?.targetNodeId !== "string"
-                || !detail.targetNodeId.startsWith(MACHINEGUN_PROJECTILE_ID_PREFIX)) return;
+            const detail = payload as ContactEventPayload;
+            if (detail.targetObject?.name !== "machinegun-round") return;
 
             const clip = TARGET_HIT_SOUNDS[Math.floor(Math.random() * TARGET_HIT_SOUNDS.length)];
             void soundManager.play(withBasePath(clip), {
@@ -368,7 +371,7 @@ export default function PhysicsDemo() {
             stopBreach();
             stopTrigger();
         };
-    }, [selectedLevel]);
+    }, [gameEvents, selectedLevel]);
 
     if (!selectedLevel) {
         return <main className="flex h-screen w-screen flex-col" style={{ background: DEFAULT_ATMOSPHERE.background }} />;
@@ -377,6 +380,7 @@ export default function PhysicsDemo() {
     return (
         <main className="flex h-screen w-screen flex-col">
             <PrefabEditor
+                importModel={importCollisionModel}
                 key={selectedLevel.prefab.id}
                 basePath={BASE_PATH}
                 prefab={selectedLevel.prefab}
@@ -392,4 +396,8 @@ export default function PhysicsDemo() {
             </PrefabEditor>
         </main>
     );
+}
+
+export default function PhysicsDemo() {
+    return <GameEventsProvider><PhysicsDemoContent /></GameEventsProvider>;
 }

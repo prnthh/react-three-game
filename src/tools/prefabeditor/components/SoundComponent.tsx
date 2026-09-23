@@ -2,9 +2,9 @@ import { useEffect, useMemo, useRef } from 'react';
 
 import { useAssetRuntime, useSoundAssetRevision } from '../assetRuntime';
 
-import { useNode } from '../SceneContext';
+import { useGameObject, useNode } from '../SceneContext';
 
-import { gameEvents, type ContactEventPayload, type NodePointerEventPayload } from '../GameEvents';
+import { useGameEvents, type ContactEventPayload, type NodePointerEventPayload } from '../GameEvents';
 
 import type { Component, ComponentViewProps } from './ComponentRegistry';
 
@@ -135,7 +135,9 @@ function playBufferedAudio(audio: ThreePositionalAudio, buffer: AudioBuffer, pro
 function SoundComponentView({ properties, children }: ComponentViewProps<SoundProperties>) {
     const { basePath } = usePrefab();
     const { getSound } = useAssetRuntime();
-    const { editMode, nodeId } = useNode();
+    const { editMode } = useNode();
+    const { id: nodeId } = useGameObject();
+    const gameEvents = useGameEvents();
     const listener = useAudioListener();
     const { eventName, autoplay = false, positional = false, refDistance = 1, maxDistance = 24, rolloffFactor = 1, distanceModel = 'inverse' } = properties;
     const sequenceIndexRef = useRef(0);
@@ -181,7 +183,7 @@ function SoundComponentView({ properties, children }: ComponentViewProps<SoundPr
 
             playBufferedAudio(audio, buffer, properties);
         });
-    }, [editMode, eventName, getSound, mode, nodeId, paths, properties]);
+    }, [gameEvents, editMode, eventName, getSound, mode, nodeId, paths, properties]);
 
     useEffect(() => {
         // Re-run when assets load so autoplay can start once the buffer is ready

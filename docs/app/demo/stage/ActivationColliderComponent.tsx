@@ -4,8 +4,9 @@ import { Html } from "@react-three/drei";
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import {
-    gameEvents,
+    useGameEvents,
     useNode,
+    useGameObject,
     type Component,
     type ComponentViewProps,
     type ContactEventPayload,
@@ -33,9 +34,12 @@ function ActivationColliderView({
     properties,
     children,
 }: ComponentViewProps<ActivationColliderProperties>) {
-    const { nodeId, editMode } = useNode();
+    const gameEvents = useGameEvents();
+    const { editMode } = useNode();
+    const { id: nodeId } = useGameObject();
+    const target = useGameObject(properties.targetNodeId?.trim() || DEFAULT_TARGET_NODE);
     const [mood, setMood] = useState<string | null>(null);
-    const targetNodeId = properties.targetNodeId?.trim() || DEFAULT_TARGET_NODE;
+    const targetNodeId = target.id;
     const enterEventName = properties.enterEventName?.trim() || DEFAULT_ENTER_EVENT;
     const exitEventName = properties.exitEventName?.trim() || DEFAULT_EXIT_EVENT;
     const moods = useMemo(() => {
@@ -66,7 +70,7 @@ function ActivationColliderView({
             unsubscribeEnter();
             unsubscribeExit();
         };
-    }, [editMode, enterEventName, exitEventName, moods, nodeId, targetNodeId]);
+    }, [gameEvents, editMode, enterEventName, exitEventName, moods, nodeId, targetNodeId]);
 
     return (
         <>

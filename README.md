@@ -2,6 +2,8 @@
 
 Build WebGPU games from editable JSON scenes and React Three Fiber components.
 
+The library and docs use React / React DOM 19.3.0 and React Three Fiber 9.8.0. Consumers need matching React / React DOM versions in the supported range `>=19.0.0 <19.4.0` and R3F `^9.8.0`. R3F 9.8 fixes async renderer root setup and Strict Mode canvas remounts; `GameCanvas` continues to await WebGPU initialization before rendering. React 19.3 compatibility does not imply support for every new React API in R3F.
+
 ## Start
 
 ```tsx
@@ -21,6 +23,17 @@ import { PrefabEditor } from 'react-three-game/editor';
 
 <PrefabEditor prefab={scene as Prefab} />
 ```
+
+For an existing canvas or custom layout, compose the same editor pieces:
+
+```tsx
+<PrefabEditorProvider prefab={scene as Prefab}>
+  <GameCanvas><PrefabEditorScene><GameSystems /></PrefabEditorScene></GameCanvas>
+  <PrefabEditorPanel />
+</PrefabEditorProvider>
+```
+
+These editor pieces are exported from `/editor`. Store actions and prefab API edits share undo history; synchronous actions form one undo step.
 
 Keep the document object stable. Passing a new document reloads it. An editor ref's `save()` returns the edited document.
 
@@ -54,16 +67,16 @@ One file defines its properties, view, and ordinary inspector:
 
 ```tsx
 import { useFrame } from '@react-three/fiber';
-import { registerComponent, useNode, useNodeObject,
+import { registerComponent, useNode, useGameObject,
   type Component, type ComponentViewProps } from 'react-three-game/viewer';
 
 type SpinProps = { speed: number };
 
 function SpinView({ properties, children }: ComponentViewProps<SpinProps>) {
-  const object = useNodeObject();
+  const object = useGameObject();
   const { editMode } = useNode();
   useFrame((_, delta) => {
-    if (!editMode && object.current) object.current.rotation.y += properties.speed * delta;
+    if (!editMode && object.transform) object.transform.rotation.y += properties.speed * delta;
   });
   return <>{children}</>;
 }
@@ -86,33 +99,46 @@ Most behaviors need no composition metadata. Object components use `slot: 'objec
 
 | Need | API |
 | --- | --- |
-| Current node object | `useNodeObject()` |
+| Current or referenced live object | `useGameObject()` / `useGameObject(id)` |
 | Node selection and edit mode | `useNode()` |
-| Current document and its objects | `usePrefab()` |
+| Document edits and assets | `usePrefab()` |
 | Shared scene and mode | `useScene()` |
 | Save an authored edit | `prefab.update()`, `add()`, `remove()`, `setMaterial()` |
 | Animate or simulate | Mutate live Three objects in `useFrame` |
-| Notify systems | `gameEvents.emit()` / `useGameEvent()` |
-| Query typed node capabilities | `useRegisterNodeComponent()` / `useSceneComponents()` |
+| Notify systems | `useGameEvents().emit()` / `useGameEvent()` |
+| Read one runtime component | `object.getComponent(type)` |
+| Register or query scene components | `useRegisterNodeComponent()` / `useSceneComponents()` |
 
-Mount scene systems as children of `PrefabRoot`. Nested prefabs share the scene but have their own document and node IDs.
+Mount scene systems as children of `PrefabRoot`. Nested prefabs share runtime services but keep their own documents and local node IDs. Use distinct `id` props when mounting the same document in multiple `PrefabRoot`s. Use `useGameObject(id)` for a live object reference in the current prefab, or `useGameObject()` for the current node. Its `id` matches event payloads; instance scoping is automatic.
+
+`GameCanvas` supplies the runtime; `PrefabRoot` also supplies it when used in an existing R3F canvas. Wrap HTML controls and their canvas in `GameEventsProvider` when both need `useGameEvents()` or `useGameEvent()`.
 
 Use one active `Camera` node. Add `CameraFollow` to follow a `targetId` in the same prefab; its offsets are world-space. Edit mode uses editor controls. `Fog` provides scene-wide color, near, and far fields; use one active fog node with far greater than near.
+
+```tsx
+const player = useGameObject('player');
+const model = useGameObject('player-model');
+
+useFrame(() => {
+  player.transform?.position.setY(1);
+  model.getComponent(ANIMATED_MODEL_COMPONENT)?.setAnimationState('idle');
+});
+```
+
+Handles stay stable; `transform` and `getComponent()` read current values and return `null` until mounted or after unloading. Crashcat bodies are available through `getComponent(RIGID_BODY_COMPONENT)` from the physics plugin. Use `usePrefab()` for document edits and assets, and `useSceneComponents(type)` when you need all components of a type.
 
 ## Stream content
 
 ```tsx
-import { AssetRuntimeProvider, PrefabInstance } from 'react-three-game/viewer';
+import { PrefabInstance } from 'react-three-game/viewer';
 
-<AssetRuntimeProvider>
-  <group position={[0, 0, -320]}>
-    <PrefabInstance id="chunk-1" url="/prefabs/chunk.json"
-      onActivate={() => console.log('Chunk active')} />
-  </group>
-</AssetRuntimeProvider>
+<group position={[0, 0, -320]}>
+  <PrefabInstance id="chunk-1" url="/prefabs/chunk.json"
+    onActivate={() => console.log('Chunk active')} />
+</group>
 ```
 
-Place this inside `GameCanvas`. Share an `AssetRuntimeProvider` across sibling chunks. `PrefabInstance` loads assets and prepares rendering before showing content. Unmount to release it. `active={false}` prepares without activation; `onStatus` reports loading, compiling, ready, active, or error. Use `static` only for immutable chunks; remount to move or edit them.
+Place this inside `GameCanvas`. Its runtime is shared automatically across roots and chunks. `PrefabInstance` loads assets and prepares rendering before showing content. Unmount to release it. `active={false}` prepares without activation; `onStatus` reports loading, compiling, ready, active, or error. Use `static` only for immutable chunks; remount to move or edit them.
 
 Custom asset components declare `dependencies(properties)` with `{ kind: 'texture' | 'model' | 'sound' | 'prefab', path }`. See [architecture](docs/ARCHITECTURE.md) for resource ownership and preparation.
 
@@ -120,7 +146,7 @@ Custom asset components declare `dependencies(properties)` with `{ kind: 'textur
 
 Runtime imports use `react-three-game/viewer` (also available from `react-three-game`). Types and schemas are available from `/core`; authoring UI from `/editor`.
 
-Crashcat physics uses `/plugins/crashcat`: register `CrashcatPhysicsComponent` and mount one `CrashcatRuntime` inside the scene. Inspector controls come from the component schemas; no editor-specific import is needed.
+Crashcat physics uses `/plugins/crashcat`: register `CrashcatPhysicsComponent` and mount one `CrashcatRuntime` inside the scene. Inspector controls come from the component schemas; no editor-specific import is needed. Pass `importModel={importCollisionModel}` to the editor to convert Blender `_col`/`_colonly` meshes into physics nodes; the importer comes from the Crashcat plugin.
 
 See [demo routes](docs/README.md), [lighting](docs/LIGHTING.md), and [interior mapping](docs/INTERIOR-MAPPING.md).
 

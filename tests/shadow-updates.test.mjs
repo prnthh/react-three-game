@@ -1,14 +1,16 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { DirectionalLight, PointLight, SpotLight } from 'three';
-import { invalidateShadows, subscribeShadowUpdates } from '../src/runtime/lighting/shadowUpdates.ts';
-import { gameEvents } from '../src/tools/prefabeditor/GameEvents.ts';
+import { subscribeShadowUpdates } from '../src/runtime/lighting/shadowUpdates.ts';
+import { createGameEvents } from '../src/tools/prefabeditor/GameEvents.ts';
 
 test('static shadows capture initially, refresh selectively, and unsubscribe', () => {
+    const gameEvents = createGameEvents();
+    const invalidateShadows = lights => gameEvents.emit('shadows:invalidate', { lights });
     const lights = [new DirectionalLight(), new PointLight(), new SpotLight()];
     const renders = [0, 0, 0];
     lights.forEach(light => { light.shadow.autoUpdate = false; });
-    const cleanup = lights.map((light, i) => subscribeShadowUpdates(light, () => renders[i]++));
+    const cleanup = lights.map((light, i) => subscribeShadowUpdates(gameEvents, light, () => renders[i]++));
     try {
         assert.ok(lights.every(light => light.shadow.needsUpdate));
         lights.forEach(light => { light.shadow.needsUpdate = false; });

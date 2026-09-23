@@ -1,6 +1,6 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useLayoutEffect, useRef } from "react";
-import { PrefabEditorMode, useNodeObject, usePrefab, useScene, type Component, type ComponentViewProps } from "react-three-game/viewer";
+import { PrefabEditorMode, useGameObject, useScene, type Component, type ComponentViewProps } from "react-three-game/viewer";
 import { OrthographicCamera, PerspectiveCamera, Quaternion, Vector3 } from "three";
 import { PLAYER_NODE_ID } from "./stage";
 const UP = new Vector3(0, 1, 0);
@@ -9,11 +9,11 @@ type CameraFollowProperties = { targetNodeId?: string; deadZone?: number; speed?
 
 function StageCameraFollowView({ properties, children }: ComponentViewProps<CameraFollowProperties>) {
     const { mode } = useScene();
-    const prefab = usePrefab();
-    const object = useNodeObject();
+    const object = useGameObject();
+    const target = useGameObject(properties.targetNodeId);
     const lockedPosition = useRef(new Vector3());
     useLayoutEffect(() => {
-        object.current?.getWorldPosition(lockedPosition.current);
+        object.transform?.getWorldPosition(lockedPosition.current);
     }, [object]);
     const camera = useThree((state) => state.camera);
     const worldPosition = useRef(new Vector3());
@@ -27,9 +27,9 @@ function StageCameraFollowView({ properties, children }: ComponentViewProps<Came
 
     useFrame((_, delta) => {
         if (mode !== PrefabEditorMode.Play) return;
-        const player = prefab.getObject(properties.targetNodeId);
+        const player = target.transform;
         if (!player) return;
-        const node = object.current;
+        const node = object.transform;
         if (!node) return;
 
         player.getWorldPosition(worldPosition.current);

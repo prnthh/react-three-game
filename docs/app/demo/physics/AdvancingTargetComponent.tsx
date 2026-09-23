@@ -2,11 +2,9 @@ import { useFrame } from "@react-three/fiber";
 
 import { useEffect, useRef } from "react";
 
-import { gameEvents, useNode, useNodeObject, type Component, type ComponentViewProps } from "react-three-game/viewer";
+import { useGameEvents, useGameObject, useNode, type Component, type ComponentViewProps, type ContactEventPayload } from "react-three-game/viewer";
 
 import type { Material, Mesh, Object3D } from "three";
-
-import { MACHINEGUN_PROJECTILE_ID_PREFIX } from "./IndustrialMachineGunComponent";
 
 export type AdvancingTargetProperties = {
     speed?: number;
@@ -46,27 +44,13 @@ function setObjectColor(object: Object3D, color: string) {
     });
 }
 
-function isHitForNode(payload: unknown, nodeId: string) {
-    const detail = payload as {
-        sourceEntityId?: unknown;
-        sourceNodeId?: unknown;
-        targetEntityId?: unknown;
-        targetNodeId?: unknown;
-    } | null;
-
-    const sourceId = detail?.sourceNodeId ?? detail?.sourceEntityId;
-    const targetId = detail?.targetNodeId ?? detail?.targetEntityId;
-    return sourceId === nodeId
-        && typeof targetId === "string"
-        && targetId.startsWith(MACHINEGUN_PROJECTILE_ID_PREFIX);
-}
-
 function AdvancingTargetView({
     properties,
     children,
 }: ComponentViewProps<AdvancingTargetProperties>) {
-    const { editMode, nodeId } = useNode();
-    const objectRef = useNodeObject();
+    const gameEvents = useGameEvents();
+    const { editMode } = useNode();
+    const target = useGameObject();
     const elapsedRef = useRef(0);
     const hitFlashRef = useRef(0);
     const resetCountRef = useRef(0);
@@ -74,9 +58,10 @@ function AdvancingTargetView({
     useEffect(() => {
         const eventName = properties.hitEventName?.trim() || DEFAULT_HIT_EVENT;
         const stopHit = gameEvents.on(eventName, (payload: unknown) => {
-            if (!isHitForNode(payload, nodeId)) return;
+            const contact = payload as ContactEventPayload;
+            if (contact.sourceNodeId !== target.id || contact.targetObject?.name !== "machinegun-round") return;
 
-            const object = objectRef.current;
+            const object = target.transform;
             if (!object) return;
 
             const resetZ = properties.resetZ ?? DEFAULT_RESET_Z;
@@ -88,10 +73,10 @@ function AdvancingTargetView({
         });
 
         return stopHit;
-    }, [nodeId, objectRef, properties.hitColor, properties.hitEventName, properties.resetZ]);
+    }, [gameEvents, target, properties.hitColor, properties.hitEventName, properties.resetZ]);
 
     useFrame((_, delta) => {
-        const object = objectRef.current;
+        const object = target.transform;
         if (!object || editMode) return;
 
         if (elapsedRef.current === 0) {
@@ -110,8 +95,8 @@ function AdvancingTargetView({
             resetCountRef.current += 1;
             const eventName = properties.breachEventName?.trim() || DEFAULT_BREACH_EVENT;
             gameEvents.emit(eventName, {
-                sourceEntityId: nodeId,
-                sourceNodeId: nodeId,
+                sourceEntityId: target.id,
+                sourceNodeId: target.id,
             });
         }
 

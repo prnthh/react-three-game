@@ -4,7 +4,7 @@ import { PerspectiveCamera, PointerLockControls } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { capsule, filter, kcc, rigidBody, MotionType, type Filter, type RigidBody } from "crashcat";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef } from "react";
-import { gameEvents, PrefabEditorMode, soundManager, useNode, usePrefab, useRegisterNodeComponent, useScene, useSceneComponents } from "react-three-game/viewer";
+import { useGameEvents, PrefabEditorMode, soundManager, usePrefab, useGameObject, useRegisterNodeComponent, useScene, useSceneComponents } from "react-three-game/viewer";
 import type { Component, ComponentViewProps } from "react-three-game/viewer";
 import { useCrashcat } from "react-three-game/plugins/crashcat";
 import { MathUtils, Quaternion, Raycaster, Vector3 } from "three";
@@ -84,20 +84,20 @@ export type FootstepMaterialSound = {
 };
 
 function PlayerControllerView({ properties, children }: ComponentViewProps<PlayerControllerProperties>) {
-    const { getObject } = useNode();
+    const gameObject = useGameObject();
     const { mode } = useScene();
     const playerRuntime = useRef<FirstPersonPlayerRef | null>(null);
     const registration = useMemo<PlayerRegistration>(() => ({
         ...properties,
         runtime: playerRuntime,
         getPosition: () => {
-            const object = getObject();
+            const object = gameObject.transform;
             if (!object) return [0, 0, 0];
             object.updateWorldMatrix(true, false);
             object.getWorldPosition(groupPosition);
             return [groupPosition.x, groupPosition.y, groupPosition.z];
         },
-    }), [getObject, properties]);
+    }), [gameObject, properties]);
     useRegisterNodeComponent(PLAYER_CONTROLLER_COMPONENT, registration);
     return <>
         {mode === PrefabEditorMode.Edit ? (
@@ -210,7 +210,9 @@ const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProp
     children,
 }, ref) {
     const scene = useScene();
+    const gameEvents = useGameEvents();
     const prefab = usePrefab();
+    const playerObject = useGameObject(PLAYER_ID);
     const mode = scene.mode;
     const runtime = useCrashcat();
     const playerGroupRef = useRef<Group>(null);
@@ -348,7 +350,7 @@ const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProp
             quaternion: [0, 0, 0, 1],
             collideKinematicVsNonDynamic: true,
             friction: 0,
-            userData: { nodeId: PLAYER_ID },
+            userData: { nodeId: playerObject.id },
         });
 
         return () => {
@@ -359,7 +361,7 @@ const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProp
             rigidBody.remove(world, playerBodyRef.current);
             playerBodyRef.current = null;
         };
-    }, [halfHeightOfCylinder, mode, radius, runtime, spawnPosition]);
+    }, [halfHeightOfCylinder, mode, playerObject.id, radius, runtime, spawnPosition]);
 
     useFrame((state, delta) => {
         if (mode !== PrefabEditorMode.Play) {
@@ -506,8 +508,8 @@ const FirstPersonPlayer = forwardRef<FirstPersonPlayerRef, FirstPersonPlayerProp
                     halfHeightOfCylinder + radius + SUPPORT_RAY_EXTRA_DISTANCE,
                 );
                 gameEvents.emit(footstepEventName, {
-                    sourceEntityId: PLAYER_ID,
-                    sourceNodeId: PLAYER_ID,
+                    sourceEntityId: playerObject.id,
+                    sourceNodeId: playerObject.id,
                     speed,
                     floorMaterialName: currentGroundMaterialNameRef.current,
                 });

@@ -1,7 +1,7 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { Vector3 } from 'three';
-import { PrefabEditorMode, PrefabInstance, useNode, useNodeObject, usePrefab, useScene, type Component, type ComponentViewProps, type PrefabInstanceStatus } from 'react-three-game/viewer';
+import { PrefabEditorMode, PrefabInstance, useNode, useGameObject, usePrefab, useScene, type Component, type ComponentViewProps, type PrefabInstanceStatus } from 'react-three-game/viewer';
 
 type Coordinate = [number, number, number];
 type Properties = { url?: string; tileSize?: Coordinate; tileCenter?: Coordinate; maxTiles?: number; static?: boolean };
@@ -15,7 +15,7 @@ export const DemoChunkStatusContext = createContext<((status: PrefabInstanceStat
 function PrefabGridStreamerView({ properties, children }: ComponentViewProps<Properties>) {
     const { basePath } = usePrefab();
     const { mode } = useScene();
-    const host = useNodeObject();
+    const host = useGameObject();
     const { nodeId } = useNode();
     const camera = useThree(state => state.camera);
     const report = useContext(DemoChunkStatusContext);
@@ -38,9 +38,9 @@ function PrefabGridStreamerView({ properties, children }: ComponentViewProps<Pro
     }, [url, mode]);
 
     useFrame(() => {
-        if (mode !== PrefabEditorMode.Play || !host.current || !url) return;
+        if (mode !== PrefabEditorMode.Play || !host.transform || !url) return;
         camera.getWorldPosition(position.current);
-        host.current.worldToLocal(position.current);
+        host.transform.worldToLocal(position.current);
         const current = tileSize.map((size, axis) => size > 0
             ? Math.floor((position.current.getComponent(axis) - center[axis] + size / 2) / size) : 0) as Coordinate;
         const currentKey = keyOf(current);

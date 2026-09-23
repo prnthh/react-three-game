@@ -9,9 +9,10 @@ Enable `castShadow` on a light and the relevant meshes. Use one primary shadow c
 Set `shadowAutoUpdate: false` for static shadows. Refresh after changing lights, casters, or chunks:
 
 ```tsx
-import { invalidateShadows } from 'react-three-game/viewer';
+import { useInvalidateShadows } from 'react-three-game/viewer';
 
-invalidateShadows();        // all registered lights
+const invalidateShadows = useInvalidateShadows(); // inside a component
+invalidateShadows();        // all registered lights in this game
 invalidateShadows([light]); // selected Three light objects
 ```
 

@@ -2,7 +2,8 @@
 
 
 import { useState } from "react";
-import { PrefabEditor } from "react-three-game/editor";
+import { PrefabEditorProvider, PrefabEditorScene, PrefabEditorPanel } from "react-three-game/editor";
+import { GameCanvas } from "react-three-game/viewer";
 import { CrashcatRuntime } from "react-three-game/plugins/crashcat";
 import { BASE_PATH } from "../../../basePath";
 import "../registerComponents";
@@ -49,13 +50,16 @@ export default function StageEditor() {
                         </div>
                     </div>
                     <div className="relative min-h-0 flex-1">
-                        <PrefabEditor
+                        <PrefabEditorProvider
                             key={selectedScene.id}
                             basePath={BASE_PATH}
                             prefab={selectedScene.prefab}
                         >
-                            <CrashcatRuntime />
-                        </PrefabEditor>
+                            <GameCanvas camera={{ position: [0, 5, 15] }}>
+                                <PrefabEditorScene><CrashcatRuntime /></PrefabEditorScene>
+                            </GameCanvas>
+                            <PrefabEditorPanel />
+                        </PrefabEditorProvider>
                     </div>
                 </>
             ) : (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { findComponent, GameCanvas, gameEvents, PrefabRoot, type ContactEventPayload } from "react-three-game/viewer";
+import { findComponent, GameCanvas, GameEventsProvider, useGameEvents, PrefabRoot, type ContactEventPayload } from "react-three-game/viewer";
 import { CrashcatRuntime } from "react-three-game/plugins/crashcat";
 import { Vector3 } from "three";
 import { BASE_PATH } from "../../basePath";
@@ -17,7 +17,8 @@ import { PLAYER_NODE_ID, INTERACTION_ENTER_EVENT, INTERACTION_EXIT_EVENT, type S
 type PendingInteraction = { nodeId: string; activationNodeId: string; properties: StageInteractionProperties };
 type Dialogue = { nodeId: string; pages: string[]; page: number };
 
-export default function StageDemo() {
+function StageDemoContent() {
+    const gameEvents = useGameEvents();
     const [activeScene, setActiveScene] = useState<StageScene>(officeScene);
     const [playerSpawn, setPlayerSpawn] = useState<StagePoint>(officeScene.playerStart);
     const [playerDestination, setPlayerDestination] = useState<StagePoint | null>(null);
@@ -81,7 +82,7 @@ export default function StageDemo() {
             stopExit();
             activeInteractionSensorsRef.current.clear();
         };
-    }, [activateInteraction, activeScene.id]);
+    }, [gameEvents, activateInteraction, activeScene.id]);
 
     const advanceDialogue = useCallback(() => {
         setDialogue((current) => {
@@ -138,4 +139,8 @@ export default function StageDemo() {
             ) : null}
         </main>
     );
+}
+
+export default function StageDemo() {
+    return <GameEventsProvider><StageDemoContent /></GameEventsProvider>;
 }

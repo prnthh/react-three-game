@@ -4,7 +4,7 @@ import type { ThreeEvent } from "@react-three/fiber";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { gameEvents, soundManager, useNode, useNodeObject, usePrefab, type Component, type ComponentViewProps, type GameObject } from "react-three-game/viewer";
+import { useGameEvents, soundManager, useNode, useGameObject, usePrefab, type Component, type ComponentViewProps, type GameObject, type GameEvents } from "react-three-game/viewer";
 
 import { Quaternion, Vector3, type Material, type Mesh, type Object3D } from "three";
 
@@ -87,7 +87,7 @@ const DEFAULT_RECOIL_RETURN = 11;
 
 const DEFAULT_FIRE_VOLUME = 0.18;
 
-export const MACHINEGUN_PROJECTILE_ID_PREFIX = "machinegun-projectile-";
+const MACHINEGUN_PROJECTILE_ID_PREFIX = "machinegun-projectile-";
 
 function setMuzzleFlashObject(object: Object3D | null, intensity: number) {
     if (!object) return;
@@ -188,7 +188,7 @@ function getPointerCaptureTarget(event: ThreeEvent<PointerEvent>) {
     };
 }
 
-function emitProjectileCount(properties: IndustrialMachineGunProperties, nodeId: string, activeProjectileCount: number) {
+function emitProjectileCount(gameEvents: GameEvents, properties: IndustrialMachineGunProperties, nodeId: string, activeProjectileCount: number) {
     const eventName = properties.projectileCountEventName?.trim() || DEFAULT_PROJECTILE_COUNT_EVENT;
     gameEvents.emit(eventName, {
         sourceEntityId: nodeId,
@@ -201,9 +201,11 @@ function IndustrialMachineGunView({
     properties,
     children,
 }: ComponentViewProps<IndustrialMachineGunProperties>) {
+    const gameEvents = useGameEvents();
     const prefab = usePrefab();
     const { editMode, nodeId, nodeInteractionHandlers } = useNode();
-    const objectRef = useNodeObject();
+    const objectRef = useGameObject();
+    const runtimeNodeId = objectRef.id;
     const [isFiring, setIsFiring] = useState(false);
     const firingRef = useRef(false);
     const shotAccumulatorRef = useRef(0);
@@ -230,7 +232,7 @@ function IndustrialMachineGunView({
 
     useEffect(() => {
         return () => {
-            const object = objectRef.current;
+            const object = objectRef.transform;
             const baseRotation = baseRotationRef.current;
             const baseQuaternion = baseQuaternionRef.current;
             if (!object || !baseRotation || !baseQuaternion) return;
@@ -248,13 +250,13 @@ function IndustrialMachineGunView({
         const eventName = properties.triggerEventName?.trim() || DEFAULT_TRIGGER_EVENT;
         const barrelId = properties.barrelId?.trim() || nodeId;
         gameEvents.emit(eventName, {
-            sourceEntityId: nodeId,
-            sourceNodeId: nodeId,
+            sourceEntityId: runtimeNodeId,
+            sourceNodeId: runtimeNodeId,
             barrelId,
             active: false,
         });
         setAimTarget(0, 0, false);
-    }, [nodeId, properties.barrelId, properties.triggerEventName, setAimTarget]);
+    }, [gameEvents, runtimeNodeId, nodeId, properties.barrelId, properties.triggerEventName, setAimTarget]);
 
     const startFiring = useCallback((origin?: { x: number; y: number }) => {
         if (editMode || firingRef.current) return;
@@ -266,13 +268,13 @@ function IndustrialMachineGunView({
         const eventName = properties.triggerEventName?.trim() || DEFAULT_TRIGGER_EVENT;
         const barrelId = properties.barrelId?.trim() || nodeId;
         gameEvents.emit(eventName, {
-            sourceEntityId: nodeId,
-            sourceNodeId: nodeId,
+            sourceEntityId: runtimeNodeId,
+            sourceNodeId: runtimeNodeId,
             barrelId,
             active: true,
         });
         setAimTarget(0, 0, true);
-    }, [editMode, nodeId, properties.barrelId, properties.fireRate, properties.triggerEventName, setAimTarget]);
+    }, [gameEvents, runtimeNodeId, editMode, nodeId, properties.barrelId, properties.fireRate, properties.triggerEventName, setAimTarget]);
 
     const updateAimFromPointer = useCallback((event: ThreeEvent<PointerEvent>) => {
         if (!firingRef.current) return;
@@ -340,8 +342,8 @@ function IndustrialMachineGunView({
 
         const shotEventName = properties.shotEventName?.trim() || DEFAULT_SHOT_EVENT;
         gameEvents.emit(shotEventName, {
-            sourceEntityId: nodeId,
-            sourceNodeId: nodeId,
+            sourceEntityId: runtimeNodeId,
+            sourceNodeId: runtimeNodeId,
             barrelId,
             projectileId: projectile.id,
             spawnMs,
@@ -349,7 +351,7 @@ function IndustrialMachineGunView({
             spawnPosition: [pose.spawnPosition.x, pose.spawnPosition.y, pose.spawnPosition.z] as [number, number, number],
             direction: [pose.direction.x, pose.direction.y, pose.direction.z] as [number, number, number],
         });
-        emitProjectileCount(properties, nodeId, liveProjectilesRef.current.length);
+        emitProjectileCount(gameEvents, properties, runtimeNodeId, liveProjectilesRef.current.length);
 
         flashPulseRef.current = 1;
         recoilRef.current = Math.min(recoilRef.current + (properties.recoilKick ?? DEFAULT_RECOIL_KICK), 0.22);
@@ -362,7 +364,7 @@ function IndustrialMachineGunView({
             });
         }
     }, [
-        nodeId,
+        gameEvents, runtimeNodeId, nodeId,
         properties.barrelId,
         properties.fireSound,
         properties.fireVolume,
@@ -378,7 +380,7 @@ function IndustrialMachineGunView({
     ]);
 
     useFrame((_, delta) => {
-        const object = objectRef.current;
+        const object = objectRef.transform;
         if (object && !editMode) {
             if (!baseRotationRef.current) {
                 baseRotationRef.current = {
@@ -433,7 +435,7 @@ function IndustrialMachineGunView({
         }
 
         if (removedProjectiles) {
-            emitProjectileCount(properties, nodeId, liveProjectiles.length);
+            emitProjectileCount(gameEvents, properties, runtimeNodeId, liveProjectiles.length);
         }
 
         if (!firingRef.current || editMode) return;

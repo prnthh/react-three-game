@@ -4,6 +4,8 @@ JSON → normalized Zustand document → registered component views → R3F obje
 
 The editor changes the document. Animation and physics change live objects. Keep these separate.
 
+Editor history observes store actions, including edits through the prefab API. `PrefabEditorProvider`, `PrefabEditorScene`, and `PrefabEditorPanel` compose the complete editor or a custom layout.
+
 ## Ownership
 
 | Part | Owns |
@@ -14,6 +16,8 @@ The editor changes the document. Animation and physics change live objects. Keep
 | Scene runtime | Shared assets, materials, geometry, node capabilities |
 | Prefab instance | Its document store, live nodes, preparation and disposal |
 | Streamer | Which instances exist and where they are placed |
+
+`GameCanvas` owns one shared runtime. Nested roots and instances reuse it; each prefab keeps a local document store. `PrefabRoot` creates a runtime when mounted in a plain R3F canvas.
 
 `PrefabRoot` renders an in-memory document. `PrefabInstance` loads a URL and prepares its resources before activation. `PrefabRef` composes a nested document with its own local IDs.
 
@@ -27,7 +31,7 @@ Most components are behaviors that wrap their children. Optional `slot` selects 
 
 ## Loading
 
-`PrefabInstance` loads declared dependencies, mounts visuals, configures materials/batches, compiles pipelines, then activates. `onActivate` fires on activation. `onStatus` exposes loading, compiling, ready, active, and error. `active={false}` stops at ready.
+`PrefabInstance` loads its declared dependencies, mounts visuals, waits for its own materials/batches, compiles pipelines, then activates. Unrelated loads do not block it. `onActivate` fires on activation. `onStatus` exposes loading, compiling, ready, active, and error. `active={false}` stops at ready.
 
 Unknown component types, failed assets, and cyclic prefab references fail preparation. Register custom types first. Declare initial asset dependencies in the component schema.
 
@@ -46,3 +50,5 @@ Eligible leaf meshes batch automatically. `instanced: false` opts out. Animated 
 `static` instances freeze transforms after preparation. Remount them to change placement or content. Shader compilation and low draw counts do not eliminate loading, mounting, or simulation costs.
 
 The engine is WebGPU-only. Test startup, chunk transitions, steady frames, and unloading separately when changing resource code.
+
+Events are scoped to the outer `GameEventsProvider`, supplied automatically by the canvas/editor. Wrap HTML game UI and its canvas together to share a bus. Gameplay uses `useGameObject(localId)` for a live transform and typed component access. Its `id` matches events; the engine handles instance prefixes. Document lookup uses local IDs.

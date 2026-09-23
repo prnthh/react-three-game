@@ -1,4 +1,4 @@
-import { forwardRef, memo, useCallback, useImperativeHandle, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { forwardRef, memo, useCallback, useContext, useImperativeHandle, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { Object3D } from "three";
 import type { ThreeEvent } from "@react-three/fiber";
 
@@ -6,9 +6,10 @@ import type { GameObject as GameObjectType, Prefab } from "./types";
 import { getComponentRegistryVersion, subscribeComponentRegistry } from "./components/ComponentRegistry";
 import { createPrefabStore, usePrefabRootId, usePrefabStore, usePrefabStoreApi } from "./prefabStore";
 import type { PrefabStoreApi } from "./prefabStore";
-import { gameEvents } from "./GameEvents";
-import { PrefabEditorMode, usePrefab, useScene, type PrefabApi, type Scene } from "./SceneContext";
+import { useGameEvents, type GameEvents } from "./GameEvents";
+import { PrefabEditorMode, RuntimeNodeIdPrefixContext, RuntimeNodeIdScope, usePrefab, useScene, type PrefabApi, type Scene } from "./SceneContext";
 import { SceneProvider } from "./SceneProvider";
+import { scopedNodeId } from "./gameObject";
 import { PrefabNode, type RendererProps } from "./PrefabNode";
 import {
     type NodeInteractionEvent,
@@ -18,6 +19,8 @@ import {
 export type { Scene };
 
 export interface PrefabRootProps {
+    /** Placement identity when the same document is mounted more than once. */
+    id?: string;
     editMode?: boolean;
     data?: Prefab;
     store?: PrefabStoreApi;
@@ -54,7 +57,7 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>((props, ref) => {
     }, [data, resolvedStore, store]);
 
     return (
-        <SceneProvider
+        <RuntimeNodeIdScope prefix={props.id ?? ""}><SceneProvider
             store={resolvedStore}
             scene={props.scene}
             prefab={props.prefab}
@@ -64,13 +67,15 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>((props, ref) => {
             onSelect={bodyProps.onSelect}
         >
             <PrefabRootBody ref={ref} {...bodyProps} />
-        </SceneProvider>
+        </SceneProvider></RuntimeNodeIdScope>
     );
 
 });
 
 const PrefabRootBody = memo(forwardRef<Scene, PrefabRootProps>(({ onSelect, onPointerEvent, onEditNodeClick, enabled = true, preparing = false, children }, ref) => {
     const scene = useScene();
+    const gameEvents = useGameEvents();
+    const prefix = useContext(RuntimeNodeIdPrefixContext);
     const editMode = scene.mode === PrefabEditorMode.Edit;
     const prefab = usePrefab();
     const registryVersion = useSyncExternalStore(subscribeComponentRegistry, getComponentRegistryVersion, getComponentRegistryVersion);
@@ -88,9 +93,9 @@ const PrefabRootBody = memo(forwardRef<Scene, PrefabRootProps>(({ onSelect, onPo
     ) => {
         const node = storeApi.getState().nodesById[nodeId];
         if (!node) return;
-        emitNodePointerEvent(eventType, eventName, event, nodeId, node, fallbackObject);
+        emitNodePointerEvent(gameEvents, eventType, eventName, event, scopedNodeId(prefix, nodeId), node, fallbackObject);
         onPointerEvent?.(eventType, event, node);
-    }, [onPointerEvent, storeApi]);
+    }, [gameEvents, onPointerEvent, prefix, storeApi]);
 
     const handleEditClick = useCallback((event: ThreeEvent<MouseEvent>) => {
         // Nested PrefabRef roots need an edit handler so their descendant meshes
@@ -162,6 +167,7 @@ function StoreRootNode(props: Omit<RendererProps, "nodeId">) {
 }
 
 function emitNodePointerEvent(
+    gameEvents: GameEvents,
     eventType: NodeInteractionEventType,
     eventName: string | null,
     event: NodeInteractionEvent,

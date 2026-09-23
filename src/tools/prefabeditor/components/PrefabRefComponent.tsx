@@ -4,7 +4,7 @@ import type { ThreeEvent } from '@react-three/fiber';
 
 import type { Component, ComponentViewProps } from './ComponentRegistry';
 
-import { RuntimeNodeIdScope, useNode, usePrefab } from '../SceneContext';
+import { useNode, usePrefab } from '../SceneContext';
 
 import { useEditSelection } from '../SelectionRuntime';
 
@@ -50,9 +50,7 @@ function PrefabRefView({ properties, enabled, children }: ComponentViewProps<Pre
     return <>
         {store && (
             <group onClick={editMode && selectEditorNode ? selectPlacement : undefined}>
-                <RuntimeNodeIdScope prefix={nodeId}>
-                    <PrefabRoot store={store} basePath={basePath} enabled={enabled} preparing={preparing} />
-                </RuntimeNodeIdScope>
+                <PrefabRoot id={nodeId} store={store} basePath={basePath} enabled={enabled} preparing={preparing} />
             </group>
         )}
         {children}

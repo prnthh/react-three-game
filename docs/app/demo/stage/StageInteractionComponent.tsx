@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import {
+    useGameObject,
     useNode,
     type Component,
     type ComponentViewProps,
@@ -30,12 +31,14 @@ const DEFAULT_EXIT_EVENT = INTERACTION_EXIT_EVENT;
 
 function StageInteractionView({ properties, children }: ComponentViewProps<StageInteractionProperties>) {
     const api = useCrashcat();
-    const { nodeId, runtimeNodeId, getObject } = useNode();
+    const { nodeId } = useNode();
+    const gameObject = useGameObject();
+    const runtimeNodeId = gameObject.id;
 
     useEffect(() => {
         const activationNodeId = properties.activationNodeId?.trim();
         if (activationNodeId && activationNodeId !== nodeId) return;
-        const object = getObject();
+        const object = gameObject.transform;
         if (!api || !object) return;
 
         object.updateWorldMatrix(true, false);
@@ -64,7 +67,7 @@ function StageInteractionView({ properties, children }: ComponentViewProps<Stage
         });
 
         return () => api.unregister(runtimeNodeId);
-    }, [api, getObject, nodeId, runtimeNodeId, properties.activationNodeId, properties.enterEventName, properties.exitEventName, properties.sensorHalfHeight, properties.sensorRadius]);
+    }, [api, gameObject, nodeId, runtimeNodeId, properties.activationNodeId, properties.enterEventName, properties.exitEventName, properties.sensorHalfHeight, properties.sensorRadius]);
 
     return <>{children}</>;
 }

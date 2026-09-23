@@ -1,6 +1,6 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
-import { usePrefab } from "react-three-game/viewer";
+import { useGameObject } from "react-three-game/viewer";
 import { AnimationMixer, LoopOnce, type AnimationClip, type Object3D } from "three";
 import type { StageScene } from "./scenes";
 import type { StagePoint } from "./stage";
@@ -11,12 +11,12 @@ export default function AnimatedSceneTransition({ request, onComplete }: {
     request: TransitionAnimationRequest | null;
     onComplete: (request: TransitionAnimationRequest) => void;
 }) {
-    const prefab = usePrefab();
+    const target = useGameObject(request?.nodeId ?? "");
     const mixer = useRef<AnimationMixer | null>(null);
     useEffect(() => {
         if (!request) return;
         let animation: { root: Object3D; clip: AnimationClip } | undefined;
-        prefab.getObject(request.nodeId)?.traverse(root => {
+        target.transform?.traverse(root => {
             const clip = root.animations.find(clip => clip.name === request.animation);
             if (!animation && clip) animation = { root, clip };
         });
@@ -36,7 +36,7 @@ export default function AnimatedSceneTransition({ request, onComplete }: {
             current.stopAllAction();
             current.uncacheRoot(root);
         };
-    }, [prefab, request, onComplete]);
+    }, [target, request, onComplete]);
     useFrame((_, delta) => mixer.current?.update(delta));
     return null;
 }

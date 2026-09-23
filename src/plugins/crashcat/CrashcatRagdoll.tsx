@@ -16,7 +16,7 @@ import { Mesh, Quaternion, Vector3 } from "three";
 
 import type { Component, ComponentViewProps, NodeInteractionHandlers } from "../../tools/prefabeditor/components/ComponentRegistry";
 
-import { useNode, useNodeObject } from "../../tools/prefabeditor/SceneContext";
+import { useNode, useGameObject } from "../../tools/prefabeditor/SceneContext";
 
 import { useCrashcat, type CrashcatApi } from "./CrashcatRuntime";
 
@@ -537,12 +537,12 @@ function CrashcatRagdollView({
 }: ComponentViewProps<CrashcatRagdollComponentProperties>) {
     const scene = useThree((state) => state.scene);
     const { editMode, nodeInteractionHandlers } = useNode();
-    const object = useNodeObject();
+    const object = useGameObject();
     const [worldPosition, setWorldPosition] = useState<Vec3 | null>(null);
     const position = useRef(new Vector3());
     useFrame(() => {
-        if ((!editMode && worldPosition) || !object.current) return;
-        object.current.getWorldPosition(position.current);
+        if ((!editMode && worldPosition) || !object.transform) return;
+        object.transform.getWorldPosition(position.current);
         const { x, y, z } = position.current;
         if (!worldPosition || worldPosition[0] !== x || worldPosition[1] !== y || worldPosition[2] !== z) {
             setWorldPosition([x, y, z]);

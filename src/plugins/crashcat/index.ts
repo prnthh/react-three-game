@@ -7,6 +7,7 @@ export {
 } from "./CrashcatRuntime";
 export {
     default as CrashcatPhysicsComponent,
+    RIGID_BODY_COMPONENT,
     default,
 } from "./CrashcatPhysicsComponent";
 export {
@@ -18,3 +19,5 @@ export {
     type CrashcatRagdollProps,
     type RagdollSettings,
 } from "./CrashcatRagdoll";
+
+export { importCollisionModel } from "./importCollisionModel";

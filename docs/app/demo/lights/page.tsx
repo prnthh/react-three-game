@@ -6,7 +6,7 @@ import { OrbitControls } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Color, DirectionalLight, InstancedMesh, Object3D, Vector3 } from 'three';
 import { WebGPURenderer } from 'three/webgpu';
-import { CascadedDirectionalLight, GameCanvas, PrefabInstance, invalidateShadows, useShadowUpdates } from 'react-three-game/viewer';
+import { CascadedDirectionalLight, GameCanvas, PrefabInstance, GameEventsProvider, useInvalidateShadows, useShadowUpdates } from 'react-three-game/viewer';
 import { BudgetedLights, type LightBudget, type LightBudgetStats, type RuntimeLight } from './BudgetedLights';
 import { BASE_PATH } from '../../basePath';
 
@@ -117,7 +117,8 @@ class DemoBoundary extends Component<{ children: ReactNode }, { error: string | 
     render() { return this.state.error ? <div role="alert" className="p-8">Unable to start WebGPU: {this.state.error}</div> : this.props.children; }
 }
 
-export default function LightsDemo() {
+function LightsDemoContent() {
+    const invalidateShadows = useInvalidateShadows();
     const [preset, setPreset] = useState<Preset>('Balanced');
     const [count, setCount] = useState(64);
     const [animate, setAnimate] = useState(true);
@@ -169,4 +170,8 @@ export default function LightsDemo() {
         {status && <div role="status" className="absolute bottom-6 left-1/2 -translate-x-1/2 rounded bg-slate-950/90 px-5 py-3 text-sm">{status}</div>}
         <p className="absolute bottom-4 right-4 text-xs text-white/50">Drag to orbit · Scroll to move closer · Right-drag to pan</p>
     </main>;
+}
+
+export default function LightsDemo() {
+    return <GameEventsProvider><LightsDemoContent /></GameEventsProvider>;
 }

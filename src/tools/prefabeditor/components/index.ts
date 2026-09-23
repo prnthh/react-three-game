@@ -21,7 +21,7 @@ import TextComponent from "./TextComponent";
 import TransformComponent from "./TransformComponent";
 import type { Component } from "./ComponentRegistry";
 
-// GameCanvas installs these for its lifetime. This order controls their editor display.
+// Built-in definitions; this order controls their editor display.
 export const builtInComponents: readonly Component<any>[] = [
 	TransformComponent,
 	MeshComponent,

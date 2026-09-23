@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { useNode, useNodeObject, useGameEvent } from "react-three-game/viewer";
+import { useNode, useGameObject, useGameEvent } from "react-three-game/viewer";
 import type { Component, ComponentViewProps, ContactEventPayload } from "react-three-game/viewer";
 import { useFrame } from "@react-three/fiber";
 
@@ -26,7 +26,7 @@ type ElevatorMoverProperties = {
 
 function ElevatorMoverView({ properties, children }: ComponentViewProps<ElevatorMoverProperties>) {
     const { editMode } = useNode();
-    const object = useNodeObject();
+    const object = useGameObject();
     const phaseRef = useRef<ElevatorPhase>("idle");
     const waitTimerRef = useRef(0);
     const startHeightRef = useRef<number | null>(null);
@@ -61,7 +61,7 @@ function ElevatorMoverView({ properties, children }: ComponentViewProps<Elevator
             return;
         }
 
-        const platformObject = object.current;
+        const platformObject = object.transform;
         if (!platformObject) {
             phaseRef.current = "idle";
             waitTimerRef.current = 0;

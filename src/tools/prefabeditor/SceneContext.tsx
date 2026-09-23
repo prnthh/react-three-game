@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 import type { Object3D, Texture } from "three";
 import type { GameObject, Prefab, PrefabMaterial } from "./types";
+import { createGameObjectHandle } from "./gameObject";
 import type { NodeInteractionHandlers } from "./usePointerEvents";
 
 export enum PrefabEditorMode {
@@ -27,6 +28,7 @@ export type SceneComponent<T> = Readonly<{
 const EMPTY_SCENE_COMPONENTS: readonly SceneComponent<never>[] = [];
 
 export interface NodeComponentRegistry {
+    get<T>(nodeId: string, type: NodeComponentType<T>): T | null;
     register<T>(nodeId: string, type: NodeComponentType<T>, value: T | null): void;
     getAll<T>(type: NodeComponentType<T>): readonly SceneComponent<T>[];
     subscribe<T>(type: NodeComponentType<T>, listener: () => void): () => void;
@@ -41,6 +43,7 @@ export function createNodeComponentRegistry(): NodeComponentRegistry {
     const snapshots = new Map<symbol, readonly SceneComponent<unknown>[]>();
     const listeners = new Map<symbol, Set<() => void>>();
     return {
+        get: <T,>(nodeId: string, type: NodeComponentType<T>) => (components.get(type)?.get(nodeId) as T | undefined) ?? null,
         register(nodeId, type, value) {
             const values = components.get(type);
             if ((values?.get(nodeId) ?? null) === value) return;
@@ -128,7 +131,7 @@ export const SceneContext = createContext<Scene | null>(null);
 export const PrefabContext = createContext<PrefabApi | null>(null);
 export const NodeComponentContext = createContext<NodeComponentRegistry | null>(null);
 const NodeContext = createContext<NodeApi | null>(null);
-const RuntimeNodeIdPrefixContext = createContext("");
+export const RuntimeNodeIdPrefixContext = createContext("");
 
 /** Owns one runtime-component index for the complete scene. */
 export function SceneComponentsProvider({ children }: { children: ReactNode }) {
@@ -144,15 +147,11 @@ function SceneComponentsOwner({ children }: { children: ReactNode }) {
 
 export interface NodeApi {
     nodeId: string;
-    runtimeNodeId: string;
     preparing?: boolean;
     editMode?: boolean;
     isSelected?: boolean;
     nodeInteractionHandlers?: NodeInteractionHandlers;
-    getObject<T extends Object3D = Object3D>(): T | null;
 }
-
-export interface LiveRef<T> { readonly current: T | null; }
 
 export function useScene() {
     const scene = useContext(SceneContext);
@@ -183,7 +182,7 @@ function useNodeComponentRegistry() {
 }
 
 export function useRegisterNodeComponent<T>(type: NodeComponentType<T>, value: T | null) {
-    const { runtimeNodeId } = useNode();
+    const { id: runtimeNodeId } = useGameObject();
     const registry = useNodeComponentRegistry();
     useLayoutEffect(() => {
         registry.register(runtimeNodeId, type, value);
@@ -206,9 +205,15 @@ export function useSceneComponents<T>(type: NodeComponentType<T>): readonly Scen
     return useSyncExternalStore(subscribe, getSnapshot, () => EMPTY_SCENE_COMPONENTS);
 }
 
-export function useNodeObject<T extends Object3D = Object3D>(): LiveRef<T> {
-    const { getObject } = useNode();
-    return useMemo(() => ({ get current() { return getObject<T>(); } }), [getObject]);
+/** Resolve a local prefab reference, or the current node when no id is supplied. */
+export function useGameObject(nodeId?: string) {
+    const prefab = usePrefab();
+    const node = useContext(NodeContext);
+    const prefix = useContext(RuntimeNodeIdPrefixContext);
+    const components = useNodeComponentRegistry();
+    const localId = nodeId ?? node?.nodeId;
+    if (localId === undefined) throw new Error('useGameObject requires a node id outside a component View');
+    return useMemo(() => createGameObjectHandle(localId, prefix, prefab, components), [localId, prefix, prefab, components]);
 }
 
 export function NodeScope({
@@ -226,25 +231,19 @@ export function NodeScope({
     nodeInteractionHandlers?: NodeInteractionHandlers;
     children: ReactNode;
 }) {
-    const prefab = usePrefab();
-    const runtimeNodeIdPrefix = useContext(RuntimeNodeIdPrefixContext);
-    const runtimeNodeId = runtimeNodeIdPrefix ? `${runtimeNodeIdPrefix}/${nodeId}` : nodeId;
-    const getObject = useCallback(<T extends Object3D = Object3D>() => prefab.getObject(nodeId) as T | null, [prefab, nodeId]);
     const value = useMemo<NodeApi>(() => ({
         nodeId,
-        runtimeNodeId,
         preparing,
         editMode,
         isSelected,
         nodeInteractionHandlers,
-            getObject,
-    }), [preparing, editMode, isSelected, nodeId, nodeInteractionHandlers, getObject, runtimeNodeId]);
+    }), [preparing, editMode, isSelected, nodeId, nodeInteractionHandlers]);
 
     return <NodeContext.Provider value={value}>{children}</NodeContext.Provider>;
 }
 
 export function RuntimeNodeIdScope({ prefix, children }: { prefix: string; children: ReactNode }) {
     const parentPrefix = useContext(RuntimeNodeIdPrefixContext);
-    const value = parentPrefix ? `${parentPrefix}/${prefix}` : prefix;
+    const value = prefix ? (parentPrefix ? `${parentPrefix}/${prefix}` : prefix) : parentPrefix;
     return <RuntimeNodeIdPrefixContext.Provider value={value}>{children}</RuntimeNodeIdPrefixContext.Provider>;
 }

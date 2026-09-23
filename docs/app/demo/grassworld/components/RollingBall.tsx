@@ -3,8 +3,7 @@ import { rigidBody } from "crashcat";
 import { useEffect, useRef, useState } from "react";
 import {
     PrefabEditorMode,
-    useNode,
-    useNodeObject,
+    useGameObject,
     useRegisterNodeComponent,
     useScene,
     type Component,
@@ -22,7 +21,7 @@ type BallInputProperties = {
 };
 
 function BallInputView({ properties, children }: ComponentViewProps<BallInputProperties>) {
-    const { runtimeNodeId } = useNode();
+    const { id: runtimeNodeId } = useGameObject();
     const { mode } = useScene();
     const crashcat = useCrashcat();
     const keys = useRef(new Set<string>());
@@ -99,7 +98,7 @@ export const BallInputComponent: Component<BallInputProperties> = {
 };
 
 function PlayerPositionSyncView({ children }: ComponentViewProps) {
-    const objectRef = useNodeObject();
+    const objectRef = useGameObject();
     const { mode } = useScene();
     const [player] = useState<PlayerRuntime>(() => ({ position: new Vector3() }));
     const isPlayMode = mode === PrefabEditorMode.Play;
@@ -108,7 +107,7 @@ function PlayerPositionSyncView({ children }: ComponentViewProps) {
 
     useFrame(() => {
         if (!isPlayMode) return;
-        const ball = objectRef.current;
+        const ball = objectRef.transform;
         if (!ball) return;
 
         ball.getWorldPosition(player.position);

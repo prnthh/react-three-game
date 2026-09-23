@@ -16,16 +16,11 @@ export interface DecomposeModelOptions {
     idPrefix?: string;
     /** Include invisible Three objects in the generated prefab tree. */
     includeInvisible?: boolean;
-    /** Create CrashcatPhysics components from Blender-style mesh name suffixes. */
-    inferCollisionMeshes?: boolean;
+    /** Optional game/plugin mapping applied to each converted node. */
+    mapNode?: (node: GameObject, object: Object3D) => GameObject;
     /** Return a serializable texture ref for embedded or externally loaded textures. */
     getTexturePath?: (texture: Texture, usage: 'map' | 'normalMap') => string | null | undefined;
 }
-
-type CollisionMeshConvention = {
-    displayName: string;
-    renderMesh: boolean;
-};
 
 function createId(prefix: string) {
     return `${prefix}-${crypto.randomUUID()}`;
@@ -82,29 +77,6 @@ function serializeGeometry(geometry: BufferGeometry) {
     };
 }
 
-function getCollisionMeshConvention(name: string, enabled: boolean): CollisionMeshConvention | null {
-    if (!enabled) return null;
-
-    const match = name.match(/^(.*)_(colonly|col)(?:\.\d+)?$/i);
-    if (!match) return null;
-
-    const [, baseName, suffix] = match;
-    return {
-        displayName: baseName || name,
-        renderMesh: suffix.toLowerCase() === 'col',
-    };
-}
-
-export function hasCollisionMeshConventions(object: Object3D, enabled = true) {
-    let hasConvention = false;
-
-    object.traverse(child => {
-        if (hasConvention) return;
-        hasConvention = child instanceof Mesh && getCollisionMeshConvention(child.name, enabled) != null;
-    });
-
-    return hasConvention;
-}
 
 function getSideName(side: Material['side']) {
     if (side === BackSide) return 'BackSide';
@@ -257,15 +229,14 @@ function decomposeObject(
     options: Required<DecomposeModelOptions>,
     materials: MaterialCollector,
 ): GameObject | null {
-    const collisionMesh = getCollisionMeshConvention(object.name, options.inferCollisionMeshes);
-    if (!options.includeInvisible && !object.visible && !collisionMesh) return null;
+    if (!options.includeInvisible && !object.visible) return null;
 
     const childNodes = object.children
         .map(child => decomposeObject(child, options, materials))
         .filter((child): child is GameObject => child != null);
 
     if (!(object instanceof Mesh)) {
-        return createNode(object, options.idPrefix, childNodes);
+        return options.mapNode(createNode(object, options.idPrefix, childNodes), object);
     }
 
     const parts = getMeshParts(object);
@@ -280,11 +251,11 @@ function decomposeObject(
         return result;
     }, {});
 
-    return createNode(object, options.idPrefix, childNodes, {
+    return options.mapNode(createNode(object, options.idPrefix, childNodes, {
         mesh: {
             type: 'Mesh',
             properties: {
-                visible: collisionMesh ? collisionMesh.renderMesh : object.visible,
+                visible: object.visible,
                 castShadow: object.castShadow,
                 receiveShadow: object.receiveShadow,
             },
@@ -294,17 +265,7 @@ function decomposeObject(
             properties: serializeGeometry(object.geometry),
         },
         ...materialComponents,
-        ...(collisionMesh ? {
-            crashcatPhysics: {
-                type: 'CrashcatPhysics',
-                properties: {
-                    type: 'fixed',
-                    colliders: 'trimesh',
-                    sensor: false,
-                },
-            },
-        } : null),
-    }, collisionMesh ? { name: collisionMesh.displayName, hidden: false } : undefined);
+    }), object);
 }
 
 /**
@@ -323,7 +284,7 @@ export function decomposeModelToPrefabNodes(
     const resolvedOptions = {
         idPrefix: options.idPrefix ?? 'model',
         includeInvisible: options.includeInvisible ?? false,
-        inferCollisionMeshes: options.inferCollisionMeshes ?? true,
+        mapNode: options.mapNode ?? (node => node),
         getTexturePath: options.getTexturePath ?? (() => undefined),
     };
     const materials: MaterialCollector = { ids: new Map(), definitions: {} };

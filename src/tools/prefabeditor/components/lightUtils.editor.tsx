@@ -1,4 +1,4 @@
-import { invalidateShadows } from '../../../runtime/lighting/shadowUpdates';
+import { useInvalidateShadows } from '../../../runtime/lighting/shadowUpdates';
 import { useState, type ReactNode } from 'react';
 import { base, colors, ui } from '../styles';
 import { FieldGroup, FieldRow, NumberInput } from './Input';
@@ -110,6 +110,7 @@ export function ShadowBiasField({
 
 /** A manual refresh is useful while editing cached lights and their casters. */
 export function RefreshShadowsButton() {
+    const invalidateShadows = useInvalidateShadows();
     return <button type="button" style={base.input} onClick={() => invalidateShadows()}>
         Refresh static shadows
     </button>;

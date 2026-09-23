@@ -2,7 +2,7 @@
 
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
-import { useNode, useNodeObject, useGameEvent } from "react-three-game/viewer";
+import { useNode, useGameObject, useGameEvent } from "react-three-game/viewer";
 import type { Component, ComponentViewProps, ContactEventPayload } from "react-three-game/viewer";
 
 const DEFAULT_SPEED = 1.2;
@@ -24,8 +24,9 @@ function normalizeVelocity(x = 0, z = 0) {
 }
 
 function OrbMoverView({ properties, children }: ComponentViewProps<OrbMoverProperties>) {
-    const { editMode, runtimeNodeId } = useNode();
-    const object = useNodeObject();
+    const { editMode } = useNode();
+    const object = useGameObject();
+    const runtimeNodeId = object.id;
     const velocityRef = useRef(normalizeVelocity(properties.velocityX, properties.velocityZ));
 
     const speed = properties.speed;
@@ -54,7 +55,7 @@ function OrbMoverView({ properties, children }: ComponentViewProps<OrbMoverPrope
 
     useFrame((_, delta) => {
         if (editMode) return;
-        const orb = object.current;
+        const orb = object.transform;
         if (!orb) return;
         orb.position.x += velocityRef.current.x * speed * delta;
         orb.position.z += velocityRef.current.z * speed * delta;

@@ -2,8 +2,6 @@
 
 Build WebGPU games from editable JSON scenes and React Three Fiber components.
 
-The library and docs use React / React DOM 19.3.0 and React Three Fiber 9.8.0. Consumers need matching React / React DOM versions in the supported range `>=19.0.0 <19.4.0` and R3F `^9.8.0`. R3F 9.8 fixes async renderer root setup and Strict Mode canvas remounts; `GameCanvas` continues to await WebGPU initialization before rendering. React 19.3 compatibility does not imply support for every new React API in R3F.
-
 ## Start
 
 ```tsx

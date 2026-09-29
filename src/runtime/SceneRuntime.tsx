@@ -9,7 +9,7 @@ import { GameEventsProvider } from '../tools/prefabeditor/GameEvents';
 
 const RuntimeContext = createContext(false);
 
-/** Nested roots share the outer runtime; documents remain local to each prefab. */
+/** Shared rendering resources and contexts, not a gameplay scheduler. Documents remain local to each prefab. */
 export function SceneRuntime({ children }: { children: ReactNode; }) {
     const inherited = useContext(RuntimeContext);
     if (inherited) return children;

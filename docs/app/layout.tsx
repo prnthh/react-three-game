@@ -4,15 +4,15 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL("https://prnth.com/react-three-game"),
   title: {
-    default: "React Three Game - AI-Native 3D Engine",
+    default: "React Three Game - Rendering and Scene Authoring",
     template: "%s | React Three Game"
   },
-  description: "An AI-native 3D game library where agents compose JSON prefab documents, reusable components, and React Three Fiber runtime systems.",
-  keywords: ["react", "three.js", "3d", "game engine", "webgpu", "ai", "prefab", "game development"],
+  description: "WebGPU rendering and scene authoring with React Three Fiber, reusable GameObject components, a visual editor and an API for agents.",
+  keywords: ["react", "three.js", "3d", "rendering", "webgpu", "scene editor", "prefab", "game development"],
   authors: [{ name: "prnthh" }],
   openGraph: {
-    title: "React Three Game - AI-Native 3D Engine",
-    description: "WebGPU based 3D game engine designed for AI-native development",
+    title: "React Three Game - Rendering and Scene Authoring",
+    description: "WebGPU rendering, React Three Fiber composition, and visual and agent scene authoring.",
     siteName: "React Three Game",
     type: "website",
     locale: "en_US",
@@ -20,8 +20,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "React Three Game - AI-Native 3D Engine",
-    description: "WebGPU based 3D game engine designed for AI-native development"
+    title: "React Three Game - Rendering and Scene Authoring",
+    description: "WebGPU rendering, React Three Fiber composition, and visual and agent scene authoring."
   },
   robots: {
     index: true,

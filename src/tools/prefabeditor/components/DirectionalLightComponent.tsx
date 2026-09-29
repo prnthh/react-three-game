@@ -1,5 +1,4 @@
 import { CascadedDirectionalLight } from '../../../runtime/lighting/CascadedDirectionalLight';
-import { useShadowUpdates } from '../../../runtime/lighting/shadowUpdates';
 import type { Component, ComponentViewProps } from "./ComponentRegistry";
 
 import { useHelper } from "@react-three/drei";
@@ -63,7 +62,6 @@ function DirectionalLightView({ properties, children }: ComponentViewProps<Direc
     const helperTargetRef = useRef<Object3D>(null!);
     const target = useMemo(() => new Object3D(), []);
     useShadowMapResolution(directionalLightRef, shadowMapSize);
-    useShadowUpdates(directionalLightRef);
 
     // Show CameraHelper only in edit mode, selected, and castShadow
     const showHelper = editMode && isSelected && merged.castShadow;

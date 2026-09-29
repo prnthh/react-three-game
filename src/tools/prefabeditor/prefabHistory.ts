@@ -30,6 +30,10 @@ export function createPrefabHistory(store: PrefabStoreApi, limit = 50) {
         notify();
     };
     return {
+        transaction(action: () => void) {
+            flush();
+            try { action(); } finally { flush(); }
+        },
         getSnapshot: () => snapshot,
         subscribe(listener: () => void) {
             listeners.add(listener);

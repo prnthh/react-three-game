@@ -3,7 +3,8 @@ import { DynamicDrawUsage, InstancedInterleavedBuffer, InstancedMesh, Matrix4, M
 import type { Node } from 'three/webgpu';
 import { instancedDynamicBufferAttribute, mat4 } from 'three/tsl';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
-import { useEditSelection } from './SelectionRuntime';
+import { EditPickContext } from './SelectionRuntime';
+import { registerEditPickSources } from './editPicking';
 
 const HIDDEN_MATRIX = new Matrix4().makeScale(0, 0, 0);
 const IDENTITY_MATRIX = new Matrix4();
@@ -18,6 +19,7 @@ export type MeshInstancingMaterialFactory = (inverseInstanceMatrix: Node<'mat4'>
 export type InstancedMeshSource = {
     id: string;
     mesh: Mesh;
+    onEditClick?: (event: ThreeEvent<MouseEvent>) => void;
 };
 
 /** Keep source geometry available to physics while the batch draws it. */
@@ -110,7 +112,6 @@ function MeshInstanceBatch({ sources, isStatic }: { sources: InstancedMeshSource
     const batchRef = useRef<InstancedMesh>(null);
     const lastParentMatrix = useRef(new Matrix4());
     const lastVisibility = useRef<boolean | null>(null);
-    const select = useEditSelection();
     const geometry = sources[0].mesh.geometry;
     const sourceMaterial = sources[0].mesh.material;
     const materialFactory = getMeshInstancingMaterialFactory(sourceMaterial);
@@ -188,14 +189,12 @@ function MeshInstanceBatch({ sources, isStatic }: { sources: InstancedMeshSource
         return hideInstancedSources(sources);
     }, [sources, updateMatrices]);
 
-    const handleClick = select ? (event: ThreeEvent<MouseEvent>) => {
+    useLayoutEffect(() => {
+        if (batchRef.current) return registerEditPickSources(batchRef.current, sources.map(source => source.mesh));
+    }, [sources]);
+    const handleClick = sources.some(source => source.onEditClick) ? (event: ThreeEvent<MouseEvent>) => {
         if (event.delta > 4 || event.instanceId == null) return;
-        const source = sources[event.instanceId];
-        if (!source) return;
-        event.stopPropagation();
-        // Nested prefab ids are scoped as placement/descendant. The outer editor
-        // owns the placement node, while play-mode meshes with events are never batched.
-        select(source.id.split('/')[0]);
+        sources[event.instanceId]?.onEditClick?.(event);
     } : undefined;
 
     return <instancedMesh
@@ -240,13 +239,15 @@ export function MeshInstanceProvider({ children, isolated = false, static: isSta
 
 export function useMeshInstanceRegistration(id: string, mesh: Mesh | null, enabled: boolean) {
     const registry = useContext(MeshInstanceContext);
+    const onEditClick = useContext(EditPickContext);
     useLayoutEffect(() => {
         if (!registry || !mesh || !enabled || !mesh.geometry || !mesh.material || mesh.children.length > 0) return;
         return registry.register({
             id,
             mesh,
+            onEditClick,
         });
-    }, [enabled, id, mesh, registry]);
+    }, [enabled, id, mesh, registry, onEditClick]);
 }
 
 const NOOP = () => {};

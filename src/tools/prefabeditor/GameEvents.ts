@@ -1,5 +1,4 @@
 import type { Object3D } from 'three';
-import type { ShadowLight } from '../../runtime/lighting/shadowUpdates';
 
 import { createContext, createElement, useContext, useCallback, useEffect, useState, type ReactNode } from 'react';
 
@@ -33,7 +32,6 @@ export type NodePointerEventPayload = {
 };
 
 export interface GameEventMap {
-    'shadows:invalidate': { lights?: readonly ShadowLight[]; };
     'sensor:enter': ContactEventPayload;
     'sensor:exit': ContactEventPayload;
     'collision:enter': ContactEventPayload;
@@ -54,6 +52,7 @@ export interface GameEventMap {
     [eventType: string]: unknown;
 }
 
+/** Synchronous scene notifications; no simulation clock or event scheduling. */
 export function createGameEvents() {
     const subscribers = new Map<string, Set<GameEventHandler>>();
     return {

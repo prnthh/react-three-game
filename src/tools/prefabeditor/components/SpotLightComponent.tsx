@@ -1,4 +1,3 @@
-import { useShadowUpdates } from '../../../runtime/lighting/shadowUpdates';
 import type { Component, ComponentViewProps } from "./ComponentRegistry";
 
 import { useHelper } from "@react-three/drei";
@@ -76,7 +75,6 @@ function SpotLightView({ properties, children }: ComponentViewProps<SpotLightPro
     const shadowCameraHelperRef = useRef<Object3D>(null!);
     const target = useMemo(() => new Object3D(), []);
     useShadowMapResolution(spotLightRef, shadowMapSize);
-    useShadowUpdates(spotLightRef);
 
     const showHelper = editMode && isSelected;
     const showShadowHelper = showHelper && Boolean(merged.castShadow);

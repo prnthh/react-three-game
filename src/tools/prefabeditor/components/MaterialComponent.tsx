@@ -273,6 +273,8 @@ export function useSharedMaterialResource<T extends Material>(key: string, creat
     if (!pool) throw new Error('Shared materials require a scene material pool');
     const entry = useMemo(() => pool.get(`custom:${key}`, create), [pool, key]);
     useLayoutEffect(() => pool.retain(entry), [entry, pool]);
+    const invalidateInstances = useInvalidateMeshInstances();
+    useLayoutEffect(invalidateInstances, [entry.material, invalidateInstances]);
     return entry.material as T;
 }
 

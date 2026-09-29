@@ -1,7 +1,7 @@
 import type { ComponentEditorProps } from "./ComponentRegistry";
 import { BooleanField, ColorField, NumberField, NumberInput, Vector3Input } from "./Input";
 import { MAX_SHADOW_MAP_SIZE, MIN_SHADOW_MAP_SIZE, mergeWithDefaults } from "./lightUtils";
-import { LightSection, ShadowBiasField, RefreshShadowsButton } from "./lightUtils.editor";
+import { LightSection, ShadowBiasField } from "./lightUtils.editor";
 import { colors } from "../styles";
 import { directionalLightDefaults, DirectionalLightValues, DirectionalLightProperties } from "./DirectionalLightComponent";
 
@@ -66,10 +66,7 @@ function DirectionalLightComponentEditor({ properties, update }: ComponentEditor
                         {values.shadowCascades > 1 ? <>
                             <NumberField name="shadowDistance" label="Shadow Distance" values={values} onChange={update} min={1} step={1} fallback={100} />
                             <small>Cascaded shadows follow the camera and update every frame.</small>
-                        </> : <>
-                            <BooleanField name="shadowAutoUpdate" label="Update Every Frame" values={values} onChange={update} fallback={true} />
-                            {!values.shadowAutoUpdate && <RefreshShadowsButton />}
-                        </>}
+                        </> : <BooleanField name="shadowAutoUpdate" label="Update Every Frame" values={values} onChange={update} fallback={true} />}
                         <NumberField
                             name="shadowMapSize"
                             label="Map Size"

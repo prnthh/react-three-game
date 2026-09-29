@@ -196,11 +196,17 @@ const ModelComponent: Component<ModelProperties> = {
     slot: 'object',
     View: ModelComponentView,
     properties: {
-        filename: { type: 'string', default: '' },
+        filename: { type: 'string', default: '', description: 'Model asset path, relative to the prefab basePath, or an absolute URL.' },
         emitClickEvent: { type: 'boolean', default: false },
         clickEventName: { type: 'string', default: '' },
         repeat: { type: 'boolean', default: false },
-        repeatAxes: { type: 'array', default: [{ axis: 'x', count: 1, offset: 1 }] },
+        repeatAxes: {
+            type: 'array', default: [{ axis: 'x', count: 1, offset: 1 }],
+            schema: { type: 'array', items: { type: 'object', properties: {
+                axis: { type: 'string', enum: ['x', 'y', 'z'] },
+                count: { type: 'integer', minimum: 1 }, offset: { type: 'number' },
+            }, required: ['axis', 'count', 'offset'], additionalProperties: false } },
+        },
     },
 };
 

@@ -1,5 +1,4 @@
 "use client";
-import CutsceneRunner from "../components/cutscene/CutsceneRunner";
 
 import PrefabGridStreamerComponent from "../components/PrefabGridStreamerComponent";
 import ConstantVelocityComponent from "../components/ConstantVelocityComponent";
@@ -94,6 +93,8 @@ function EditorPage() {
       {selectedMap && cameraPosition && (
         <PrefabEditor
           key={`${selectedMap.source}:${cameraPosition[0]},${cameraPosition[1]},${cameraPosition[2]}`}
+          agentId="main"
+          agentDocsUrl={withBasePath("/editor/agents")}
           basePath={BASE_PATH}
           prefab={selectedMap.prefab}
           canvasProps={{ camera: { position: cameraPosition } }}
@@ -120,4 +121,3 @@ export default function Home() {
 registerComponent(PrefabGridStreamerComponent);
 registerComponent(ConstantVelocityComponent);
 registerComponent(CameraShadowFollowerComponent);
-registerComponent(CutsceneRunner);

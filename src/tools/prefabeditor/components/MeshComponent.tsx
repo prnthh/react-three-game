@@ -41,6 +41,7 @@ function MeshView({ properties, children }: ComponentViewProps<MeshProperties>) 
 
 const MeshComponent: Component<MeshProperties> = {
     name: 'Mesh',
+    description: 'Renderable mesh. Compatible shared geometry/materials instance automatically; keep instanced enabled for repeated pieces.',
     renderWhenDisabled: true,
     slot: 'object',
     View: MeshView,
@@ -48,7 +49,7 @@ const MeshComponent: Component<MeshProperties> = {
         visible: { type: 'boolean', default: true },
         castShadow: { type: 'boolean', default: true },
         receiveShadow: { type: 'boolean', default: true },
-        instanced: { type: 'boolean', default: true },
+        instanced: { type: 'boolean', default: true, description: 'Allow automatic batching with matching geometry, material and shadow flags. Selection and click events can require separate meshes.' },
         emitClickEvent: { type: 'boolean', default: false },
         clickEventName: { type: 'string', default: '' },
     },

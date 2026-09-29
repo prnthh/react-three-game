@@ -1,3 +1,5 @@
+import { EditPickContext } from './SelectionRuntime';
+import { editPickIds } from './editPicking';
 import { forwardRef, memo, useCallback, useContext, useImperativeHandle, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { Object3D } from "three";
 import type { ThreeEvent } from "@react-three/fiber";
@@ -73,6 +75,7 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>((props, ref) => {
 });
 
 const PrefabRootBody = memo(forwardRef<Scene, PrefabRootProps>(({ onSelect, onPointerEvent, onEditNodeClick, enabled = true, preparing = false, children }, ref) => {
+    const inheritedEditPick = useContext(EditPickContext);
     const scene = useScene();
     const gameEvents = useGameEvents();
     const prefix = useContext(RuntimeNodeIdPrefixContext);
@@ -106,23 +109,7 @@ const PrefabRootBody = memo(forwardRef<Scene, PrefabRootProps>(({ onSelect, onPo
         event.stopPropagation();
 
         const state = storeApi.getState();
-        const ids: string[] = [];
-        const seen = new Set<string>();
-        for (const intersection of event.intersections) {
-            let object: Object3D | null = intersection.object;
-            while (object) {
-                const id = object.userData.prefabNodeId;
-                const node = typeof id === 'string' ? state.nodesById[id] : null;
-                if (node && !node.locked) {
-                    if (!seen.has(id)) {
-                        seen.add(id);
-                        ids.push(id);
-                    }
-                    break;
-                }
-                object = object.parent;
-            }
-        }
+        const ids = editPickIds(event.intersections, state.nodesById);
 
         if (ids.length === 0) {
             lastPick.current = null;
@@ -146,17 +133,19 @@ const PrefabRootBody = memo(forwardRef<Scene, PrefabRootProps>(({ onSelect, onPo
     }, [onEditNodeClick, onSelect, storeApi]);
 
     return (
-        <group onClick={editMode ? handleEditClick : undefined}>
-            <StoreRootNode
-                onPointerEvent={editMode ? undefined : handleNodePointerEvent}
-                registerRef={prefab.registerObject}
-                editMode={editMode}
-                registryVersion={registryVersion}
-                isEnabled={enabled}
-                preparing={preparing}
-            />
-            {children}
-        </group>
+        <EditPickContext.Provider value={editMode ? (onSelect || onEditNodeClick ? handleEditClick : inheritedEditPick) : undefined}>
+            <group onClick={editMode ? handleEditClick : undefined}>
+                <StoreRootNode
+                    onPointerEvent={editMode ? undefined : handleNodePointerEvent}
+                    registerRef={prefab.registerObject}
+                    editMode={editMode}
+                    registryVersion={registryVersion}
+                    isEnabled={enabled}
+                    preparing={preparing}
+                />
+                {children}
+            </group>
+        </EditPickContext.Provider>
     );
 }));
 

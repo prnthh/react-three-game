@@ -3,7 +3,7 @@ import { BooleanField, ColorField, Label, NumberField, Vector3Input } from "./In
 import { useEditorRef } from "../EditorContext";
 import { TexturePicker } from "../../assetviewer/page";
 import { MAX_SHADOW_MAP_SIZE, MIN_SHADOW_MAP_SIZE, mergeWithDefaults } from "./lightUtils";
-import { LightSection, ShadowBiasField, RefreshShadowsButton } from "./lightUtils.editor";
+import { LightSection, ShadowBiasField } from "./lightUtils.editor";
 import { spotLightDefaults, SpotLightProperties } from "./SpotLightComponent";
 
 function SpotLightComponentEditor({ properties, update }: ComponentEditorProps<SpotLightProperties>) {
@@ -39,7 +39,6 @@ function SpotLightComponentEditor({ properties, update }: ComponentEditorProps<S
                 {values.castShadow ? (
                     <>
                         <BooleanField name="shadowAutoUpdate" label="Update Every Frame" values={values} onChange={update} fallback={true} />
-                        {!values.shadowAutoUpdate && <RefreshShadowsButton />}
                         <NumberField
                             name="shadowMapSize"
                             label="Map Size"

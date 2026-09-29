@@ -1,7 +1,7 @@
 import type { ComponentEditorProps } from './ComponentRegistry';
 import { BooleanField, ColorField, NumberField } from './Input';
 import { MAX_SHADOW_MAP_SIZE, MIN_SHADOW_MAP_SIZE, mergeWithDefaults } from "./lightUtils";
-import { LightSection, ShadowBiasField, RefreshShadowsButton } from "./lightUtils.editor";
+import { LightSection, ShadowBiasField } from "./lightUtils.editor";
 import { pointLightDefaults, PointLightProperties } from "./PointLightComponent";
 
 function PointLightComponentEditor({ properties, update }: ComponentEditorProps<PointLightProperties>) {
@@ -19,7 +19,6 @@ function PointLightComponentEditor({ properties, update }: ComponentEditorProps<
                 {values.castShadow ? (
                     <>
                         <BooleanField name="shadowAutoUpdate" label="Update Every Frame" values={values} onChange={update} fallback={true} />
-                        {!values.shadowAutoUpdate && <RefreshShadowsButton />}
                         <NumberField
                             name="shadowMapSize"
                             label="Map Size"

@@ -59,3 +59,8 @@ export {
 } from "./tools/assetviewer/page";
 
 export { registerComponentEditor } from "./tools/prefabeditor/ComponentEditors";
+
+export type { SceneCommand, SceneCommandBatch, SceneCommandResult } from "./tools/prefabeditor/sceneCommands";
+
+export type { SceneAgentApi, SceneAgentBatch, FindSceneNodes, GetSceneNodes } from "./tools/prefabeditor/sceneAgent";
+export type { SceneAgentRegistry } from "./tools/prefabeditor/sceneAgentBridge";

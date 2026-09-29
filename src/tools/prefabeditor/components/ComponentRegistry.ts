@@ -35,7 +35,13 @@ export type ComponentPropertyType =
 
 type ComponentPropertyDefault<T> = T | ((properties: Record<string, any>) => T);
 
+export type ComponentPropertySchema = Record<string, unknown>;
+
 type ComponentPropertyEditor = {
+    /** Agent-facing semantics, units, asset paths, etc. */
+    description?: string;
+    /** Optional nested/positional JSON Schema; evaluated against resolved properties. */
+    schema?: ComponentPropertySchema | ((properties: Record<string, any>) => ComponentPropertySchema);
 	/** Inspector label. Property names are humanized when omitted. */
 	label?: string;
 };
@@ -79,6 +85,7 @@ export type ComponentPropertyDefinitions<P extends object> = {
 
 export interface Component<P extends object = Record<string, any>> {
 	name: string;
+    description?: string;
 	/** Declare resources without mounting a view; paths are relative to the prefab basePath. */
 	dependencies?: (properties: P) => readonly ComponentDependency[];
 	/** Keep this render-graph component mounted for preparation while its node is disabled. */

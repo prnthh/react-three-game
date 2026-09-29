@@ -113,6 +113,7 @@ function GeometryComponentView({ properties, children }: ComponentViewProps<Geom
 
 const GeometryComponent: Component<GeometryProperties> = {
     name: 'Geometry',
+    description: 'Shared primitive geometry. For repeated boxes use args [1,1,1] and Transform.scale for dimensions, so differently sized pieces can batch.',
     renderWhenDisabled: true,
     slot: 'geometry',
     View: GeometryComponentView,
@@ -130,6 +131,16 @@ const GeometryComponent: Component<GeometryProperties> = {
         },
         args: {
             type: 'number[]',
+            description: 'Ordered geometry constructor arguments. Meanings depend on geometryType.',
+            schema: properties => {
+                const fields = GEOMETRY_ARGS[properties.geometryType ?? 'box']?.fields ?? [];
+                return {
+                    type: 'array',
+                    prefixItems: fields.map(field => ({ type: 'number', title: field.name, description: field.label, default: field.defaultValue, minimum: field.min })),
+                    minItems: fields.length,
+                    maxItems: fields.length,
+                };
+            },
             default: properties => getDefaultArgs(properties.geometryType ?? 'box'),
         },
     }

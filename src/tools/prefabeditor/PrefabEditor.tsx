@@ -1,5 +1,5 @@
 import { OrbitControls, TransformControls, useHelper } from "@react-three/drei";
-import { createContext, useContext, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, forwardRef, useImperativeHandle } from "react";
+import { createContext, useId, useContext, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, forwardRef, useImperativeHandle } from "react";
 import { BoxHelper, Plane, Vector2, Vector3 } from "three";
 import type { Intersection, Object3D, Sprite, Texture } from "three";
 import { useThree, type RootState } from "@react-three/fiber";
@@ -13,6 +13,8 @@ import { createPrefabRegistry, PrefabEditorMode } from "./SceneContext";
 import type { PrefabApi, Scene } from "./SceneContext";
 import { createDefaultMaterial, createImageNode, createModelNode, denormalizePrefab } from "./prefab";
 import EditorUI from "./EditorUI";
+import { createSceneAgent, type SceneAgentHost } from "./sceneAgent";
+import { exposeSceneAgent } from "./sceneAgentBridge";
 import { base, toolbar } from "./styles";
 import { exportGLB as exportGLBFile, exportGLBData, focusCameraOnObject, isExternalPath, withBasePath } from "./utils";
 import type { ExportGLBOptions } from "./utils";
@@ -153,6 +155,14 @@ export interface PrefabEditorProps {
     mode?: PrefabEditorMode;
     onPointerEvent?: React.ComponentProps<typeof PrefabRoot>["onPointerEvent"];
     showUI?: boolean;
+    /** Expose the headless page API. Enabled by default in editors, independent of showUI. */
+    agentTools?: boolean;
+    /** Stable ID under window.reactThreeGame.editors; must be unique within the page. */
+    agentId?: string;
+    /** Documentation target for the small Agent API toolbar hint. */
+    agentDocsUrl?: string;
+    /** Optional host persistence adapter. Agent saves never trigger a file dialog. */
+    onSaveScene?: (prefab: Prefab) => void | Promise<void>;
     enableWindowDrop?: boolean;
     /** Optional game/plugin model importer. Return null to keep the model as an asset reference. */
     importModel?: (model: Object3D, options: DecomposeModelOptions) => DecomposedPrefabNodes | null;
@@ -162,7 +172,7 @@ export interface PrefabEditorProps {
 
 export type PrefabEditorProviderProps = Omit<PrefabEditorProps, 'showUI' | 'canvasProps'>;
 
-function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEditorMode.Edit, onPointerEvent, enableWindowDrop = true, importModel }: PrefabEditorProviderProps) {
+function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEditorMode.Edit, onPointerEvent, enableWindowDrop = true, importModel, agentTools = true, agentId, agentDocsUrl = "https://prnth.com/react-three-game/editor/agents", onSaveScene }: PrefabEditorProviderProps) {
     const [mode, setMode] = useState<PrefabEditorMode>(providedMode);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [transformMode, setTransformMode] = useState<"translate" | "rotate" | "scale">("translate");
@@ -536,9 +546,48 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
         mode,
     }), [mode, prefabValue]);
 
+    const generatedAgentId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+    const agentHost: SceneAgentHost = {
+        mode: () => mode,
+        selectedId: () => selectedId,
+        transaction: history.transaction,
+        beforeCommit: detachTransformControls,
+        undo, redo,
+        history: history.getSnapshot,
+        canSave: () => Boolean(onSaveScene),
+        save: async document => { await onSaveScene?.(document); },
+        focusNode: id => {
+            if (!getObject(id)) throw new Error('Node has no mounted render object yet.');
+            handleFocusNode(id);
+        },
+        captureView: async () => {
+            // Let React/R3F commit the latest batch, then render immediately before capture.
+            await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+            const state = canvasStateRef.current?.get();
+            const canvas = canvasRef.current;
+            if (!state || !canvas || !canvas.width || !canvas.height) throw new Error('Editor canvas is not ready.');
+            state.gl.render(state.scene, state.camera);
+            const dataUrl = canvas.toDataURL('image/png');
+            if (!dataUrl.startsWith('data:image/png;base64,')) throw new Error('Canvas capture failed.');
+            return { mimeType: 'image/png', dataUrl, width: canvas.width, height: canvas.height };
+        },
+    };
+    const agentHostRef = useRef(agentHost);
+    useLayoutEffect(() => { agentHostRef.current = agentHost; });
+    const [sceneAgent] = useState(() => createSceneAgent(prefabStore, () => agentHostRef.current));
+    useLayoutEffect(() => {
+        sceneAgent.activate();
+        return () => sceneAgent.dispose();
+    }, [sceneAgent]);
+    useEffect(() => {
+        if (!agentTools) return;
+        return exposeSceneAgent(window, agentId ?? `editor-${generatedAgentId}`, sceneAgent.api);
+    }, [agentTools, agentId, generatedAgentId, sceneAgent]);
+
     const editorRefValue = useMemo<PrefabEditorRef>(() => ({
         ...prefabValue,
         ...sceneValue,
+        agent: sceneAgent.api,
         save: getPrefab,
         load: loadPrefab,
         undo,
@@ -547,10 +596,10 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
         exportGLB: handleExportGLB,
         exportGLBData: handleExportGLBData,
         clearSelection,
-    }), [clearSelection, getPrefab, handleExportGLB, handleExportGLBData, handleScreenshot, loadPrefab, prefabValue, redo, sceneValue, undo]);
+    }), [sceneAgent, clearSelection, getPrefab, handleExportGLB, handleExportGLBData, handleScreenshot, loadPrefab, prefabValue, redo, sceneValue, undo]);
 
     return {
-        basePath, prefabStore, prefabValue, sceneValue, editorRefValue, runtimeRef,
+        basePath, prefabStore, prefabValue, sceneValue, editorRefValue, runtimeRef, agentTools, agentDocsUrl,
         isEditMode, selectedId, setSelection, onPointerEvent, getRoot,
         canvasRef, canvasStateRef, dropPreviewRef, controlsRef, transformControlsRef,
         transformMode, setTransformMode, scaleSnap, setScaleSnap,
@@ -661,7 +710,7 @@ export function PrefabEditorScene({ children }: { children?: React.ReactNode; })
 
 /** HTML controls: mount beside the canvas under the same provider. */
 export function PrefabEditorPanel() {
-    const { isEditMode, toggleMode, selectedId, setSelection, canUndo, canRedo } = useEditorStateContext();
+    const { isEditMode, toggleMode, selectedId, setSelection, canUndo, canRedo, agentTools, agentDocsUrl } = useEditorStateContext();
     return (
         <>
             <div
@@ -676,6 +725,14 @@ export function PrefabEditorPanel() {
                 <button type="button" style={base.btn} onClick={toggleMode}>
                     {isEditMode ? "▶" : "⏸"}
                 </button>
+                {agentTools && <a
+                    href={agentDocsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Editor API for agents: window.reactThreeGame.help()"
+                    title="Start here: window.reactThreeGame.help()"
+                    style={{ color: 'inherit', fontSize: 11, padding: '4px 6px', textUnderlineOffset: 3 }}
+                >Agent API ↗</a>}
             </div>
             {isEditMode && (
                 <EditorUI

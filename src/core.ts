@@ -7,6 +7,7 @@ export {
 } from "./tools/prefabeditor/components/ComponentRegistry";
 export type {
 	Component,
+	ComponentPropertySchema,
 	ComponentPropertyDefinition,
 	ComponentPropertyDefinitions,
 	ComponentPropertyOption,

@@ -1,3 +1,4 @@
+import type { ThreeEvent } from '@react-three/fiber';
 import { createContext, useContext, useLayoutEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { createStore, type StoreApi } from "zustand/vanilla";
 
@@ -47,3 +48,6 @@ export function useNodeSelected(nodeId: string, enabled = true) {
 export function useEditSelection() {
     return useContext(EditSelectionContext);
 }
+
+/** Carries the owning editor's picking handler into instance registrations. */
+export const EditPickContext = createContext<((event: ThreeEvent<MouseEvent>) => void) | undefined>(undefined);

@@ -1,4 +1,3 @@
-import { useShadowUpdates } from '../../../runtime/lighting/shadowUpdates';
 import { useRef } from 'react';
 
 import { useHelper } from '@react-three/drei';
@@ -54,7 +53,6 @@ function PointLightView({ properties, children }: ComponentViewProps<PointLightP
     const lightRef = useRef<PointLight>(null);
     const helperTargetRef = useRef<Object3D>(null!);
     useShadowMapResolution(lightRef, shadowMapSize);
-    useShadowUpdates(lightRef);
     const showHelper = editMode && isSelected && lightRef.current;
     if (lightRef.current) helperTargetRef.current = lightRef.current;
     useHelper(showHelper ? helperTargetRef : null, PointLightHelper, 0.5);

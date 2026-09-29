@@ -1,26 +1,28 @@
-# Demo workspace
+# Rendering and authoring examples
+
+These routes are host applications built with React Three Game. Their game loops,
+controllers, world residency and narrative systems are examples, not engine APIs.
 
 Run `npm run dev` from the repository root. Demos import the built library from `dist`; `npm run build` rebuilds it. Verify production with `npm --prefix docs run build`.
 
-| Route | Demonstrates |
+| Route | Starting point |
 | --- | --- |
-| `/` | City chunks behind a centered landing-page hero |
-| `/viewer` | Scene-authored camera and runtime rendering |
-| `/editor` | Visual prefab authoring |
-| `/demo/customcomponent` | One-file components with schema-generated inspectors |
-| `/demo/grassworld` | CameraFollow, streamed terrain, physics, cascaded sunlight |
-| `/demo/lights` | Budgeted colored lights and cached sun shadows |
-| `/demo/interior` | Interior mapping and instanced windows |
-| `/demo/interior/editor` | Custom interior mapping inspector |
-| `/demo/physics` | Authored physics and gameplay |
-| `/demo/stage` | Point-and-click game |
-| `/demo/stage/editor` | Its scene editor |
-| `/demo/benchmark` | Rendering scale and instancing |
+| `/` | [City composition](app/components/DemoApp.tsx) |
+| `/viewer` | [Viewer](app/viewer/page.tsx) |
+| `/editor` | [Editor integration](app/editor/page.tsx) |
+| `/editor/agents` | [Read/edit examples](editor-api-for-agents.md) |
+| `/demo/jumper` | [First-person controller + dynamic roster](app/demo/jumper/README.md) |
+| `/demo/customcomponent` | [Component and registration](app/demo/customcomponent/page.tsx) |
+| `/demo/grassworld` | [Terrain composition](app/demo/grassworld/page.tsx) |
+| `/demo/interior` | [Interior scene](app/demo/interior/page.tsx) |
+| `/demo/interior/editor` | [Interior editor](app/demo/interior/editor/page.tsx) |
+| `/demo/physics` | [Physics integration](app/demo/physics/page.tsx) |
+| `/demo/stage` | [Stage game](app/demo/stage/page.tsx) |
+| `/demo/stage/editor` | [Stage editor](app/demo/stage/editor/page.tsx) |
+| `/demo/benchmark` | [Benchmark](app/demo/benchmark/page.tsx) |
 
 Edit prefab JSON in `public/prefabs` directly. Builds do not generate scenes.
 
-The city uses one shared set of visual prefabs: three buildings and a planter. `city-chunk.json` places them around a continuous path. `game-level.json` owns the camera, fog, lighting, and chunk streamer. Concrete reuses the grey-tinted sand texture. Physics/NPC examples have their own scenes.
-
-Keep specialized demo components under their demo. Interior mapping and light-budget selection are examples, not built-in engine systems.
+Keep specialized demo components under their demo. Interior mapping and the jumper controller are examples, not built-in engine systems.
 
 See [architecture](ARCHITECTURE.md), [lighting](LIGHTING.md), and [interior mapping](INTERIOR-MAPPING.md).

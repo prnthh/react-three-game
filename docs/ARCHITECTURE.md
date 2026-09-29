@@ -1,54 +1,114 @@
-# Architecture
+# Architecture and implementation patterns
 
-JSON → normalized Zustand document → registered component views → R3F objects.
+React Three Game handles rendering and scene authoring. The host application
+owns gameplay state, ticks, input, networking and persistence.
 
-The editor changes the document. Animation and physics change live objects. Keep these separate.
+```text
+Prefab data → document store → component views → R3F / Three objects
+                   ↑
+          visual editor + agent batches
+```
 
-Editor history observes store actions, including edits through the prefab API. `PrefabEditorProvider`, `PrefabEditorScene`, and `PrefabEditorPanel` compose the complete editor or a custom layout.
+Start with the [README examples](../README.md) for rendering, components and editing.
+Use the patterns below when adding integrations or changing internals.
 
-## Ownership
+## Load a prefab
 
-| Part | Owns |
+```tsx
+import { GameCanvas, PrefabInstance } from 'react-three-game/viewer';
+
+export function Room() {
+  return <GameCanvas>
+    <group position={[10, 0, 0]}>
+      <PrefabInstance id="room-1" url="/prefabs/room.json"
+        onStatus={status => console.log(status.phase)} />
+    </group>
+  </GameCanvas>;
+}
+```
+
+The host chooses which instances to mount. Each gets local document IDs; rendering
+resources are shared. Loading prepares assets and pipelines before activation.
+Unmount to release ownership. `active={false}` prepares without activating;
+`static` freezes placement/content and requires remounting to change either.
+
+Follow [PrefabInstance](../src/runtime/PrefabInstance.tsx) →
+[preparePrefab](../src/runtime/preparePrefab.ts) →
+[assetRuntime](../src/tools/prefabeditor/assetRuntime.tsx).
+For authored nesting, copy [PrefabRef](../src/tools/prefabeditor/components/PrefabRefComponent.tsx).
+
+## Connect a host system
+
+```tsx
+import { useFrame } from '@react-three/fiber';
+import { useGameObject, useScene } from 'react-three-game/viewer';
+
+// Mount <PlayerView player={hostPlayer} /> as a child of PrefabRoot.
+function PlayerView({ player }: { player: { position: [number, number, number] } }) {
+  const object = useGameObject('player'); // Local authored node ID.
+  const scene = useScene();
+  useFrame(() => {
+    if (scene.mode === 'edit') return;
+    object.transform?.position.set(...player.position);
+  });
+  return null;
+}
+```
+
+The host advances `player`; this view projects its position onto Three.js.
+`useFrame` is a rendering callback, not a fixed world tick. Live object changes
+are not saved or undoable. Edit/Play does not snapshot/reset host state.
+
+Follow [gameObject](../src/tools/prefabeditor/gameObject.ts) for stable node handles,
+[SceneContext](../src/tools/prefabeditor/SceneContext.tsx) for typed capabilities,
+and [GameEvents](../src/tools/prefabeditor/GameEvents.ts) for synchronous notifications.
+The optional [Crashcat adapter](../src/plugins/crashcat/CrashcatRuntime.tsx)
+steps its own physics world from R3F frames.
+
+## Change a component
+
+Copy [Rotator](app/demo/customcomponent/RotatorComponent.tsx) for a behavior, or
+[Mesh](../src/tools/prefabeditor/components/MeshComponent.tsx) for an object view.
+Register it as in the [custom component demo](app/demo/customcomponent/page.tsx).
+
+- Put editable fields/defaults in the definition; views receive resolved values.
+- Return `children` so composition continues through the view.
+- Object, geometry and material views declare their `slot` and implement R3F attachments.
+- Keep custom inspector imports in `.editor.tsx` modules.
+
+Follow [ComponentRegistry](../src/tools/prefabeditor/components/ComponentRegistry.ts) →
+[nodePlan](../src/tools/prefabeditor/nodePlan.ts) →
+[PrefabNode](../src/tools/prefabeditor/PrefabNode.tsx).
+
+## Change authoring behavior
+
+Use the [agent guide](editor-api-for-agents.md) for copyable read/edit patterns.
+Both the GUI and API write the document store; neither serializes transient
+animation or physics. Agent batches validate before committing one undo step.
+
+| Change | Start here |
 | --- | --- |
-| Prefab document | Hierarchy, component properties, material definitions |
-| Component | Schema, view, optional asset dependencies |
-| Editor | Generated fields and optional custom inspectors |
-| Scene runtime | Shared assets, materials, geometry, node capabilities |
-| Prefab instance | Its document store, live nodes, preparation and disposal |
-| Streamer | Which instances exist and where they are placed |
+| Hierarchy or component mutation | [prefabStore](../src/tools/prefabeditor/prefabStore.ts) |
+| Undo grouping | [prefabHistory](../src/tools/prefabeditor/prefabHistory.ts) |
+| Agent query or browser exposure | [sceneAgent](../src/tools/prefabeditor/sceneAgent.ts), [sceneAgentBridge](../src/tools/prefabeditor/sceneAgentBridge.ts) |
+| Batch operation | [sceneCommands](../src/tools/prefabeditor/sceneCommands.ts), [sceneCommandSchema](../src/tools/prefabeditor/sceneCommandSchema.ts) |
+| Agent field discovery | [componentSchemas](../src/tools/prefabeditor/componentSchemas.ts) |
+| Editor integration | [PrefabEditor](../src/tools/prefabeditor/PrefabEditor.tsx) |
 
-`GameCanvas` owns one shared runtime. Nested roots and instances reuse it; each prefab keeps a local document store. `PrefabRoot` creates a runtime when mounted in a plain R3F canvas.
+## Keep package boundaries
 
-`PrefabRoot` renders an in-memory document. `PrefabInstance` loads a URL and prepares its resources before activation. `PrefabRef` composes a nested document with its own local IDs.
+| Entry | Contains |
+| --- | --- |
+| `/core` | Definitions and document helpers |
+| `/viewer` and package root | R3F views and rendering resources |
+| `/editor` | Visual editor, history and agent API |
+| `/plugins/crashcat` | Optional physics adapter |
+| `docs/app` | Host applications and game-specific examples |
 
-## Components
+[SceneRuntime](../src/runtime/SceneRuntime.tsx) groups providers, not gameplay systems.
+The historical `prefabeditor` folder also contains runtime code; follow imports,
+not the folder name. [Import-boundary tests](../tests/import-boundaries.test.mjs)
+keep authoring out of the viewer and plugins out of core entrypoints.
 
-Register definitions before mounting scenes. Schemas resolve defaults once, before views and inspectors receive properties. Keep ordinary inspectors generated from the schema.
-
-Most components are behaviors that wrap their children. Optional `slot` selects an exclusive node role: `object`, `geometry`, `material`, `transform`, `environment`, `fog`, or `data`. Behaviors wrap the object; geometry and material render inside it. Views implement native R3F attachments themselves.
-
-`renderWhenDisabled` is for visual components that must mount during resource preparation. Those views must respect `enabled` for gameplay effects. Ordinary behaviors are not mounted while disabled. Keep runtime definitions free of inspector imports.
-
-## Loading
-
-`PrefabInstance` loads its declared dependencies, mounts visuals, waits for its own materials/batches, compiles pipelines, then activates. Unrelated loads do not block it. `onActivate` fires on activation. `onStatus` exposes loading, compiling, ready, active, and error. `active={false}` stops at ready.
-
-Unknown component types, failed assets, and cyclic prefab references fail preparation. Register custom types first. Declare initial asset dependencies in the component schema.
-
-Shared assets stay alive while used. Unmounting releases ownership; the runtime keeps a bounded idle cache. Custom immutable materials use `useSharedMaterialResource(key, factory)`; include all appearance settings and texture identity in the key.
-
-Keep cameras and global lighting outside streamed chunks. Keep old terrain active until replacement chunks activate. Residency belongs in runtime state, not document edits.
-
-Physics belongs to the Three.js scene: mount one `CrashcatRuntime` per scene. Components use `useCrashcat()`; debug display does not reset simulation.
-
-## Rendering
-
-`PrefabRoot` owns the document scope and editor picking. `PrefabNode` subscribes to one node and its child IDs; `nodePlan` resolves its component composition. Three.js owns world transforms. Store actions preserve untouched node references; use hierarchy actions to add, move, or replace nodes.
-
-Eligible leaf meshes batch automatically. `instanced: false` opts out. Animated models and interactive objects can use the ordinary object path.
-
-`static` instances freeze transforms after preparation. Remount them to change placement or content. Shader compilation and low draw counts do not eliminate loading, mounting, or simulation costs.
-
-The engine is WebGPU-only. Test startup, chunk transitions, steady frames, and unloading separately when changing resource code.
-
-Events are scoped to the outer `GameEventsProvider`, supplied automatically by the canvas/editor. Wrap HTML game UI and its canvas together to share a bus. Gameplay uses `useGameObject(localId)` for a live transform and typed component access. Its `id` matches events; the engine handles instance prefixes. Document lookup uses local IDs.
+For resource changes, check startup, activation and unloading in a WebGPU browser.
+Run `npm test`, `npm run build` and `npm --prefix docs run build`.

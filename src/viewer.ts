@@ -81,7 +81,6 @@ export { withBasePath as resolveAssetPath } from "./tools/prefabeditor/runtimeUt
 
 export { CascadedDirectionalLight } from './runtime/lighting/CascadedDirectionalLight';
 export type { CascadedDirectionalLightProps } from './runtime/lighting/CascadedDirectionalLight';
-export { useInvalidateShadows, useShadowUpdates } from './runtime/lighting/shadowUpdates';
 
 export { SceneRuntime } from "./runtime/SceneRuntime";
 

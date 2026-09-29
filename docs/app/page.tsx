@@ -16,7 +16,7 @@ function Features() {
         </li>
         <li className="flex items-start gap-2">
           <span className="text-emerald-700">▸</span>
-          <span>Compose entities from reusable components</span>
+          <span>Compose GameObjects from reusable components</span>
         </li>
         <li className="flex items-start gap-2">
           <span className="text-emerald-700">▸</span>
@@ -38,7 +38,7 @@ function Features2() {
         </li>
         <li className="flex items-start gap-2">
           <span className="text-emerald-700">▸</span>
-          <span>Lightweight runtime entrypoint</span>
+          <span>Separate viewer and editor entrypoints</span>
         </li>
         <li className="flex items-start gap-2">
           <span className="text-emerald-700">▸</span>
@@ -50,7 +50,7 @@ function Features2() {
         </li>
         <li className="flex items-start gap-2">
           <span className="text-emerald-700">▸</span>
-          <span>Scene, prefab, and node runtime scopes</span>
+          <span>Shared rendering resources across prefabs</span>
         </li>
         <li className="flex items-start gap-2">
           <span className="text-emerald-700">▸</span>
@@ -62,7 +62,7 @@ function Features2() {
         </li>
         <li className="flex items-start gap-2">
           <span className="text-emerald-700">▸</span>
-          <span>Visual editor with hot reload</span>
+          <span>Visual editor and agent command API</span>
         </li>
       </ul>
     </div>
@@ -85,7 +85,7 @@ export default function Home() {
         <div className="text-center font-bold">
           <h1 className="metal-title mb-2">REACT-THREE-GAME</h1>
           <div className="metal-subtitle mt-1">
-            high performance 3D game engine
+            WebGPU rendering and scene authoring
           </div>
         </div>
 
@@ -113,6 +113,7 @@ export default function Home() {
       <DemoApp />
     </main>
     <div className="relative flex w-full flex-col items-center gap-6 bg-zinc-950 py-12 text-center">
+      <p className="max-w-2xl px-4 text-zinc-300">Compose with React Three Fiber, author scenes visually or through the agent API, and keep gameplay rules and simulation in your application.</p>
       <div className="flex w-full max-w-5xl flex-col gap-5 px-4 md:flex-row">
         <Section className="flex-1">
           <Features />

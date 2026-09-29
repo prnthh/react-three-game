@@ -3,7 +3,10 @@ import type { PrefabApi, Scene } from "./SceneContext";
 import type { Prefab } from "./types";
 import type { ExportGLBOptions } from "./utils";
 
+import type { SceneAgentApi } from "./sceneAgent";
+
 export interface PrefabEditorRef extends Scene, PrefabApi {
+    agent: SceneAgentApi;
     save: () => Prefab;
     load: (prefab: Prefab) => void;
     undo: () => void;

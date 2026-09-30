@@ -11,8 +11,8 @@ Demo behavior, scene fixtures, and executable documentation examples are tested 
 `docs/tests`. Run `npm test --workspace docs` from the repository root, or `npm test`
 from this directory. Library regressions belong in the root `tests` directories.
 
-The Examples menu goes from viewing and components to physics, gameplay and streaming;
-Benchmark is a diagnostic. Keep short game-system connections inline when that makes
+The Examples menu goes from viewing and components to physics, gameplay and streaming.
+Keep short game-system connections inline when that makes
 the example easier to copy. Extract reusable scene behavior, not every function.
 Components stay in the demo that owns them and may be imported by other demos.
 
@@ -22,11 +22,10 @@ Components stay in the demo that owns them and may be imported by other demos.
 | [Asset Viewer](app/demo/assetviewer/page.tsx) | Asset-browser utility. Next: handle failed manifest requests. |
 | [Custom Component](app/demo/customcomponent/page.tsx) | Minimal scene shared with Viewer; Rotator and Squish are registered for editing. |
 | [Cool stuff](app/demo/coolstuff/page.tsx) | One scene with interior mapping, ragdolls, and a small sleeping-box warehouse, each under its own parent node. |
-| [Jumper](app/demo/jumper/page.tsx) | Movement components plus inline roster/shadow connections. |
+| [Jumper](app/demo/jumper/page.tsx) | Player movement, procedural concrete, and static scene shadows. |
 | [Point n Click](app/demo/stage/page.tsx) | Inline interaction/dialogue/transition flow; shared component registration with its editor. |
 | [Killbox FPS](app/demo/killbox/page.tsx) | Player, NPC and weapon-system integration. Keep page wiring inline; review the large NPC component separately. |
 | [Streamed World](app/demo/grassworld/page.tsx) | A bounded chunk window owns terrain colliders and deterministic grass/flowers with dense billboard blades, layered wind and recovering trails; [Water](app/demo/grassworld/components/Water.tsx) is a reusable, registered scene component. |
-| [Benchmark](app/demo/benchmark/page.tsx) | Direct-ref mutation measurements, not an authoring tutorial. |
 
 Water remains in `demo/grassworld/components/Water.tsx`. Import `WaterComponent`,
 call `registerComponent(WaterComponent)`, then add `{type:'Water', properties:{level:0,size:100,speed:0.1}}`

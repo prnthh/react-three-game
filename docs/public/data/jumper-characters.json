@@ -1,3 +1,0 @@
-[
-  { "id": "runner", "name": "Runner", "color": "#b8a47d", "position": [0, 0, 6], "speed": 5, "jumpSpeed": 9, "playable": true }
-]

@@ -69,6 +69,7 @@ export type { PrefabStoreApi, PrefabStoreState } from "./tools/prefabeditor/pref
 
 export type { SharedMaterialOptions } from "./tools/prefabeditor/components/MaterialComponent";
 export { useSharedMaterialResource } from "./tools/prefabeditor/components/MaterialComponent";
+export { useInvalidateMeshInstances } from "./tools/prefabeditor/MeshInstanceProvider";
 
 export { withBasePath as resolveAssetPath } from "./tools/prefabeditor/runtimeUtils";
 

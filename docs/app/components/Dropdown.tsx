@@ -8,7 +8,7 @@ type DemoOption = {
     href: string;
 };
 
-// Ordered by the concepts introduced; benchmark is a diagnostic tool.
+// Ordered by the concepts introduced.
 const options: DemoOption[] = [
     { label: "Viewer Mode", href: "/viewer" },
     { label: "Asset Viewer", href: "/demo/assetviewer" },
@@ -18,7 +18,6 @@ const options: DemoOption[] = [
     { label: "Point n Click", href: "/demo/stage" },
     { label: "Killbox FPS", href: "/demo/killbox" },
     { label: "Streamed World", href: "/demo/grassworld" },
-    { label: "Benchmark (Diagnostics)", href: "/demo/benchmark" },
 ];
 
 export default function Dropdown() {

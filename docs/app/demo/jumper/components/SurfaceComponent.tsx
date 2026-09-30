@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Box3, Vector3 } from 'three';
 import { createNodeComponentType, useGameObject, useRegisterNodeComponent, type Component, type ComponentViewProps } from 'react-three-game/viewer';
-import type { Surface } from './movement';
+import type { Surface } from '../movement';
 
 export const JUMPER_SURFACE = createNodeComponentType<{ bounds(): Surface | null }>('JumperSurface');
 type Properties = { size: [number, number, number]; color: string; solid: boolean; visible: boolean };

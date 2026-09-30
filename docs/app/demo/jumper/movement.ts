@@ -9,7 +9,8 @@ export type MovementSettings = { speed: number; jumpSpeed: number; jumpBoost?: n
 export const PLAYER_RADIUS = 0.3;
 export const STANDING_HEIGHT = 1.8;
 export const CROUCH_HEIGHT = 1;
-const MAX_SPEED = 24;
+const HOP_SPEED_CAP = 27;
+const FALL_SPEED_CAP = 34;
 
 export function createJumperState(position: Position): JumperState {
     return { position: [...position], velocityY: 0, velocity: [0, 0], grounded: false,
@@ -72,19 +73,34 @@ export function stepJumper(state: JumperState,
             vx *= (speed + boost) / speed; vz *= (speed + boost) / speed;
             speed += boost;
         }
-        const decayed = Math.max(0, speed - 8 * dt);
+        const slideSpeed = settings.speed + (settings.slideBoost ?? 3);
+        const decayed = Math.max(wishLength && speed > 0.5 ? slideSpeed : 0, speed - 8 * dt);
         if (speed > 0) { vx *= decayed / speed; vz *= decayed / speed; }
     } else {
-        const drag = state.grounded ? (wishLength ? 0.7 : 12) : 0.08;
+        const drag = state.grounded ? (wishLength ? 0.7 : 12) : 0;
         vx *= Math.exp(-drag * dt); vz *= Math.exp(-drag * dt);
-        accelerate(state.grounded ? 45 : 10, settings.speed);
+        const reversing = vx * wx + vz * wz < 0;
+        accelerate(state.grounded ? (reversing ? 90 : 45) : (reversing ? 45 : 22), settings.speed);
+    }
+    // Redirect momentum without discarding hop speed. Slides keep the widest turns;
+    // opposite input brakes first, avoiding an arbitrary sideways U-turn.
+    if (wishLength && Math.hypot(vx, vz) > 0 && vx * wx + vz * wz >= 0) {
+        const angle = Math.atan2(vx * wz - vz * wx, vx * wx + vz * wz);
+        const grip = state.grounded ? (crouched ? 2.5 : 10) : 5;
+        const turn = angle * (1 - Math.exp(-grip * dt));
+        const cos = Math.cos(turn), sin = Math.sin(turn);
+        [vx, vz] = [vx * cos - vz * sin, vx * sin + vz * cos];
     }
     if (wallNormal) {
         const into = vx * wallNormal[0] + vz * wallNormal[1];
         vx -= wallNormal[0] * into; vz -= wallNormal[1] * into;
         const tangent = [-wallNormal[1], wallNormal[0]];
-        const sign = Math.sign(vx * tangent[0] + vz * tangent[1] || wx * tangent[0] + wz * tangent[1]);
-        const speed = Math.max(Math.hypot(vx, vz), settings.wallRunSpeed ?? 7);
+        const desiredAlong = wx * tangent[0] + wz * tangent[1];
+        // Look-relative input chooses the direction; a dead zone avoids flipping
+        // when looking nearly straight into the wall or releasing movement.
+        const sign = Math.sign(Math.abs(desiredAlong) > 0.15
+            ? desiredAlong : vx * tangent[0] + vz * tangent[1]);
+        const speed = Math.max(Math.hypot(vx, vz), settings.wallRunSpeed ?? 13);
         vx = tangent[0] * sign * speed; vz = tangent[1] * sign * speed;
         vy = Math.max(vy, -1.5);
     }
@@ -94,14 +110,15 @@ export function stepJumper(state: JumperState,
         const speed = Math.hypot(vx, vz);
         const dx = speed > 0.1 ? vx / speed : wishLength ? wx : 0;
         const dz = speed > 0.1 ? vz / speed : wishLength ? wz : 0;
-        vx += dx * (settings.jumpBoost ?? 2); vz += dz * (settings.jumpBoost ?? 2);
+        vx += dx * (settings.jumpBoost ?? 1); vz += dz * (settings.jumpBoost ?? 1);
         if (wallNormal) {
             vx += wallNormal[0] * 7; vz += wallNormal[1] * 7;
             cooldown = 0.3; wallNormal = null;
         }
     }
     const speed = Math.hypot(vx, vz);
-    if (speed > MAX_SPEED) { vx *= MAX_SPEED / speed; vz *= MAX_SPEED / speed; }
+    const cap = !state.grounded && !wallNormal && !jumping && vy < 0 ? FALL_SPEED_CAP : HOP_SPEED_CAP;
+    if (speed > cap) { vx *= cap / speed; vz *= cap / speed; }
     vy -= (wallNormal ? 3 : 20) * dt;
     const moveX = vx, moveZ = vz;
     let nx = x + vx * dt, nz = z + vz * dt;
@@ -124,7 +141,11 @@ export function stepJumper(state: JumperState,
     }
     const landing = vy <= 0 ? surfaces.filter(s => overlaps(nx, nz, s, s.solid ? PLAYER_RADIUS : 0)
         && y >= s.top - 0.001 && ny <= s.top).sort((a, b) => b.top - a.top)[0] : undefined;
-    if (landing) { ny = landing.top; vy = 0; wallNormal = null; }
+    if (landing) {
+        ny = landing.top; vy = 0; wallNormal = null;
+        const landingSpeed = Math.hypot(vx, vz);
+        if (landingSpeed > HOP_SPEED_CAP) { vx *= HOP_SPEED_CAP / landingSpeed; vz *= HOP_SPEED_CAP / landingSpeed; }
+    }
     return { position: [nx, ny, nz], velocity: [vx, vz], velocityY: vy, grounded: !!landing, crouched,
         wallNormal, wallTime: wallNormal ? wallTime : 0, wallCooldown: cooldown };
 }
@@ -134,4 +155,36 @@ export function cameraRoll(turnRate: number, wallNormal: [number, number] | null
     const sway = Math.max(-0.065, Math.min(0.065, turnRate * 0.018));
     const wall = wallNormal ? -(wallNormal[0] * -forwardZ + wallNormal[1] * forwardX) * 0.2 : 0;
     return Math.max(-0.24, Math.min(0.24, sway + wall));
+}
+
+export function cameraFov(speed: number) {
+    const t = Math.max(0, Math.min(1, speed / FALL_SPEED_CAP));
+    return 75 + 20 * t * t * (3 - 2 * t);
+}
+
+export const JUMPER_STEP = 1 / 120;
+export function createJumperSimulation(position: Position) {
+    const current = createJumperState(position);
+    return { current, previous: current, remainder: 0 };
+}
+export type JumperSimulation = ReturnType<typeof createJumperSimulation>;
+
+/** Fixed simulation, interpolated presentation; cap catch-up after a suspended frame. */
+export function advanceJumper(sim: JumperSimulation, delta: number,
+    input: Parameters<typeof stepJumper>[1], settings: Parameters<typeof stepJumper>[2],
+    surfaces: Parameters<typeof stepJumper>[3]) {
+    sim.remainder += Math.min(Math.max(delta, 0), 0.1);
+    let steps = 0;
+    while (sim.remainder + 1e-12 >= JUMPER_STEP) {
+        sim.previous = sim.current;
+        sim.current = stepJumper(sim.current, { ...input, jump: input.jump && steps === 0 }, settings, surfaces, JUMPER_STEP);
+        sim.remainder = Math.max(0, sim.remainder - JUMPER_STEP);
+        steps++;
+    }
+    return steps;
+}
+
+export function jumperRenderPosition(sim: JumperSimulation): Position {
+    const alpha = sim.remainder / JUMPER_STEP;
+    return sim.current.position.map((value, i) => sim.previous.position[i] + (value - sim.previous.position[i]) * alpha) as Position;
 }

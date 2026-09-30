@@ -6,14 +6,15 @@ import type { PointLight } from 'three';
 import { registerComponent, useScene, PrefabEditorMode, type Prefab } from 'react-three-game/viewer';
 import { PrefabEditor } from 'react-three-game/editor';
 import { BASE_PATH, withBasePath } from '../../basePath';
-import { CharacterComponent } from './CharacterComponent';
-import { SurfaceComponent } from './SurfaceComponent';
-import { characterNode, parseRoster } from './roster';
-import { ConcreteComponent } from './ConcreteComponent';
+import { CharacterComponent } from './components/CharacterComponent';
+import { SurfaceComponent } from './components/SurfaceComponent';
+import { ConcreteComponent } from './components/ConcreteComponent';
+import { RuinGeometryComponent } from './components/RuinGeometryComponent';
 
 registerComponent(CharacterComponent);
 registerComponent(SurfaceComponent);
 registerComponent(ConcreteComponent);
+registerComponent(RuinGeometryComponent);
 
 // Course geometry and lights are static during play. Editing keeps shadows live.
 function CourseShadows() {
@@ -46,24 +47,20 @@ export default function JumperDemo() {
             if (!response.ok) throw new Error(`Playground request failed: ${response.status}`);
             return response.json();
         };
-        void Promise.all([load('/prefabs/jumper-course.json'), load('/data/jumper-characters.json')])
-            .then(([course, roster]: [Prefab, unknown]) => {
-                const characters = parseRoster(roster);
+        void load('/prefabs/jumper-course.json')
+            .then((course: Prefab) => {
                 if (abort.signal.aborted) return;
-                setPrefab({ ...course, name: 'Jumper playground', root: { ...course.root, children: [
-                    ...(course.root.children ?? []), ...characters.map(characterNode),
-                ] } });
+                setPrefab(course);
             }).catch(reason => { if (!abort.signal.aborted) setError(String(reason)); });
         return () => abort.abort();
     }, []);
     return <main style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#18180f', color: '#ddd7bd' }}>
-        <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+        <div id="jumper-canvas" style={{ flex: 1, minHeight: 0, position: 'relative' }}>
             {error ? <p role="alert">{error}</p> : !prefab ? <p>Loading playground…</p> :
                 <PrefabEditor prefab={prefab} agentId="jumper" basePath={BASE_PATH} canvasProps={{ rendererConfig: { toneMappingExposure: 1.15 } }}>
                     <CourseShadows />
                     <color attach="background" args={['#171910']} />
                 </PrefabEditor>}
         </div>
-        {prefab && !error && <button id="jumper-lock" className="fixed bottom-3 right-3 rounded bg-black/70 px-3 py-2 text-xs">Click to look</button>}
     </main>;
 }

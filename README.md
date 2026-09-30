@@ -164,7 +164,7 @@ to a JSON file. Import that file in either app to load it again.
 | --- | --- |
 | Load and place URL-backed prefabs | [Loading pattern](docs/ARCHITECTURE.md#load-a-prefab) |
 | Connect gameplay code to scene objects | [Gameplay example](docs/ARCHITECTURE.md#connect-a-host-system) |
-| Build a first-person jumper or import character data | [Jumper playground](docs/app/demo/jumper/README.md) |
+| Build a first-person jumper or import character data | [Jumper demo](docs/app/demo/jumper/page.tsx) |
 | Add optional physics | [Cool stuff demo](docs/app/demo/coolstuff/page.tsx) |
 | Add a custom inspector | [Inspector example](docs/app/demo/coolstuff/InteriorMapComponent.editor.tsx) |
 | Change rendering or resource ownership | [Implementation map](docs/ARCHITECTURE.md) |

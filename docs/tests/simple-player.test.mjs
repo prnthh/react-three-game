@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { registerAll, createWorldSettings, addBroadphaseLayer, addObjectLayer, enableCollision,
     createWorld, rigidBody, MotionType, box, capsule, kcc, filter, updateWorld } from 'crashcat';
-import { SimplePlayerComponent } from '../app/demo/coolstuff/SimplePlayerComponent.tsx';
+import { SimplePlayerComponent } from '../app/demo/coolstuff/components/SimplePlayerComponent.tsx';
 
 test('the simple player can push a sleeping warehouse-weight box', () => {
     registerAll();

@@ -1,20 +1,27 @@
 import { Html, PerspectiveCamera, PointerLockControls } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { MathUtils, PerspectiveCamera as AimCamera, Quaternion, Vector3 } from 'three';
+import { CameraHelper, Group, MathUtils, Mesh, PerspectiveCamera as AimCamera, Quaternion, Vector3 } from 'three';
 import { useGameObject, useNode, useSceneComponents, type Component, type ComponentViewProps } from 'react-three-game/viewer';
 import { JUMPER_SURFACE } from './SurfaceComponent';
-import { cameraRoll } from './movement';
-import { advanceJumper, createJumperSimulation, jumperRenderPosition, type JumperSimulation } from './timestep';
+import { cameraFov, cameraRoll, CROUCH_HEIGHT, PLAYER_RADIUS, STANDING_HEIGHT,
+    advanceJumper, createJumperSimulation, jumperRenderPosition, type JumperSimulation } from '../movement';
 
-type Properties = { speed: number; jumpSpeed: number; jumpBoost: number; slideBoost: number; wallRunSpeed: number; color: string; playable: boolean };
+type Properties = { speed: number; jumpSpeed: number; jumpBoost: number; slideBoost: number; wallRunSpeed: number; color: string; debug: boolean };
 function Controller(settings: Properties) {
     const object = useGameObject();
     const surfaces = useSceneComponents(JUMPER_SURFACE);
-    const { gl } = useThree();
+    const { gl, scene } = useThree();
     // Controls own yaw/pitch. The rendered camera adds roll separately, so mouse look cannot erase it.
     const aim = useMemo(() => new AimCamera(), []);
     const camera = useRef<AimCamera>(null);
+    const debugCamera = useRef<AimCamera>(null);
+    const cameraHelper = useRef<CameraHelper | null>(null);
+    const debugTarget = useRef(new Vector3());
+    const body = useRef<Group>(null);
+    const capsule = useRef<Mesh>(null);
+    const bodyRotation = useRef(new Quaternion());
+    const up = useMemo(() => new Vector3(0, 1, 0), []);
     const input = useRef({ keys: new Set<string>(), jump: false });
     const motion = useRef<JumperSimulation | null>(null);
     const [status, setStatus] = useState('Airborne');
@@ -25,7 +32,15 @@ function Controller(settings: Properties) {
     const forward = useRef(new Vector3());
     const position = useRef(new Vector3());
     const parentRotation = useRef(new Quaternion());
-    const view = useRef({ yaw: 0, roll: 0, height: 1.6, fov: 75 });
+    const view = useRef({ yaw: 0, roll: 0, crouch: 0, fov: 75 });
+    useEffect(() => {
+        if (!settings.debug || !camera.current) return;
+        const helper = new CameraHelper(camera.current);
+        // Keep the diagnostic frustum short enough to inspect beside the body.
+        scene.add(helper);
+        cameraHelper.current = helper;
+        return () => { scene.remove(helper); helper.dispose(); cameraHelper.current = null; };
+    }, [settings.debug, scene]);
     useEffect(() => {
         const clear = () => { input.current.keys.clear(); input.current.jump = false; if (motion.current) { motion.current.remainder = 0; motion.current.previous = motion.current.current; } };
         const keydown = (event: KeyboardEvent) => {
@@ -95,40 +110,74 @@ function Controller(settings: Properties) {
         const targetRoll = locked ? cameraRoll(turn / Math.max(delta, 0.001), state.wallNormal, forward.current.x, forward.current.z) : 0;
         view.current.yaw = yaw;
         view.current.roll = MathUtils.damp(view.current.roll, targetRoll, 9, delta);
-        view.current.height = MathUtils.damp(view.current.height, state.crouched ? 0.8 : 1.6, 14, delta);
-        view.current.fov = MathUtils.damp(view.current.fov, 75 + Math.min(8, Math.max(0, Math.hypot(...state.velocity) - settings.speed)), 5, delta);
+        view.current.crouch = MathUtils.damp(view.current.crouch, state.crouched ? 1 : 0, 14, delta);
+        const length = STANDING_HEIGHT - 2 * PLAYER_RADIUS;
+        // Leave room above the reclined body for the eyes inside the crouch clearance.
+        const lean = view.current.crouch * Math.acos((CROUCH_HEIGHT - 0.25 - 2 * PLAYER_RADIUS) / length);
+        const height = 2 * PLAYER_RADIUS + length * Math.cos(lean);
+        view.current.fov = MathUtils.damp(view.current.fov, cameraFov(Math.hypot(...state.velocity)), 5, delta);
         transform.getWorldQuaternion(parentRotation.current);
         camera.current.quaternion.copy(parentRotation.current.invert()).multiply(aim.quaternion);
         camera.current.rotateZ(view.current.roll);
-        camera.current.position.y = view.current.height;
+        // Follow the upper end backward without pitching the view with the body.
+        const eyeHeight = MathUtils.lerp(STANDING_HEIGHT - 0.2, CROUCH_HEIGHT - 0.2, view.current.crouch);
+        camera.current.position.set(-forward.current.x * length / 2 * Math.sin(lean), eyeHeight,
+            -forward.current.z * length / 2 * Math.sin(lean)).applyQuaternion(parentRotation.current);
+        if (body.current && capsule.current) {
+            bodyRotation.current.setFromAxisAngle(up, yaw);
+            body.current.quaternion.copy(parentRotation.current).multiply(bodyRotation.current);
+            capsule.current.position.y = height / 2;
+            capsule.current.rotation.x = lean;
+        }
         camera.current.fov = view.current.fov; camera.current.updateProjectionMatrix();
+        if (settings.debug && debugCamera.current) {
+            debugCamera.current.position.set(-forward.current.x * 4, 2.6, -forward.current.z * 4)
+                .applyQuaternion(parentRotation.current);
+            transform.updateWorldMatrix(true, true);
+            debugTarget.current.set(0, height / 2, 0).applyMatrix4(transform.matrixWorld);
+            debugCamera.current.lookAt(debugTarget.current);
+            cameraHelper.current?.update();
+        }
     });
+    const hud = <Html position={[0, 0, -1]} fullscreen zIndexRange={[10, 10]} style={{ pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', bottom: 24, left: 64, color: 'white', fontFamily: 'Arial, Helvetica, sans-serif', fontVariantNumeric: 'tabular-nums', textShadow: '0 1px 3px #0008' }}>
+            <div style={{ fontSize: 28, fontWeight: 600, fontStyle: 'italic', lineHeight: 1.2 }}>{speedLabel} <span style={{ fontSize: 16 }}>m/s</span></div>
+            <div style={{ marginTop: 4, fontSize: 13 }}>{status}</div>
+        </div>
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: 'white', opacity: 0.7 }}>·</div>
+    </Html>;
     return <>
-        <PerspectiveCamera ref={camera} makeDefault position={[0, 1.6, 0]} fov={75} />
-        <PointerLockControls camera={aim} domElement={gl.domElement} selector="#jumper-lock" />
-        <Html fullscreen style={{ pointerEvents: 'none' }}>
-            <div style={{ position: 'absolute', bottom: 20, left: 20, color: 'white' }}>{status} · {speedLabel} m/s</div>
-            <div style={{ position: 'absolute', top: '50%', left: '50%', color: 'white', opacity: 0.7 }}>·</div>
-        </Html>
+        <group ref={body}>
+            <mesh ref={capsule} position={[0, STANDING_HEIGHT / 2, 0]}>
+                <capsuleGeometry args={[PLAYER_RADIUS, STANDING_HEIGHT - 2 * PLAYER_RADIUS, 8, 16]} />
+                <meshStandardMaterial color={settings.color} />
+            </mesh>
+        </group>
+        <PerspectiveCamera ref={camera} makeDefault={!settings.debug} position={[0, 1.6, 0]} fov={75} far={settings.debug ? 1.5 : 2000}>
+            {/* Keep the screen overlay in front of the camera, not at the player's feet. */}
+            {!settings.debug && hud}
+        </PerspectiveCamera>
+        {settings.debug && <PerspectiveCamera ref={debugCamera} makeDefault fov={60} position={[0, 2.6, 4]}>{hud}</PerspectiveCamera>}
+        <PointerLockControls camera={aim} domElement={gl.domElement} selector="#jumper-canvas canvas" />
     </>;
 }
 function CharacterView({ properties, children }: ComponentViewProps<Properties>) {
     const { editMode } = useNode();
     return <>
-        {properties.playable && !editMode ? <Controller {...properties} /> :
+        {!editMode ? <Controller {...properties} /> :
             <mesh position={[0, 0.9, 0]}><capsuleGeometry args={[0.3, 1.2, 4, 8]} /><meshStandardMaterial color={properties.color} /></mesh>}
         {children}
     </>;
 }
 export const CharacterComponent: Component<Properties> = {
-    name: 'JumperCharacter', description: 'Roster character. Exactly one character should be playable. Movement stays in demo state.',
+    name: 'JumperCharacter', description: 'Jumper player controller. Runs in Play; movement stays in demo state.',
     properties: {
-        speed: { default: 5, min: 1, max: 12, step: 0.5, description: 'Movement speed in world units per second.' },
+        speed: { default: 13, min: 1, max: 27, step: 0.5, description: 'Walking speed in world units per second. Hops cap at 27; falling allows 34.' },
         jumpSpeed: { default: 9, min: 1, max: 15, step: 0.5, description: 'Upward jump velocity.' },
-        jumpBoost: { default: 2, min: 0, max: 6, step: 0.25, description: 'Forward speed added by ground and wall jumps.' },
-        slideBoost: { default: 3, min: 0, max: 8, step: 0.25, description: 'One-shot speed boost when crouching while moving on the ground.' },
-        wallRunSpeed: { default: 7, min: 1, max: 16, step: 0.5, description: 'Minimum speed along a wall while wallrunning.' },
+        jumpBoost: { default: 1, min: 0, max: 6, step: 0.25, description: 'Forward speed added by ground and wall jumps.' },
+        slideBoost: { default: 3, min: 0, max: 8, step: 0.25, description: 'Slide entry boost and speed above walking while holding movement.' },
+        wallRunSpeed: { default: 13, min: 1, max: 27, step: 0.5, description: 'Minimum speed along a wall while wallrunning.' },
         color: { type: 'color', default: '#38bdf8' },
-        playable: { type: 'boolean', default: false },
+        debug: { type: 'boolean', default: false, description: 'In Play, follow behind the capsule and show the first-person camera frustum.' },
     }, View: CharacterView,
 };

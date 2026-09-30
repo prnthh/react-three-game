@@ -159,10 +159,10 @@ export interface PrefabEditorProps {
     agentTools?: boolean;
     /** Stable ID under window.reactThreeGame.editors; must be unique within the page. */
     agentId?: string;
-    /** Documentation target for the small Agent API toolbar hint. */
-    agentDocsUrl?: string;
     /** Optional host persistence adapter. Agent saves never trigger a file dialog. */
     onSaveScene?: (prefab: Prefab) => void | Promise<void>;
+    /** Reset host-owned game state before the live prefab subtree remounts. */
+    onResetScene?: () => void | Promise<void>;
     enableWindowDrop?: boolean;
     /** Optional game/plugin model importer. Return null to keep the model as an asset reference. */
     importModel?: (model: Object3D, options: DecomposeModelOptions) => DecomposedPrefabNodes | null;
@@ -172,8 +172,9 @@ export interface PrefabEditorProps {
 
 export type PrefabEditorProviderProps = Omit<PrefabEditorProps, 'showUI' | 'canvasProps'>;
 
-function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEditorMode.Edit, onPointerEvent, enableWindowDrop = true, importModel, agentTools = true, agentId, agentDocsUrl = "https://prnth.com/react-three-game/editor/agents", onSaveScene }: PrefabEditorProviderProps) {
+function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEditorMode.Edit, onPointerEvent, enableWindowDrop = true, importModel, agentTools = true, agentId, onSaveScene, onResetScene }: PrefabEditorProviderProps) {
     const [mode, setMode] = useState<PrefabEditorMode>(providedMode);
+    const [runtimeVersion, setRuntimeVersion] = useState(0);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [transformMode, setTransformMode] = useState<"translate" | "rotate" | "scale">("translate");
     const [scaleSnap, setScaleSnap] = useState(0);
@@ -229,6 +230,14 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
             return nextMode;
         });
     }, []);
+
+    const resetScene = useCallback(async () => {
+        await onResetScene?.();
+        detachTransformControls();
+        setSelectedId(null);
+        setRuntimeVersion(version => version + 1);
+        await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    }, [detachTransformControls, onResetScene]);
 
     const toggleMode = () => {
         updateMode(isEditMode ? PrefabEditorMode.Play : PrefabEditorMode.Edit);
@@ -549,6 +558,29 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
     const generatedAgentId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
     const agentHost: SceneAgentHost = {
         mode: () => mode,
+        setMode: async next => {
+            updateMode(next as PrefabEditorMode);
+            await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+        },
+        resetScene,
+        setSelection,
+        getView: () => {
+            const camera = canvasStateRef.current?.get().camera;
+            if (!camera) throw new Error('Editor canvas is not ready.');
+            const position = camera.getWorldPosition(new Vector3());
+            const target = controlsRef.current?.target ?? position.clone().add(camera.getWorldDirection(new Vector3()));
+            return { position: position.toArray(), target: target.toArray() };
+        },
+        setView: ({ position, target }) => {
+            const camera = canvasStateRef.current?.get().camera;
+            if (!camera) throw new Error('Editor canvas is not ready.');
+            camera.position.fromArray(position);
+            if (camera.parent) camera.parent.worldToLocal(camera.position);
+            camera.lookAt(...target);
+            controlsRef.current?.target.fromArray(target);
+            controlsRef.current?.update();
+            camera.updateMatrixWorld();
+        },
         selectedId: () => selectedId,
         transaction: history.transaction,
         beforeCommit: detachTransformControls,
@@ -571,6 +603,18 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
             if (!dataUrl.startsWith('data:image/png;base64,')) throw new Error('Canvas capture failed.');
             return { mimeType: 'image/png', dataUrl, width: canvas.width, height: canvas.height };
         },
+        exportGLB: async filename => {
+            const data = await handleExportGLB({ filename });
+            if (!data) throw new Error('Editor scene is not ready for GLB export.');
+        },
+        screenshot: async filename => {
+            await clearSelection();
+            const image = await agentHost.captureView();
+            const link = document.createElement('a');
+            link.href = image.dataUrl;
+            link.download = filename;
+            link.click();
+        },
     };
     const agentHostRef = useRef(agentHost);
     useLayoutEffect(() => { agentHostRef.current = agentHost; });
@@ -588,6 +632,8 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
         ...prefabValue,
         ...sceneValue,
         agent: sceneAgent.api,
+        setMode: updateMode,
+        resetScene,
         save: getPrefab,
         load: loadPrefab,
         undo,
@@ -596,10 +642,10 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
         exportGLB: handleExportGLB,
         exportGLBData: handleExportGLBData,
         clearSelection,
-    }), [sceneAgent, clearSelection, getPrefab, handleExportGLB, handleExportGLBData, handleScreenshot, loadPrefab, prefabValue, redo, sceneValue, undo]);
+    }), [sceneAgent, updateMode, resetScene, clearSelection, getPrefab, handleExportGLB, handleExportGLBData, handleScreenshot, loadPrefab, prefabValue, redo, sceneValue, undo]);
 
     return {
-        basePath, prefabStore, prefabValue, sceneValue, editorRefValue, runtimeRef, agentTools, agentDocsUrl,
+        basePath, prefabStore, prefabValue, sceneValue, editorRefValue, runtimeRef, runtimeVersion, resetScene,
         isEditMode, selectedId, setSelection, onPointerEvent, getRoot,
         canvasRef, canvasStateRef, dropPreviewRef, controlsRef, transformControlsRef,
         transformMode, setTransformMode, scaleSnap, setScaleSnap,
@@ -641,7 +687,7 @@ export const PrefabEditorProvider = forwardRef<PrefabEditorRef, PrefabEditorProv
 /** R3F content: mount inside your GameCanvas. */
 export function PrefabEditorScene({ children }: { children?: React.ReactNode; }) {
     const {
-        basePath, prefabStore, prefabValue, sceneValue, isEditMode, selectedId,
+        basePath, prefabStore, prefabValue, sceneValue, isEditMode, selectedId, runtimeVersion,
         setSelection, onPointerEvent, getRoot, canvasRef, canvasStateRef,
         dropPreviewRef, controlsRef, transformControlsRef, transformMode,
         positionSnap, rotationSnap, scaleSnap, handleTransformChange,
@@ -668,6 +714,7 @@ export function PrefabEditorScene({ children }: { children?: React.ReactNode; })
     return <>
         {isEditMode ? <gridHelper args={[10, 10]} position={[0, -0.001, 0]} /> : null}
         <PrefabRoot
+            key={runtimeVersion}
             store={prefabStore}
             editMode={isEditMode}
             selectedId={selectedId}
@@ -710,7 +757,7 @@ export function PrefabEditorScene({ children }: { children?: React.ReactNode; })
 
 /** HTML controls: mount beside the canvas under the same provider. */
 export function PrefabEditorPanel() {
-    const { isEditMode, toggleMode, selectedId, setSelection, canUndo, canRedo, agentTools, agentDocsUrl } = useEditorStateContext();
+    const { isEditMode, toggleMode, resetScene, selectedId, setSelection, canUndo, canRedo } = useEditorStateContext();
     return (
         <>
             <div
@@ -722,17 +769,10 @@ export function PrefabEditorPanel() {
                     justifyContent: "center",
                 }}
             >
-                <button type="button" style={base.btn} onClick={toggleMode}>
+                <button type="button" style={base.btn} onClick={toggleMode} aria-label={isEditMode ? "Play" : "Edit"}>
                     {isEditMode ? "▶" : "⏸"}
                 </button>
-                {agentTools && <a
-                    href={agentDocsUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Editor API for agents: window.reactThreeGame.help()"
-                    title="Start here: window.reactThreeGame.help()"
-                    style={{ color: 'inherit', fontSize: 11, padding: '4px 6px', textUnderlineOffset: 3 }}
-                >Agent API ↗</a>}
+                <button type="button" style={base.btn} aria-label="Reset scene" onClick={() => { void resetScene().catch(console.error); }}>↺</button>
             </div>
             {isEditMode && (
                 <EditorUI

@@ -126,6 +126,7 @@ export default function KillboxDemo() {
     return (
         <main className="flex h-screen w-screen flex-col items-center justify-between bg-white dark:bg-black sm:items-start">
             <PrefabEditor
+                agentId="killbox"
                 importModel={importCollisionModel}
                 basePath={BASE_PATH}
                 prefab={selectedPrefab}

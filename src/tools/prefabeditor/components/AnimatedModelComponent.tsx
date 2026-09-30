@@ -16,9 +16,13 @@ import type { Component, ComponentViewProps } from './ComponentRegistry';
 
 export interface AnimatedModelHandle {
     readonly object: Object3D;
+    /** This model instance's mixer. Disable autoUpdate when advancing it yourself. */
+    readonly mixer: AnimationMixer;
     readonly animations: readonly AnimationClip[];
     readonly animationStates: readonly string[];
     readonly animationState: string;
+    /** Existing clip action, matched case-insensitively; null for an unknown name. */
+    getAction(name: string): AnimationAction | null;
     setAnimationState(state: string, immediate?: boolean): void;
     stop(): void;
     update(delta: number): void;
@@ -103,13 +107,15 @@ function LoadedAnimatedModel({ properties, enabled, path }: { properties: Animat
     }, [actions, clips, properties.fadeDuration]);
     const handle = useMemo<AnimatedModelHandle | null>(() => object && mixer ? ({
         object,
+        mixer,
         animations: clips,
         animationStates: clips.map(clip => clip.name),
         get animationState() { return stateRef.current; },
+        getAction: name => findAction(name, clips, actions),
         setAnimationState,
         stop,
         update: delta => mixer.update(delta),
-    }) : null, [clips, mixer, object, setAnimationState, stop]);
+    }) : null, [actions, clips, mixer, object, setAnimationState, stop]);
 
     useRegisterNodeComponent(ANIMATED_MODEL_COMPONENT, handle);
     useEffect(() => {

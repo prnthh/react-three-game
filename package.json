@@ -50,7 +50,9 @@
 		"build": "npm run clean && tsc",
 		"prepack": "npm run build",
 		"release": "npm publish --access public",
-		"test": "node --import ./tests/register.mjs --test tests/*.test.mjs"
+		"test": "npm run test:lib && npm run test:docs",
+		"test:lib": "node --import ./tests/support/register.mjs --test tests/*/*.test.mjs",
+		"test:docs": "npm test --workspace docs"
 	},
 	"keywords": [],
 	"author": "prnth",

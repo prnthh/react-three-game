@@ -1,17 +1,15 @@
+import { useMemo } from 'react';
 import type { AssetRuntime } from './assetRuntime';
-import type { PrefabApi, PrefabRegistry } from './SceneContext';
-import type { PrefabStoreApi } from './prefabStore';
+import type { PrefabApi, PrefabDocumentApi, PrefabRegistry } from './SceneContext';
+import { usePrefabStoreApi, type PrefabStoreApi } from './prefabStore';
 import { withBasePath } from './runtimeUtils';
 
-/** The same document API is used by the viewer and editor. */
-export function createPrefabApi(store: PrefabStoreApi, registry: PrefabRegistry, getRuntime: () => AssetRuntime | null, basePath: string): PrefabApi {
+/** Document mutations are independent of mounted objects, assets and rendering. */
+export function createPrefabDocumentApi(store: PrefabStoreApi): PrefabDocumentApi {
     return {
-        ...registry,
-        get root() { return registry.getObject(store.getState().rootId); },
-        basePath,
         get: id => store.getState().nodesById[id] ?? null,
-        getModel: path => getRuntime()?.getModel(withBasePath(basePath, path)) ?? null,
         getMaterial: id => store.getState().materials[id] ?? null,
+        batch: action => store.getState().batch(action),
         add: (node, parentId) => {
             const state = store.getState();
             state.addChild(parentId ?? state.rootId, node);
@@ -24,6 +22,23 @@ export function createPrefabApi(store: PrefabStoreApi, registry: PrefabRegistry,
         duplicate: id => store.getState().duplicateNode(id),
         move: (a, b, position) => store.getState().moveNode(a, b, position),
         replace: prefab => store.getState().replacePrefab(prefab),
+    };
+}
+
+/** Use for authored edits; useGameObject accesses transient runtime state. */
+export function usePrefabDocument(): PrefabDocumentApi {
+    const store = usePrefabStoreApi();
+    return useMemo(() => createPrefabDocumentApi(store), [store]);
+}
+
+/** Existing refs combine the document facade with live objects and resources. */
+export function createPrefabApi(store: PrefabStoreApi, registry: PrefabRegistry, getRuntime: () => AssetRuntime | null, basePath: string): PrefabApi {
+    return {
+        ...createPrefabDocumentApi(store),
+        ...registry,
+        get root() { return registry.getObject(store.getState().rootId); },
+        basePath,
+        getModel: path => getRuntime()?.getModel(withBasePath(basePath, path)) ?? null,
         addModel: (path, model) => getRuntime()?.registerModel(withBasePath(basePath, path), model),
         addTexture: (path, texture) => getRuntime()?.registerTexture(withBasePath(basePath, path), texture),
         addSound: (path, sound) => getRuntime()?.registerSound(withBasePath(basePath, path), sound),

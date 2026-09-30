@@ -51,7 +51,7 @@ api.getNodes({ ids: ['character-runner', 'entry-lamp'], resolved: true });
 
 One undo restores both edits. Play uses the edited settings. `exportScene()` returns
 configuration, not the player's current position or velocity. Browser access and
-save adapters are covered in the [agent guide](../../../editor-api-for-agents.md).
+save adapters are covered in the [agent guide](../../../public/editor-api-for-agents.md).
 
 The component schema supplies both inspector fields and agent metadata. Movement
 uses live objects and host-owned state; it does not edit the document each frame.

@@ -23,14 +23,15 @@ import {
     step,
     texture,
     uniform,
-    uv,
+    time,
+    vec2,
     vec3,
     viewportDepthTexture,
     viewportTexture,
 } from "three/tsl";
 
 import { withBasePath } from "../../../basePath";
-import { gameTime } from "./GrassWorldRuntime";
+import { usePrefab, type Component } from "react-three-game/viewer";
 
 class WaterMaterial extends MeshBasicNodeMaterial {
     readonly waterUniforms;
@@ -69,12 +70,13 @@ class WaterMaterial extends MeshBasicNodeMaterial {
         this.fog = false;
 
         const u = this.waterUniforms;
-        const speed = gameTime.mul(u.uSpeed);
+        const speed = time.mul(u.uSpeed);
         const frequency = u.uNoiseScrollDir.mul(speed);
-        const nUV1 = uv().add(frequency).mul(u.uUvScale.mul(1.37)).fract();
+        const waterUV = vec2(positionWorld.x, positionWorld.z.negate()).div(512).add(0.5);
+        const nUV1 = waterUV.add(frequency).mul(u.uUvScale.mul(1.37)).fract();
         const tex1 = texture(normVeinWater, nUV1);
         const tsn1 = tex1.rgb.mul(2).sub(1).normalize();
-        const nUV2 = uv().sub(frequency).mul(u.uUvScale.mul(0.73)).fract();
+        const nUV2 = waterUV.sub(frequency).mul(u.uUvScale.mul(0.73)).fract();
         const tex2 = texture(normVeinWater, nUV2);
         const tsn2 = tex2.rgb.mul(2).sub(1).normalize();
         const blendedTsn = vec3(
@@ -140,11 +142,15 @@ class WaterMaterial extends MeshBasicNodeMaterial {
     }
 }
 
-export default function Water({ level, size }: { level: number; size: number }) {
+export type WaterProperties = { level: number; size: number; speed: number; normalMap: string; followCamera: boolean };
+
+export default function Water({ level, size, speed = 0.1, followCamera = false, normalMap = withBasePath('/grassworld/textures/water-normal.png') }: {
+    level: number; size: number; speed?: number; normalMap?: string; followCamera?: boolean;
+}) {
     const surface = useRef<Mesh>(null);
     const camera = useThree((state) => state.camera);
     const scene = useThree((state) => state.scene);
-    const normalTexture = useTexture(withBasePath("/grassworld/textures/water-normal.png"));
+    const normalTexture = useTexture(normalMap);
     const [environment, setEnvironment] = useState<CubeTexture | null>(null);
     useMemo(() => {
         normalTexture.wrapS = normalTexture.wrapT = RepeatWrapping;
@@ -153,6 +159,11 @@ export default function Water({ level, size }: { level: number; size: number }) 
         () => environment ? new WaterMaterial(normalTexture, environment) : null,
         [environment, normalTexture],
     );
+    useEffect(() => {
+        if (material) material.waterUniforms.uSpeed.value = speed;
+    }, [material, speed]);
+    const cameraPositionWorld = useMemo(() => new Vector3(), []);
+    const surfacePositionWorld = useMemo(() => new Vector3(), []);
     useEffect(() => () => {
         material?.dispose();
     }, [material]);
@@ -164,7 +175,15 @@ export default function Water({ level, size }: { level: number; size: number }) 
         // camera intersects or passes below the single-sided surface those reads
         // become self-referential on WebGPU. Keep the shader unchanged and guard
         // the invalid camera/surface configuration at the adapter boundary.
-        surface.current.visible = camera.position.y > level + 0.25;
+        camera.getWorldPosition(cameraPositionWorld);
+        if (followCamera) {
+            surfacePositionWorld.copy(cameraPositionWorld);
+            surface.current.parent?.worldToLocal(surfacePositionWorld);
+            surface.current.position.x = surfacePositionWorld.x;
+            surface.current.position.z = surfacePositionWorld.z;
+        }
+        surface.current.getWorldPosition(surfacePositionWorld);
+        surface.current.visible = cameraPositionWorld.y > surfacePositionWorld.y + 0.25;
     }, -3);
     if (!material) return null;
     return (
@@ -174,3 +193,24 @@ export default function Water({ level, size }: { level: number; size: number }) 
         </mesh>
     );
 }
+
+
+/** Keep the surface horizontal. Requires Environment and GameCanvas glConfig.antialias=false. */
+export const WaterComponent: Component<WaterProperties> = {
+    name: 'Water',
+    description: 'Horizontal refractive water. Requires an Environment component and canvas antialias=false. No collider.',
+    properties: {
+        level: { default: 0, step: 0.1 },
+        size: { default: 100, min: 1, step: 1 },
+        followCamera: { type: 'boolean', default: false },
+        speed: { default: 0.1, step: 0.01 },
+        normalMap: { type: 'string', default: '/grassworld/textures/water-normal.png' },
+    },
+    View: function WaterView({ properties, children }) {
+        const { basePath } = usePrefab();
+        const path = properties.normalMap;
+        const normalMap = /^(?:https?:|data:|blob:)/.test(path)
+            ? path : `${(basePath ?? '').replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
+        return <><Water {...properties} normalMap={normalMap} />{children}</>;
+    },
+};

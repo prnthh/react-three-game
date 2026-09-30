@@ -1,10 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useSyncExternalStore, type ReactNode } from 'react';
 import { DynamicDrawUsage, InstancedInterleavedBuffer, InstancedMesh, Matrix4, Mesh, type Material, type Object3D } from 'three';
-import type { Node } from 'three/webgpu';
 import { instancedDynamicBufferAttribute, mat4 } from 'three/tsl';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { EditPickContext } from './SelectionRuntime';
 import { registerEditPickSources } from './editPicking';
+import { getInstancedMaterialFactory } from './materialInstancing';
 
 const HIDDEN_MATRIX = new Matrix4().makeScale(0, 0, 0);
 const IDENTITY_MATRIX = new Matrix4();
@@ -12,10 +12,6 @@ const BATCH_PARENT_INVERSE = new Matrix4();
 const INSTANCE_MATRIX = new Matrix4();
 const CURRENT_INSTANCE_MATRIX = new Matrix4();
 const INVERSE_MATRIX = new Matrix4();
-export const MESH_INSTANCING_MATERIAL_FACTORY = 'prefabMeshInstancingMaterialFactory';
-
-export type MeshInstancingMaterialFactory = (inverseInstanceMatrix: Node<'mat4'>) => Material;
-
 export type InstancedMeshSource = {
     id: string;
     mesh: Mesh;
@@ -85,12 +81,6 @@ function equalsFloat32(left: Matrix4, right: Matrix4) {
     return true;
 }
 
-function getMeshInstancingMaterialFactory(material: Material | Material[]) {
-    if (Array.isArray(material)) return null;
-    const factory = material.userData[MESH_INSTANCING_MATERIAL_FACTORY];
-    return typeof factory === 'function' ? factory as MeshInstancingMaterialFactory : null;
-}
-
 function isHierarchyVisible(source: InstancedMeshSource) {
     if (!source.mesh.visible) return false;
     let current: Object3D | null = source.mesh.parent;
@@ -114,7 +104,7 @@ function MeshInstanceBatch({ sources, isStatic }: { sources: InstancedMeshSource
     const lastVisibility = useRef<boolean | null>(null);
     const geometry = sources[0].mesh.geometry;
     const sourceMaterial = sources[0].mesh.material;
-    const materialFactory = getMeshInstancingMaterialFactory(sourceMaterial);
+    const materialFactory = getInstancedMaterialFactory(sourceMaterial);
     const capacity = Math.max(2, 2 ** Math.ceil(Math.log2(sources.length)));
     const inverseMatrixBuffer = useMemo(() => {
         if (!materialFactory) return null;

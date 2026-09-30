@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import type { PrefabApi, Scene } from "./SceneContext";
+import type { PrefabApi, Scene, PrefabEditorMode } from "./SceneContext";
 import type { Prefab } from "./types";
 import type { ExportGLBOptions } from "./utils";
 
@@ -7,6 +7,8 @@ import type { SceneAgentApi } from "./sceneAgent";
 
 export interface PrefabEditorRef extends Scene, PrefabApi {
     agent: SceneAgentApi;
+    setMode: (mode: PrefabEditorMode) => void;
+    resetScene: () => Promise<void>;
     save: () => Prefab;
     load: (prefab: Prefab) => void;
     undo: () => void;

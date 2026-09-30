@@ -9,6 +9,7 @@ import { PrefabEditor } from "react-three-game/editor";
 import type { Prefab } from "react-three-game/core";
 import { registerComponent } from "react-three-game/core";
 import { BASE_PATH, withBasePath } from "../basePath";
+import AgentApiHint from "../components/AgentApiHint";
 import PrefabSelector from "../components/PrefabSelector";
 
 
@@ -94,12 +95,13 @@ function EditorPage() {
         <PrefabEditor
           key={`${selectedMap.source}:${cameraPosition[0]},${cameraPosition[1]},${cameraPosition[2]}`}
           agentId="main"
-          agentDocsUrl={withBasePath("/editor/agents")}
           basePath={BASE_PATH}
           prefab={selectedMap.prefab}
           canvasProps={{ camera: { position: cameraPosition } }}
         />
       )}
+
+      {selectedMap && cameraPosition && <AgentApiHint />}
 
       {(loadError || queryError) && (
         <div className="fixed left-1/2 top-4 z-50 -translate-x-1/2 rounded bg-red-950/90 px-3 py-2 text-sm text-red-100 shadow-lg">

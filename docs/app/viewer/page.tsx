@@ -1,44 +1,21 @@
-"use client";
-import PrefabGridStreamerComponent from "../components/PrefabGridStreamerComponent";
-import ConstantVelocityComponent from "../components/ConstantVelocityComponent";
-import CameraShadowFollowerComponent from "../demo/grassworld/components/CameraShadowFollowerComponent";
+'use client';
 
+import { OrbitControls } from '@react-three/drei';
+import { GameCanvas, PrefabRoot, registerComponent } from 'react-three-game/viewer';
+import Rotator from '../demo/customcomponent/RotatorComponent';
+import { rotatorScene } from '../demo/customcomponent/scene';
+import { BASE_PATH } from '../basePath';
 
-import { GameCanvas, PrefabRoot, registerComponent } from "react-three-game/viewer";
-import { useState } from "react";
-import { BASE_PATH } from "../basePath";
-import type { Prefab } from "react-three-game/core";
+registerComponent(Rotator);
 
-import PrefabSelector from "../components/PrefabSelector";
-import gameLevel from "../../public/prefabs/game-level.json";
-
-export default function Home() {
-    const [selectedScene, setSelectedScene] = useState<Prefab>(gameLevel as unknown as Prefab);
-    const [selectedPrefabName, setSelectedPrefabName] = useState("game-level");
-
-    return (
-        <main className="flex h-screen w-screen flex-col items-center justify-between bg-white dark:bg-black sm:items-start">
-            <GameCanvas camera={{ position: [0, 1, 10] }}>
-                <ambientLight intensity={0.8} />
-                <PrefabRoot
-                    basePath={BASE_PATH}
-                    data={selectedScene}
-                />
-            </GameCanvas>
-
-            <div className="fixed top-2 left-1/2 -translate-x-1/2 z-2">
-                <PrefabSelector
-                    selectedName={selectedPrefabName}
-                    onSelect={(prefab: Prefab, prefabName) => {
-                        setSelectedScene(prefab);
-                        setSelectedPrefabName(prefabName);
-                    }}
-                />
-            </div>
-        </main>
-    );
+export default function ViewerDemo() {
+    return <main className="h-screen w-screen bg-slate-950 text-white">
+        <GameCanvas camera={{ position: [8, 7, 12] }}>
+            <color attach="background" args={['#17232d']} />
+            <ambientLight intensity={2} />
+            <directionalLight position={[4, 6, 3]} intensity={2} />
+            <PrefabRoot data={rotatorScene} basePath={BASE_PATH} />
+            <OrbitControls makeDefault />
+        </GameCanvas>
+    </main>;
 }
-
-registerComponent(PrefabGridStreamerComponent);
-registerComponent(ConstantVelocityComponent);
-registerComponent(CameraShadowFollowerComponent);

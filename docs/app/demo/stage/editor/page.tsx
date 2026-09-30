@@ -51,6 +51,7 @@ export default function StageEditor() {
                     </div>
                     <div className="relative min-h-0 flex-1">
                         <PrefabEditorProvider
+                            agentId="stage"
                             key={selectedScene.id}
                             basePath={BASE_PATH}
                             prefab={selectedScene.prefab}

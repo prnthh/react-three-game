@@ -64,3 +64,6 @@ export type { SceneCommand, SceneCommandBatch, SceneCommandResult } from "./tool
 
 export type { SceneAgentApi, SceneAgentBatch, FindSceneNodes, GetSceneNodes } from "./tools/prefabeditor/sceneAgent";
 export type { SceneAgentRegistry } from "./tools/prefabeditor/sceneAgentBridge";
+
+export { usePrefabDocument } from "./tools/prefabeditor/prefabApi";
+export type { PrefabDocumentApi } from "./tools/prefabeditor/SceneContext";

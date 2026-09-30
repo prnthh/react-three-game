@@ -1,7 +1,7 @@
 import type { Object3D } from 'three';
 import type { NodeComponentRegistry, NodeComponentType, PrefabRegistry } from './SceneContext';
 
-/** A stable reference to a live object; reads follow mounting, replacement and unloading. */
+/** Live state only: changes are neither serialized nor undoable. Reads follow mounting, replacement and unloading. */
 export interface GameObjectHandle {
     readonly id: string;
     readonly transform: Object3D | null;

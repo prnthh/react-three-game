@@ -8,7 +8,14 @@ import { denormalizePrefab, type PrefabState } from './prefab';
 import type { PrefabStoreApi } from './prefabStore';
 import type { Prefab } from './types';
 
+export interface SceneView { position: [number, number, number]; target: [number, number, number] }
+
 export interface SceneAgentHost {
+    setMode?(mode: 'edit' | 'play'): void | Promise<void>;
+    resetScene?(): void | Promise<void>;
+    setSelection?(id: string | null): void;
+    getView?(): SceneView;
+    setView?(view: SceneView): void;
     mode(): string;
     selectedId(): string | null;
     transaction(action: () => void): void;
@@ -17,6 +24,8 @@ export interface SceneAgentHost {
     redo(): void;
     history(): { canUndo: boolean; canRedo: boolean };
     captureView(): Promise<{ mimeType: 'image/png'; dataUrl: string; width: number; height: number }>;
+    exportGLB?(filename: string): Promise<void>;
+    screenshot?(filename: string): Promise<void>;
     focusNode(id: string): void;
     canSave(): boolean;
     save(prefab: Prefab): Promise<void>;
@@ -70,6 +79,21 @@ export function createSceneAgent(store: PrefabStoreApi, getHost: () => SceneAgen
         options(input, ['commands', 'expectedRevision']);
         const current = checkRevision(input.expectedRevision);
         return { ...evaluateSceneCommandState(current.state, { commands: input.commands }), before: current.state, revision: current.revision };
+    };
+    const download = async (kind: 'exportGLB' | 'screenshot', input: { filename?: string }) => {
+        options(input, ['filename']);
+        const { revision } = snapshot();
+        const filename = input.filename ?? (kind === 'exportGLB' ? 'scene.glb' : 'screenshot.png');
+        if (typeof filename !== 'string' || !filename.trim() || /[\\/\x00-\x1f]/.test(filename) || filename === '.' || filename === '..') {
+            throw new Error('filename must be a nonempty file name without a directory path.');
+        }
+        const host = getHost();
+        const action = host[kind];
+        if (!action) throw new Error(`${kind} download is not configured for this editor.`);
+        await action.call(host, filename);
+        return { downloadRequested: true, filename,
+            mimeType: kind === 'exportGLB' ? 'model/gltf-binary' : 'image/png',
+            revision, currentRevision: snapshot().revision };
     };
     const api = {
         help() {
@@ -166,6 +190,49 @@ export function createSceneAgent(store: PrefabStoreApi, getHost: () => SceneAgen
             }
             return { ...evaluated.result, advisories: analyzeSceneAuthoring(evaluated.state).advisories, changed, revision: snapshot().revision };
         },
+        async setMode(input: { mode: 'edit' | 'play' }) {
+            options(input, ['mode']); snapshot();
+            if (input.mode !== 'edit' && input.mode !== 'play') throw new Error('mode must be edit or play.');
+            const host = getHost();
+            if (!host.setMode) throw new Error('Mode control is not configured.');
+            await host.setMode(input.mode);
+            return { mode: getHost().mode() };
+        },
+        async resetScene() {
+            snapshot();
+            const host = getHost();
+            if (!host.resetScene) throw new Error('Scene reset is not configured.');
+            await host.resetScene();
+            return { resetRequested: true, revision: snapshot().revision };
+        },
+        setSelection(input: { id: string | null }) {
+            options(input, ['id']); requireEdit();
+            if (input.id !== null) {
+                const node = lookup(snapshot().state, input.id);
+                if (node.locked) throw new Error('Cannot select a locked node.');
+            }
+            const host = getHost();
+            if (!host.setSelection) throw new Error('Selection control is not configured.');
+            host.setSelection(input.id);
+            return { selectedId: input.id };
+        },
+        getView() {
+            snapshot();
+            const host = getHost();
+            if (!host.getView) throw new Error('Camera control is not configured.');
+            return structuredClone(host.getView());
+        },
+        setView(input: SceneView) {
+            options(input, ['position', 'target']); requireEdit();
+            for (const value of [input.position, input.target]) {
+                if (!Array.isArray(value) || value.length !== 3 || !value.every(n => typeof n === 'number' && Number.isFinite(n))) throw new Error('View vectors must contain three finite numbers.');
+            }
+            if (input.position.every((n, i) => n === input.target[i])) throw new Error('View position and target must differ.');
+            const host = getHost();
+            if (!host.setView) throw new Error('Camera control is not configured.');
+            host.setView(structuredClone(input));
+            return api.getView();
+        },
         undo(input: { expectedRevision: string }) {
             options(input, ['expectedRevision']); requireEdit(); checkRevision(input.expectedRevision); getHost().undo();
             return api.getSceneInfo();
@@ -182,6 +249,12 @@ export function createSceneAgent(store: PrefabStoreApi, getHost: () => SceneAgen
             const { revision } = snapshot();
             const image = await getHost().captureView();
             return { ...image, revision, currentRevision: snapshot().revision };
+        },
+        exportGLB(input: { filename?: string } = {}) {
+            return download('exportGLB', input);
+        },
+        screenshot(input: { filename?: string } = {}) {
+            return download('screenshot', input);
         },
         exportScene() {
             const { state, revision } = snapshot();

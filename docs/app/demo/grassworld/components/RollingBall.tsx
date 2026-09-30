@@ -25,6 +25,7 @@ function BallInputView({ properties, children }: ComponentViewProps<BallInputPro
     const { mode } = useScene();
     const crashcat = useCrashcat();
     const keys = useRef(new Set<string>());
+    const jumpRequested = useRef(false);
     const move = useRef(new Vector3());
     const bodyVelocity = useRef<[number, number, number]>([0, 0, 0]);
     const isPlayMode = mode === PrefabEditorMode.Play;
@@ -34,18 +35,25 @@ function BallInputView({ properties, children }: ComponentViewProps<BallInputPro
             keys.current.clear();
             return;
         }
+        const clear = () => { keys.current.clear(); jumpRequested.current = false; };
         const down = (event: KeyboardEvent) => {
+            const target = event.target;
+            if (target instanceof HTMLElement && (target.isContentEditable || target.closest('input, textarea, select, button'))) return;
             keys.current.add(event.code);
+            if (event.code === "Space" && !event.repeat) jumpRequested.current = true;
             if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(event.code)) event.preventDefault();
-            if (event.code === "KeyF") {
+            if (event.code === "KeyF" && !event.repeat) {
                 if (document.fullscreenElement) void document.exitFullscreen();
                 else void document.documentElement.requestFullscreen();
             }
         };
         const up = (event: KeyboardEvent) => keys.current.delete(event.code);
+        window.addEventListener("blur", clear);
         window.addEventListener("keydown", down);
         window.addEventListener("keyup", up);
         return () => {
+            clear();
+            window.removeEventListener("blur", clear);
             window.removeEventListener("keydown", down);
             window.removeEventListener("keyup", up);
         };
@@ -55,7 +63,7 @@ function BallInputView({ properties, children }: ComponentViewProps<BallInputPro
         if (!isPlayMode || !crashcat) return;
         const body = crashcat.getBody(runtimeNodeId);
         if (!body) return;
-        const dt = Math.min(delta, 1 / 30);
+        const dt = Math.min(delta, 0.1);
         const pressed = keys.current;
         const linearVelocity = body.motionProperties.linearVelocity;
         let velocityX = linearVelocity[0];
@@ -76,7 +84,8 @@ function BallInputView({ properties, children }: ComponentViewProps<BallInputPro
         const drag = Math.exp(-(properties.drag ?? 1.8) * dt);
         velocityX *= drag;
         velocityZ *= drag;
-        if (pressed.has("Space") && body.contactCount > 0) velocityY = properties.jumpVelocity ?? 10.5;
+        if (jumpRequested.current && body.contactCount > 0) velocityY = properties.jumpVelocity ?? 10.5;
+        jumpRequested.current = false;
 
         bodyVelocity.current[0] = velocityX;
         bodyVelocity.current[1] = velocityY;
@@ -99,19 +108,16 @@ export const BallInputComponent: Component<BallInputProperties> = {
 
 function PlayerPositionSyncView({ children }: ComponentViewProps) {
     const objectRef = useGameObject();
-    const { mode } = useScene();
     const [player] = useState<PlayerRuntime>(() => ({ position: new Vector3() }));
-    const isPlayMode = mode === PrefabEditorMode.Play;
 
     useRegisterNodeComponent(GRASS_WORLD_PLAYER_COMPONENT, player);
 
     useFrame(() => {
-        if (!isPlayMode) return;
         const ball = objectRef.transform;
         if (!ball) return;
 
         ball.getWorldPosition(player.position);
-    }, 0);
+    }, -0.5);
 
     return <>{children}</>;
 }

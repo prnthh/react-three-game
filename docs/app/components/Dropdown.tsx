@@ -8,23 +8,21 @@ type DemoOption = {
     href: string;
 };
 
+// Ordered by the concepts introduced; benchmark is a diagnostic tool.
+const options: DemoOption[] = [
+    { label: "Viewer Mode", href: "/viewer" },
+    { label: "Asset Viewer", href: "/demo/assetviewer" },
+    { label: "Custom Component", href: "/demo/customcomponent" },
+    { label: "Cool stuff", href: "/demo/coolstuff" },
+    { label: "Jumper API Playground", href: "/demo/jumper" },
+    { label: "Point n Click", href: "/demo/stage" },
+    { label: "Killbox FPS", href: "/demo/killbox" },
+    { label: "Streamed World", href: "/demo/grassworld" },
+    { label: "Benchmark (Diagnostics)", href: "/demo/benchmark" },
+];
+
 export default function Dropdown() {
     const [open, setOpen] = useState(false);
-
-    const options: DemoOption[] = [
-        { label: "Jumper API Playground", href: "/demo/jumper" },
-        { label: "Interior Mapping", href: "/demo/interior" },
-        { label: "Viewer Mode", href: "/viewer" },
-        { label: "Streamed World", href: "/demo/grassworld" },
-        { label: "Point n Click", href: "/demo/stage" },
-        { label: "Killbox FPS", href: "/demo/killbox" },
-        { label: "Cannons (Physics)", href: "/demo/physics" },
-        { label: "Custom Component", href: "/demo/customcomponent" },
-        { label: "Ragdoll", href: "/demo/ragdoll" },
-        { label: "Quake", href: "/demo/quake" },
-        { label: "Asset Viewer", href: "/demo/assetviewer" },
-        { label: "Benchmark", href: "/demo/benchmark" },
-    ];
 
     return (
         <div className={`relative ${open ? "z-50" : "z-10"}`}>
@@ -57,7 +55,7 @@ export default function Dropdown() {
                             if (e.key === "Escape") setOpen(false);
                         }}
                         onMouseLeave={() => setOpen(false)}
-                        className="metal-menu left-0 top-full z-50 mt-2 w-48 max-w-[calc(100vw-2rem)]"
+                        className="metal-menu left-0 top-full z-50 mt-2 w-56 max-w-[calc(100vw-2rem)] max-h-[70vh] overflow-y-auto"
                     >
                         {options.map((opt) => (
                             <Link

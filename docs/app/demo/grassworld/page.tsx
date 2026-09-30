@@ -7,12 +7,22 @@ import {
     CrashcatRuntime,
 } from "react-three-game/plugins/crashcat";
 
+import { WaterComponent } from "./components/Water";
 import GrassWorld, { terrainHeight } from "./GrassWorld";
 import { BASE_PATH } from "../../basePath";
 import {
     BallInputComponent,
     PlayerPositionSyncComponent,
 } from "./components/RollingBall";
+
+const grassWorldConfig = {
+    mapSize: 512,
+    waterLevel: -0.7,
+    grassShoreClearance: 0.45,
+    grassTransitionWidth: 0.55,
+    terrainChunkSize: 24,
+    terrainChunkRadius: 2,
+};
 
 const grassWorldPrefab: Prefab = {
     id: "grassworld",
@@ -41,6 +51,9 @@ const grassWorldPrefab: Prefab = {
             },
         },
         children: [
+            { id: 'grassworld-water', name: 'Water', components: {
+                water: { type: 'Water', properties: { level: grassWorldConfig.waterLevel, size: grassWorldConfig.mapSize, followCamera: true } },
+            } },
             {
                 id: "grassworld-environment",
                 name: "Grass World Environment",
@@ -82,7 +95,7 @@ const grassWorldPrefab: Prefab = {
                     transform: {
                         type: "Transform",
                         properties: {
-                            position: [-18, terrainHeight(-18, 0) + 0.5, 0],
+                            position: [-8, terrainHeight(-8, 0) + 0.5, 0],
                             rotation: [0, 0, 0],
                             scale: [1, 1, 1],
                         },
@@ -126,7 +139,7 @@ const grassWorldPrefab: Prefab = {
                     transform: {
                         type: "Transform",
                         properties: {
-                            position: [-18, terrainHeight(-18, 0) + 16, 20],
+                            position: [-8, terrainHeight(-8, 0) + 16, 20],
                             rotation: [0, 0, 0],
                             scale: [1, 1, 1],
                         },
@@ -198,20 +211,14 @@ const grassWorldPrefab: Prefab = {
     },
 };
 
-const grassWorldConfig = {
-    mapSize: 512,
-    waterLevel: -0.7,
-    grassShoreClearance: 0.45,
-    grassTransitionWidth: 0.55,
-    terrainChunkSize: 24,
-    terrainChunkRadius: 2,
-};
+
 
 export default function GrassWorldDemo() {
 
     return (
         <main className="h-screen w-screen bg-sky-300">
             <PrefabEditor
+                agentId="grassworld"
                 basePath={BASE_PATH}
                 prefab={grassWorldPrefab}
                 mode={PrefabEditorMode.Play}
@@ -243,3 +250,5 @@ export default function GrassWorldDemo() {
 registerComponent(CrashcatPhysicsComponent);
 registerComponent(BallInputComponent);
 registerComponent(PlayerPositionSyncComponent);
+
+registerComponent(WaterComponent);

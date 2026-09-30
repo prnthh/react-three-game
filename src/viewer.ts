@@ -3,8 +3,6 @@ export * from "./core";
 export { default as GameCanvas } from "./shared/GameCanvas";
 export type { GameCanvasProps } from "./shared/GameCanvas";
 
-export { ground } from "./helpers";
-export type { GroundOptions, Vec3 } from "./helpers";
 export { sound as soundManager, SoundManager } from "./helpers/SoundManager";
 export type { SoundOptions, SoundPlayback } from "./helpers/SoundManager";
 
@@ -62,12 +60,6 @@ export type {
 export { MaterialOverridesProvider, useMaterialOverrides } from "./tools/prefabeditor/components/MaterialComponent";
 export type { MaterialOverrides } from "./tools/prefabeditor/components/MaterialComponent";
 
-export {
-	MESH_INSTANCING_MATERIAL_FACTORY,
-	useInvalidateMeshInstances,
-} from "./tools/prefabeditor/MeshInstanceProvider";
-export type { MeshInstancingMaterialFactory } from "./tools/prefabeditor/MeshInstanceProvider";
-
 export { PrefabInstance } from "./runtime/PrefabInstance";
 export type { PrefabInstanceProps, PrefabInstanceStatus } from "./runtime/PrefabInstance";
 export type { PreparedPrefab, PrefabPreparationOptions, AssetDependency, ComponentDependency } from "./runtime/preparePrefab";
@@ -75,6 +67,7 @@ export { useSceneLoadStats } from "./tools/prefabeditor/assetRuntime";
 export { createPrefabStore, usePrefabStore, usePrefabStoreApi } from "./tools/prefabeditor/prefabStore";
 export type { PrefabStoreApi, PrefabStoreState } from "./tools/prefabeditor/prefabStore";
 
+export type { SharedMaterialOptions } from "./tools/prefabeditor/components/MaterialComponent";
 export { useSharedMaterialResource } from "./tools/prefabeditor/components/MaterialComponent";
 
 export { withBasePath as resolveAssetPath } from "./tools/prefabeditor/runtimeUtils";
@@ -85,3 +78,6 @@ export type { CascadedDirectionalLightProps } from './runtime/lighting/CascadedD
 export { SceneRuntime } from "./runtime/SceneRuntime";
 
 export type { GameObjectHandle } from "./tools/prefabeditor/gameObject";
+
+export { usePrefabDocument, createPrefabDocumentApi } from "./tools/prefabeditor/prefabApi";
+export type { PrefabDocumentApi } from "./tools/prefabeditor/SceneContext";

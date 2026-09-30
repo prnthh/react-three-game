@@ -6,6 +6,8 @@ import { PrefabEditor, type PrefabEditorRef } from "react-three-game/editor";
 import { CrashcatPhysicsComponent, CrashcatRuntime } from "react-three-game/plugins/crashcat";
 import { BASE_PATH } from "../../basePath";
 
+registerComponent(CrashcatPhysicsComponent);
+
 const TEST_COUNT = 100;
 const ROOT_ID = "benchmark-root";
 const BENCH_DELAY_MS = 2000;
@@ -23,7 +25,7 @@ type BenchmarkDefinition = {
     label: string;
     createPrefab?: () => Prefab;
     settleFrames?: number;
-    run: (editor: PrefabEditorRef) => Promise<void>;
+    run: (editor: PrefabEditorRef) => void;
 };
 
 function createEmptyPrefab(): Prefab {
@@ -236,8 +238,6 @@ function waitForFrames(count = 2) {
 }
 
 export default function BenchmarkPage() {
-    registerComponent(CrashcatPhysicsComponent);
-
     const editorRef = useRef<PrefabEditorRef>(null);
     const hasAutoStartedRef = useRef(false);
     const isRunningRef = useRef(false);
@@ -246,45 +246,53 @@ export default function BenchmarkPage() {
     const [error, setError] = useState<string | null>(null);
     const benchmarkPrefab = useMemo(() => createEmptyPrefab(), []);
 
-    const benchmarkDefinitions = useMemo<BenchmarkDefinition[]>(() => [
-        {
-            id: "mesh-material-100",
-            label: "Add 100 geometry + material nodes",
-            run: async (editor) => {
-                for (let index = 0; index < TEST_COUNT; index += 1) {
-                    editor.add(createGeometryMaterialNode(index), ROOT_ID);
-                }
+    const benchmarkDefinitions = useMemo<BenchmarkDefinition[]>(() => {
+        const cases: BenchmarkDefinition[] = [
+            {
+                id: "mesh-material-100",
+                label: "Add 100 geometry + material nodes",
+                run: (editor) => {
+                    for (let index = 0; index < TEST_COUNT; index += 1) {
+                        editor.add(createGeometryMaterialNode(index), ROOT_ID);
+                    }
+                },
             },
-        },
-        {
-            id: "instanced-100",
-            label: "Add 100 implicitly instanced meshes",
-            run: async (editor) => {
-                for (let index = 0; index < TEST_COUNT; index += 1) {
-                    editor.add(createInstancedNode(index), ROOT_ID);
-                }
+            {
+                id: "instanced-100",
+                label: "Add 100 implicitly instanced meshes",
+                run: (editor) => {
+                    for (let index = 0; index < TEST_COUNT; index += 1) {
+                        editor.add(createInstancedNode(index), ROOT_ID);
+                    }
+                },
             },
-        },
-        {
-            id: "crashcat-static-100",
-            label: "Add 100 static Crashcat bodies",
-            run: async (editor) => {
-                for (let index = 0; index < TEST_COUNT; index += 1) {
-                    editor.add(createStaticCrashcatNode(index), ROOT_ID);
-                }
+            {
+                id: "crashcat-static-100",
+                label: "Add 100 static Crashcat bodies",
+                run: (editor) => {
+                    for (let index = 0; index < TEST_COUNT; index += 1) {
+                        editor.add(createStaticCrashcatNode(index), ROOT_ID);
+                    }
+                },
             },
-        },
-        {
-            id: "crashcat-dynamic-100",
-            label: "Add 100 dynamic Crashcat bodies",
-            createPrefab: createDynamicBenchmarkPrefab,
-            run: async (editor) => {
-                for (let index = 0; index < TEST_COUNT; index += 1) {
-                    editor.add(createDynamicCrashcatNode(index), ROOT_ID);
-                }
+            {
+                id: "crashcat-dynamic-100",
+                label: "Add 100 dynamic Crashcat bodies",
+                createPrefab: createDynamicBenchmarkPrefab,
+                run: (editor) => {
+                    for (let index = 0; index < TEST_COUNT; index += 1) {
+                        editor.add(createDynamicCrashcatNode(index), ROOT_ID);
+                    }
+                },
             },
-        },
-    ], []);
+        ];
+        return cases.flatMap(benchmark => [benchmark, {
+            ...benchmark,
+            id: `${benchmark.id}-batched`,
+            label: `${benchmark.label} (one batch)`,
+            run: (editor: PrefabEditorRef) => editor.batch(() => benchmark.run(editor)),
+        }]);
+    }, []);
 
     const totalTimeMs = useMemo(
         () => results.reduce((sum, result) => sum + result.durationMs, 0),
@@ -313,7 +321,7 @@ export default function BenchmarkPage() {
                 await waitForFrames();
 
                 const startTime = performance.now();
-                await benchmark.run(editor);
+                benchmark.run(editor);
                 const mutationEndTime = performance.now();
                 await waitForFrames(benchmark.settleFrames ?? 2);
                 const endTime = performance.now();
@@ -380,6 +388,7 @@ export default function BenchmarkPage() {
     return (
         <main className="relative h-screen w-screen overflow-hidden bg-[radial-gradient(circle_at_top,_#202f45_0%,_#0b1017_52%,_#04070b_100%)] text-white">
             <PrefabEditor
+                agentId="benchmark"
                 ref={editorRef}
                 basePath={BASE_PATH}
                 prefab={benchmarkPrefab}
@@ -398,7 +407,7 @@ export default function BenchmarkPage() {
                 <p className="text-[11px] text-slate-400">PrefabEditor Benchmark</p>
                 <h1 className="mt-1 text-base font-medium text-white">Mutation profiling</h1>
                 <p className="mt-1 text-xs leading-5 text-slate-300">
-                    Runs editor-ref scene mutations against a blank prefab and measures total wall-clock time after the scene settles.
+                    Compares individual edits with one batch. Mutation measures synchronous calls; total includes mounting and a two-frame wait.
                 </p>
 
                 <button

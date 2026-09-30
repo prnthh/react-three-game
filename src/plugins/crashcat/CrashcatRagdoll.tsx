@@ -10,7 +10,7 @@ import { mat3, mat4, quat, vec3 } from "mathcat";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { box, ConstraintSpace, massProperties, motionProperties, MotionType, rigidBody, swingTwistConstraint, type RigidBody, type SwingTwistConstraint, type World } from "crashcat";
+import { box, DEFAULT_SHAPE_DENSITY, ConstraintSpace, massProperties, motionProperties, MotionType, rigidBody, swingTwistConstraint, type RigidBody, type SwingTwistConstraint, type World } from "crashcat";
 
 import { Mesh, Quaternion, Vector3 } from "three";
 
@@ -128,17 +128,17 @@ export function createRagdollSettings(
     const lowerRightArmPos: Vec3 = [upperRightArmPos[0] + lowerArmLength / 2 + upperArmLength / 2, upperRightArmPos[1], 0];
 
     const shapes = new Map<RagdollBodyPart, ShapeConfig>([
-        [RagdollBodyPart.LowerLeftLeg, { args: [lowerLegSize * 0.5, lowerLegLength * 0.5, lowerLegSize * 0.5], density: scale, position: lowerLeftLegPos }],
-        [RagdollBodyPart.LowerRightLeg, { args: [lowerLegSize * 0.5, lowerLegLength * 0.5, lowerLegSize * 0.5], density: scale, position: lowerRightLegPos }],
-        [RagdollBodyPart.UpperLeftLeg, { args: [upperLegSize * 0.5, upperLegLength * 0.5, upperLegSize * 0.5], density: scale, position: upperLeftLegPos }],
-        [RagdollBodyPart.UpperRightLeg, { args: [upperLegSize * 0.5, upperLegLength * 0.5, upperLegSize * 0.5], density: scale, position: upperRightLegPos }],
-        [RagdollBodyPart.Pelvis, { args: [shouldersDistance * 0.5, pelvisLength * 0.5, pelvisSize * 0.5], density: scale, position: pelvisPos }],
-        [RagdollBodyPart.UpperBody, { args: [shouldersDistance * 0.5, upperBodyLength * 0.5, lowerArmSize * 0.75], density: scale, position: upperBodyPos }],
-        [RagdollBodyPart.Head, { args: [headRadius * 0.6, headRadius * 0.7, headRadius * 0.6], density: scale, position: headPos }],
-        [RagdollBodyPart.UpperLeftArm, { args: [upperArmLength * 0.5, upperArmSize * 0.5, upperArmSize * 0.5], density: scale, position: upperLeftArmPos }],
-        [RagdollBodyPart.UpperRightArm, { args: [upperArmLength * 0.5, upperArmSize * 0.5, upperArmSize * 0.5], density: scale, position: upperRightArmPos }],
-        [RagdollBodyPart.LowerLeftArm, { args: [lowerArmLength * 0.5, lowerArmSize * 0.5, lowerArmSize * 0.5], density: scale, position: lowerLeftArmPos }],
-        [RagdollBodyPart.LowerRightArm, { args: [lowerArmLength * 0.5, lowerArmSize * 0.5, lowerArmSize * 0.5], density: scale, position: lowerRightArmPos }],
+        [RagdollBodyPart.LowerLeftLeg, { args: [lowerLegSize * 0.5, lowerLegLength * 0.5, lowerLegSize * 0.5], density: DEFAULT_SHAPE_DENSITY, position: lowerLeftLegPos }],
+        [RagdollBodyPart.LowerRightLeg, { args: [lowerLegSize * 0.5, lowerLegLength * 0.5, lowerLegSize * 0.5], density: DEFAULT_SHAPE_DENSITY, position: lowerRightLegPos }],
+        [RagdollBodyPart.UpperLeftLeg, { args: [upperLegSize * 0.5, upperLegLength * 0.5, upperLegSize * 0.5], density: DEFAULT_SHAPE_DENSITY, position: upperLeftLegPos }],
+        [RagdollBodyPart.UpperRightLeg, { args: [upperLegSize * 0.5, upperLegLength * 0.5, upperLegSize * 0.5], density: DEFAULT_SHAPE_DENSITY, position: upperRightLegPos }],
+        [RagdollBodyPart.Pelvis, { args: [shouldersDistance * 0.5, pelvisLength * 0.5, pelvisSize * 0.5], density: DEFAULT_SHAPE_DENSITY, position: pelvisPos }],
+        [RagdollBodyPart.UpperBody, { args: [shouldersDistance * 0.5, upperBodyLength * 0.5, lowerArmSize * 0.75], density: DEFAULT_SHAPE_DENSITY, position: upperBodyPos }],
+        [RagdollBodyPart.Head, { args: [headRadius * 0.6, headRadius * 0.7, headRadius * 0.6], density: DEFAULT_SHAPE_DENSITY, position: headPos }],
+        [RagdollBodyPart.UpperLeftArm, { args: [upperArmLength * 0.5, upperArmSize * 0.5, upperArmSize * 0.5], density: DEFAULT_SHAPE_DENSITY, position: upperLeftArmPos }],
+        [RagdollBodyPart.UpperRightArm, { args: [upperArmLength * 0.5, upperArmSize * 0.5, upperArmSize * 0.5], density: DEFAULT_SHAPE_DENSITY, position: upperRightArmPos }],
+        [RagdollBodyPart.LowerLeftArm, { args: [lowerArmLength * 0.5, lowerArmSize * 0.5, lowerArmSize * 0.5], density: DEFAULT_SHAPE_DENSITY, position: lowerLeftArmPos }],
+        [RagdollBodyPart.LowerRightArm, { args: [lowerArmLength * 0.5, lowerArmSize * 0.5, lowerArmSize * 0.5], density: DEFAULT_SHAPE_DENSITY, position: lowerRightArmPos }],
     ]);
 
     const joints: JointConfig[] = [
@@ -416,7 +416,7 @@ export function CrashcatRagdoll({
     initialLinearVelocity = ZERO_VECTOR,
     initialAngularVelocity = ZERO_VECTOR,
     color = "#f97316",
-    clickImpulse = 8,
+    clickImpulse = 4000,
     nodeInteractionHandlers,
 }: CrashcatRagdollProps) {
     const api = useCrashcat();
@@ -562,7 +562,7 @@ function CrashcatRagdollView({
                         twistAngle={properties.twistAngle ?? 0}
                         stabilize={properties.stabilize !== false}
                         color={properties.color ?? "#f97316"}
-                        clickImpulse={editMode ? 0 : properties.clickImpulse ?? 8}
+                        clickImpulse={editMode ? 0 : properties.clickImpulse ?? 4000}
                         initialLinearVelocity={properties.initialLinearVelocity}
                         initialAngularVelocity={properties.initialAngularVelocity}
                         nodeInteractionHandlers={nodeInteractionHandlers}
@@ -584,7 +584,7 @@ const CrashcatRagdollComponent: Component<CrashcatRagdollComponentProperties> = 
         twistAngle: { default: 0, step: 0.05 },
         stabilize: { type: "boolean", default: true },
         color: { type: "color", default: "#f97316" },
-        clickImpulse: { default: 8, min: 0, step: 0.5 },
+        clickImpulse: { default: 4000, min: 0, step: 100 },
         initialLinearVelocity: { type: "vector3", default: [0, 0, 0] },
         initialAngularVelocity: { type: "vector3", default: [0, 0, 0] },
     },

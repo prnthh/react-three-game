@@ -1,3 +1,5 @@
+import { registerInstancedMaterial } from '../materialInstancing';
+import type { Node } from 'three/webgpu';
 import { useInvalidateMeshInstances } from "../MeshInstanceProvider";
 import { BackSide, DoubleSide, NearestFilter, NearestMipmapNearestFilter, NearestMipmapLinearFilter, LinearMipmapNearestFilter } from "three";
 import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
@@ -267,11 +269,23 @@ function SceneMaterialPoolOwner({ children }: { children: ReactNode }) {
     </SceneMaterialPoolContext.Provider>;
 }
 
-/** Shared shader/material implementations use the same scene ownership as built-in materials. */
-export function useSharedMaterialResource<T extends Material>(key: string, create: () => T): T {
+export type SharedMaterialOptions<T extends Material> = {
+    /** Optional shader variant for object-local calculations in an instance batch.
+     * Return a new material; the renderer owns its disposal. Never mutate source.
+     * Include every shader dependency in the resource key, just as for create(). */
+    createInstanced?: (source: T, inverseInstanceMatrix: Node<'mat4'>) => Material;
+};
+
+/** Immutable materials are shared by key; resource changes automatically refresh batches. */
+export function useSharedMaterialResource<T extends Material>(key: string, create: () => T, options?: SharedMaterialOptions<T>): T {
     const pool = useContext(SceneMaterialPoolContext);
     if (!pool) throw new Error('Shared materials require a scene material pool');
-    const entry = useMemo(() => pool.get(`custom:${key}`, create), [pool, key]);
+    const entry = useMemo(() => pool.get(`custom:${key}`, () => {
+        const material = create();
+        const createInstanced = options?.createInstanced;
+        if (createInstanced) registerInstancedMaterial(material, inverse => createInstanced(material, inverse));
+        return material;
+    }), [pool, key]);
     useLayoutEffect(() => pool.retain(entry), [entry, pool]);
     const invalidateInstances = useInvalidateMeshInstances();
     useLayoutEffect(invalidateInstances, [entry.material, invalidateInstances]);
@@ -390,12 +404,13 @@ function MaterialComponentView({ properties, children }: ComponentViewProps<Mate
 
 const MaterialComponent: Component<MaterialComponentProperties> = {
     name: 'Material',
+    description: 'Named material definition. Matching built-in definitions share rendering resources automatically, even across IDs; edits to separate IDs stay independent.',
     slot: 'material',
     renderWhenDisabled: true,
     View: MaterialComponentView,
     properties: {
         attach: { type: 'string', default: 'material' },
-        materialId: { type: 'string', default: DEFAULT_MATERIAL_ID },
+        materialId: { type: 'string', default: DEFAULT_MATERIAL_ID, description: 'Reuse an ID to link edits across meshes. Different IDs with matching settings still share GPU resources.' },
     },
 };
 

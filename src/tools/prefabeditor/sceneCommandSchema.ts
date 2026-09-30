@@ -13,6 +13,8 @@ export const sceneCommandsSchema: JsonSchema = {
     items: { oneOf: [
         operation('add', { parentId: string, node: { type: 'object', description: 'Prefab node: unique id, optional name/hidden/disabled/locked, components keyed by instance key ({type,properties}), and children array of nodes.', properties: { id: string, ...nodeFields, components: { type: 'object', additionalProperties: component }, children: { type: 'array', items: { type: 'object' } } }, required: ['id'], additionalProperties: false } }, ['parentId', 'node']),
         operation('update', { id: string, patch: objectSchema(nodeFields) }, ['id', 'patch']),
+        operation('replaceNode', { id: string, node: { type: 'object', description: 'Complete replacement subtree, using the same node fields as add.' } }, ['id', 'node']),
+        operation('replace', { prefab: { type: 'object', description: 'Complete prefab document: root, optional id, name and materials.' } }, ['prefab']),
         operation('remove', { id: string }, ['id']),
         operation('move', { id: string, parentId: string }, ['id', 'parentId']),
         operation('duplicate', { id: string, newId: string, parentId: string }, ['id', 'newId']),

@@ -1,8 +1,9 @@
 import { Euler, Matrix4, Quaternion, Vector3 } from 'three';
 import { getComponents } from './components/ComponentRegistry';
-import { findComponentEntry, type ComponentData, type GameObject, type PrefabMaterial } from './types';
+import { findComponentEntry, type ComponentData, type GameObject, type Prefab, type PrefabMaterial } from './types';
 import { composeTransform } from './runtimeUtils';
 import { createPrefabStore } from './prefabStore';
+import { createPrefabDocumentApi } from './prefabApi';
 import { collectSubtreeIds, type PrefabState } from './prefab';
 
 type Vec3 = [number, number, number];
@@ -10,6 +11,8 @@ export type SceneCommand =
     | { op: 'add'; parentId: string; node: GameObject }
     | { op: 'update'; id: string; patch: Partial<Pick<GameObject, 'name' | 'hidden' | 'disabled' | 'locked'>> }
     | { op: 'remove'; id: string }
+    | { op: 'replaceNode'; id: string; node: GameObject }
+    | { op: 'replace'; prefab: Prefab }
     | { op: 'move'; id: string; parentId: string }
     | { op: 'transform'; id: string; space?: 'local' | 'world'; position?: Vec3; rotation?: Vec3; scale?: Vec3 }
     | { op: 'component'; id: string; key: string; component: ComponentData | null }
@@ -21,6 +24,7 @@ export interface SceneCommandBatch { commands: SceneCommand[] }
 export interface SceneCommandResult { commandCount: number; changedIds: string[]; createdIds: string[]; removedIds: string[] }
 
 const fields: Record<SceneCommand['op'], string[]> = {
+    replaceNode: ['id', 'node'], replace: ['prefab'],
     add: ['parentId', 'node'], update: ['id', 'patch'], remove: ['id'], move: ['id', 'parentId'],
     transform: ['id', 'space', 'position', 'rotation', 'scale'], component: ['id', 'key', 'component'], material: ['id', 'material'],
     patchComponent: ['id', 'key', 'properties', 'unset'], patchMaterial: ['id', 'patch'], duplicate: ['id', 'newId', 'parentId'],
@@ -68,11 +72,11 @@ function component(value: unknown) {
         } else if (typeof value !== (type === 'color' ? 'string' : type)) throw new Error(`Invalid ${key}: expected ${type}.`);
     }
 }
-function validateNode(node: GameObject, ids: Set<string>) {
+function validateNode(node: GameObject, ids: Set<string>, existing?: PrefabState["nodesById"]) {
     record(node, 'node');
     keys(node as unknown as Record<string, unknown>, ['id', 'name', 'hidden', 'disabled', 'locked', 'components', 'children']);
     id(node.id);
-    if (ids.has(node.id)) throw new Error(`Duplicate node ID "${node.id}".`);
+    if (ids.has(node.id) || existing && Object.hasOwn(existing, node.id)) throw new Error(`Duplicate node ID "${node.id}".`);
     ids.add(node.id);
     const { id: _, components, children, ...patch } = node;
     nodePatch(patch);
@@ -89,7 +93,7 @@ function validateNode(node: GameObject, ids: Set<string>) {
     }
     if (children !== undefined) {
         if (!Array.isArray(children)) throw new Error('children must be an array.');
-        children.forEach(child => validateNode(child, ids));
+        children.forEach(child => validateNode(child, ids, existing));
     }
 }
 function material(value: unknown) {
@@ -116,9 +120,10 @@ export function evaluateSceneCommandState(initial: PrefabState, input: unknown):
     keys(batch, ['commands']);
     if (!Array.isArray(batch.commands) || !batch.commands.length || batch.commands.length > 1000) throw new Error('commands must contain 1–1000 commands.');
     const staging = createPrefabStore(initial);
+    const document = createPrefabDocumentApi(staging);
     const changed = new Set<string>();
     const created: string[] = [], removed: string[] = [];
-    batch.commands.forEach((raw: unknown, index: number) => {
+    document.batch(() => batch.commands.forEach((raw: unknown, index: number) => {
         try {
             const command = record(raw, 'command');
             if (!Object.hasOwn(fields, command.op)) throw new Error(`Unknown operation "${command.op}".`);
@@ -130,12 +135,27 @@ export function evaluateSceneCommandState(initial: PrefabState, input: unknown):
                 return state.nodesById[value];
             };
             const update = (node: GameObject) => {
-                if (JSON.stringify(state.nodesById[node.id]) !== JSON.stringify(node)) state.updateNode(node.id, () => node);
+                if (JSON.stringify(state.nodesById[node.id]) !== JSON.stringify(node)) document.update(node.id, () => node);
             };
+            if (command.op === 'replace') {
+                const prefab = record(command.prefab, 'prefab');
+                keys(prefab, ['id', 'name', 'root', 'materials']);
+                if (prefab.id !== undefined) id(prefab.id);
+                if (prefab.name !== undefined && typeof prefab.name !== 'string') throw new Error('Invalid prefab name.');
+                validateNode(prefab.root, new Set());
+                if (prefab.materials !== undefined) {
+                    for (const [key, value] of Object.entries(record(prefab.materials, 'materials'))) { id(key); material(value); }
+                }
+                removed.push(...Object.keys(state.nodesById));
+                document.replace(prefab as unknown as Prefab);
+                created.push(...Object.keys(staging.getState().nodesById));
+                changed.add(staging.getState().rootId);
+                return;
+            }
             if (command.op === 'add') {
                 lookup(command.parentId);
-                validateNode(command.node, new Set(Object.keys(state.nodesById)));
-                state.addChild(command.parentId, command.node);
+                validateNode(command.node, new Set(), state.nodesById);
+                document.add(command.node, command.parentId);
                 created.push(...collectSubtreeIds(command.node.id, staging.getState().childIdsById));
                 changed.add(command.node.id);
                 return;
@@ -145,18 +165,33 @@ export function evaluateSceneCommandState(initial: PrefabState, input: unknown):
                 if (command.op === 'patchMaterial' && !Object.hasOwn(state.materials, command.id)) throw new Error(`Material "${command.id}" does not exist.`);
                 const next = command.op === 'material' ? command.material : { ...state.materials[command.id], ...record(command.patch, 'patch') };
                 material(next);
-                if (JSON.stringify(next) !== JSON.stringify(state.materials[command.id])) state.setMaterial(command.id, next);
+                if (JSON.stringify(next) !== JSON.stringify(state.materials[command.id])) document.setMaterial(command.id, next);
                 changed.add(command.id);
                 return;
             }
             const node = lookup(command.id);
             const parentId = state.parentIdById[node.id];
             switch (command.op) {
+                case 'replaceNode': {
+                    const replaced = new Set(collectSubtreeIds(node.id, state.childIdsById));
+                    const replacementIds = new Set<string>();
+                    validateNode(command.node, replacementIds);
+                    for (const replacementId of replacementIds) {
+                        if (!replaced.has(replacementId) && Object.hasOwn(state.nodesById, replacementId)) {
+                            throw new Error(`Duplicate node ID "${replacementId}".`);
+                        }
+                    }
+                    document.replaceNode(node.id, command.node);
+                    removed.push(...replaced);
+                    created.push(...replacementIds);
+                    changed.add(command.node.id);
+                    break;
+                }
                 case 'update': nodePatch(command.patch); update({ ...node, ...command.patch }); break;
                 case 'remove':
                     if (!parentId) throw new Error('Cannot remove the scene root.');
                     removed.push(...collectSubtreeIds(node.id, state.childIdsById));
-                    state.deleteNode(node.id);
+                    document.remove(node.id);
                     break;
                 case 'duplicate': {
                     id(command.newId);
@@ -168,8 +203,8 @@ export function evaluateSceneCommandState(initial: PrefabState, input: unknown):
                         children: state.childIdsById[sourceId].map(copy),
                     });
                     const duplicated = copy(node.id);
-                    validateNode(duplicated, new Set(Object.keys(state.nodesById)));
-                    state.addChild(destination, duplicated);
+                    validateNode(duplicated, new Set(), state.nodesById);
+                    document.add(duplicated, destination);
                     created.push(...collectSubtreeIds(duplicated.id, staging.getState().childIdsById));
                     changed.add(duplicated.id);
                     return;
@@ -182,7 +217,7 @@ export function evaluateSceneCommandState(initial: PrefabState, input: unknown):
                         if (ancestor === node.id) throw new Error('Cannot move a node into its own subtree.');
                         ancestor = state.parentIdById[ancestor];
                     }
-                    if (parentId !== command.parentId) state.moveNode(node.id, command.parentId, 'inside');
+                    if (parentId !== command.parentId) document.move(node.id, command.parentId, 'inside');
                     break;
                 }
                 case 'patchComponent':
@@ -253,7 +288,7 @@ export function evaluateSceneCommandState(initial: PrefabState, input: unknown):
         } catch (error) {
             throw new Error(`Command ${index + 1}: ${error instanceof Error ? error.message : String(error)}`);
         }
-    });
+    }));
     return { state: staging.getState(), result: { commandCount: batch.commands.length, changedIds: [...changed], createdIds: created, removedIds: removed } };
 }
 

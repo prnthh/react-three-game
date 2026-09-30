@@ -1,8 +1,8 @@
 # Interior mapping example
 
-Open `/demo/interior` to orbit six flat windows, change room depth, and compare ordinary and instanced rendering. `/demo/interior/editor` registers the same runtime component and its inspector in a dedicated prefab editor. The city, general viewer, and general editor do not import this example.
+Open `/demo/coolstuff` and select the Interior mapping subtree. Its windows share the InteriorMap component and custom inspector with the other exhibits in one editor scene.
 
-The component lives in `app/demo/interior/InteriorMapComponent.tsx`. Register it before mounting a prefab:
+The component lives in `app/demo/coolstuff/InteriorMapComponent.tsx`. Register it before mounting a prefab:
 
 ```tsx
 registerComponent(InteriorMapComponent);
@@ -31,3 +31,10 @@ node --input-type=module -e "import sharp from 'sharp'; await sharp('docs/public
 ```
 
 The component supports both ordinary and instanced meshes.
+
+Its `useSharedMaterialResource(key, create, { createInstanced })` callback creates
+an instance-aware shader variant using the supplied inverse instance matrix.
+Return a new material without mutating the shared source; the renderer disposes
+variants when their batches unmount. Include shader inputs in the resource key.
+The hook handles regrouping automatically—no `userData` marker or manual batch
+invalidation is needed. Ordinary custom materials can omit this option.

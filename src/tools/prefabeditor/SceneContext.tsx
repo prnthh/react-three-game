@@ -108,12 +108,12 @@ export interface Scene {
     mode: PrefabEditorMode;
 }
 
-export interface PrefabApi extends PrefabRegistry {
-    root: Object3D | null;
-    basePath: string;
+/** Serializable authored state. Reads are immutable snapshots; edits use these methods. */
+export interface PrefabDocumentApi {
     get(id: string): GameObject | null;
-    getModel(path: string): Object3D | null;
     getMaterial(id: string): PrefabMaterial | null;
+    /** Apply synchronous document edits atomically, with one subscription update. */
+    batch(action: () => void): void;
     add(node: GameObject, parentId?: string): GameObject;
     update(id: string, fn: (node: PrefabNode) => PrefabNode): void;
     setMaterial(id: string, material: PrefabMaterial): void;
@@ -122,6 +122,13 @@ export interface PrefabApi extends PrefabRegistry {
     duplicate(id: string): string | null;
     move(draggedId: string, targetId: string, position: "before" | "inside"): void;
     replace(prefab: Prefab): void;
+}
+
+/** Combined facade retained for editor/viewer refs and resource integrations. */
+export interface PrefabApi extends PrefabDocumentApi, PrefabRegistry {
+    root: Object3D | null;
+    basePath: string;
+    getModel(path: string): Object3D | null;
     addModel(path: string, model: Object3D): void;
     addTexture(path: string, texture: Texture): void;
     addSound(path: string, sound: AudioBuffer): void;

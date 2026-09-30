@@ -11,12 +11,14 @@ import {
     PlaneGeometry,
     RepeatWrapping,
     Vector2,
+    Vector3,
 } from "three";
 
 import { withBasePath } from "../../../basePath";
 import { usePlayerRuntime } from "./GrassWorldRuntime";
 
-const TERRAIN_SEGMENTS = 12;
+import { TERRAIN_SEGMENTS } from "../terrain";
+import Grass, { useVegetationResources } from "./Grass";
 const TERRAIN_NORMAL_SCALE = new Vector2(0.85, 0.85);
 const ASSETS = {
     groundNormal: withBasePath("/grassworld/textures/ground-normal.jpg"),
@@ -68,11 +70,17 @@ const TerrainChunk = memo(function TerrainChunk({
         positions.needsUpdate = true;
         value.setAttribute("color", new Float32BufferAttribute(colors, 3));
         value.setAttribute("uv1", value.attributes.uv);
-        value.computeVertexNormals();
+        const normals = value.attributes.normal;
+        const normal = new Vector3();
+        const epsilon = 0.05;
+        for (let i = 0; i < positions.count; i++) {
+            const wx = originX + positions.getX(i), wz = originZ + positions.getZ(i);
+            normal.set(heightAt(wx - epsilon, wz) - heightAt(wx + epsilon, wz), 2 * epsilon,
+                heightAt(wx, wz - epsilon) - heightAt(wx, wz + epsilon)).normalize();
+            normals.setXYZ(i, normal.x, normal.y, normal.z);
+        }
         return value;
     }, [chunkSize, heightAt, waterLevel, x, z]);
-
-    useEffect(() => () => geometry.dispose(), [geometry]);
 
     useEffect(() => {
         if (!crashcat || !geometry.index) return;
@@ -95,8 +103,11 @@ const TerrainChunk = memo(function TerrainChunk({
         return () => crashcat.unregister(nodeId);
     }, [chunkSize, crashcat, geometry, x, z]);
 
-    // Geometry belongs to this chunk and the material belongs to the streamer.
-    return <mesh geometry={geometry} material={material} position={[x * chunkSize, 0, z * chunkSize]} receiveShadow dispose={null} />;
+    // R3F owns the mounted geometry and defers GPU disposal when a chunk leaves.
+    // The streamer owns the material shared by all chunks.
+    return <mesh material={material} position={[x * chunkSize, 0, z * chunkSize]} receiveShadow>
+        <bufferGeometry index={geometry.index} attributes={geometry.attributes} />
+    </mesh>;
 });
 
 export default function StreamedTerrain({
@@ -104,13 +115,18 @@ export default function StreamedTerrain({
     chunkSize,
     heightAt,
     waterLevel,
+    shoreClearance,
+    transitionWidth,
 }: {
     chunkRadius: number;
     chunkSize: number;
     heightAt: (x: number, z: number) => number;
     waterLevel: number;
+    shoreClearance: number;
+    transitionWidth: number;
 }) {
     const runtime = usePlayerRuntime();
+    const vegetation = useVegetationResources();
     const [center, setCenter] = useState<ChunkCoordinate>({ x: 0, z: 0 });
     const renderedCenter = useRef<ChunkCoordinate>({ x: 0, z: 0 });
     const [normalMap, aoMap] = useTexture([ASSETS.groundNormal, ASSETS.groundAo]);
@@ -137,27 +153,33 @@ export default function StreamedTerrain({
     useEffect(() => () => material.dispose(), [material]);
 
     useFrame(() => {
-        const { x, z } = runtime.current.position;
+        if (!runtime) return;
+        const { x, z } = runtime.position;
         const nextX = Math.round(x / chunkSize);
         const nextZ = Math.round(z / chunkSize);
         if (renderedCenter.current.x === nextX && renderedCenter.current.z === nextZ) return;
         renderedCenter.current = { x: nextX, z: nextZ };
         setCenter({ x: nextX, z: nextZ });
-    }, -8);
+    });
 
     const chunks = [];
     for (let z = center.z - chunkRadius; z <= center.z + chunkRadius; z += 1) {
         for (let x = center.x - chunkRadius; x <= center.x + chunkRadius; x += 1) {
             chunks.push(
-                <TerrainChunk
-                    key={`${x}:${z}`}
-                    x={x}
-                    z={z}
-                    chunkSize={chunkSize}
-                    heightAt={heightAt}
-                    material={material}
-                    waterLevel={waterLevel}
-                />,
+                <group key={`${x}:${z}`} name={`terrain-chunk-${x}:${z}`}>
+                    <TerrainChunk
+                        x={x}
+                        z={z}
+                        chunkSize={chunkSize}
+                        heightAt={heightAt}
+                        material={material}
+                        waterLevel={waterLevel}
+                    />
+                    <group position={[x * chunkSize, 0, z * chunkSize]}>
+                        <Grass x={x} z={z} chunkSize={chunkSize} heightAt={heightAt} waterLevel={waterLevel}
+                            shoreClearance={shoreClearance} transitionWidth={transitionWidth} resources={vegetation} />
+                    </group>
+                </group>,
             );
         }
     }

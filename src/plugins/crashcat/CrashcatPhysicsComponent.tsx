@@ -31,6 +31,8 @@ export type CrashcatPhysicsProperties = {
     type?: "fixed" | "dynamic" | "kinematicPosition" | "kinematicVelocity";
     colliders?: "cuboid" | "ball" | "capsule" | "cylinder" | "hull" | "trimesh";
     sensor?: boolean;
+    /** Put dynamic bodies to sleep before their first simulation step. */
+    startSleeping?: boolean;
     friction?: number;
     restitution?: number;
     capsuleRadius?: number;
@@ -138,6 +140,9 @@ function createAndRegisterBody(
     if (physics.angularVelocity) {
         rigidBody.setAngularVelocity(api.world, body, physics.angularVelocity);
     }
+    if (physics.startSleeping && motionType === MotionType.DYNAMIC) {
+        rigidBody.sleep(api.world, body);
+    }
 
     api.register(nodeId, body, {
         object,
@@ -155,7 +160,7 @@ function createAndRegisterBody(
 }
 
 function CrashcatPhysicsView({ properties, children }: ComponentViewProps<CrashcatPhysicsProperties>) {
-    const { nodeId } = useNode();
+    const { nodeId, editMode } = useNode();
     const gameObject = useGameObject();
     const runtimeNodeId = gameObject.id;
     const api = useCrashcat();
@@ -177,7 +182,8 @@ function CrashcatPhysicsView({ properties, children }: ComponentViewProps<Crashc
     const physics = properties;
 
     useEffect(() => {
-        // Rebuild from current geometry when authored node data or its model changes.
+        // Also rebuild on mode changes: ancestor edits can change world transforms
+        // without changing this node (including bodies inside referenced prefabs).
         void loadedModel;
         if (!api) return;
         const object = gameObject.transform;
@@ -215,6 +221,7 @@ function CrashcatPhysicsView({ properties, children }: ComponentViewProps<Crashc
         };
     }, [
         api,
+        editMode,
         gameObject,
         runtimeNodeId,
         physics,
@@ -254,6 +261,7 @@ const CrashcatPhysicsComponent: Component<CrashcatPhysicsProperties> = {
             ],
         },
         sensor: { type: "boolean", default: false },
+        startSleeping: { type: "boolean", default: false, label: "Start Sleeping" },
         friction: { default: undefined, step: 0.05 },
         restitution: { default: undefined, step: 0.05 },
         capsuleRadius: { default: undefined, step: 0.05 },

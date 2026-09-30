@@ -57,17 +57,13 @@ export default function JumperDemo() {
         return () => abort.abort();
     }, []);
     return <main style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#18180f', color: '#ddd7bd' }}>
-        <div style={{ padding: '10px 16px', display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-            <strong>Jumper API playground</strong>
-            <span>Toolbar Play → click to look · WASD · Space jump / wall jump · Ctrl or C slide · Esc release</span>
-            <button id="jumper-lock" style={{ padding: '6px 12px', background: '#56513c', borderRadius: 4 }}>Click to look</button>
-        </div>
         <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
             {error ? <p role="alert">{error}</p> : !prefab ? <p>Loading playground…</p> :
-                <PrefabEditor prefab={prefab} agentId="jumper" basePath={BASE_PATH} canvasProps={{ rendererConfig: { toneMappingExposure: 1.15 } }} agentDocsUrl={withBasePath('/editor/agents')}>
+                <PrefabEditor prefab={prefab} agentId="jumper" basePath={BASE_PATH} canvasProps={{ rendererConfig: { toneMappingExposure: 1.15 } }}>
                     <CourseShadows />
                     <color attach="background" args={['#171910']} />
                 </PrefabEditor>}
         </div>
+        {prefab && !error && <button id="jumper-lock" className="fixed bottom-3 right-3 rounded bg-black/70 px-3 py-2 text-xs">Click to look</button>}
     </main>;
 }

@@ -41,7 +41,7 @@ export default function EditorTree({
     const store = usePrefabStoreApi();
     const [draggedId, setDraggedId] = useState<string | null>(null);
     const [dropTarget, setDropTarget] = useState<{ id: string; position: DropPosition } | null>(null);
-    const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
+    const [expandedIds, setExpandedIds] = useState(() => new Set([rootId]));
     const [collapsed, setCollapsed] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [contextMenu, setContextMenu] = useState<TreeContextMenuState>(null);
@@ -92,9 +92,9 @@ export default function EditorTree({
 
     useEffect(() => stopAutoScroll, [stopAutoScroll]);
 
-    const toggleCollapse = (e: MouseEvent, id: string) => {
+    const toggleExpanded = (e: MouseEvent, id: string) => {
         e.stopPropagation();
-        setCollapsedIds(prev => {
+        setExpandedIds(prev => {
             const next = new Set(prev);
             next.has(id) ? next.delete(id) : next.add(id);
             return next;
@@ -291,10 +291,10 @@ export default function EditorTree({
                                 depth={0}
                                 rootId={rootId}
                                 visibleIds={visibleIds}
-                                collapsedIds={collapsedIds}
+                                expandedIds={expandedIds}
                                 dropTarget={dropTarget}
                                 selectedNodeId={selectedId}
-                                onToggleCollapse={toggleCollapse}
+                                onToggleExpanded={toggleExpanded}
                                 onOpenContextMenu={openContextMenu}
                                 onDragStart={handleDragStart}
                                 onDragOver={handleDragOver}
@@ -341,10 +341,10 @@ const TreeNode = memo(function TreeNode({
     depth,
     rootId,
     visibleIds,
-    collapsedIds,
+    expandedIds,
     dropTarget,
     selectedNodeId,
-    onToggleCollapse,
+    onToggleExpanded,
     onOpenContextMenu,
     onDragStart,
     onDragOver,
@@ -359,10 +359,10 @@ const TreeNode = memo(function TreeNode({
     depth: number;
     rootId: string;
     visibleIds: Set<string> | null;
-    collapsedIds: Set<string>;
+    expandedIds: Set<string>;
     dropTarget: { id: string; position: DropPosition } | null;
     selectedNodeId: string | null;
-    onToggleCollapse: (e: MouseEvent, id: string) => void;
+    onToggleExpanded: (e: MouseEvent, id: string) => void;
     onOpenContextMenu: (nodeId: string, x: number, y: number) => void;
     onDragStart: (e: React.DragEvent, id: string) => void;
     onDragOver: (e: React.DragEvent<HTMLDivElement>, targetId: string, isRoot: boolean) => void;
@@ -379,7 +379,7 @@ const TreeNode = memo(function TreeNode({
 
     if (!node || (visibleIds && !visibleIds.has(nodeId))) return null;
 
-    const isCollapsed = collapsedIds.has(nodeId);
+    const isExpanded = visibleIds !== null || expandedIds.has(nodeId);
     const hasChildren = childIds.length > 0;
     const isRoot = nodeId === rootId;
     const isDropTarget = dropTarget?.id === nodeId;
@@ -424,9 +424,9 @@ const TreeNode = memo(function TreeNode({
                             cursor: 'pointer',
                             visibility: hasChildren ? 'visible' : 'hidden'
                         }}
-                        onClick={(e) => hasChildren && onToggleCollapse(e, nodeId)}
+                        onClick={(e) => hasChildren && onToggleExpanded(e, nodeId)}
                     >
-                        {isCollapsed ? '▶' : '▼'}
+                        {isExpanded ? '▼' : '▶'}
                     </span>
                     {!isRoot && <span style={{ marginRight: 4, opacity: 0.4 }}>⋮⋮</span>}
                     {isPrefabReference && <PrefabBoxIcon />}
@@ -488,17 +488,17 @@ const TreeNode = memo(function TreeNode({
                     </Dropdown>
                 )}
             </div>
-            {!isCollapsed && childIds.map(childId => (
+            {isExpanded && childIds.map(childId => (
                 <TreeNode
                     key={childId}
                     nodeId={childId}
                     depth={depth + 1}
                     rootId={rootId}
                     visibleIds={visibleIds}
-                    collapsedIds={collapsedIds}
+                    expandedIds={expandedIds}
                     dropTarget={dropTarget}
                     selectedNodeId={selectedNodeId}
-                    onToggleCollapse={onToggleCollapse}
+                    onToggleExpanded={onToggleExpanded}
                     onOpenContextMenu={onOpenContextMenu}
                     onDragStart={onDragStart}
                     onDragOver={onDragOver}

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { SoundManager } from '../../src/helpers/SoundManager.ts';
+import { SoundManager } from '../../src/runtime/audio/SoundManager.ts';
 
 function setup() {
     const context = {
@@ -55,4 +55,12 @@ test('natural completion invokes callback once; stop is idempotent; context is l
     const clip = await manager.play('sfx', { onEnded: () => ended++ });
     context.sources[0].onended(); clip.stop(); clip.stop();
     assert.equal(ended, 1);
+});
+
+test('looping effects can be stopped independently of music', () => {
+    const { manager, context } = setup();
+    const wind = manager.playSync('sfx', { loop: true });
+    assert.equal(context.sources[0].loop, true);
+    wind.stop();
+    assert.equal(context.sources[0].stopped, true);
 });

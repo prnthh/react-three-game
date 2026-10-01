@@ -4,15 +4,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useStore } from "zustand";
 
-import { type Component, type ComponentViewProps } from "../../tools/prefabeditor/components/ComponentRegistry";
+import { type Component, type ComponentViewProps } from "../../core/ComponentRegistry";
 
-import { useModelAsset } from "../../tools/prefabeditor/assetRuntime";
+import { useModelAsset } from "../../runtime/assets/AssetRuntime";
 
-import { createNodeComponentType, useGameObject, useNode, usePrefab, useRegisterNodeComponent } from "../../tools/prefabeditor/SceneContext";
+import { createNodeComponentType, useGameObject, useNode, usePrefab, useRegisterNodeComponent } from "../../runtime/scene/SceneContext";
 
-import { usePrefabStoreApi } from "../../tools/prefabeditor/prefabStore";
+import { usePrefabStoreApi } from "../../runtime/prefabs/PrefabStoreContext";
 
-import { withBasePath } from "../../tools/prefabeditor/runtimeUtils";
+import { withBasePath } from "../../runtime/assets/assetPaths";
 
 import { MotionQuality, MotionType, rigidBody, type RigidBody, type World } from "crashcat";
 

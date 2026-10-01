@@ -10,12 +10,12 @@ sees the image from inside the sphere without lighting changing its colors.
 Any supported image texture works; an equirectangular panorama wraps naturally,
 while an ordinary photo stretches around the sphere.
 
-This window API batch adds both the material and its nodes. Obtain `api` from
-`window.reactThreeGame.editors[editorId]` after `listEditors()`; use unused IDs.
+This window API batch adds both the material and its nodes. Obtain `scene` from
+`window.scene`; only one agent-enabled editor is supported per page.
 
 ```js
-const { rootId, revision } = api.getSceneInfo();
-api.applyBatch({ expectedRevision: revision, commands: [
+const { rootId, revision } = scene.info();
+scene.batch({ expectedRevision: revision, commands: [
   { op: 'material', id: 'sky-image', material: {
     materialType: 'basic', side: 'BackSide',
     texture: '/textures/skybox/skybox3.jpg', // Replace with your image URL.

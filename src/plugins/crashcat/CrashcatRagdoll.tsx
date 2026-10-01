@@ -14,9 +14,9 @@ import { box, DEFAULT_SHAPE_DENSITY, ConstraintSpace, massProperties, motionProp
 
 import { Mesh, Quaternion, Vector3 } from "three";
 
-import type { Component, ComponentViewProps, NodeInteractionHandlers } from "../../tools/prefabeditor/components/ComponentRegistry";
+import type { Component, ComponentViewProps, NodeInteractionHandlers } from "../../core/ComponentRegistry";
 
-import { useNode, useGameObject } from "../../tools/prefabeditor/SceneContext";
+import { useNode, useGameObject } from "../../runtime/scene/SceneContext";
 
 import { useCrashcat, type CrashcatApi } from "./CrashcatRuntime";
 

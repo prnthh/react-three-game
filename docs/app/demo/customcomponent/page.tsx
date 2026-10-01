@@ -12,7 +12,7 @@ registerComponent(SquishComponent);
 
 export default function CustomComponentDemo() {
     return <main className="h-screen w-screen">
-        <PrefabEditor agentId="components" basePath={BASE_PATH} prefab={rotatorScene} canvasProps={{ camera: { position: [8, 7, 12] } }}>
+        <PrefabEditor basePath={BASE_PATH} prefab={rotatorScene} canvasProps={{ camera: { position: [8, 7, 12] } }}>
             <ambientLight intensity={2} />
             <directionalLight position={[4, 6, 3]} intensity={2} />
         </PrefabEditor>

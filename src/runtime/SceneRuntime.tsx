@@ -1,11 +1,11 @@
 import { createContext, useContext, type ReactNode } from 'react';
-import { AssetRuntimeProvider } from '../tools/prefabeditor/assetRuntime';
-import { AudioRuntimeProvider } from '../tools/prefabeditor/AudioRuntime';
-import { GeometryRuntimeProvider } from '../tools/prefabeditor/components/GeometryComponent';
-import { MaterialPoolProvider } from '../tools/prefabeditor/components/MaterialComponent';
-import { SceneComponentsProvider } from '../tools/prefabeditor/SceneContext';
-import { MeshInstanceProvider } from '../tools/prefabeditor/MeshInstanceProvider';
-import { GameEventsProvider } from '../tools/prefabeditor/GameEvents';
+import { AssetRuntimeProvider } from './assets/AssetRuntime';
+import { AudioRuntimeProvider } from './audio/AudioRuntime';
+import { GeometryRuntimeProvider } from './components/GeometryComponent';
+import { MaterialPoolProvider } from './components/MaterialComponent';
+import { SceneComponentsProvider } from './scene/SceneContext';
+import { MeshInstanceProvider } from './rendering/MeshInstanceProvider';
+import { GameEventsProvider } from './scene/GameEvents';
 
 const RuntimeContext = createContext(false);
 

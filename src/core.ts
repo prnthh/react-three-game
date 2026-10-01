@@ -4,7 +4,7 @@ export {
 	getComponent,
 	registerComponent,
 	resolveComponentProperties,
-} from "./tools/prefabeditor/components/ComponentRegistry";
+} from "./core/ComponentRegistry";
 export type {
 	Component,
 	ComponentPropertySchema,
@@ -14,9 +14,9 @@ export type {
 	ComponentPropertyType,
 	ComponentViewProps,
 	NodeInteractionHandlers,
-} from "./tools/prefabeditor/components/ComponentRegistry";
+} from "./core/ComponentRegistry";
 
-export { createImageNode, createModelNode, denormalizePrefab } from "./tools/prefabeditor/prefab";
+export { createImageNode, createModelNode, denormalizePrefab } from "./core/prefab";
 export type {
 	ComponentData,
 	GameObject,
@@ -24,7 +24,7 @@ export type {
 	Prefab,
 	PrefabMaterial,
 	PrefabMaterialType,
-} from "./tools/prefabeditor/types";
-export { findComponent, findComponentEntry, hasComponent } from "./tools/prefabeditor/types";
+} from "./core/types";
+export { findComponent, findComponentEntry, hasComponent } from "./core/types";
 
-export type { AssetDependency, ComponentDependency } from "./runtime/preparePrefab";
+export type { AssetDependency, ComponentDependency } from "./core/dependencies";

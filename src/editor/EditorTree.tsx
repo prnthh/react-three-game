@@ -1,0 +1,591 @@
+import { useShallow } from "zustand/react/shallow";
+import { memo, MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { base, colors, tree } from './ui/styles';
+import { useEditorContext, useEditorRef } from './EditorContext';
+import { Dropdown } from './ui/Dropdown';
+import { FileMenu, TreeContextMenu, TreeContextMenuState, TreeNodeMenu } from './EditorTreeMenus';
+import { createEmptyNode } from '../core/prefab';
+import { PrefabStoreState } from "../core/prefabStore";
+import { usePrefabChildIds, usePrefabNode, usePrefabRootId, usePrefabStore, usePrefabStoreApi } from "../runtime/prefabs/PrefabStoreContext";
+import { hasComponent } from '../core/types';
+import { saveJson } from './documentIO';
+
+type DropPosition = 'before' | 'inside';
+
+function PrefabBoxIcon() {
+    return (
+        <span
+            title="Prefab reference"
+            style={{ display: 'inline-flex', marginRight: 5, opacity: 0.65, flexShrink: 0 }}
+        >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                <path d="M1.5 3.25 6 1l4.5 2.25v5.5L6 11 1.5 8.75v-5.5Z" stroke="currentColor" strokeWidth="1" strokeLinejoin="round" />
+                <path d="m1.75 3.4 4.25 2 4.25-2M6 5.4V11" stroke="currentColor" strokeWidth="1" strokeLinejoin="round" />
+            </svg>
+        </span>
+    );
+}
+
+export default function EditorTree({
+    selectedId,
+    setSelectedId,
+    canUndo,
+    canRedo
+}: {
+    selectedId: string | null;
+    setSelectedId: (id: string | null) => void;
+    canUndo: boolean;
+    canRedo: boolean;
+}) {
+    const { onFocusNode } = useEditorContext();
+    const editor = useEditorRef();
+    const rootId = usePrefabRootId();
+    const store = usePrefabStoreApi();
+    const [draggedId, setDraggedId] = useState<string | null>(null);
+    const [dropTarget, setDropTarget] = useState<{ id: string; position: DropPosition } | null>(null);
+    const [expandedIds, setExpandedIds] = useState(() => new Set([rootId]));
+    const [collapsed, setCollapsed] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [actionError, setActionError] = useState<string | null>(null);
+    const [contextMenu, setContextMenu] = useState<TreeContextMenuState>(null);
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const autoScrollFrameRef = useRef<number | null>(null);
+    const autoScrollSpeedRef = useRef(0);
+
+    const stopAutoScroll = useCallback(() => {
+        autoScrollSpeedRef.current = 0;
+        if (autoScrollFrameRef.current !== null) {
+            cancelAnimationFrame(autoScrollFrameRef.current);
+            autoScrollFrameRef.current = null;
+        }
+    }, []);
+
+    const updateAutoScroll = useCallback((clientY: number) => {
+        const scroller = scrollRef.current;
+        if (!scroller || scroller.scrollHeight <= scroller.clientHeight) {
+            stopAutoScroll();
+            return;
+        }
+
+        const rect = scroller.getBoundingClientRect();
+        const edgeSize = Math.min(48, rect.height / 3);
+        const maxSpeed = 12;
+        let speed = 0;
+        if (clientY < rect.top + edgeSize) {
+            speed = -maxSpeed * (1 - Math.max(0, clientY - rect.top) / edgeSize);
+        } else if (clientY > rect.bottom - edgeSize) {
+            speed = maxSpeed * (1 - Math.max(0, rect.bottom - clientY) / edgeSize);
+        }
+
+        autoScrollSpeedRef.current = speed;
+        if (speed === 0 || autoScrollFrameRef.current !== null) return;
+
+        const tick = () => {
+            const currentScroller = scrollRef.current;
+            const currentSpeed = autoScrollSpeedRef.current;
+            if (!currentScroller || currentSpeed === 0) {
+                autoScrollFrameRef.current = null;
+                return;
+            }
+            currentScroller.scrollTop += currentSpeed;
+            autoScrollFrameRef.current = requestAnimationFrame(tick);
+        };
+        autoScrollFrameRef.current = requestAnimationFrame(tick);
+    }, [stopAutoScroll]);
+
+    useEffect(() => stopAutoScroll, [stopAutoScroll]);
+
+    const toggleExpanded = (e: MouseEvent, id: string) => {
+        e.stopPropagation();
+        setExpandedIds(prev => {
+            const next = new Set(prev);
+            next.has(id) ? next.delete(id) : next.add(id);
+            return next;
+        });
+    };
+
+    const handleAddChild = (parentId: string) => {
+        const newNode = createEmptyNode();
+
+        editor.add(newNode, parentId);
+        setSelectedId(newNode.id);
+    };
+
+    const handleDuplicate = (nodeId: string) => {
+        if (nodeId === rootId) return;
+        const duplicatedId = editor.duplicate(nodeId);
+        if (duplicatedId) setSelectedId(duplicatedId);
+    };
+
+    const handlePrefabAction = async (nodeId: string, action: 'pack' | 'unpack' | 'export') => {
+        setActionError(null);
+        try {
+            if (action === 'export') {
+                const { prefab } = editor.scene.exportPrefab({ id: nodeId });
+                await saveJson(prefab, (prefab.name ?? 'prefab').replace(/[^a-z0-9_-]+/gi, '-'));
+            } else {
+                await editor.scene[action]({ id: nodeId });
+                setSelectedId(nodeId);
+            }
+        } catch (error) {
+            setActionError(error instanceof Error ? error.message : String(error));
+        }
+    };
+
+    const handleDelete = (nodeId: string) => {
+        if (nodeId === rootId) return;
+        editor.remove(nodeId);
+        if (selectedId === nodeId) setSelectedId(null);
+    };
+
+    const handleToggleDisabled = (nodeId: string) => {
+        editor.update(nodeId, n => ({ ...n, disabled: !n.disabled }));
+    };
+
+    const handleToggleLocked = (nodeId: string) => {
+        const willLock = !store.getState().nodesById[nodeId]?.locked;
+        editor.update(nodeId, n => ({ ...n, locked: !n.locked }));
+        if (willLock && selectedId === nodeId) setSelectedId(null);
+    };
+
+    const closeContextMenu = () => setContextMenu(null);
+
+    const openContextMenu = (nodeId: string, x: number, y: number) => {
+        setSelectedId(nodeId);
+        setContextMenu({ nodeId, x, y });
+    };
+
+    const handleFocus = (nodeId: string) => {
+        setSelectedId(nodeId);
+        onFocusNode?.(nodeId);
+    };
+
+    const renderTreeNodeMenu = (nodeId: string, isRoot: boolean, onClose: () => void) => (
+        <TreeNodeMenu
+            isRoot={isRoot}
+            nodeId={nodeId}
+            locked={store.getState().nodesById[nodeId]?.locked}
+            onAddChild={handleAddChild}
+            onFocus={handleFocus}
+            onToggleLock={isRoot ? undefined : handleToggleLocked}
+            onDuplicate={isRoot ? undefined : handleDuplicate}
+            onPack={!isRoot && !hasComponent(store.getState().nodesById[nodeId], 'PrefabRef') ? id => void handlePrefabAction(id, 'pack') : undefined}
+            onUnpack={hasComponent(store.getState().nodesById[nodeId], 'PrefabRef') ? id => void handlePrefabAction(id, 'unpack') : undefined}
+            onExport={id => void handlePrefabAction(id, 'export')}
+            onDelete={isRoot ? undefined : handleDelete}
+            onClose={onClose}
+        />
+    );
+
+    const handleDragStart = (e: React.DragEvent, id: string) => {
+        if (id === rootId) return e.preventDefault();
+        e.dataTransfer.effectAllowed = "move";
+        setDraggedId(id);
+    };
+
+    const getDropPosition = (e: React.DragEvent<HTMLDivElement>, isRoot: boolean): DropPosition => {
+        if (isRoot) return 'inside';
+        const rect = e.currentTarget.getBoundingClientRect();
+        return e.clientY <= rect.top + rect.height * 0.35 ? 'before' : 'inside';
+    };
+
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>, targetId: string, isRoot: boolean) => {
+        if (!draggedId || draggedId === targetId) return;
+        e.preventDefault();
+        setDropTarget({ id: targetId, position: getDropPosition(e, isRoot) });
+    };
+
+    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>, targetId: string) => {
+        const relatedTarget = e.relatedTarget;
+        if (relatedTarget instanceof Node && e.currentTarget.contains(relatedTarget)) return;
+        setDropTarget(current => current?.id === targetId ? null : current);
+    };
+
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetId: string, isRoot: boolean) => {
+        if (!draggedId || draggedId === targetId) return;
+        e.preventDefault();
+        editor.move(draggedId, targetId, getDropPosition(e, isRoot));
+        stopAutoScroll();
+        setDraggedId(null);
+        setDropTarget(null);
+    };
+
+    const handleDragEnd = () => {
+        stopAutoScroll();
+        setDraggedId(null);
+        setDropTarget(null);
+    };
+
+    const visibleIds = usePrefabStore(useShallow(useCallback(
+        state => searchQuery ? buildVisibleIds(state, rootId, searchQuery) : null,
+        [rootId, searchQuery]
+    )));
+    const selectedPathIds = usePrefabStore(useShallow(useCallback(
+        state => buildAncestorIds(state, selectedId),
+        [selectedId]
+    )));
+    const visibleExpandedIds = useMemo(
+        () => new Set([...expandedIds, ...selectedPathIds]),
+        [expandedIds, selectedPathIds]
+    );
+
+    return (
+        <>
+            <div style={{ ...tree.panel, width: collapsed ? 'auto' : 240 }}>
+                <div style={base.header}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }} onClick={() => setCollapsed(!collapsed)}>
+                        <span>{collapsed ? '▶' : '▼'}</span>
+                        <span>Prefab</span>
+                    </div>
+                    {!collapsed && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <button
+                                style={{ ...base.btn, padding: '2px 6px', fontSize: 10, opacity: canUndo ? 1 : 0.4 }}
+                                onClick={(e) => { e.stopPropagation(); editor.undo(); }}
+                                disabled={!canUndo}
+                                title="Undo"
+                            >
+                                ↶
+                            </button>
+                            <button
+                                style={{ ...base.btn, padding: '2px 6px', fontSize: 10, opacity: canRedo ? 1 : 0.4 }}
+                                onClick={(e) => { e.stopPropagation(); editor.redo(); }}
+                                disabled={!canRedo}
+                                title="Redo"
+                            >
+                                ↷
+                            </button>
+                            <Dropdown
+                                placement="bottom-end"
+                                trigger={({ ref, toggle }) => (
+                                    <button
+                                        ref={ref}
+                                        title="Menu"
+                                        style={{ ...base.btn, padding: '2px 6px', fontSize: 10 }}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            toggle();
+                                        }}
+                                    >
+                                        ⋮
+                                    </button>
+                                )}
+                            >
+                                {(close) => (
+                                    <FileMenu
+                                        onClose={close}
+                                    />
+                                )}
+                            </Dropdown>
+                        </div>
+                    )}
+                </div>
+                {!collapsed && (
+                    <>
+                        <div style={{ padding: 7, borderBottom: `1px solid ${colors.borderLight}`, background: colors.bg }}>
+                            <input
+                                type="text"
+                                placeholder="Search nodes..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onClick={(e) => e.stopPropagation()}
+                                style={{
+                                    ...base.input,
+                                }}
+                            />
+                        </div>
+                        <div
+                            ref={scrollRef}
+                            style={tree.scroll}
+                            onDragOver={(e) => {
+                                if (!draggedId) return;
+                                e.preventDefault();
+                                e.stopPropagation();
+                                updateAutoScroll(e.clientY);
+                            }}
+                            onDrop={(e) => {
+                                if (!draggedId) return;
+                                e.stopPropagation();
+                                stopAutoScroll();
+                            }}
+                            onDragLeave={(e) => {
+                                const relatedTarget = e.relatedTarget;
+                                if (!(relatedTarget instanceof Node) || !e.currentTarget.contains(relatedTarget)) {
+                                    stopAutoScroll();
+                                }
+                            }}
+                        >
+                            <TreeNode
+                                nodeId={rootId}
+                                depth={0}
+                                rootId={rootId}
+                                visibleIds={visibleIds}
+                                expandedIds={visibleExpandedIds}
+                                dropTarget={dropTarget}
+                                selectedNodeId={selectedId}
+                                onToggleExpanded={toggleExpanded}
+                                onOpenContextMenu={openContextMenu}
+                                onDragStart={handleDragStart}
+                                onDragOver={handleDragOver}
+                                onDragLeave={handleDragLeave}
+                                onDrop={handleDrop}
+                                onDragEnd={handleDragEnd}
+                                renderTreeNodeMenu={renderTreeNodeMenu}
+                                onToggleDisabled={handleToggleDisabled}
+                                setSelectedId={setSelectedId}
+                            />
+                        </div>
+                        <div style={{
+                            padding: 7,
+                            borderTop: `1px solid ${colors.borderLight}`,
+                            background: colors.bgLight,
+                        }}>
+                            <button
+                                type="button"
+                                style={{ ...base.btn, width: '100%' }}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAddChild(rootId);
+                                }}
+                            >
+                                + Add node
+                            </button>
+                        </div>
+                    </>
+                )}
+            </div>
+            {actionError && <div role="alert" style={{ padding: 8, color: '#ef8888' }}>{actionError}<button type="button" onClick={() => setActionError(null)}>Dismiss</button></div>}
+            <TreeContextMenu
+                contextMenu={contextMenu}
+                onClose={closeContextMenu}
+            >
+                {(nodeId, close) => renderTreeNodeMenu(nodeId, nodeId === rootId, close)}
+            </TreeContextMenu>
+
+        </>
+    );
+}
+
+const TreeNode = memo(function TreeNode({
+    nodeId,
+    depth,
+    rootId,
+    visibleIds,
+    expandedIds,
+    dropTarget,
+    selectedNodeId,
+    onToggleExpanded,
+    onOpenContextMenu,
+    onDragStart,
+    onDragOver,
+    onDragLeave,
+    onDrop,
+    onDragEnd,
+    renderTreeNodeMenu,
+    onToggleDisabled,
+    setSelectedId,
+}: {
+    nodeId: string;
+    depth: number;
+    rootId: string;
+    visibleIds: Set<string> | null;
+    expandedIds: Set<string>;
+    dropTarget: { id: string; position: DropPosition } | null;
+    selectedNodeId: string | null;
+    onToggleExpanded: (e: MouseEvent, id: string) => void;
+    onOpenContextMenu: (nodeId: string, x: number, y: number) => void;
+    onDragStart: (e: React.DragEvent, id: string) => void;
+    onDragOver: (e: React.DragEvent<HTMLDivElement>, targetId: string, isRoot: boolean) => void;
+    onDragLeave: (e: React.DragEvent<HTMLDivElement>, targetId: string) => void;
+    onDrop: (e: React.DragEvent<HTMLDivElement>, targetId: string, isRoot: boolean) => void;
+    onDragEnd: () => void;
+    renderTreeNodeMenu: (nodeId: string, isRoot: boolean, onClose: () => void) => React.ReactNode;
+    onToggleDisabled: (nodeId: string) => void;
+    setSelectedId: (id: string | null) => void;
+}) {
+    const node = usePrefabNode(nodeId);
+    const childIds = usePrefabChildIds(nodeId);
+    const isSelected = selectedNodeId === nodeId;
+    const rowRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!isSelected) return;
+        rowRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }, [isSelected]);
+
+    if (!node || (visibleIds && !visibleIds.has(nodeId))) return null;
+
+    const isExpanded = visibleIds !== null || expandedIds.has(nodeId);
+    const hasChildren = childIds.length > 0;
+    const isRoot = nodeId === rootId;
+    const isDropTarget = dropTarget?.id === nodeId;
+    const showDropBefore = isDropTarget && dropTarget?.position === 'before';
+    const showDropInside = isDropTarget && dropTarget?.position === 'inside';
+    const isPrefabReference = hasComponent(node, 'PrefabRef');
+
+    return (
+        <div>
+            <div
+                ref={rowRef}
+                style={{
+                    ...tree.row,
+                    ...(isSelected ? tree.selected : {}),
+                    paddingLeft: `${depth * 12 + 6}px`,
+                    opacity: node.disabled ? 0.4 : 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    borderTop: showDropBefore ? `2px solid ${colors.accent}` : undefined,
+                    outline: showDropInside ? `1px solid ${colors.accentBorder}` : undefined,
+                    outlineOffset: showDropInside ? -1 : undefined,
+                }}
+                draggable={!isRoot}
+                onClick={(e) => { e.stopPropagation(); setSelectedId(nodeId); }}
+                onContextMenu={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onOpenContextMenu(nodeId, e.clientX, e.clientY);
+                }}
+                onDragStart={(e) => onDragStart(e, nodeId)}
+                onDragEnd={onDragEnd}
+                onDragOver={(e) => onDragOver(e, nodeId, isRoot)}
+                onDragLeave={(e) => onDragLeave(e, nodeId)}
+                onDrop={(e) => onDrop(e, nodeId, isRoot)}
+            >
+                <div style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
+                    <span
+                        style={{
+                            width: 12,
+                            opacity: 0.6,
+                            marginRight: 4,
+                            cursor: 'pointer',
+                            visibility: hasChildren ? 'visible' : 'hidden'
+                        }}
+                        onClick={(e) => hasChildren && onToggleExpanded(e, nodeId)}
+                    >
+                        {isExpanded ? '▼' : '▶'}
+                    </span>
+                    {!isRoot && <span style={{ marginRight: 4, opacity: 0.4 }}>⋮⋮</span>}
+                    {isPrefabReference && <PrefabBoxIcon />}
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {node.name ?? node.id}
+                    </span>
+                    {node.locked && <span style={{ marginLeft: 6, opacity: 0.6 }}>🔒</span>}
+                </div>
+                {!isRoot && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Dropdown
+                            placement="bottom-end"
+                            trigger={({ ref, toggle }) => (
+                                <button
+                                    ref={ref}
+                                    title="Node Actions"
+                                    style={tree.iconButton}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggle();
+                                    }}
+                                >
+                                    ⋯
+                                </button>
+                            )}
+                        >
+                            {(close) => renderTreeNodeMenu(nodeId, false, close)}
+                        </Dropdown>
+                        <button
+                            style={{ ...tree.iconButton, opacity: node.disabled ? 0.5 : 0.7 }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onToggleDisabled(nodeId);
+                            }}
+                            title={node.disabled ? 'Enable' : 'Disable'}
+                        >
+                            {node.disabled ? '◎' : '◉'}
+                        </button>
+                    </div>
+                )}
+                {isRoot && (
+                    <Dropdown
+                        placement="bottom-end"
+                        trigger={({ ref, toggle }) => (
+                            <button
+                                ref={ref}
+                                title="Prefab Actions"
+                                style={tree.iconButton}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggle();
+                                }}
+                            >
+                                ⋯
+                            </button>
+                        )}
+                    >
+                        {(close) => renderTreeNodeMenu(nodeId, true, close)}
+                    </Dropdown>
+                )}
+            </div>
+            {isExpanded && childIds.map(childId => (
+                <TreeNode
+                    key={childId}
+                    nodeId={childId}
+                    depth={depth + 1}
+                    rootId={rootId}
+                    visibleIds={visibleIds}
+                    expandedIds={expandedIds}
+                    dropTarget={dropTarget}
+                    selectedNodeId={selectedNodeId}
+                    onToggleExpanded={onToggleExpanded}
+                    onOpenContextMenu={onOpenContextMenu}
+                    onDragStart={onDragStart}
+                    onDragOver={onDragOver}
+                    onDragLeave={onDragLeave}
+                    onDrop={onDrop}
+                    onDragEnd={onDragEnd}
+                    renderTreeNodeMenu={renderTreeNodeMenu}
+                    onToggleDisabled={onToggleDisabled}
+                    setSelectedId={setSelectedId}
+                />
+            ))}
+        </div>
+    );
+});
+
+export function buildVisibleIds(state: Pick<PrefabStoreState, 'nodesById' | 'childIdsById'>, rootId: string, query: string) {
+    if (!query) return null;
+
+    const visibleIds = new Set<string>();
+    const lowerQuery = query.toLowerCase();
+
+    const visit = (nodeId: string): boolean => {
+        const node = state.nodesById[nodeId];
+        if (!node) return false;
+
+        const selfMatches = (node.name ?? node.id).toLowerCase().includes(lowerQuery);
+        let childMatches = false;
+        for (const childId of state.childIdsById[nodeId] ?? []) {
+            if (visit(childId)) childMatches = true;
+        }
+
+        if (selfMatches || childMatches) {
+            visibleIds.add(nodeId);
+            return true;
+        }
+
+        return false;
+    };
+
+    visit(rootId);
+    return visibleIds;
+}
+
+/** Ancestors are expanded only while their descendant is selected. */
+export function buildAncestorIds(state: Pick<PrefabStoreState, 'parentIdById'>, selectedId: string | null) {
+    const ancestors = new Set<string>();
+    let currentId = selectedId ? state.parentIdById[selectedId] : undefined;
+    while (currentId && !ancestors.has(currentId)) {
+        ancestors.add(currentId);
+        currentId = state.parentIdById[currentId];
+    }
+    return ancestors;
+}

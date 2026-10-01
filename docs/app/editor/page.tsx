@@ -94,7 +94,6 @@ function EditorPage() {
       {selectedMap && cameraPosition && (
         <PrefabEditor
           key={`${selectedMap.source}:${cameraPosition[0]},${cameraPosition[1]},${cameraPosition[2]}`}
-          agentId="main"
           basePath={BASE_PATH}
           prefab={selectedMap.prefab}
           canvasProps={{ camera: { position: cameraPosition } }}

@@ -32,10 +32,10 @@ resources are shared. Loading prepares assets and pipelines before activation.
 Unmount to release ownership. `active={false}` prepares without activating;
 `static` freezes placement/content and requires remounting to change either.
 
-Follow [PrefabInstance](../src/runtime/PrefabInstance.tsx) →
-[preparePrefab](../src/runtime/preparePrefab.ts) →
-[assetRuntime](../src/tools/prefabeditor/assetRuntime.tsx).
-For authored nesting, copy [PrefabRef](../src/tools/prefabeditor/components/PrefabRefComponent.tsx).
+Follow [PrefabInstance](../src/runtime/prefabs/PrefabInstance.tsx) →
+[preparePrefab](../src/runtime/prefabs/preparePrefab.ts) →
+[AssetRuntime](../src/runtime/assets/AssetRuntime.tsx).
+For authored nesting, copy [PrefabRef](../src/runtime/components/PrefabRefComponent.tsx).
 
 ## Document and live state
 
@@ -58,6 +58,20 @@ physics adapters can still mutate Three.js objects directly. Instance matrix
 scanning remains the fallback until every writer can reliably report changes.
 The window API reads/edits the document; captures and GLB export use live objects.
 
+## Runtime scripts
+
+`RuntimeComponent` is an ordinary built-in behavior (`type: "Runtime"`) with two
+JavaScript fields: `setup` and `update`. Its React view compiles the bodies inside
+`useEffect`, runs setup, and returns its cleanup to React. R3F's `useFrame` calls
+update. Refs supply current data without restarting the effect. Each effect setup
+gets fresh local state; disabling, leaving Play, code changes and unmounting clean
+up the effect. Edit mode and asset preparation keep it inactive.
+
+This uses the same React effects, refs and R3F frame callbacks as other components.
+There is no separate lifecycle runner, component base class or scheduler. Existing
+components continue to use React directly. See the
+[runtime example](../README.md#runtime-behavior-without-registration).
+
 ## Batch document edits
 
 With an editor/viewer ref, group synchronous edits into one store publication:
@@ -71,7 +85,7 @@ editor.batch(() => {
 Reads inside the callback see earlier edits. An uncaught error rolls back the
 batch; nested batches join the outer batch. Keep asynchronous work outside it.
 The store copies affected tables once and preserves committed undo snapshots.
-The window API's `applyBatch` uses this same mechanism automatically.
+The window scene's `batch` method uses this same mechanism automatically.
 
 ## Connect a host system
 
@@ -95,16 +109,16 @@ The host advances `player`; this view projects its position onto Three.js.
 `useFrame` is a rendering callback, not a fixed world tick. Live object changes
 are not saved or undoable. Edit/Play does not snapshot/reset host state.
 
-Follow [gameObject](../src/tools/prefabeditor/gameObject.ts) for stable node handles,
-[SceneContext](../src/tools/prefabeditor/SceneContext.tsx) for typed capabilities,
-and [GameEvents](../src/tools/prefabeditor/GameEvents.ts) for synchronous notifications.
+Follow [gameObject](../src/runtime/scene/gameObject.ts) for stable node handles,
+[SceneContext](../src/runtime/scene/SceneContext.tsx) for typed capabilities,
+and [GameEvents](../src/runtime/scene/GameEvents.ts) for synchronous notifications.
 The optional [Crashcat adapter](../src/plugins/crashcat/CrashcatRuntime.tsx)
 steps its own physics world from R3F frames.
 
 ## Change a component
 
 Copy [Rotator](app/demo/customcomponent/RotatorComponent.tsx) for a behavior, or
-[Mesh](../src/tools/prefabeditor/components/MeshComponent.tsx) for an object view.
+[Mesh](../src/runtime/components/MeshComponent.tsx) for an object view.
 Register it as in the [custom component demo](app/demo/customcomponent/page.tsx).
 
 - Put editable fields/defaults in the definition; views receive resolved values.
@@ -169,9 +183,9 @@ can use `useGameObject(id).getComponent(token)` for one node or
 the methods your game needs; they are not serialized or callable through the window
 API. The window API edits the registered component's authored properties.
 
-Follow [ComponentRegistry](../src/tools/prefabeditor/components/ComponentRegistry.ts) →
-[nodePlan](../src/tools/prefabeditor/nodePlan.ts) →
-[PrefabNode](../src/tools/prefabeditor/PrefabNode.tsx).
+Follow [ComponentRegistry](../src/core/ComponentRegistry.ts) →
+[nodePlan](../src/runtime/prefabs/nodePlan.ts) →
+[PrefabNode](../src/runtime/prefabs/PrefabNode.tsx).
 
 ## Control model animation
 
@@ -203,18 +217,18 @@ These are live controls, not serialized settings or window API methods.
 
 ## Change authoring behavior
 
-Use the [agent guide](public/editor-api-for-agents.md) for copyable read/edit patterns.
+Use the [agent guide](public/editor-scene-for-agents.md) for copyable read/edit patterns.
 Both the GUI and API write the document store; neither serializes transient
 animation or physics. Agent batches validate before committing one undo step.
 
 | Change | Start here |
 | --- | --- |
-| Hierarchy or component mutation | [prefabStore](../src/tools/prefabeditor/prefabStore.ts) |
-| Undo grouping | [prefabHistory](../src/tools/prefabeditor/prefabHistory.ts) |
-| Agent query or browser exposure | [sceneAgent](../src/tools/prefabeditor/sceneAgent.ts), [sceneAgentBridge](../src/tools/prefabeditor/sceneAgentBridge.ts) |
-| Batch operation | [sceneCommands](../src/tools/prefabeditor/sceneCommands.ts), [sceneCommandSchema](../src/tools/prefabeditor/sceneCommandSchema.ts) |
-| Agent field discovery | [componentSchemas](../src/tools/prefabeditor/componentSchemas.ts) |
-| Editor integration | [PrefabEditor](../src/tools/prefabeditor/PrefabEditor.tsx) |
+| Hierarchy or component mutation | [prefabStore](../src/core/prefabStore.ts) |
+| Undo grouping | [prefabHistory](../src/core/prefabHistory.ts) |
+| Agent query or browser exposure | [sceneAgent](../src/editor/agent/sceneAgent.ts), [sceneAgentBridge](../src/editor/agent/sceneAgentBridge.ts) |
+| Batch operation | [sceneCommands](../src/editor/agent/sceneCommands.ts), [sceneCommandSchema](../src/editor/agent/sceneCommandSchema.ts) |
+| Agent field discovery | [componentSchemas](../src/editor/agent/componentSchemas.ts) |
+| Editor integration | [PrefabEditor](../src/editor/PrefabEditor.tsx) |
 
 ## Keep package boundaries
 
@@ -227,8 +241,22 @@ animation or physics. Agent batches validate before committing one undo step.
 | `docs/app` | Host applications and game-specific examples |
 
 [SceneRuntime](../src/runtime/SceneRuntime.tsx) groups providers, not gameplay systems.
-The historical `prefabeditor` folder also contains runtime code; follow imports,
-not the folder name. [Import-boundary tests](../tests/core/import-boundaries.test.mjs)
+Runtime modules are grouped by responsibility:
+
+- `runtime/prefabs`: source loading, dependency preparation, and instance activation.
+- `runtime/scene`: live scene contexts, object handles, events, and interaction.
+- `runtime/components`: built-in component views; their inspectors live in `editor/components`.
+- `runtime/rendering`: mesh batching and material instancing.
+- `runtime/assets`: loaders and shared resource ownership/cache.
+- `runtime/audio`: the scene listener and sound playback manager.
+- `runtime/lighting`: optional rendering helpers, including the point light grid.
+- `runtime/GameCanvas.tsx` and `runtime/SceneRuntime.tsx`: canvas setup and provider composition.
+
+`core/` owns prefab data, the component registry, document store, document mutations,
+and history. React store bindings live in `runtime/prefabs/PrefabStoreContext.ts`.
+`editor/` owns authoring UI, inspector registration, agent commands, and file tools.
+Runtime modules may depend on core, and editor modules may depend on both; core
+must not import runtime or editor implementations. [Import-boundary tests](../tests/core/import-boundaries.test.mjs)
 keep authoring out of the viewer and plugins out of core entrypoints.
 
 For resource changes, check startup, activation and unloading in a WebGPU browser.

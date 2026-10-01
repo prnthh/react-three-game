@@ -21,9 +21,9 @@ import { getPhysicsScene } from "./physicsScene";
 import { debugRenderer } from "crashcat/three";
 import { useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { Object3D } from "three";
-import { useGameEvents, type GameEvents } from "../../tools/prefabeditor/GameEvents";
-import type { ContactEventPayload } from "../../tools/prefabeditor/GameEvents";
-import { PrefabEditorMode, SceneContext } from "../../tools/prefabeditor/SceneContext";
+import { useGameEvents, type GameEvents } from "../../runtime/scene/GameEvents";
+import type { ContactEventPayload } from "../../runtime/scene/GameEvents";
+import { PrefabEditorMode, SceneContext } from "../../runtime/scene/SceneContext";
 
 const SLEEP_TIME_BEFORE_REST = 0.1;
 const SLEEP_POINT_VELOCITY_THRESHOLD = 0.06;

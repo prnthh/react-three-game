@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { analyzeNodeComponents } from '../../src/tools/prefabeditor/nodePlan.ts';
-import { registerComponent } from '../../src/tools/prefabeditor/components/ComponentRegistry.ts';
-import { createPrefabStore } from '../../src/tools/prefabeditor/prefabStore.ts';
+import { analyzeNodeComponents } from '../../src/runtime/prefabs/nodePlan.ts';
+import { registerComponent } from '../../src/core/ComponentRegistry.ts';
+import { createPrefabStore } from "../../src/core/prefabStore.ts";
 
 const View = () => null;
 test('composition orders behaviors outside objects and attachments, resolving defaults', () => {

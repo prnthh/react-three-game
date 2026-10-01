@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { evaluateSceneCommandState } from '../../src/tools/prefabeditor/sceneCommands.ts';
-import { registerComponent } from '../../src/tools/prefabeditor/components/ComponentRegistry.ts';
-import Transform from '../../src/tools/prefabeditor/components/TransformComponent.tsx';
-import { denormalizePrefab, normalizePrefab } from '../../src/tools/prefabeditor/prefab.ts';
+import { evaluateSceneCommandState } from '../../src/editor/agent/sceneCommands.ts';
+import { registerComponent } from '../../src/core/ComponentRegistry.ts';
+import Transform from '../../src/runtime/components/TransformComponent.tsx';
+import { denormalizePrefab, normalizePrefab } from '../../src/core/prefab.ts';
 registerComponent(Transform);
 const transform = (position, rotation = [0, 0, 0], scale = [1, 1, 1]) => ({ type: 'Transform', properties: { position, rotation, scale } });
 const scene = () => ({ root: { id: 'root', children: [{ id: 'parent', components: { transform: transform([3, 0, 0], [0, Math.PI / 2, 0], [2, 2, 2]) }, children: [{ id: 'child' }] }] } });

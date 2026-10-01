@@ -1,0 +1,255 @@
+import { useEffect, useMemo, useRef } from 'react';
+
+import { useAssetRuntime, useSoundAssetRevision } from '../assets/AssetRuntime';
+
+import { useGameObject, useNode } from '../scene/SceneContext';
+
+import { useGameEvents, type ContactEventPayload, type NodePointerEventPayload } from '../scene/GameEvents';
+
+import type { Component, ComponentViewProps } from '../../core/ComponentRegistry';
+
+import { PositionalAudio as ThreePositionalAudio } from 'three';
+
+import { useAudioListener } from '../audio/AudioRuntime';
+
+import { withBasePath } from "../assets/assetPaths";
+
+import { usePrefab } from '../scene/SceneContext';
+
+export type ClipMode = 'single' | 'random' | 'sequence';
+
+export type SoundProperties = {
+    clips?: string[];
+    eventName?: string;
+    autoplay?: boolean;
+    loop?: boolean;
+    clipMode?: ClipMode;
+    positional?: boolean;
+    refDistance?: number;
+    maxDistance?: number;
+    rolloffFactor?: number;
+    distanceModel?: 'linear' | 'inverse' | 'exponential';
+    pitch?: number;
+    randomizePitch?: boolean;
+    minPitch?: number;
+    maxPitch?: number;
+    volume?: number;
+    randomizeVolume?: boolean;
+    minVolume?: number;
+    maxVolume?: number;
+};
+
+export const CLIP_MODE_OPTIONS = [
+    { value: 'single', label: 'Single Clip' },
+    { value: 'random', label: 'Random Clip' },
+    { value: 'sequence', label: 'Sequence' },
+] as const;
+
+function normalizeClips(clips?: string[]) {
+    return (clips ?? []).map(clip => clip.trim()).filter(Boolean);
+}
+
+function clampRange(min: number | undefined, max: number | undefined, fallbackMin: number, fallbackMax: number) {
+    const safeMin = Number.isFinite(min) ? Number(min) : fallbackMin;
+    const safeMax = Number.isFinite(max) ? Number(max) : fallbackMax;
+    return safeMin <= safeMax ? [safeMin, safeMax] as const : [safeMax, safeMin] as const;
+}
+
+function sampleRange(min: number, max: number) {
+    return min + Math.random() * (max - min);
+}
+
+function getPitchValue(properties: SoundProperties) {
+    if (properties.randomizePitch) {
+        const [pitchFloor, pitchCeiling] = clampRange(properties.minPitch, properties.maxPitch, 0.96, 1.04);
+        return sampleRange(pitchFloor, pitchCeiling);
+    }
+
+    return Number.isFinite(properties.pitch) ? Number(properties.pitch) : 1;
+}
+
+function getVolumeValue(properties: SoundProperties) {
+    if (properties.randomizeVolume) {
+        const [volumeFloor, volumeCeiling] = clampRange(properties.minVolume, properties.maxVolume, 0.9, 1);
+        return sampleRange(volumeFloor, volumeCeiling);
+    }
+
+    return Number.isFinite(properties.volume) ? Number(properties.volume) : 1;
+}
+
+function resolveClipPaths({ clips, clipMode }: SoundProperties) {
+    const normalizedClips = normalizeClips(clips);
+    if (normalizedClips.length > 0) {
+        return { paths: normalizedClips, mode: clipMode ?? 'random' };
+    }
+
+    return { paths: [], mode: 'single' as const };
+}
+
+function pickClip(paths: string[], mode: ClipMode, sequenceIndexRef: React.MutableRefObject<number>) {
+    if (paths.length <= 1 || mode === 'single') {
+        return paths[0];
+    }
+
+    if (mode === 'sequence') {
+        const clip = paths[sequenceIndexRef.current % paths.length];
+        sequenceIndexRef.current += 1;
+        return clip;
+    }
+
+    return paths[Math.floor(Math.random() * paths.length)];
+}
+
+function payloadMatchesNode(nodeId: string | undefined, payload: unknown) {
+    if (!nodeId || !payload || typeof payload !== 'object') {
+        return true;
+    }
+
+    const eventPayload = payload as NodePointerEventPayload & ContactEventPayload;
+    const relatedNodeIds = [
+        eventPayload.nodeId,
+        eventPayload.sourceEntityId,
+        eventPayload.sourceNodeId,
+        eventPayload.targetEntityId,
+        eventPayload.targetNodeId,
+        eventPayload.instanceEntityId,
+    ].filter((value): value is string => typeof value === 'string');
+
+    return relatedNodeIds.length > 0 ? relatedNodeIds.includes(nodeId) : true;
+}
+
+function playBufferedAudio(audio: ThreePositionalAudio, buffer: AudioBuffer, properties: SoundProperties) {
+    void audio.listener.context.resume();
+
+    if (audio.isPlaying) {
+        audio.stop();
+    }
+
+    audio.setBuffer(buffer);
+    audio.setLoop(Boolean(properties.loop));
+    audio.setPlaybackRate(getPitchValue(properties));
+    audio.setVolume(getVolumeValue(properties));
+    audio.play();
+}
+
+function SoundComponentView({ properties, children }: ComponentViewProps<SoundProperties>) {
+    const { basePath } = usePrefab();
+    const { getSound } = useAssetRuntime();
+    const { editMode } = useNode();
+    const { id: nodeId } = useGameObject();
+    const gameEvents = useGameEvents();
+    const listener = useAudioListener();
+    const { eventName, autoplay = false, positional = false, refDistance = 1, maxDistance = 24, rolloffFactor = 1, distanceModel = 'inverse' } = properties;
+    const sequenceIndexRef = useRef(0);
+    const positionalAudioRef = useRef<ThreePositionalAudio | null>(null);
+    const { paths, mode } = useMemo(() => {
+        const resolved = resolveClipPaths(properties);
+        return { ...resolved, paths: resolved.paths.map(path => withBasePath(basePath, path)) };
+    },
+        [basePath, properties.clips, properties.clipMode],
+    );
+    const soundAssetRevision = useSoundAssetRevision(paths);
+
+    useEffect(() => {
+        const audio = positionalAudioRef.current;
+        if (!audio) {
+            return;
+        }
+
+        audio.setRefDistance(positional ? refDistance : Math.max(refDistance, 1));
+        audio.setMaxDistance(positional ? maxDistance : 1_000_000);
+        audio.setRolloffFactor(positional ? rolloffFactor : 0);
+        audio.setDistanceModel(positional ? distanceModel : 'inverse');
+    }, [distanceModel, maxDistance, positional, refDistance, rolloffFactor]);
+
+    useEffect(() => {
+        if (editMode || paths.length === 0 || !eventName) {
+            return;
+        }
+
+        return gameEvents.on(eventName, (payload) => {
+            if (!payloadMatchesNode(nodeId, payload)) {
+                return;
+            }
+
+            const clip = pickClip(paths, mode, sequenceIndexRef);
+            if (!clip) return;
+
+            const audio = positionalAudioRef.current;
+            const buffer = getSound(clip);
+            if (!audio || !buffer) {
+                return;
+            }
+
+            playBufferedAudio(audio, buffer, properties);
+        });
+    }, [gameEvents, editMode, eventName, getSound, mode, nodeId, paths, properties]);
+
+    useEffect(() => {
+        // Re-run when assets load so autoplay can start once the buffer is ready
+        // (the asset runtime context is now stable and no longer re-renders on load).
+        void soundAssetRevision;
+        if (editMode || !autoplay || paths.length === 0) {
+            return;
+        }
+
+        const clip = pickClip(paths, mode, sequenceIndexRef);
+        if (!clip) {
+            return;
+        }
+
+        const audio = positionalAudioRef.current;
+        const buffer = getSound(clip);
+        if (!audio || !buffer) {
+            return;
+        }
+        playBufferedAudio(audio, buffer, properties);
+
+        return () => {
+            if (audio.isPlaying) audio.stop();
+        };
+    }, [autoplay, editMode, getSound, mode, paths, properties, soundAssetRevision]);
+
+    return (
+        <>
+            <positionalAudio ref={positionalAudioRef} args={[listener]} />
+            {children}
+        </>
+    );
+}
+
+const SoundComponent: Component<SoundProperties> = {
+    dependencies: properties => (properties.clips ?? []).filter(Boolean).map(path => ({ kind: 'sound', path })),
+    name: 'Sound',
+    View: SoundComponentView,
+    properties: {
+        eventName: { type: 'string', default: '' },
+        autoplay: { type: 'boolean', default: false },
+        loop: { type: 'boolean', default: false },
+        clips: { type: 'string[]', default: [] },
+        clipMode: { type: 'select', default: 'single', options: CLIP_MODE_OPTIONS },
+        positional: { type: 'boolean', default: false },
+        refDistance: { default: 1 },
+        maxDistance: { default: 24 },
+        rolloffFactor: { default: 1 },
+        distanceModel: {
+            type: 'select',
+            default: 'inverse',
+            options: [
+                { value: 'inverse', label: 'Inverse' },
+                { value: 'linear', label: 'Linear' },
+                { value: 'exponential', label: 'Exponential' },
+            ],
+        },
+        pitch: { default: 1 },
+        randomizePitch: { type: 'boolean', default: false },
+        minPitch: { default: 0.96 },
+        maxPitch: { default: 1.04 },
+        volume: { default: 1 },
+        randomizeVolume: { type: 'boolean', default: false },
+        minVolume: { default: 0.9 },
+        maxVolume: { default: 1 },
+    },
+};
+
+export default SoundComponent;

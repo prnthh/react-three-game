@@ -4,7 +4,7 @@ import { dependencies } from '../../tests/support/import-graph.mjs';
 
 for (const entry of ['docs/app/components/DemoApp.tsx']) {
     test(`${entry} has no transitive authoring imports`, () => {
-        const forbidden = dependencies(entry).filter(file => /(?:\.editor\.tsx?$|\/Input\.tsx$|\/EditorUI\.tsx$|\/PrefabEditor\.tsx$|\/assetviewer\/|\/editor\.ts$|\/ComponentEditors\.ts$|\/(?:sceneAgent|sceneAgentBridge|sceneAgentHelp|sceneAuthoringAdvice|sceneCommands|sceneCommandSchema|componentSchemas)\.ts$)/.test(file));
+        const forbidden = dependencies(entry).filter(file => /\/src\/editor(?:\/|\.ts$)/.test(file));
         assert.deepEqual(forbidden, []);
     });
 }

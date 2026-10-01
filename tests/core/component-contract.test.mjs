@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { canAddComponentToNode, resolveComponentProperties } from '../../src/tools/prefabeditor/components/ComponentRegistry.ts';
+import { canAddComponentToNode, resolveComponentProperties } from '../../src/core/ComponentRegistry.ts';
 
 test('schema defaults resolve sparse JSON without replacing authored values', () => {
     const component = { name: 'Example', properties: {

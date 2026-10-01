@@ -1,23 +1,23 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { analyzeSceneAuthoring } from '../../src/tools/prefabeditor/sceneAuthoringAdvice.ts';
-import { normalizePrefab } from '../../src/tools/prefabeditor/prefab.ts';
-import { createSceneAgent } from '../../src/tools/prefabeditor/sceneAgent.ts';
-import { createPrefabStore } from '../../src/tools/prefabeditor/prefabStore.ts';
-import { createPrefabHistory } from '../../src/tools/prefabeditor/prefabHistory.ts';
-import { registerComponent } from '../../src/tools/prefabeditor/components/ComponentRegistry.ts';
-import Geometry from '../../src/tools/prefabeditor/components/GeometryComponent.tsx';
-import Mesh from '../../src/tools/prefabeditor/components/MeshComponent.tsx';
-import Transform from '../../src/tools/prefabeditor/components/TransformComponent.tsx';
-import Material from '../../src/tools/prefabeditor/components/MaterialComponent.tsx';
-import Model from '../../src/tools/prefabeditor/components/ModelComponent.tsx';
+import { analyzeSceneAuthoring } from '../../src/editor/agent/sceneAuthoringAdvice.ts';
+import { normalizePrefab } from '../../src/core/prefab.ts';
+import { createSceneAgent } from '../../src/editor/agent/sceneAgent.ts';
+import { createPrefabStore } from "../../src/core/prefabStore.ts";
+import { createPrefabHistory } from '../../src/core/prefabHistory.ts';
+import { registerComponent } from '../../src/core/ComponentRegistry.ts';
+import Geometry from '../../src/runtime/components/GeometryComponent.tsx';
+import Mesh from '../../src/runtime/components/MeshComponent.tsx';
+import Transform from '../../src/runtime/components/TransformComponent.tsx';
+import Material from '../../src/runtime/components/MaterialComponent.tsx';
+import Model from '../../src/runtime/components/ModelComponent.tsx';
 [Geometry, Mesh, Transform, Material, Model].forEach(registerComponent);
 const box = i => ({id:`box-${i}`, components:{mesh:{type:'Mesh',properties:{instanced:false}},geometry:{type:'Geometry',properties:{geometryType:'box',args:[i+1,1,1]}}}});
 function fixture() {
     const store = createPrefabStore({root:{id:'world'}});
     const history = createPrefabHistory(store); history.connect();
-    const api = createSceneAgent(store,()=>({mode:()=> 'edit',selectedId:()=>null,transaction:history.transaction,beforeCommit(){},undo:history.undo,redo:history.redo,history:history.getSnapshot,canSave:()=>false,save:async()=>{},focusNode(){},captureView:async()=>({mimeType:'image/png',dataUrl:'',width:1,height:1})})).api;
-    return {store,api};
+    const scene = createSceneAgent(store,()=>({mode:()=> 'edit',selectedId:()=>null,transaction:history.transaction,beforeCommit(){},undo:history.undo,redo:history.redo,history:history.getSnapshot,canSave:()=>false,save:async()=>{},focusNode(){},captureView:async()=>({mimeType:'image/png',dataUrl:'',width:1,height:1})})).scene;
+    return {store,scene};
 }
 
 test('advice is bounded, ignores disabled subtrees, and does not change documents', () => {
@@ -35,18 +35,18 @@ test('advice is bounded, ignores disabled subtrees, and does not change document
     assert.deepEqual(analyzeSceneAuthoring(shared).advisories,[]);
 });
 
-test('validation reports the proposed document, apply agrees, undo clears advice', () => {
-    const {api,store} = fixture();
+test('validation reports the proposed document, batch agrees, undo clears advice', () => {
+    const {scene,store} = fixture();
     const before = store.getState();
-    const batch = {expectedRevision:api.getSceneInfo().revision,commands:[{op:'add',parentId:'world',node:{id:'assembly',children:Array.from({length:9},(_,i)=>box(i))}}]};
-    const validated = api.validateBatch(batch);
+    const batch = {expectedRevision:scene.info().revision,commands:[{op:'add',parentId:'world',node:{id:'assembly',children:Array.from({length:9},(_,i)=>box(i))}}]};
+    const validated = scene.validate(batch);
     assert.strictEqual(store.getState(),before);
     assert.equal(validated.advisories.length,2);
-    const result = api.applyBatch(batch);
+    const result = scene.batch(batch);
     assert.deepEqual(result.advisories,validated.advisories);
-    assert.deepEqual(api.analyzeScene().advisories,result.advisories);
+    assert.deepEqual(scene.analyze().advisories,result.advisories);
     result.advisories[0].nodeIds.length=0;
-    assert.ok(api.analyzeScene().advisories[0].nodeIds.length>0);
-    api.undo({expectedRevision:result.revision});
-    assert.deepEqual(api.analyzeScene().advisories,[]);
+    assert.ok(scene.analyze().advisories[0].nodeIds.length>0);
+    scene.undo({expectedRevision:result.revision});
+    assert.deepEqual(scene.analyze().advisories,[]);
 });

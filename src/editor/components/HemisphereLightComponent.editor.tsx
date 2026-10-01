@@ -1,0 +1,16 @@
+import type { ComponentEditorProps } from "../../core/ComponentRegistry";
+import { ColorField, NumberField } from "../ui/Input";
+import { mergeWithDefaults } from "../../runtime/components/lightUtils";
+import { LightSection } from "./lightUtils.editor";
+import { hemisphereLightDefaults, HemisphereLightProperties } from "../../runtime/components/HemisphereLightComponent";
+
+function HemisphereLightEditor({ properties, update }: ComponentEditorProps<HemisphereLightProperties>) {
+    const values = mergeWithDefaults(hemisphereLightDefaults, properties);
+    return <LightSection title="Light">
+        <ColorField name="skyColor" label="Sky Color" values={values} onChange={update} />
+        <ColorField name="groundColor" label="Ground Color" values={values} onChange={update} />
+        <NumberField name="intensity" label="Intensity" values={values} onChange={update} min={0} step={0.1} fallback={1} />
+    </LightSection>;
+}
+
+export default HemisphereLightEditor;

@@ -1,13 +1,13 @@
 export * from "./core";
 
-export { default as GameCanvas } from "./shared/GameCanvas";
-export type { GameCanvasProps } from "./shared/GameCanvas";
+export { default as GameCanvas } from "./runtime/GameCanvas";
+export type { GameCanvasProps } from "./runtime/GameCanvas";
 
-export { sound as soundManager, SoundManager } from "./helpers/SoundManager";
-export type { SoundOptions, SoundPlayback } from "./helpers/SoundManager";
+export { sound as soundManager, SoundManager } from "./runtime/audio/SoundManager";
+export type { SoundOptions, SoundPlayback } from "./runtime/audio/SoundManager";
 
-export { default as PrefabRoot } from "./tools/prefabeditor/PrefabRoot";
-export type { PrefabRootProps } from "./tools/prefabeditor/PrefabRoot";
+export { default as PrefabRoot } from "./runtime/prefabs/PrefabRoot";
+export type { PrefabRootProps } from "./runtime/prefabs/PrefabRoot";
 
 export {
 	PrefabEditorMode,
@@ -20,30 +20,30 @@ export {
 	useGameObject,
 	useRegisterNodeComponent,
 	createNodeComponentType,
-} from "./tools/prefabeditor/SceneContext";
-export { ANIMATED_MODEL_COMPONENT } from "./tools/prefabeditor/components/AnimatedModelComponent";
-export type { AnimatedModelHandle, AnimatedModelProperties } from "./tools/prefabeditor/components/AnimatedModelComponent";
-export type { NodeApi, NodeComponentType, PrefabApi, PrefabNode, Scene, SceneComponent } from "./tools/prefabeditor/SceneContext";
-export { SceneProvider } from "./tools/prefabeditor/SceneProvider";
+} from "./runtime/scene/SceneContext";
+export { ANIMATED_MODEL_COMPONENT } from "./runtime/components/AnimatedModelComponent";
+export type { AnimatedModelHandle, AnimatedModelProperties } from "./runtime/components/AnimatedModelComponent";
+export type { NodeApi, NodeComponentType, PrefabApi, PrefabNode, Scene, SceneComponent } from "./runtime/scene/SceneContext";
+export { SceneProvider } from "./runtime/scene/SceneProvider";
 
-export type { AssetRuntime } from "./tools/prefabeditor/assetRuntime";
+export type { AssetRuntime } from "./runtime/assets/AssetRuntime";
 export {
 	useAssetRuntime,
 	useTextureAsset,
 	useScenePendingLoads,
 	AssetRuntimeProvider,
-} from "./tools/prefabeditor/assetRuntime";
+} from "./runtime/assets/AssetRuntime";
 
-export { GameEventsProvider, createGameEvents, useGameEvents, useGameEvent } from "./tools/prefabeditor/GameEvents";
+export { GameEventsProvider, createGameEvents, useGameEvents, useGameEvent } from "./runtime/scene/GameEvents";
 export type {
 	GameEvents,
 	ContactEventPayload,
 	GameEventHandler,
 	GameEventMap,
 	NodePointerEventPayload,
-} from "./tools/prefabeditor/GameEvents";
+} from "./runtime/scene/GameEvents";
 
-export { loadModel, loadSound, loadTexture } from "./tools/dragdrop/modelLoader";
+export { loadModel, loadSound, loadTexture } from "./runtime/assets/assetLoaders";
 export type {
 	LoadedModel,
 	LoadedModels,
@@ -55,30 +55,38 @@ export type {
 	LoadedTextures,
 	TextureLoadResult,
 	ProgressCallback,
-} from "./tools/dragdrop/modelLoader";
+} from "./runtime/assets/assetLoaders";
 
-export { MaterialOverridesProvider, useMaterialOverrides } from "./tools/prefabeditor/components/MaterialComponent";
-export type { MaterialOverrides } from "./tools/prefabeditor/components/MaterialComponent";
+export { MaterialOverridesProvider, useMaterialOverrides } from "./runtime/components/MaterialComponent";
+export type { MaterialOverrides } from "./runtime/components/MaterialComponent";
 
-export { PrefabInstance } from "./runtime/PrefabInstance";
-export type { PrefabInstanceProps, PrefabInstanceStatus } from "./runtime/PrefabInstance";
-export type { PreparedPrefab, PrefabPreparationOptions, AssetDependency, ComponentDependency } from "./runtime/preparePrefab";
-export { useSceneLoadStats } from "./tools/prefabeditor/assetRuntime";
-export { createPrefabStore, usePrefabStore, usePrefabStoreApi } from "./tools/prefabeditor/prefabStore";
-export type { PrefabStoreApi, PrefabStoreState } from "./tools/prefabeditor/prefabStore";
+export { PrefabInstance } from "./runtime/prefabs/PrefabInstance";
+export type { PrefabInstanceProps, PrefabInstanceStatus } from "./runtime/prefabs/PrefabInstance";
+export type { PreparedPrefab, PrefabPreparationOptions, AssetDependency, ComponentDependency } from "./runtime/prefabs/preparePrefab";
+export { useSceneLoadStats } from "./runtime/assets/AssetRuntime";
+export { createPrefabStore } from "./core/prefabStore";
+export { usePrefabStore, usePrefabStoreApi } from "./runtime/prefabs/PrefabStoreContext";
+export type { PrefabStoreApi, PrefabStoreState } from "./core/prefabStore";
 
-export type { SharedMaterialOptions } from "./tools/prefabeditor/components/MaterialComponent";
-export { useSharedMaterialResource } from "./tools/prefabeditor/components/MaterialComponent";
-export { useInvalidateMeshInstances } from "./tools/prefabeditor/MeshInstanceProvider";
+export type { SharedMaterialOptions } from "./runtime/components/MaterialComponent";
+export { useSharedMaterialResource } from "./runtime/components/MaterialComponent";
+export { useInvalidateMeshInstances } from "./runtime/rendering/MeshInstanceProvider";
 
-export { withBasePath as resolveAssetPath } from "./tools/prefabeditor/runtimeUtils";
+export { withBasePath as resolveAssetPath } from "./runtime/assets/assetPaths";
 
 export { CascadedDirectionalLight } from './runtime/lighting/CascadedDirectionalLight';
 export type { CascadedDirectionalLightProps } from './runtime/lighting/CascadedDirectionalLight';
+export { LightCullingGrid, LightCullingGridController } from './runtime/lighting/LightCullingGrid';
+export type { LightCullingGridOptions } from './runtime/lighting/LightCullingGrid';
 
 export { SceneRuntime } from "./runtime/SceneRuntime";
 
-export type { GameObjectHandle } from "./tools/prefabeditor/gameObject";
+export type { GameObjectHandle } from "./runtime/scene/gameObject";
 
-export { usePrefabDocument, createPrefabDocumentApi } from "./tools/prefabeditor/prefabApi";
-export type { PrefabDocumentApi } from "./tools/prefabeditor/SceneContext";
+export { usePrefabDocument, createPrefabDocumentApi } from "./runtime/prefabs/prefabApi";
+export type { PrefabDocumentApi } from "./runtime/scene/SceneContext";
+
+export { default as RuntimeComponent } from "./runtime/components/RuntimeComponent";
+export type { RuntimeComponentProperties, RuntimeScriptContext } from "./runtime/components/RuntimeComponent";
+
+export { useSharedGeometryResource } from "./runtime/components/GeometryComponent";

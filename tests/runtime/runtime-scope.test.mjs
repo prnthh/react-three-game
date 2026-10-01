@@ -2,11 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { createGameEvents, GameEventsProvider, useGameEvents } from '../../src/tools/prefabeditor/GameEvents.ts';
-import { createPrefabStore } from '../../src/tools/prefabeditor/prefabStore.ts';
-import { createPrefabApi } from '../../src/tools/prefabeditor/prefabApi.ts';
-import { createGameObjectHandle } from '../../src/tools/prefabeditor/gameObject.ts';
-import { createNodeComponentRegistry, createPrefabRegistry } from '../../src/tools/prefabeditor/SceneContext.tsx';
+import { createGameEvents, GameEventsProvider, useGameEvents } from '../../src/runtime/scene/GameEvents.ts';
+import { createPrefabStore } from "../../src/core/prefabStore.ts";
+import { createPrefabApi } from '../../src/runtime/prefabs/prefabApi.ts';
+import { createGameObjectHandle } from '../../src/runtime/scene/gameObject.ts';
+import { createNodeComponentRegistry, createPrefabRegistry } from '../../src/runtime/scene/SceneContext.tsx';
 
 test('nested event providers reuse the outer bus; separate games are isolated', () => {
     const buses = [];

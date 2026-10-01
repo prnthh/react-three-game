@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Group, Mesh, MeshBasicMaterial, BoxGeometry } from 'three';
-import { getPendingMaterialCount } from '../../src/tools/prefabeditor/components/MaterialComponent.tsx';
+import { getPendingMaterialCount } from '../../src/runtime/components/MaterialComponent.tsx';
 
 test('a ready chunk is not blocked by an unrelated chunk material, but shared dependencies still block both', () => {
     const a = new Group(), b = new Group();

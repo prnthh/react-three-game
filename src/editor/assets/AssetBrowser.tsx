@@ -1,0 +1,760 @@
+import { Canvas } from "@react-three/fiber";
+import { OrbitControls, View, PerspectiveCamera } from "@react-three/drei";
+import { useEffect, useLayoutEffect, useState, useRef } from "react";
+import { createPortal } from 'react-dom';
+import { Material, Mesh, Texture, TextureLoader } from "three";
+import type { Object3D } from "three";
+import { loadModel } from "../../runtime/assets/assetLoaders";
+import { withBasePath } from "../documentIO";
+import { base, colors, fonts } from "../ui/styles";
+
+const styles: Record<string, any> = {
+    errorIcon: { color: colors.danger, fontSize: 12 },
+    flexFillRelative: { flex: 1, position: 'relative' },
+    bottomLabel: { backgroundColor: colors.bgLight, color: colors.text, fontSize: fonts.sizeSm, padding: '1px 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center', borderTop: `1px solid ${colors.borderFaint}` },
+    textLight: { color: colors.text, fontFamily: fonts.family, fontSize: fonts.size },
+    iconLarge: { fontSize: 20 }
+};
+
+const assetViewerColors = {
+    panelBg: colors.bg,
+    controlBg: colors.bgSurface,
+    previewBg: colors.bgLight,
+    text: colors.text,
+    border: colors.border,
+    borderFaint: colors.borderFaint,
+    accentBorder: colors.accentBorder,
+    errorBg: colors.dangerBg,
+};
+
+const assetPickerPopupBaseStyle = {
+    background: assetViewerColors.panelBg,
+    border: `1px solid ${assetViewerColors.border}`,
+    borderRadius: 0,
+    boxShadow: 'none',
+    color: colors.text,
+    fontFamily: fonts.family,
+    fontSize: fonts.size,
+} as const;
+
+const assetPickerButtonBaseStyle = {
+    ...base.btn,
+    background: assetViewerColors.controlBg,
+    color: colors.text,
+    fontSize: fonts.size,
+    cursor: 'pointer',
+} as const;
+
+const assetPickerWideButtonStyle = {
+    ...assetPickerButtonBaseStyle,
+    width: '100%',
+    padding: '6px 8px',
+} as const;
+
+function disposeMaterial(material: Material | Material[]) {
+    if (Array.isArray(material)) {
+        material.forEach(entry => entry.dispose());
+        return;
+    }
+
+    material.dispose();
+}
+
+function disposeObject3D(object: Object3D) {
+    object.traverse(child => {
+        if (!(child instanceof Mesh)) return;
+        child.geometry?.dispose();
+        disposeMaterial(child.material);
+    });
+}
+
+const assetPickerSmallButtonStyle = {
+    ...assetPickerButtonBaseStyle,
+    padding: '4px 8px',
+} as const;
+
+const assetPickerEmptyPreviewStyle = {
+    backgroundColor: assetViewerColors.previewBg,
+    border: `1px dashed ${assetViewerColors.border}`,
+    borderRadius: 0,
+} as const;
+
+const assetTileStyle = {
+    backgroundColor: assetViewerColors.previewBg,
+    color: assetViewerColors.text,
+    border: `1px solid ${assetViewerColors.borderFaint}`,
+    cursor: 'pointer',
+    display: 'flex',
+    flexDirection: 'column',
+    boxSizing: 'border-box',
+} as const;
+
+function getItemsInPath(files: string[], currentPath: string) {
+    // Remove the leading category folder (e.g., /textures/, /models/, /sounds/)
+    const filesWithoutCategory = files.map(file => {
+        const parts = file.split('/').filter(Boolean);
+        return parts.length > 1 ? '/' + parts.slice(1).join('/') : '';
+    }).filter(Boolean);
+
+    const prefix = currentPath ? `/${currentPath}/` : '/';
+    const relevantFiles = filesWithoutCategory.filter(file => file.startsWith(prefix));
+
+    const folders = new Set<string>();
+    const filesInCurrentPath: string[] = [];
+
+    relevantFiles.forEach((file) => {
+        const relativePath = file.slice(prefix.length);
+        const parts = relativePath.split('/').filter(Boolean);
+
+        if (parts.length > 1) {
+            folders.add(parts[0]);
+        } else if (parts[0]) {
+            // Return the original file path
+            filesInCurrentPath.push(files[filesWithoutCategory.indexOf(file)]);
+        }
+    });
+
+    return { folders: Array.from(folders), filesInCurrentPath };
+}
+
+function FolderTile({ name, onClick }: { name: string; onClick: () => void }) {
+    return (
+        <div
+            onClick={onClick}
+            style={{
+                maxWidth: 60,
+                aspectRatio: '1 / 1',
+                ...assetTileStyle,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center'
+            }}
+        >
+            <div style={{ fontSize: 24 }}>📁</div>
+            <div style={{ fontSize: 10, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%', padding: '0 4px', marginTop: 4 }}>{name}</div>
+        </div>
+    );
+}
+
+function useInView() {
+    const [isInView, setIsInView] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                setIsInView(entry.isIntersecting);
+            },
+            { rootMargin: '100px' }
+        );
+
+        if (ref.current) {
+            observer.observe(ref.current);
+        }
+
+        return () => {
+            if (ref.current) {
+                observer.unobserve(ref.current);
+            }
+        };
+    }, []);
+
+    return { ref, isInView };
+}
+
+interface AssetListViewerProps {
+    files: string[];
+    onSelect: (file: string) => void;
+    renderCard: (file: string, onSelect: (file: string) => void) => React.ReactNode;
+}
+
+function AssetListViewer({ files, onSelect, renderCard }: AssetListViewerProps) {
+    const [currentPath, setCurrentPath] = useState('');
+    const { folders, filesInCurrentPath } = getItemsInPath(files, currentPath);
+
+    return (
+        <div style={styles.textLight}>
+            {currentPath && (
+                <button
+                    onClick={() => {
+                        const pathParts = currentPath.split('/').filter(Boolean);
+                        pathParts.pop();
+                        setCurrentPath(pathParts.join('/'));
+                    }}
+                    style={{ ...assetPickerSmallButtonStyle, marginBottom: 4 }}
+                >
+                    ← Back
+                </button>
+            )}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
+                {folders.map((folder) => (
+                    <FolderTile
+                        key={folder}
+                        name={folder}
+                        onClick={() => setCurrentPath(currentPath ? `${currentPath}/${folder}` : folder)}
+                    />
+                ))}
+                {filesInCurrentPath.map((file) => (
+                    <div key={file}>
+                        {renderCard(file, onSelect)}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+interface TextureListViewerProps {
+    files: string[];
+    onSelect: (file: string) => void;
+    basePath?: string;
+}
+
+export function TextureListViewer({ files, onSelect, basePath = "" }: TextureListViewerProps) {
+    return (
+        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+            <div style={{ width: '100%', height: '100%', overflowY: 'auto', overflowX: 'hidden', paddingRight: 4 }}>
+                <AssetListViewer
+                    files={files}
+                    onSelect={onSelect}
+                    renderCard={(file, onSelectHandler) => (
+                        <TextureCard file={file} basePath={basePath} onSelect={onSelectHandler} />
+                    )}
+                />
+            </div>
+            <SharedCanvas />
+        </div>
+    );
+}
+
+function TextureCard({
+    file,
+    onSelect,
+    basePath = "",
+    size = 60,
+}: {
+    file: string;
+    onSelect: (file: string) => void;
+    basePath?: string;
+    size?: number;
+}) {
+    const [isHovered, setIsHovered] = useState(false);
+    const [error, setError] = useState(false);
+    const { ref, isInView } = useInView();
+    const fullPath = withBasePath(basePath, file);
+    const fileName = file.split('/').pop();
+
+    if (error) {
+        return (
+            <div
+                ref={ref}
+                style={{ width: size, aspectRatio: '1 / 1', ...assetTileStyle, backgroundColor: assetViewerColors.errorBg }}
+                onClick={() => onSelect(file)}
+                title={`Could not load ${file}`}
+            >
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={styles.errorIcon}>✗</div>
+                </div>
+                <div style={styles.bottomLabel}>
+                    {fileName}
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div
+            ref={ref}
+            style={{ width: size, aspectRatio: '1 / 1', ...assetTileStyle }}
+            onClick={() => onSelect(file)}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+        >
+            <div style={{ flex: 1, position: 'relative' }}>
+                {isInView ? (
+                    <View style={{ width: '100%', height: '100%' }}>
+                        <PerspectiveCamera makeDefault position={[0, 0, 2.5]} fov={50} />
+                        <ambientLight intensity={0.8} />
+                        <pointLight position={[5, 5, 5]} intensity={0.5} />
+                        <TextureSphere url={fullPath} onError={() => setError(true)} />
+                        <OrbitControls
+                            enableZoom={false}
+                            enablePan={false}
+                            autoRotate={isHovered}
+                            autoRotateSpeed={2}
+                        />
+                    </View>
+                ) : null}
+            </div>
+            <div style={styles.bottomLabel}>
+                {fileName}
+            </div>
+        </div>
+    );
+}
+
+function TextureSphere({ url, onError }: { url: string; onError?: () => void }) {
+    const [texture, setTexture] = useState<Texture | null>(null);
+    const textureRef = useRef<Texture | null>(null);
+    const onErrorRef = useRef(onError);
+    onErrorRef.current = onError;
+
+    useEffect(() => {
+        let cancelled = false;
+        textureRef.current = null;
+        setTexture(null);
+
+        const loader = new TextureLoader();
+        loader.load(
+            url,
+            loadedTexture => {
+                if (cancelled) {
+                    return;
+                }
+
+                textureRef.current = loadedTexture;
+                setTexture(loadedTexture);
+            },
+            undefined,
+            () => {
+                if (!cancelled) {
+                    onErrorRef.current?.();
+                }
+            },
+        );
+
+        return () => {
+            cancelled = true;
+            textureRef.current = null;
+        };
+    }, [url]);
+
+    if (!texture) return null;
+
+    return (
+        <mesh position={[0, 0, 0]}>
+            <sphereGeometry args={[1, 32, 32]} />
+            <meshStandardMaterial map={texture} />
+        </mesh>
+    );
+}
+
+interface ModelListViewerProps {
+    files: string[];
+    onSelect: (file: string) => void;
+    basePath?: string;
+}
+
+export function ModelListViewer({ files, onSelect, basePath = "" }: ModelListViewerProps) {
+    return (
+        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+            <div style={{ width: '100%', height: '100%', overflowY: 'auto', overflowX: 'hidden', paddingRight: 4 }}>
+                <AssetListViewer
+                    files={files}
+                    onSelect={onSelect}
+                    renderCard={(file, onSelectHandler) => (
+                        <ModelCard file={file} basePath={basePath} onSelect={onSelectHandler} />
+                    )}
+                />
+            </div>
+            <SharedCanvas />
+        </div>
+    );
+}
+
+function ModelCard({
+    file,
+    onSelect,
+    basePath = "",
+    size = 60,
+}: {
+    file: string;
+    onSelect: (file: string) => void;
+    basePath?: string;
+    size?: number;
+}) {
+    const [error, setError] = useState(false);
+    const { ref, isInView } = useInView();
+    const fullPath = withBasePath(basePath, file);
+
+    if (error) {
+        return (
+            <div
+                ref={ref}
+                style={{ aspectRatio: '1 / 1', backgroundColor: assetViewerColors.errorBg, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${colors.dangerBorder}` }}
+                onClick={() => onSelect(file)}
+            >
+                <div style={styles.errorIcon}>✗</div>
+            </div>
+        );
+    }
+
+    return (
+        <div
+            ref={ref}
+            style={{ width: size, aspectRatio: '1 / 1', ...assetTileStyle }}
+            onClick={() => onSelect(file)}
+        >
+            <div style={styles.flexFillRelative}>
+                {isInView ? (
+                    <View style={{ width: '100%', height: '100%' }}>
+                        <PerspectiveCamera makeDefault position={[0, 1, 3]} fov={50} />
+                        <ambientLight intensity={1} />
+                        <pointLight position={[5, 5, 5]} intensity={0.5} />
+                        <ModelPreview url={fullPath} onError={() => setError(true)} />
+                        <OrbitControls enableZoom={false} />
+                    </View>
+                ) : null}
+            </div>
+            <div style={styles.bottomLabel}>
+                {file.split('/').pop()}
+            </div>
+        </div>
+    );
+}
+
+function ModelPreview({ url, onError }: { url: string; onError?: () => void }) {
+    const [model, setModel] = useState<Object3D | null>(null);
+    const modelRef = useRef<Object3D | null>(null);
+    const onErrorRef = useRef(onError);
+    onErrorRef.current = onError;
+
+    useEffect(() => {
+        let cancelled = false;
+        modelRef.current && disposeObject3D(modelRef.current);
+        modelRef.current = null;
+        setModel(null);
+
+        loadModel(url).then((result) => {
+            if (cancelled) {
+                result.model && disposeObject3D(result.model);
+                return;
+            }
+            if (result.success && result.model) {
+                modelRef.current = result.model;
+                setModel(result.model);
+            } else {
+                onErrorRef.current?.();
+            }
+        });
+
+        return () => {
+            cancelled = true;
+            modelRef.current && disposeObject3D(modelRef.current);
+            modelRef.current = null;
+        };
+    }, [url]);
+
+    if (!model) return null;
+    return <primitive object={model} />;
+}
+
+interface SoundListViewerProps {
+    files: string[];
+    onSelect: (file: string) => void;
+}
+
+export function SoundListViewer({ files, onSelect }: SoundListViewerProps) {
+    return (
+        <AssetListViewer
+            files={files}
+            onSelect={onSelect}
+            renderCard={(file, onSelectHandler) => (
+                <SoundCard file={file} onSelect={onSelectHandler} />
+            )}
+        />
+    );
+}
+
+function SoundCard({ file, onSelect }: { file: string; onSelect: (file: string) => void }) {
+    const fileName = file.split('/').pop() || '';
+    return (
+        <div
+            onClick={() => onSelect(file)}
+            style={{ aspectRatio: '1 / 1', ...assetTileStyle, alignItems: 'center', justifyContent: 'center' }}
+        >
+            <div style={styles.iconLarge}>🔊</div>
+            <div style={{ color: colors.text, fontSize: fonts.size, padding: '0 4px', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center', width: '100%' }}>{fileName}</div>
+        </div>
+    );
+}
+
+const PICKER_POPUP_WIDTH = 260;
+const PICKER_POPUP_HEIGHT = 360;
+const VISUAL_PICKER_PREVIEW_SIZE = 76;
+const visualAssetPickerRootStyle = {
+    width: '100%',
+    overflow: 'visible',
+    position: 'relative',
+    display: 'flex',
+    gap: 6,
+    alignItems: 'center',
+} as const;
+const visualAssetPickerControlsStyle = {
+    flex: 1,
+    minWidth: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 4,
+} as const;
+const visualAssetPickerButtonStyle = {
+    ...assetPickerWideButtonStyle,
+    padding: '4px 6px',
+} as const;
+
+function AssetPicker({
+    value,
+    onChange,
+    basePath,
+    manifestFolder,
+    preview,
+    renderList,
+    rootStyle,
+    controlsStyle,
+    changeButtonStyle,
+    clearButtonStyle,
+    popupStyle,
+}: {
+    value: string | undefined;
+    onChange: (value: string | undefined) => void;
+    basePath: string;
+    manifestFolder: string;
+    preview?: React.ReactNode;
+    renderList: (props: {
+        files: string[];
+        value: string | undefined;
+        onSelect: (file: string) => void;
+        basePath: string;
+    }) => React.ReactNode;
+    rootStyle?: React.CSSProperties;
+    controlsStyle?: React.CSSProperties;
+    changeButtonStyle?: React.CSSProperties;
+    clearButtonStyle?: React.CSSProperties;
+    popupStyle?: React.CSSProperties;
+}) {
+    const [files, setFiles] = useState<string[]>([]);
+    const [showPicker, setShowPicker] = useState(false);
+    const [resolvedPopupStyle, setResolvedPopupStyle] = useState<React.CSSProperties | null>(null);
+    const triggerRef = useRef<HTMLButtonElement>(null);
+
+    useEffect(() => {
+        fetch(`${basePath}/${manifestFolder}/manifest.json`)
+            .then(r => r.json())
+            .then(data => setFiles(Array.isArray(data) ? data : data.files || []))
+            .catch(console.error);
+    }, [basePath, manifestFolder]);
+
+    useLayoutEffect(() => {
+        if (!showPicker || !triggerRef.current || typeof window === 'undefined') return;
+
+        const updatePosition = () => {
+            const rect = triggerRef.current?.getBoundingClientRect();
+            if (!rect) return;
+
+            const preferredLeft = rect.left - PICKER_POPUP_WIDTH - 8;
+            const fallbackLeft = rect.right + 8;
+            const fitsLeft = preferredLeft >= 8;
+            const left = fitsLeft ? preferredLeft : Math.min(fallbackLeft, window.innerWidth - PICKER_POPUP_WIDTH - 8);
+            const top = Math.min(Math.max(8, rect.top), window.innerHeight - PICKER_POPUP_HEIGHT - 8);
+
+            setResolvedPopupStyle({
+                position: 'fixed',
+                left,
+                top,
+                padding: 12,
+                width: PICKER_POPUP_WIDTH,
+                height: PICKER_POPUP_HEIGHT,
+                overflow: 'hidden',
+                zIndex: 1000,
+                ...assetPickerPopupBaseStyle,
+                ...popupStyle,
+            });
+        };
+
+        updatePosition();
+        window.addEventListener('resize', updatePosition);
+        window.addEventListener('scroll', updatePosition, true);
+
+        return () => {
+            window.removeEventListener('resize', updatePosition);
+            window.removeEventListener('scroll', updatePosition, true);
+        };
+    }, [popupStyle, showPicker]);
+
+    return (
+        <div style={rootStyle}>
+            {preview}
+            <div style={controlsStyle}>
+                <button
+                    ref={triggerRef}
+                    onClick={() => setShowPicker(!showPicker)}
+                    style={changeButtonStyle}
+                >
+                    {showPicker ? 'Cancel' : 'Change'}
+                </button>
+                <button
+                    onClick={() => onChange(undefined)}
+                    style={clearButtonStyle}
+                >
+                    Clear
+                </button>
+            </div>
+            {showPicker && resolvedPopupStyle && typeof document !== 'undefined' && createPortal(
+                <div style={resolvedPopupStyle} onMouseLeave={() => setShowPicker(false)}>
+                    {renderList({
+                        files,
+                        value,
+                        onSelect: (file) => {
+                            onChange(file);
+                            setShowPicker(false);
+                        },
+                        basePath,
+                    })}
+                </div>,
+                document.body
+            )}
+        </div>
+    );
+}
+
+export function TexturePicker({ value, onChange, basePath = "" }: { value: string | undefined; onChange: (value: string | undefined) => void; basePath?: string }) {
+    return (
+        <AssetPicker
+            value={value}
+            onChange={onChange}
+            basePath={basePath}
+            manifestFolder="textures"
+            rootStyle={visualAssetPickerRootStyle}
+            controlsStyle={visualAssetPickerControlsStyle}
+            changeButtonStyle={visualAssetPickerButtonStyle}
+            clearButtonStyle={visualAssetPickerButtonStyle}
+            preview={<SingleTextureViewer file={value} basePath={basePath} size={VISUAL_PICKER_PREVIEW_SIZE} />}
+            renderList={({ files, onSelect, basePath: currentBasePath }) => (
+                <TextureListViewer
+                    files={files}
+                    onSelect={onSelect}
+                    basePath={currentBasePath}
+                />
+            )}
+        />
+    );
+}
+
+export function ModelPicker({ value, onChange, basePath = "", pickerKey }: { value: string | undefined; onChange: (value: string | undefined) => void; basePath?: string; pickerKey?: string }) {
+    return (
+        <AssetPicker
+            value={value}
+            onChange={onChange}
+            basePath={basePath}
+            manifestFolder="models"
+            rootStyle={visualAssetPickerRootStyle}
+            controlsStyle={visualAssetPickerControlsStyle}
+            changeButtonStyle={visualAssetPickerButtonStyle}
+            clearButtonStyle={visualAssetPickerButtonStyle}
+            popupStyle={{ border: `1px solid ${assetViewerColors.accentBorder}` }}
+            preview={<SingleModelViewer file={value} basePath={basePath} size={VISUAL_PICKER_PREVIEW_SIZE} />}
+            renderList={({ files, onSelect, basePath: currentBasePath }) => (
+                <ModelListViewer
+                    key={pickerKey}
+                    files={files}
+                    onSelect={(file) => onSelect(file.startsWith('/') ? file.slice(1) : file)}
+                    basePath={currentBasePath}
+                />
+            )}
+        />
+    );
+}
+
+export function SoundPicker({ value, onChange, basePath = "" }: { value: string | undefined; onChange: (value: string | undefined) => void; basePath?: string }) {
+    return (
+        <AssetPicker
+            value={value}
+            onChange={onChange}
+            basePath={basePath}
+            manifestFolder="sound"
+            rootStyle={{ maxHeight: 76, overflow: 'visible', position: 'relative', display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}
+            controlsStyle={{ display: 'flex', flexDirection: 'column', gap: 6, flex: '0 0 84px', minWidth: 84, justifyContent: 'flex-end' }}
+            changeButtonStyle={assetPickerWideButtonStyle}
+            clearButtonStyle={assetPickerWideButtonStyle}
+            preview={<div style={{ flex: '0 0 auto', minWidth: 84 }}>{value ? <SingleSoundViewer file={value} /> : <div style={{ width: 84, height: 60, ...assetPickerEmptyPreviewStyle }} />}</div>}
+            renderList={({ files, onSelect }) => (
+                <SoundListViewer
+                    files={files}
+                    onSelect={onSelect}
+                />
+            )}
+        />
+    );
+}
+
+function SingleVisualAssetViewer({
+    file,
+    size,
+    children,
+}: {
+    file?: string;
+    size: number;
+    children: React.ReactNode;
+}) {
+    return (
+        <>
+            <div style={{ flex: '0 0 auto', width: size, height: size }}>
+                {file
+                    ? children
+                    : <div style={{ width: '100%', height: '100%', ...assetPickerEmptyPreviewStyle }} />}
+            </div>
+            {file ? <SharedCanvas /> : null}
+        </>
+    );
+}
+
+// Single Asset Viewer Components - display only one selected asset
+export function SingleTextureViewer({ file, basePath = "", size = 60 }: { file?: string; basePath?: string; size?: number }) {
+    return (
+        <SingleVisualAssetViewer file={file} size={size}>
+            {file ? <TextureCard file={file} basePath={basePath} onSelect={() => { }} size={size} /> : null}
+        </SingleVisualAssetViewer>
+    );
+}
+
+export function SingleModelViewer({ file, basePath = "", size = 112 }: { file?: string; basePath?: string; size?: number }) {
+    return (
+        <SingleVisualAssetViewer file={file} size={size}>
+            {file ? <ModelCard file={file} basePath={basePath} onSelect={() => { }} size={size} /> : null}
+        </SingleVisualAssetViewer>
+    );
+}
+
+export function SingleSoundViewer({ file }: { file?: string }) {
+    if (!file) return null;
+    return <SoundCard file={file} onSelect={() => { }} />;
+}
+
+// Shared Canvas Component - can be used independently in any viewer
+export function SharedCanvas() {
+    return (
+        <Canvas
+            shadows
+            dpr={[1, 1.5]}
+            gl={{ alpha: true }}
+            camera={{ position: [0, 0, 3], fov: 45, near: 0.1, far: 1000 }}
+            onCreated={({ gl }) => {
+                gl.setClearAlpha(0);
+            }}
+            style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100vw',
+                height: '100vh',
+                pointerEvents: 'none',
+                background: 'transparent',
+            }}
+            eventSource={typeof document !== 'undefined' ? document.getElementById('root') || undefined : undefined}
+            eventPrefix="client"
+        >
+            <View.Port />
+        </Canvas>
+    );
+}

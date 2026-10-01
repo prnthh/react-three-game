@@ -1,0 +1,244 @@
+import type { PrefabDocumentApi } from '../../core/prefabDocumentApi';
+export type { PrefabDocumentApi } from '../../core/prefabDocumentApi';
+import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
+import type { Object3D, Texture } from "three";
+import type { GameObject, Prefab, PrefabMaterial } from "../../core/types";
+import { createGameObjectHandle } from "./gameObject";
+import type { NodeInteractionHandlers } from "./usePointerEvents";
+
+export enum PrefabEditorMode {
+    Edit = "edit",
+    Play = "play",
+}
+
+export type PrefabNode = Omit<GameObject, "children">;
+
+export interface PrefabRegistry {
+    registerObject(id: string, object: Object3D | null): void;
+    subscribeObject(id: string, listener: () => void): () => void;
+    getObject(id: string): Object3D | null;
+}
+
+declare const NODE_COMPONENT_VALUE: unique symbol;
+export type NodeComponentType<T> = symbol & { readonly [NODE_COMPONENT_VALUE]?: T };
+
+export type SceneComponent<T> = Readonly<{
+    nodeId: string;
+    value: T;
+}>;
+
+const EMPTY_SCENE_COMPONENTS: readonly SceneComponent<never>[] = [];
+
+export interface NodeComponentRegistry {
+    get<T>(nodeId: string, type: NodeComponentType<T>): T | null;
+    register<T>(nodeId: string, type: NodeComponentType<T>, value: T | null): void;
+    getAll<T>(type: NodeComponentType<T>): readonly SceneComponent<T>[];
+    subscribe<T>(type: NodeComponentType<T>, listener: () => void): () => void;
+}
+
+export function createNodeComponentType<T>(name: string): NodeComponentType<T> {
+    return Symbol(name) as NodeComponentType<T>;
+}
+
+export function createNodeComponentRegistry(): NodeComponentRegistry {
+    const components = new Map<symbol, Map<string, unknown>>();
+    const snapshots = new Map<symbol, readonly SceneComponent<unknown>[]>();
+    const listeners = new Map<symbol, Set<() => void>>();
+    return {
+        get: <T,>(nodeId: string, type: NodeComponentType<T>) => (components.get(type)?.get(nodeId) as T | undefined) ?? null,
+        register(nodeId, type, value) {
+            const values = components.get(type);
+            if ((values?.get(nodeId) ?? null) === value) return;
+            if (value == null) {
+                values?.delete(nodeId);
+                if (values?.size === 0) components.delete(type);
+            } else if (values) {
+                values.set(nodeId, value);
+            } else {
+                components.set(type, new Map([[nodeId, value]]));
+            }
+            const current = components.get(type);
+            snapshots.set(type, current
+                ? Array.from(current, ([registeredNodeId, registeredValue]) => ({
+                    nodeId: registeredNodeId,
+                    value: registeredValue,
+                }))
+                : []);
+            listeners.get(type)?.forEach(listener => listener());
+        },
+        getAll: <T,>(type: NodeComponentType<T>) => (
+            (snapshots.get(type) as readonly SceneComponent<T>[] | undefined) ?? EMPTY_SCENE_COMPONENTS
+        ),
+        subscribe(type, listener) {
+            const typeListeners = listeners.get(type) ?? new Set<() => void>();
+            typeListeners.add(listener);
+            listeners.set(type, typeListeners);
+            return () => {
+                typeListeners.delete(listener);
+                if (typeListeners.size === 0) listeners.delete(type);
+            };
+        },
+    };
+}
+
+export function createPrefabRegistry(): PrefabRegistry {
+    const objects = new Map<string, Object3D>();
+    const listeners = new Map<string, Set<() => void>>();
+
+    return {
+        registerObject(id, object) {
+            if ((objects.get(id) ?? null) === object) return;
+            if (object) objects.set(id, object);
+            else objects.delete(id);
+            listeners.get(id)?.forEach(listener => listener());
+        },
+        subscribeObject(id, listener) {
+            const nodeListeners = listeners.get(id) ?? new Set<() => void>();
+            nodeListeners.add(listener);
+            listeners.set(id, nodeListeners);
+            return () => {
+                nodeListeners.delete(listener);
+                if (nodeListeners.size === 0) listeners.delete(id);
+            };
+        },
+        getObject: id => objects.get(id) ?? null,
+    };
+}
+
+export interface Scene {
+    root: Object3D | null;
+    mode: PrefabEditorMode;
+}
+
+
+
+/** Combined facade retained for editor/viewer refs and resource integrations. */
+export interface PrefabApi extends PrefabDocumentApi, PrefabRegistry {
+    root: Object3D | null;
+    basePath: string;
+    getModel(path: string): Object3D | null;
+    addModel(path: string, model: Object3D): void;
+    addTexture(path: string, texture: Texture): void;
+    addSound(path: string, sound: AudioBuffer): void;
+}
+
+export const SceneContext = createContext<Scene | null>(null);
+export const PrefabContext = createContext<PrefabApi | null>(null);
+export const NodeComponentContext = createContext<NodeComponentRegistry | null>(null);
+const NodeContext = createContext<NodeApi | null>(null);
+export const RuntimeNodeIdPrefixContext = createContext("");
+
+/** Owns one runtime-component index for the complete scene. */
+export function SceneComponentsProvider({ children }: { children: ReactNode }) {
+    const inherited = useContext(NodeComponentContext);
+    if (inherited) return children;
+    return <SceneComponentsOwner>{children}</SceneComponentsOwner>;
+}
+
+function SceneComponentsOwner({ children }: { children: ReactNode }) {
+    const [registry] = useState(createNodeComponentRegistry);
+    return <NodeComponentContext.Provider value={registry}>{children}</NodeComponentContext.Provider>;
+}
+
+export interface NodeApi {
+    nodeId: string;
+    preparing?: boolean;
+    editMode?: boolean;
+    isSelected?: boolean;
+    nodeInteractionHandlers?: NodeInteractionHandlers;
+}
+
+export function useScene() {
+    const scene = useContext(SceneContext);
+    if (!scene) {
+        throw new Error("useScene must be used within a PrefabRoot or PrefabEditor scene provider");
+    }
+    return scene;
+}
+
+export function usePrefab() {
+    const prefab = useContext(PrefabContext);
+    if (!prefab) {
+        throw new Error("usePrefab must be used within a PrefabRoot or PrefabEditor");
+    }
+    return prefab;
+}
+
+export function useNode() {
+    const node = useContext(NodeContext);
+    if (!node) throw new Error("useNode must be used inside a component View rendered by <PrefabRoot>");
+    return node;
+}
+
+function useNodeComponentRegistry() {
+    const registry = useContext(NodeComponentContext);
+    if (!registry) throw new Error("Node component registry is unavailable outside PrefabRoot");
+    return registry;
+}
+
+export function useRegisterNodeComponent<T>(type: NodeComponentType<T>, value: T | null) {
+    const { id: runtimeNodeId } = useGameObject();
+    const registry = useNodeComponentRegistry();
+    useLayoutEffect(() => {
+        registry.register(runtimeNodeId, type, value);
+    }, [registry, runtimeNodeId, type, value]);
+    useLayoutEffect(() => () => {
+        registry.register(runtimeNodeId, type, null);
+    }, [registry, runtimeNodeId, type]);
+}
+
+export function useSceneComponents<T>(type: NodeComponentType<T>): readonly SceneComponent<T>[] {
+    const registry = useNodeComponentRegistry();
+    const subscribe = useCallback(
+        (listener: () => void) => registry.subscribe(type, listener),
+        [registry, type],
+    );
+    const getSnapshot = useCallback(
+        () => registry.getAll(type),
+        [registry, type],
+    );
+    return useSyncExternalStore(subscribe, getSnapshot, () => EMPTY_SCENE_COMPONENTS);
+}
+
+/** Resolve a local prefab reference, or the current node when no id is supplied. */
+export function useGameObject(nodeId?: string) {
+    const prefab = usePrefab();
+    const node = useContext(NodeContext);
+    const prefix = useContext(RuntimeNodeIdPrefixContext);
+    const components = useNodeComponentRegistry();
+    const localId = nodeId ?? node?.nodeId;
+    if (localId === undefined) throw new Error('useGameObject requires a node id outside a component View');
+    return useMemo(() => createGameObjectHandle(localId, prefix, prefab, components), [localId, prefix, prefab, components]);
+}
+
+export function NodeScope({
+    nodeId,
+    preparing,
+    editMode,
+    isSelected,
+    nodeInteractionHandlers,
+    children,
+}: {
+    nodeId: string;
+    preparing?: boolean;
+    editMode?: boolean;
+    isSelected?: boolean;
+    nodeInteractionHandlers?: NodeInteractionHandlers;
+    children: ReactNode;
+}) {
+    const value = useMemo<NodeApi>(() => ({
+        nodeId,
+        preparing,
+        editMode,
+        isSelected,
+        nodeInteractionHandlers,
+    }), [preparing, editMode, isSelected, nodeId, nodeInteractionHandlers]);
+
+    return <NodeContext.Provider value={value}>{children}</NodeContext.Provider>;
+}
+
+export function RuntimeNodeIdScope({ prefix, children }: { prefix: string; children: ReactNode }) {
+    const parentPrefix = useContext(RuntimeNodeIdPrefixContext);
+    const value = prefix ? (parentPrefix ? `${parentPrefix}/${prefix}` : prefix) : parentPrefix;
+    return <RuntimeNodeIdPrefixContext.Provider value={value}>{children}</RuntimeNodeIdPrefixContext.Provider>;
+}

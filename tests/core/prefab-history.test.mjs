@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createPrefabStore } from '../../src/tools/prefabeditor/prefabStore.ts';
-import { createPrefabHistory } from '../../src/tools/prefabeditor/prefabHistory.ts';
-import { createPrefabApi } from '../../src/tools/prefabeditor/prefabApi.ts';
-import { createPrefabRegistry } from '../../src/tools/prefabeditor/SceneContext.tsx';
+import { createPrefabStore } from "../../src/core/prefabStore.ts";
+import { createPrefabHistory } from '../../src/core/prefabHistory.ts';
+import { createPrefabApi } from '../../src/runtime/prefabs/prefabApi.ts';
+import { createPrefabRegistry } from '../../src/runtime/scene/SceneContext.tsx';
 
 const tick = () => new Promise(resolve => queueMicrotask(resolve));
 const fixture = () => {

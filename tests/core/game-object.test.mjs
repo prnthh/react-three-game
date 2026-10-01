@@ -3,11 +3,11 @@ import assert from 'node:assert/strict';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { Group } from 'three';
-import { createGameObjectHandle } from '../../src/tools/prefabeditor/gameObject.ts';
+import { createGameObjectHandle } from '../../src/runtime/scene/gameObject.ts';
 import {
     createPrefabRegistry, createNodeComponentRegistry, createNodeComponentType,
     PrefabContext, NodeComponentContext, NodeScope, RuntimeNodeIdScope, useGameObject,
-} from '../../src/tools/prefabeditor/SceneContext.tsx';
+} from '../../src/runtime/scene/SceneContext.tsx';
 
 const ANIMATOR = createNodeComponentType('test animator');
 

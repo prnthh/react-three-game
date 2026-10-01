@@ -1,13 +1,13 @@
-export type { ComponentEditorProps } from "./tools/prefabeditor/components/ComponentRegistry";
+export type { ComponentEditorProps } from "./core/ComponentRegistry";
 
-export { default as PrefabEditor, PrefabEditorProvider, PrefabEditorScene, PrefabEditorPanel } from "./tools/prefabeditor/PrefabEditor";
-export type { PrefabEditorProps, PrefabEditorProviderProps, PrefabEditorRef } from "./tools/prefabeditor/PrefabEditor";
+export { default as PrefabEditor, PrefabEditorProvider, PrefabEditorScene, PrefabEditorPanel } from "./editor/PrefabEditor";
+export type { PrefabEditorProps, PrefabEditorProviderProps, PrefabEditorRef } from "./editor/PrefabEditor";
 
-export { useEditorContext, useEditorRef } from "./tools/prefabeditor/EditorContext";
-export type { EditorContextType } from "./tools/prefabeditor/EditorContext";
+export { useEditorContext, useEditorRef } from "./editor/EditorContext";
+export type { EditorContextType } from "./editor/EditorContext";
 
-export { usePrefabStore, usePrefabStoreApi } from "./tools/prefabeditor/prefabStore";
-export type { PrefabStoreApi, PrefabStoreState } from "./tools/prefabeditor/prefabStore";
+export { usePrefabStore, usePrefabStoreApi } from "./runtime/prefabs/PrefabStoreContext";
+export type { PrefabStoreApi, PrefabStoreState } from "./core/prefabStore";
 
 export {
   FieldRenderer,
@@ -25,7 +25,7 @@ export {
   BooleanField,
   SelectInput,
   SelectField,
-} from "./tools/prefabeditor/components/Input";
+} from "./editor/ui/Input";
 
 export {
   loadJson,
@@ -34,16 +34,16 @@ export {
   exportGLBData,
   regenerateIds,
   computeParentWorldMatrix,
-} from "./tools/prefabeditor/utils";
-export type { ExportGLBOptions } from "./tools/prefabeditor/utils";
+} from "./editor/documentIO";
+export type { ExportGLBOptions } from "./editor/documentIO";
 
-export { decomposeModelToPrefabNodes } from "./tools/prefabeditor/modelPrefab";
-export type { DecomposeModelOptions, DecomposedPrefabNodes } from "./tools/prefabeditor/modelPrefab";
+export { decomposeModelToPrefabNodes } from "./editor/modelPrefab";
+export type { DecomposeModelOptions, DecomposedPrefabNodes } from "./editor/modelPrefab";
 
-export type { FieldDefinition } from "./tools/prefabeditor/components/Input";
-export { editorTheme } from "./tools/prefabeditor/styles";
-export { loadFiles } from "./tools/dragdrop/DragDropLoader";
-export type { AssetLoadOptions } from "./tools/dragdrop/DragDropLoader";
+export type { FieldDefinition } from "./editor/ui/Input";
+export { editorTheme } from "./editor/ui/styles";
+export { loadFiles } from "./editor/assets/DragDropLoader";
+export type { AssetLoadOptions } from "./editor/assets/DragDropLoader";
 
 export {
   ModelListViewer,
@@ -56,14 +56,13 @@ export {
   SingleSoundViewer,
   SingleTextureViewer,
   SharedCanvas,
-} from "./tools/assetviewer/page";
+} from "./editor/assets/AssetBrowser";
 
-export { registerComponentEditor } from "./tools/prefabeditor/ComponentEditors";
+export { registerComponentEditor } from "./editor/ComponentEditors";
 
-export type { SceneCommand, SceneCommandBatch, SceneCommandResult } from "./tools/prefabeditor/sceneCommands";
+export type { SceneCommand, SceneCommandBatch, SceneCommandResult } from "./editor/agent/sceneCommands";
 
-export type { SceneAgentApi, SceneAgentBatch, FindSceneNodes, GetSceneNodes } from "./tools/prefabeditor/sceneAgent";
-export type { SceneAgentRegistry } from "./tools/prefabeditor/sceneAgentBridge";
+export type { SceneAgent, SceneBatch, SceneSearchOptions, SceneGetManyOptions } from "./editor/agent/sceneAgent";
 
-export { usePrefabDocument } from "./tools/prefabeditor/prefabApi";
-export type { PrefabDocumentApi } from "./tools/prefabeditor/SceneContext";
+export { usePrefabDocument } from "./runtime/prefabs/prefabApi";
+export type { PrefabDocumentApi } from "./runtime/scene/SceneContext";

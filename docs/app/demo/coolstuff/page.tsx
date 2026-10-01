@@ -18,7 +18,7 @@ registerComponent(SimplePlayerComponent);
 
 export default function CoolStuffDemo() {
     return <main className="h-screen w-screen">
-        <PrefabEditor agentId="cool-stuff" basePath={BASE_PATH} prefab={coolStuffScene as Prefab}
+        <PrefabEditor basePath={BASE_PATH} prefab={coolStuffScene as Prefab}
             canvasProps={{ camera: { position: [12, 20, 44], fov: 50, far: 250 } }}>
             <color attach="background" args={['#17232d']} />
             <ambientLight intensity={1.8} />

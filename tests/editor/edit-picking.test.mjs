@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Group, Mesh, InstancedMesh, BoxGeometry, MeshBasicMaterial, Raycaster, Vector3, Matrix4 } from 'three';
-import { editPickIds, registerEditPickSources } from '../../src/tools/prefabeditor/editPicking.ts';
+import { editPickIds, registerEditPickSources } from '../../src/runtime/scene/editPicking.ts';
 
 test('instanced foreground and ordinary background participate in the same pick cycle', () => {
     const geometry = new BoxGeometry(), material = new MeshBasicMaterial();
@@ -24,4 +24,24 @@ test('instanced foreground and ordinary background participate in the same pick 
     unregister();
     assert.deepEqual(editPickIds(hits, nodes), ['wall']);
     geometry.dispose(); material.dispose();
+});
+
+test('repeated and nested prefab picks select the clicked placement despite source ID collisions', () => {
+    const placement = new Group();
+    placement.userData = {prefabNodeId:'window-6',prefabNodeScope:''};
+    const sourceRoot = new Group();
+    sourceRoot.userData = {prefabNodeId:'window-0',prefabNodeScope:'window-6'};
+    placement.add(sourceRoot);
+    const nested = new Group();
+    nested.userData = {prefabNodeId:'window-0',prefabNodeScope:'window-6/trim'};
+    sourceRoot.add(nested);
+    const mesh = new Mesh();nested.add(mesh);
+    const nodes={'window-0':{id:'window-0'},'window-6':{id:'window-6'}};
+    assert.deepEqual(editPickIds([{object:mesh}],nodes),['window-6']);
+    assert.deepEqual(editPickIds([{object:mesh}],nodes,'window-6'),['window-0']);
+    const batch = new Group();
+    const unregister=registerEditPickSources(batch,[mesh]);
+    assert.deepEqual(editPickIds([{object:batch,instanceId:0}],nodes),['window-6']);
+    assert.deepEqual(editPickIds([{object:batch,instanceId:0}],{...nodes,'window-6':{id:'window-6',locked:true}}),[]);
+    unregister();
 });

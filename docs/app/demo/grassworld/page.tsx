@@ -218,7 +218,6 @@ export default function GrassWorldDemo() {
     return (
         <main className="h-screen w-screen bg-sky-300">
             <PrefabEditor
-                agentId="grassworld"
                 basePath={BASE_PATH}
                 prefab={grassWorldPrefab}
                 mode={PrefabEditorMode.Play}

@@ -1,41 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useThree } from '@react-three/fiber';
-import type { PointLight } from 'three';
-import { registerComponent, useScene, PrefabEditorMode, type Prefab } from 'react-three-game/viewer';
+import { registerComponent, LightCullingGrid, type Prefab } from 'react-three-game/viewer';
 import { PrefabEditor } from 'react-three-game/editor';
 import { BASE_PATH, withBasePath } from '../../basePath';
 import { CharacterComponent } from './components/CharacterComponent';
-import { SurfaceComponent } from './components/SurfaceComponent';
+import { CollisionSurfaceComponent } from './components/CollisionSurfaceComponent';
 import { ConcreteComponent } from './components/ConcreteComponent';
-import { RuinGeometryComponent } from './components/RuinGeometryComponent';
 
 registerComponent(CharacterComponent);
-registerComponent(SurfaceComponent);
+registerComponent(CollisionSurfaceComponent);
 registerComponent(ConcreteComponent);
-registerComponent(RuinGeometryComponent);
-
-// Course geometry and lights are static during play. Editing keeps shadows live.
-function CourseShadows() {
-    const { scene } = useThree();
-    const { mode } = useScene();
-    useEffect(() => {
-        const lights: { light: PointLight; autoUpdate: boolean }[] = [];
-        scene.traverse(object => {
-            const light = object as PointLight;
-            if (!light.isPointLight || !light.castShadow) return;
-            lights.push({ light, autoUpdate: light.shadow.autoUpdate });
-            light.shadow.autoUpdate = mode === PrefabEditorMode.Edit;
-            light.shadow.needsUpdate = true;
-        });
-        return () => lights.forEach(({ light, autoUpdate }) => {
-            light.shadow.autoUpdate = autoUpdate;
-            light.shadow.needsUpdate = true;
-        });
-    }, [scene, mode]);
-    return null;
-}
 
 export default function JumperDemo() {
     const [prefab, setPrefab] = useState<Prefab | null>(null);
@@ -57,8 +32,8 @@ export default function JumperDemo() {
     return <main style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#18180f', color: '#ddd7bd' }}>
         <div id="jumper-canvas" style={{ flex: 1, minHeight: 0, position: 'relative' }}>
             {error ? <p role="alert">{error}</p> : !prefab ? <p>Loading playground…</p> :
-                <PrefabEditor prefab={prefab} agentId="jumper" basePath={BASE_PATH} canvasProps={{ rendererConfig: { toneMappingExposure: 1.15 } }}>
-                    <CourseShadows />
+                <PrefabEditor prefab={prefab} basePath={BASE_PATH} canvasProps={{ rendererConfig: { toneMappingExposure: 1.15 } }}>
+                    <LightCullingGrid cellSize={24} neighborRadius={1} />
                     <color attach="background" args={['#171910']} />
                 </PrefabEditor>}
         </div>

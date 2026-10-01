@@ -1,0 +1,103 @@
+/** Small, serializable entry points; detailed schemas stay behind components() and commands(). */
+export const sceneAgentHelp = {
+    purpose: 'Inspect and edit the running application’s scene: a JSON document of nodes (scene objects) and component settings. Changes stay in memory until saved.',
+    concepts: {
+        component: 'React behavior made available by registerComponent; declares settings exposed in the inspector and API.',
+        schema: 'Supported component settings, types and defaults.',
+        revision: 'Visible scene version for guarded writes, history and advanced coordination. Normal individual edits use the current version automatically.',
+        prefab: 'Reusable scene document storing component type names and settings, not React implementations.',
+        batch: 'Document commands committed together as one update and one undo step.',
+        liveState: 'Animation and physics change mounted objects, not the document. These changes do not advance document revisions or appear in export(); capture() and downloadGLB() capture live objects.',
+    },
+    start: [
+        'scene.find({ query: "north wall" }) // Fast path when one node should match; returns placement and ID.',
+        'scene.search({ query: "wall", limit: 20 }) // Broaden the search when the name is ambiguous.',
+        'scene.get({ id, resolved: true }) // Read full properties only when the search summary is insufficient.',
+        'scene.look({ id }) // Bring the mounted object into view directly from a search result.',
+        'scene.update({ id, transform: { position: [x, y, z] } }) // Edit metadata, transform and components together.',
+        'await scene.capture() // Review with the current view, then repeat the loop.',
+        'await scene.capture({ mode: "wireframe", fov: 55, position: [8, 6, 4], target: [0, 1, 0] }) // Optional capture-only view overrides.',
+    ],
+    methods: {
+        packMany: 'packMany({ids,reuse?,expectedRevision?}) — pack 1–200 disjoint subtrees atomically. reuse:true shares definitions whose components and child structure match, ignoring node IDs/names and root placement. Opt in only for self-contained assemblies; custom ID references are not remapped. Returns reused source IDs. Ancestor/descendant selections are rejected.',
+        pack: 'pack({id,expectedRevision?}) — replace a child subtree with a self-contained PrefabRef. Keeps placement transform/flags, snapshots materials, and creates one undo step. Duplicate the result for more instances; save the scene to persist. References across the packed boundary and custom scripts may need adjustment.',
+        unpack: 'await unpack({id,expectedRevision?}) — load a PrefabRef and expand under its existing placement wrapper, preserving transforms and siblings. One undo step; rejects edits made during loading. Internal IDs are scoped; custom ID strings are not rewritten.',
+        exportPrefab: 'exportPrefab({id}) — return {revision,prefab} for the full subtree, including materials, with the placement transform/flags removed. No truncation and no scene changes. Asset URLs retain the editor basePath convention.',
+        bounds: 'bounds({id}) — live rendered subtree world AABB: {min,max,size,center}, or null when empty. Wait for mounting/assets; includes hidden objects, instancing source meshes, and any mounted helpers. Not collision bounds. Use low-angle captures to verify ground contact.',
+        help: 'help() — this compact guide; no scene changes.',
+        analyze: 'analyze() — document counts and bounded rendering/organization advice. It does not judge visual or behavioral correctness, draw calls or FPS.',
+        info: 'info() — mode, revision, rootId, selection, history and saveMethod. saveMethod names the next callable persistence method.',
+        find: 'find({query?, component?, parentId?}) — require exactly one search match and return its ID, flags, components and local/world transform.',
+        search: 'search({query?, component?, parentId?, recursive?, groupsOnly?, offset?, limit?}) — search IDs/names; recursive includes all descendants of parentId; groupsOnly filters assemblies before pagination.',
+        get: 'get({id, depth?, resolved?}) — node plus flat descendants and truncated flag; node.childIds lists children (not node.children). Use exportPrefab for a complete nested subtree.',
+        getMany: 'getMany({ids, depth?, limit?, resolved?}) — exact full reads for known node IDs and optional resolved component defaults.',
+        components: 'components({names?, properties?}) — registered types, editable fields and evaluated defaults.',
+        commands: 'commands() — batch command inputs and semantics; inspect only when individual methods cannot express the edit.',
+        materials: 'materials({ids?, offset?, limit?}) — summaries, or full definitions for chosen IDs; inspect only before changing shared materials.',
+        validate: 'validate({expectedRevision, commands}) — read-only batch/schema validation plus bounded advisories. It does not judge visual or behavioral correctness.',
+        batch: 'batch({expectedRevision, commands}) — run any supported command sequence atomically as one shared UI undo step; edit mode only.',
+        create: 'create({parentId,node,expectedRevision?}) — add one node or subtree; defaults to the current revision.',
+        update: 'update({id,patch?,transform?,components?,expectedRevision?}) — atomically edit one node’s metadata, transform and component entries.',
+        remove: 'remove({id,expectedRevision?}) — remove one node subtree.',
+        replace: 'replace({id,node,expectedRevision?}) — replace one complete node subtree.',
+        replaceAll: 'replaceAll({prefab,expectedRevision?}) — replace the complete prefab document.',
+        move: 'move({id,parentId,expectedRevision?}) — reparent one node, keeping its local transform.',
+        transform: 'transform({id,space?,position?,rotation?,scale?,expectedRevision?}) — set one node transform.',
+        setComponent: 'setComponent({id,key,component,expectedRevision?}) — add/replace a component; null removes it.',
+        patchComponent: 'patchComponent({id,key,properties,unset?,expectedRevision?}) — patch one existing component.',
+        setMaterial: 'setMaterial({id,material,expectedRevision?}) — add/replace one shared material.',
+        updateMaterial: 'updateMaterial({id,patch,expectedRevision?}) — patch one shared material.',
+        duplicate: 'duplicate({id,newId,parentId?,expectedRevision?}) — duplicate one subtree.',
+        setMode: 'await setMode({mode:"edit"|"play"}) — use the same mode action as the toolbar. Switching mode does not reset live state.',
+        reset: 'await reset() — remount live prefab objects/behaviors from the current document, preserving mode, authored edits and undo. Clears selection; calls onResetScene for external host state. Asset loading may continue after return.',
+        select: 'select({id:string|null}) — select an unlocked document node or clear selection; edit mode only.',
+        getCamera: 'getCamera() — current camera position and orbit target in world coordinates.',
+        setCamera: 'setCamera({position:[x,y,z],target:[x,y,z]}) — position the editor camera; edit mode only. Does not edit the document.',
+        undo: 'undo({expectedRevision?}) — undo the latest shared editor action; revision guard is optional; edit mode only.',
+        redo: 'redo({expectedRevision?}) — redo the latest undone action; revision guard is optional; edit mode only.',
+        look: 'look({id}) — position the viewport around a mounted node; edit mode only.',
+        capture: 'await capture({mode?,fov?,position?,target?,helpers?}) — inline PNG plus capture metadata; mode is default, unlit or wireframe. View/material overrides apply only to the capture. helpers:false hides guides without play/reset; custom guides opt in with userData.editorHelper=true.',
+        downloadGLB: 'await downloadGLB({filename?}) — request a browser GLB download, default scene.glb; returns download metadata.',
+        downloadScreenshot: 'await downloadScreenshot({filename?}) — request a browser PNG download, default screenshot.png; returns download metadata.',
+        export: 'export() — structured full prefab export; does not save it.',
+        exportJSON: 'exportJSON() — complete pretty-printed scene JSON for replacing the source scene file; always available.',
+        save: 'await save({expectedRevision?}) — save the current scene, optionally guarded, through PrefabEditor.onSaveScene; edit mode only.',
+    },
+    workflow: [
+        'Start with find when a query should be unique; use search to explore. Results include IDs, flags, component keys/types and local/world transforms, so navigate or edit directly from them. Use get only when full properties are needed.',
+        'Look at the chosen node, use update for a small object-centric edit, look again after a large move, capture, and repeat.',
+        'Prefer moving, resizing, renaming or removing suitable existing nodes. Create a node only after confirming that a physical or visual role is missing.',
+        'Escalate gradually: one update; then a short sequence of individual operations with review between them; then a small creation; finally batch only when dependent cross-node changes must be atomic.',
+        'Revisions are optional for ordinary individual edits. Use expectedRevision only for guarded coordination.',
+        'Call setMode({mode:"play"}) to check motion after the edit/capture loop.',
+        'Call setMode({mode:"edit"}); reset() restores live objects to authored settings. Then call the saveMethod reported by info(): save() uses the host callback, while exportJSON() returns text to replace the source scene file.',
+    ],
+    outputs: [
+        'Wait for assets before capture/export. PNG excludes HTML but may include canvas helpers. capture can temporarily override render mode, perspective FOV, camera position and target without moving the editor view. If revision and currentRevision differ, read and capture again.',
+        'Set a browser download listener before downloadScreenshot/downloadGLB and check its result. GLB contains rendered prefab objects, not React behavior. GameCanvas/PrefabRoot alone do not expose this API; PrefabEditor showUI={false} does.',
+    ],
+    authoring: [
+        'Group related nodes under a named parent; child transforms are relative to it. Use unique IDs and add parents before children.',
+        'Repeated boxes: Geometry {geometryType:"box",args:[1,1,1]}, dimensions in Transform.scale, Mesh defaults (instanced:true). Matching built-in materials share automatically; reuse materialId for linked edits.',
+        'Inspect nearby peers before composing a node. Preserve the scene’s conventions for component ownership, hierarchy, naming and the distinction between functional objects and visual-only details.',
+        'Prefer a few well-placed objects over repeated decoration. Reuse the scene’s established visual language rather than introducing a new one implicitly.',
+        'Shared material edits affect every user. Prefer a local component/material change unless a scene-wide change is intentional.',
+        'Model.filename loads a known asset URL relative to basePath or a CORS-enabled absolute URL. Model keeps embedded materials; sibling Material does not override them.',
+        'Advisories and analyze() cover bounded structure/rendering hints only. Captures and application-specific review remain responsible for visual and behavioral correctness.',
+    ],
+    example: `// Find, look, update and review without a redundant inspection read.
+async function placeExistingNode(query, position) {
+    const before = scene.find({ query }).node;
+    const id = before.id;
+    scene.look({ id });
+    const result = scene.update({ id, transform: { position } });
+    scene.look({ id });
+    const image = await scene.capture();
+    return { before, result, image }; // Review before saving. undo() remains available.
+}`,
+    rules: [
+        'Y up, XYZ Euler radians. Local transforms are relative to the parent; world transforms require position, rotation and scale.',
+        'Read node.components keys before editing components; keys can differ from type names. Advanced callers may pass expectedRevision; on conflict, read again and adjust.',
+        'After navigation or reload, reacquire window.scene. Query results are copies, not live references.',
+    ],
+};

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { BoxGeometry, Mesh, MeshStandardMaterial } from 'three';
-import { decomposeModelToPrefabNodes } from '../../src/tools/prefabeditor/modelPrefab.ts';
+import { decomposeModelToPrefabNodes } from '../../src/editor/modelPrefab.ts';
 import { importCollisionModel } from '../../src/plugins/crashcat/importCollisionModel.ts';
 
 test('generic model conversion is physics agnostic; collision import is explicitly supplied by the plugin', () => {

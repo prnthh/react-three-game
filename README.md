@@ -108,6 +108,12 @@ registerComponent(Rotator); // Import this module before mounting the scene.
 
 The definition supplies behavior, inspector fields, and agent-readable settings.
 
+For imperative changes, call `notifyObjectChanged(object)` from
+`react-three-game/viewer`, or pass `'geometry'` as the second argument for geometry
+changes. This updates affected colliders, including inherited transforms and
+compound geometry. Authored transforms and primitive geometry notify automatically;
+physics simulation writes do not.
+
 ## Runtime behavior without registration
 
 Add a built-in `Runtime` component to any node to author behavior directly in JSON.

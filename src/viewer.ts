@@ -82,6 +82,7 @@ export type { LightCullingGridOptions } from './runtime/lighting/LightCullingGri
 export { SceneRuntime } from "./runtime/SceneRuntime";
 
 export type { GameObjectHandle } from "./runtime/scene/gameObject";
+export { notifyObjectChanged } from "./runtime/scene/objectChanges";
 
 export { usePrefabDocument, createPrefabDocumentApi } from "./runtime/prefabs/prefabApi";
 export type { PrefabDocumentApi } from "./runtime/scene/SceneContext";

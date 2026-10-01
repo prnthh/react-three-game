@@ -77,7 +77,6 @@ function CameraComponentView({ properties, enabled, children }: ComponentViewPro
         return (
             <group>
                 <DreiOrthographicCamera
-                    key={editMode ? 'edit' : 'play'}
                     ref={orthographicCameraRef}
                     makeDefault={enabled && !editMode && !preparing}
                     near={near}
@@ -98,7 +97,6 @@ function CameraComponentView({ properties, enabled, children }: ComponentViewPro
     return (
         <group>
             <DreiPerspectiveCamera
-                key={editMode ? 'edit' : 'play'}
                 ref={perspectiveCameraRef}
                 makeDefault={enabled && !editMode && !preparing}
                 fov={fov}

@@ -6,7 +6,7 @@ import {normalizePrefab} from '../../src/core/prefab.ts';
 import {createJumperState, stepJumper} from '../app/demo/jumper/movement.ts';
 
 import {resolveCollisionSurfaceSize} from '../app/demo/jumper/components/CollisionSurfaceComponent.tsx';
-import {roughenGeometry} from '../../src/runtime/components/WeatheredGeometryComponent.ts';
+import {roughenGeometry} from '../app/demo/jumper/components/WeatheredGeometryComponent.ts';
 
 import {expandEmbeddedPrefabs,readTestPrefab} from './support/expand-prefabs.mjs';
 const authoredScene=JSON.parse(readFileSync(new URL('../public/prefabs/jumper-course.json',import.meta.url),'utf8'));

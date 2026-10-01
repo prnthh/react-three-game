@@ -8,6 +8,7 @@ import { findComponentEntry } from "../core/types";
 import type { GameObject, Prefab } from "../core/types";
 import GameCanvas from "../runtime/GameCanvas";
 import PrefabRoot from "../runtime/prefabs/PrefabRoot";
+import { EditorNodeStreaming } from "../runtime/prefabs/NodeStreaming";
 import { AssetRuntimeProvider } from "../runtime/assets/AssetRuntime";
 import type { AssetRuntime } from "../runtime/assets/AssetRuntime";
 import { createPrefabRegistry, PrefabEditorMode } from "../runtime/scene/SceneContext";
@@ -866,7 +867,7 @@ export function PrefabEditorScene({ children }: { children?: React.ReactNode; })
     }, [get, isEditMode, setSelection]);
     return <SceneRuntime>
         {isEditMode ? <gridHelper args={[10, 10]} position={[0, -0.001, 0]} /> : null}
-        <PrefabRoot
+        <EditorNodeStreaming enabled={isEditMode}><PrefabRoot
             key={runtimeVersion}
             store={prefabStore}
             editMode={isEditMode}
@@ -878,7 +879,7 @@ export function PrefabEditorScene({ children }: { children?: React.ReactNode; })
             prefab={prefabValue}
         >
             {children}
-        </PrefabRoot>
+        </PrefabRoot></EditorNodeStreaming>
         <DropPreview previewRef={dropPreviewRef} />
 
         {isEditMode && (

@@ -160,7 +160,7 @@ function createAndRegisterBody(
 }
 
 function CrashcatPhysicsView({ properties, children }: ComponentViewProps<CrashcatPhysicsProperties>) {
-    const { nodeId, editMode } = useNode();
+    const { nodeId } = useNode();
     const gameObject = useGameObject();
     const runtimeNodeId = gameObject.id;
     const api = useCrashcat();
@@ -179,11 +179,18 @@ function CrashcatPhysicsView({ properties, children }: ComponentViewProps<Crashc
     const syncQuaternionRef = useRef<[number, number, number, number]>([0, 0, 0, 1]);
     const lastPositionRef = useRef<[number, number, number] | null>(null);
     const lastQuaternionRef = useRef<[number, number, number, number] | null>(null);
+    const [objectRevision, setObjectRevision] = useState(0);
     const physics = properties;
 
     useEffect(() => {
-        // Also rebuild on mode changes: ancestor edits can change world transforms
-        // without changing this node (including bodies inside referenced prefabs).
+        const object = gameObject.transform;
+        if (!object) return;
+        const invalidate = () => setObjectRevision(revision => revision + 1);
+        object.addEventListener('objectchange', invalidate);
+        return () => object.removeEventListener('objectchange', invalidate);
+    }, [gameObject]);
+
+    useEffect(() => {
         void loadedModel;
         if (!api) return;
         const object = gameObject.transform;
@@ -221,11 +228,10 @@ function CrashcatPhysicsView({ properties, children }: ComponentViewProps<Crashc
         };
     }, [
         api,
-        editMode,
+        objectRevision,
         gameObject,
         runtimeNodeId,
         physics,
-        node,
         loadedModel,
     ]);
 

@@ -1,4 +1,5 @@
-import { useNode, usePrefab } from "../scene/SceneContext";
+import { useGameObject, useNode, usePrefab } from "../scene/SceneContext";
+import { notifyObjectChanged } from '../scene/objectChanges';
 import type { GameObject } from "../../core/types";
 import { useInvalidateMeshInstances } from "../rendering/MeshInstanceProvider";
 import { getComponent, getComponentRegistryVersion, resolveComponentProperties, type Component, type ComponentViewProps } from "../../core/ComponentRegistry";
@@ -153,7 +154,11 @@ function GeometryComponentView({ properties, children }: ComponentViewProps<Geom
         finally { if (result !== source) source.dispose(); }
     });
     const invalidateInstances = useInvalidateMeshInstances();
-    useLayoutEffect(invalidateInstances, [geometry, invalidateInstances]);
+    const object = useGameObject();
+    useLayoutEffect(() => {
+        invalidateInstances();
+        if (object.transform) notifyObjectChanged(object.transform, 'geometry');
+    }, [geometry, invalidateInstances, object]);
     return <><primitive object={geometry} attach="geometry" dispose={null} />{children}</>;
 }
 

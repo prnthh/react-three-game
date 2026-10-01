@@ -1,4 +1,6 @@
-import { memo, useCallback, useContext, useMemo, useRef } from "react";
+import { Suspense, memo, useCallback, useContext, useLayoutEffect, useMemo, useRef } from "react";
+import { notifyObjectChanged } from '../scene/objectChanges';
+import { useNodeMountReady } from './NodeStreaming';
 import type { Object3D } from "three";
 import { getNodeUserData, type GameObject as GameObjectType } from "../../core/types";
 import { usePrefabRenderNode } from "./PrefabStoreContext";
@@ -31,6 +33,7 @@ export const PrefabNode = memo(function PrefabNode({
     preparing = false,
 }: RendererProps) {
     const [gameObject, childIds] = usePrefabRenderNode(nodeId);
+    const mountReady = useNodeMountReady();
     const scope = useContext(RuntimeNodeIdPrefixContext);
     const analyzedComponents = useMemo(
         () => gameObject ? analyzeNodeComponents(gameObject) : EMPTY_NODE_COMPONENTS,
@@ -40,6 +43,12 @@ export const PrefabNode = memo(function PrefabNode({
     const { transform } = analyzedComponents;
 
     const groupRef = useRef<Object3D | null>(null);
+    useLayoutEffect(() => {
+        if (groupRef.current) notifyObjectChanged(groupRef.current);
+    }, [...transform.position, ...transform.rotation, ...transform.scale]);
+    useLayoutEffect(() => {
+        if (groupRef.current) notifyObjectChanged(groupRef.current, 'geometry');
+    }, [childIds, mountReady]);
     const handleGroupRef = useCallback((object: Object3D | null) => {
         groupRef.current = object;
         registerRef(nodeId, object);
@@ -83,7 +92,9 @@ export const PrefabNode = memo(function PrefabNode({
                 {...primaryInteractionHandlers}
                 visible={nodeVisible}
             >
-                {inner}
+                {/* Keep the transform and editor registration alive while this
+                    node loads. Sibling nodes and canvas controls stay mounted. */}
+                <Suspense fallback={null}>{mountReady ? inner : null}</Suspense>
             </group>
         </NodeScope>
     );
@@ -131,4 +142,3 @@ function renderNodeContent(
     }
     return content;
 }
-

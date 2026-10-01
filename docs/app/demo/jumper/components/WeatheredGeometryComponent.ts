@@ -1,6 +1,6 @@
 import type { BufferGeometry } from "three";
+import type { Component } from "react-three-game/core";
 import { toCreasedNormals } from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import type { Component } from "../../core/ComponentRegistry";
 
 /** Clone and roughen any geometry; coincident vertices move together to keep seams closed. */
 export function roughenGeometry(source: BufferGeometry, amount: number, seed: number, preserveTop = false, preserveBottom = false, displacementScale: readonly number[] = [1, 1, 1]) {
@@ -27,6 +27,7 @@ export function roughenGeometry(source: BufferGeometry, amount: number, seed: nu
     result.computeBoundingSphere();
     return result;
 }
+
 
 type Properties = { amount: number; seed: number; preserveTop: boolean; preserveBottom: boolean; displacementScale: [number, number, number] };
 

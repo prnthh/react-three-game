@@ -7,7 +7,6 @@ import RuntimeComponent from "./RuntimeComponent";
 import DirectionalLightComponent from "./DirectionalLightComponent";
 import EnvironmentComponent from "./EnvironmentComponent";
 import FogComponent from "./FogComponent";
-import WeatheredGeometryComponent from "./WeatheredGeometryComponent";
 import GeometryComponent from "./GeometryComponent";
 import HemisphereLightComponent from "./HemisphereLightComponent";
 import MaterialComponent from "./MaterialComponent";
@@ -30,7 +29,6 @@ export const builtInComponents: readonly Component<any>[] = [
 
 	// Geometry components
 	GeometryComponent,
-	WeatheredGeometryComponent,
 	BufferGeometryComponent,
 	ModelComponent,
 	AnimatedModelComponent,

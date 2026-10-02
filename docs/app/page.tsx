@@ -85,7 +85,7 @@ export default function Home() {
         <div className="text-center font-bold">
           <h1 className="metal-title mb-2">REACT-THREE-GAME</h1>
           <div className="metal-subtitle mt-1">
-            WebGPU rendering and scene authoring
+            A game creation toolbox for the web
           </div>
         </div>
 
@@ -113,7 +113,7 @@ export default function Home() {
       <DemoApp />
     </main>
     <div className="relative flex w-full flex-col items-center gap-6 bg-zinc-950 py-12 text-center">
-      <p className="max-w-2xl px-4 text-zinc-300">Compose with React Three Fiber, author scenes visually or through the agent API, and keep gameplay rules and simulation in your application.</p>
+      <p className="max-w-2xl px-4 text-zinc-300">Build games with JavaScript and Three.js, a visual scene editor, and WebGPU rendering. We use React to make behavior reusable and easy to compose, so the components you start with can grow with your game. Grab a demo and build from there.</p>
       <div className="flex w-full max-w-5xl flex-col gap-5 px-4 md:flex-row">
         <Section className="flex-1">
           <Features />

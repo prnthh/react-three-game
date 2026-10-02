@@ -4,7 +4,6 @@ import { createPrefabRegistry, PrefabContext, PrefabEditorMode, SceneContext } f
 import type { PrefabApi, Scene } from "./SceneContext";
 import { useAssetRuntime } from "../assets/AssetRuntime";
 import { SelectionRuntimeProvider } from "./SelectionRuntime";
-import { MaterialRuntimeProvider } from "../components/MaterialComponent";
 import { PrefabStoreProvider } from "../prefabs/PrefabStoreContext";
 import { type PrefabStoreApi } from "../../core/prefabStore";
 import { SceneRuntime } from "../SceneRuntime";
@@ -46,7 +45,7 @@ function PrefabScope({ store, scene, prefab, editMode, basePath = "", children }
 
     return <SceneContext.Provider value={resolvedScene}>
         <PrefabContext.Provider value={resolvedPrefab}>
-            <MaterialRuntimeProvider>{children}</MaterialRuntimeProvider>
+            {children}
         </PrefabContext.Provider>
     </SceneContext.Provider>;
 }

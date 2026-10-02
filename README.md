@@ -1,7 +1,12 @@
 # React Three Game
 
-Build scene behavior as React components. Let agents compose and tune their settings
-through the running editor, then save the scene. Built for React Three Fiber with WebGPU.
+A game creation toolbox for the web. Build games with JavaScript and Three.js,
+WebGPU rendering, and a visual scene editor.
+
+We use React and React Three Fiber to make behavior reusable and easy to compose.
+Start with small components, then build on them as your game grows. Assemble
+scenes in the editor and save them as JSON prefabs. Agents can help compose and
+tune scenes through the editor API too.
 
 Install it in your own React app: use `PrefabEditor` for editing, or `GameCanvas`
 and `PrefabRoot` for playback. The website is a demo of these same components.
@@ -45,15 +50,31 @@ With `active={false}`, the prepared instance stays hidden and inactive until ena
 
 The underlying `useAssetRuntime().preparePrefab(url, { basePath, signal })` discovers
 nested prefab documents and declared model, texture, and sound dependencies. It
-deduplicates loads, rejects cycles and unknown components, and retains resources
-until the returned `PreparedPrefab.release()` is called. Custom components must
+deduplicates loads and rejects cycles and unknown components. Custom components must
 declare their assets through `dependencies` for preparation to discover them.
 Preparation covers asset loading; GPU compilation and gameplay activation belong
 to `PrefabInstance`.
 
-`PrefabRoot` and editor `PrefabRef` rendering load incrementally and do not provide
-that whole-instance readiness guarantee. Use them for live authoring, or when your
-application manages readiness itself.
+`PrefabRoot` renders model/reference content independently of placement children. Resource reads participate in React
+Suspense and use one `suspend-react` cache for decoded assets. Environments and prepared instances wait
+for their complete content. `PrefabRef` keeps the current
+instance visible while a replacement document loads and preserves matching objects.
+
+Loading failures are contained by the same node or whole-instance boundary that
+owns loading. Failed nodes retry on document edits; prepared instances report an
+error through `onStatus`. Other rendering errors still propagate to the application.
+URL assets remain cached across scene unmounts.
+After unmounting consumers and finishing pending loads, hosts can call
+`runtime.clearAsset(kind, resolvedPath)` (`kind`: `model`, `texture`, `sound`, or
+`prefab`) to evict an unused source from the runtime overrides and asset cache. It returns
+that source for host-owned Three.js disposal; eviction never disposes live objects.
+Embedded prefab references clear obsolete source revisions when replaced or unmounted.
+Imperative preparation awaits the same cache entries that rendering reads.
+Three's global cache settings are left to the host application.
+Shared source geometry, materials and textures must not be mutated or disposed by
+individual instances; instance-local objects and configured copies keep their own
+cleanup. Drei's `useProgress` reports underlying Three loader activity; it does not
+include prefab JSON or audio fetched directly.
 
 ## Point light grid
 
@@ -281,6 +302,9 @@ npm test
 npm run build
 npm --prefix docs run build
 ```
+
+The docs app imports local source directly; `npm run dev` does not require a library
+build or a separate TypeScript watcher. `npm run build` generates the published package.
 
 `npm test` runs library and docs tests. Use `npm run test:lib` or `npm run test:docs`
 to run either suite separately. Library tests live in `tests`; demo tests live in `docs/tests`.

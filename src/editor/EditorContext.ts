@@ -20,6 +20,7 @@ export interface PrefabEditorRef extends Scene, PrefabApi {
 }
 
 export interface EditorContextType {
+    createPrefab?: () => Prefab;
     transformMode: "translate" | "rotate" | "scale";
     setTransformMode: (mode: "translate" | "rotate" | "scale") => void;
     scaleSnap: number;

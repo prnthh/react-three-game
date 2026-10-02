@@ -31,8 +31,7 @@ function PrefabRefEditor({ node, properties, update }: ComponentEditorProps<Pref
     useEffect(() => {
         if (!embedded) return;
         let active = true;
-        const lease = runtime.acquirePrefab(url);
-        void lease.ready.then(document => {
+        void runtime.loadDocument(url).then(document => {
             if (!active) return;
             const name = document.prefabName?.trim() || document.nodesById[document.rootId].name?.trim()
                 || document.prefabId || document.rootId;
@@ -40,7 +39,7 @@ function PrefabRefEditor({ node, properties, update }: ComponentEditorProps<Pref
         }).catch(() => {
             if (active) setSourceName({ url, name: 'Unavailable prefab' });
         });
-        return () => { active = false; lease.release(); };
+        return () => { active = false; };
     }, [embedded, runtime, url]);
 
     useEffect(() => {

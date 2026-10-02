@@ -1,41 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ResourceCache } from '../../src/runtime/assets/ResourceCache.ts';
 import { normalizePrefab } from '../../src/core/prefab.ts';
-import { createPrefabStore } from "../../src/core/prefabStore.ts";
+import { createPrefabStore } from "../../src/core/prefabStore";
+import { assetLoaders, clearAsset, getAsset, loadAsset, useAsset } from '../../src/runtime/assets/assetCache.ts';
 
-const flush = () => new Promise(resolve => queueMicrotask(resolve));
-
-test('shared leases load once; release is idempotent and active assets cannot be evicted', async () => {
-    let loads = 0;
-    const disposed = [];
-    const cache = new ResourceCache(value => disposed.push(value), 0);
-    const load = async () => { loads++; return { name: 'shared' }; };
-    const a = cache.acquire('a', load), b = cache.acquire('a', load);
-    assert.equal(await a.ready, await b.ready);
-    assert.equal(loads, 1);
-    a.release(); a.release(); await flush();
-    assert.equal(disposed.length, 0);
-    b.release(); await flush();
-    assert.equal(disposed.length, 1);
-    cache.dispose();
-    assert.equal(disposed.length, 1);
-});
-
-test('failed resources can retry; disposal cleans late completions exactly once', async () => {
-    const disposed = [];
-    const cache = new ResourceCache(value => disposed.push(value));
-    const failed = cache.acquire('a', async () => { throw Error('offline'); });
-    await assert.rejects(failed.ready, /offline/);
-    failed.release();
-    const retry = cache.acquire('a', async () => 'ok');
-    assert.equal(await retry.ready, 'ok');
-    let finish;
-    const pending = cache.acquire('b', () => new Promise(resolve => { finish = resolve; }));
-    await flush();
-    cache.dispose(); finish('late');
-    await assert.rejects(pending.ready, /disposed/);
-    assert.deepEqual(disposed, ['ok', 'late']);
+test('absent optional assets do not load or suspend', () => {
+    for (const path of [undefined, null, '']) {
+        assert.equal(useAsset('prefab', path), null);
+    }
 });
 
 test('instances share immutable definitions but edits stay local', () => {
@@ -46,18 +18,70 @@ test('instances share immutable definitions but edits stay local', () => {
     assert.equal(document.nodesById.child.name, 'original');
 });
 
-test('replacing a resource preserves old live instances until their leases release', async () => {
-    const disposed = [];
-    const cache = new ResourceCache(value => disposed.push(value), 0);
-    const old = cache.acquire('texture', async () => 'old');
-    await old.ready;
-    cache.invalidate('texture');
-    const current = cache.acquire('texture', async () => 'new');
-    await current.ready;
-    assert.deepEqual(disposed, []);
-    old.release(); await flush();
-    assert.deepEqual(disposed, ['old']);
-    assert.equal(cache.get('texture'), 'new');
-    current.release(); await flush();
-    assert.deepEqual(disposed, ['old', 'new']);
+
+test('clearing a decoded prefab cache reloads its source without mutating existing documents', async t => {
+    let revision = 'first';
+    const request = t.mock.method(globalThis, 'fetch', async () => new Response(JSON.stringify({ root: { id: 'root', name: revision } })));
+    const first = await loadAsset('prefab', '/cache-lifetime.json');
+    assert.equal(await loadAsset('prefab', '/cache-lifetime.json'), first);
+    assert.equal(clearAsset('prefab', '/cache-lifetime.json'), first);
+    assert.equal(getAsset('prefab', '/cache-lifetime.json'), null);
+    revision = 'second';
+    const next = await loadAsset('prefab', '/cache-lifetime.json');
+    assert.equal(first.nodesById.root.name, 'first');
+    assert.equal(next.nodesById.root.name, 'second');
+    assert.equal(request.mock.callCount(), 2);
+    clearAsset('prefab', '/cache-lifetime.json');
+});
+
+test('clearing an in-flight load prevents it from repopulating the decoded cache', async t => {
+    let finish;
+    const response = new Promise(resolve => { finish = resolve; });
+    t.mock.method(globalThis, 'fetch', () => response);
+    let pending;
+    try { useAsset('prefab', '/cache-pending.json'); } catch (value) { pending = value; }
+    assert.ok(pending instanceof Promise);
+    clearAsset('prefab', '/cache-pending.json');
+    finish(new Response(JSON.stringify({ root: { id: 'root' } })));
+    await pending;
+    assert.equal(getAsset('prefab', '/cache-pending.json'), null);
+});
+
+
+test('imperative preparation and Suspense reads share pending and decoded assets in either order', async t => {
+    for (const renderFirst of [true, false]) {
+        const path = `/shared-${renderFirst}.json`;
+        let finish;
+        const source = new Promise(resolve => { finish = resolve; });
+        const decode = t.mock.method(assetLoaders, 'prefab', () => source);
+        let renderPending;
+        const read = () => { try { useAsset('prefab', path); } catch (pending) { renderPending = pending; } };
+        if (renderFirst) read();
+        const prepared = loadAsset('prefab', path);
+        if (!renderFirst) read();
+        assert.ok(renderPending instanceof Promise);
+        const document = normalizePrefab({ root: { id: 'root' } });
+        finish(document);
+        assert.equal(await prepared, document);
+        await renderPending;
+        assert.equal(useAsset('prefab', path), document);
+        assert.equal(getAsset('prefab', path), document);
+        assert.equal(decode.mock.callCount(), 1);
+        clearAsset('prefab', path);
+        decode.mock.restore();
+    }
+});
+
+test('failed imperative loads reject and can retry without poisoning the render cache', async t => {
+    let attempts = 0;
+    const document = normalizePrefab({ root: { id: 'root' } });
+    t.mock.method(assetLoaders, 'prefab', async () => {
+        if (++attempts === 1) throw new Error('offline');
+        return document;
+    });
+    await assert.rejects(loadAsset('prefab', '/retry.json'), /offline/);
+    assert.equal(await loadAsset('prefab', '/retry.json'), document);
+    assert.equal(useAsset('prefab', '/retry.json'), document);
+    assert.equal(attempts, 2);
+    clearAsset('prefab', '/retry.json');
 });

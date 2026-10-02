@@ -1,12 +1,14 @@
+import { AssetBoundary } from '../assets/AssetBoundary';
+import { usePrefabStoreApi } from '../prefabs/PrefabStoreContext';
 import { useFrame } from '@react-three/fiber';
 
-import { Suspense, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { AnimationMixer, LoopRepeat, Mesh, type AnimationAction, type AnimationClip, type Object3D } from 'three';
 
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 
-import { useSuspenseModelAsset } from '../assets/AssetRuntime';
+import { useModelAsset } from '../assets/AssetRuntime';
 
 import { createNodeComponentType, usePrefab, useRegisterNodeComponent } from '../scene/SceneContext';
 
@@ -57,7 +59,7 @@ function AutoAnimationUpdate({ mixer }: { mixer: AnimationMixer }) {
 }
 
 function LoadedAnimatedModel({ properties, enabled, path }: { properties: AnimatedModelProperties; enabled: boolean; path: string }) {
-    const source = useSuspenseModelAsset(path);
+    const source = useModelAsset(path);
     const currentActionRef = useRef<AnimationAction | null>(null);
     const stateRef = useRef(properties.animationState ?? '');
     const object = useMemo(() => {
@@ -133,9 +135,10 @@ function LoadedAnimatedModel({ properties, enabled, path }: { properties: Animat
 
 function AnimatedModelView({ properties, enabled, children }: ComponentViewProps<AnimatedModelProperties>) {
     const { basePath } = usePrefab();
+    const store = usePrefabStoreApi();
     const resolvedFilename = properties.filename ? withBasePath(basePath, properties.filename) : '';
     return <>
-        {resolvedFilename ? <Suspense fallback={null}><LoadedAnimatedModel properties={properties} enabled={enabled} path={resolvedFilename} /></Suspense> : null}
+        {resolvedFilename ? <AssetBoundary subscribeToRetry={store.subscribe}><LoadedAnimatedModel properties={properties} enabled={enabled} path={resolvedFilename} /></AssetBoundary> : null}
         {children}
     </>;
 }

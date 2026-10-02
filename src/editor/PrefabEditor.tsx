@@ -227,6 +227,8 @@ export interface PrefabEditorProps {
     agentTools?: boolean;
     /** Optional host persistence adapter. Agent saves never trigger a file dialog. */
     onSaveScene?: (prefab: Prefab) => void | Promise<void>;
+    /** Host-owned starter document for the New Prefab menu action. Defaults to an empty prefab. */
+    createPrefab?: () => Prefab;
     /** Reset host-owned game state before the live prefab subtree remounts. */
     onResetScene?: () => void | Promise<void>;
     enableWindowDrop?: boolean;
@@ -825,6 +827,7 @@ export const PrefabEditorProvider = forwardRef<PrefabEditorRef, PrefabEditorProv
                 <EditorStateContext.Provider value={state}>
                     <EditorRefContext.Provider value={state.editorRefValue}>
                         <EditorContext.Provider value={{
+                            createPrefab: props.createPrefab,
                             transformMode: state.transformMode, setTransformMode: state.setTransformMode,
                             scaleSnap: state.scaleSnap, setScaleSnap: state.setScaleSnap,
                             positionSnap: state.positionSnap, setPositionSnap: state.setPositionSnap,

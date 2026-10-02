@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, type RefObject } from 'react';
-import { DoubleSide } from 'three';
+import { DoubleSide, Quaternion, Vector3 } from 'three';
 
 export const MIN_SHADOW_MAP_SIZE = 64;
 export const MAX_SHADOW_MAP_SIZE = 2048;
@@ -8,27 +8,35 @@ export const MAX_SHADOW_MAP_SIZE = 2048;
 export function EditorLightGizmo({
     color,
     selected = false,
+    targetOffset = [0, -1, 0],
 }: {
     color: string;
     selected?: boolean;
+    targetOffset?: [number, number, number];
 }) {
+    // The target is local to the node; its transform rotates both the light and this guide.
+    const orientation = new Quaternion().setFromUnitVectors(
+        new Vector3(0, -1, 0), new Vector3(...targetOffset).normalize(),
+    );
     return (
-        <mesh
-            position={[0, -0.22, 0]}
-            renderOrder={10_000}
-        >
-            <coneGeometry args={[0.36, 0.72, 12, 1, true]} />
-            <meshBasicMaterial
-                color={selected ? '#ffffff' : color}
-                depthTest={false}
-                depthWrite={false}
-                opacity={selected ? 0.95 : 0.62}
-                side={DoubleSide}
-                toneMapped={false}
-                transparent
-                wireframe
-            />
-        </mesh>
+        <group quaternion={orientation}>
+            <mesh
+                position={[0, -0.22, 0]}
+                renderOrder={10_000}
+            >
+                <coneGeometry args={[0.36, 0.72, 12, 1, true]} />
+                <meshBasicMaterial
+                    color={selected ? '#ffffff' : color}
+                    depthTest={false}
+                    depthWrite={false}
+                    opacity={selected ? 0.95 : 0.62}
+                    side={DoubleSide}
+                    toneMapped={false}
+                    transparent
+                    wireframe
+                />
+            </mesh>
+        </group>
     );
 }
 

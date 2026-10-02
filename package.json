@@ -46,7 +46,7 @@
 	"scripts": {
 		"clean": "rm -rf dist",
 		"watch": "npm run clean && tsc --watch",
-		"dev": "npm run build && concurrently \"tsc --watch\" \"cd docs && npm run dev\"",
+		"dev": "npm run dev --workspace docs",
 		"build": "npm run clean && tsc",
 		"prepack": "npm run build",
 		"release": "npm publish --access public",
@@ -90,6 +90,7 @@
 		"vite": ">=8.0.16"
 	},
 	"dependencies": {
-		"zustand": ">=5.0.14"
+		"zustand": ">=5.0.14",
+		"suspend-react": "^0.1.3"
 	}
 }

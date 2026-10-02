@@ -6,12 +6,12 @@ import { PrefabEditor } from 'react-three-game/editor';
 import { BASE_PATH, withBasePath } from '../../basePath';
 import { CharacterComponent } from './components/CharacterComponent';
 import { CollisionSurfaceComponent } from './components/CollisionSurfaceComponent';
-import { ConcreteComponent } from './components/ConcreteComponent';
+import { ConcreteMaterialComponent } from './components/ConcreteMaterialComponent';
 import WeatheredGeometryComponent from './components/WeatheredGeometryComponent';
 
 registerComponent(CharacterComponent);
 registerComponent(CollisionSurfaceComponent);
-registerComponent(ConcreteComponent);
+registerComponent(ConcreteMaterialComponent);
 registerComponent(WeatheredGeometryComponent);
 
 export default function JumperDemo() {

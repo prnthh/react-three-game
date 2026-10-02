@@ -64,3 +64,12 @@ test('geometry modifiers update immediately, stay node-local and restore the sha
  await update({modifier:scale});assert.equal(a.geometry,scaled,'same parameters reuse cached geometry');
  await update({});assert.equal(a.geometry,base,'removing modifier restores base without reset');
 });
+
+ test('geometry modifiers receive the node transform scale independently of component keys',()=>{
+    registerComponent({name:'TestCompensatedDisplacement',properties:{},modifyGeometry:(source,p,context)=>source.clone().translate(.1/context.scale[0],.1/context.scale[1],.1/context.scale[2])});
+    const node={id:'scaled',components:{placement:{type:'Transform',properties:{scale:[2,40,3]}},damage:{type:'TestCompensatedDisplacement',properties:{}}}};
+    const source=new BoxGeometry(1,1,1);
+    const result=applyGeometryModifiers(source,getGeometryModifiers(node));
+    for(let axis=0;axis<3;axis++)assert.ok(Math.abs((result.attributes.position.array[axis]-source.attributes.position.array[axis])*[2,40,3][axis]-.1)<1e-5);
+    source.dispose();result.dispose();
+ });

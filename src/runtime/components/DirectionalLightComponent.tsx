@@ -85,6 +85,7 @@ function DirectionalLightView({ properties, children }: ComponentViewProps<Direc
                     <EditorLightGizmo
                         color={merged.color}
                         selected={isSelected}
+                        targetOffset={merged.targetOffset}
                     />
                 ) : null}
                 {editMode && isSelected && (

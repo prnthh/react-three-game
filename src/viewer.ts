@@ -30,7 +30,6 @@ export type { AssetRuntime } from "./runtime/assets/AssetRuntime";
 export {
 	useAssetRuntime,
 	useTextureAsset,
-	useScenePendingLoads,
 	AssetRuntimeProvider,
 } from "./runtime/assets/AssetRuntime";
 
@@ -57,13 +56,12 @@ export type {
 	ProgressCallback,
 } from "./runtime/assets/assetLoaders";
 
-export { MaterialOverridesProvider, useMaterialOverrides } from "./runtime/components/MaterialComponent";
+export { default as MaterialComponent, MaterialOverridesProvider, useMaterialOverrides } from "./runtime/components/MaterialComponent";
 export type { MaterialOverrides } from "./runtime/components/MaterialComponent";
 
 export { PrefabInstance } from "./runtime/prefabs/PrefabInstance";
 export type { PrefabInstanceProps, PrefabInstanceStatus } from "./runtime/prefabs/PrefabInstance";
 export type { PreparedPrefab, PrefabPreparationOptions } from "./runtime/prefabs/preparePrefab";
-export { useSceneLoadStats } from "./runtime/assets/AssetRuntime";
 export { createPrefabStore } from "./core/prefabStore";
 export { usePrefabStore, usePrefabStoreApi } from "./runtime/prefabs/PrefabStoreContext";
 export type { PrefabStoreApi, PrefabStoreState } from "./core/prefabStore";

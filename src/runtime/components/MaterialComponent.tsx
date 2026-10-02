@@ -2,7 +2,7 @@ import { registerInstancedMaterial } from '../rendering/materialInstancing';
 import type { Node } from 'three/webgpu';
 import { useInvalidateMeshInstances } from "../rendering/MeshInstanceProvider";
 import { BackSide, DoubleSide, NearestFilter, NearestMipmapNearestFilter, NearestMipmapLinearFilter, LinearMipmapNearestFilter } from "three";
-import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { applyProps, extend } from '@react-three/fiber';
 
@@ -52,6 +52,8 @@ export type MaterialOverrides = Record<string, unknown>;
 
 const EMPTY_MATERIAL_OVERRIDES: MaterialOverrides = Object.freeze({});
 
+const MaterialOverrideKeyContext = createContext<string | undefined>(undefined);
+
 const MaterialOverridesContext = createContext<MaterialOverrides>(EMPTY_MATERIAL_OVERRIDES);
 
 const SIDE_MAP = { FrontSide, BackSide, DoubleSide } as const;
@@ -92,44 +94,6 @@ function configureTexture(
     texture.needsUpdate = true;
 }
 
-function useConfiguredTexture(texture: Texture | null | undefined, options: TextureConfig) {
-    const {
-        colorSpace,
-        repeat,
-        repeatCount,
-        offset,
-        generateMipmaps,
-        minFilter,
-        magFilter,
-    } = options;
-    const configuredTexture = useMemo(() => texture?.clone(), [texture]);
-
-    useLayoutEffect(() => {
-        configureTexture(configuredTexture, {
-            colorSpace,
-            repeat,
-            repeatCount,
-            offset,
-            generateMipmaps,
-            minFilter,
-            magFilter,
-        });
-    }, [
-        configuredTexture,
-        colorSpace,
-        repeat,
-        repeatCount,
-        offset,
-        generateMipmaps,
-        minFilter,
-        magFilter,
-    ]);
-
-    useEffect(() => () => configuredTexture?.dispose(), [configuredTexture]);
-
-    return configuredTexture;
-}
-
 export function useMaterialOverrides(): MaterialOverrides {
     return useContext(MaterialOverridesContext);
 }
@@ -137,13 +101,19 @@ export function useMaterialOverrides(): MaterialOverrides {
 export function MaterialOverridesProvider({
     overrides,
     children,
+    cacheKey,
 }: {
     overrides: MaterialOverrides;
     children: ReactNode;
+    /** Opt in to sharing immutable overrides. Include every override value in this key. */
+    cacheKey?: string;
 }) {
     const parent = useContext(MaterialOverridesContext);
     const merged = useMemo(() => ({ ...parent, ...overrides }), [parent, overrides]);
-    return <MaterialOverridesContext.Provider value={merged}>{children}</MaterialOverridesContext.Provider>;
+    // Nested overrides may carry per-object values, so only share an otherwise empty scope.
+    return <MaterialOverrideKeyContext.Provider value={Object.keys(parent).length ? undefined : cacheKey}>
+        <MaterialOverridesContext.Provider value={merged}>{children}</MaterialOverridesContext.Provider>
+    </MaterialOverrideKeyContext.Provider>;
 }
 
 extend({
@@ -154,40 +124,20 @@ extend({
 
 type RuntimeMaterial = MeshBasicNodeMaterial | MeshStandardNodeMaterial | SpriteNodeMaterial;
 
-type SharedMaterials = { byId: ReadonlyMap<string, RuntimeMaterial> };
-const materialSources = new WeakMap<Material, Material>();
-const SharedMaterialsContext = createContext<SharedMaterials>({ byId: new Map() });
 type MaterialEntry = {
     key: string;
     material: Material;
     references: number;
-    configured: boolean;
-    configuration?: { properties: PrefabMaterial; basePath: string };
 };
 
 class SceneMaterialPool {
     readonly entries = new Map<string, MaterialEntry>();
-    private listeners = new Set<() => void>();
-    private revision = 0;
-    private scheduled = false;
     lifetime: object | null = null;
-    subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
-    getSnapshot = () => this.revision;
-    changed = () => {
-        if (this.scheduled) return;
-        this.scheduled = true;
-        queueMicrotask(() => {
-            this.scheduled = false;
-            this.revision++;
-            this.listeners.forEach(listener => listener());
-        });
-    };
-    get(key: string, create: () => Material, configuration?: MaterialEntry['configuration']) {
+    get(key: string, create: () => Material) {
         let entry = this.entries.get(key);
         if (!entry) {
-            entry = { key, material: create(), references: 0, configured: !configuration, configuration };
+            entry = { key, material: create(), references: 0 };
             this.entries.set(key, entry);
-            this.changed();
         }
         return entry;
     }
@@ -199,7 +149,6 @@ class SceneMaterialPool {
                 if (entry.references > 0 || this.entries.get(entry.key) !== entry) return;
                 this.entries.delete(entry.key);
                 entry.material.dispose();
-                this.changed();
             });
         };
     }
@@ -222,32 +171,6 @@ function getMaterialSignature(material: PrefabMaterial, basePath: string) {
     }).sort(([left], [right]) => left.localeCompare(right)));
 }
 
-function ConfiguredSharedMaterial({ entry, pool }: { entry: MaterialEntry; pool: SceneMaterialPool }) {
-    const { basePath, properties } = entry.configuration!;
-    const material = entry.material as RuntimeMaterial;
-    const textureName = properties.texture;
-    const normalMapTextureName = properties.normalMapTexture;
-    const texture = useTextureAsset(textureName ? withBasePath(basePath, textureName) : textureName) ?? undefined;
-    const normalMapTexture = useTextureAsset(normalMapTextureName ? withBasePath(basePath, normalMapTextureName) : normalMapTextureName) ?? undefined;
-    const textureConfig = {
-        repeat: properties.repeat, repeatCount: properties.repeatCount, offset: properties.offset,
-        generateMipmaps: properties.generateMipmaps !== false,
-        minFilter: MIN_FILTER_MAP[properties.minFilter ?? 'LinearMipmapLinearFilter'] ?? LinearMipmapLinearFilter,
-        magFilter: MAG_FILTER_MAP[properties.magFilter ?? 'LinearFilter'] ?? LinearFilter,
-    };
-    const map = useConfiguredTexture(texture, { ...textureConfig, colorSpace: SRGBColorSpace });
-    const normalMap = useConfiguredTexture(normalMapTexture, { ...textureConfig, colorSpace: NoColorSpace });
-    useLayoutEffect(() => {
-        applyMaterialProperties(material, properties, map, normalMap, EMPTY_MATERIAL_OVERRIDES);
-        entry.configured = (!textureName || !!map) && (!normalMapTextureName || !!normalMap);
-        pool.changed();
-    }, [entry, map, material, normalMap, normalMapTextureName, pool, properties, textureName]);
-    return null;
-}
-
-export function MaterialRuntimeProvider({ children }: { children: ReactNode }) {
-    return <MaterialPoolProvider><MaterialRuntimeLayer>{children}</MaterialRuntimeLayer></MaterialPoolProvider>;
-}
 export function MaterialPoolProvider({ children }: { children: ReactNode }) {
     const inherited = useContext(SceneMaterialPoolContext);
     if (inherited) return children;
@@ -255,7 +178,6 @@ export function MaterialPoolProvider({ children }: { children: ReactNode }) {
 }
 function SceneMaterialPoolOwner({ children }: { children: ReactNode }) {
     const [pool] = useState(() => new SceneMaterialPool());
-    useSyncExternalStore(pool.subscribe, pool.getSnapshot, pool.getSnapshot);
     useEffect(() => {
         const lifetime = {};
         pool.lifetime = lifetime;
@@ -263,9 +185,6 @@ function SceneMaterialPoolOwner({ children }: { children: ReactNode }) {
     }, [pool]);
     return <SceneMaterialPoolContext.Provider value={pool}>
         {children}
-        {[...pool.entries.values()].filter(entry => entry.configuration).map(entry => (
-            <ConfiguredSharedMaterial key={entry.material.uuid} entry={entry} pool={pool} />
-        ))}
     </SceneMaterialPoolContext.Provider>;
 }
 
@@ -286,47 +205,10 @@ export function useSharedMaterialResource<T extends Material>(key: string, creat
         if (createInstanced) registerInstancedMaterial(material, inverse => createInstanced(material, inverse));
         return material;
     }), [pool, key]);
-    useLayoutEffect(() => pool.retain(entry), [entry, pool]);
+    useEffect(() => pool.retain(entry), [entry, pool]);
     const invalidateInstances = useInvalidateMeshInstances();
     useLayoutEffect(invalidateInstances, [entry.material, invalidateInstances]);
     return entry.material as T;
-}
-
-export function useSceneMaterialStatus(root: import("three").Object3D) {
-    const pool = useContext(SceneMaterialPoolContext);
-    if (!pool) throw new Error('Material status requires a scene material pool');
-    const revision = useSyncExternalStore(pool.subscribe, pool.getSnapshot, pool.getSnapshot);
-    return { revision, pending: getPendingMaterialCount(root, pool.entries.values()) };
-}
-
-/** Count only materials used by this instance, including local override copies. */
-export function getPendingMaterialCount(root: import("three").Object3D, entries: Iterable<Pick<MaterialEntry, 'material' | 'configured'>>) {
-    const used = new Set<Material>();
-    root.traverse(object => {
-        const material = (object as import("three").Mesh).material;
-        if (Array.isArray(material)) material.forEach(value => used.add(materialSources.get(value) ?? value));
-        else if (material) used.add(materialSources.get(material) ?? material);
-    });
-    return [...entries].filter(entry => used.has(entry.material) && !entry.configured).length;
-}
-
-function MaterialRuntimeLayer({ children }: { children: ReactNode }) {
-    const materials = usePrefabStore(state => state.materials);
-    const { basePath } = usePrefab();
-    const pool = useContext(SceneMaterialPoolContext)!;
-    const entries = useMemo(() => Object.entries(materials).map(([id, properties]) => ({
-        id, entry: pool.get(`standard:${getMaterialSignature(properties, basePath)}`, () => {
-            const material = createMaterial(properties.materialType);
-            applyMaterialProperties(material, properties, undefined, undefined, EMPTY_MATERIAL_OVERRIDES);
-            return material;
-        }, { properties, basePath }),
-    })), [basePath, materials, pool]);
-    useLayoutEffect(() => {
-        const release = entries.map(({ entry }) => pool.retain(entry));
-        return () => release.forEach(dispose => dispose());
-    }, [entries, pool]);
-    const shared = useMemo(() => ({ byId: new Map(entries.map(({ id, entry }) => [id, entry.material as RuntimeMaterial])) }), [entries]);
-    return <SharedMaterialsContext.Provider value={shared}>{children}</SharedMaterialsContext.Provider>;
 }
 
 function applyMaterialProperties(
@@ -376,30 +258,51 @@ function applyMaterialProperties(
 function MaterialComponentView({ properties, children }: ComponentViewProps<MaterialComponentProperties>) {
     const materialId = properties.materialId ?? DEFAULT_MATERIAL_ID;
     const material = usePrefabStore(state => state.materials[materialId] ?? state.materials[DEFAULT_MATERIAL_ID]);
-    const sharedMaterials = useContext(SharedMaterialsContext);
-    const sharedMaterial = sharedMaterials.byId.get(materialId) ?? sharedMaterials.byId.get(DEFAULT_MATERIAL_ID);
-    const materialType = material.materialType ?? 'standard';
+    const { basePath } = usePrefab();
+    const texture = useTextureAsset(material.texture ? withBasePath(basePath, material.texture) : null);
+    const normal = useTextureAsset(material.normalMapTexture ? withBasePath(basePath, material.normalMapTexture) : null);
+    const sharedMaterial = useSharedMaterialResource(
+        `standard:${getMaterialSignature(material, basePath)}:${texture?.uuid ?? ''}:${normal?.uuid ?? ''}`,
+        () => {
+            const result = createMaterial(material.materialType);
+            const map = texture?.clone();
+            const normalMap = normal?.clone();
+            const config = {
+                repeat: material.repeat, repeatCount: material.repeatCount, offset: material.offset,
+                generateMipmaps: material.generateMipmaps !== false,
+                minFilter: MIN_FILTER_MAP[material.minFilter ?? 'LinearMipmapLinearFilter'] ?? LinearMipmapLinearFilter,
+                magFilter: MAG_FILTER_MAP[material.magFilter ?? 'LinearFilter'] ?? LinearFilter,
+            };
+            configureTexture(map, { ...config, colorSpace: SRGBColorSpace });
+            configureTexture(normalMap, { ...config, colorSpace: NoColorSpace });
+            applyMaterialProperties(result, material, map, normalMap, EMPTY_MATERIAL_OVERRIDES);
+            result.addEventListener('dispose', () => { map?.dispose(); normalMap?.dispose(); });
+            return result;
+        },
+    );
     const overrides = useMaterialOverrides();
     const ownsMaterial = Object.keys(overrides).length > 0;
-    const pool = useContext(SceneMaterialPoolContext)!;
-    const materialRevision = useSyncExternalStore(pool.subscribe, () => ownsMaterial ? pool.getSnapshot() : 0, () => 0);
-    const localMaterial = useMemo(() => ownsMaterial ? createMaterial(materialType) : null, [materialType, ownsMaterial]);
-    const resolvedMaterial = localMaterial ?? sharedMaterial;
-    const invalidateInstances = useInvalidateMeshInstances();
-    useLayoutEffect(invalidateInstances, [resolvedMaterial, invalidateInstances]);
-
+    const overrideKey = useContext(MaterialOverrideKeyContext);
+    // Unkeyed overrides remain node-local; memo identity changes must replace that material.
+    const localMaterial = useMemo(() => ownsMaterial && overrideKey === undefined
+        ? applyProps(sharedMaterial.clone(), overrides) : null, [sharedMaterial, overrides, ownsMaterial, overrideKey]);
     useEffect(() => () => localMaterial?.dispose(), [localMaterial]);
-    useLayoutEffect(() => {
-        if (!localMaterial || !sharedMaterial) return;
-        materialSources.set(localMaterial, sharedMaterial);
-        localMaterial.copy(sharedMaterial);
-        applyProps(localMaterial, overrides);
-        localMaterial.needsUpdate = true;
-    }, [localMaterial, material, materialRevision, overrides, sharedMaterial]);
+    const resolvedMaterial = ownsMaterial && overrideKey !== undefined
+        ? <SharedOverrideMaterial source={sharedMaterial} overrides={overrides} cacheKey={overrideKey} attach={properties.attach} />
+        : <primitive object={localMaterial ?? sharedMaterial} attach={properties.attach} dispose={null} />;
+    const invalidateInstances = useInvalidateMeshInstances();
+    useLayoutEffect(invalidateInstances, [localMaterial, sharedMaterial, invalidateInstances]);
     return <>
-        {resolvedMaterial ? <primitive object={resolvedMaterial as Material} attach={properties.attach} dispose={null} /> : null}
+        {resolvedMaterial}
         {children}
     </>;
+}
+
+function SharedOverrideMaterial({ source, overrides, cacheKey, attach }: {
+    source: Material; overrides: MaterialOverrides; cacheKey: string; attach?: string;
+}) {
+    const material = useSharedMaterialResource(`override:${source.uuid}:${cacheKey}`, () => applyProps(source.clone(), overrides));
+    return <primitive object={material} attach={attach} dispose={null} />;
 }
 
 const MaterialComponent: Component<MaterialComponentProperties> = {

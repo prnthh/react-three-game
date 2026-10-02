@@ -5,26 +5,47 @@ import ConstantVelocityComponent from "../components/ConstantVelocityComponent";
 import CameraShadowFollowerComponent from "../demo/grassworld/components/CameraShadowFollowerComponent";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { PrefabEditor } from "react-three-game/editor";
+import { PrefabEditorProvider, PrefabEditorScene, PrefabEditorPanel, usePrefabStoreApi } from "react-three-game/editor";
+import { GameCanvas } from "react-three-game/viewer";
 import type { Prefab } from "react-three-game/core";
-import { registerComponent } from "react-three-game/core";
+import { denormalizePrefab, registerComponent } from "react-three-game/core";
 import { BASE_PATH, withBasePath } from "../basePath";
 import AgentApiHint from "../components/AgentApiHint";
-import PrefabSelector from "../components/PrefabSelector";
+import { createPrefabPersistence, readSavedPrefab } from "./persistence";
+import starterScene from "../../public/prefabs/starter-scene.json";
+
+const createStarterScene = (): Prefab => structuredClone(starterScene) as Prefab;
 
 
-const DEFAULT_MAP = "/prefabs/game-level.json";
 const DEFAULT_CAMERA_POSITION: [number, number, number] = [0, 5, 15];
+const STARTER_CAMERA_POSITION: [number, number, number] = [4, 3, 6];
+
+
+function Autosave({ writer }: { writer: ReturnType<typeof createPrefabPersistence> }) {
+  const store = usePrefabStoreApi();
+  useEffect(() => {
+    const unsubscribe = store.subscribe(() => writer.schedule(() => denormalizePrefab(store.getState())));
+    const flushWhenHidden = () => { if (document.visibilityState === 'hidden') writer.flush(); };
+    window.addEventListener('pagehide', writer.flush);
+    document.addEventListener('visibilitychange', flushWhenHidden);
+    return () => {
+      unsubscribe();
+      window.removeEventListener('pagehide', writer.flush);
+      document.removeEventListener('visibilitychange', flushWhenHidden);
+      writer.dispose();
+    };
+  }, [store, writer]);
+  return null;
+}
 
 type LoadedMap = {
   prefab: Prefab;
-  name: string;
-  source: string;
+  source: string | null;
 };
 
 type MapLoadError = {
   message: string;
-  source: string;
+  source: string | null;
 };
 
 function parseCameraPosition(value: string | null): [number, number, number] | null {
@@ -41,24 +62,32 @@ function parseCameraPosition(value: string | null): [number, number, number] | n
   return [x, y, z];
 }
 
-function getMapName(source: string) {
-  const path = source.split(/[?#]/, 1)[0];
-  const fileName = path.slice(path.lastIndexOf("/") + 1);
-  return fileName.replace(/\.json$/i, "") || "map";
-}
-
 function EditorPage() {
 
   const searchParams = useSearchParams();
-  const mapSource = searchParams.get("map")?.trim() || DEFAULT_MAP;
+  const mapSource = searchParams.get("map")?.trim() || null;
   const cameraValue = searchParams.get("camera");
-  const cameraPosition = useMemo(() => parseCameraPosition(cameraValue), [cameraValue]);
+  const cameraPosition = useMemo(() => cameraValue === null && !mapSource
+    ? STARTER_CAMERA_POSITION : parseCameraPosition(cameraValue), [cameraValue, mapSource]);
   const [loadedMap, setLoadedMap] = useState<LoadedMap | null>(null);
+  const writer = useMemo(() => createPrefabPersistence({
+    setItem: (key, value) => window.localStorage.setItem(key, value),
+  }, message => console.warn(message)), []);
   const [mapLoadError, setMapLoadError] = useState<MapLoadError | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
-    const mapName = getMapName(mapSource);
+    if (!mapSource) {
+      let prefab = createStarterScene();
+      try {
+        prefab = readSavedPrefab(window.localStorage) ?? prefab;
+      } catch {
+        console.warn('Could not restore the saved prefab; loading the starter template.');
+      }
+      setLoadedMap({ prefab, source: null });
+      setMapLoadError(null);
+      return () => controller.abort();
+    }
 
     void fetch(withBasePath(mapSource), { signal: controller.signal })
       .then((response) => {
@@ -69,8 +98,9 @@ function EditorPage() {
         return response.json() as Promise<Prefab>;
       })
       .then((prefab) => {
+        if (controller.signal.aborted) return;
         setMapLoadError(null);
-        setLoadedMap({ prefab, name: mapName, source: mapSource });
+        setLoadedMap({ prefab, source: mapSource });
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return;
@@ -92,18 +122,25 @@ function EditorPage() {
   return (
     <main className="flex h-screen w-screen flex-col items-center justify-between bg-white dark:bg-black sm:items-start">
       {selectedMap && cameraPosition && (
-        <PrefabEditor
-          key={`${selectedMap.source}:${cameraPosition[0]},${cameraPosition[1]},${cameraPosition[2]}`}
+        <PrefabEditorProvider
+          key={selectedMap.source}
           basePath={BASE_PATH}
           prefab={selectedMap.prefab}
-          canvasProps={{ camera: { position: cameraPosition } }}
-        />
+          onSaveScene={writer.save}
+          createPrefab={createStarterScene}
+        >
+          <Autosave writer={writer} />
+          <GameCanvas camera={{ position: cameraPosition }}>
+            <PrefabEditorScene />
+          </GameCanvas>
+          <PrefabEditorPanel />
+        </PrefabEditorProvider>
       )}
 
       {selectedMap && cameraPosition && <AgentApiHint />}
 
       {(loadError || queryError) && (
-        <div className="fixed left-1/2 top-4 z-50 -translate-x-1/2 rounded bg-red-950/90 px-3 py-2 text-sm text-red-100 shadow-lg">
+        <div role="alert" className="fixed left-1/2 top-4 z-50 -translate-x-1/2 rounded bg-red-950/90 px-3 py-2 text-sm text-red-100 shadow-lg">
           {loadError ?? queryError}
         </div>
       )}

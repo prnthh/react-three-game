@@ -95,6 +95,7 @@ function SpotLightView({ properties, children }: ComponentViewProps<SpotLightPro
                     <EditorLightGizmo
                         color={merged.color}
                         selected={isSelected}
+                        targetOffset={merged.targetOffset}
                     />
                 ) : null}
                 {showHelper && (

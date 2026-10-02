@@ -19,6 +19,8 @@
       }
     ],
     "paths": {
+      "react-three-game": ["../src/index.ts"],
+      "react-three-game/*": ["../src/*"],
       "@/*": ["./*"]
     }
   },

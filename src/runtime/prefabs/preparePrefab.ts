@@ -2,7 +2,6 @@ import type { Component } from '../../core/ComponentRegistry';
 import { resolveComponentProperties } from '../../core/ComponentRegistry';
 import type { PrefabState } from '../../core/prefab';
 import { withBasePath } from "../assets/assetPaths";
-import type { ResourceLease } from '../assets/ResourceCache';
 import { describePrefabSource } from './prefabSource';
 
 import type { AssetDependency } from '../../core/dependencies';
@@ -12,56 +11,44 @@ export interface PreparedPrefab {
     readonly documentCount: number;
     readonly assetCount: number;
     readonly durationMs: number;
-    /** Keep the lease for the lifetime of the instance. Idempotent. */
-    release(): void;
 }
 export interface PrefabPreparationOptions { basePath?: string; signal?: AbortSignal; }
 export interface PrefabPreparationRuntime {
     getComponent(name: string): Component | undefined;
-    acquireDocument(path: string): ResourceLease<PrefabState>;
-    acquireAsset(dependency: AssetDependency): ResourceLease<unknown>;
+    loadDocument(path: string): Promise<PrefabState>;
+    loadAsset(dependency: AssetDependency): Promise<unknown>;
 }
 
-/** Discover and retain dependencies before creating live React/Three objects. */
+/** Discover and load dependencies through the shared loader cache before mounting. */
 export async function preparePrefab(
     runtime: PrefabPreparationRuntime,
     path: string,
     { basePath = '', signal }: PrefabPreparationOptions = {},
 ): Promise<PreparedPrefab> {
     const started = performance.now();
-    const leases: ResourceLease<unknown>[] = [];
     const documents = new Map<string, Promise<PrefabState>>();
     const assets = new Map<string, Promise<unknown>>();
     const edges = new Map<string, string[]>();
     const queue: string[] = [];
-    let released = false;
-    const release = () => {
-        if (released) return;
-        released = true;
-        leases.forEach(lease => lease.release());
-    };
     const check = () => {
         if (signal?.aborted) throw signal.reason ?? new Error('Prefab preparation cancelled');
-        if (released) throw new Error('Prefab preparation released');
     };
     const enqueue = (url: string) => {
         check();
         if (documents.has(url)) return;
-        const lease = runtime.acquireDocument(url);
-        leases.push(lease);
-        documents.set(url, lease.ready);
-        void lease.ready.catch(() => {});
+        const ready = runtime.loadDocument(url);
+        documents.set(url, ready);
+        void ready.catch(() => {});
         queue.push(url);
     };
-    const retainAsset = (dependency: AssetDependency) => {
+    const enqueueAsset = (dependency: AssetDependency) => {
         check();
         const resolved = { ...dependency, path: withBasePath(basePath, dependency.path) };
         const key = `${resolved.kind}:${resolved.path}`;
         if (assets.has(key)) return;
-        const lease = runtime.acquireAsset(resolved);
-        leases.push(lease);
-        assets.set(key, lease.ready);
-        void lease.ready.catch(() => {});
+        const ready = runtime.loadAsset(resolved);
+        assets.set(key, ready);
+        void ready.catch(() => {});
     };
     const rootUrl = withBasePath(basePath, path);
     const run = async () => {
@@ -74,8 +61,8 @@ export async function preparePrefab(
                 const references: string[] = [];
                 edges.set(url, references);
                 for (const material of Object.values(document.materials)) {
-                    if (material.texture) retainAsset({ kind: 'texture', path: material.texture });
-                    if (material.normalMapTexture) retainAsset({ kind: 'texture', path: material.normalMapTexture });
+                    if (material.texture) enqueueAsset({ kind: 'texture', path: material.texture });
+                    if (material.normalMapTexture) enqueueAsset({ kind: 'texture', path: material.normalMapTexture });
                 }
                 for (const node of Object.values(document.nodesById)) {
                     for (const component of Object.values(node.components ?? {})) {
@@ -89,7 +76,7 @@ export async function preparePrefab(
                                 const next = withBasePath(basePath, dependency.path);
                                 references.push(next);
                                 enqueue(next);
-                            } else retainAsset(dependency);
+                            } else enqueueAsset(dependency);
                         }
                     }
                 }
@@ -110,19 +97,16 @@ export async function preparePrefab(
         check();
         return {
             document: await documents.get(rootUrl)!, documentCount: documents.size,
-            assetCount: assets.size, durationMs: performance.now() - started, release,
+            assetCount: assets.size, durationMs: performance.now() - started,
         };
     };
     let onAbort = () => {};
     const cancelled = new Promise<never>((_, reject) => {
-        onAbort = () => { release(); reject(signal?.reason ?? new Error('Prefab preparation cancelled')); };
+        onAbort = () => reject(signal?.reason ?? new Error('Prefab preparation cancelled'));
         signal?.addEventListener('abort', onAbort, { once: true });
     });
     try {
         return await Promise.race([run(), cancelled]);
-    } catch (error) {
-        release();
-        throw error;
     } finally {
         signal?.removeEventListener('abort', onAbort);
     }

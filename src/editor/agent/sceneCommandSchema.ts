@@ -3,7 +3,7 @@ import type { JsonSchema } from './componentSchemas';
 const objectSchema = (properties: Record<string, JsonSchema>, required: string[] = []): JsonSchema => ({ type: 'object', properties, required, additionalProperties: false });
 const string = { type: 'string', minLength: 1 };
 const vector = { type: 'array', items: { type: 'number' }, minItems: 3, maxItems: 3 };
-const properties = { type: 'object', description: 'Discover field names, types and defaults with describeComponents. Nested values and arrays replace the entire field.' };
+const properties = { type: 'object', description: 'Discover field names, types and defaults with scene.components(). Nested values and arrays replace the entire field.' };
 const component = objectSchema({ type: string, properties }, ['type', 'properties']);
 const nodeFields = { name: { type: 'string' }, hidden: { type: 'boolean' }, disabled: { type: 'boolean' }, locked: { type: 'boolean' } };
 const operation = (op: string, fields: Record<string, JsonSchema>, required: string[]) => objectSchema({ op: { const: op }, ...fields }, ['op', ...required]);

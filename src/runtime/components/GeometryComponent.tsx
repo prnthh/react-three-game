@@ -115,12 +115,14 @@ export function useSharedGeometryResource<T extends BufferGeometry>(key: string,
 
 /** Resolve only this node's modifiers, independently of View nesting or component keys. */
 export function getGeometryModifiers(node: GameObject | null) {
+    const transform = Object.values(node?.components ?? {}).find(data => data?.type === 'Transform');
+    const context = { scale: (transform?.properties?.scale ?? [1, 1, 1]) as [number, number, number] };
     return Object.values(node?.components ?? {}).flatMap(data => {
         if (!data) return [];
         const definition = getComponent(data.type);
         if (!definition?.modifyGeometry) return [];
         return [{ type: data.type, modify: definition.modifyGeometry,
-            properties: resolveComponentProperties(definition, data.properties) }];
+            properties: resolveComponentProperties(definition, data.properties), context }];
     });
 }
 
@@ -128,7 +130,7 @@ export function applyGeometryModifiers(source: BufferGeometry, modifiers: Return
     let result = source;
     try {
         for (const modifier of modifiers) {
-            const next = modifier.modify(result, modifier.properties);
+            const next = modifier.modify(result, modifier.properties, modifier.context);
             if (result !== source && result !== next) result.dispose();
             result = next;
         }
@@ -146,7 +148,7 @@ function GeometryComponentView({ properties, children }: ComponentViewProps<Geom
     const { nodeId } = useNode();
     const prefab = usePrefab();
     const modifiers = getGeometryModifiers(prefab.get(nodeId));
-    const signature = JSON.stringify([type, resolvedArgs, modifiers.map(({ type, properties }) => [type, properties]), getComponentRegistryVersion()]);
+    const signature = JSON.stringify([type, resolvedArgs, modifiers.map(({ type, properties, context }) => [type, properties, context]), getComponentRegistryVersion()]);
     const geometry = useSharedGeometryResource(signature, () => {
         const source = createGeometry(type, resolvedArgs);
         let result: BufferGeometry | undefined;

@@ -1,27 +1,24 @@
 import type { AssetDependency } from '../../core/dependencies';
-import { useShallow } from "zustand/react/shallow";
-import { ResourceCache, type ResourceLease } from "./ResourceCache";
 import { preparePrefab, type PreparedPrefab, type PrefabPreparationOptions } from "../prefabs/preparePrefab";
 import { getComponent } from "../../core/ComponentRegistry";
-import { Mesh, type Material } from "three";
 import { createContext, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useState, type ReactNode } from "react";
 import { useStore } from "zustand";
 import { createStore, type StoreApi } from "zustand/vanilla";
 import type { Object3D, Texture } from "three";
-import { loadModel as fetchModel, loadSound as fetchSound, loadTexture as fetchTexture } from "./assetLoaders";
+import { clearAsset as clearCachedAsset, getAsset, loadAsset as loadCachedAsset, useAsset } from "./assetCache";
 import type { LoadedModels, LoadedSounds, LoadedTextures } from "./assetLoaders";
 import { sound as soundManager } from "../audio/SoundManager";
 import { denormalizePrefab, type PrefabState } from "../../core/prefab";
 import type { Prefab } from "../../core/types";
-import { loadPrefabSource } from "../prefabs/prefabSource";
 
 export interface AssetRuntime {
-    /** Retain one normalized URL or embedded prefab definition until the consumer unmounts. */
-    acquirePrefab: (path: string) => ResourceLease<PrefabState>;
-    /** Read the same cached definition used by rendering, returning an isolated document. */
+    /** Evict an unused asset from local and shared caches. Returns its source for host-owned disposal.
+     * Unmount consumers and finish pending loads first; eviction does not dispose live Three objects. */
+    clearAsset: (kind: AssetDependency['kind'] | 'prefab', path: string) => Object3D | Texture | AudioBuffer | PrefabState | null;
+    loadDocument: (path: string) => Promise<PrefabState>;
+    /** Return an isolated copy of the shared definition. */
     readPrefab: (path: string) => Promise<Prefab>;
-    /** Retain assets while an instance uses them; release on unload. */
-    acquireAsset: (dependency: AssetDependency) => ResourceLease<Object3D | Texture | AudioBuffer>;
+    loadAsset: (dependency: AssetDependency) => Promise<Object3D | Texture | AudioBuffer>;
     preparePrefab: (path: string, options?: PrefabPreparationOptions) => Promise<PreparedPrefab>;
     getPrefab: (path: string) => PrefabState | null;
     loadModel: (path: string, source?: () => Promise<Object3D>) => Promise<void>;
@@ -35,59 +32,25 @@ export interface AssetRuntime {
     getSound: (path: string) => AudioBuffer | null;
 }
 
-interface InternalAssetRuntime extends AssetRuntime {
-    readModel: (path: string) => Object3D;
-    trackLoad: <T>(promise: Promise<T>) => Promise<T>;
-}
-
 export interface AssetRuntimeProviderProps {
     children: ReactNode;
     runtimeRef?: React.MutableRefObject<AssetRuntime | null>;
 }
 
-/** Number of scene resources that are still loading. */
-export function useScenePendingLoads(): number {
-    return useStore(useAssetStore(), state => state.pendingLoads);
-}
+export const AssetRuntimeContext = createContext<AssetRuntime | null>(null);
 
-/** CPU/download work only. GPU compilation and activation are separate phases. */
-export function useSceneLoadStats() {
-    return useStore(useAssetStore(), useShallow(({ pendingLoads, completedLoads, failedLoads, totalLoadTimeMs }) => ({ pendingLoads, completedLoads, failedLoads, totalLoadTimeMs })));
-}
-
-/** Register non-asset scene work, such as loading a nested prefab document. */
-export function useTrackSceneLoad(): InternalAssetRuntime['trackLoad'] {
-    const runtime = useContext(AssetRuntimeContext);
-    if (!runtime) throw new Error("useTrackSceneLoad must be used inside <PrefabRoot>");
-    return runtime.trackLoad;
-}
-
-
-
-export const AssetRuntimeContext = createContext<InternalAssetRuntime | null>(null);
-
-/**
- * Reactive backing store for loaded assets. Components subscribe to the single
- * asset slot they care about via the selector hooks below, so loading one asset
- * only re-renders the handful of nodes that reference it — not every consumer of
- * the runtime.
- */
+/** Per-asset subscriptions for editor replacements and audio/material observers. */
 interface AssetStoreState {
     models: LoadedModels;
     textures: LoadedTextures;
     sounds: LoadedSounds;
     soundVersions: Record<string, number>;
-    modelVersion: number;
-    pendingLoads: number;
-    completedLoads: number;
-    failedLoads: number;
-    totalLoadTimeMs: number;
 }
 
 type AssetStoreApi = StoreApi<AssetStoreState>;
 
 function createAssetStore(): AssetStoreApi {
-    return createStore<AssetStoreState>(() => ({ models: {}, textures: {}, sounds: {}, soundVersions: {}, modelVersion: 0, pendingLoads: 0, completedLoads: 0, failedLoads: 0, totalLoadTimeMs: 0 }));
+    return createStore<AssetStoreState>(() => ({ models: {}, textures: {}, sounds: {}, soundVersions: {} }));
 }
 
 const AssetStoreContext = createContext<AssetStoreApi | null>(null);
@@ -98,44 +61,18 @@ function useAssetStore(): AssetStoreApi {
     return store;
 }
 
-/** Subscribe to a single loaded model; re-renders only when that model changes. */
+/** Editor replacements are local; URL assets share the preparation cache. */
 export function useModelAsset(path?: string | null): Object3D | null {
-    const runtime = useAssetRuntime();
-    const model = useStore(useAssetStore(), s => (path ? s.models[path] ?? null : null));
-    useEffect(() => {
-        if (!path) return;
-        const lease = runtime.acquireAsset({ kind: 'model', path });
-        void lease.ready.catch(() => {});
-        return lease.release;
-    }, [path, runtime]);
-    return model;
+    const model = useStore(useAssetStore(), s => path ? s.models[path] ?? null : null);
+    const loaded = useAsset('model', model ? null : path);
+    return model ?? loaded;
 }
 
-/** Suspends the model component's boundary until this model is available. */
-export function useSuspenseModelAsset(path?: string | null): Object3D | null {
-    const runtime = useContext(AssetRuntimeContext);
-    if (!runtime) throw new Error("Asset hooks must be used inside <PrefabRoot>");
-    const model = useStore(useAssetStore(), s => (path ? s.models[path] ?? null : null));
-    useEffect(() => {
-        if (!path) return;
-        const lease = runtime.acquireAsset({ kind: 'model', path });
-        void lease.ready.catch(() => {});
-        return lease.release;
-    }, [path, runtime]);
-    return path && !model ? runtime.readModel(path) : model;
-}
-
-/** Subscribe to a single loaded texture; re-renders only when that texture changes. */
+/** Render-time dependency: URL textures suspend, runtime replacements are immediately available. */
 export function useTextureAsset(path?: string | null): Texture | null {
-    const runtime = useAssetRuntime();
-    const texture = useStore(useAssetStore(), s => (path ? s.textures[path] ?? null : null));
-    useEffect(() => {
-        if (!path) return;
-        const lease = runtime.acquireAsset({ kind: 'texture', path });
-        void lease.ready.catch(() => {});
-        return lease.release;
-    }, [path, runtime]);
-    return texture;
+    const texture = useStore(useAssetStore(), s => path ? s.textures[path] ?? null : null);
+    const loaded = useAsset('texture', texture ? null : path);
+    return texture ?? loaded;
 }
 
 /** Reacts only when one of the requested sound buffers is replaced or loaded. */
@@ -145,16 +82,9 @@ export function useSoundAssetRevision(paths: string[]): string {
         paths.map(path => state.soundVersions[path] ?? 0).join('|')
     ));
     useEffect(() => {
-        const leases = paths.map(path => runtime.acquireAsset({ kind: 'sound', path }));
-        leases.forEach(lease => { void lease.ready.catch(() => {}); });
-        return () => leases.forEach(lease => lease.release());
+        paths.forEach(path => { void runtime.loadSound(path).catch(() => {}); });
     }, [paths, runtime]);
     return revision;
-}
-
-/** Coarse model-only signal for derived geometry that may gain new meshes. */
-export function useModelAssetRevision(): number {
-    return useStore(useAssetStore(), s => s.modelVersion);
 }
 
 export function useAssetRuntime(): AssetRuntime {
@@ -177,147 +107,68 @@ export function AssetRuntimeProvider({ children, runtimeRef }: AssetRuntimeProvi
 
 function AssetRuntimeOwner({ children, runtimeRef }: AssetRuntimeProviderProps) {
     const [assetStore] = useState(createAssetStore);
-    const [assetCache] = useState(() => new ResourceCache<CachedAsset>((asset) => {
-        if (!asset.owned) return;
-        const slot = asset.type === 'model' ? 'models' : asset.type === 'texture' ? 'textures' : 'sounds';
-        const state = assetStore.getState();
-        if (state[slot][asset.path] === asset.value) {
-            const remaining = { ...state[slot] };
-            delete remaining[asset.path];
-            assetStore.setState({ [slot]: remaining });
-        }
-        disposeAsset(asset);
-    }));
-    const [prefabCache] = useState(() => new ResourceCache<PrefabState>(() => {}));
-    useEffect(() => {
-        const lifetime = {};
-        assetStoreLifetime.set(assetStore, lifetime);
-        return () => { queueMicrotask(() => {
-            if (assetStoreLifetime.get(assetStore) !== lifetime) return;
-            assetCache.dispose();
-            prefabCache.dispose();
-        }); };
-    }, [assetCache, assetStore, prefabCache]);
-    const [loadErrors] = useState(() => new Map<string, unknown>());
-    const trackLoad = useCallback(<T,>(promise: Promise<T>) => {
-        const started = performance.now();
-        queueMicrotask(() => assetStore.setState(state => ({ pendingLoads: state.pendingLoads + 1 })));
-        const settle = (failed = false) => assetStore.setState(state => ({
-            pendingLoads: Math.max(0, state.pendingLoads - 1),
-            completedLoads: state.completedLoads + Number(!failed),
-            failedLoads: state.failedLoads + Number(failed),
-            totalLoadTimeMs: state.totalLoadTimeMs + performance.now() - started,
-        }));
-        return promise.then(value => {
-            settle();
-            return value;
-        }, error => {
-            settle(true);
-            throw error;
-        });
+    const registerModel = useCallback((path: string, model: Object3D) => {
+        if (assetStore.getState().models[path] !== model)
+            assetStore.setState(s => ({ models: { ...s.models, [path]: model } }));
     }, [assetStore]);
-
-    const registerModel = useCallback((path: string, model: Object3D, replace = true) => {
-        if (assetStore.getState().models[path] === model) return;
-        if (replace) assetCache.invalidate(`model:${path}`);
-        loadErrors.delete(`model:${path}`);
-        assetStore.setState(s => ({
-            models: { ...s.models, [path]: model },
-            modelVersion: s.modelVersion + 1,
-        }));
-    }, [assetCache, assetStore, loadErrors]);
-    const registerTexture = useCallback((path: string, texture: Texture, replace = true) => {
-        if (assetStore.getState().textures[path] === texture) return;
-        if (replace) assetCache.invalidate(`texture:${path}`);
-        loadErrors.delete(`texture:${path}`);
-        assetStore.setState(s => ({ textures: { ...s.textures, [path]: texture } }));
-    }, [assetCache, assetStore, loadErrors]);
-    const registerSound = useCallback((path: string, sound: AudioBuffer, replace = true) => {
+    const registerTexture = useCallback((path: string, texture: Texture) => {
+        if (assetStore.getState().textures[path] !== texture)
+            assetStore.setState(s => ({ textures: { ...s.textures, [path]: texture } }));
+    }, [assetStore]);
+    const registerSound = useCallback((path: string, sound: AudioBuffer) => {
         if (assetStore.getState().sounds[path] === sound) return;
-        if (replace) assetCache.invalidate(`sound:${path}`);
-        loadErrors.delete(`sound:${path}`);
         soundManager.setBuffer(path, sound);
         assetStore.setState(s => ({
             sounds: { ...s.sounds, [path]: sound },
             soundVersions: { ...s.soundVersions, [path]: (s.soundVersions[path] ?? 0) + 1 },
         }));
-    }, [assetCache, assetStore, loadErrors]);
-
-    const getModel = useCallback((path: string) => assetStore.getState().models[path] ?? null, [assetStore]);
-    const getTexture = useCallback((path: string) => assetStore.getState().textures[path] ?? null, [assetStore]);
-    const getSound = useCallback((path: string) => assetStore.getState().sounds[path] ?? null, [assetStore]);
-    const acquire = useCallback((type: AssetDependency['kind'], path: string, source?: () => Promise<Object3D | Texture | AudioBuffer>) => {
-        const key = `${type}:${path}`;
-        return assetCache.acquire(key, async () => {
-            const state = assetStore.getState();
-            const existing = type === 'model' ? state.models[path] : type === 'texture' ? state.textures[path] : state.sounds[path];
-            if (existing) return { type, path, value: existing, owned: false };
-            loadErrors.delete(key);
-            return trackLoad((async () => {
-                try {
-                    const result = source ? await source() : await (type === 'model' ? fetchModel(path) : type === 'texture' ? fetchTexture(path) : fetchSound(path));
-                    let asset: Object3D | Texture | AudioBuffer;
-                    if ('success' in result) {
-                        if (!result.success) throw result.error;
-                        const loaded = 'model' in result ? result.model : 'texture' in result ? result.texture : 'sound' in result ? result.sound : undefined;
-                        if (!loaded) throw new Error(`Asset loader returned no asset: ${path}`);
-                        asset = loaded;
-                    } else asset = result;
-                    const latest = assetStore.getState();
-                    const replacement = type === 'model' ? latest.models[path] : type === 'texture' ? latest.textures[path] : latest.sounds[path];
-                    if (replacement) {
-                        if (replacement !== asset) disposeAsset({ type, path, value: asset, owned: true });
-                        return { type, path, value: replacement, owned: false };
-                    }
-                    if (type === 'model') registerModel(path, asset as Object3D, false);
-                    else if (type === 'texture') registerTexture(path, asset as Texture, false);
-                    else registerSound(path, asset as AudioBuffer, false);
-                    return { type, path, value: asset, owned: true };
-                } catch (error) {
-                    loadErrors.set(key, error);
-                    throw error;
-                }
-            })());
-        });
-    }, [assetCache, assetStore, loadErrors, registerModel, registerSound, registerTexture, trackLoad]);
-    const acquireAsset = useCallback((dependency: AssetDependency) => {
-        const lease = acquire(dependency.kind, dependency.path);
-        return { ready: lease.ready.then(entry => entry.value), release: lease.release };
-    }, [acquire]);
-    const load = useCallback(async (type: AssetDependency['kind'], path: string, source?: () => Promise<Object3D | Texture | AudioBuffer>) => {
-        const lease = acquire(type, path, source);
-        try { await lease.ready; } finally { lease.release(); }
-    }, [acquire]);
-    const loadModel = useCallback((path: string, source?: () => Promise<Object3D>) => load('model', path, source), [load]);
-    const loadTexture = useCallback((path: string, source?: () => Promise<Texture>) => load('texture', path, source), [load]);
-    const loadSound = useCallback((path: string, source?: () => Promise<AudioBuffer>) => load('sound', path, source), [load]);
-    const acquireDocument = useCallback((path: string) => prefabCache.acquire(path,
-        () => trackLoad(loadPrefabSource(path))), [prefabCache, trackLoad]);
-    const readPrefab = useCallback(async (path: string) => {
-        const lease = acquireDocument(path);
-        try { return structuredClone(denormalizePrefab(await lease.ready)); }
-        finally { lease.release(); }
-    }, [acquireDocument]);
-    const getPrefab = useCallback((path: string) => prefabCache.get(path) ?? null, [prefabCache]);
+    }, [assetStore]);
+    const getModel = useCallback((path: string) => assetStore.getState().models[path] ?? getAsset('model', path), [assetStore]);
+    const getTexture = useCallback((path: string) => assetStore.getState().textures[path] ?? getAsset('texture', path), [assetStore]);
+    const getSound = useCallback((path: string) => assetStore.getState().sounds[path] ?? getAsset('sound', path), [assetStore]);
+    const clearAsset = useCallback((kind: AssetDependency['kind'] | 'prefab', path: string) => {
+        const cached = clearCachedAsset(kind, path);
+        if (kind === 'prefab') return cached;
+        const field = { model: 'models', texture: 'textures', sound: 'sounds' }[kind] as 'models' | 'textures' | 'sounds';
+        const values = { ...assetStore.getState()[field] };
+        const value = values[path] ?? cached;
+        delete values[path];
+        assetStore.setState({ [field]: values });
+        if (kind === 'sound' && value) soundManager.removeBuffer(path, value as AudioBuffer);
+        return value;
+    }, [assetStore]);
+    const loadModel = useCallback(async (path: string, source?: () => Promise<Object3D>) => {
+        if (source) registerModel(path, await source());
+        else await loadCachedAsset('model', path);
+    }, [registerModel]);
+    const loadTexture = useCallback(async (path: string, source?: () => Promise<Texture>) => {
+        if (source) registerTexture(path, await source());
+        else if (!getTexture(path)) await loadCachedAsset('texture', path);
+    }, [getTexture, registerTexture]);
+    const loadSound = useCallback(async (path: string, source?: () => Promise<AudioBuffer>) => {
+        if (source) registerSound(path, await source());
+        else {
+            const sound = getSound(path) ?? await loadCachedAsset('sound', path);
+            registerSound(path, getSound(path) ?? sound);
+        }
+    }, [getSound, registerSound]);
+    const loadAsset = useCallback(async ({ kind, path }: AssetDependency) => {
+        if (kind === 'model') return getModel(path) ?? await loadCachedAsset('model', path);
+        if (kind === 'texture') { await loadTexture(path); return getTexture(path)!; }
+        await loadSound(path); return getSound(path)!;
+    }, [getModel, getTexture, getSound, loadTexture, loadSound]);
+    const loadDocument = useCallback((path: string) => loadCachedAsset('prefab', path), []);
+    const readPrefab = useCallback(async (path: string) =>
+        structuredClone(denormalizePrefab(await loadDocument(path))), [loadDocument]);
+    const getPrefab = useCallback((path: string) => getAsset('prefab', path), []);
     const prepare = useCallback((path: string, options?: PrefabPreparationOptions) => preparePrefab({
-        getComponent: getComponent, acquireDocument, acquireAsset,
-    }, path, options), [acquireDocument, acquireAsset]);
-    const readModel = useCallback((path: string) => {
-        const model = assetStore.getState().models[path];
-        if (model) return model;
-        const error = loadErrors.get(`model:${path}`);
-        if (error) throw error;
-        const pending = loadModel(path);
-        void pending.catch(() => {});
-        throw pending;
-    }, [assetStore, loadErrors, loadModel]);
-    // Stable runtime: imperative readers do not re-render on asset loads.
-    // Reactive consumers use the per-asset selector hooks.
-    const runtime = useMemo<InternalAssetRuntime>(() => ({
-        loadModel, loadTexture, loadSound, acquirePrefab: acquireDocument, readPrefab, acquireAsset, preparePrefab: prepare, getPrefab,
-        registerModel, registerTexture, registerSound,
-        getModel, getTexture, getSound, readModel, trackLoad,
-    }), [acquireDocument, readPrefab, acquireAsset, prepare, getPrefab, loadModel, loadTexture, loadSound, registerModel, registerTexture, registerSound, getModel, getTexture, getSound, readModel, trackLoad]);
+        getComponent, loadDocument, loadAsset,
+    }, path, options), [loadDocument, loadAsset]);
+    const runtime = useMemo<AssetRuntime>(() => ({
+        clearAsset, loadModel, loadTexture, loadSound, loadDocument, readPrefab, loadAsset, preparePrefab: prepare, getPrefab,
+        registerModel, registerTexture, registerSound, getModel, getTexture, getSound,
+    }), [clearAsset, loadModel, loadTexture, loadSound, loadDocument, readPrefab, loadAsset, prepare, getPrefab,
+        registerModel, registerTexture, registerSound, getModel, getTexture, getSound]);
 
     useImperativeHandle(runtimeRef, () => runtime, [runtime]);
 
@@ -328,30 +179,4 @@ function AssetRuntimeOwner({ children, runtimeRef }: AssetRuntimeProviderProps) 
             </AssetRuntimeContext.Provider>
         </AssetStoreContext.Provider>
     );
-}
-
-interface CachedAsset {
-    type: AssetDependency['kind'];
-    path: string;
-    value: Object3D | Texture | AudioBuffer;
-    owned: boolean;
-}
-const assetStoreLifetime = new WeakMap<AssetStoreApi, object>();
-function disposeAsset(asset: CachedAsset) {
-    if (asset.type === 'sound') soundManager.removeBuffer(asset.path, asset.value as AudioBuffer);
-    if (asset.type === 'texture') (asset.value as Texture).dispose();
-    if (asset.type !== 'model') return;
-    const resources = new Set<{ dispose(): void }>();
-    (asset.value as Object3D).traverse(object => {
-        if (!(object instanceof Mesh)) return;
-        resources.add(object.geometry);
-        const materials: Material[] = Array.isArray(object.material) ? object.material : [object.material];
-        materials.forEach(material => {
-            resources.add(material);
-            Object.values(material).forEach(value => {
-                if (value && typeof value === 'object' && value.isTexture) resources.add(value);
-            });
-        });
-    });
-    resources.forEach(resource => resource.dispose());
 }

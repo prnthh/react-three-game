@@ -1,20 +1,22 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { AssetBoundary } from '../assets/AssetBoundary';
+import { usePrefabStoreApi } from '../prefabs/PrefabStoreContext';
+import { createContext, useContext, useDeferredValue, useEffect, useLayoutEffect, useMemo } from 'react';
 
 import type { Component, ComponentViewProps } from '../../core/ComponentRegistry';
 
 import { useNode, usePrefab } from '../scene/SceneContext';
 
-import { reconcilePrefabState, type PrefabState } from '../../core/prefab';
+import { reconcilePrefabState } from '../../core/prefab';
 
-import { createPrefabStore, type PrefabStoreApi } from "../../core/prefabStore";
+import { createPrefabStore } from "../../core/prefabStore";
 
 import { withBasePath } from "../assets/assetPaths";
 
-import { describePrefabSource } from '../prefabs/prefabSource';
+import { describePrefabSource, isEmbeddedPrefabSource } from '../prefabs/prefabSource';
 
 import { PrefabRoot } from '../prefabs/PrefabRoot';
 
-import { useAssetRuntime } from '../assets/AssetRuntime';
+import { clearAsset, useAsset } from '../assets/assetCache';
 
 export type PrefabRefProperties = {
     url?: string;
@@ -23,51 +25,27 @@ export type PrefabRefProperties = {
 // Track ancestry, not all loaded sources: sibling instances may share a definition.
 const PrefabSourceAncestry = createContext<readonly string[]>([]);
 
-function PrefabRefView({ properties, enabled, children }: ComponentViewProps<PrefabRefProperties>) {
+function LoadedPrefabRef({ properties, enabled }: ComponentViewProps<PrefabRefProperties>) {
     const { basePath } = usePrefab();
     const { nodeId, preparing } = useNode();
-    const runtime = useAssetRuntime();
-    const url = properties.url ? withBasePath(basePath, properties.url) : '';
+    const url = useDeferredValue(properties.url ? withBasePath(basePath, properties.url) : '');
     const ancestors = useContext(PrefabSourceAncestry);
     const cyclic = ancestors.includes(url);
-    const [loaded, setLoaded] = useState<{ url: string; document: PrefabState; store: PrefabStoreApi } | null>(() => {
-        const document = runtime.getPrefab(url);
-        return document ? { url, document, store: createPrefabStore(document) } : null;
-    });
-    const loadedRef = useRef(loaded);
-    // Keep the previous version visible while its replacement loads. Retaining
-    // the store also retains meshes, geometry and gameplay on unchanged nodes.
-    const store = url && !cyclic ? loaded?.store : null;
-    // A replacement can still be loading; track the document actually on screen.
-    const ancestry = useMemo(() => [...ancestors, loaded?.url ?? url], [ancestors, loaded?.url, url]);
+    const document = useAsset('prefab', cyclic ? null : url);
+    const store = useMemo(() => document ? createPrefabStore(document) : null,
+        [document?.prefabId, document?.rootId]);
+    useEffect(() => () => {
+        if (isEmbeddedPrefabSource(url)) clearAsset('prefab', url);
+    }, [url]);
+    const ancestry = useMemo(() => [...ancestors, url], [ancestors, url]);
 
+    useLayoutEffect(() => {
+        if (!document || !store) return;
+        store.getState().restoreState(reconcilePrefabState(store.getState(), document));
+    }, [document, store]);
     useEffect(() => {
-        if (!url) return;
-        if (cyclic) {
-            console.warn('[PrefabRef] Cyclic prefab reference:', describePrefabSource(url));
-            return;
-        }
-        let active = true;
-        const lease = runtime.acquirePrefab(url);
-        void lease.ready.then(document => {
-            if (!active) return;
-            const previous = loadedRef.current;
-            if (previous?.url === url && previous.document === document) return;
-            const sameIdentity = previous && previous.document.rootId === document.rootId
-                && previous.document.prefabId === document.prefabId;
-            const store = sameIdentity ? previous.store : createPrefabStore(document);
-            if (sameIdentity) store.getState().restoreState(reconcilePrefabState(store.getState(), document));
-            const next = { url, document, store };
-            loadedRef.current = next;
-            setLoaded(next);
-        }).catch(error => {
-            if (!active) return;
-            loadedRef.current = null;
-            setLoaded(null);
-            console.warn('[PrefabRef] Failed to load:', describePrefabSource(url), error);
-        });
-        return () => { active = false; lease.release(); };
-    }, [runtime, url, cyclic]);
+        if (cyclic) console.warn('[PrefabRef] Cyclic prefab reference:', describePrefabSource(url));
+    }, [cyclic, url]);
 
     return <>
         {store && (
@@ -77,8 +55,12 @@ function PrefabRefView({ properties, enabled, children }: ComponentViewProps<Pre
                 </PrefabSourceAncestry.Provider>
             </group>
         )}
-        {children}
     </>;
+}
+
+function PrefabRefView(props: ComponentViewProps<PrefabRefProperties>) {
+    const store = usePrefabStoreApi();
+    return <><AssetBoundary subscribeToRetry={store.subscribe}><LoadedPrefabRef {...props} /></AssetBoundary>{props.children}</>;
 }
 
 const PrefabRefComponent: Component<PrefabRefProperties> = {

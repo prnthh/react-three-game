@@ -1,8 +1,9 @@
+import { AssetBoundary } from '../assets/AssetBoundary';
 import { memo, useCallback, useContext, useLayoutEffect, useMemo, useRef } from "react";
 import { notifyObjectChanged } from '../scene/objectChanges';
 import type { Object3D } from "three";
 import { getNodeUserData, type GameObject as GameObjectType } from "../../core/types";
-import { usePrefabRenderNode } from "./PrefabStoreContext";
+import { usePrefabRenderNode, usePrefabStoreApi } from "./PrefabStoreContext";
 import { NodeScope, RuntimeNodeIdPrefixContext } from "../scene/SceneContext";
 import { useNodeSelected } from "../scene/SelectionRuntime";
 import { createNodeInteractionHandlers, type NodeInteractionEvent, type NodeInteractionEventType } from "../scene/usePointerEvents";
@@ -21,7 +22,12 @@ function getNodeMetadataProps(node: GameObjectType, scope: string) {
     };
 }
 
-export const PrefabNode = memo(function PrefabNode({
+export const PrefabNode = memo(function PrefabNode(props: RendererProps) {
+    const store = usePrefabStoreApi();
+    return <AssetBoundary subscribeToRetry={store.subscribe}><ResolvedPrefabNode {...props} /></AssetBoundary>;
+});
+
+function ResolvedPrefabNode({
     nodeId,
     registryVersion,
     onPointerEvent,
@@ -94,7 +100,7 @@ export const PrefabNode = memo(function PrefabNode({
             </group>
         </NodeScope>
     );
-});
+}
 
 export interface RendererProps {
     registryVersion: number;

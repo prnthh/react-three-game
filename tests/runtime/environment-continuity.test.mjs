@@ -4,6 +4,8 @@ import { act, createElement as h } from 'react';
 import { createRoot, extend } from '@react-three/fiber';
 import { CubeCamera, Group, Texture } from 'three';
 import Environment from '../../src/runtime/components/EnvironmentComponent.tsx';
+import { PrefabStoreProvider } from '../../src/runtime/prefabs/PrefabStoreContext.ts';
+import { createPrefabStore } from '../../src/core/prefabStore.ts';
 import { AssetRuntimeProvider, useAssetRuntime } from '../../src/runtime/assets/AssetRuntime.tsx';
 
 extend({ CubeCamera, Group });
@@ -19,10 +21,11 @@ test('environment refreshes its capture without remounting children or replacing
     t.after(async () => { await act(async () => root.unmount()); });
     function Probe() { runtime = useAssetRuntime(); return null; }
     const children = h('group', { name: 'environment-content' });
+    const document = createPrefabStore({ root: { id: 'root' } });
     let store;
     const render = async (intensity, content = children) => act(async () => {
         store = root.render(h(AssetRuntimeProvider, null, h(Probe),
-            h(Environment.View, { properties: { intensity } }, content)));
+            h(PrefabStoreProvider, { store: document }, h(Environment.View, { properties: { intensity } }, content))));
     });
     await render(1);
     const content = capturedScene.getObjectByName('environment-content');

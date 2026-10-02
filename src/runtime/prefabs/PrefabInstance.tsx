@@ -1,4 +1,4 @@
-import { useSceneMaterialStatus } from "../components/MaterialComponent";
+import { AssetBoundary } from '../assets/AssetBoundary';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useThree } from '@react-three/fiber';
 import { Group } from 'three';
@@ -41,16 +41,14 @@ function InstanceResource(props: PrefabInstanceProps) {
     callbacks.current = props;
     useEffect(() => {
         const controller = new AbortController();
-        let resource: PreparedPrefab | undefined;
         callbacks.current.onStatus?.({ phase: 'loading' });
         void runtime.preparePrefab(props.url, { basePath: props.basePath, signal: controller.signal }).then(value => {
-            if (controller.signal.aborted) { value.release(); return; }
-            resource = value;
+            if (controller.signal.aborted) return;
             setPrepared(value);
         }, error => {
             if (!controller.signal.aborted) callbacks.current.onStatus?.({ phase: 'error', error });
         });
-        return () => { controller.abort(); resource?.release(); };
+        return () => controller.abort();
     }, [props.basePath, props.url, runtime]);
     if (!prepared) return null;
     return <InstanceMount {...props} prepared={prepared} />;
@@ -71,7 +69,11 @@ function enqueueCompilation(renderer: WebGPURenderer, compile: () => Promise<voi
 function InstanceMount(props: PrefabInstanceProps & { prepared: PreparedPrefab }) {
     const container = useMemo(() => new Group(), []);
     return <primitive object={container} visible={false} dispose={null}>
-        <MeshInstanceProvider isolated static={props.static}><InstanceView {...props} container={container} /></MeshInstanceProvider>
+        <MeshInstanceProvider isolated static={props.static}>
+            <AssetBoundary atomic onError={error => props.onStatus?.({ phase: 'error', error })}>
+                <InstanceView {...props} container={container} />
+            </AssetBoundary>
+        </MeshInstanceProvider>
     </primitive>;
 }
 
@@ -79,14 +81,13 @@ function InstanceView({ id, prepared, active = true, static: isStatic = false, b
     const store = useMemo(() => createPrefabStore(prepared.document), [prepared]);
     const { gl, camera, scene, invalidate } = useThree();
     const revision = useMeshInstanceRevision();
-    const { pending: pendingMaterials } = useSceneMaterialStatus(container);
     const [compiled, setCompiled] = useState(false);
     const [compileMs, setCompileMs] = useState(0);
     const callbacks = useRef({ onStatus, onActivate });
     callbacks.current = { onStatus, onActivate };
 
     useEffect(() => {
-        if (compiled || pendingMaterials > 0) return;
+        if (compiled) return;
         let cancelled = false;
         callbacks.current.onStatus?.({ phase: 'compiling', loadMs: prepared.durationMs });
         void enqueueCompilation(gl as unknown as WebGPURenderer, async () => {
@@ -116,7 +117,7 @@ function InstanceView({ id, prepared, active = true, static: isStatic = false, b
             if (!cancelled) callbacks.current.onStatus?.({ phase: 'error', error });
         });
         return () => { cancelled = true; };
-    }, [camera, compiled, container, isStatic, gl, invalidate, pendingMaterials, prepared, revision, scene]);
+    }, [camera, compiled, container, isStatic, gl, invalidate, prepared, revision, scene]);
 
     useEffect(() => {
         if (!compiled) return;

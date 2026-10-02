@@ -1,0 +1,119 @@
+{
+  "name": "New Prefab",
+  "root": {
+    "id": "root",
+    "name": "Scene",
+    "components": {},
+    "children": [
+      {
+        "id": "cube",
+        "name": "Cube",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                0.5,
+                0
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {}
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box"
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "default"
+            }
+          }
+        }
+      },
+      {
+        "id": "light",
+        "name": "Key light",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                4,
+                6,
+                4
+              ]
+            }
+          },
+          "light": {
+            "type": "DirectionalLight",
+            "properties": {
+              "intensity": 2,
+              "targetOffset": [
+                -4,
+                -6,
+                -4
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": "environment",
+        "name": "Environment",
+        "components": {
+          "environment": {
+            "type": "Environment",
+            "properties": {
+              "background": true,
+              "intensity": 0.55,
+              "backgroundIntensity": 0.75,
+              "backgroundBlurriness": 0.4
+            }
+          }
+        },
+        "children": [
+          {
+            "id": "sky",
+            "name": "Sky sphere",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {}
+              },
+              "mesh": {
+                "type": "Mesh",
+                "properties": {}
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "sphere"
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "materialId": "sky"
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "materials": {
+    "sky": {
+      "materialType": "basic",
+      "side": "BackSide",
+      "texture": "/textures/skybox/skybox3.jpg"
+    }
+  }
+}

@@ -1,18 +1,21 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
+const title = "React Three Game - A game creation toolbox for the web";
+const description = "A game creation toolbox for the web. Build with JavaScript, Three.js, WebGPU, and a visual scene editor, with React components that grow with your game.";
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://prnth.com/react-three-game"),
   title: {
-    default: "React Three Game - Rendering and Scene Authoring",
+    default: title,
     template: "%s | React Three Game"
   },
-  description: "WebGPU rendering and scene authoring with React Three Fiber, reusable GameObject components, a visual editor and an API for agents.",
-  keywords: ["react", "three.js", "3d", "rendering", "webgpu", "scene editor", "prefab", "game development"],
+  description,
+  keywords: ["game creation", "web games", "JavaScript", "Three.js", "React", "React Three Fiber", "WebGPU", "visual scene editor", "prefabs", "game development"],
   authors: [{ name: "prnthh" }],
   openGraph: {
-    title: "React Three Game - Rendering and Scene Authoring",
-    description: "WebGPU rendering, React Three Fiber composition, and visual and agent scene authoring.",
+    title,
+    description,
     siteName: "React Three Game",
     type: "website",
     locale: "en_US",
@@ -20,8 +23,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "React Three Game - Rendering and Scene Authoring",
-    description: "WebGPU rendering, React Three Fiber composition, and visual and agent scene authoring."
+    title,
+    description
   },
   robots: {
     index: true,

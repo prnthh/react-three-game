@@ -31,11 +31,12 @@ const DEFAULT_EXIT_EVENT = INTERACTION_EXIT_EVENT;
 
 function StageInteractionView({ properties, children }: ComponentViewProps<StageInteractionProperties>) {
     const api = useCrashcat();
-    const { nodeId } = useNode();
+    const { nodeId, editMode } = useNode();
     const gameObject = useGameObject();
     const runtimeNodeId = gameObject.id;
 
     useEffect(() => {
+        if (editMode) return;
         const activationNodeId = properties.activationNodeId?.trim();
         if (activationNodeId && activationNodeId !== nodeId) return;
         const object = gameObject.transform;
@@ -67,7 +68,7 @@ function StageInteractionView({ properties, children }: ComponentViewProps<Stage
         });
 
         return () => api.unregister(runtimeNodeId);
-    }, [api, gameObject, nodeId, runtimeNodeId, properties.activationNodeId, properties.enterEventName, properties.exitEventName, properties.sensorHalfHeight, properties.sensorRadius]);
+    }, [api, editMode, gameObject, nodeId, runtimeNodeId, properties.activationNodeId, properties.enterEventName, properties.exitEventName, properties.sensorHalfHeight, properties.sensorRadius]);
 
     return <>{children}</>;
 }

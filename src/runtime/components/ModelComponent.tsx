@@ -1,10 +1,12 @@
-import { Suspense, useEffect, useMemo, useRef } from 'react';
+import { AssetBoundary } from '../assets/AssetBoundary';
+import { usePrefabStoreApi } from '../prefabs/PrefabStoreContext';
+import { useEffect, useMemo, useRef } from 'react';
 
 import { Matrix4, Mesh, SkinnedMesh, type BufferGeometry, type Material, type Object3D } from 'three';
 
 import type { Component, ComponentViewProps } from '../../core/ComponentRegistry';
 
-import { useSuspenseModelAsset } from '../assets/AssetRuntime';
+import { useModelAsset } from '../assets/AssetRuntime';
 
 import { useGameObject, useNode } from '../scene/SceneContext';
 
@@ -169,12 +171,12 @@ function RepeatedModel({ source, positions, interactive }: {
     </group>;
 }
 
-function LoadedModel({ properties }: { properties: ModelProperties }) {
+function LoadedModel({ properties }: ComponentViewProps<ModelProperties>) {
     const { basePath } = usePrefab();
     const { nodeInteractionHandlers } = useNode();
     const interactive = Boolean(nodeInteractionHandlers);
     const path = properties.filename ? withBasePath(basePath, properties.filename) : '';
-    const sourceModel = useSuspenseModelAsset(path);
+    const sourceModel = useModelAsset(path);
     const positions = useMemo(() => getRepeatPositions(properties), [properties.repeat, properties.repeatAxes]);
     const model = sourceModel && (positions.length > 1 && canInstance(sourceModel)
         ? <RepeatedModel source={sourceModel} positions={positions} interactive={interactive} />
@@ -182,11 +184,9 @@ function LoadedModel({ properties }: { properties: ModelProperties }) {
     return model;
 }
 
-function ModelComponentView({ properties, children }: ComponentViewProps<ModelProperties>) {
-    return <>
-        <Suspense fallback={null}><LoadedModel properties={properties} /></Suspense>
-        {children}
-    </>;
+function ModelComponentView(props: ComponentViewProps<ModelProperties>) {
+    const store = usePrefabStoreApi();
+    return <><AssetBoundary subscribeToRetry={store.subscribe}><LoadedModel {...props} /></AssetBoundary>{props.children}</>;
 }
 
 const ModelComponent: Component<ModelProperties> = {

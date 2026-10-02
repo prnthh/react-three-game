@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { act, createElement as h } from 'react';
 import { createRoot, extend } from '@react-three/fiber';
-import { AudioContext, Group } from 'three';
+import { AudioContext, Group, Texture } from 'three';
 import { AssetRuntimeProvider } from '../../src/runtime/assets/AssetRuntime.tsx';
 import { createPrefabStore } from "../../src/core/prefabStore.ts";
 import { PrefabRoot } from '../../src/runtime/prefabs/PrefabRoot.tsx';
@@ -43,7 +43,7 @@ test('unpacking scopes an omitted default material instead of inheriting the out
     assert.equal(missing.root.components.paint.properties.materialId,'instance:default','unresolved asset IDs must retain their local fallback after unpack');
 });
 
-test('mounted cached URL and embedded references retain documents; reads share the rendered definition', async t => {
+test('URL and embedded references share cached definitions with imperative reads', async t => {
     const nativeFetch=globalThis.fetch;
     const documents = new Map();
     let revision='original',requests=0;
@@ -66,7 +66,7 @@ test('mounted cached URL and embedded references retain documents; reads share t
     t.after(async()=>{await render(null);await act(async()=>root.unmount());globalThis.window=previousWindow;});
     await render(null);
     const embedded=encodePrefabSource({root:{id:'embedded',name:'embedded-original',children:[{id:'kept',name:'kept-child'},{id:'edited',name:'before-edit'}]}});
-    // Preloaded definitions reproduce the old cached fast path, which never retained a lease.
+    // References reuse preloaded definitions.
     await act(async()=>{await runtimeRef.current.readPrefab('/asset.json');await runtimeRef.current.readPrefab(embedded);});
     const scene={root:{id:'world',children:[
         {id:'url-instance',components:{ref:{type:'PrefabRef',properties:{url:'/asset.json'}}}},
@@ -77,14 +77,22 @@ test('mounted cached URL and embedded references retain documents; reads share t
     assert.ok(store.getState().scene.getObjectByName('original'));
     revision='changed-on-server';
     await act(async()=>{for(let i=0;i<40;i++)await runtimeRef.current.readPrefab(`/idle-${i}.json`);});
-    assert.ok(runtimeRef.current.getPrefab('/asset.json'),'mounted URL must remain pinned');
-    assert.ok(runtimeRef.current.getPrefab(embedded),'mounted embedded definition must remain pinned');
+    assert.ok(runtimeRef.current.getPrefab('/asset.json'),'URL definition remains cached');
+    assert.ok(runtimeRef.current.getPrefab(embedded),'embedded definition remains cached');
     let exported;
     await act(async()=>{exported=await runtimeRef.current.readPrefab('/asset.json');});
     assert.equal(exported.root.name,'original','unpack must use the visible definition, not fetch a newer version');
     exported.root.name='mutated copy';
     assert.equal(runtimeRef.current.getPrefab('/asset.json').nodesById.asset.name,'original');
     assert.equal(requests,41);
+    const localTexture = new Texture();
+    let disposed = false;
+    localTexture.addEventListener('dispose', () => { disposed = true; });
+    await act(async () => runtimeRef.current.registerTexture('/local.png', localTexture));
+    await act(async () => assert.equal(runtimeRef.current.clearAsset('texture', '/local.png'), localTexture));
+    assert.equal(runtimeRef.current.getTexture('/local.png'), null, 'eviction clears registered overrides too');
+    assert.equal(disposed, false, 'eviction must not dispose sources still held by other consumers');
+    localTexture.dispose();
     await render(h(PrefabRoot,{store:documentStore}));
     assert.ok(store.getState().scene.getObjectByName('original'));
     assert.ok(store.getState().scene.getObjectByName('embedded-original'));
@@ -95,6 +103,7 @@ test('mounted cached URL and embedded references retain documents; reads share t
         {id:'kept',name:'kept-child'},{id:'edited',name:'after-edit'},
     ]}});
     await act(async()=>documentStore.getState().updateNode('inline-instance',n=>({...n,components:{ref:{type:'PrefabRef',properties:{url:replacement}}}})));
+    assert.equal(runtimeRef.current.getPrefab(embedded), null, 'obsolete embedded revisions leave the loader cache');
     assert.equal(store.getState().scene.getObjectByName('embedded-updated'),beforeRoot,'root stays mounted across source edits');
     assert.equal(store.getState().scene.getObjectByName('kept-child'),beforeChild,'unchanged objects stay mounted');
     assert.equal(store.getState().scene.getObjectByName('after-edit'),beforeEdited,'edited objects update in place');

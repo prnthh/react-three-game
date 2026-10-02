@@ -96,7 +96,7 @@ export interface Component<P extends object = Record<string, any>> {
 	/** Serializable property contract and the source of runtime/editor defaults. */
 	properties: ComponentPropertyDefinitions<P>;
 	/** Pure node-local modifier consumed by Geometry; return a new owned geometry without mutating source. Applied in component order. */
-	modifyGeometry?: (source: BufferGeometry, properties: P) => BufferGeometry;
+	modifyGeometry?: (source: BufferGeometry, properties: P, context?: { scale: readonly [number, number, number] }) => BufferGeometry;
 	View?: FC<ComponentViewProps<P>>;
 }
 

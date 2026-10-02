@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {Box3, Euler, Matrix4, Quaternion, Vector3} from 'three';
 import {normalizePrefab} from '../../src/core/prefab.ts';
-import {createJumperState, stepJumper} from '../app/demo/jumper/movement.ts';
+import {createJumperState, stepJumper, surfaceTopAt, STANDING_HEIGHT} from '../app/demo/jumper/movement.ts';
 
 import {resolveCollisionSurfaceSize} from '../app/demo/jumper/components/CollisionSurfaceComponent.tsx';
 
@@ -15,7 +15,7 @@ function visit(node,parent=new Matrix4()) {
     const t=node.components?.transform?.properties??{};
     const matrix=parent.clone().multiply(new Matrix4().compose(new Vector3(...(t.position??[0,0,0])),new Quaternion().setFromEuler(new Euler(...(t.rotation??[0,0,0]))),new Vector3(...(t.scale??[1,1,1]))));
     const collision=node.components?.collision?.properties;
-    if(collision){const size=node.components?.geometry?.properties?.args?.slice(0,3)??collision.size??[1,1,1];const half=new Vector3(...size).multiplyScalar(.5);const box=new Box3(half.clone().negate(),half).applyMatrix4(matrix);surfaces.set(node.id,{minX:box.min.x,maxX:box.max.x,minZ:box.min.z,maxZ:box.max.z,top:box.max.y,bottom:box.min.y,solid:collision.solid});}
+    if(collision){const size=node.components?.geometry?.properties?.args?.slice(0,3)??collision.size??[1,1,1];const half=new Vector3(...size).multiplyScalar(.5);const box=new Box3(half.clone().negate(),half).applyMatrix4(matrix);surfaces.set(node.id,{minX:box.min.x,maxX:box.max.x,minZ:box.min.z,maxZ:box.max.z,top:box.max.y,bottom:box.min.y,solid:collision.solid,...(node.id.startsWith('spiral-connecting-beam-')?{orientation:{center:new Vector3().setFromMatrixPosition(matrix).toArray(),halfSize:new Vector3(...size).multiplyScalar(.5).multiply(new Vector3().setFromMatrixScale(matrix)).toArray(),quaternion:new Quaternion().setFromRotationMatrix(new Matrix4().extractRotation(matrix)).toArray()}}:{})});}
     node.children?.forEach(child=>visit(child,matrix));
 }
 visit(scene.root);
@@ -50,12 +50,51 @@ test('the sparse long-jump court connects outdoor roofs, the covered hall and th
     checkJump('ruin-ext-entry-1','ruin-ext-entry-2');
     checkJump('ruin-ext-entry-2','ruin-step-3');
 });
+test('spiral climb uses fewer landings and walkable angled floor connections',()=>{
+    for(const [from,to] of [['ruin-approach-2','construction-deck-1-n'],['ruin-step-6','construction-deck-2-s'],['construction-deck-2-w','ruin-step-9'],['construction-deck-3-e','ruin-step-17']])checkLandingJump(from,to);
+    const connections=[[[38,10.6,-48],[30.2,14.95,-41.55]],[[29.6,14.85,-41.2],[34.8,19.4,-41.2]],[[35,22.65,-47],[30.65,25.4,-41.5]],[[29.7,25.25,-40.8],[33.7,28,-46.6]],[[40,27.85,-48],[40,31.55,-43.1]],[[35.2,33.05,-50.5],[30.4,37.1,-50.5]],[[28,36.95,-47],[31.9,41.95,-38.5]]];
+    for(const [i,[a,b]] of connections.entries()){
+        const beam=resolveSurface(`spiral-connecting-beam-${i}`);
+        const distance=Math.hypot(b[0]-a[0],b[2]-a[2]),dx=(b[0]-a[0])/distance,dz=(b[2]-a[2])/distance;
+        let state={...createJumperState([a[0],surfaceTopAt(beam,a[0],a[2]),a[2]]),grounded:true};
+        for(let f=0;f<Math.ceil(distance/3*120);f++)state=stepJumper(state,{x:dx,z:dz,jump:false},{...settings,speed:3},[...surfaces.values()],1/120);
+        assert.ok(Math.hypot(state.position[0]-b[0],state.position[2]-b[2])<.7,`beam ${i}: stopped at ${state.position}`);
+        assert.ok(state.position[1]>b[1]-.3,`beam ${i}: did not climb to the upper floor: ${state.position}`);
+    }
+});
+test('middle ramp has a walkable approach, standing clearance and landing exit',()=>{
+    const lower=resolveSurface('ruin-step-3'),upper=resolveSurface('ruin-step-6');
+    let state={...createJumperState([28.8,lower.top,-41.2]),grounded:true};
+    for(let frame=0;frame<300;frame++){
+        state=stepJumper(state,{x:1,z:0,jump:false},{...settings,speed:3},[...surfaces.values()],1/120);
+        const [x,y,z]=state.position;
+        for(const [id,s] of surfaces){
+            if(!s.solid||s.orientation)continue;
+            const intersects=x+.3>s.minX&&x-.3<s.maxX&&z+.3>s.minZ&&z-.3<s.maxZ
+                &&y<s.top-.01&&y+STANDING_HEIGHT>s.bottom+.01;
+            assert.ok(!intersects,`ramp traversal intersects ${id} at ${state.position}`);
+        }
+    }
+    assert.ok(state.position[0]>upper.minX+.6,'walk off the ramp onto the upper landing');
+    assert.ok(state.grounded,'finish standing on the upper landing');
+    assert.ok(Math.abs(state.position[1]-upper.top)<.01,`expected upper landing, got ${state.position}`);
+});
 function resolveSurface(id){
     if(surfaces.has(id))return surfaces.get(id);
     const matches=[...surfaces].filter(([key])=>key.endsWith('/'+id));
     assert.equal(matches.length,1,`${id}: unique surface required`);
     return matches[0][1];
 }
+test('construction decks do not obstruct spiral landings with low ceilings',()=>{
+    const landings=[...surfaces].filter(([id])=>/construction-deck-\d-[nesw]$|\/ruin-step-\d+$/.test(id));
+    for(const [lowerId,lower] of landings)for(const [upperId,upper] of landings){
+        if(upper.top<=lower.top)continue;
+        const overlapX=Math.min(lower.maxX,upper.maxX)-Math.max(lower.minX,upper.minX);
+        const overlapZ=Math.min(lower.maxZ,upper.maxZ)-Math.max(lower.minZ,upper.minZ);
+        if(overlapX>0&&overlapZ>0)assert.ok(upper.bottom-lower.top>=STANDING_HEIGHT,
+            `${upperId} obstructs ${lowerId}: ${upper.bottom-lower.top} headroom`);
+    }
+});
 function checkRunningJump(fromId,toId){
     const from=resolveSurface(fromId),to=resolveSurface(toId);
     const a=center(from),b=center(to),distance=Math.hypot(b[0]-a[0],b[2]-a[2]);
@@ -75,12 +114,12 @@ function checkRunningJump(fromId,toId){
 test('ruin extension sky viaduct connects the spiral to the crown climb',()=>{
     checkJump('ruin-step-13','ruin-ext-traverse-0');
     for(let i=1;i<5;i++)checkJump(`ruin-ext-traverse-${i-1}`,`ruin-ext-traverse-${i}`);
-    checkJump('ruin-ext-traverse-4','ruin-ext-tower-step-0');
-    for(let i=1;i<17;i++)checkJump(`ruin-ext-tower-step-${i-1}`,`ruin-ext-tower-step-${i}`);
-    checkJump('ruin-ext-tower-step-16','ruin-ext-tower-summit');
+    checkLandingJump('ruin-ext-traverse-4','ruin-ext-tower-step-0');
+    for(let i=1;i<11;i++)checkLandingJump(`ruin-ext-tower-step-${i-1}`,`ruin-ext-tower-step-${i}`);
+    checkLandingJump('ruin-ext-tower-step-10','ruin-ext-tower-summit');
 });
 test('ruin extension precision return reaches the solid original roof',()=>{
-    checkJump('ruin-ext-tower-step-8','ruin-ext-return-0');
+    checkLandingJump('ruin-ext-tower-step-8','ruin-ext-return-0');
     for(let i=1;i<5;i++)checkJump(`ruin-ext-return-${i-1}`,`ruin-ext-return-${i}`);
     checkJump('ruin-ext-return-4','construction-deck-4-w');
 });
@@ -93,6 +132,19 @@ test('west spillway climb clears the reservoir walls and reaches the observation
     for(let i=1;i<8;i++)checkJump(`west-spillway-step-${i-1}`,`west-spillway-step-${i}`);
     checkJump('west-spillway-step-7','west-spillway-crown',undefined,[-72,41.05,-49]);
 });
+
+// Broad terraces allow takeoff and landing away from their centers. Require a
+// collision-free fixed-step jump with a 0.6 m inset at both ends, at normal speed.
+function checkLandingJump(fromId,toId){
+    const points=s=>[.0,.25,.5,.75,1].flatMap(u=>[.0,.25,.5,.75,1].map(v=>[
+        s.minX+.6+u*(s.maxX-s.minX-1.2),s.top,s.minZ+.6+v*(s.maxZ-s.minZ-1.2)]));
+    const starts=points(resolveSurface(fromId)),ends=points(resolveSurface(toId));
+    let lastError;
+    for(const start of starts)for(const end of ends){
+        try {checkJump(fromId,toId,start,end);return;} catch(error){lastError=error;}
+    }
+    assert.fail(`${fromId} → ${toId}: no clear jump between inset landing points; ${lastError?.message}`);
+}
 
 function checkJump(fromId,toId,fromPosition,toPosition){
     const resolve=id=>{

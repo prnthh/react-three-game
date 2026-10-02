@@ -6,22 +6,21 @@ import { normalizePrefab } from '../../src/core/prefab.ts';
 const flush = () => new Promise(resolve => queueMicrotask(resolve));
 
 function fixture(spec, assetLoader = async () => ({})) {
-    const released = [];
     const requested = [];
     const defs = {
         Ref: { name: 'Ref', properties: { path: { type: 'string', default: '' } }, dependencies: p => [{ kind: 'prefab', path: p.path }] },
         Image: { name: 'Image', properties: { path: { type: 'string', default: '/shared.png' } }, dependencies: p => [{ kind: 'texture', path: p.path }] },
     };
-    return { released, requested, runtime: {
+    return { requested, runtime: {
         getComponent: name => defs[name],
-        acquireDocument(path) {
+        loadDocument(path) {
             requested.push(path);
             const values = spec[path];
-            return { ready: Promise.resolve(normalizePrefab({ root: { id: 'root', components: Object.fromEntries(values.map((c, i) => [String(i), c])) } })), release: () => released.push(path) };
+            return Promise.resolve(normalizePrefab({ root: { id: 'root', components: Object.fromEntries(values.map((c, i) => [String(i), c])) } }));
         },
-        acquireAsset(dep) {
+        loadAsset(dep) {
             requested.push(dep.path);
-            return { ready: assetLoader(dep), release: () => released.push(dep.path) };
+            return assetLoader(dep);
         },
     } };
 }
@@ -47,37 +46,28 @@ test('preparation waits for assets from both the root and nested prefabs', async
     await flush();
     assert.equal(ready, false, 'a loaded root asset does not make its nested dependency ready');
     finish.get('/nested.png')({});
-    const prepared = await work;
-    assert.deepEqual(f.released, [], 'prepared resources stay owned until explicitly released');
-    prepared.release();
-    assert.deepEqual(f.released.sort(), ['/child', '/nested.png', '/root', '/shared.png']);
+    await work;
 });
 
-test('preparation discovers a shared DAG once, resolves defaults/basePath, retains until released', async () => {
+test('preparation discovers a shared DAG once and resolves defaults/basePath', async () => {
     const f = fixture({ '/game/root': [ref('/a'), ref('/b')], '/game/a': [ref('/c'), image()], '/game/b': [ref('/c'), image()], '/game/c': [] });
     const result = await preparePrefab(f.runtime, '/root', { basePath: '/game' });
     assert.equal(result.documentCount, 4);
     assert.equal(result.assetCount, 1);
     assert.equal(f.requested.filter(p => p === '/game/c').length, 1);
     assert.equal(f.requested.filter(p => p === '/game/shared.png').length, 1);
-    assert.deepEqual(f.released, []);
-    result.release(); result.release();
-    assert.equal(f.released.length, 5);
 });
 
 test('cross-branch cycles fail instead of awaiting one another forever', async () => {
     const f = fixture({ '/root': [ref('/a'), ref('/b')], '/a': [ref('/b')], '/b': [ref('/a')] });
     await assert.rejects(preparePrefab(f.runtime, '/root'), /Cyclic prefab reference/);
-    assert.equal(f.released.length, 3);
 });
 
-test('unknown components and failed assets fail preparation and release their leases', async () => {
+test('unknown components and failed assets fail preparation', async () => {
     const f = fixture({ '/root': [{ type: 'Missing', properties: {} }] });
     await assert.rejects(preparePrefab(f.runtime, '/root'), /Missing.*root/);
-    assert.equal(f.released.length, 1);
     const g = fixture({ '/root': [image()] }, async () => { throw Error('texture failed'); });
     await assert.rejects(preparePrefab(g.runtime, '/root'), /texture failed/);
-    assert.equal(g.released.length, 2);
 });
 
 test('preparation errors describe embedded sources without dumping their payload', async () => {
@@ -90,7 +80,7 @@ test('preparation errors describe embedded sources without dumping their payload
     });
 });
 
-test('cancellation releases promptly without waiting for shared network work', async () => {
+test('cancellation rejects promptly without waiting for shared network work', async () => {
     let finish;
     const f = fixture({ '/root': [image()] }, () => new Promise(resolve => { finish = resolve; }));
     const controller = new AbortController();
@@ -98,6 +88,5 @@ test('cancellation releases promptly without waiting for shared network work', a
     await flush(); await flush();
     controller.abort(new Error('cancelled'));
     await assert.rejects(work, /cancelled/);
-    assert.equal(f.released.length, 2);
     finish({});
 });

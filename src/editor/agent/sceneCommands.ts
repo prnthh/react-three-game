@@ -57,7 +57,7 @@ function component(value: unknown) {
     keys(data, ['type', 'properties']);
     id(data.type);
     const definition = getComponents()[data.type];
-    if (!definition) throw new Error(`Unknown component type "${data.type}". Use describeComponents for available types.`);
+    if (!definition) throw new Error(`Unknown component type "${data.type}". Use scene.components() for available types.`);
     const props = record(data.properties, 'properties');
     for (const [key, value] of Object.entries(props)) {
         const schema = definition.properties[key];

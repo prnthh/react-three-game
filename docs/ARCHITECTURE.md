@@ -29,7 +29,8 @@ export function Room() {
 
 The host chooses which instances to mount. Each gets local document IDs; rendering
 resources are shared. Loading prepares assets and pipelines before activation.
-Unmount to release ownership. `active={false}` prepares without activating;
+Unmount removes the instance; URL assets stay in the shared asset cache.
+`active={false}` prepares without activating;
 `static` freezes placement/content and requires remounting to change either.
 
 Follow [PrefabInstance](../src/runtime/prefabs/PrefabInstance.tsx) →

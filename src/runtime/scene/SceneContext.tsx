@@ -1,8 +1,7 @@
 import type { PrefabDocumentApi } from '../../core/prefabDocumentApi';
-export type { PrefabDocumentApi } from '../../core/prefabDocumentApi';
 import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 import type { Object3D, Texture } from "three";
-import type { GameObject, Prefab, PrefabMaterial } from "../../core/types";
+import type { GameObject } from "../../core/types";
 import { createGameObjectHandle } from "./gameObject";
 import type { NodeInteractionHandlers } from "./usePointerEvents";
 

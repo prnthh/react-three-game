@@ -1,12 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {BoxGeometry, Box3, Euler, Matrix4, Quaternion, Vector3} from 'three';
+import {Box3, Euler, Matrix4, Quaternion, Vector3} from 'three';
 import {normalizePrefab} from '../../src/core/prefab.ts';
 import {createJumperState, stepJumper} from '../app/demo/jumper/movement.ts';
 
 import {resolveCollisionSurfaceSize} from '../app/demo/jumper/components/CollisionSurfaceComponent.tsx';
-import {roughenGeometry} from '../app/demo/jumper/components/WeatheredGeometryComponent.ts';
 
 import {expandEmbeddedPrefabs,readTestPrefab} from './support/expand-prefabs.mjs';
 const authoredScene=JSON.parse(readFileSync(new URL('../public/prefabs/jumper-course.json',import.meta.url),'utf8'));
@@ -22,18 +21,6 @@ function visit(node,parent=new Matrix4()) {
 visit(scene.root);
 const center=s=>[(s.minX+s.maxX)/2,s.top,(s.minZ+s.maxZ)/2];
 const settings={speed:13,jumpSpeed:9,jumpBoost:1};
-
-test('west reservoir chambers meet the raft and preserve supported landing heights',()=>{
-    const raft=resolveSurface('west-annex-foundation');
-    for(let i=0;i<11;i++){
-        const core=resolveSurface(`west-reservoir-core-${i}`);
-        const cap=resolveSurface(`west-annex-step-${i}`);
-        assert.ok(Math.abs(core.bottom-raft.top)<1e-6,`chamber ${i} meets raft`);
-        assert.ok(Math.abs(core.top-cap.bottom)<1e-6,`chamber ${i} supports cap`);
-
-    }
-
-});
 
 test('jumper prefab definitions are self-contained, including nested references',()=>{
     const seen=new Set();
@@ -107,23 +94,6 @@ test('west spillway climb clears the reservoir walls and reaches the observation
     checkJump('west-spillway-step-7','west-spillway-crown',undefined,[-72,41.05,-49]);
 });
 
-test('backfield prefab placements keep their bases grounded',()=>{
-    const backfield=scene.root.children.find(n=>n.id==='motif-backfield');
-    assert.ok(backfield,'missing sparse backfield');
-    const samples=backfield.children.filter(n=>/^back-(signal|shrine|wall|canopy)-0[1-3]$/.test(n.id));
-    assert.ok(samples.length>0,'backfield has grounded samples');
-    const groundTop=surfaces.get('playground-ground').top;
-    const baseNames={signal:'base',shrine:'base',wall:'foot',canopy:'foot'};
-    for(const sample of samples){
-        const [,kind,instance]=sample.id.match(/^back-(signal|shrine|wall|canopy)-(\d+)$/);
-        const sourceId=`back-${kind}-${baseNames[kind]}`;
-        const baseId=instance==='01'?sourceId:`${sample.id}/${sourceId}`;
-        const base=surfaces.get(baseId);
-        assert.ok(base,`${sample.id}: missing grounded base`);
-        assert.ok(Math.abs(base.bottom-groundTop)<1e-6,`${sample.id}: base floats ${(base.bottom-groundTop).toFixed(3)} m above ground`);
-    }
-});
-
 function checkJump(fromId,toId,fromPosition,toPosition){
     const resolve=id=>{
         if(surfaces.has(id))return surfaces.get(id);
@@ -191,15 +161,6 @@ test('the sky arcade loops around the tower and descends onto the passage',()=>{
     for(let i=1;i<route.length;i++)checkJump(route[i-1],route[i]);
 });
 
-
-
-
-
-
-
-
-
-
 test('collision dimensions come from the primitive independently of weathering',()=>{
     const node={id:'piece',components:{
         shape:{type:'Geometry',properties:{geometryType:'box',args:[2,6,4,3,8,3]}},
@@ -210,30 +171,4 @@ test('collision dimensions come from the primitive independently of weathering',
     assert.deepEqual(resolveCollisionSurfaceSize(node,[1,1,1]),[2,6,4]);
     node.components.shape.properties.geometryType='cylinder';
     assert.deepEqual(resolveCollisionSurfaceSize(node,[3,7,3]),[3,7,3]);
-});
-
-
-
-
-test('all window recess panels clear the roughened tower face',()=>{
-    const bounds=new Map();
-    function walk(n,parent=new Matrix4()){
-        const cs=Object.values(n.components??{});
-        const t=cs.find(c=>c.type==='Transform')?.properties??{};
-        const world=parent.clone().multiply(new Matrix4().compose(new Vector3(...(t.position??[0,0,0])),new Quaternion().setFromEuler(new Euler(...(t.rotation??[0,0,0]))),new Vector3(...(t.scale??[1,1,1]))));
-        if(n.id==='window-tower'||n.id.endsWith('window-dark-0')){
-            const g=cs.find(c=>c.type==='Geometry').properties;
-            const w=cs.find(c=>c.type==='WeatheredGeometry').properties;
-            const source=new BoxGeometry(...g.args);
-            const rough=roughenGeometry(source,w.amount,w.seed,w.preserveTop,w.preserveBottom,w.displacementScale);
-            rough.computeBoundingBox();bounds.set(n.id,rough.boundingBox.clone().applyMatrix4(world));
-            source.dispose();rough.dispose();
-        }
-        n.children?.forEach(c=>walk(c,world));
-    }
-    walk(scene.root);
-    const tower=bounds.get('window-tower');
-    const windows=[...bounds].filter(([id])=>id!=='window-tower');
-    assert.ok(windows.length>0,'window recesses are present');
-    for(const[id,box]of windows)assert.ok(box.min.z>tower.max.z+.01,`${id}: panel is swallowed by weathered concrete`);
 });

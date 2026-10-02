@@ -7,7 +7,6 @@ import { rigidBody } from 'crashcat';
 import { registerComponent } from '../../src/core/ComponentRegistry.ts';
 import { createPrefabStore } from '../../src/core/prefabStore.ts';
 import { PrefabRoot } from '../../src/runtime/prefabs/PrefabRoot.tsx';
-import { EditorNodeStreaming } from '../../src/runtime/prefabs/NodeStreaming.tsx';
 import { SceneRuntime } from '../../src/runtime/SceneRuntime.tsx';
 import Camera from '../../src/runtime/components/CameraComponent.tsx';
 import Geometry from '../../src/runtime/components/GeometryComponent.tsx';
@@ -25,12 +24,6 @@ const box = id => ({ id, name: id, components: {
 } });
 
 async function fixture(t, data, physics = false) {
-    const frames = new Map();
-    let frameId = 0;
-    const previousRAF = globalThis.requestAnimationFrame, previousCancel = globalThis.cancelAnimationFrame;
-    globalThis.requestAnimationFrame = callback => { frames.set(++frameId, callback); return frameId; };
-    globalThis.cancelAnimationFrame = id => frames.delete(id);
-    t.after(() => { globalThis.requestAnimationFrame = previousRAF; globalThis.cancelAnimationFrame = previousCancel; });
     const previousWindow = globalThis.window;
     globalThis.window = { addEventListener() {}, removeEventListener() {} };
     THREE.AudioContext.setContext({ createGain: () => ({ connect() {} }), destination: {}, listener: {} });
@@ -43,12 +36,7 @@ async function fixture(t, data, physics = false) {
     let store;
     const render = async (editMode, version = 0) => {
         await act(async () => { store = root.render(h(SceneRuntime, null,
-            h(EditorNodeStreaming, { enabled: editMode },
-                h(PrefabRoot, { key: version, store: doc, editMode }, physics ? h(CrashcatRuntime) : null)))); });
-        while (frames.size) await act(async () => {
-            const [id, callback] = frames.entries().next().value;
-            frames.delete(id); callback();
-        });
+            h(PrefabRoot, { key: version, store: doc, editMode }, physics ? h(CrashcatRuntime) : null))); });
     };
     return { doc, render, get state() { return store.getState(); } };
 }

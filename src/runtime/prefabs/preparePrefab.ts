@@ -6,7 +6,6 @@ import type { ResourceLease } from '../assets/ResourceCache';
 import { describePrefabSource } from './prefabSource';
 
 import type { AssetDependency } from '../../core/dependencies';
-export type { AssetDependency, ComponentDependency } from '../../core/dependencies';
 
 export interface PreparedPrefab {
     readonly document: PrefabState;

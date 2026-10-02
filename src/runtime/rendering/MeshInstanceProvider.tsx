@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useSyncExternalStore, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useSyncExternalStore, type ReactNode, type RefObject } from 'react';
 import { DynamicDrawUsage, InstancedInterleavedBuffer, InstancedMesh, Matrix4, Mesh, type Material, type Object3D } from 'three';
 import { instancedDynamicBufferAttribute, mat4 } from 'three/tsl';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
@@ -254,17 +254,20 @@ export function MeshInstanceProvider({ children, isolated = false, static: isSta
     );
 }
 
-export function useMeshInstanceRegistration(id: string, mesh: Mesh | null, enabled: boolean) {
+export function useMeshInstanceRegistration(id: string, meshRef: RefObject<Mesh | null>, enabled: boolean) {
     const registry = useContext(MeshInstanceContext);
     const onEditClick = useContext(EditPickContext);
+    const editClick = useRef(onEditClick);
+    useLayoutEffect(() => { editClick.current = onEditClick; }, [onEditClick]);
     useLayoutEffect(() => {
+        const mesh = meshRef.current;
         if (!registry || !mesh || !enabled || !mesh.geometry || !mesh.material || mesh.children.length > 0) return;
         return registry.register({
             id,
             mesh,
-            onEditClick,
+            onEditClick: event => editClick.current?.(event),
         });
-    }, [enabled, id, mesh, registry, onEditClick]);
+    }, [enabled, id, meshRef, registry]);
 }
 
 const NOOP = () => {};

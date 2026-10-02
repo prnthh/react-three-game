@@ -8,7 +8,7 @@ import { COLLISION_SURFACE } from './CollisionSurfaceComponent';
 import { cameraFov, cameraRoll, CROUCH_HEIGHT, PLAYER_RADIUS, STANDING_HEIGHT,
     advanceJumper, createJumperSimulation, jumperRenderPosition, type JumperSimulation } from '../movement';
 
-import { attemptCollision, createAttempt, createRecorder, createReplay, stepReplay, type Attempt, type Replay } from '../replay';
+import { attemptCollision, Buttons, createAttempt, packCommand, unpackCommand, Replay, type Attempt } from '../replay';
 
 type Properties = { speed: number; jumpSpeed: number; jumpBoost: number; slideBoost: number; wallRunSpeed: number; color: string; debug: boolean };
 const STEP_SOUND = '/sound/step.mp3';
@@ -33,7 +33,6 @@ function Controller(settings: Properties) {
     const input = useRef({ keys: new Set<string>(), jump: false });
     const motion = useRef<JumperSimulation | null>(null);
     const attempt = useRef<Attempt | null>(null);
-    const record = useRef<ReturnType<typeof createRecorder> | null>(null);
     const replay = useRef<Replay | null>(null);
     const restart = useRef(false);
     const spawnRotation = useRef(new Quaternion());
@@ -104,10 +103,9 @@ function Controller(settings: Properties) {
             view.current.yaw = Math.atan2(-forward.current.x, -forward.current.z);
         }
         if (restart.current) {
-            if (attempt.current?.ticks) replay.current = createReplay(attempt.current);
+            replay.current = attempt.current?.recording.ticks ? new Replay(attempt.current) : null;
             motion.current = createJumperSimulation(spawn.current.toArray());
             attempt.current = null;
-            record.current = null;
             aim.quaternion.copy(spawnRotation.current);
             input.current.jump = false;
             wasGrounded.current = false;
@@ -122,23 +120,23 @@ function Controller(settings: Properties) {
         const locked = document.pointerLockElement === gl.domElement;
         if (locked) {
             const keys = input.current.keys;
-            const ahead = Number(keys.has('KeyW')) - Number(keys.has('KeyS'));
-            const right = Number(keys.has('KeyD')) - Number(keys.has('KeyA'));
+            const buttons = (keys.has('KeyW') ? Buttons.forward : 0)
+                | (keys.has('KeyS') ? Buttons.back : 0)
+                | (keys.has('KeyA') ? Buttons.left : 0)
+                | (keys.has('KeyD') ? Buttons.right : 0)
+                | (input.current.jump ? Buttons.jump : 0)
+                | (keys.has('ControlLeft') || keys.has('ControlRight') || keys.has('KeyC') ? Buttons.crouch : 0);
+            const packed = packCommand(buttons, Math.atan2(-forward.current.x, -forward.current.z));
             if (!attempt.current) {
                 const bounds = surfaces.flatMap(s => { const b = s.value.bounds(); return b ? [b] : []; });
                 attempt.current = createAttempt(spawn.current.toArray(), settings, bounds);
-                record.current = createRecorder(attempt.current);
             }
-            const steps = advanceJumper(motion.current, frameDelta, {
-                x: forward.current.x * ahead - forward.current.z * right,
-                z: forward.current.z * ahead + forward.current.x * right,
-                facingX: forward.current.x,
-                facingZ: forward.current.z,
-                jump: input.current.jump, crouch: keys.has('ControlLeft') || keys.has('ControlRight') || keys.has('KeyC'),
-            }, attempt.current.settings, attemptCollision(attempt.current), command => {
-                record.current?.(command);
-                if (replay.current) stepReplay(replay.current);
-            });
+            const steps = advanceJumper(motion.current, frameDelta, unpackCommand(packed),
+                attempt.current.settings, attemptCollision(attempt.current), command => {
+                    // advanceJumper consumes a jump on only the first physics tick.
+                    attempt.current!.recording.append(command.jump ? packed : packed & ~Buttons.jump);
+                    if (replay.current && !replay.current.step()) replay.current = null;
+                });
             if (steps) input.current.jump = false;
             if (motion.current.current.position[1] < -12) restart.current = true;
             position.current.fromArray(jumperRenderPosition(motion.current));
@@ -147,7 +145,7 @@ function Controller(settings: Properties) {
         }
         if (ghost.current && ghostCapsule.current) {
             const playback = replay.current;
-            ghost.current.visible = !!playback && playback.tick < playback.attempt.ticks;
+            ghost.current.visible = !!playback && playback.tick < playback.attempt.recording.ticks;
             if (playback) {
                 playback.simulation.remainder = motion.current.remainder;
                 ghost.current.position.fromArray(jumperRenderPosition(playback.simulation));

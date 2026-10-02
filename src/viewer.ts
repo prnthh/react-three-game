@@ -62,7 +62,7 @@ export type { MaterialOverrides } from "./runtime/components/MaterialComponent";
 
 export { PrefabInstance } from "./runtime/prefabs/PrefabInstance";
 export type { PrefabInstanceProps, PrefabInstanceStatus } from "./runtime/prefabs/PrefabInstance";
-export type { PreparedPrefab, PrefabPreparationOptions, AssetDependency, ComponentDependency } from "./runtime/prefabs/preparePrefab";
+export type { PreparedPrefab, PrefabPreparationOptions } from "./runtime/prefabs/preparePrefab";
 export { useSceneLoadStats } from "./runtime/assets/AssetRuntime";
 export { createPrefabStore } from "./core/prefabStore";
 export { usePrefabStore, usePrefabStoreApi } from "./runtime/prefabs/PrefabStoreContext";
@@ -84,8 +84,9 @@ export { SceneRuntime } from "./runtime/SceneRuntime";
 export type { GameObjectHandle } from "./runtime/scene/gameObject";
 export { notifyObjectChanged } from "./runtime/scene/objectChanges";
 
-export { usePrefabDocument, createPrefabDocumentApi } from "./runtime/prefabs/prefabApi";
-export type { PrefabDocumentApi } from "./runtime/scene/SceneContext";
+export { usePrefabDocument } from "./runtime/prefabs/prefabApi";
+export { createPrefabDocumentApi } from "./core/prefabDocumentApi";
+export type { PrefabDocumentApi } from "./core/prefabDocumentApi";
 
 export { default as RuntimeComponent } from "./runtime/components/RuntimeComponent";
 export type { RuntimeComponentProperties, RuntimeScriptContext } from "./runtime/components/RuntimeComponent";

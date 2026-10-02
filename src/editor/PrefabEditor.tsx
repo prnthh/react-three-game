@@ -1,3 +1,4 @@
+import { isExternalPath, withBasePath } from '../runtime/assets/assetPaths';
 import { SceneRuntime } from "../runtime/SceneRuntime";
 import { OrbitControls, TransformControls, useHelper } from "@react-three/drei";
 import { createContext, useContext, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, forwardRef, useImperativeHandle } from "react";
@@ -8,7 +9,6 @@ import { findComponentEntry } from "../core/types";
 import type { GameObject, Prefab } from "../core/types";
 import GameCanvas from "../runtime/GameCanvas";
 import PrefabRoot from "../runtime/prefabs/PrefabRoot";
-import { EditorNodeStreaming } from "../runtime/prefabs/NodeStreaming";
 import { AssetRuntimeProvider } from "../runtime/assets/AssetRuntime";
 import type { AssetRuntime } from "../runtime/assets/AssetRuntime";
 import { createPrefabRegistry, PrefabEditorMode } from "../runtime/scene/SceneContext";
@@ -18,7 +18,7 @@ import EditorUI from "./EditorUI";
 import { createSceneAgent, type SceneAgentHost, type SceneCaptureOptions } from "./agent/sceneAgent";
 import { exposeSceneAgent } from "./agent/sceneAgentBridge";
 import { base, toolbar } from "./ui/styles";
-import { exportGLB as exportGLBFile, exportGLBData, focusCameraOnObject, isExternalPath, withBasePath } from "./documentIO";
+import { exportGLB as exportGLBFile, exportGLBData, focusCameraOnObject } from "./documentIO";
 import type { ExportGLBOptions } from "./documentIO";
 import { loadDroppedAssets } from "./assets";
 import { resolveManifestAssetPath } from "../runtime/assets/assetLoaders";
@@ -114,7 +114,7 @@ function isObjectAttachedToRoot(root: Object3D | null | undefined, object: Objec
     return false;
 }
 
-export { isExternalPath as isAbsoluteAssetPath } from "./documentIO";
+export { isExternalPath as isAbsoluteAssetPath } from "../runtime/assets/assetPaths";
 
 export function resolvePrefabAssetPath(basePath: string, file: string) {
     return withBasePath(basePath, file);
@@ -867,7 +867,7 @@ export function PrefabEditorScene({ children }: { children?: React.ReactNode; })
     }, [get, isEditMode, setSelection]);
     return <SceneRuntime>
         {isEditMode ? <gridHelper args={[10, 10]} position={[0, -0.001, 0]} /> : null}
-        <EditorNodeStreaming enabled={isEditMode}><PrefabRoot
+        <PrefabRoot
             key={runtimeVersion}
             store={prefabStore}
             editMode={isEditMode}
@@ -879,7 +879,7 @@ export function PrefabEditorScene({ children }: { children?: React.ReactNode; })
             prefab={prefabValue}
         >
             {children}
-        </PrefabRoot></EditorNodeStreaming>
+        </PrefabRoot>
         <DropPreview previewRef={dropPreviewRef} />
 
         {isEditMode && (

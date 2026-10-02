@@ -1,22 +1,53 @@
 import { SurfaceGrid } from './spatial';
 import { createJumperSimulation, JUMPER_STEP, stepJumper,
-    type JumperSimulation, type MovementSettings, type Position, type Surface } from './movement';
+    type MovementSettings, type Position, type Surface } from './movement';
 
-export type JumperCommand = Required<Parameters<typeof stepJumper>[1]>;
-const idle = (): JumperCommand => ({ x: 0, z: 0, facingX: 0, facingZ: -1, jump: false, crouch: false });
-const fields = ['x', 'z', 'facingX', 'facingZ', 'jump', 'crouch'] as const;
-export type Attempt = {
-    spawn: Position;
-    settings: MovementSettings;
-    surfaces: Surface[];
-    ticks: number;
-    changes: { tick: number; delta: Partial<JumperCommand> }[];
-};
-export function createAttempt(spawn: Position, settings: MovementSettings, surfaces: Surface[]): Attempt {
-    return { spawn: [...spawn], settings: { ...settings }, surfaces: structuredClone(surfaces), ticks: 0, changes: [] };
+export const Buttons = { forward: 1, back: 2, left: 4, right: 8, jump: 16, crouch: 32 } as const;
+const TAU = Math.PI * 2;
+const YAW_STEPS = 65536;
+
+/** Quantize before simulation: live physics and replay consume the same command. */
+export function packCommand(buttons: number, yaw: number) {
+    const angle = Math.round(((yaw % TAU + TAU) % TAU) * YAW_STEPS / TAU) & 0xffff;
+    return (angle << 6) | (buttons & 63);
 }
-// Runtime acceleration stays outside the serializable recording. Live and ghost
-// share an index when using the same immutable attempt snapshot.
+export function unpackCommand(packed: number) {
+    const yaw = (packed >>> 6) * TAU / YAW_STEPS;
+    const facingX = -Math.sin(yaw), facingZ = -Math.cos(yaw);
+    const ahead = Number(!!(packed & Buttons.forward)) - Number(!!(packed & Buttons.back));
+    const right = Number(!!(packed & Buttons.right)) - Number(!!(packed & Buttons.left));
+    return { x: facingX * ahead - facingZ * right, z: facingZ * ahead + facingX * right,
+        facingX, facingZ, jump: !!(packed & Buttons.jump), crouch: !!(packed & Buttons.crouch) };
+}
+
+/** One packed command per tick. Capacity doubles as needed. */
+export class Recording {
+    ticks = 0;
+    private commands = new Uint32Array(4096);
+    private finished = false;
+
+    append(packed: number) {
+        if (this.finished) throw new Error('Cannot append to a finished recording');
+        if (this.ticks === this.commands.length) {
+            const larger = new Uint32Array(this.commands.length * 2);
+            larger.set(this.commands);
+            this.commands = larger;
+        }
+        this.commands[this.ticks++] = packed;
+    }
+    finish() {
+        if (!this.finished) {
+            this.commands = this.commands.slice(0, this.ticks);
+            this.finished = true;
+        }
+        return this.commands;
+    }
+}
+
+export function createAttempt(spawn: Position, settings: MovementSettings, surfaces: Surface[]) {
+    return { spawn: [...spawn] as Position, settings: { ...settings }, surfaces: structuredClone(surfaces), recording: new Recording() };
+}
+export type Attempt = ReturnType<typeof createAttempt>;
 const collisionGrids = new WeakMap<Attempt, SurfaceGrid>();
 export function attemptCollision(attempt: Attempt) {
     let grid = collisionGrids.get(attempt);
@@ -24,36 +55,23 @@ export function attemptCollision(attempt: Attempt) {
     return grid;
 }
 
-export function createRecorder(attempt: Attempt) {
-    let previous = idle();
-    return (input: Parameters<typeof stepJumper>[1]) => {
-        const command: JumperCommand = { ...idle(), ...input, crouch: !!input.crouch };
-        const delta: Partial<JumperCommand> = {};
-        for (const field of fields) {
-            if (command[field] !== previous[field]) Object.assign(delta, { [field]: command[field] });
-        }
-        if (Object.keys(delta).length) attempt.changes.push({ tick: attempt.ticks, delta });
-        previous = command;
-        attempt.ticks++;
-    };
-}
-export type Replay = {
-    attempt: Attempt; simulation: JumperSimulation; tick: number; cursor: number; command: JumperCommand;
-};
-export function createReplay(attempt: Attempt): Replay {
-    return { attempt, simulation: createJumperSimulation(attempt.spawn), tick: 0, cursor: 0, command: idle() };
-}
-/** Consume exactly one recorded physics command per live physics step. No frame clock drift. */
-export function stepReplay(replay: Replay) {
-    if (replay.tick >= replay.attempt.ticks) return false;
-    const change = replay.attempt.changes[replay.cursor];
-    if (change?.tick === replay.tick) {
-        Object.assign(replay.command, change.delta);
-        replay.cursor++;
+/** Playback indexes the finished commands directly, once per live physics tick. */
+export class Replay {
+    readonly simulation;
+    tick = 0;
+    command = unpackCommand(0);
+    private readonly commands;
+
+    constructor(readonly attempt: Attempt) {
+        this.simulation = createJumperSimulation(attempt.spawn);
+        this.commands = attempt.recording.finish();
     }
-    const sim = replay.simulation;
-    sim.previous = sim.current;
-    sim.current = stepJumper(sim.current, replay.command, replay.attempt.settings, attemptCollision(replay.attempt), JUMPER_STEP);
-    replay.tick++;
-    return true;
+    step() {
+        if (this.tick >= this.commands.length) return false;
+        this.command = unpackCommand(this.commands[this.tick++]);
+        const sim = this.simulation;
+        sim.previous = sim.current;
+        sim.current = stepJumper(sim.current, this.command, this.attempt.settings, attemptCollision(this.attempt), JUMPER_STEP);
+        return true;
+    }
 }

@@ -3,6 +3,48 @@ import assert from 'node:assert/strict';
 import { Group, Mesh, BoxGeometry, MeshBasicMaterial, Layers } from 'three';
 import { hideInstancedSources } from '../../src/runtime/rendering/MeshInstanceProvider.tsx';
 
+test('changing editor handlers preserves instance batches and uses the current handler', async t => {
+    const { act, createElement: h, useRef } = await import('react');
+    const { createRoot, extend } = await import('@react-three/fiber');
+    const { InstancedMesh } = await import('three');
+    const { MeshInstanceProvider, useMeshInstanceRegistration, useMeshInstanceRevision } = await import('../../src/runtime/rendering/MeshInstanceProvider.tsx');
+    const { EditPickContext } = await import('../../src/runtime/scene/SelectionRuntime.tsx');
+    extend({ Group, Mesh, InstancedMesh }); globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+    const canvas = { width: 100, height: 100, style: {}, addEventListener() {}, removeEventListener() {} };
+    const root = createRoot(canvas);
+    await root.configure({ gl: { render() {}, setSize() {}, setPixelRatio() {}, domElement: canvas },
+        size: { width: 100, height: 100, top: 0, left: 0 }, frameloop: 'never' });
+    const geometry = new BoxGeometry(), material = new MeshBasicMaterial();
+    geometry.userData.prefabGeometrySignature = 'handler-continuity';
+    const meshes = [new Mesh(geometry, material), new Mesh(geometry, material)];
+    let revision, store;
+    function Probe() { revision = useMeshInstanceRevision(); return null; }
+    let sourceRenders = 0;
+    function Source({ mesh }) {
+        sourceRenders++;
+        const ref = useRef(null);
+        useMeshInstanceRegistration(mesh.uuid, ref, true);
+        return h('mesh', { ref, geometry: mesh.geometry, material: mesh.material });
+    }
+    const render = async handler => act(async () => {
+        store = root.render(h(MeshInstanceProvider, null, h(Probe),
+            h(EditPickContext.Provider, { value: handler }, meshes.map(mesh => h(Source, { key: mesh.uuid, mesh })))));
+    });
+    t.after(async () => { await act(async () => root.unmount()); geometry.dispose(); material.dispose(); });
+    let clicks = 0;
+    await render(() => { clicks++; });
+    assert.equal(sourceRenders, 2, 'refs register both meshes without a second render');
+    const originalRevision = revision;
+    const batch = store.getState().scene.children.find(object => object.isInstancedMesh);
+    for (const handler of [undefined, () => { clicks += 10; }]) {
+        await render(handler);
+        assert.equal(revision, originalRevision, 'no unregister/register cycle');
+        assert.ok(store.getState().scene.children.includes(batch));
+        batch.__r3f.handlers.onClick({ delta: 0, instanceId: 0 });
+    }
+    assert.equal(clicks, 10, 'play ignores edit clicks; edit uses the new handler');
+});
+
 test('instancing preserves source geometry for collider rebuilding and restores rendering on cleanup', () => {
     const node = new Group();
     const mesh = new Mesh(new BoxGeometry(2, 0.1, 2), new MeshBasicMaterial());
@@ -61,7 +103,7 @@ test('reflected instance transforms retain ordinary rendering and restore custom
 });
 
 test('mounted batches hide reflected slots and render their sources across live scale changes', async t => {
-    const {act,createElement:h}=await import('react');
+    const {act,createElement:h,useRef}=await import('react');
     const {createRoot,extend}=await import('@react-three/fiber');
     const {InstancedMesh,Matrix4}=await import('three');
     const {MeshInstanceProvider,useMeshInstanceRegistration}=await import('../../src/runtime/rendering/MeshInstanceProvider.tsx');
@@ -71,7 +113,7 @@ test('mounted batches hide reflected slots and render their sources across live 
     await root.configure({gl:{render(){},setSize(){},setPixelRatio(){},domElement:canvas},size:{width:100,height:100,top:0,left:0},frameloop:'never'});
     const geometry=new BoxGeometry(),material=new MeshBasicMaterial();geometry.userData.prefabGeometrySignature='reflection-test';
     const a=new Mesh(geometry,material),b=new Mesh(geometry,material);b.scale.x=-1;
-    function Source({id,mesh}){useMeshInstanceRegistration(id,mesh,true);return h('primitive',{object:mesh});}
+    function Source({id,mesh}){useMeshInstanceRegistration(id,useRef(mesh),true);return h('primitive',{object:mesh});}
     let store;await act(async()=>{store=root.render(h(MeshInstanceProvider,null,h(Source,{id:'a',mesh:a}),h(Source,{id:'b',mesh:b})));});
     t.after(async()=>{await act(async()=>root.unmount());geometry.dispose();material.dispose();});
     const batch=store.getState().scene.children.find(o=>o.isInstancedMesh);assert.ok(batch);

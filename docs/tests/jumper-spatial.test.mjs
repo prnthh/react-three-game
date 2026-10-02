@@ -105,21 +105,10 @@ test('indexed course movement matches full scans on every tick across many start
     }
 });
 
-test('course grid substantially narrows candidates; report isolated simulation timing', t => {
+test('course grid substantially narrows candidates', () => {
     const starts = surfaces.filter((_, i) => i % 20 === 0).map(s => [(s.minX + s.maxX) / 2, s.top, (s.minZ + s.maxZ) / 2]);
     let candidates = 0;
     for (const [x, y, z] of starts) candidates += grid.query({ minX: x - 1, maxX: x + 1, minY: y - 1, maxY: y + 3, minZ: z - 1, maxZ: z + 1 }).length;
     const average = candidates / starts.length;
     assert.ok(average < surfaces.length / 4, `${average} of ${surfaces.length}`);
-    function bench(world) {
-        const start = performance.now();
-        for (const position of starts) {
-            let state = createJumperState(position);
-            for (let i = 0; i < 120; i++) state = stepJumper(state, { x: 1, z: 0, jump: i === 10 }, settings, world, JUMPER_STEP);
-        }
-        return performance.now() - start;
-    }
-    bench(grid); bench(surfaces);
-    const fullMs = bench(surfaces), indexedMs = bench(grid);
-    t.diagnostic(`${surfaces.length} surfaces; average ${average.toFixed(1)} nearby candidates. ${starts.length * 120} steps: full scan ${fullMs.toFixed(1)}ms, grid ${indexedMs.toFixed(1)}ms. CPU microbenchmark, not render FPS.`);
 });

@@ -3,7 +3,7 @@ import { getComponents } from '../../core/ComponentRegistry';
 import { findComponentEntry, type ComponentData, type GameObject, type Prefab, type PrefabMaterial } from '../../core/types';
 import { composeTransform } from "../../core/transforms";
 import { createPrefabStore } from "../../core/prefabStore";
-import { createPrefabDocumentApi } from '../../runtime/prefabs/prefabApi';
+import { createPrefabDocumentApi } from '../../core/prefabDocumentApi';
 import { collectSubtreeIds, type PrefabState } from '../../core/prefab';
 
 type Vec3 = [number, number, number];

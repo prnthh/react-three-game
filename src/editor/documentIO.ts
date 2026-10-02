@@ -9,8 +9,6 @@ import {
 	Quaternion,
 	Vector3,
 } from "three";
-export { composeTransform, decompose } from "../core/transforms";
-export { isExternalPath, withBasePath } from "../runtime/assets/assetPaths";
 
 export interface ExportGLBOptions {
 	filename?: string;

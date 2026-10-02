@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { Material, Mesh, Texture, TextureLoader } from "three";
 import type { Object3D } from "three";
 import { loadModel } from "../../runtime/assets/assetLoaders";
-import { withBasePath } from "../documentIO";
+import { withBasePath } from "../../runtime/assets/assetPaths";
 import { base, colors, fonts } from "../ui/styles";
 
 const styles: Record<string, any> = {

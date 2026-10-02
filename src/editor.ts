@@ -65,4 +65,4 @@ export type { SceneCommand, SceneCommandBatch, SceneCommandResult } from "./edit
 export type { SceneAgent, SceneBatch, SceneSearchOptions, SceneGetManyOptions } from "./editor/agent/sceneAgent";
 
 export { usePrefabDocument } from "./runtime/prefabs/prefabApi";
-export type { PrefabDocumentApi } from "./runtime/scene/SceneContext";
+export type { PrefabDocumentApi } from "./core/prefabDocumentApi";

@@ -14,7 +14,7 @@ export const CascadedDirectionalLight = forwardRef<DirectionalLight, CascadedDir
     function CascadedDirectionalLight({ cascades = 3, maxFar = 100, lightMargin = 25, ...props }, ref) {
         const camera = useThree(state => state.camera);
         // Three keys lighting pipelines by light identity. Reconfiguration needs a new light.
-        const light = useMemo(() => new DirectionalLight(), [camera, cascades, maxFar, lightMargin]);
+        const light = useMemo(() => new DirectionalLight(), [cascades, maxFar, lightMargin]);
         const node = useRef<CSMShadowNode | null>(null);
         const projection = useRef(new Matrix4());
         useImperativeHandle(ref, () => light, [light]);
@@ -23,7 +23,6 @@ export const CascadedDirectionalLight = forwardRef<DirectionalLight, CascadedDir
             csm.fade = true;
             light.shadow.shadowNode = csm;
             node.current = csm;
-            projection.current.copy(camera.projectionMatrix);
             return () => {
                 // Three's CSM dispose detaches its cascade lights but doesn't free their maps.
                 csm.lights.forEach(cascade => cascade.shadow?.dispose());
@@ -31,11 +30,12 @@ export const CascadedDirectionalLight = forwardRef<DirectionalLight, CascadedDir
                 light.dispose();
                 node.current = null;
             };
-        }, [light, camera, cascades, maxFar, lightMargin]);
+        }, [light, cascades, maxFar, lightMargin]);
         useFrame(() => {
             const csm = node.current;
             if (!csm?.camera) return; // Initialized by Three during shader setup.
-            if (!projection.current.equals(camera.projectionMatrix)) {
+            if (csm.camera !== camera || !projection.current.equals(camera.projectionMatrix)) {
+                csm.camera = camera;
                 projection.current.copy(camera.projectionMatrix);
                 csm.updateFrustums();
             }

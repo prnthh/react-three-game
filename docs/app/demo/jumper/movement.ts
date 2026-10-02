@@ -1,6 +1,6 @@
 import type { SurfaceGrid } from './spatial';
 
-// Demo-owned kinematic movement: one-way platforms plus axis-aligned solid walls.
+// Demo-owned kinematic movement: one-way platforms plus solid walls with yaw-aware collision.
 export type Position = [number, number, number];
 export type SurfaceOrientation = {
     center: Position;
@@ -21,6 +21,8 @@ export type MovementSettings = { speed: number; jumpSpeed: number; jumpBoost?: n
 export const PLAYER_RADIUS = 0.3;
 export const STANDING_HEIGHT = 1.8;
 export const CROUCH_HEIGHT = 1;
+// Scene pacing: horizontal momentum tops out at 27 m/s, with 34 m/s
+// allowed during an unattached fall. Landing restores the 27 m/s limit.
 const HOP_SPEED_CAP = 27;
 const FALL_SPEED_CAP = 34;
 const WALL_RUN_VERTICAL_SPEED = 1.5;
@@ -36,9 +38,26 @@ export function createJumperState(position: Position): JumperState {
 function sameWall(a: [number, number] | null, b: [number, number] | null) {
     return !!a && !!b && a[0] === b[0] && a[1] === b[1];
 }
+// Upright boxes collide in their own horizontal frame. Tilted boxes retain
+// the conservative bounds fallback; their sloping top faces are handled below.
+function wallFrame(s: Surface) {
+    const o = s.orientation;
+    if (o) {
+        const up = rotateByQuaternion([0, 1, 0], o.quaternion);
+        if (Math.abs(up[0]) < 1e-6 && Math.abs(up[2]) < 1e-6 && up[1] > 0) {
+            const axis = rotateByQuaternion([1, 0, 0], o.quaternion);
+            return { x: o.center[0], z: o.center[2], c: axis[0], s: axis[2], hx: o.halfSize[0], hz: o.halfSize[2] };
+        }
+    }
+    return { x: (s.minX + s.maxX) / 2, z: (s.minZ + s.maxZ) / 2,
+        c: 1, s: 0, hx: (s.maxX - s.minX) / 2, hz: (s.maxZ - s.minZ) / 2 };
+}
+function wallPoint(x: number, z: number, f: ReturnType<typeof wallFrame>) {
+    return [(x - f.x) * f.c + (z - f.z) * f.s, -(x - f.x) * f.s + (z - f.z) * f.c];
+}
 function overlaps(x: number, z: number, s: Surface, radius = PLAYER_RADIUS) {
-    return x + radius > s.minX + 1e-6 && x - radius < s.maxX - 1e-6
-        && z + radius > s.minZ + 1e-6 && z - radius < s.maxZ - 1e-6;
+    const f = wallFrame(s), [lx, lz] = wallPoint(x, z, f);
+    return Math.abs(lx) < f.hx + radius - 1e-6 && Math.abs(lz) < f.hz + radius - 1e-6;
 }
 function touchesHeight(y: number, height: number, s: Surface) {
     return y < s.top - 0.01 && y + height > (s.bottom ?? -Infinity) + 0.01;
@@ -79,13 +98,14 @@ function wallAt(x: number, y: number, z: number, height: number, walls: Surface[
     for (const s of walls) {
         if (!touchesHeight(y, height, s)) continue;
         const reach = PLAYER_RADIUS + 0.08;
-        if (z > s.minZ - PLAYER_RADIUS && z < s.maxZ + PLAYER_RADIUS) {
-            if (x <= s.minX && s.minX - x <= reach) return [-1, 0];
-            if (x >= s.maxX && x - s.maxX <= reach) return [1, 0];
+        const f = wallFrame(s), [lx, lz] = wallPoint(x, z, f);
+        if (Math.abs(lz) < f.hz + PLAYER_RADIUS) {
+            if (lx <= -f.hx && -f.hx - lx <= reach) return [-f.c, -f.s];
+            if (lx >= f.hx && lx - f.hx <= reach) return [f.c, f.s];
         }
-        if (x > s.minX - PLAYER_RADIUS && x < s.maxX + PLAYER_RADIUS) {
-            if (z <= s.minZ && s.minZ - z <= reach) return [0, -1];
-            if (z >= s.maxZ && z - s.maxZ <= reach) return [0, 1];
+        if (Math.abs(lx) < f.hx + PLAYER_RADIUS) {
+            if (lz <= -f.hz && -f.hz - lz <= reach) return [f.s, -f.c];
+            if (lz >= f.hz && lz - f.hz <= reach) return [-f.s, f.c];
         }
     }
     return null;
@@ -96,10 +116,11 @@ export function stepJumper(state: JumperState,
     settings: MovementSettings, world: Surface[] | SurfaceGrid, dt: number): JumperState {
     /* ── Contact, stance, and input ─────────────────────────────────────── */
     const [x, y, z] = state.position;
+    const contactReach = Math.SQRT2 * (PLAYER_RADIUS + 0.08) + 0.001;
     let surfaces = Array.isArray(world) ? world : world.query({
-        minX: x - PLAYER_RADIUS - 0.081, maxX: x + PLAYER_RADIUS + 0.081,
+        minX: x - contactReach, maxX: x + contactReach,
         minY: y, maxY: y + STANDING_HEIGHT,
-        minZ: z - PLAYER_RADIUS - 0.081, maxZ: z + PLAYER_RADIUS + 0.081,
+        minZ: z - contactReach, maxZ: z + contactReach,
     });
     let walls = surfaces.filter(s => s.solid);
     const blockedStanding = state.crouched && walls.some(s => overlaps(x, z, s) && touchesHeight(y, STANDING_HEIGHT, s));
@@ -126,10 +147,6 @@ export function stepJumper(state: JumperState,
     const startingWallClimb = !!wallClimbNormal && !sameWall(state.wallClimbNormal, wallClimbNormal);
 
     /* ── Ground, air, and slide locomotion ─────────────────────────────── */
-    const accelerate = (amount: number, target: number) => {
-        const add = Math.min(amount * dt, Math.max(0, target - (vx * wx + vz * wz)));
-        vx += wx * add; vz += wz * add;
-    };
     if (state.grounded && crouched) {
         let speed = Math.hypot(vx, vz);
         if (!state.crouched && speed > 0.5) {
@@ -144,7 +161,9 @@ export function stepJumper(state: JumperState,
         const drag = state.grounded ? (wishLength ? 0.7 : 12) : 0;
         vx *= Math.exp(-drag * dt); vz *= Math.exp(-drag * dt);
         const reversing = vx * wx + vz * wz < 0;
-        accelerate(state.grounded ? (reversing ? 90 : 45) : (reversing ? 45 : 22), settings.speed);
+        const acceleration = state.grounded ? (reversing ? 90 : 45) : (reversing ? 45 : 22);
+        const add = Math.min(acceleration * dt, Math.max(0, settings.speed - (vx * wx + vz * wz)));
+        vx += wx * add; vz += wz * add;
     }
 
     /* ── Momentum steering ─────────────────────────────────────────────── */
@@ -163,13 +182,12 @@ export function stepJumper(state: JumperState,
 
     /* ── Wallrunning ───────────────────────────────────────────────────── */
     if (wallRunNormal) {
-        const into = vx * wallRunNormal[0] + vz * wallRunNormal[1];
-        vx -= wallRunNormal[0] * into; vz -= wallRunNormal[1] * into;
         const tangent = [-wallRunNormal[1], wallRunNormal[0]];
+        const alongVelocity = vx * tangent[0] + vz * tangent[1];
         const desiredAlong = wx * tangent[0] + wz * tangent[1];
         // Forward-facing input chooses the direction along the wall.
-        const sign = Math.sign(desiredAlong) || Math.sign(vx * tangent[0] + vz * tangent[1]) || 1;
-        const speed = Math.max(Math.hypot(vx, vz), settings.wallRunSpeed ?? 13);
+        const sign = Math.sign(desiredAlong) || Math.sign(alongVelocity) || 1;
+        const speed = Math.max(Math.abs(alongVelocity), settings.wallRunSpeed ?? 13);
         vx = tangent[0] * sign * speed; vz = tangent[1] * sign * speed;
         // Wall contact softens a fall and permits a small rise, but must not
         // preserve the full upward velocity from the jump that reached it.
@@ -184,8 +202,8 @@ export function stepJumper(state: JumperState,
     if (jumping) {
         vy = settings.jumpSpeed;
         const speed = Math.hypot(vx, vz);
-        const dx = speed > 0.1 ? vx / speed : wishLength ? wx : 0;
-        const dz = speed > 0.1 ? vz / speed : wishLength ? wz : 0;
+        const dx = speed > 0.1 ? vx / speed : wx;
+        const dz = speed > 0.1 ? vz / speed : wz;
         vx += dx * (settings.jumpBoost ?? 1); vz += dz * (settings.jumpBoost ?? 1);
         if (wallJumping && attachedWallNormal) {
             vx += attachedWallNormal[0] * WALL_JUMP_BACK_IMPULSE;
@@ -203,31 +221,59 @@ export function stepJumper(state: JumperState,
     vy -= (wallRunNormal ? 3 : 20) * dt;
 
     /* ── Horizontal collision sweep ───────────────────────────────────── */
-    const moveX = vx, moveZ = vz;
     let nx = x + vx * dt, nz = z + vz * dt;
     if (!Array.isArray(world)) {
-        // Query the entire sweep after impulses and speed limits, not just the
-        // destination cell. Padding includes rotated top-face radius extension
-        // and the small downward slope-following allowance.
+        // Sliding can redirect motion outside the original endpoint bounds.
+        // Projection cannot increase travel length, so query that radius plus
+        // collider padding around the start (see verification/jumper).
         const pad = 2 * PLAYER_RADIUS + 0.001;
+        const reach = Math.hypot(nx - x, nz - z) + pad;
         const endY = y + vy * dt;
         surfaces = world.query({
-            minX: Math.min(x, nx) - pad, maxX: Math.max(x, nx) + pad,
+            minX: x - reach, maxX: x + reach,
             minY: Math.min(y, endY) - pad, maxY: Math.max(y, endY) + STANDING_HEIGHT + pad,
-            minZ: Math.min(z, nz) - pad, maxZ: Math.max(z, nz) + pad,
+            minZ: z - reach, maxZ: z + reach,
         });
         walls = surfaces.filter(s => s.solid);
     }
-    // Sweep each horizontal axis against the expanded wall faces (no tunneling).
-    for (const s of walls) {
-        if (!touchesHeight(y, height, s) || z + PLAYER_RADIUS <= s.minZ || z - PLAYER_RADIUS >= s.maxZ) continue;
-        if (moveX > 0 && x + PLAYER_RADIUS <= s.minX + 0.001 && nx + PLAYER_RADIUS > s.minX) { nx = Math.min(nx, s.minX - PLAYER_RADIUS); vx = 0; }
-        if (moveX < 0 && x - PLAYER_RADIUS >= s.maxX - 0.001 && nx - PLAYER_RADIUS < s.maxX) { nx = Math.max(nx, s.maxX + PLAYER_RADIUS); vx = 0; }
-    }
-    for (const s of walls) {
-        if (!touchesHeight(y, height, s) || nx + PLAYER_RADIUS <= s.minX || nx - PLAYER_RADIUS >= s.maxX) continue;
-        if (moveZ > 0 && z + PLAYER_RADIUS <= s.minZ + 0.001 && nz + PLAYER_RADIUS > s.minZ) { nz = Math.min(nz, s.minZ - PLAYER_RADIUS); vz = 0; }
-        if (moveZ < 0 && z - PLAYER_RADIUS >= s.maxZ - 0.001 && nz - PLAYER_RADIUS < s.maxZ) { nz = Math.max(nz, s.maxZ + PLAYER_RADIUS); vz = 0; }
+    // Sweep against expanded local boxes, selecting the earliest face across
+    // all walls. Project the remaining motion onto that face to slide along it.
+    let remainingX = nx - x, remainingZ = nz - z;
+    nx = x; nz = z;
+    for (let iteration = 0; iteration < 8; iteration++) {
+        let hit: { time: number; normal: [number, number] } | null = null;
+        for (const wall of walls) {
+            if (!touchesHeight(y, height, wall)) continue;
+            const f = wallFrame(wall), origin = wallPoint(nx, nz, f);
+            const delta = [remainingX * f.c + remainingZ * f.s, -remainingX * f.s + remainingZ * f.c];
+            const extent = [f.hx + PLAYER_RADIUS, f.hz + PLAYER_RADIUS];
+            let enter = -Infinity, leave = Infinity;
+            let axis = 0, sign = 0;
+            for (let i = 0; i < 2; i++) {
+                if (Math.abs(delta[i]) < 1e-12) {
+                    if (Math.abs(origin[i]) >= extent[i] - 1e-9) { leave = -Infinity; break; }
+                    continue;
+                }
+                const near = (-extent[i] - origin[i]) / delta[i];
+                const far = (extent[i] - origin[i]) / delta[i];
+                const entry = Math.min(near, far);
+                if (entry > enter) { enter = entry; axis = i; sign = -Math.sign(delta[i]); }
+                leave = Math.min(leave, Math.max(near, far));
+            }
+            if (enter < -1e-8 || enter > 1 || enter > leave || leave < 0 || !Number.isFinite(enter)) continue;
+            const time = Math.max(0, enter);
+            const normal: [number, number] = axis === 0 ? [sign * f.c, sign * f.s] : [-sign * f.s, sign * f.c];
+            if (!hit || time < hit.time) hit = { time, normal };
+        }
+        if (!hit) { nx += remainingX; nz += remainingZ; break; }
+        nx += remainingX * hit.time; nz += remainingZ * hit.time;
+        remainingX *= 1 - hit.time; remainingZ *= 1 - hit.time;
+        const [normalX, normalZ] = hit.normal;
+        const motionInto = remainingX * normalX + remainingZ * normalZ;
+        remainingX -= normalX * motionInto; remainingZ -= normalZ * motionInto;
+        const velocityInto = Math.min(0, vx * normalX + vz * normalZ);
+        vx -= normalX * velocityInto; vz -= normalZ * velocityInto;
+        if (Math.hypot(remainingX, remainingZ) < 1e-10) break;
     }
 
     /* ── Vertical collision and landing ───────────────────────────────── */
@@ -237,7 +283,7 @@ export function stepJumper(state: JumperState,
             ny = Math.min(ny, s.bottom - height); vy = 0;
         }
     }
-    let landing: { top: number } | undefined;
+    let landing: number | undefined;
     if (vy <= 0) for (const surface of surfaces) {
         const radius = surface.solid ? PLAYER_RADIUS : 0;
         const previousTop = surfaceTopAt(surface, x, z, radius);
@@ -246,14 +292,14 @@ export function stepJumper(state: JumperState,
         const crossedTop = ny <= nextTop;
         const followedSlope = state.grounded && Math.abs(y - previousTop) <= 0.01
             && nextTop <= y && y - nextTop <= 0.2;
-        if ((crossedTop || followedSlope) && (!landing || nextTop > landing.top)) landing = { top: nextTop };
+        if ((crossedTop || followedSlope) && (landing === undefined || nextTop > landing)) landing = nextTop;
     }
-    if (landing) {
-        ny = landing.top; vy = 0; wallRunNormal = null; wallClimbNormal = null; wallJumpNormal = null;
+    if (landing !== undefined) {
+        ny = landing; vy = 0; wallRunNormal = null; wallClimbNormal = null; wallJumpNormal = null;
         const landingSpeed = Math.hypot(vx, vz);
         if (landingSpeed > HOP_SPEED_CAP) { vx *= HOP_SPEED_CAP / landingSpeed; vz *= HOP_SPEED_CAP / landingSpeed; }
     }
-    return { position: [nx, ny, nz], velocity: [vx, vz], velocityY: vy, grounded: !!landing, crouched,
+    return { position: [nx, ny, nz], velocity: [vx, vz], velocityY: vy, grounded: landing !== undefined, crouched,
         wallRunNormal, wallClimbNormal, wallJumpNormal };
 }
 

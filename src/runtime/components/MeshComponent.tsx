@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef } from 'react';
 
 import type { Mesh } from 'three';
 
@@ -20,7 +20,7 @@ export type MeshProperties = {
 function MeshView({ properties, children }: ComponentViewProps<MeshProperties>) {
     const { isSelected } = useNode();
     const { id: runtimeNodeId } = useGameObject();
-    const [mesh, setMesh] = useState<Mesh | null>(null);
+    const mesh = useRef<Mesh>(null);
     const visible = properties.visible !== false;
     useMeshInstanceRegistration(
         runtimeNodeId,
@@ -29,7 +29,7 @@ function MeshView({ properties, children }: ComponentViewProps<MeshProperties>) 
     );
     return (
         <mesh
-            ref={setMesh}
+            ref={mesh}
             visible={visible}
             castShadow={visible && properties.castShadow !== false}
             receiveShadow={visible && properties.receiveShadow !== false}

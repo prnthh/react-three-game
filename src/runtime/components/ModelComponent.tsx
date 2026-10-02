@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef } from 'react';
 
 import { Matrix4, Mesh, SkinnedMesh, type BufferGeometry, type Material, type Object3D } from 'three';
 
@@ -112,10 +112,10 @@ function RepeatedMesh({
     position: [number, number, number];
     instanced: boolean;
 }) {
-    const [mesh, setMesh] = useState<Mesh | null>(null);
+    const mesh = useRef<Mesh>(null);
     useMeshInstanceRegistration(id, mesh, instanced);
     return <mesh
-        ref={setMesh}
+        ref={mesh}
         position={position}
         geometry={part.geometry}
         material={part.material}

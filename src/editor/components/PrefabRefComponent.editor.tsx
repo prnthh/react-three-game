@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ComponentEditorProps } from '../../core/ComponentRegistry';
 import { useEditorRef } from '../EditorContext';
-import { withBasePath } from '../documentIO';
+import { withBasePath } from '../../runtime/assets/assetPaths';
 import { base, colors } from '../ui/styles';
 import { FieldGroup, Label } from '../ui/Input';
 import { isEmbeddedPrefabSource } from '../../runtime/prefabs/prefabSource';

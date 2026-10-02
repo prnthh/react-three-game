@@ -1,12 +1,11 @@
 import { useMemo } from 'react';
 import type { AssetRuntime } from '../assets/AssetRuntime';
-import type { PrefabApi, PrefabDocumentApi, PrefabRegistry } from '../scene/SceneContext';
+import type { PrefabApi, PrefabRegistry } from '../scene/SceneContext';
 import { usePrefabStoreApi } from "./PrefabStoreContext";
 import { type PrefabStoreApi } from "../../core/prefabStore";
 import { withBasePath } from "../assets/assetPaths";
 
-import { createPrefabDocumentApi } from '../../core/prefabDocumentApi';
-export { createPrefabDocumentApi } from '../../core/prefabDocumentApi';
+import { createPrefabDocumentApi, type PrefabDocumentApi } from '../../core/prefabDocumentApi';
 
 /** Use for authored edits; useGameObject accesses transient runtime state. */
 export function usePrefabDocument(): PrefabDocumentApi {

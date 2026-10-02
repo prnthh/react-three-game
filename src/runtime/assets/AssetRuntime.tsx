@@ -1,6 +1,7 @@
+import type { AssetDependency } from '../../core/dependencies';
 import { useShallow } from "zustand/react/shallow";
 import { ResourceCache, type ResourceLease } from "./ResourceCache";
-import { preparePrefab, type AssetDependency, type PreparedPrefab, type PrefabPreparationOptions } from "../prefabs/preparePrefab";
+import { preparePrefab, type PreparedPrefab, type PrefabPreparationOptions } from "../prefabs/preparePrefab";
 import { getComponent } from "../../core/ComponentRegistry";
 import { Mesh, type Material } from "three";
 import { createContext, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useState, type ReactNode } from "react";
@@ -69,8 +70,7 @@ export const AssetRuntimeContext = createContext<InternalAssetRuntime | null>(nu
  * Reactive backing store for loaded assets. Components subscribe to the single
  * asset slot they care about via the selector hooks below, so loading one asset
  * only re-renders the handful of nodes that reference it — not every consumer of
- * the runtime. `visualVersion` is the coarse signal used by systems that must
- * rebuild after model or texture availability changes.
+ * the runtime.
  */
 interface AssetStoreState {
     models: LoadedModels;
@@ -78,7 +78,6 @@ interface AssetStoreState {
     sounds: LoadedSounds;
     soundVersions: Record<string, number>;
     modelVersion: number;
-    visualVersion: number;
     pendingLoads: number;
     completedLoads: number;
     failedLoads: number;
@@ -88,7 +87,7 @@ interface AssetStoreState {
 type AssetStoreApi = StoreApi<AssetStoreState>;
 
 function createAssetStore(): AssetStoreApi {
-    return createStore<AssetStoreState>(() => ({ models: {}, textures: {}, sounds: {}, soundVersions: {}, modelVersion: 0, visualVersion: 0, pendingLoads: 0, completedLoads: 0, failedLoads: 0, totalLoadTimeMs: 0 }));
+    return createStore<AssetStoreState>(() => ({ models: {}, textures: {}, sounds: {}, soundVersions: {}, modelVersion: 0, pendingLoads: 0, completedLoads: 0, failedLoads: 0, totalLoadTimeMs: 0 }));
 }
 
 const AssetStoreContext = createContext<AssetStoreApi | null>(null);
@@ -112,7 +111,7 @@ export function useModelAsset(path?: string | null): Object3D | null {
     return model;
 }
 
-/** Suspends the nearest node boundary until this model is available. */
+/** Suspends the model component's boundary until this model is available. */
 export function useSuspenseModelAsset(path?: string | null): Object3D | null {
     const runtime = useContext(AssetRuntimeContext);
     if (!runtime) throw new Error("Asset hooks must be used inside <PrefabRoot>");
@@ -151,11 +150,6 @@ export function useSoundAssetRevision(paths: string[]): string {
         return () => leases.forEach(lease => lease.release());
     }, [paths, runtime]);
     return revision;
-}
-
-/** Coarse visual-only signal for systems that rebake when scene imagery changes. */
-export function useVisualAssetRevision(): number {
-    return useStore(useAssetStore(), s => s.visualVersion);
 }
 
 /** Coarse model-only signal for derived geometry that may gain new meshes. */
@@ -230,14 +224,13 @@ function AssetRuntimeOwner({ children, runtimeRef }: AssetRuntimeProviderProps) 
         assetStore.setState(s => ({
             models: { ...s.models, [path]: model },
             modelVersion: s.modelVersion + 1,
-            visualVersion: s.visualVersion + 1,
         }));
     }, [assetCache, assetStore, loadErrors]);
     const registerTexture = useCallback((path: string, texture: Texture, replace = true) => {
         if (assetStore.getState().textures[path] === texture) return;
         if (replace) assetCache.invalidate(`texture:${path}`);
         loadErrors.delete(`texture:${path}`);
-        assetStore.setState(s => ({ textures: { ...s.textures, [path]: texture }, visualVersion: s.visualVersion + 1 }));
+        assetStore.setState(s => ({ textures: { ...s.textures, [path]: texture } }));
     }, [assetCache, assetStore, loadErrors]);
     const registerSound = useCallback((path: string, sound: AudioBuffer, replace = true) => {
         if (assetStore.getState().sounds[path] === sound) return;

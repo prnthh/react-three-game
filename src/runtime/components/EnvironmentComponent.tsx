@@ -1,7 +1,5 @@
 import { Environment } from '@react-three/drei';
 
-import { useVisualAssetRevision } from '../assets/AssetRuntime';
-
 import type { Component, ComponentViewProps } from '../../core/ComponentRegistry';
 
 export type EnvironmentProperties = {
@@ -18,42 +16,10 @@ function EnvironmentView({
     properties,
     children,
 }: ComponentViewProps<EnvironmentProperties>) {
-    const assetRevision = useVisualAssetRevision();
-    const {
-        intensity = 1,
-        resolution = 256,
-        background = true,
-        backgroundIntensity = 1,
-        backgroundBlurriness = 0,
-        environmentRotation = [0, 0, 0],
-        backgroundRotation = [0, 0, 0],
-    } = properties;
-    const environmentRevision = [
-        assetRevision,
-        intensity,
-        resolution,
-        background,
-        backgroundIntensity,
-        backgroundBlurriness,
-        ...environmentRotation,
-        ...backgroundRotation,
-    ].join('::');
-
-    return (
-        <Environment
-            key={environmentRevision}
-            background={background}
-            environmentIntensity={intensity}
-            backgroundIntensity={backgroundIntensity}
-            backgroundBlurriness={backgroundBlurriness}
-            environmentRotation={environmentRotation}
-            backgroundRotation={backgroundRotation}
-            resolution={resolution}
-            frames={1}
-        >
-            {children}
-        </Environment>
-    );
+    const { intensity, ...props } = properties;
+    return <Environment {...props} environmentIntensity={intensity} frames={1}>
+        <>{children}</>
+    </Environment>;
 }
 
 const EnvironmentComponent: Component<EnvironmentProperties> = {

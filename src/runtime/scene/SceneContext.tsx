@@ -1,5 +1,6 @@
+import { useThree } from '@react-three/fiber';
 import type { PrefabDocumentApi } from '../../core/prefabDocumentApi';
-import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useSyncExternalStore, type ReactNode } from "react";
 import type { Object3D, Texture } from "three";
 import type { GameObject } from "../../core/types";
 import { createGameObjectHandle } from "./gameObject";
@@ -13,7 +14,7 @@ export enum PrefabEditorMode {
 export type PrefabNode = Omit<GameObject, "children">;
 
 export interface PrefabRegistry {
-    registerObject(id: string, object: Object3D | null): void;
+    registerObject(id: string, object: Object3D | null): () => void;
     subscribeObject(id: string, listener: () => void): () => void;
     getObject(id: string): Object3D | null;
 }
@@ -22,6 +23,9 @@ declare const NODE_COMPONENT_VALUE: unique symbol;
 export type NodeComponentType<T> = symbol & { readonly [NODE_COMPONENT_VALUE]?: T };
 
 export type SceneComponent<T> = Readonly<{
+    /** Registry identity; graph entries use Three UUIDs, gameplay entries use scoped node IDs. */
+    key: string;
+    /** @deprecated Use key; this is not necessarily an authored node ID. */
     nodeId: string;
     value: T;
 }>;
@@ -30,7 +34,9 @@ const EMPTY_SCENE_COMPONENTS: readonly SceneComponent<never>[] = [];
 
 export interface NodeComponentRegistry {
     get<T>(nodeId: string, type: NodeComponentType<T>): T | null;
-    register<T>(nodeId: string, type: NodeComponentType<T>, value: T | null): void;
+    register<T>(nodeId: string, type: NodeComponentType<T>, value: T | null): () => void;
+    /** Coalesce notifications; writes are immediate and are not rolled back on exceptions. */
+    batch<T>(action: () => T): T;
     getAll<T>(type: NodeComponentType<T>): readonly SceneComponent<T>[];
     subscribe<T>(type: NodeComponentType<T>, listener: () => void): () => void;
 }
@@ -40,34 +46,67 @@ export function createNodeComponentType<T>(name: string): NodeComponentType<T> {
 }
 
 export function createNodeComponentRegistry(): NodeComponentRegistry {
-    const components = new Map<symbol, Map<string, unknown>>();
+    const components = new Map<symbol, Map<string, { value: unknown; owner: object }>>();
     const snapshots = new Map<symbol, readonly SceneComponent<unknown>[]>();
     const listeners = new Map<symbol, Set<() => void>>();
-    return {
-        get: <T,>(nodeId: string, type: NodeComponentType<T>) => (components.get(type)?.get(nodeId) as T | undefined) ?? null,
-        register(nodeId, type, value) {
-            const values = components.get(type);
-            if ((values?.get(nodeId) ?? null) === value) return;
-            if (value == null) {
-                values?.delete(nodeId);
-                if (values?.size === 0) components.delete(type);
-            } else if (values) {
-                values.set(nodeId, value);
-            } else {
-                components.set(type, new Map([[nodeId, value]]));
+    const pending = new Set<symbol>();
+    let depth = 0;
+    let flushing = false;
+    const flush = () => {
+        if (depth || flushing) return;
+        flushing = true;
+        try {
+            while (pending.size) {
+                const types = [...pending];
+                pending.clear();
+                for (const type of types) listeners.get(type)?.forEach(listener => listener());
             }
-            const current = components.get(type);
-            snapshots.set(type, current
-                ? Array.from(current, ([registeredNodeId, registeredValue]) => ({
-                    nodeId: registeredNodeId,
-                    value: registeredValue,
-                }))
-                : []);
-            listeners.get(type)?.forEach(listener => listener());
+        } finally { flushing = false; }
+    };
+    const changed = (type: symbol) => {
+        snapshots.delete(type);
+        pending.add(type);
+        flush();
+    };
+    return {
+        get: <T,>(nodeId: string, type: NodeComponentType<T>) => (components.get(type)?.get(nodeId)?.value as T | undefined) ?? null,
+        register(nodeId, type, value) {
+            let values = components.get(type);
+            const previous = values?.get(nodeId);
+            if (value == null) {
+                if (previous) {
+                    values!.delete(nodeId);
+                    if (!values!.size) components.delete(type);
+                    changed(type);
+                }
+                return () => {};
+            }
+            if (!values) components.set(type, values = new Map());
+            const owner = {};
+            values.set(nodeId, { value, owner });
+            if (previous?.value !== value) changed(type);
+            return () => {
+                const current = components.get(type);
+                if (current?.get(nodeId)?.owner !== owner) return;
+                current.delete(nodeId);
+                if (!current.size) components.delete(type);
+                changed(type);
+            };
         },
-        getAll: <T,>(type: NodeComponentType<T>) => (
-            (snapshots.get(type) as readonly SceneComponent<T>[] | undefined) ?? EMPTY_SCENE_COMPONENTS
-        ),
+        batch(action) {
+            depth++;
+            try { return action(); }
+            finally { depth--; flush(); }
+        },
+        getAll: <T,>(type: NodeComponentType<T>): readonly SceneComponent<T>[] => {
+            let snapshot = snapshots.get(type);
+            if (!snapshot) {
+                const current = components.get(type);
+                snapshot = current ? Array.from(current, ([key, { value }]) => ({ key, nodeId: key, value })) : EMPTY_SCENE_COMPONENTS;
+                snapshots.set(type, snapshot);
+            }
+            return snapshot as readonly SceneComponent<T>[];
+        },
         subscribe(type, listener) {
             const typeListeners = listeners.get(type) ?? new Set<() => void>();
             typeListeners.add(listener);
@@ -80,16 +119,33 @@ export function createNodeComponentRegistry(): NodeComponentRegistry {
     };
 }
 
+const sceneComponentRegistries = new WeakMap<Object3D, NodeComponentRegistry>();
+
+/** One live component registry per Three scene, shared with imperative consumers. */
+export function getSceneComponentRegistry(scene: Object3D): NodeComponentRegistry {
+    let registry = sceneComponentRegistries.get(scene);
+    if (!registry) sceneComponentRegistries.set(scene, registry = createNodeComponentRegistry());
+    return registry;
+}
+
 export function createPrefabRegistry(): PrefabRegistry {
     const objects = new Map<string, Object3D>();
+    const owners = new Map<string, object>();
     const listeners = new Map<string, Set<() => void>>();
 
     return {
         registerObject(id, object) {
-            if ((objects.get(id) ?? null) === object) return;
-            if (object) objects.set(id, object);
-            else objects.delete(id);
-            listeners.get(id)?.forEach(listener => listener());
+            const previous = objects.get(id) ?? null;
+            const owner = {};
+            if (object) { objects.set(id, object); owners.set(id, owner); }
+            else { objects.delete(id); owners.delete(id); }
+            if (previous !== object) listeners.get(id)?.forEach(listener => listener());
+            return () => {
+                if (owners.get(id) !== owner) return;
+                owners.delete(id);
+                objects.delete(id);
+                listeners.get(id)?.forEach(listener => listener());
+            };
         },
         subscribeObject(id, listener) {
             const nodeListeners = listeners.get(id) ?? new Set<() => void>();
@@ -135,7 +191,8 @@ export function SceneComponentsProvider({ children }: { children: ReactNode }) {
 }
 
 function SceneComponentsOwner({ children }: { children: ReactNode }) {
-    const [registry] = useState(createNodeComponentRegistry);
+    const scene = useThree(state => state.scene);
+    const registry = getSceneComponentRegistry(scene);
     return <NodeComponentContext.Provider value={registry}>{children}</NodeComponentContext.Provider>;
 }
 
@@ -178,12 +235,7 @@ function useNodeComponentRegistry() {
 export function useRegisterNodeComponent<T>(type: NodeComponentType<T>, value: T | null) {
     const { id: runtimeNodeId } = useGameObject();
     const registry = useNodeComponentRegistry();
-    useLayoutEffect(() => {
-        registry.register(runtimeNodeId, type, value);
-    }, [registry, runtimeNodeId, type, value]);
-    useLayoutEffect(() => () => {
-        registry.register(runtimeNodeId, type, null);
-    }, [registry, runtimeNodeId, type]);
+    useLayoutEffect(() => value == null ? undefined : registry.register(runtimeNodeId, type, value), [registry, runtimeNodeId, type, value]);
 }
 
 export function useSceneComponents<T>(type: NodeComponentType<T>): readonly SceneComponent<T>[] {

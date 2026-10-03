@@ -1,10 +1,11 @@
 import { AssetBoundary } from '../assets/AssetBoundary';
 import { memo, useCallback, useContext, useLayoutEffect, useMemo, useRef } from "react";
+import { registerGameObjectOwner } from '../scene/gameObject';
 import { notifyObjectChanged } from '../scene/objectChanges';
 import type { Object3D } from "three";
 import { getNodeUserData, type GameObject as GameObjectType } from "../../core/types";
 import { usePrefabRenderNode, usePrefabStoreApi } from "./PrefabStoreContext";
-import { NodeScope, RuntimeNodeIdPrefixContext } from "../scene/SceneContext";
+import { NodeScope, RuntimeNodeIdPrefixContext, useGameObject } from "../scene/SceneContext";
 import { useNodeSelected } from "../scene/SelectionRuntime";
 import { createNodeInteractionHandlers, type NodeInteractionEvent, type NodeInteractionEventType } from "../scene/usePointerEvents";
 import { analyzeNodeComponents, EMPTY_NODE_COMPONENTS } from "./nodePlan";
@@ -46,6 +47,9 @@ function ResolvedPrefabNode({
     const isSelected = useNodeSelected(nodeId, Boolean(editMode));
     const { transform } = analyzedComponents;
 
+    const owner = useGameObject(nodeId);
+    const unregisterOwner = useRef<(() => void) | null>(null);
+    const unregisterObject = useRef<(() => void) | null>(null);
     const groupRef = useRef<Object3D | null>(null);
     useLayoutEffect(() => {
         if (groupRef.current) notifyObjectChanged(groupRef.current);
@@ -54,9 +58,16 @@ function ResolvedPrefabNode({
         if (groupRef.current) notifyObjectChanged(groupRef.current, 'geometry');
     }, [childIds]);
     const handleGroupRef = useCallback((object: Object3D | null) => {
+        unregisterOwner.current?.();
+        unregisterOwner.current = object ? registerGameObjectOwner(object, owner) : null;
+        unregisterObject.current?.();
+        unregisterObject.current = null;
         groupRef.current = object;
-        registerRef(nodeId, object);
-    }, [nodeId, registerRef]);
+        if (object) {
+            const cleanup = registerRef(nodeId, object);
+            unregisterObject.current = cleanup ?? (() => registerRef(nodeId, null));
+        }
+    }, [nodeId, registerRef, owner]);
 
     const primaryInteractionHandlers = !editMode && analyzedComponents.clickEvent.enabled && onPointerEvent
         ? createNodeInteractionHandlers((eventType, event) => {
@@ -112,7 +123,7 @@ export interface RendererProps {
         object: Object3D | null,
         eventName: string | null,
     ) => void;
-    registerRef: (id: string, obj: Object3D | null) => void;
+    registerRef: (id: string, obj: Object3D | null) => (() => void) | void;
     editMode?: boolean;
     isVisible?: boolean;
     isEnabled?: boolean;

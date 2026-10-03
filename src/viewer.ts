@@ -90,3 +90,10 @@ export { default as RuntimeComponent } from "./runtime/components/RuntimeCompone
 export type { RuntimeComponentProperties, RuntimeScriptContext } from "./runtime/components/RuntimeComponent";
 
 export { useSharedGeometryResource } from "./runtime/components/GeometryComponent";
+
+export { SpatialGrid, DEFAULT_SPATIAL_CELL_SIZE } from './runtime/spatial/SpatialGrid';
+export { getSceneComponentRegistry } from './runtime/scene/SceneContext';
+export { SCENE_OBJECT, SCENE_LIGHT } from './runtime/scene/SceneGraphRegistration';
+
+export { resolveGameObject, resolveRenderSource, registerGameObjectOwner, registerRenderSources } from './runtime/scene/gameObject';
+export type { NodeComponentRegistry } from './runtime/scene/SceneContext';

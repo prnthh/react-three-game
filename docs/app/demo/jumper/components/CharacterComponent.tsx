@@ -47,6 +47,8 @@ function Controller(settings: Properties) {
     const ghostCapsule = useRef<Mesh>(null);
     const statusLabel = useRef<HTMLDivElement>(null);
     const speedLabel = useRef<HTMLSpanElement>(null);
+    const fpsLabel = useRef<HTMLDivElement>(null);
+    const fpsSample = useRef({ frames: 0, elapsed: 0 });
     const hudClock = useRef(0);
     const footstepClock = useRef(0);
     const wasGrounded = useRef(false);
@@ -122,6 +124,14 @@ function Controller(settings: Properties) {
         };
     }, [gl, object]);
     useFrame((_, frameDelta) => {
+        // Measure render frames using real elapsed time, independent of physics ticks.
+        fpsSample.current.frames++;
+        fpsSample.current.elapsed += frameDelta;
+        if (fpsSample.current.elapsed >= 0.5) {
+            if (fpsLabel.current) fpsLabel.current.textContent = `${Math.round(fpsSample.current.frames / fpsSample.current.elapsed)} FPS`;
+            fpsSample.current.frames = 0;
+            fpsSample.current.elapsed = 0;
+        }
         const transform = object.transform;
         if (!transform || !camera.current) return;
         const delta = Math.min(frameDelta, 0.1);
@@ -303,6 +313,7 @@ function Controller(settings: Properties) {
             <div style={{ fontSize: 28, fontWeight: 600, fontStyle: 'italic', lineHeight: 1.2 }}><span ref={speedLabel}>0.0</span> <span style={{ fontSize: 16 }}>m/s</span></div>
             <div ref={statusLabel} style={{ marginTop: 4, fontSize: 13 }}>Airborne</div>
             <div style={{ marginTop: 6, fontSize: 12, opacity: 0.7 }}>T · Restart & replay last attempt</div>
+            <div ref={fpsLabel} style={{ marginTop: 6, fontSize: 12, opacity: 0.7 }}>— FPS</div>
         </div>
         <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: 'white', opacity: 0.7 }}>·</div>
     </Html>;

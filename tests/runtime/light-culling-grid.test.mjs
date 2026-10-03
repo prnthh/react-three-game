@@ -50,3 +50,17 @@ test('scene traversal discovers ordinary lights added later, restores removed li
  scene.add(light);controller.update(new Vector3(1,31,1));assert.equal(controller.stats().active,1);
  controller.dispose();assert.equal(light.layers.mask,mask);assert.deepEqual(visibleLights(scene),[light.id]);
 });
+
+test('discovery tracks subtree lifecycle without traversing the scene on updates', () => {
+ const scene=new Scene(), area=new Group(), nested=new Group(), light=new PointLight();
+ nested.add(light);area.add(nested);scene.add(area);
+ const controller=new LightCullingGridController(scene);
+ scene.traverse=()=>{throw new Error('frame discovery must not traverse the scene');};
+ controller.update(new Vector3());assert.equal(controller.stats().authored,1);
+ scene.remove(area);controller.update(new Vector3());assert.equal(controller.stats().authored,0);
+ scene.add(area);controller.update(new Vector3());assert.equal(controller.stats().authored,1);
+ const other=new Group();scene.add(other);other.add(nested);
+ controller.update(new Vector3());assert.equal(controller.stats().authored,1);
+ controller.dispose();
+ assert.equal(light.layers.mask,1);
+});

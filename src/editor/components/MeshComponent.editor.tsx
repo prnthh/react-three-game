@@ -7,6 +7,7 @@ function MeshEditor({ properties, update }: ComponentEditorProps<MeshProperties>
         <BooleanField name="visible" label="Visible" values={properties} onChange={update} fallback />
         <BooleanField name="castShadow" label="Cast Shadow" values={properties} onChange={update} fallback />
         <BooleanField name="receiveShadow" label="Receive Shadow" values={properties} onChange={update} fallback />
+        <BooleanField name="frustumCulled" label="Frustum Culling" values={properties} onChange={update} fallback />
         <BooleanField name="instanced" label="Allow Instancing" values={properties} onChange={update} fallback />
         <BooleanField name="emitClickEvent" label="Emit Click Event" values={properties} onChange={update} fallback={false} />
         {properties.emitClickEvent ? (

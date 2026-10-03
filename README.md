@@ -87,6 +87,13 @@ import { LightCullingGrid } from 'react-three-game';
 
 It selects point lights in the camera's cell and neighboring cells on all three
 axes, using stable light slots to avoid shader rebuilds when crossing cells.
+SceneRuntime indexes live Three.js objects in the existing scene component registry
+through hierarchy events, including additions, removals and reparenting. Lights
+are a typed view of that same registry; discovery does not traverse the scene
+each frame. `useSceneComponents(SCENE_LIGHT)` exposes lights and
+`useSceneComponents(SCENE_OBJECT)` exposes graph objects (keyed by Three UUID).
+Imperative consumers can use `getSceneComponentRegistry(scene)`. Authored prefab
+documents remain in their Zustand store.
 It works with ordinary Three.js lights and prefab lights; other light types are
 unaffected. Selection uses cell membership, so choose a cell size and radius that
 cover the lighting you need. Unmounting restores the original light layers.
@@ -95,6 +102,61 @@ The component, `LightCullingGridOptions` type, and imperative
 `LightCullingGridController` are also exported from `react-three-game/viewer`.
 For manual integration, create one controller per scene, call `update` with the
 camera's world position each frame, and call `dispose` when finished.
+
+## Spatial mesh batches
+
+Compatible meshes automatically batch within 24-unit world-space cells. Set
+`<GameCanvas spatialCellSize={32}>` (or `PrefabEditor`'s
+`canvasProps={{ spatialCellSize: 32 }}`) to change the scene-wide size.
+Moving meshes migrate between cells; immutable `PrefabInstance static` content
+keeps its prepared membership. Smaller cells trade more draw calls for finer
+batch culling.
+
+Batch bounds include the full geometry, even when it extends outside its cell.
+Three.js performs its normal per-camera batch culling, including shadow cameras;
+source nodes remain available to gameplay and collision. Set a Mesh's
+`frustumCulled: false` for geometry with shader deformation that exceeds its
+bounds, or `instanced: false` to keep ordinary mesh rendering.
+
+The exported `SpatialGrid<T>` provides generic cell membership for custom node
+systems. It groups positions, not influence volumes, and does not hide nodes or
+run gameplay visibility logic. Light selection still uses its separate
+`LightCullingGrid` cell settings; light distance does not determine membership.
+
+## Runtime ownership and registration
+
+`resolveGameObject(object, instanceId?)` returns the nearest owning
+`GameObjectHandle`, or `null` for an unowned object. Prefab node roots register
+automatically; imported descendants inherit their owner, and generated mesh
+batches resolve through their source instance. A batch needs a valid instance
+index to identify its owner.
+
+```ts
+import { resolveGameObject } from 'react-three-game/viewer';
+
+const owner = resolveGameObject(hit.object, hit.instanceId);
+// owner.id: scoped runtime node ID; owner.nodeId: local document ID;
+// owner.scope: prefab placement scope. hit.object.uuid is a separate identity.
+```
+
+Custom renderers can use `registerGameObjectOwner(object, handle)` and
+`registerRenderSources(batch, sources)`. Both return replacement-safe cleanup
+functions. Editor picking uses the same source mapping and ownership identities.
+Runtime ownership does not change or serialize the authored document.
+
+Scene component entries expose `key` as their registry identity. The older
+`nodeId` alias remains available; graph entry keys are Three UUIDs, not authored
+node IDs. `getSceneComponentRegistry(scene).register(key, type, value)` returns
+an unregister function that cannot remove a later replacement, even if the
+replacement uses the same value. Prefer this cleanup over registering `null`;
+explicit `null` clears the current entry unconditionally.
+
+`registry.batch(() => { ... })` coalesces synchronous notifications once per
+changed component type, including nested batches. Reads see writes immediately.
+It batches notifications, not rollback: writes are retained and notifications
+flush if the callback throws. Scene-subtree attachment and removal use batching
+automatically. Wrap a multi-step imperative reparent in `registry.batch` when
+subscribers should observe only the final membership.
 
 ## Define and register behavior
 

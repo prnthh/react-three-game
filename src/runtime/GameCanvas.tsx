@@ -17,6 +17,8 @@ registerBuiltInComponents(builtInComponents);
 
 export interface GameCanvasProps extends Omit<CanvasProps, 'children'> {
     loader?: boolean;
+    /** World-space cell size for automatic spatial mesh batches. Default: 24. */
+    spatialCellSize?: number;
     children: React.ReactNode;
     glConfig?: Omit<WebGPURendererParameters, 'forceWebGL' | 'getFallback'>;
     rendererConfig?: {
@@ -27,7 +29,7 @@ export interface GameCanvasProps extends Omit<CanvasProps, 'children'> {
     };
 }
 
-export default function GameCanvas({ loader = false, children, glConfig, rendererConfig, onCreated, raycaster, style, ...props }: GameCanvasProps) {
+export default function GameCanvas({ loader = false, children, spatialCellSize, glConfig, rendererConfig, onCreated, raycaster, style, ...props }: GameCanvasProps) {
 
     return <Canvas
         style={{
@@ -62,7 +64,7 @@ export default function GameCanvas({ loader = false, children, glConfig, rendere
         onCreated={onCreated}
         {...props}
     >
-        <SceneRuntime>{children}</SceneRuntime>
+        <SceneRuntime spatialCellSize={spatialCellSize}>{children}</SceneRuntime>
 
         {loader ? <Loader /> : null}
     </Canvas>;

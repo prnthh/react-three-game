@@ -1,9 +1,10 @@
+import { SpatialGrid, DEFAULT_SPATIAL_CELL_SIZE } from '../spatial/SpatialGrid';
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useSyncExternalStore, type ReactNode, type RefObject } from 'react';
-import { DynamicDrawUsage, InstancedInterleavedBuffer, InstancedMesh, Matrix4, Mesh, type Material, type Object3D } from 'three';
+import { DynamicDrawUsage, InstancedInterleavedBuffer, InstancedMesh, Matrix4, Mesh, Vector3, type Material, type Object3D } from 'three';
 import { instancedDynamicBufferAttribute, mat4 } from 'three/tsl';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { EditPickContext } from '../scene/SelectionRuntime';
-import { registerEditPickSources } from '../scene/editPicking';
+import { registerRenderSources } from '../scene/gameObject';
 import { getInstancedMaterialFactory } from './materialInstancing';
 
 const HIDDEN_MATRIX = new Matrix4().makeScale(0, 0, 0);
@@ -44,7 +45,19 @@ export function supportsInstanceMatrix(matrix: Matrix4) {
 }
 
 class MeshInstanceRegistry {
-    constructor(readonly isStatic = false) {}
+    readonly spatial: SpatialGrid<InstancedMeshSource>;
+    private position = new Vector3();
+    constructor(readonly isStatic = false, cellSize = DEFAULT_SPATIAL_CELL_SIZE) { this.spatial = new SpatialGrid(cellSize); }
+
+    updateSpatial() {
+        if (this.isStatic) return;
+        let changed = false;
+        for (const source of this.sources.values()) {
+            source.mesh.getWorldPosition(this.position);
+            changed = this.spatial.update(source, this.position) || changed;
+        }
+        if (changed) this.changed();
+    }
     private sources = new Map<string, InstancedMeshSource>();
     private listeners = new Set<() => void>();
     private revision = 0;
@@ -64,11 +77,16 @@ class MeshInstanceRegistry {
     invalidate = () => this.changed();
 
     register(source: InstancedMeshSource) {
+        const previous = this.sources.get(source.id);
+        if (previous) this.spatial.remove(previous);
         this.sources.set(source.id, source);
+        source.mesh.getWorldPosition(this.position);
+        this.spatial.update(source, this.position);
         this.changed();
         return () => {
             if (this.sources.get(source.id)?.mesh !== source.mesh) return;
             this.sources.delete(source.id);
+            this.spatial.remove(source);
             this.changed();
         };
     }
@@ -111,7 +129,7 @@ function getBatchKey(source: InstancedMeshSource) {
     const { mesh } = source;
     const geometryKey = mesh.geometry.userData.prefabGeometrySignature;
     if (typeof geometryKey !== 'string' || !mesh.material) return null;
-    return `${geometryKey}|${materialKey(mesh.material)}|${Number(mesh.castShadow)}|${Number(mesh.receiveShadow)}`;
+    return `${geometryKey}|${materialKey(mesh.material)}|${Number(mesh.castShadow)}|${Number(mesh.receiveShadow)}|${Number(mesh.frustumCulled)}`;
 }
 
 function MeshInstanceBatch({ sources, isStatic }: { sources: InstancedMeshSource[]; isStatic: boolean }) {
@@ -188,7 +206,7 @@ function MeshInstanceBatch({ sources, isStatic }: { sources: InstancedMeshSource
         }
         if (matricesChanged) {
             batch.instanceMatrix.needsUpdate = true;
-            // Raycasting still uses this bound even when render culling is disabled.
+            // Full geometry bounds keep oversized objects and shadow passes conservative.
             batch.computeBoundingSphere();
         }
         if (inverseMatrixBuffer && inverseMatricesChanged) inverseMatrixBuffer.needsUpdate = true;
@@ -207,7 +225,7 @@ function MeshInstanceBatch({ sources, isStatic }: { sources: InstancedMeshSource
     }, [sources, updateMatrices]);
 
     useLayoutEffect(() => {
-        if (batchRef.current) return registerEditPickSources(batchRef.current, sources.map(source => source.mesh));
+        if (batchRef.current) return registerRenderSources(batchRef.current, sources.map(source => source.mesh));
     }, [sources]);
     const handleClick = sources.some(source => source.onEditClick) ? (event: ThreeEvent<MouseEvent>) => {
         if (event.delta > 4 || event.instanceId == null) return;
@@ -219,17 +237,19 @@ function MeshInstanceBatch({ sources, isStatic }: { sources: InstancedMeshSource
         args={[geometry, material, capacity]}
         castShadow={sources[0].mesh.castShadow}
         receiveShadow={sources[0].mesh.receiveShadow}
-        frustumCulled={false}
+        frustumCulled={sources[0].mesh.frustumCulled}
         onClick={handleClick}
     />;
 }
 
 function MeshInstanceBatches({ registry }: { registry: MeshInstanceRegistry }) {
     useSyncExternalStore(registry.subscribe, registry.getSnapshot, registry.getSnapshot);
+    useFrame(() => registry.updateSpatial());
     const groups = new Map<string, InstancedMeshSource[]>();
     for (const source of registry.getSources()) {
-        const key = getBatchKey(source);
-        if (!key) continue;
+        const compatibleKey = getBatchKey(source);
+        if (!compatibleKey) continue;
+        const key = `${registry.spatial.cellOf(source)}|${compatibleKey}`;
         const group = groups.get(key);
         if (group) group.push(source);
         else groups.set(key, [source]);
@@ -241,10 +261,13 @@ function MeshInstanceBatches({ registry }: { registry: MeshInstanceRegistry }) {
 }
 
 /** Owns one mesh bucket registry for the complete nested prefab tree. */
+export const SpatialCellSizeContext = createContext(DEFAULT_SPATIAL_CELL_SIZE);
+
 export function MeshInstanceProvider({ children, isolated = false, static: isStatic = false }: { children: ReactNode; isolated?: boolean; static?: boolean }) {
+    const cellSize = useContext(SpatialCellSizeContext);
     const parent = useContext(MeshInstanceContext);
     const inherited = isolated ? null : parent;
-    const registry = useMemo(() => inherited ?? new MeshInstanceRegistry(isStatic), [inherited, isStatic]);
+    const registry = useMemo(() => inherited ?? new MeshInstanceRegistry(isStatic, cellSize), [inherited, isStatic, cellSize]);
     if (inherited) return children;
     return (
         <MeshInstanceContext.Provider value={registry}>

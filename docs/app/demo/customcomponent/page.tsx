@@ -2,8 +2,8 @@
 
 import { registerComponent } from "react-three-game/viewer";
 import { PrefabEditor } from "react-three-game/editor";
-import RotatorComponent from "./RotatorComponent";
-import SquishComponent from "./SquishComponent";
+import RotatorComponent from "./components/RotatorComponent";
+import SquishComponent from "./components/SquishComponent";
 import { rotatorScene } from "./scene";
 import { BASE_PATH } from "../../basePath";
 

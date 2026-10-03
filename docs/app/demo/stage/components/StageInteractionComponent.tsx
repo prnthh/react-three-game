@@ -11,7 +11,7 @@ import { useCrashcat } from "react-three-game/plugins/crashcat";
 import { cylinder, MotionType, rigidBody } from "crashcat";
 import { Quaternion, Vector3 } from "three";
 
-import { INTERACTION_ENTER_EVENT, INTERACTION_EXIT_EVENT, type StagePoint } from "./stage";
+import { INTERACTION_ENTER_EVENT, INTERACTION_EXIT_EVENT, type StagePoint } from "../stage";
 
 export type StageInteractionProperties = {
     action?: "dialogue" | "transition";

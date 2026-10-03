@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { speakDialogue } from "./speech";
+import { speakDialogue } from "../speech";
 
 export default function DialogueBox({ text, voiceEnabled, onNext }: { text: string; voiceEnabled: boolean; onNext(): void }) {
     useEffect(() => {

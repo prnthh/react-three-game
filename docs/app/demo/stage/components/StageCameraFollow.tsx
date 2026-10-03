@@ -2,7 +2,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useLayoutEffect, useRef } from "react";
 import { PrefabEditorMode, useGameObject, useScene, type Component, type ComponentViewProps } from "react-three-game/viewer";
 import { OrthographicCamera, PerspectiveCamera, Quaternion, Vector3 } from "three";
-import { PLAYER_NODE_ID } from "./stage";
+import { PLAYER_NODE_ID } from "../stage";
 const UP = new Vector3(0, 1, 0);
 const CAMERA_RIGHT = new Vector3(1, 0, 0);
 type CameraFollowProperties = { targetNodeId?: string; deadZone?: number; speed?: number; lockX?: boolean; lockY?: boolean; lockZ?: boolean };

@@ -3,12 +3,20 @@
 
 import { useState } from "react";
 import { PrefabEditorProvider, PrefabEditorScene, PrefabEditorPanel } from "react-three-game/editor";
-import { GameCanvas } from "react-three-game/viewer";
-import { CrashcatRuntime } from "react-three-game/plugins/crashcat";
+import { GameCanvas, registerComponent } from "react-three-game/viewer";
+import { CrashcatPhysicsComponent, CrashcatRuntime } from "react-three-game/plugins/crashcat";
 import { BASE_PATH } from "../../../basePath";
-import "../registerComponents";
 import { STAGE_SCENES } from "../scenes";
 import type { StageScene } from "../scenes";
+
+import ActivationCollider from "../components/ActivationColliderComponent";
+import StageInteraction from "../components/StageInteractionComponent";
+import StageCameraFollow from "../components/StageCameraFollow";
+
+registerComponent(CrashcatPhysicsComponent);
+registerComponent(ActivationCollider);
+registerComponent(StageInteraction);
+registerComponent(StageCameraFollow);
 
 function countNodes(scene: StageScene) {
     let count = 0;

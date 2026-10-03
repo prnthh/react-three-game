@@ -6,12 +6,11 @@ Open `/demo/stage` to play or `/demo/stage/editor` to edit the office and junkya
 - `PlayerCharacter` moves the player node and selects the built-in AnimatedModel's idle/walk state. Movement is direct across the floor, without pathfinding.
 - `StageInteraction` creates a proximity sensor, or references an existing one with `activationNodeId`. Clicking walks toward the hotspot; entering its sensor activates it.
 - `StageCameraFollow` follows the player within a screen-space dead zone and respects axis locks.
-- `page.tsx` only composes the event provider, canvas and `StageGame` host component.
-- `StageGame`, mounted inside `GameCanvas`, owns clicks, destinations, dialogue and scene changes in React state. Its `PrefabRoot` children use `useGameObject` to move live objects and play animations without changing the scene document.
+- `page.tsx` owns component registration, the event provider, canvas, and scene/HUD composition. Its local `StageGame` function runs inside `GameCanvas` and owns clicks, destinations, dialogue and scene changes in React state. Its `PrefabRoot` children use `useGameObject` to move live objects and play animations without changing the scene document.
 - `DialogueBox` owns text reveal and optional browser speech. Voice starts enabled; the Voice button mutes it. Advancing, closing, muting or leaving the scene cancels speech. Text remains usable when speech is unavailable or blocked by browser playback policy.
 - `AnimatedSceneTransition` plays door animations. Interaction sensors run only in Play mode.
 
-Add a scene to `scenes.ts`. A door's `targetScene` matches its scene ID; `spawn` gives the player's arrival position. Custom components register once in `registerComponents.ts`; inspectors come from their schemas.
+Add a scene to `scenes.ts`. A door's `targetScene` matches its scene ID; `spawn` gives the player's arrival position. Custom prefab components and the dialogue UI live in `components/`. Each route registers the prefab components in its own `page.tsx`; inspectors come from their schemas. Movement (`PlayerCharacter.tsx`), transitions (`AnimatedSceneTransition.tsx`), speech (`speech.ts`), scene definitions (`scenes.ts`), and shared constants (`stage.ts`) stay alongside the page as demo-specific systems.
 
 The editor route composes `PrefabEditorProvider`, `GameCanvas`, `PrefabEditorScene`, and `PrefabEditorPanel`, just as a separate game project can.
 

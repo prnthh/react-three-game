@@ -12,6 +12,15 @@ Prefab data → document store → component views → R3F / Three objects
 Start with the [README examples](../README.md) for rendering, components and editing.
 Use the patterns below when adding integrations or changing internals.
 
+## Demo organization
+
+Each demo's `page.tsx` owns setup, component registration, providers, and main
+scene composition. Keep demo-specific systems (movement, transitions, speech,
+scene definitions, and shared constants) in files alongside the page. Put custom
+prefab components and UI components in that demo's `components/` folder.
+Context-dependent orchestration can use a local function inside `page.tsx` so it
+runs beneath the providers it needs. See [stage](app/demo/stage/page.tsx).
+
 ## Load a prefab
 
 ```tsx
@@ -117,7 +126,7 @@ steps its own physics world from R3F frames.
 
 ## Change a component
 
-Copy [Rotator](app/demo/customcomponent/RotatorComponent.tsx) for a behavior, or
+Copy [Rotator](app/demo/customcomponent/components/RotatorComponent.tsx) for a behavior, or
 [Mesh](../src/runtime/components/MeshComponent.tsx) for an object view.
 Register it as in the [custom component demo](app/demo/customcomponent/page.tsx).
 

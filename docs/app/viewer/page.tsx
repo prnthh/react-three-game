@@ -2,7 +2,7 @@
 
 import { OrbitControls } from '@react-three/drei';
 import { GameCanvas, PrefabRoot, registerComponent } from 'react-three-game/viewer';
-import Rotator from '../demo/customcomponent/RotatorComponent';
+import Rotator from '../demo/customcomponent/components/RotatorComponent';
 import { rotatorScene } from '../demo/customcomponent/scene';
 import { BASE_PATH } from '../basePath';
 

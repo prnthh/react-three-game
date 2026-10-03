@@ -1,3 +1,4 @@
+import { Color } from 'three';
 import type { Component, ComponentViewProps } from "../../core/ComponentRegistry";
 
 
@@ -13,7 +14,7 @@ function AmbientLightComponentView({ properties, children }: ComponentViewProps<
 
     return (
         <>
-            <ambientLight color={color} intensity={intensity} />
+            <ambientLight color={new Color(color)} intensity={intensity} />
             {children}
         </>
     );

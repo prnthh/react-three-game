@@ -12,6 +12,8 @@ import {
     type ContactEventPayload,
 } from "react-three-game/viewer";
 
+import { usePlayer } from "./player";
+
 export type ActivationColliderProperties = {
     targetNodeId?: string;
     enterEventName?: string;
@@ -22,7 +24,7 @@ export type ActivationColliderProperties = {
 
 const DEFAULT_ENTER_EVENT = "stage:activation-enter";
 const DEFAULT_EXIT_EVENT = "stage:activation-exit";
-const DEFAULT_TARGET_NODE = "stage-player-collider";
+const DEFAULT_TARGET_NODE = "";
 const DEFAULT_MOODS = ["🙂", "😄", "🤔", "😮", "😎", "🥳"];
 const DEFAULT_BUBBLE_HEIGHT = 1.35;
 
@@ -39,7 +41,8 @@ function ActivationColliderView({
     const { id: nodeId } = useGameObject();
     const target = useGameObject(properties.targetNodeId?.trim() || DEFAULT_TARGET_NODE);
     const [mood, setMood] = useState<string | null>(null);
-    const targetNodeId = target.id;
+    const player = usePlayer();
+    const targetNodeId = player?.id ?? target.id;
     const enterEventName = properties.enterEventName?.trim() || DEFAULT_ENTER_EVENT;
     const exitEventName = properties.exitEventName?.trim() || DEFAULT_EXIT_EVENT;
     const moods = useMemo(() => {

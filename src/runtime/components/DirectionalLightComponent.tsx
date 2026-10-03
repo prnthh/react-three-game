@@ -1,3 +1,4 @@
+import { Color } from 'three';
 import { CascadedDirectionalLight } from '../lighting/CascadedDirectionalLight';
 import type { Component, ComponentViewProps } from "../../core/ComponentRegistry";
 
@@ -43,7 +44,7 @@ function DirectionalLightView({ properties, children }: ComponentViewProps<Direc
     const merged = mergeWithDefaults(directionalLightDefaults, properties);
     const shadowMapSize = normalizeShadowMapSize(merged.shadowMapSize);
     const lightProps = {
-        color: merged.color,
+        color: new Color(merged.color),
         intensity: merged.intensity,
         castShadow: merged.castShadow,
         "shadow-bias": merged.shadowBias,

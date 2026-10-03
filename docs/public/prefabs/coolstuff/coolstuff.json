@@ -1620,7 +1620,7 @@
                   "prefab": {
                     "type": "PrefabRef",
                     "properties": {
-                      "url": "/prefabs/warehouse-rack.json"
+                      "url": "/prefabs/coolstuff/warehouse-rack.json"
                     }
                   }
                 }
@@ -3526,7 +3526,7 @@
                   "prefab": {
                     "type": "PrefabRef",
                     "properties": {
-                      "url": "/prefabs/warehouse-rack.json"
+                      "url": "/prefabs/coolstuff/warehouse-rack.json"
                     }
                   }
                 }
@@ -5432,7 +5432,7 @@
                   "prefab": {
                     "type": "PrefabRef",
                     "properties": {
-                      "url": "/prefabs/warehouse-rack.json"
+                      "url": "/prefabs/coolstuff/warehouse-rack.json"
                     }
                   }
                 }
@@ -7338,7 +7338,7 @@
                   "prefab": {
                     "type": "PrefabRef",
                     "properties": {
-                      "url": "/prefabs/warehouse-rack.json"
+                      "url": "/prefabs/coolstuff/warehouse-rack.json"
                     }
                   }
                 }

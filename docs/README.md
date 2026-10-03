@@ -41,3 +41,25 @@ Edit prefab JSON in `public/prefabs` directly. Builds do not generate scenes.
 Keep specialized demo components under their demo. Interior mapping and the jumper controller are examples, not built-in engine systems.
 
 See [architecture](ARCHITECTURE.md), [lighting](LIGHTING.md), and [interior mapping](INTERIOR-MAPPING.md).
+
+## Headless export
+
+Run `npm run sample:headless --workspace docs` from the repository root, or
+`npm run sample:headless` from this directory, with Node 22+.
+This builds the library and runs [the export example](examples/export-prefab.mjs)
+directly in Node, without a browser, DOM root, GPU, or TypeScript loader.
+
+The default input is the unchanged `public/prefabs/brutalist-city/brutalist-skywalk.json`.
+It writes `output/headless/brutalist-skywalk.glb` in this workspace: 37 meshes with
+their authored hierarchy, transforms, and three materials.
+
+After building, specify a different input and output from this directory:
+
+```sh
+node examples/export-prefab.mjs path/to/scene.json path/to/scene.glb
+```
+
+The example uses the default untextured geometry support. Models, textures, and
+filesystem prefab references need platform loaders passed to `createHeadlessScene`.
+See the [library API documentation](../README.md#node-scene-construction-and-glb-export)
+for supported components, asset ownership, and export limits.

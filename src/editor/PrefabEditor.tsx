@@ -1,3 +1,4 @@
+import { downloadBlob, downloadURL } from '../browser';
 import { isExternalPath, withBasePath } from '../runtime/assets/assetPaths';
 import { SceneRuntime } from "../runtime/SceneRuntime";
 import { OrbitControls, TransformControls, useHelper } from "@react-three/drei";
@@ -368,12 +369,7 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
 
         canvas.toBlob((blob) => {
             if (!blob) return;
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${prefabStore.getState().prefabName || 'screenshot'}.png`;
-            a.click();
-            URL.revokeObjectURL(url);
+            downloadBlob(blob, `${prefabStore.getState().prefabName || 'screenshot'}.png`);
         });
     }, [prefabStore]);
 
@@ -766,10 +762,7 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
         screenshot: async filename => {
             await clearSelection();
             const image = await agentHost.captureView();
-            const link = document.createElement('a');
-            link.href = image.dataUrl;
-            link.download = filename;
-            link.click();
+            downloadURL(image.dataUrl, filename);
         },
     };
     const agentHostRef = useRef(agentHost);

@@ -1,3 +1,4 @@
+import { Color } from 'three';
 import { useRef } from 'react';
 
 import { useHelper } from '@react-three/drei';
@@ -37,7 +38,7 @@ function PointLightView({ properties, children }: ComponentViewProps<PointLightP
     const shadowCameraNear = Math.max(0.001, Number(merged.shadowCameraNear) || 0.5);
     const shadowCameraFar = Math.max(shadowCameraNear, Number(merged.shadowCameraFar) || 500);
     const lightProps = {
-        color: merged.color,
+        color: new Color(merged.color),
         intensity: merged.intensity,
         distance: merged.distance,
         decay: merged.decay,

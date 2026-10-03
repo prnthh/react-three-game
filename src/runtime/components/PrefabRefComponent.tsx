@@ -16,7 +16,7 @@ import { describePrefabSource, isEmbeddedPrefabSource } from '../prefabs/prefabS
 
 import { PrefabRoot } from '../prefabs/PrefabRoot';
 
-import { clearAsset, useAsset } from '../assets/assetCache';
+import { useAssetCache, useAsset } from '../assets/assetCache';
 
 export type PrefabRefProperties = {
     url?: string;
@@ -27,6 +27,7 @@ const PrefabSourceAncestry = createContext<readonly string[]>([]);
 
 function LoadedPrefabRef({ properties, enabled }: ComponentViewProps<PrefabRefProperties>) {
     const { basePath } = usePrefab();
+    const { clear: clearAsset } = useAssetCache();
     const { nodeId, preparing } = useNode();
     const url = useDeferredValue(properties.url ? withBasePath(basePath, properties.url) : '');
     const ancestors = useContext(PrefabSourceAncestry);
@@ -36,7 +37,7 @@ function LoadedPrefabRef({ properties, enabled }: ComponentViewProps<PrefabRefPr
         [document?.prefabId, document?.rootId]);
     useEffect(() => () => {
         if (isEmbeddedPrefabSource(url)) clearAsset('prefab', url);
-    }, [url]);
+    }, [url, clearAsset]);
     const ancestry = useMemo(() => [...ancestors, url], [ancestors, url]);
 
     useLayoutEffect(() => {

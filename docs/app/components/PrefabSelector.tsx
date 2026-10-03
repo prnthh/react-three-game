@@ -10,8 +10,8 @@ type PrefabSelectorProps<T> = {
     className?: string;
 };
 
-function normalizePrefabName(entry: string) {
-    return entry.replace(/^.*\//, "").replace(/\.json$/, "");
+export function normalizePrefabName(entry: string) {
+    return entry.replace(/^\/?prefabs\//, "").replace(/\.json$/, "");
 }
 
 function mergePrefabNames(manifestEntries: readonly string[], fallbackOptions: readonly string[]) {

@@ -1,3 +1,4 @@
+import { Color } from 'three';
 import type { Component, ComponentViewProps } from "../../core/ComponentRegistry";
 
 import { useHelper } from "@react-three/drei";
@@ -51,7 +52,7 @@ function SpotLightView({ properties, children }: ComponentViewProps<SpotLightPro
     const textureMap = useTextureAsset(resolvedMap) ?? undefined;
 
     const lightProps = {
-        color: merged.color,
+        color: new Color(merged.color),
         intensity: merged.intensity,
         angle: merged.angle,
         penumbra: merged.penumbra,

@@ -5,7 +5,7 @@ import { registerAll, createWorldSettings, addBroadphaseLayer, addObjectLayer, e
     createWorld, updateWorld, rigidBody, box, capsule, MotionType } from 'crashcat';
 
 registerAll();
-const prefab = JSON.parse(readFileSync(new URL('../public/prefabs/killbox.json', import.meta.url)));
+const prefab = JSON.parse(readFileSync(new URL('../public/prefabs/killbox/killbox.json', import.meta.url)));
 
 test('each lift has its own boarding sensor that detects the kinematic player', () => {
     const lifts = prefab.root.children.filter(node => node.components?.elevatormover);

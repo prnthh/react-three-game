@@ -2,10 +2,8 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import { useGameObject } from "react-three-game/viewer";
 import { AnimationMixer, LoopOnce, type AnimationClip, type Object3D } from "three";
-import type { StageScene } from "./scenes";
-import type { StagePoint } from "./stage";
 
-export type TransitionAnimationRequest = { nodeId: string; animation: string; targetScene: StageScene; spawn: StagePoint };
+export type TransitionAnimationRequest = { nodeId: string; animation: string };
 
 export default function AnimatedSceneTransition({ request, onComplete }: {
     request: TransitionAnimationRequest | null;

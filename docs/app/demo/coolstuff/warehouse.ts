@@ -47,7 +47,7 @@ export function createWarehouse({ seed = 42, rows = 6, bays = 8, stacks = 2 } = 
                 const y = stack * RACK_HEIGHT;
                 children.push({ id, name: id, components: {
                     transform: { type: 'Transform', properties: { position: [x, y, z] } },
-                    prefab: { type: 'PrefabRef', properties: { url: '/prefabs/warehouse-rack.json' } },
+                    prefab: { type: 'PrefabRef', properties: { url: '/prefabs/coolstuff/warehouse-rack.json' } },
                 } });
                 SHELF_TOPS.forEach((top, shelf) => {
                     for (let slot = 0; slot < BOXES_PER_SHELF; slot++) {

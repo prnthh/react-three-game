@@ -1,7 +1,7 @@
 import { registerInstancedMaterial } from '../rendering/materialInstancing';
 import type { Node } from 'three/webgpu';
 import { useInvalidateMeshInstances } from "../rendering/MeshInstanceProvider";
-import { BackSide, DoubleSide, NearestFilter, NearestMipmapNearestFilter, NearestMipmapLinearFilter, LinearMipmapNearestFilter } from "three";
+import { Color, BackSide, DoubleSide, NearestFilter, NearestMipmapNearestFilter, NearestMipmapLinearFilter, LinearMipmapNearestFilter } from "three";
 import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { applyProps, extend } from '@react-three/fiber';
@@ -51,6 +51,19 @@ export type MaterialProps = PrefabMaterial;
 export type MaterialOverrides = Record<string, unknown>;
 
 const EMPTY_MATERIAL_OVERRIDES: MaterialOverrides = Object.freeze({});
+
+// R3F's CJS entry and Three's ESM node materials can have different Color
+// constructors in Node. Supply Color objects so applyProps preserves the math type.
+function applyMaterialOverrides<T extends Material>(material: T, overrides: MaterialOverrides): T {
+    const resolved = { ...overrides };
+    for (const [key, value] of Object.entries(resolved)) {
+        const target = (material as unknown as Record<string, unknown>)[key] as Color | undefined;
+        if (target?.isColor && (typeof value === 'string' || typeof value === 'number' || (value as Color)?.isColor)) {
+            resolved[key] = target.clone().set(value as Color | string | number);
+        }
+    }
+    return applyProps(material, resolved);
+}
 
 const MaterialOverrideKeyContext = createContext<string | undefined>(undefined);
 
@@ -221,7 +234,7 @@ function applyMaterialProperties(
     const materialType = properties.materialType ?? 'standard';
     const common = {
         name: properties.name ?? '',
-        color: properties.color ?? '#ffffff',
+        color: new Color(properties.color ?? '#ffffff'),
         visible: (!properties.texture || !!map) && (!properties.normalMapTexture || !!normalMap),
         toneMapped: properties.toneMapped ?? true,
         transparent: properties.transparent ?? materialType === 'sprite',
@@ -285,7 +298,7 @@ function MaterialComponentView({ properties, children }: ComponentViewProps<Mate
     const overrideKey = useContext(MaterialOverrideKeyContext);
     // Unkeyed overrides remain node-local; memo identity changes must replace that material.
     const localMaterial = useMemo(() => ownsMaterial && overrideKey === undefined
-        ? applyProps(sharedMaterial.clone(), overrides) : null, [sharedMaterial, overrides, ownsMaterial, overrideKey]);
+        ? applyMaterialOverrides(sharedMaterial.clone(), overrides) : null, [sharedMaterial, overrides, ownsMaterial, overrideKey]);
     useEffect(() => () => localMaterial?.dispose(), [localMaterial]);
     const resolvedMaterial = ownsMaterial && overrideKey !== undefined
         ? <SharedOverrideMaterial source={sharedMaterial} overrides={overrides} cacheKey={overrideKey} attach={properties.attach} />
@@ -301,7 +314,7 @@ function MaterialComponentView({ properties, children }: ComponentViewProps<Mate
 function SharedOverrideMaterial({ source, overrides, cacheKey, attach }: {
     source: Material; overrides: MaterialOverrides; cacheKey: string; attach?: string;
 }) {
-    const material = useSharedMaterialResource(`override:${source.uuid}:${cacheKey}`, () => applyProps(source.clone(), overrides));
+    const material = useSharedMaterialResource(`override:${source.uuid}:${cacheKey}`, () => applyMaterialOverrides(source.clone(), overrides));
     return <primitive object={material} attach={attach} dispose={null} />;
 }
 

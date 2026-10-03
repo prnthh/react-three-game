@@ -1,46 +1,15 @@
-import { createContext, useContext, useEffect, useMemo, type ReactNode } from "react";
-import { useThree } from "@react-three/fiber";
-import { AudioListener } from "three";
+import { createContext, useContext } from 'react';
+import type { AudioListener } from 'three';
 
-const AudioListenerContext = createContext<AudioListener | undefined>(undefined);
-
-/** Owns exactly one listener for a canvas, shared by every authored Sound node. */
-export function AudioRuntimeProvider({ children }: { children: ReactNode }) {
-    const inherited = useContext(AudioListenerContext);
-    if (inherited) return children;
-    return <AudioRuntimeOwner>{children}</AudioRuntimeOwner>;
-}
-
-function AudioRuntimeOwner({ children }: { children: ReactNode }) {
-    const camera = useThree(state => state.camera);
-    const listener = useMemo(() => new AudioListener(), []);
-
-    useEffect(() => {
-        const resume = () => { void listener.context.resume(); };
-        window.addEventListener("pointerdown", resume);
-        window.addEventListener("keydown", resume);
-        return () => {
-            window.removeEventListener("pointerdown", resume);
-            window.removeEventListener("keydown", resume);
-        };
-    }, [listener]);
-
-    useEffect(() => {
-        camera.add(listener);
-        return () => {
-            camera.remove(listener);
-        };
-    }, [camera, listener]);
-
-    return (
-        <AudioListenerContext.Provider value={listener}>
-            {children}
-        </AudioListenerContext.Provider>
-    );
-}
+/** Hosts supply audio explicitly; scene construction never creates an AudioContext. */
+export const AudioListenerContext = createContext<AudioListener | undefined>(undefined);
 
 export function useAudioListener() {
-    const listener = useContext(AudioListenerContext);
-    if (!listener) throw new Error("Sound components must be rendered inside <PrefabRoot>");
-    return listener;
+    return useContext(AudioListenerContext);
 }
+
+/** Optional host integration for imperative audio playback. */
+export const AudioAssetsContext = createContext<{
+    register(path: string, buffer: AudioBuffer): void;
+    remove(path: string, buffer: AudioBuffer): void;
+} | null>(null);

@@ -11,15 +11,9 @@ import { useCrashcat } from "react-three-game/plugins/crashcat";
 import { cylinder, MotionType, rigidBody } from "crashcat";
 import { Quaternion, Vector3 } from "three";
 
-import { INTERACTION_ENTER_EVENT, INTERACTION_EXIT_EVENT, type StagePoint } from "../stage";
+import { INTERACTION_ENTER_EVENT, INTERACTION_EXIT_EVENT } from "../stage";
 
-export type StageInteractionProperties = {
-    action?: "dialogue" | "transition";
-    animation?: string;
-    activationNodeId?: string;
-    pages?: string[];
-    targetScene?: string;
-    spawn?: StagePoint;
+export type InteractionColliderProperties = {
     sensorRadius?: number;
     sensorHalfHeight?: number;
     enterEventName?: string;
@@ -29,16 +23,14 @@ export type StageInteractionProperties = {
 const DEFAULT_ENTER_EVENT = INTERACTION_ENTER_EVENT;
 const DEFAULT_EXIT_EVENT = INTERACTION_EXIT_EVENT;
 
-function StageInteractionView({ properties, children }: ComponentViewProps<StageInteractionProperties>) {
+function InteractionColliderView({ properties, children }: ComponentViewProps<InteractionColliderProperties>) {
     const api = useCrashcat();
-    const { nodeId, editMode } = useNode();
+    const { editMode } = useNode();
     const gameObject = useGameObject();
     const runtimeNodeId = gameObject.id;
 
     useEffect(() => {
         if (editMode) return;
-        const activationNodeId = properties.activationNodeId?.trim();
-        if (activationNodeId && activationNodeId !== nodeId) return;
         const object = gameObject.transform;
         if (!api || !object) return;
 
@@ -68,28 +60,15 @@ function StageInteractionView({ properties, children }: ComponentViewProps<Stage
         });
 
         return () => api.unregister(runtimeNodeId);
-    }, [api, editMode, gameObject, nodeId, runtimeNodeId, properties.activationNodeId, properties.enterEventName, properties.exitEventName, properties.sensorHalfHeight, properties.sensorRadius]);
+    }, [api, editMode, gameObject, runtimeNodeId, properties.enterEventName, properties.exitEventName, properties.sensorHalfHeight, properties.sensorRadius]);
 
     return <>{children}</>;
 }
 
-const StageInteractionComponent: Component<StageInteractionProperties> = {
-    name: "StageInteraction",
-    View: StageInteractionView,
+const InteractionCollider: Component<InteractionColliderProperties> = {
+    name: "InteractionCollider",
+    View: InteractionColliderView,
     properties: {
-        action: {
-            type: "select",
-            default: "dialogue",
-            options: [
-                { value: "dialogue", label: "Dialogue" },
-                { value: "transition", label: "Transition" },
-            ],
-        },
-        pages: { type: "string[]", default: [], label: "Dialogue Pages" },
-        targetScene: { type: "string", default: "" },
-        spawn: { type: "vector3", default: [0, 0, 0] },
-        animation: { type: "string", default: "" },
-        activationNodeId: { type: "string", default: "" },
         sensorRadius: { default: 0.8, min: 0.05, step: 0.05 },
         sensorHalfHeight: { default: 1, min: 0.05, step: 0.05 },
         enterEventName: { type: "string", default: DEFAULT_ENTER_EVENT },
@@ -97,4 +76,4 @@ const StageInteractionComponent: Component<StageInteractionProperties> = {
     },
 };
 
-export default StageInteractionComponent;
+export default InteractionCollider;

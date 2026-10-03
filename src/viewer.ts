@@ -97,3 +97,6 @@ export { SCENE_OBJECT, SCENE_LIGHT } from './runtime/scene/SceneGraphRegistratio
 
 export { resolveGameObject, resolveRenderSource, registerGameObjectOwner, registerRenderSources } from './runtime/scene/gameObject';
 export type { NodeComponentRegistry } from './runtime/scene/SceneContext';
+
+export { exportGLBData } from './export';
+export { BrowserRuntime } from './browser';

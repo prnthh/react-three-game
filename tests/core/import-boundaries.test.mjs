@@ -27,3 +27,10 @@ for (const file of readdirSync(new URL('../../src/core/', import.meta.url))) {
         assert.deepEqual(dependencies(`src/core/${file}`).filter(path => /\/src\/(runtime|editor|plugins)\//.test(path)), []);
     });
 }
+
+for (const entry of ['src/runtime/SceneRuntime.tsx', 'src/runtime/prefabs/PrefabRoot.tsx', 'src/headless.tsx', 'src/export.ts']) {
+    test(`${entry} stays independent of browser hosts and editor IO`, () => {
+        const forbidden = dependencies(entry).filter(file => /\/src\/(?:browser(?:\/|\.tsx?$)|editor(?:\/|\.ts$))/.test(file) || file.endsWith('/runtime/GameCanvas.tsx'));
+        assert.deepEqual(forbidden, []);
+    });
+}

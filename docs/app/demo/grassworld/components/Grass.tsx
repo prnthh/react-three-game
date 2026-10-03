@@ -94,8 +94,8 @@ function createBladeGeometry() {
 export function useVegetationResources() {
     const player = usePlayerRuntime();
     const [flowers, noise] = useTexture([
-        withBasePath('/grassworld/textures/edelweiss.png'),
-        withBasePath('/grassworld/textures/noise-atlas.png'),
+        withBasePath('/textures/grassworld/edelweiss.png'),
+        withBasePath('/textures/grassworld/noise-atlas.png'),
     ]);
     const resources = useMemo(() => {
         flowers.colorSpace = SRGBColorSpace;

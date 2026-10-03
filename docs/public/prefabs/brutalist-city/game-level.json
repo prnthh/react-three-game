@@ -195,7 +195,7 @@
                 -80
               ],
               "maxTiles": 3,
-              "url": "/prefabs/city-chunk.json",
+              "url": "/prefabs/brutalist-city/city-chunk.json",
               "static": true
             }
           }

@@ -26,7 +26,7 @@ export default function DemoApp({ onReady }: { onReady: () => void }) {
     useEffect(() => {
         const controller = new AbortController();
         performance.mark('home:load-start');
-        void fetch(withBasePath('/prefabs/game-level.json'), { signal: controller.signal })
+        void fetch(withBasePath('/prefabs/brutalist-city/game-level.json'), { signal: controller.signal })
             .then(response => {
                 if (!response.ok) throw new Error(`Scene request failed (${response.status})`);
                 return response.json();

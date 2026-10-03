@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { PrefabEditorMode, registerComponent, useSceneComponents, type GameObject, type Prefab } from "react-three-game/viewer";
 import { PrefabEditor } from "react-three-game/editor";
 import { CrashcatPhysicsComponent, CrashcatRuntime } from "react-three-game/plugins/crashcat";
-import initialWorld from "../../../public/prefabs/killbox.json";
+import initialWorld from "../../../public/prefabs/killbox/killbox.json";
 
 import PrefabSelector from "../../components/PrefabSelector";
 import {
@@ -18,7 +18,7 @@ import OrbMover from "./components/OrbMover";
 import { NPC_MANAGER_COMPONENT, NPCManagerComponent } from "./components/NPCManager";
 import { BASE_PATH } from "../../basePath";
 
-const PLAYER_PREFAB_URL = "/prefabs/player.json";
+const PLAYER_PREFAB_URL = "/prefabs/killbox/player.json";
 const PLAYER_SPAWN_ID = "killbox-player-spawn";
 
 function containsPlayer(node: GameObject): boolean {
@@ -89,7 +89,7 @@ registerComponent(PlayerControllerComponent);
 
 export default function KillboxDemo() {
     const [selectedPrefab, setSelectedPrefab] = useState<Prefab>(() => injectPlayer(initialWorld as unknown as Prefab));
-    const [selectedPrefabName, setSelectedPrefabName] = useState("killbox");
+    const [selectedPrefabName, setSelectedPrefabName] = useState("killbox/killbox");
     const [selectedWeaponIndex, setSelectedWeaponIndex] = useState(0);
     const weaponWheelTimeRef = useRef(0);
     const crosshairRef = useRef<HTMLDivElement>(null);

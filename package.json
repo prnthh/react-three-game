@@ -36,7 +36,17 @@
 			"import": "./dist/plugins/*/index.js",
 			"default": "./dist/plugins/*/index.js"
 		},
-		"./package.json": "./package.json"
+		"./package.json": "./package.json",
+		"./browser": {
+			"types": "./dist/browser.d.ts",
+			"import": "./dist/browser.js",
+			"default": "./dist/browser.js"
+		},
+		"./headless": {
+			"types": "./dist/headless.d.ts",
+			"import": "./dist/headless.js",
+			"default": "./dist/headless.js"
+		}
 	},
 	"files": [
 		"dist",
@@ -47,7 +57,7 @@
 		"clean": "rm -rf dist",
 		"watch": "npm run clean && tsc --watch",
 		"dev": "npm run dev --workspace docs",
-		"build": "npm run clean && tsc",
+		"build": "npm run clean && tsc && node scripts/finalize-esm.mjs",
 		"prepack": "npm run build",
 		"release": "npm publish --access public",
 		"test": "npm run test:lib && npm run test:docs",

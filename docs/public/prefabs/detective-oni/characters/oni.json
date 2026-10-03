@@ -1,0 +1,71 @@
+{
+  "id": "oni",
+  "name": "Player",
+  "root": {
+    "id": "stage-player-collider",
+    "name": "Player",
+    "components": {
+      "transform": {
+        "type": "Transform",
+        "properties": {
+          "position": [
+            0,
+            0.85,
+            0
+          ]
+        }
+      },
+      "crashcatPhysics": {
+        "type": "CrashcatPhysics",
+        "properties": {
+          "type": "kinematicPosition",
+          "colliders": "capsule",
+          "capsuleRadius": 0.32,
+          "capsuleHalfHeight": 0.53
+        }
+      },
+      "characterDriver": {
+        "type": "CharacterDriver",
+        "properties": {
+          "id": "oni",
+          "dialogue": "dialogue.json",
+          "role": "player",
+          "modelNodeId": "stage-player-model",
+          "centerY": 0.85,
+          "walkSpeed": 1.55,
+          "rotationY": 0.25
+        }
+      }
+    },
+    "children": [
+      {
+        "id": "stage-player-model",
+        "name": "Player model",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                -0.85,
+                0
+              ],
+              "scale": [
+                0.92,
+                0.92,
+                0.92
+              ]
+            }
+          },
+          "model": {
+            "type": "AnimatedModel",
+            "properties": {
+              "filename": "/models/human/onimilio.glb",
+              "animationState": "idle"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

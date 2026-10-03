@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { speakDialogue } from "../speech";
+import { speakDialogue } from "./speech";
 
-export default function DialogueBox({ text, voiceEnabled, onNext }: { text: string; voiceEnabled: boolean; onNext(): void }) {
+export default function DialogueBox({ title, text, voiceEnabled, onNext }: { title: string; text: string; voiceEnabled: boolean; onNext(): void }) {
     useEffect(() => {
         if (voiceEnabled) return speakDialogue(text);
     }, [text, voiceEnabled]);
@@ -30,7 +30,7 @@ export default function DialogueBox({ text, voiceEnabled, onNext }: { text: stri
         className="pointer-events-auto absolute bottom-8 left-1/2 z-20 w-[min(42rem,calc(100vw-2rem))] -translate-x-1/2 cursor-pointer rounded-2xl border-4 border-black bg-[#fff7cf] px-6 py-5 text-left font-mono text-base leading-relaxed text-black shadow-[8px_8px_0_#1b1b1b] sm:text-lg"
         aria-label="Continue dialogue"
     >
-        <span className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#8b3d2f]">Field notes</span>
+        <span className="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#8b3d2f]">{title}</span>
         {text.slice(0, visible)}
         <span className="ml-1 animate-pulse">{visible < text.length ? "▌" : "▼"}</span>
     </button>;

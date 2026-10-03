@@ -128,7 +128,7 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "url": "/prefabs/brutalist-enterable-cube.json"
+              "url": "/prefabs/brutalist-city/brutalist-enterable-cube.json"
             }
           }
         },
@@ -161,7 +161,7 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "url": "/prefabs/brutalist-enterable-cube.json"
+              "url": "/prefabs/brutalist-city/brutalist-enterable-cube.json"
             }
           }
         },
@@ -194,7 +194,7 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "url": "/prefabs/brutalist-cube-building.json"
+              "url": "/prefabs/brutalist-city/brutalist-cube-building.json"
             }
           }
         },
@@ -227,7 +227,7 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "url": "/prefabs/brutalist-cube-building.json"
+              "url": "/prefabs/brutalist-city/brutalist-cube-building.json"
             }
           }
         },
@@ -260,7 +260,7 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "url": "/prefabs/brutalist-cube-building.json"
+              "url": "/prefabs/brutalist-city/brutalist-cube-building.json"
             }
           }
         },
@@ -293,7 +293,7 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "url": "/prefabs/brutalist-cylinder-tower.json"
+              "url": "/prefabs/brutalist-city/brutalist-cylinder-tower.json"
             }
           }
         },
@@ -326,7 +326,7 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "url": "/prefabs/brutalist-cylinder-tower.json"
+              "url": "/prefabs/brutalist-city/brutalist-cylinder-tower.json"
             }
           }
         },
@@ -359,7 +359,7 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "url": "/prefabs/brutalist-cylinder-tower.json"
+              "url": "/prefabs/brutalist-city/brutalist-cylinder-tower.json"
             }
           }
         },
@@ -733,7 +733,7 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "url": "/prefabs/city-planter.json"
+              "url": "/prefabs/brutalist-city/city-planter.json"
             }
           }
         },
@@ -756,7 +756,7 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "url": "/prefabs/city-planter.json"
+              "url": "/prefabs/brutalist-city/city-planter.json"
             }
           }
         },
@@ -779,7 +779,7 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "url": "/prefabs/city-planter.json"
+              "url": "/prefabs/brutalist-city/city-planter.json"
             }
           }
         },
@@ -802,7 +802,7 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "url": "/prefabs/city-planter.json"
+              "url": "/prefabs/brutalist-city/city-planter.json"
             }
           }
         },
@@ -825,7 +825,7 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "url": "/prefabs/city-planter.json"
+              "url": "/prefabs/brutalist-city/city-planter.json"
             }
           }
         },
@@ -848,7 +848,7 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "url": "/prefabs/city-planter.json"
+              "url": "/prefabs/brutalist-city/city-planter.json"
             }
           }
         },
@@ -871,7 +871,7 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "url": "/prefabs/city-planter.json"
+              "url": "/prefabs/brutalist-city/city-planter.json"
             }
           }
         },
@@ -894,7 +894,7 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "url": "/prefabs/city-planter.json"
+              "url": "/prefabs/brutalist-city/city-planter.json"
             }
           }
         },
@@ -917,7 +917,7 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "url": "/prefabs/city-planter.json"
+              "url": "/prefabs/brutalist-city/city-planter.json"
             }
           }
         },
@@ -940,7 +940,7 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "url": "/prefabs/city-planter.json"
+              "url": "/prefabs/brutalist-city/city-planter.json"
             }
           }
         },
@@ -963,7 +963,7 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "url": "/prefabs/city-planter.json"
+              "url": "/prefabs/brutalist-city/city-planter.json"
             }
           }
         },
@@ -986,7 +986,7 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "url": "/prefabs/city-planter.json"
+              "url": "/prefabs/brutalist-city/city-planter.json"
             }
           }
         },

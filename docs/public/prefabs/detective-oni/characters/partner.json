@@ -1,0 +1,127 @@
+{
+  "id": "partner",
+  "name": "rigged office partner",
+  "root": {
+    "id": "stage-office-npc",
+    "name": "rigged office partner",
+    "components": {
+      "transform": {
+        "type": "Transform",
+        "properties": {
+          "position": [
+            1.25,
+            0,
+            -0.1
+          ],
+          "rotation": [
+            0,
+            -0.25,
+            0
+          ],
+          "scale": [
+            0.92,
+            0.92,
+            0.92
+          ]
+        }
+      },
+      "animatedModel": {
+        "type": "AnimatedModel",
+        "properties": {
+          "filename": "models/human/mixamo-anatomical-character.fbx",
+          "animationState": "idle",
+          "castShadow": true,
+          "receiveShadow": true,
+          "frustumCulled": false,
+          "emitClickEvent": true,
+          "clickEventName": "stage:talk-to-partner"
+        }
+      },
+      "characterDriver": {
+        "type": "CharacterDriver",
+        "properties": {
+          "id": "stage-office-npc",
+          "dialogue": "dialogue.json",
+          "action": "talk",
+          "activationNodeId": "stage-office-npc-trigger",
+          "role": "npc",
+          "modelNodeId": "stage-office-npc"
+        }
+      }
+    },
+    "children": [
+      {
+        "id": "stage-office-npc-trigger",
+        "name": "partner dialogue trigger",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                0.85,
+                0
+              ]
+            }
+          },
+          "mesh": {
+            "type": "Mesh",
+            "properties": {
+              "visible": false,
+              "castShadow": false,
+              "receiveShadow": false
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0.95,
+                0.95,
+                1.7,
+                32
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialId": "material-24"
+            }
+          },
+          "activationCollider": {
+            "type": "ActivationCollider",
+            "properties": {
+              "targetNodeId": "stage-player-collider",
+              "enterEventName": "stage:interaction-enter",
+              "exitEventName": "stage:interaction-exit",
+              "bubbleHeight": 1.35
+            }
+          },
+          "crashcatPhysics": {
+            "type": "CrashcatPhysics",
+            "properties": {
+              "type": "fixed",
+              "colliders": "cylinder",
+              "cylinderRadius": 0.95,
+              "cylinderHalfHeight": 0.85,
+              "sensor": true,
+              "sensorEnterEventName": "stage:interaction-enter",
+              "sensorExitEventName": "stage:interaction-exit"
+            }
+          }
+        }
+      }
+    ]
+  },
+  "materials": {
+    "material-24": {
+      "materialType": "basic",
+      "color": "#fbbf24",
+      "transparent": true,
+      "opacity": 0.08,
+      "depthWrite": false
+    }
+  }
+}

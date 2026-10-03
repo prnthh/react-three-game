@@ -54,7 +54,7 @@ the page is hidden or left. `await scene.save()` writes immediately and rejects 
 storage is unavailable or full. Autosave failures are reported in the browser console.
 The demo pages do not opt into this persistence.
 
-`?map=/prefabs/game-level.json` explicitly loads that source instead of restoring
+`?map=/prefabs/brutalist-city/game-level.json` explicitly loads that source instead of restoring
 storage. Edits still save to the same slot; return to `/editor` to resume them.
 The saved prefab belongs to this browser and origin; it is not synced, a source-file
 edit, or a portable asset backup. Multiple editor tabs share that slot; the latest

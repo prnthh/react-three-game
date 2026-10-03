@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { speakDialogue } from '../app/demo/stage/speech.ts';
+import { speakDialogue } from '../app/demo/stage/components/speech.ts';
 
 test('speech remains optional on the server and unsupported browsers', () => {
     assert.equal(speakDialogue('Hello'), undefined);

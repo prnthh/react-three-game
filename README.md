@@ -75,6 +75,92 @@ individual instances; instance-local objects and configured copies keep their ow
 cleanup. Drei's `useProgress` reports underlying Three loader activity; it does not
 include prefab JSON or audio fetched directly.
 
+## Node scene construction and GLB export
+
+`react-three-game/headless` constructs the same Three.js object graph as
+`PrefabRoot`, using an R3F reconciler in plain Node. It does not launch a browser,
+create a DOM root, allocate a canvas, or initialize WebGL/WebGPU. GLB export
+serializes objects; this host does not render screenshots.
+
+```js
+import { readFile, writeFile } from 'node:fs/promises';
+import { exportPrefabToGLB } from 'react-three-game/headless';
+
+const prefab = JSON.parse(await readFile('scene.json', 'utf8'));
+const bytes = await exportPrefabToGLB(prefab);
+await writeFile('scene.glb', new Uint8Array(bytes));
+```
+
+For direct access to the Three.js scene, use `createHeadlessScene(prefab, options)`.
+It resolves after declared dependencies and the atomic Suspense tree have loaded
+and committed. Always release the host after inspecting or exporting its objects:
+
+```js
+import { createHeadlessScene } from 'react-three-game/headless';
+
+const host = await createHeadlessScene(prefab, { timeoutMs: 30_000 });
+try {
+  console.log(host.scene); // THREE.Scene
+  const bytes = await host.exportGLB({ onlyVisible: true });
+  await writeFile('scene.glb', new Uint8Array(bytes));
+} finally {
+  await host.dispose();
+}
+```
+
+The host disables gameplay, audio, and automatic mesh batching. Original meshes,
+transforms, visibility, and materials remain available for export. Built-in render
+components mount in preparation mode; custom components must be registered and
+use `renderWhenDisabled: true` to participate. Their views must work without browser
+APIs or GPU calls and use declared dependencies or Suspense for asynchronous
+readiness. The host does not advance simulation frames. Errors, cycles, cancellation
+via `signal`, and timeouts reject rather than returning a partially loaded scene.
+
+Each host has a separate asset cache. Untextured built-in geometry works immediately.
+HTTP/data-URL prefab references use Node's `fetch`; filesystem prefab references,
+models, and textures can use `options.loaders` adapters. A prefab loader returns a
+normalized document (`normalizePrefab` from `react-three-game/core`); model and
+texture loaders return Three.js objects. `basePath` uses the same asset-root rules
+as the browser viewer. Adapter resources belong to the caller and must stay alive
+until the host is disposed. Texture export additionally requires an image/canvas
+adapter compatible with Three's GLTFExporter.
+
+GPU environment captures and the current Text component are not supported by this
+host yet and produce explicit errors. GLB preserves supported glTF scene data,
+not gameplay, physics, arbitrary node shaders, fog, or environment lighting. Use
+`host.exportGLB({ animations })` to supply animation clips explicitly. For binary
+output in Node, the host installs a small Blob-reading `FileReader` shim only when
+one is absent; it does not emulate a DOM or replace a native implementation.
+
+A runnable Node export example lives in the [docs workspace](docs/README.md#headless-export).
+The library build adds explicit `.js` extensions to emitted relative imports for Node ESM.
+
+### Browser services
+
+`SceneRuntime` and `PrefabRoot` own scene resources and document scopes. They do
+not create audio listeners or install browser interaction listeners. `GameCanvas`
+includes `BrowserRuntime` to supply these services; existing editor and GameCanvas
+usage retains audio behavior. When hosting `PrefabRoot` in your own R3F canvas,
+opt into browser services explicitly:
+
+```tsx
+import { Canvas } from '@react-three/fiber';
+import { PrefabRoot } from 'react-three-game/viewer';
+import { BrowserRuntime } from 'react-three-game/browser';
+
+<Canvas>
+  <BrowserRuntime>
+    <PrefabRoot data={prefab} />
+  </BrowserRuntime>
+</Canvas>
+```
+
+Sound nodes preserve their children but do not load or play clips without an audio
+provider. `SceneRuntime` also accepts `instancing={false}` for hosts that need source
+meshes. `exportGLBData` is shared serialization code; browser downloads are separate
+`downloadBlob` / `downloadURL` adapters in `react-three-game/browser`. The editor's
+existing save, screenshot, and GLB download APIs use this browser layer.
+
 ## Point light grid
 
 Mount one `LightCullingGrid` inside your R3F canvas or as a child of `PrefabEditor`:

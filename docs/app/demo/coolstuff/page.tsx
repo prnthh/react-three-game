@@ -7,7 +7,7 @@ import { CrashcatPhysicsComponent, CrashcatRagdollComponent, CrashcatRuntime } f
 import InteriorMap from './components/InteriorMapComponent';
 import InteriorInspector from './components/InteriorMapComponent.editor';
 import { SimplePlayerComponent } from './components/SimplePlayerComponent';
-import coolStuffScene from './scene.json';
+import coolStuffScene from '../../../public/prefabs/coolstuff/coolstuff.json';
 import { BASE_PATH } from '../../basePath';
 
 registerComponent(InteriorMap);

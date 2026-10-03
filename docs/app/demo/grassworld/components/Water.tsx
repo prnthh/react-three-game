@@ -144,7 +144,7 @@ class WaterMaterial extends MeshBasicNodeMaterial {
 
 export type WaterProperties = { level: number; size: number; speed: number; normalMap: string; followCamera: boolean };
 
-export default function Water({ level, size, speed = 0.1, followCamera = false, normalMap = withBasePath('/grassworld/textures/water-normal.png') }: {
+export default function Water({ level, size, speed = 0.1, followCamera = false, normalMap = withBasePath('/textures/grassworld/water-normal.png') }: {
     level: number; size: number; speed?: number; normalMap?: string; followCamera?: boolean;
 }) {
     const surface = useRef<Mesh>(null);
@@ -204,7 +204,7 @@ export const WaterComponent: Component<WaterProperties> = {
         size: { default: 100, min: 1, step: 1 },
         followCamera: { type: 'boolean', default: false },
         speed: { default: 0.1, step: 0.01 },
-        normalMap: { type: 'string', default: '/grassworld/textures/water-normal.png' },
+        normalMap: { type: 'string', default: '/textures/grassworld/water-normal.png' },
     },
     View: function WaterView({ properties, children }) {
         const { basePath } = usePrefab();

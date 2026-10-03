@@ -1,8 +1,8 @@
 import { useFrame, useThree } from "@react-three/fiber";
-import { useLayoutEffect, useRef } from "react";
+import { useRef } from "react";
 import { PrefabEditorMode, useGameObject, useScene, type Component, type ComponentViewProps } from "react-three-game/viewer";
 import { OrthographicCamera, PerspectiveCamera, Quaternion, Vector3 } from "three";
-import { PLAYER_NODE_ID } from "../stage";
+import { usePlayer } from "./player";
 const UP = new Vector3(0, 1, 0);
 const CAMERA_RIGHT = new Vector3(1, 0, 0);
 type CameraFollowProperties = { targetNodeId?: string; deadZone?: number; speed?: number; lockX?: boolean; lockY?: boolean; lockZ?: boolean };
@@ -10,11 +10,9 @@ type CameraFollowProperties = { targetNodeId?: string; deadZone?: number; speed?
 function StageCameraFollowView({ properties, children }: ComponentViewProps<CameraFollowProperties>) {
     const { mode } = useScene();
     const object = useGameObject();
-    const target = useGameObject(properties.targetNodeId);
-    const lockedPosition = useRef(new Vector3());
-    useLayoutEffect(() => {
-        object.transform?.getWorldPosition(lockedPosition.current);
-    }, [object]);
+    const authoredTarget = useGameObject(properties.targetNodeId);
+    const target = usePlayer() ?? authoredTarget;
+    const lockedPosition = useRef<Vector3 | null>(null);
     const camera = useThree((state) => state.camera);
     const worldPosition = useRef(new Vector3());
     const viewPosition = useRef(new Vector3());
@@ -31,6 +29,8 @@ function StageCameraFollowView({ properties, children }: ComponentViewProps<Came
         if (!player) return;
         const node = object.transform;
         if (!node) return;
+        // Capture after the authored transform is registered, including warm scene reloads.
+        lockedPosition.current ??= node.getWorldPosition(new Vector3());
 
         player.getWorldPosition(worldPosition.current);
         camera.updateMatrixWorld();
@@ -83,7 +83,7 @@ const StageCameraFollow: Component<CameraFollowProperties> = {
     name: "StageCameraFollow",
     View: StageCameraFollowView,
     properties: {
-        targetNodeId: { type: "string", default: PLAYER_NODE_ID },
+        targetNodeId: { type: "string", default: "" },
         deadZone: { default: 0.4, min: 0, max: 1 },
         speed: { default: 8, min: 0 },
         lockX: { type: "boolean", default: false },

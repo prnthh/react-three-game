@@ -1228,7 +1228,7 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "url": "/prefabs/npc.json"
+              "url": "/prefabs/killbox/npc.json"
             }
           }
         }
@@ -1250,7 +1250,7 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "url": "/prefabs/npc.json"
+              "url": "/prefabs/killbox/npc.json"
             }
           }
         }
@@ -1272,7 +1272,7 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "url": "/prefabs/npc.json"
+              "url": "/prefabs/killbox/npc.json"
             }
           }
         }
@@ -1294,7 +1294,7 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "url": "/prefabs/npc.json"
+              "url": "/prefabs/killbox/npc.json"
             }
           }
         }

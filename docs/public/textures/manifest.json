@@ -41,5 +41,11 @@
   "/textures/floor/terrain/grass-512.jpg",
   "/textures/skybox/skybox2.jpg",
   "/textures/skybox/skybox3.jpg",
-  "/textures/skybox/skybox1.jpg"
+  "/textures/skybox/skybox1.jpg",
+  "/textures/grassworld/edelweiss.png",
+  "/textures/grassworld/grass-map.webp",
+  "/textures/grassworld/ground-ao.jpg",
+  "/textures/grassworld/ground-normal.jpg",
+  "/textures/grassworld/noise-atlas.png",
+  "/textures/grassworld/water-normal.png"
 ]

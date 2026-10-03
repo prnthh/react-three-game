@@ -168,7 +168,8 @@
             "type": "StageCameraFollow",
             "properties": {
               "lockY": true,
-              "lockZ": true
+              "lockZ": true,
+              "targetNodeId": "stage-player-collider"
             }
           }
         },
@@ -268,6 +269,10 @@
             "properties": {
               "materialId": "yard-dirt"
             }
+          },
+          "walkable": {
+            "type": "Walkable",
+            "properties": {}
           }
         },
         "children": []
@@ -1236,19 +1241,25 @@
                       "clickEventName": "stage:door-click"
                     }
                   },
-                  "stageInteraction": {
-                    "type": "StageInteraction",
+                  "interactionDriver": {
+                    "type": "InteractionDriver",
                     "properties": {
-                      "action": "transition",
-                      "animation": "open",
-                      "sensorRadius": 0.78,
-                      "pages": [],
-                      "targetScene": "office",
+                      "id": "stage-office-exterior-door",
+                      "dialogue": "dialogue.json",
+                      "action": "scene",
+                      "targetScene": "scenes/office.json",
                       "spawn": [
                         -3.35,
                         0,
                         1.15
-                      ]
+                      ],
+                      "animation": "open"
+                    }
+                  },
+                  "interactionCollider": {
+                    "type": "InteractionCollider",
+                    "properties": {
+                      "sensorRadius": 0.78
                     }
                   }
                 },
@@ -2212,15 +2223,18 @@
               "materialId": "rust"
             }
           },
-          "stageInteraction": {
-            "type": "StageInteraction",
+          "interactionDriver": {
+            "type": "InteractionDriver",
             "properties": {
-              "action": "dialogue",
-              "sensorRadius": 0.95,
-              "pages": [
-                "A once-proud getaway car, retired after its dashboard developed root access and locked the driver out.",
-                "The glove box still contains a hypothetical CAN-bus s\u00e9ance kit. It asks the engine control unit questions through interpretive blinking."
-              ]
+              "id": "stage-scrap-car",
+              "dialogue": "dialogue.json",
+              "action": "examine"
+            }
+          },
+          "interactionCollider": {
+            "type": "InteractionCollider",
+            "properties": {
+              "sensorRadius": 0.95
             }
           }
         },
@@ -3058,15 +3072,18 @@
               "materialId": "trash"
             }
           },
-          "stageInteraction": {
-            "type": "StageInteraction",
+          "interactionDriver": {
+            "type": "InteractionDriver",
             "properties": {
-              "action": "dialogue",
-              "sensorRadius": 0.72,
-              "pages": [
-                "The trashcan is full of shredded one-time pads, expired access badges, and a banana peel with suspiciously good opsec.",
-                "At the bottom: an esoteric refuse-collection chip that exfiltrates nothing except the smell. A flawless threat model."
-              ]
+              "id": "stage-trashcan",
+              "dialogue": "dialogue.json",
+              "action": "examine"
+            }
+          },
+          "interactionCollider": {
+            "type": "InteractionCollider",
+            "properties": {
+              "sensorRadius": 0.72
             }
           }
         },
@@ -5009,7 +5026,7 @@
         "children": []
       },
       {
-        "id": "stage-player-collider",
+        "id": "player",
         "name": "Player",
         "components": {
           "transform": {
@@ -5017,51 +5034,18 @@
             "properties": {
               "position": [
                 -0.9,
-                0.85,
+                0,
                 -0.35
               ]
             }
           },
-          "crashcatPhysics": {
-            "type": "CrashcatPhysics",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "type": "kinematicPosition",
-              "colliders": "capsule",
-              "capsuleRadius": 0.32,
-              "capsuleHalfHeight": 0.53
+              "url": "/prefabs/detective-oni/characters/oni.json"
             }
           }
-        },
-        "children": [
-          {
-            "id": "stage-player-model",
-            "name": "Player model",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    0,
-                    -0.85,
-                    0
-                  ],
-                  "scale": [
-                    0.92,
-                    0.92,
-                    0.92
-                  ]
-                }
-              },
-              "model": {
-                "type": "AnimatedModel",
-                "properties": {
-                  "filename": "/models/human/onimilio.glb",
-                  "animationState": "idle"
-                }
-              }
-            }
-          }
-        ]
+        }
       }
     ]
   }

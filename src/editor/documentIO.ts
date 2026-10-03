@@ -1,6 +1,8 @@
 import { GameObject, Prefab, findComponent } from "../core/types";
 import { composeTransform } from "../core/transforms";
-import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
+import { exportGLBData } from "../export";
+import { downloadBlob } from "../browser";
+export { exportGLBData } from "../export";
 import {
 	Box3,
 	Matrix4,
@@ -34,10 +36,7 @@ export async function saveJson(data: Prefab, filename: string) {
 		}
 	}
 	// Fallback for browsers without File System Access API
-	const a = document.createElement("a");
-	a.href = "data:text/json;charset=utf-8," + encodeURIComponent(json);
-	a.download = `${filename || "scene"}.json`;
-	a.click();
+	downloadBlob(new Blob([json], { type: 'application/json' }), `${filename || "scene"}.json`);
 }
 
 /** Load scene JSON from a file */
@@ -97,20 +96,6 @@ export function loadJsonFile(): Promise<
 }
 
 /**
- * Export a Three.js scene or object to GLB binary data
- */
-export function exportGLBData(sceneRoot: Object3D): Promise<ArrayBuffer> {
-	return new Promise((resolve, reject) => {
-		new GLTFExporter().parse(
-			sceneRoot,
-			(result) => resolve(result as ArrayBuffer),
-			(error) => reject(error),
-			{ binary: true },
-		);
-	});
-}
-
-/**
  * Export a Three.js scene or object to GLB and trigger a download
  */
 export async function exportGLB(
@@ -122,12 +107,7 @@ export async function exportGLB(
 
 	if (filename) {
 		const blob = new Blob([data], { type: "application/octet-stream" });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement("a");
-		a.href = url;
-		a.download = filename;
-		a.click();
-		URL.revokeObjectURL(url);
+		downloadBlob(blob, filename);
 	}
 
 	return data;

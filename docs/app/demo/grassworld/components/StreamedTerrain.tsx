@@ -21,8 +21,8 @@ import { TERRAIN_SEGMENTS } from "../terrain";
 import Grass, { useVegetationResources } from "./Grass";
 const TERRAIN_NORMAL_SCALE = new Vector2(0.85, 0.85);
 const ASSETS = {
-    groundNormal: withBasePath("/grassworld/textures/ground-normal.jpg"),
-    groundAo: withBasePath("/grassworld/textures/ground-ao.jpg"),
+    groundNormal: withBasePath("/textures/grassworld/ground-normal.jpg"),
+    groundAo: withBasePath("/textures/grassworld/ground-ao.jpg"),
 };
 
 type ChunkCoordinate = { x: number; z: number };

@@ -1,0 +1,10 @@
+{
+  "id": "the-cave",
+  "name": "the-cave",
+  "root": {
+    "id": "the-cave",
+    "name": "the-cave",
+    "components": {},
+    "children": []
+  }
+}

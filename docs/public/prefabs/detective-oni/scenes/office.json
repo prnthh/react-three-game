@@ -196,7 +196,8 @@
             "type": "StageCameraFollow",
             "properties": {
               "lockY": true,
-              "lockZ": true
+              "lockZ": true,
+              "targetNodeId": "stage-player-collider"
             }
           }
         }
@@ -2969,6 +2970,10 @@
             "properties": {
               "materialId": "material-23"
             }
+          },
+          "walkable": {
+            "type": "Walkable",
+            "properties": {}
           }
         }
       },
@@ -4694,19 +4699,25 @@
                   "clickEventName": "stage:door-click"
                 }
               },
-              "stageInteraction": {
-                "type": "StageInteraction",
+              "interactionDriver": {
+                "type": "InteractionDriver",
                 "properties": {
-                  "action": "transition",
-                  "animation": "open",
-                  "sensorRadius": 0.72,
-                  "pages": [],
-                  "targetScene": "junkyard",
+                  "id": "stage-left-door",
+                  "dialogue": "dialogue.json",
+                  "action": "scene",
+                  "targetScene": "scenes/junkyard.json",
                   "spawn": [
                     -0.9,
                     0,
                     -0.35
-                  ]
+                  ],
+                  "animation": "open"
+                }
+              },
+              "interactionCollider": {
+                "type": "InteractionCollider",
+                "properties": {
+                  "sensorRadius": 0.72
                 }
               }
             }
@@ -4879,14 +4890,18 @@
                   "materialId": "material-6"
                 }
               },
-              "stageInteraction": {
-                "type": "StageInteraction",
+              "interactionDriver": {
+                "type": "InteractionDriver",
                 "properties": {
-                  "sensorRadius": 0.65,
-                  "pages": [
-                    "The records closet is alphabetized by motive, moon phase, and snack preference.",
-                    "Opening it without a warrant would release at least three decades of dust."
-                  ]
+                  "id": "stage-closet-door",
+                  "dialogue": "dialogue.json",
+                  "action": "examine"
+                }
+              },
+              "interactionCollider": {
+                "type": "InteractionCollider",
+                "properties": {
+                  "sensorRadius": 0.65
                 }
               }
             },
@@ -5799,14 +5814,17 @@
                   "materialId": "material-7"
                 }
               },
-              "stageInteraction": {
-                "type": "StageInteraction",
+              "interactionDriver": {
+                "type": "InteractionDriver",
                 "properties": {
-                  "pages": [
-                    "The secure hotline only calls payphones that have not been invented yet.",
-                    "Someone left a message: 'Bring the polymorphic dongle. And snacks.'"
-                  ]
+                  "id": "stage-phone",
+                  "dialogue": "dialogue.json",
+                  "action": "examine"
                 }
+              },
+              "interactionCollider": {
+                "type": "InteractionCollider",
+                "properties": {}
               }
             },
             "children": [
@@ -6002,14 +6020,17 @@
                   "materialId": "material-8"
                 }
               },
-              "stageInteraction": {
-                "type": "StageInteraction",
+              "interactionDriver": {
+                "type": "InteractionDriver",
                 "properties": {
-                  "pages": [
-                    "A suitcase cyberdeck with a phosphor display and three keyboards. None agree on where Escape is.",
-                    "Its packet-origami chip allegedly folds a hypothetical network until two distant ports touch."
-                  ]
+                  "id": "stage-cyberdeck",
+                  "dialogue": "dialogue.json",
+                  "action": "examine"
                 }
+              },
+              "interactionCollider": {
+                "type": "InteractionCollider",
+                "properties": {}
               }
             },
             "children": [
@@ -6956,14 +6977,17 @@
                   "materialId": "material-18"
                 }
               },
-              "stageInteraction": {
-                "type": "StageInteraction",
+              "interactionDriver": {
+                "type": "InteractionDriver",
                 "properties": {
-                  "pages": [
-                    "The cabinet contains forbidden silicon: moon-phase timers and one chip labeled DO NOT LICK.",
-                    "Perfect for imaginary capers involving air-gapped vending machines."
-                  ]
+                  "id": "stage-chip-cabinet",
+                  "dialogue": "dialogue.json",
+                  "action": "examine"
                 }
+              },
+              "interactionCollider": {
+                "type": "InteractionCollider",
+                "properties": {}
               }
             }
           }
@@ -7671,14 +7695,17 @@
               "materialId": "material-19"
             }
           },
-          "stageInteraction": {
-            "type": "StageInteraction",
+          "interactionDriver": {
+            "type": "InteractionDriver",
             "properties": {
-              "pages": [
-                "A spectral signal diviner. It finds ghost packets by listening for tiny apologies after missed handshakes.",
-                "The brass dial selects NORMAL, ESOTERIC, or PLAUSIBLE DENIABILITY."
-              ]
+              "id": "stage-signal-analyzer",
+              "dialogue": "dialogue.json",
+              "action": "examine"
             }
+          },
+          "interactionCollider": {
+            "type": "InteractionCollider",
+            "properties": {}
           }
         },
         "children": [
@@ -9090,121 +9117,7 @@
         ]
       },
       {
-        "id": "stage-office-npc",
-        "name": "rigged office partner",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                1.25,
-                0,
-                -0.1
-              ],
-              "rotation": [
-                0,
-                -0.25,
-                0
-              ],
-              "scale": [
-                0.92,
-                0.92,
-                0.92
-              ]
-            }
-          },
-          "animatedModel": {
-            "type": "AnimatedModel",
-            "properties": {
-              "filename": "models/human/mixamo-anatomical-character.fbx",
-              "animationState": "idle",
-              "castShadow": true,
-              "receiveShadow": true,
-              "frustumCulled": false,
-              "emitClickEvent": true,
-              "clickEventName": "stage:talk-to-partner"
-            }
-          },
-          "stageInteraction": {
-            "type": "StageInteraction",
-            "properties": {
-              "action": "dialogue",
-              "activationNodeId": "stage-office-npc-trigger",
-              "pages": [
-                "I traced the signal through three dead relays. Someone wants us to find the source.",
-                "Check the junkyard. And try not to antagonize anything with more antennas than sense."
-              ]
-            }
-          }
-        },
-        "children": [
-          {
-            "id": "stage-office-npc-trigger",
-            "name": "partner dialogue trigger",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    0,
-                    0.85,
-                    0
-                  ]
-                }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "visible": false,
-                  "castShadow": false,
-                  "receiveShadow": false
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "geometryType": "cylinder",
-                  "args": [
-                    0.95,
-                    0.95,
-                    1.7,
-                    32
-                  ]
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialId": "material-24"
-                }
-              },
-              "activationCollider": {
-                "type": "ActivationCollider",
-                "properties": {
-                  "targetNodeId": "stage-player-collider",
-                  "enterEventName": "stage:interaction-enter",
-                  "exitEventName": "stage:interaction-exit",
-                  "bubbleHeight": 1.35
-                }
-              },
-              "crashcatPhysics": {
-                "type": "CrashcatPhysics",
-                "properties": {
-                  "type": "fixed",
-                  "colliders": "cylinder",
-                  "cylinderRadius": 0.95,
-                  "cylinderHalfHeight": 0.85,
-                  "sensor": true,
-                  "sensorEnterEventName": "stage:interaction-enter",
-                  "sensorExitEventName": "stage:interaction-exit"
-                }
-              }
-            }
-          }
-        ]
-      },
-      {
-        "id": "stage-player-collider",
+        "id": "player",
         "name": "Player",
         "components": {
           "transform": {
@@ -9212,51 +9125,30 @@
             "properties": {
               "position": [
                 -1.25,
-                0.85,
+                0,
                 0.25
               ]
             }
           },
-          "crashcatPhysics": {
-            "type": "CrashcatPhysics",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "type": "kinematicPosition",
-              "colliders": "capsule",
-              "capsuleRadius": 0.32,
-              "capsuleHalfHeight": 0.53
+              "url": "/prefabs/detective-oni/characters/oni.json"
             }
           }
-        },
-        "children": [
-          {
-            "id": "stage-player-model",
-            "name": "Player model",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    0,
-                    -0.85,
-                    0
-                  ],
-                  "scale": [
-                    0.92,
-                    0.92,
-                    0.92
-                  ]
-                }
-              },
-              "model": {
-                "type": "AnimatedModel",
-                "properties": {
-                  "filename": "/models/human/onimilio.glb",
-                  "animationState": "idle"
-                }
-              }
+        }
+      },
+      {
+        "id": "partner",
+        "name": "Partner",
+        "components": {
+          "prefab": {
+            "type": "PrefabRef",
+            "properties": {
+              "url": "/prefabs/detective-oni/characters/partner.json"
             }
           }
-        ]
+        }
       }
     ]
   }

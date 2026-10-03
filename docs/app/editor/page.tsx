@@ -1,5 +1,8 @@
 "use client";
 
+import SceneRedirect from "../demo/stage/components/SceneRedirect";
+import Walkable from "../demo/stage/components/Walkable";
+
 import PrefabGridStreamerComponent from "../components/PrefabGridStreamerComponent";
 import ConstantVelocityComponent from "../components/ConstantVelocityComponent";
 import CameraShadowFollowerComponent from "../demo/grassworld/components/CameraShadowFollowerComponent";
@@ -12,6 +15,12 @@ import { denormalizePrefab, registerComponent } from "react-three-game/core";
 import { BASE_PATH, withBasePath } from "../basePath";
 import AgentApiHint from "../components/AgentApiHint";
 import { createPrefabPersistence, readSavedPrefab } from "./persistence";
+import { CrashcatPhysicsComponent, CrashcatRuntime } from "react-three-game/plugins/crashcat";
+import ActivationCollider from "../demo/stage/components/ActivationColliderComponent";
+import InteractionDriver from "../demo/stage/components/InteractionDriver";
+import InteractionCollider from "../demo/stage/components/InteractionCollider";
+import CharacterDriver from "../demo/stage/components/CharacterDriver";
+import StageCameraFollow from "../demo/stage/components/StageCameraFollow";
 import starterScene from "../../public/prefabs/starter-scene.json";
 
 const createStarterScene = (): Prefab => structuredClone(starterScene) as Prefab;
@@ -89,15 +98,23 @@ function EditorPage() {
       return () => controller.abort();
     }
 
-    void fetch(withBasePath(mapSource), { signal: controller.signal })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`Failed to load ${mapSource} (${response.status})`);
-        }
+    const loadMap = async (): Promise<Prefab> => {
+      if (mapSource.startsWith("game:")) {
+        const { games } = await import("../demo/stage/games");
+        const [gameId, sceneId] = mapSource.slice("game:".length).split("/");
+        const game = games.find(game => game.id === gameId);
+        if (!game) throw new Error(`Unknown game: ${gameId}`);
+        const { loadGameJson } = await import("../demo/stage/scene");
+        return loadGameJson<Prefab>(game.rootFolder, `scenes/${sceneId}.json`, controller.signal, BASE_PATH);
+      }
+      const response = await fetch(withBasePath(mapSource), { signal: controller.signal });
+      if (!response.ok) {
+        throw new Error(`Failed to load ${mapSource} (${response.status})`);
+      }
 
-        return response.json() as Promise<Prefab>;
-      })
-      .then((prefab) => {
+      return response.json() as Promise<Prefab>;
+    };
+    void loadMap().then((prefab) => {
         if (controller.signal.aborted) return;
         setMapLoadError(null);
         setLoadedMap({ prefab, source: mapSource });
@@ -131,7 +148,7 @@ function EditorPage() {
         >
           <Autosave writer={writer} />
           <GameCanvas camera={{ position: cameraPosition }}>
-            <PrefabEditorScene />
+            <PrefabEditorScene><CrashcatRuntime /></PrefabEditorScene>
           </GameCanvas>
           <PrefabEditorPanel />
         </PrefabEditorProvider>
@@ -159,3 +176,12 @@ export default function Home() {
 registerComponent(PrefabGridStreamerComponent);
 registerComponent(ConstantVelocityComponent);
 registerComponent(CameraShadowFollowerComponent);
+
+registerComponent(CrashcatPhysicsComponent);
+registerComponent(ActivationCollider);
+registerComponent(InteractionDriver);
+registerComponent(SceneRedirect);
+registerComponent(Walkable);
+registerComponent(InteractionCollider);
+registerComponent(CharacterDriver);
+registerComponent(StageCameraFollow);

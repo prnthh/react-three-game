@@ -1,0 +1,50 @@
+{
+  "stage-closet-door": {
+    "examine": [
+      "The records closet is alphabetized by motive, moon phase, and snack preference.",
+      "Opening it without a warrant would release at least three decades of dust."
+    ]
+  },
+  "stage-phone": {
+    "examine": [
+      "The secure hotline only calls payphones that have not been invented yet.",
+      "Someone left a message: 'Bring the polymorphic dongle. And snacks.'"
+    ]
+  },
+  "stage-cyberdeck": {
+    "examine": [
+      "A suitcase cyberdeck with a phosphor display and three keyboards. None agree on where Escape is.",
+      "Its packet-origami chip allegedly folds a hypothetical network until two distant ports touch."
+    ]
+  },
+  "stage-chip-cabinet": {
+    "examine": [
+      "The cabinet contains forbidden silicon: moon-phase timers and one chip labeled DO NOT LICK.",
+      "Perfect for imaginary capers involving air-gapped vending machines."
+    ]
+  },
+  "stage-signal-analyzer": {
+    "examine": [
+      "A spectral signal diviner. It finds ghost packets by listening for tiny apologies after missed handshakes.",
+      "The brass dial selects NORMAL, ESOTERIC, or PLAUSIBLE DENIABILITY."
+    ]
+  },
+  "stage-office-npc": {
+    "talk": [
+      "I traced the signal through three dead relays. Someone wants us to find the source.",
+      "Check the junkyard. And try not to antagonize anything with more antennas than sense."
+    ]
+  },
+  "stage-scrap-car": {
+    "examine": [
+      "A once-proud getaway car, retired after its dashboard developed root access and locked the driver out.",
+      "The glove box still contains a hypothetical CAN-bus séance kit. It asks the engine control unit questions through interpretive blinking."
+    ]
+  },
+  "stage-trashcan": {
+    "examine": [
+      "The trashcan is full of shredded one-time pads, expired access badges, and a banana peel with suspiciously good opsec.",
+      "At the bottom: an esoteric refuse-collection chip that exfiltrates nothing except the smell. A flawless threat model."
+    ]
+  }
+}

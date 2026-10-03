@@ -103,6 +103,7 @@ class MeshInstanceRegistry {
 }
 
 const MeshInstanceContext = createContext<MeshInstanceRegistry | null>(null);
+const MeshInstancingEnabled = createContext(true);
 
 function materialKey(material: Material | Material[]) {
     return Array.isArray(material) ? material.map(entry => entry.uuid).join(',') : material.uuid;
@@ -263,34 +264,37 @@ function MeshInstanceBatches({ registry }: { registry: MeshInstanceRegistry }) {
 /** Owns one mesh bucket registry for the complete nested prefab tree. */
 export const SpatialCellSizeContext = createContext(DEFAULT_SPATIAL_CELL_SIZE);
 
-export function MeshInstanceProvider({ children, isolated = false, static: isStatic = false }: { children: ReactNode; isolated?: boolean; static?: boolean }) {
+export function MeshInstanceProvider({ children, isolated = false, static: isStatic = false, enabled = true }: { children: ReactNode; isolated?: boolean; static?: boolean; enabled?: boolean }) {
+    const parentEnabled = useContext(MeshInstancingEnabled);
+    const active = parentEnabled && enabled;
     const cellSize = useContext(SpatialCellSizeContext);
     const parent = useContext(MeshInstanceContext);
     const inherited = isolated ? null : parent;
     const registry = useMemo(() => inherited ?? new MeshInstanceRegistry(isStatic, cellSize), [inherited, isStatic, cellSize]);
     if (inherited) return children;
     return (
-        <MeshInstanceContext.Provider value={registry}>
+        <MeshInstancingEnabled.Provider value={active}><MeshInstanceContext.Provider value={registry}>
             {children}
-            <MeshInstanceBatches registry={registry} />
-        </MeshInstanceContext.Provider>
+            {active && <MeshInstanceBatches registry={registry} />}
+        </MeshInstanceContext.Provider></MeshInstancingEnabled.Provider>
     );
 }
 
 export function useMeshInstanceRegistration(id: string, meshRef: RefObject<Mesh | null>, enabled: boolean) {
+    const instancingEnabled = useContext(MeshInstancingEnabled);
     const registry = useContext(MeshInstanceContext);
     const onEditClick = useContext(EditPickContext);
     const editClick = useRef(onEditClick);
     useLayoutEffect(() => { editClick.current = onEditClick; }, [onEditClick]);
     useLayoutEffect(() => {
         const mesh = meshRef.current;
-        if (!registry || !mesh || !enabled || !mesh.geometry || !mesh.material || mesh.children.length > 0) return;
+        if (!instancingEnabled || !registry || !mesh || !enabled || !mesh.geometry || !mesh.material || mesh.children.length > 0) return;
         return registry.register({
             id,
             mesh,
             onEditClick: event => editClick.current?.(event),
         });
-    }, [enabled, id, meshRef, registry]);
+    }, [enabled, instancingEnabled, id, meshRef, registry]);
 }
 
 const NOOP = () => {};

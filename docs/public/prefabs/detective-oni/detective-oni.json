@@ -1,0 +1,17 @@
+{
+  "id": "detective-oni",
+  "name": "detective-oni",
+  "root": {
+    "id": "detective-oni",
+    "name": "detective-oni",
+    "components": {
+      "redirect": {
+        "type": "SceneRedirect",
+        "properties": {
+          "scene": "scenes/office.json"
+        }
+      }
+    },
+    "children": []
+  }
+}

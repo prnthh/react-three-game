@@ -19,7 +19,10 @@ scene composition. Keep demo-specific systems (movement, transitions, speech,
 scene definitions, and shared constants) in files alongside the page. Put custom
 prefab components and UI components in that demo's `components/` folder.
 Context-dependent orchestration can use a local function inside `page.tsx` so it
-runs beneath the providers it needs. See [stage](app/demo/stage/page.tsx).
+runs beneath the providers it needs. For demos hosting multiple games, keep reusable
+behaviors in `components/` and game wiring in `games/<game>/`. Store prefab and
+project JSON in `docs/public/prefabs`: single-file demos at the top level, multi-file
+projects in a project-named folder containing their main JSON and supporting assets. See [stage](app/demo/stage/README.md).
 
 ## Load a prefab
 

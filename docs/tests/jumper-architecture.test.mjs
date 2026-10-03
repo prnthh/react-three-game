@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {Box3, Euler, Matrix4, Quaternion, Vector3} from 'three';
 import {normalizePrefab} from '../../src/core/prefab.ts';
-import {createJumperState, stepJumper, surfaceTopAt, STANDING_HEIGHT} from '../app/demo/jumper/movement.ts';
+import { createJumperState, stepJumper, DEFAULT_MOVEMENT_SETTINGS, STANDING_HEIGHT } from '../app/demo/jumper/movement.ts';
+import { surfaceTopAt } from '../app/demo/jumper/collision.ts';
 
 import {resolveCollisionSurfaceSize} from '../app/demo/jumper/components/CollisionSurfaceComponent.tsx';
 
@@ -20,7 +21,7 @@ function visit(node,parent=new Matrix4()) {
 }
 visit(scene.root);
 const center=s=>[(s.minX+s.maxX)/2,s.top,(s.minZ+s.maxZ)/2];
-const settings={speed:13,jumpSpeed:9,jumpBoost:1};
+const settings=DEFAULT_MOVEMENT_SETTINGS;
 
 test('jumper prefab definitions are self-contained, including nested references',()=>{
     const seen=new Set();
@@ -163,11 +164,15 @@ function checkJump(fromId,toId,fromPosition,toPosition){
         assert.ok(!intersects, `${fromId}: takeoff intersects ${id}`);
     }
     const dt=1/120;
-    // Find the descending crossing of the target height under the actual fixed-step gravity.
-    let y=start[1],vy=9,time=0;
-    do{vy-=20*dt;y+=vy*dt;time+=dt;}while((vy>0||y>end[1])&&time<2);
+    // Probe fixed-step flight time; horizontal speed stays constant in free flight.
+    let probe={...createJumperState([0,start[1],0]),velocity:[1,0],velocityY:9},time=0;
+    do{probe=stepJumper(probe,{x:0,z:0,jump:false},settings,[],dt);time+=dt;}
+    while((probe.velocityY>0||probe.position[1]>end[1])&&time<2);
     assert.ok(time<2,`${toId}: unreachable height`);
-    const vx=(end[0]-start[0])/time,vz=(end[2]-start[2])/time;
+    const dx=end[0]-start[0],dz=end[2]-start[2],distance=Math.hypot(dx,dz);
+    const initialSpeed=distance/time;
+    assert.ok(initialSpeed>0,`${toId}: target must be distinct from takeoff`);
+    const vx=dx/distance*initialSpeed,vz=dz/distance*initialSpeed;
     assert.ok(Math.hypot(vx,vz)<=14,`${fromId} → ${toId}: needs ${Math.hypot(vx,vz).toFixed(2)} speed`);
     let state={...createJumperState(start),velocity:[vx,vz],velocityY:9};
     for(let i=0;i<240&&!state.grounded;i++)state=stepJumper(state,{x:0,z:0,jump:false},settings,[...surfaces.values()],dt);
@@ -185,7 +190,7 @@ test('architectural sections have unique IDs and collision surfaces with valid p
 test('courtyard terraces lead onto the overhead bridge',()=>{
     checkJump('court-floor','court-step-1',[-5,0,-37]);
     for(let i=1;i<5;i++)checkJump(`court-step-${i}`,`court-step-${i+1}`);
-    checkJump('court-step-5','court-skybridge',undefined,[6,7,-52]);
+    checkLandingJump('court-step-5','court-skybridge');
 });
 test('the bridge and narrow passage form a reachable ledge route',()=>{
     checkJump('court-skybridge','passage-pier-1',[2,7,-53.1]);

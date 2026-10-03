@@ -46,7 +46,6 @@ import { PrefabInstance } from 'react-three-game';
 
 It prepares dependencies, mounts an isolated instance with gameplay disabled,
 compiles its rendering resources, then makes it visible and activates gameplay.
-With `active={false}`, the prepared instance stays hidden and inactive until enabled.
 
 The underlying `useAssetRuntime().preparePrefab(url, { basePath, signal })` discovers
 nested prefab documents and declared model, texture, and sound dependencies. It

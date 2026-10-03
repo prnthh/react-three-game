@@ -3,10 +3,11 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { Box3, Euler, Matrix4, Quaternion, Vector3 } from 'three';
 import { SurfaceGrid } from '../app/demo/jumper/spatial.ts';
-import { createJumperState, stepJumper, JUMPER_STEP } from '../app/demo/jumper/movement.ts';
+import { createJumperState, stepJumper } from '../app/demo/jumper/movement.ts';
+import { JUMPER_STEP } from '../app/demo/jumper/simulation.ts';
 import { expandEmbeddedPrefabs } from './support/expand-prefabs.mjs';
 
-const settings = { speed: 13, jumpSpeed: 9, slideBoost: 3, jumpBoost: 1 };
+const settings = { speed: 13, jumpSpeed: 9, slideBoost: 3 };
 const idle = { x: 0, z: 0, jump: false };
 const box = (x, y, z, width = 2) => ({ minX: x, maxX: x + width, bottom: y, top: y + 2, minZ: z, maxZ: z + width, solid: true });
 
@@ -17,6 +18,22 @@ test('3D queries cover negative cells, boundaries and multi-cell boxes without d
     assert.deepEqual(grid.query(query), [surfaces[0], surfaces[2], surfaces[3]]);
     assert.deepEqual(grid.query({ ...query, minY: 29, maxY: 33 }), [surfaces[1]]);
     assert.deepEqual(grid.query(query), [surfaces[0], surfaces[2], surfaces[3]]);
+});
+
+test('prepared grid geometry stays with its snapshot while raw edited surfaces remain live', () => {
+    const surface = { ...box(0, 0, 0), orientation: {
+        center: [1, 1, 1], halfSize: [1, 1, 1], quaternion: [0, 0, 0, 1],
+    } };
+    const original = structuredClone(surface);
+    const grid = new SurfaceGrid([surface]);
+    surface.minX += 100; surface.maxX += 100;
+    surface.orientation.center[0] += 100;
+    const state = { ...createJumperState([-0.5, 0.5, 1]), velocity: [30, 0] };
+    const cached = stepJumper(state, idle, settings, grid, 0.1);
+    assert.deepEqual(cached, stepJumper(state, idle, settings, [original], 0.1));
+    const edited = stepJumper(state, idle, settings, [surface], 0.1);
+    assert.ok(edited.position[0] > cached.position[0]);
+    assert.deepEqual(edited, stepJumper(state, idle, settings, new SurfaceGrid([surface]), 0.1));
 });
 
 test('oversized floors, bottomless walls, and long sweeps use bounded fallbacks', () => {

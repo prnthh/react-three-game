@@ -1,347 +1,247 @@
 import type { SurfaceGrid } from './spatial';
+import { PLAYER_RADIUS, overlaps, touchesHeight, surfaceTopAt, uprightWall, wallAt, sameNormal, sweepWall,
+    type Position, type Surface } from './collision';
 
 // Demo-owned kinematic movement: one-way platforms plus solid walls with yaw-aware collision.
-export type Position = [number, number, number];
-export type SurfaceOrientation = {
-    center: Position;
-    halfSize: Position;
-    quaternion: [number, number, number, number];
-};
-export type Surface = {
-    minX: number; maxX: number; minZ: number; maxZ: number; top: number; bottom?: number; solid?: boolean;
-    orientation?: SurfaceOrientation;
-};
 export type JumperState = {
     position: Position; velocityY: number; velocity: [number, number]; grounded: boolean;
     crouched: boolean;
-    wallRunNormal: [number, number] | null;
-    wallClimbNormal: [number, number] | null; wallJumpNormal: [number, number] | null;
+    wallNormal: [number, number] | null;
+    wallTime: number; // Seconds since attaching to this wall.
+    climbRemaining: number | null; // Seconds of climb support; null means unused, zero means spent.
+    jumpBuffer: number; // Seconds remaining to consume an early jump press.
 };
-export type MovementSettings = { speed: number; jumpSpeed: number; jumpBoost?: number; slideBoost?: number; wallRunSpeed?: number };
-export const PLAYER_RADIUS = 0.3;
+export type MovementSettings = { speed: number; jumpSpeed: number; slideBoost?: number };
 export const STANDING_HEIGHT = 1.8;
 export const CROUCH_HEIGHT = 1;
-// Scene pacing: horizontal momentum tops out at 27 m/s, with 34 m/s
-// allowed during an unattached fall. Landing restores the 27 m/s limit.
-const HOP_SPEED_CAP = 27;
-const FALL_SPEED_CAP = 34;
-const WALL_RUN_VERTICAL_SPEED = 1.5;
-const WALL_CLIMB_IMPULSE = 2.5;
-const WALL_JUMP_BACK_IMPULSE = 4;
-// Entry requires the wall to sit clearly beside the view, not in front of it.
-const WALL_RUN_ENTRY_MAX_NORMAL_ALIGNMENT = 0.5;
+export const GRAVITY = 20;
+const RUN_ACCELERATION = 100;
+const AIR_ACCELERATION = 20;
+const AIR_TURN_RATE = 5;
+const CROUCH_ACCELERATION = 20;
+const WALL_SPEED_MULTIPLIER = 16.5 / 13;
+export const CROUCH_SPEED = 5;
+const GROUND_FRICTION = 6;
+const STOP_SPEED = 7.5;
+const SLIDE_DECELERATION = 14;
+// Slide entry stops adding speed at this limit; carried momentum is not clamped.
+const SLIDE_BOOST_SPEED_LIMIT = 27;
+const WALL_JUMP_IMPULSE = 4;
+const WALL_PUSH_IMPULSE = 2;
+const WALLRUN_JUMP_MIN_ANGLE = Math.PI / 6; // Minimum departure angle from the wall tangent.
+// Retain early jump presses until contact or expiry.
+const JUMP_BUFFER = 0.1;
+// Timed climb drives upward toward this cap, once per attachment.
+const WALL_CLIMB_SPEED = 4;
+const WALL_CLIMB_DURATION = 0.6;
+const WALLCLIMB_CUTOFF_ANGLE = 15 * Math.PI / 180; // Measured from directly into the wall.
+
+export const DEFAULT_MOVEMENT_SETTINGS = { speed: 13, jumpSpeed: 7.5, slideBoost: 3 };
+
+/** One head-on angle check shared by wall jumps and camera presentation. */
+export function isWallClimbing(normal: [number, number] | null, facingX: number, facingZ: number) {
+    return !!normal && -(normal[0] * facingX + normal[1] * facingZ) >= Math.cos(WALLCLIMB_CUTOFF_ANGLE);
+}
+
+// Remove inward velocity, optionally preserving speed along the wall.
+function resolveWallVelocity(velocityX: number, velocityZ: number, [normalX, normalZ]: [number, number], preserveSpeed: boolean): [number, number] {
+    const horizontalSpeed = Math.hypot(velocityX, velocityZ);
+    const inwardSpeed = Math.min(0, velocityX * normalX + velocityZ * normalZ);
+    velocityX -= normalX * inwardSpeed; velocityZ -= normalZ * inwardSpeed;
+    const projectedSpeed = Math.hypot(velocityX, velocityZ);
+    if (preserveSpeed && projectedSpeed > 1e-6) {
+        velocityX *= horizontalSpeed / projectedSpeed; velocityZ *= horizontalSpeed / projectedSpeed;
+    }
+    return [velocityX, velocityZ];
+}
 
 export function createJumperState(position: Position): JumperState {
     return { position: [...position], velocityY: 0, velocity: [0, 0], grounded: false,
-        crouched: false, wallRunNormal: null, wallClimbNormal: null, wallJumpNormal: null };
+        crouched: false, wallNormal: null, wallTime: 0, climbRemaining: null, jumpBuffer: 0 };
 }
-function sameWall(a: [number, number] | null, b: [number, number] | null) {
-    return !!a && !!b && a[0] === b[0] && a[1] === b[1];
-}
-// Upright boxes collide in their own horizontal frame. Tilted boxes retain
-// the conservative bounds fallback; their sloping top faces are handled below.
-function wallFrame(s: Surface) {
-    const o = s.orientation;
-    if (o) {
-        const up = rotateByQuaternion([0, 1, 0], o.quaternion);
-        if (Math.abs(up[0]) < 1e-6 && Math.abs(up[2]) < 1e-6 && up[1] > 0) {
-            const axis = rotateByQuaternion([1, 0, 0], o.quaternion);
-            return { x: o.center[0], z: o.center[2], c: axis[0], s: axis[2], hx: o.halfSize[0], hz: o.halfSize[2] };
-        }
-    }
-    return { x: (s.minX + s.maxX) / 2, z: (s.minZ + s.maxZ) / 2,
-        c: 1, s: 0, hx: (s.maxX - s.minX) / 2, hz: (s.maxZ - s.minZ) / 2 };
-}
-function wallPoint(x: number, z: number, f: ReturnType<typeof wallFrame>) {
-    return [(x - f.x) * f.c + (z - f.z) * f.s, -(x - f.x) * f.s + (z - f.z) * f.c];
-}
-function overlaps(x: number, z: number, s: Surface, radius = PLAYER_RADIUS) {
-    const f = wallFrame(s), [lx, lz] = wallPoint(x, z, f);
-    return Math.abs(lx) < f.hx + radius - 1e-6 && Math.abs(lz) < f.hz + radius - 1e-6;
-}
-function touchesHeight(y: number, height: number, s: Surface) {
-    return y < s.top - 0.01 && y + height > (s.bottom ?? -Infinity) + 0.01;
-}
-
-function rotateByQuaternion([x, y, z]: Position, [qx, qy, qz, qw]: SurfaceOrientation['quaternion']): Position {
-    const ix = qw * x + qy * z - qz * y;
-    const iy = qw * y + qz * x - qx * z;
-    const iz = qw * z + qx * y - qy * x;
-    const iw = -qx * x - qy * y - qz * z;
-    return [
-        ix * qw + iw * -qx + iy * -qz - iz * -qy,
-        iy * qw + iw * -qy + iz * -qx - ix * -qz,
-        iz * qw + iw * -qz + ix * -qy - iy * -qx,
-    ];
-}
-
-/** Height of a surface's actual rotated top face at a world-space X/Z point. */
-export function surfaceTopAt(surface: Surface, x: number, z: number, radius = 0) {
-    const orientation = surface.orientation;
-    if (!orientation) {
-        return x + radius > surface.minX + 1e-6 && x - radius < surface.maxX - 1e-6
-            && z + radius > surface.minZ + 1e-6 && z - radius < surface.maxZ - 1e-6 ? surface.top : null;
-    }
-
-    const { center, halfSize, quaternion } = orientation;
-    const normal = rotateByQuaternion([0, 1, 0], quaternion);
-    if (normal[1] <= 1e-4) return null;
-    const topCenterOffset = rotateByQuaternion([0, halfSize[1], 0], quaternion);
-    const topCenter: Position = [center[0] + topCenterOffset[0], center[1] + topCenterOffset[1], center[2] + topCenterOffset[2]];
-    const y = topCenter[1] - (normal[0] * (x - topCenter[0]) + normal[2] * (z - topCenter[2])) / normal[1];
-    const inverse: SurfaceOrientation['quaternion'] = [-quaternion[0], -quaternion[1], -quaternion[2], quaternion[3]];
-    const local = rotateByQuaternion([x - center[0], y - center[1], z - center[2]], inverse);
-    return Math.abs(local[0]) <= halfSize[0] + radius + 1e-6
-        && Math.abs(local[2]) <= halfSize[2] + radius + 1e-6 ? y : null;
-}
-function wallAt(x: number, y: number, z: number, height: number, walls: Surface[]): [number, number] | null {
-    for (const s of walls) {
-        if (!touchesHeight(y, height, s)) continue;
-        const reach = PLAYER_RADIUS + 0.08;
-        const f = wallFrame(s), [lx, lz] = wallPoint(x, z, f);
-        if (Math.abs(lz) < f.hz + PLAYER_RADIUS) {
-            if (lx <= -f.hx && -f.hx - lx <= reach) return [-f.c, -f.s];
-            if (lx >= f.hx && lx - f.hx <= reach) return [f.c, f.s];
-        }
-        if (Math.abs(lx) < f.hx + PLAYER_RADIUS) {
-            if (lz <= -f.hz && -f.hz - lz <= reach) return [f.s, -f.c];
-            if (lz >= f.hz && lz - f.hz <= reach) return [-f.s, f.c];
-        }
-    }
-    return null;
-}
-
 export function stepJumper(state: JumperState,
-    input: { x: number; z: number; jump: boolean; crouch?: boolean; facingX?: number; facingZ?: number },
-    settings: MovementSettings, world: Surface[] | SurfaceGrid, dt: number): JumperState {
-    /* ── Contact, stance, and input ─────────────────────────────────────── */
+    input: { x: number; z: number; jump: boolean; crouch?: boolean; detach?: boolean; facingX?: number; facingZ?: number },
+    settings: MovementSettings, world: Surface[] | SurfaceGrid, deltaTime: number): JumperState {
+    // Read input, stance, and wall contact
     const [x, y, z] = state.position;
-    const contactReach = Math.SQRT2 * (PLAYER_RADIUS + 0.08) + 0.001;
+    const clearanceReach = Math.SQRT2 * (PLAYER_RADIUS + 0.08) + 0.001;
     let surfaces = Array.isArray(world) ? world : world.query({
-        minX: x - contactReach, maxX: x + contactReach,
+        minX: x - clearanceReach, maxX: x + clearanceReach,
         minY: y, maxY: y + STANDING_HEIGHT,
-        minZ: z - contactReach, maxZ: z + contactReach,
+        minZ: z - clearanceReach, maxZ: z + clearanceReach,
     });
-    let walls = surfaces.filter(s => s.solid);
-    const blockedStanding = state.crouched && walls.some(s => overlaps(x, z, s) && touchesHeight(y, STANDING_HEIGHT, s));
+    let walls = surfaces.filter(surface => surface.solid);
+    const blockedStanding = state.crouched && walls.some(surface => overlaps(x, z, surface) && touchesHeight(y, STANDING_HEIGHT, surface));
     const crouched = !!input.crouch || blockedStanding;
     const height = crouched ? CROUCH_HEIGHT : STANDING_HEIGHT;
-    const wishLength = Math.hypot(input.x, input.z);
-    const wx = input.x / Math.max(1, wishLength), wz = input.z / Math.max(1, wishLength);
-    let [vx, vz] = state.velocity;
-    let vy = state.velocityY;
-    const contact = wallAt(x, y, z, height, walls);
-    const along = contact ? Math.abs(vx * -contact[1] + vz * contact[0]) : 0;
-    const alongInput = contact ? Math.abs(wx * -contact[1] + wz * contact[0]) : 0;
-    const wallJumpLatched = sameWall(state.wallJumpNormal, contact);
-    let wallJumpNormal = wallJumpLatched ? state.wallJumpNormal : null;
-    const facingLength = Math.hypot(input.facingX ?? wx, input.facingZ ?? wz);
-    const facingX = (input.facingX ?? wx) / Math.max(1, facingLength);
-    const facingZ = (input.facingZ ?? wz) / Math.max(1, facingLength);
-    const facingNormal = contact ? facingX * contact[0] + facingZ * contact[1] : 0;
-    const movingForward = wishLength > 0.1 && wx * facingX + wz * facingZ > 0.5;
-    const canUseWall = !state.grounded && !crouched && !wallJumpLatched && !!contact && movingForward;
-    let wallRunNormal = canUseWall && Math.abs(facingNormal) <= WALL_RUN_ENTRY_MAX_NORMAL_ALIGNMENT
-        && (along > 1 || alongInput > 0.25) ? contact : null;
-    let wallClimbNormal = canUseWall && facingNormal < -WALL_RUN_ENTRY_MAX_NORMAL_ALIGNMENT ? contact : null;
-    const startingWallClimb = !!wallClimbNormal && !sameWall(state.wallClimbNormal, wallClimbNormal);
+    const inputMagnitude = Math.hypot(input.x, input.z);
+    const inputX = input.x / Math.max(1, inputMagnitude), inputZ = input.z / Math.max(1, inputMagnitude);
+    let [velocityX, velocityZ] = state.velocity;
+    let velocityY = state.velocityY;
+    const facingX = input.facingX ?? inputX, facingZ = input.facingZ ?? inputZ;
+    const previousWallContact = state.wallNormal && wallAt(x, y, z, height, walls, state.wallNormal);
+    const wallContact = previousWallContact ?? wallAt(x, y, z, height, walls);
+    const wallMovementEnabled = !state.grounded && !crouched && !input.detach;
+    const movingForward = inputX * facingX + inputZ * facingZ > 1e-6;
+    let jumpBuffer = input.jump ? JUMP_BUFFER : Math.max(0, state.jumpBuffer - deltaTime);
+    // Nearby contact permits a jump only while we are not already moving away.
+    const jumpWallNormal = wallMovementEnabled && wallContact && velocityX * wallContact[0] + velocityZ * wallContact[1] <= 1e-6 ? wallContact : null;
+    const jumping = jumpBuffer > 0 && (state.grounded || !!jumpWallNormal);
+    if (jumping) jumpBuffer = 0;
+    const acceptsWall = (normal: [number, number]) => {
+        if (!wallMovementEnabled || !movingForward || jumping) return false;
+        // An established wallrun permits looking away; a climb releases outward.
+        if (sameNormal(previousWallContact, normal) && state.climbRemaining === null) return true;
+        return inputX * normal[0] + inputZ * normal[1] <= 0.1;
+    };
+    let wallNormal = wallContact && acceptsWall(wallContact) && (previousWallContact || jumpWallNormal) ? wallContact : null;
 
-    /* ── Ground, air, and slide locomotion ─────────────────────────────── */
-    if (state.grounded && crouched) {
-        let speed = Math.hypot(vx, vz);
-        if (!state.crouched && speed > 0.5) {
-            const boost = settings.slideBoost ?? 3;
-            vx *= (speed + boost) / speed; vz *= (speed + boost) / speed;
-            speed += boost;
+    const groundedMovement = state.grounded && !jumping;
+
+    // Choose horizontal movement parameters
+    let movementX = inputX, movementZ = inputZ;
+    let targetSpeed = settings.speed;
+    let acceleration = groundedMovement ? RUN_ACCELERATION : AIR_ACCELERATION;
+    if (wallNormal) {
+        [velocityX, velocityZ] = resolveWallVelocity(velocityX, velocityZ, wallNormal, !isWallClimbing(wallNormal, facingX, facingZ));
+        const normalInput = movementX * wallNormal[0] + movementZ * wallNormal[1];
+        movementX -= wallNormal[0] * normalInput; movementZ -= wallNormal[1] * normalInput;
+        targetSpeed *= WALL_SPEED_MULTIPLIER;
+        acceleration = RUN_ACCELERATION;
+    }
+    if (groundedMovement && crouched) {
+        targetSpeed = Math.min(CROUCH_SPEED, targetSpeed);
+        acceleration = CROUCH_ACCELERATION;
+    }
+
+    // Apply slide entry and ground friction
+    let horizontalSpeed = Math.hypot(velocityX, velocityZ);
+    if (state.grounded && crouched && !state.crouched && horizontalSpeed > CROUCH_SPEED) {
+        const boost = Math.min(settings.slideBoost ?? DEFAULT_MOVEMENT_SETTINGS.slideBoost, Math.max(0, SLIDE_BOOST_SPEED_LIMIT - horizontalSpeed));
+        velocityX += velocityX / horizontalSpeed * boost; velocityZ += velocityZ / horizontalSpeed * boost;
+        horizontalSpeed += boost;
+    }
+    if (groundedMovement && horizontalSpeed > 0) {
+        const speedDrop = crouched ? SLIDE_DECELERATION * deltaTime
+            : Math.max(horizontalSpeed, STOP_SPEED) * GROUND_FRICTION * deltaTime;
+        const speedScale = Math.max(0, horizontalSpeed - speedDrop) / horizontalSpeed;
+        velocityX *= speedScale; velocityZ *= speedScale;
+    }
+    // Accelerate and steer horizontal movement
+    const movementMagnitude = Math.hypot(movementX, movementZ);
+    if (!groundedMovement && !wallNormal && movementMagnitude > 1e-6) {
+        // Air input builds speed from rest, then steers carried momentum without adding energy.
+        const targetVelocityX = movementX * targetSpeed, targetVelocityZ = movementZ * targetSpeed;
+        if (horizontalSpeed < targetSpeed * movementMagnitude - 1e-6) {
+            const velocityDeltaX = targetVelocityX - velocityX, velocityDeltaZ = targetVelocityZ - velocityZ;
+            const accelerationFraction = Math.min(1, acceleration * deltaTime / Math.hypot(velocityDeltaX, velocityDeltaZ));
+            velocityX += velocityDeltaX * accelerationFraction; velocityZ += velocityDeltaZ * accelerationFraction;
         }
-        const slideSpeed = settings.speed + (settings.slideBoost ?? 3);
-        const decayed = Math.max(wishLength && speed > 0.5 ? slideSpeed : 0, speed - 8 * dt);
-        if (speed > 0) { vx *= decayed / speed; vz *= decayed / speed; }
-    } else {
-        const drag = state.grounded ? (wishLength ? 0.7 : 12) : 0;
-        vx *= Math.exp(-drag * dt); vz *= Math.exp(-drag * dt);
-        const reversing = vx * wx + vz * wz < 0;
-        const acceleration = state.grounded ? (reversing ? 90 : 45) : (reversing ? 45 : 22);
-        const add = Math.min(acceleration * dt, Math.max(0, settings.speed - (vx * wx + vz * wz)));
-        vx += wx * add; vz += wz * add;
+        if (!(jumping && jumpWallNormal)) {
+            const steeringAngle = Math.atan2(velocityX * movementZ - velocityZ * movementX,
+                velocityX * movementX + velocityZ * movementZ);
+            const turnAngle = steeringAngle * (1 - Math.exp(-AIR_TURN_RATE * deltaTime));
+            const turnCos = Math.cos(turnAngle), turnSin = Math.sin(turnAngle);
+            [velocityX, velocityZ] = [velocityX * turnCos - velocityZ * turnSin, velocityX * turnSin + velocityZ * turnCos];
+        }
+    } else if (movementMagnitude > 1e-6) {
+        const directionX = movementX / movementMagnitude, directionZ = movementZ / movementMagnitude;
+        const speedAlongInput = velocityX * directionX + velocityZ * directionZ;
+        const addedSpeed = Math.max(0, Math.min(targetSpeed * movementMagnitude - speedAlongInput, acceleration * deltaTime));
+        velocityX += directionX * addedSpeed; velocityZ += directionZ * addedSpeed;
+    } else if (wallNormal && horizontalSpeed > 0) {
+        // Facing straight into the wall brakes sideways motion during a climb.
+        const speedScale = Math.max(0, horizontalSpeed - RUN_ACCELERATION * deltaTime) / horizontalSpeed;
+        velocityX *= speedScale; velocityZ *= speedScale;
     }
 
-    /* ── Momentum steering ─────────────────────────────────────────────── */
-    // Redirect momentum without discarding hop speed. Slides keep the widest turns;
-    // opposite input brakes first, avoiding an arbitrary sideways U-turn.
-    if (wishLength && Math.hypot(vx, vz) > 0 && vx * wx + vz * wz >= 0) {
-        const angle = Math.atan2(vx * wz - vz * wx, vx * wx + vz * wz);
-        const grip = state.grounded ? (crouched ? 2.5 : 10) : 5;
-        const turn = angle * (1 - Math.exp(-grip * dt));
-        const cos = Math.cos(turn), sin = Math.sin(turn);
-        [vx, vz] = [vx * cos - vz * sin, vx * sin + vz * cos];
-    }
-
-    /* ── Wallclimbing ──────────────────────────────────────────────────── */
-    if (startingWallClimb) vy += WALL_CLIMB_IMPULSE;
-
-    /* ── Wallrunning ───────────────────────────────────────────────────── */
-    if (wallRunNormal) {
-        const tangent = [-wallRunNormal[1], wallRunNormal[0]];
-        const alongVelocity = vx * tangent[0] + vz * tangent[1];
-        const desiredAlong = wx * tangent[0] + wz * tangent[1];
-        // Forward-facing input chooses the direction along the wall.
-        const sign = Math.sign(desiredAlong) || Math.sign(alongVelocity) || 1;
-        const speed = Math.max(Math.abs(alongVelocity), settings.wallRunSpeed ?? 13);
-        vx = tangent[0] * sign * speed; vz = tangent[1] * sign * speed;
-        // Wall contact softens a fall and permits a small rise, but must not
-        // preserve the full upward velocity from the jump that reached it.
-        vy = Math.max(-WALL_RUN_VERTICAL_SPEED, Math.min(vy, WALL_RUN_VERTICAL_SPEED));
-    }
-
-    /* ── Ground jump and shared wall jump ──────────────────────────────── */
-    const attachedWallNormal = wallRunNormal ?? wallClimbNormal;
-    const groundJumping = input.jump && state.grounded;
-    const wallJumping = input.jump && !state.grounded && !!attachedWallNormal;
-    const jumping = groundJumping || wallJumping;
+    // Apply jump impulses
     if (jumping) {
-        vy = settings.jumpSpeed;
-        const speed = Math.hypot(vx, vz);
-        const dx = speed > 0.1 ? vx / speed : wx;
-        const dz = speed > 0.1 ? vz / speed : wz;
-        vx += dx * (settings.jumpBoost ?? 1); vz += dz * (settings.jumpBoost ?? 1);
-        if (wallJumping && attachedWallNormal) {
-            vx += attachedWallNormal[0] * WALL_JUMP_BACK_IMPULSE;
-            vz += attachedWallNormal[1] * WALL_JUMP_BACK_IMPULSE;
-            wallJumpNormal = attachedWallNormal;
-            wallRunNormal = null;
-            wallClimbNormal = null;
+        velocityY += jumpWallNormal ? WALL_JUMP_IMPULSE : settings.jumpSpeed;
+        if (jumpWallNormal) {
+            const climbing = isWallClimbing(jumpWallNormal, facingX, facingZ);
+            [velocityX, velocityZ] = resolveWallVelocity(velocityX, velocityZ, jumpWallNormal, !climbing);
+            if (!climbing) {
+                const [normalX, normalZ] = jumpWallNormal;
+                const tangentAlignment = -facingX * normalZ + facingZ * normalX;
+                const outwardAlignment = facingX * normalX + facingZ * normalZ;
+                const departureAngle = Math.max(WALLRUN_JUMP_MIN_ANGLE, Math.atan2(outwardAlignment, Math.abs(tangentAlignment)));
+                const horizontalSpeed = Math.hypot(velocityX, velocityZ);
+                const outwardSpeed = Math.sin(departureAngle) * horizontalSpeed + WALL_PUSH_IMPULSE;
+                const tangentSpeed = Math.cos(departureAngle) * Math.sign(tangentAlignment) * horizontalSpeed;
+                velocityX = normalX * outwardSpeed - normalZ * tangentSpeed;
+                velocityZ = normalZ * outwardSpeed + normalX * tangentSpeed;
+            }
         }
     }
 
-    /* ── Speed limits and gravity ──────────────────────────────────────── */
-    const speed = Math.hypot(vx, vz);
-    const cap = !state.grounded && !wallRunNormal && !jumping && vy < 0 ? FALL_SPEED_CAP : HOP_SPEED_CAP;
-    if (speed > cap) { vx *= cap / speed; vz *= cap / speed; }
-    vy -= (wallRunNormal ? 3 : 20) * dt;
-
-    /* ── Horizontal collision sweep ───────────────────────────────────── */
-    let nx = x + vx * dt, nz = z + vz * dt;
+    // Move horizontally and resolve collisions
     if (!Array.isArray(world)) {
-        // Sliding can redirect motion outside the original endpoint bounds.
-        // Projection cannot increase travel length, so query that radius plus
-        // collider padding around the start (see verification/jumper).
-        const pad = 2 * PLAYER_RADIUS + 0.001;
-        const reach = Math.hypot(nx - x, nz - z) + pad;
-        const endY = y + vy * dt;
+        // Query the full travel radius to cover redirection along walls.
+        const collisionPadding = 2 * PLAYER_RADIUS + 0.001;
+        const sweepReach = Math.hypot(velocityX, velocityZ) * deltaTime + collisionPadding;
+        const highestY = y + Math.max(0, velocityY) * deltaTime;
         surfaces = world.query({
-            minX: x - reach, maxX: x + reach,
-            minY: Math.min(y, endY) - pad, maxY: Math.max(y, endY) + STANDING_HEIGHT + pad,
-            minZ: z - reach, maxZ: z + reach,
+            minX: x - sweepReach, maxX: x + sweepReach,
+            minY: Math.min(y, y + (velocityY - GRAVITY * deltaTime) * deltaTime) - collisionPadding, maxY: highestY + STANDING_HEIGHT + collisionPadding,
+            minZ: z - sweepReach, maxZ: z + sweepReach,
         });
-        walls = surfaces.filter(s => s.solid);
+        walls = surfaces.filter(surface => surface.solid);
     }
     // Sweep against expanded local boxes, selecting the earliest face across
-    // all walls. Project the remaining motion onto that face to slide along it.
-    let remainingX = nx - x, remainingZ = nz - z;
-    nx = x; nz = z;
+    // all walls. Resolve velocity once and use it for the remaining tick.
+    let nextX = x, nextZ = z;
+    let remainingTime = deltaTime;
     for (let iteration = 0; iteration < 8; iteration++) {
-        let hit: { time: number; normal: [number, number] } | null = null;
-        for (const wall of walls) {
-            if (!touchesHeight(y, height, wall)) continue;
-            const f = wallFrame(wall), origin = wallPoint(nx, nz, f);
-            const delta = [remainingX * f.c + remainingZ * f.s, -remainingX * f.s + remainingZ * f.c];
-            const extent = [f.hx + PLAYER_RADIUS, f.hz + PLAYER_RADIUS];
-            let enter = -Infinity, leave = Infinity;
-            let axis = 0, sign = 0;
-            for (let i = 0; i < 2; i++) {
-                if (Math.abs(delta[i]) < 1e-12) {
-                    if (Math.abs(origin[i]) >= extent[i] - 1e-9) { leave = -Infinity; break; }
-                    continue;
-                }
-                const near = (-extent[i] - origin[i]) / delta[i];
-                const far = (extent[i] - origin[i]) / delta[i];
-                const entry = Math.min(near, far);
-                if (entry > enter) { enter = entry; axis = i; sign = -Math.sign(delta[i]); }
-                leave = Math.min(leave, Math.max(near, far));
-            }
-            if (enter < -1e-8 || enter > 1 || enter > leave || leave < 0 || !Number.isFinite(enter)) continue;
-            const time = Math.max(0, enter);
-            const normal: [number, number] = axis === 0 ? [sign * f.c, sign * f.s] : [-sign * f.s, sign * f.c];
-            if (!hit || time < hit.time) hit = { time, normal };
-        }
-        if (!hit) { nx += remainingX; nz += remainingZ; break; }
-        nx += remainingX * hit.time; nz += remainingZ * hit.time;
-        remainingX *= 1 - hit.time; remainingZ *= 1 - hit.time;
-        const [normalX, normalZ] = hit.normal;
-        const motionInto = remainingX * normalX + remainingZ * normalZ;
-        remainingX -= normalX * motionInto; remainingZ -= normalZ * motionInto;
-        const velocityInto = Math.min(0, vx * normalX + vz * normalZ);
-        vx -= normalX * velocityInto; vz -= normalZ * velocityInto;
-        if (Math.hypot(remainingX, remainingZ) < 1e-10) break;
+        const remainingDistanceX = velocityX * remainingTime, remainingDistanceZ = velocityZ * remainingTime;
+        const hit = sweepWall(nextX, y, nextZ, height, remainingDistanceX, remainingDistanceZ, walls);
+        if (!hit) { nextX += remainingDistanceX; nextZ += remainingDistanceZ; break; }
+        nextX += remainingDistanceX * hit.time; nextZ += remainingDistanceZ * hit.time;
+        remainingTime *= 1 - hit.time;
+        const attaching = uprightWall(hit.wall) && acceptsWall(hit.normal);
+        [velocityX, velocityZ] = resolveWallVelocity(velocityX, velocityZ, hit.normal, attaching && !isWallClimbing(hit.normal, facingX, facingZ));
+        if (attaching) wallNormal = hit.normal;
+        if (Math.hypot(velocityX * remainingTime, velocityZ * remainingTime) < 1e-10) break;
     }
 
-    /* ── Vertical collision and landing ───────────────────────────────── */
-    let ny = y + vy * dt;
-    if (vy > 0) for (const s of walls) {
-        if (s.bottom !== undefined && overlaps(nx, nz, s) && y + height <= s.bottom + 0.001 && ny + height > s.bottom) {
-            ny = Math.min(ny, s.bottom - height); vy = 0;
+    // Apply wall support and vertical motion
+    const continuingContact = sameNormal(state.wallNormal, wallNormal);
+    const wallTime = continuingContact ? state.wallTime : 0;
+    let climbRemaining = continuingContact ? state.climbRemaining : null;
+    const climbing = isWallClimbing(wallNormal, facingX, facingZ);
+    if (climbing && climbRemaining === null) climbRemaining = velocityY <= WALL_CLIMB_SPEED ? WALL_CLIMB_DURATION : 0;
+    if (wallNormal && !continuingContact && !climbing) velocityY = 0;
+    // Wallrun gravity increases with contact age; climbs provide timed upward acceleration.
+    const gravityScale = wallNormal && !climbing ? Math.min(1, wallTime ** 3) : 1;
+    velocityY -= GRAVITY * gravityScale * deltaTime;
+    if (climbing && climbRemaining !== null && climbRemaining > 0) velocityY += Math.min(Math.max(0, WALL_CLIMB_SPEED - velocityY), RUN_ACCELERATION * deltaTime);
+    if (climbRemaining !== null) climbRemaining = Math.max(0, climbRemaining - deltaTime);
+    // Move vertically and resolve ceilings and landings
+    let nextY = y + velocityY * deltaTime;
+    if (velocityY > 0) for (const surface of walls) {
+        if (surface.bottom !== undefined && overlaps(nextX, nextZ, surface) && y + height <= surface.bottom + 0.001 && nextY + height > surface.bottom) {
+            nextY = Math.min(nextY, surface.bottom - height); velocityY = 0;
         }
     }
-    let landing: number | undefined;
-    if (vy <= 0) for (const surface of surfaces) {
+    let landingHeight: number | undefined;
+    if (velocityY <= 0) for (const surface of surfaces) {
         const radius = surface.solid ? PLAYER_RADIUS : 0;
         const previousTop = surfaceTopAt(surface, x, z, radius);
-        const nextTop = surfaceTopAt(surface, nx, nz, radius);
+        const nextTop = surfaceTopAt(surface, nextX, nextZ, radius);
         if (previousTop === null || nextTop === null || y < previousTop - 0.001) continue;
-        const crossedTop = ny <= nextTop;
+        const crossedTop = nextY <= nextTop;
         const followedSlope = state.grounded && Math.abs(y - previousTop) <= 0.01
             && nextTop <= y && y - nextTop <= 0.2;
-        if ((crossedTop || followedSlope) && (landing === undefined || nextTop > landing)) landing = nextTop;
+        if ((crossedTop || followedSlope) && (landingHeight === undefined || nextTop > landingHeight)) landingHeight = nextTop;
     }
-    if (landing !== undefined) {
-        ny = landing; vy = 0; wallRunNormal = null; wallClimbNormal = null; wallJumpNormal = null;
-        const landingSpeed = Math.hypot(vx, vz);
-        if (landingSpeed > HOP_SPEED_CAP) { vx *= HOP_SPEED_CAP / landingSpeed; vz *= HOP_SPEED_CAP / landingSpeed; }
+    if (landingHeight !== undefined) {
+        nextY = landingHeight; velocityY = 0;
     }
-    return { position: [nx, ny, nz], velocity: [vx, vz], velocityY: vy, grounded: landing !== undefined, crouched,
-        wallRunNormal, wallClimbNormal, wallJumpNormal };
-}
-
-/** Roll in camera-local space, away from the wall; turning adds a smaller inertial lean. */
-export function cameraRoll(turnRate: number, wallNormal: [number, number] | null, forwardX: number, forwardZ: number) {
-    const sway = Math.max(-0.065, Math.min(0.065, turnRate * 0.018));
-    const wall = wallNormal ? -(wallNormal[0] * -forwardZ + wallNormal[1] * forwardX) * 0.2 : 0;
-    return Math.max(-0.24, Math.min(0.24, sway + wall));
-}
-
-export function cameraFov(speed: number) {
-    const t = Math.max(0, Math.min(1, speed / FALL_SPEED_CAP));
-    return 75 + 20 * t * t * (3 - 2 * t);
-}
-
-export const JUMPER_STEP = 1 / 120;
-export function createJumperSimulation(position: Position) {
-    const current = createJumperState(position);
-    return { current, previous: current, remainder: 0 };
-}
-export type JumperSimulation = ReturnType<typeof createJumperSimulation>;
-
-/** Fixed simulation, interpolated presentation; cap catch-up after a suspended frame. */
-export function advanceJumper(sim: JumperSimulation, delta: number,
-    input: Parameters<typeof stepJumper>[1], settings: Parameters<typeof stepJumper>[2],
-    surfaces: Parameters<typeof stepJumper>[3], onStep?: (input: Parameters<typeof stepJumper>[1]) => void) {
-    /* ── Fixed-step simulation ─────────────────────────────────────────── */
-    sim.remainder += Math.min(Math.max(delta, 0), 0.1);
-    let steps = 0;
-    while (sim.remainder + 1e-12 >= JUMPER_STEP) {
-        sim.previous = sim.current;
-        const command = { ...input, jump: input.jump && steps === 0 };
-        sim.current = stepJumper(sim.current, command, settings, surfaces, JUMPER_STEP);
-        onStep?.(command);
-        sim.remainder = Math.max(0, sim.remainder - JUMPER_STEP);
-        steps++;
-    }
-    return steps;
-}
-
-export function jumperRenderPosition(sim: JumperSimulation): Position {
-    /* ── Render interpolation ──────────────────────────────────────────── */
-    const alpha = sim.remainder / JUMPER_STEP;
-    return sim.current.position.map((value, i) => sim.previous.position[i] + (value - sim.previous.position[i]) * alpha) as Position;
+    if (wallNormal && (landingHeight !== undefined || !wallAt(nextX, nextY, nextZ, height, walls, wallNormal))) wallNormal = null;
+    // Return the resolved movement state
+    return {
+        position: [nextX, nextY, nextZ], velocity: [velocityX, velocityZ], velocityY,
+        grounded: landingHeight !== undefined, crouched, wallNormal,
+        wallTime: wallNormal ? wallTime + deltaTime : 0, climbRemaining: wallNormal ? climbRemaining : null, jumpBuffer,
+    };
 }

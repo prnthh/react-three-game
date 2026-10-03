@@ -1,4 +1,4 @@
-import type { Surface } from './movement';
+import { prepareSurfaceGeometry, type Surface } from './collision';
 
 export type Bounds3 = { minX: number; maxX: number; minY: number; maxY: number; minZ: number; maxZ: number };
 const intersects = (a: Bounds3, b: Bounds3) => a.minX <= b.maxX && a.maxX >= b.minX
@@ -20,10 +20,13 @@ export class SurfaceGrid {
     constructor(private surfaces: Surface[], cellSize = 8) {
         if (!Number.isFinite(cellSize) || cellSize <= 0) throw new Error('Cell size must be positive and finite');
         this.cellSize = cellSize;
+        // Own immutable snapshots so cached geometry cannot outlive an authored edit.
+        this.surfaces = structuredClone(surfaces);
+        this.surfaces.forEach(prepareSurfaceGeometry);
         this.seen = new Uint32Array(surfaces.length);
         this.bounds = surfaces.map(surface => ({
             minX: surface.minX, maxX: surface.maxX, minZ: surface.minZ, maxZ: surface.maxZ,
-            // A solid with no bottom extends downward indefinitely in movement.ts.
+            // A solid with no bottom extends downward indefinitely.
             minY: surface.bottom ?? (surface.solid || surface.orientation ? -Infinity : surface.top), maxY: surface.top,
         }));
         this.bounds.forEach((bounds, id) => {

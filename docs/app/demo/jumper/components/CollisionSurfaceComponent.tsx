@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Box3, Quaternion, Vector3 } from 'three';
 import { createNodeComponentType, findComponent, useNode, useGameObject, usePrefab, useRegisterNodeComponent, type Component, type ComponentViewProps, type GameObject } from 'react-three-game/viewer';
-import type { Surface } from '../movement';
+import type { Surface } from '../collision';
 
 export const COLLISION_SURFACE = createNodeComponentType<{ bounds(): Surface | null }>('CollisionSurface');
 type BoxSize = [number, number, number];
@@ -59,7 +59,7 @@ function CollisionSurfaceView({ properties, children, enabled }: ComponentViewPr
 export const CollisionSurfaceComponent: Component<Properties> = {
     name: 'CollisionSurface', renderWhenDisabled: true, description: 'Collision-only box inferred from this node\'s geometry and transform.',
     properties: {
-        solid: { type: 'boolean', default: false, description: 'Solid sides and ceiling; enables wallrunning.' },
+        solid: { type: 'boolean', default: false, description: 'Solid sides and ceiling.' },
         fallbackSize: { type: 'vector3', label: 'Fallback Size', default: [1, 1, 1], description: 'Used only when this node has no box geometry component.' },
     },
     View: CollisionSurfaceView,

@@ -13,7 +13,7 @@ import type { PreparedPrefab } from './preparePrefab';
 export type PrefabInstanceStatus =
     | { phase: 'loading' }
     | { phase: 'compiling'; loadMs: number }
-    | { phase: 'ready' | 'active'; loadMs: number; compileMs: number }
+    | { phase: 'active'; loadMs: number; compileMs: number }
     | { phase: 'error'; error: unknown };
 
 export interface PrefabInstanceProps {
@@ -21,7 +21,6 @@ export interface PrefabInstanceProps {
     id: string;
     url: string;
     basePath?: string;
-    active?: boolean;
     /** Immutable terrain: freeze world transforms after preparation. Remount to move or edit it. */
     static?: boolean;
     onStatus?: (status: PrefabInstanceStatus) => void;
@@ -77,7 +76,7 @@ function InstanceMount(props: PrefabInstanceProps & { prepared: PreparedPrefab }
     </primitive>;
 }
 
-function InstanceView({ id, prepared, active = true, static: isStatic = false, basePath, onStatus, onActivate, children, container }: PrefabInstanceProps & { prepared: PreparedPrefab; container: Group }) {
+function InstanceView({ id, prepared, static: isStatic = false, basePath, onStatus, onActivate, children, container }: PrefabInstanceProps & { prepared: PreparedPrefab; container: Group }) {
     const store = useMemo(() => createPrefabStore(prepared.document), [prepared]);
     const { gl, camera, scene, invalidate } = useThree();
     const revision = useMeshInstanceRevision();
@@ -121,11 +120,11 @@ function InstanceView({ id, prepared, active = true, static: isStatic = false, b
 
     useEffect(() => {
         if (!compiled) return;
-        callbacks.current.onStatus?.({ phase: active ? 'active' : 'ready', loadMs: prepared.durationMs, compileMs });
-        if (active) callbacks.current.onActivate?.();
-    }, [active, compiled, compileMs, prepared]);
+        callbacks.current.onStatus?.({ phase: 'active', loadMs: prepared.durationMs, compileMs });
+        callbacks.current.onActivate?.();
+    }, [compiled, compileMs, prepared]);
 
-    useEffect(() => { container.visible = compiled && active; invalidate(); }, [active, compiled, container, invalidate]);
+    useEffect(() => { container.visible = compiled; invalidate(); }, [compiled, container, invalidate]);
 
-    return <PrefabRoot id={id} store={store} basePath={basePath} enabled={compiled && active} preparing={!compiled}>{children}</PrefabRoot>;
+    return <PrefabRoot id={id} store={store} basePath={basePath} enabled={compiled} preparing={!compiled}>{children}</PrefabRoot>;
 }

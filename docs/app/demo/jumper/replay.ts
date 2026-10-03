@@ -1,23 +1,24 @@
 import { SurfaceGrid } from './spatial';
-import { createJumperSimulation, JUMPER_STEP, stepJumper,
-    type MovementSettings, type Position, type Surface } from './movement';
+import { createJumperSimulation, JUMPER_STEP } from './simulation';
+import { stepJumper, type MovementSettings } from './movement';
+import { type Position, type Surface } from './collision';
 
-export const Buttons = { forward: 1, back: 2, left: 4, right: 8, jump: 16, crouch: 32 } as const;
+export const Buttons = { forward: 1, back: 2, left: 4, right: 8, jump: 16, crouch: 32, detach: 64 } as const;
 const TAU = Math.PI * 2;
 const YAW_STEPS = 65536;
 
 /** Quantize before simulation: live physics and replay consume the same command. */
 export function packCommand(buttons: number, yaw: number) {
     const angle = Math.round(((yaw % TAU + TAU) % TAU) * YAW_STEPS / TAU) & 0xffff;
-    return (angle << 6) | (buttons & 63);
+    return (angle << 7) | (buttons & 127);
 }
 export function unpackCommand(packed: number) {
-    const yaw = (packed >>> 6) * TAU / YAW_STEPS;
+    const yaw = (packed >>> 7) * TAU / YAW_STEPS;
     const facingX = -Math.sin(yaw), facingZ = -Math.cos(yaw);
     const ahead = Number(!!(packed & Buttons.forward)) - Number(!!(packed & Buttons.back));
     const right = Number(!!(packed & Buttons.right)) - Number(!!(packed & Buttons.left));
     return { x: facingX * ahead - facingZ * right, z: facingZ * ahead + facingX * right,
-        facingX, facingZ, jump: !!(packed & Buttons.jump), crouch: !!(packed & Buttons.crouch) };
+        facingX, facingZ, jump: !!(packed & Buttons.jump), crouch: !!(packed & Buttons.crouch), detach: !!(packed & Buttons.detach) };
 }
 
 /** One packed command per tick. Capacity doubles as needed. */

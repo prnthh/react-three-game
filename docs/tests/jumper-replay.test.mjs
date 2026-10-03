@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { advanceJumper, createJumperSimulation, JUMPER_STEP } from '../app/demo/jumper/movement.ts';
+import { advanceJumper, createJumperSimulation, JUMPER_STEP } from '../app/demo/jumper/simulation.ts';
 import { Buttons, createAttempt, packCommand, unpackCommand, Replay } from '../app/demo/jumper/replay.ts';
 
-const settings = { speed: 13, jumpSpeed: 9, slideBoost: 3, jumpBoost: 1 };
+const settings = { speed: 13, jumpSpeed: 9, slideBoost: 3 };
 const surfaces = [{ minX: -100, maxX: 100, minZ: -100, maxZ: 100, top: 0 }];
 function advance(attempt, live, packed, delta, onStep) {
     return advanceJumper(live, delta, unpackCommand(packed), attempt.settings, attempt.surfaces, command => {
@@ -17,12 +17,12 @@ test('binary input reproduces every physics state across buffer growth and rende
     const live = createJumperSimulation(attempt.spawn);
     const expected = [];
     for (let frame = 0; frame < 5000; frame++) {
-        // Exercise all six button bits, opposing keys, yaw wrapping and catch-up ticks.
-        const packed = packCommand(frame % 64, (frame - 1000) * 0.015);
-        assert.equal(packed & 63, frame % 64);
+        // Exercise all seven button bits, opposing keys, yaw wrapping and catch-up ticks.
+        const packed = packCommand(frame % 128, (frame - 1000) * 0.015);
+        assert.equal(packed & 127, frame % 128);
         const decoded = unpackCommand(packed);
         const yaw = Math.atan2(-decoded.facingX, -decoded.facingZ);
-        assert.equal(packCommand(packed & 63, yaw), packed);
+        assert.equal(packCommand(packed & 127, yaw), packed);
         advance(attempt, live, packed, frame % 2 ? 1 / 30 : 1 / 240, () => expected.push(structuredClone(live.current)));
     }
     const commands = attempt.recording.finish();
@@ -77,4 +77,25 @@ test('attempts snapshot settings and geometry; finished recordings support indep
     assert.throws(() => attempt.recording.append(0), /finished recording/);
     const empty = new Replay(createAttempt([0, 0, 0], settings, surfaces));
     assert.equal(empty.step(), false);
+});
+
+test('wall attachment, right-click release and wall jumps replay identically', () => {
+    const wall = { minX: -2, maxX: -0.3, minZ: -100, maxZ: 100, bottom: -100, top: 100, solid: true };
+    const attempt = createAttempt([0, 5, 0], settings, [wall]);
+    const live = createJumperSimulation(attempt.spawn);
+    const expected = [];
+    for (let tick = 0; tick < 120; tick++) {
+        const buttons = Buttons.forward | (tick % 30 === 10 ? Buttons.detach : 0)
+            | (tick % 30 === 11 ? Buttons.jump : 0);
+        advance(attempt, live, packCommand(buttons, Math.PI / 2), JUMPER_STEP,
+            () => expected.push(structuredClone(live.current)));
+    }
+    assert.ok(expected.some(state => state.wallNormal));
+    assert.equal(expected[10].wallNormal, null);
+    assert.ok(expected[11].velocityY > expected[10].velocityY);
+    const replay = new Replay(attempt);
+    for (const state of expected) {
+        assert.equal(replay.step(), true);
+        assert.deepEqual(replay.simulation.current, state);
+    }
 });

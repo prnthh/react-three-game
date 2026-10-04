@@ -66,3 +66,5 @@ export type { SceneAgent, SceneBatch, SceneSearchOptions, SceneGetManyOptions } 
 
 export { usePrefabDocument } from "./runtime/prefabs/prefabApi.js";
 export type { PrefabDocumentApi } from "./core/prefabDocumentApi.js";
+
+export { loadAssetManifest, type AssetManifest } from './runtime/assets/assetManifest.js';

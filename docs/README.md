@@ -19,7 +19,7 @@ Components stay in the demo that owns them and may be imported by other demos.
 | Demo | Pattern / cleanup status |
 | --- | --- |
 | [Viewer](app/viewer/page.tsx) | One saved Rotator scene shared with the component editor; no streaming or selector setup. |
-| [Asset Viewer](app/demo/assetviewer/page.tsx) | Asset-browser utility. Next: handle failed manifest requests. |
+| [Asset Viewer](app/demo/assetviewer/page.tsx) | Browse the shared asset manifest, with loading and error states. |
 | [Custom Component](app/demo/customcomponent/page.tsx) | Minimal scene shared with Viewer; Rotator and Squish are registered for editing. |
 | [Cool stuff](app/demo/coolstuff/page.tsx) | One scene with interior mapping, ragdolls, and a small sleeping-box warehouse, each under its own parent node. |
 | [Parkour](app/demo/parkour/page.tsx) | Player movement, procedural concrete, and static scene shadows. |

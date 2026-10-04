@@ -1,20 +1,12 @@
 import { useEffect, useState } from 'react';
 import type { ComponentEditorProps } from '../../core/ComponentRegistry.js';
 import { useEditorRef } from '../EditorContext.js';
-import { withBasePath } from '../../runtime/assets/assetPaths.js';
+import { loadAssetManifest } from '../../runtime/assets/assetManifest.js';
 import { base, colors } from '../ui/styles.js';
 import { FieldGroup, Label } from '../ui/Input.js';
 import { isEmbeddedPrefabSource } from '../../runtime/prefabs/prefabSource.js';
 import { useAssetRuntime } from '../../runtime/assets/AssetRuntime.js';
 import { PrefabRefProperties } from "../../runtime/components/PrefabRefComponent.js";
-
-async function fetchJson<T>(url: string): Promise<T> {
-    const response = await fetch(url);
-    if (!response.ok) {
-        throw new Error(`Request failed (${response.status}) for ${url}`);
-    }
-    return response.json() as Promise<T>;
-}
 
 function PrefabRefEditor({ node, properties, update }: ComponentEditorProps<PrefabRefProperties>) {
     const url = properties.url ?? '';
@@ -45,10 +37,10 @@ function PrefabRefEditor({ node, properties, update }: ComponentEditorProps<Pref
     useEffect(() => {
         let cancelled = false;
 
-        void fetchJson<unknown>(withBasePath(basePath, '/prefabs/manifest.json'))
+        void loadAssetManifest(basePath)
             .then((data) => {
                 if (cancelled) return;
-                setManifest(Array.isArray(data) ? data.filter((entry): entry is string => typeof entry === 'string') : []);
+                setManifest(data.prefabs);
             })
             .catch(() => {
                 if (!cancelled) setManifest([]);

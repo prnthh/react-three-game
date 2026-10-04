@@ -1,4 +1,4 @@
-import { withBasePath } from '../runtime/assets/assetPaths.js';
+import { loadAssetManifest } from '../runtime/assets/assetManifest.js';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { createEmptyPrefab, createPackedPrefabNode, scopePrefabMaterials } from '../core/prefab.js';
@@ -237,7 +237,7 @@ export function FileMenu({
         if (!loaded) return;
 
         try {
-            const manifest: string[] = await fetch(withBasePath(basePath, '/prefabs/manifest.json')).then(r => r.json());
+            const { prefabs: manifest } = await loadAssetManifest(basePath);
             const matched = manifest.find(entry =>
                 entry.endsWith(`/${loaded.filename}`) || entry === `/${loaded.filename}`
             );

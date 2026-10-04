@@ -1,3 +1,4 @@
+import { loadAssetManifest } from '../runtime/assets/assetManifest.js';
 import { downloadBlob, downloadURL } from '../browser.js';
 import { isExternalPath, withBasePath } from '../runtime/assets/assetPaths.js';
 import { SceneRuntime } from "../runtime/SceneRuntime.js";
@@ -40,11 +41,7 @@ const EDITOR_CAMERA_MOVE_SPEED = 8;
 const EDITOR_CAMERA_FAST_MULTIPLIER = 3;
 const EDITOR_CAMERA_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD']);
 function loadModelManifest(basePath: string) {
-    const url = withBasePath(basePath, "/models/manifest.json");
-    return fetch(url)
-        .then(response => response.ok ? response.json() : [])
-        .then(data => Array.isArray(data) ? data.filter((path): path is string => typeof path === 'string') : [])
-        .catch(() => []);
+    return loadAssetManifest(basePath).then(manifest => manifest.models).catch(() => []);
 }
 
 function raycastDropPosition(event: DragEvent, state: RootState, target: Vector3) {
@@ -618,6 +615,7 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
     }), [mode, prefabValue]);
 
     const agentHost: SceneAgentHost = {
+        loadAssetManifest: () => loadAssetManifest(basePath),
         loadPrefab: async url => {
             const runtime = runtimeRef.current;
             if (!runtime) throw new Error('Editor asset runtime is not ready.');

@@ -14,7 +14,7 @@ describe('Editor API', () => {
         properties: { enabled: { type: 'boolean', default: true } },
     });
 
-    function fixture() {
+    function fixture(overrides = {}) {
         const store = createPrefabStore({ root: { id: 'root', children: [
             { id: 'alpha', name: 'Alpha wall', components: {
                 custom: { type: 'AgentFixture', properties: { enabled: false } },
@@ -41,10 +41,27 @@ describe('Editor API', () => {
             },
             canSave: () => false,
             save: async () => {},
+            ...overrides,
         };
         const service = createSceneAgent(store, () => host);
         return { store, service, scene: service.scene, focused, captures };
     }
+
+    test('asset discovery filters and paginates without changing the document', async () => {
+        const manifest = { models: ['/models/hero.glb'], textures: ['/textures/brick-a.png', '/textures/brick-b.png'], sound: [], prefabs: ['/prefabs/room.json'] };
+        const { scene } = fixture({ loadAssetManifest: async () => manifest });
+        const revision = scene.info().revision;
+        const first = await scene.assets({ type: 'texture', query: 'BRICK', limit: 1 });
+        assert.deepEqual(first, { assets: [{ type: 'texture', path: '/textures/brick-a.png' }], total: 2, nextOffset: 1 });
+        const second = await scene.assets({ type: 'texture', query: 'brick', offset: first.nextOffset, limit: 1 });
+        assert.equal(second.assets[0].path, '/textures/brick-b.png');
+        assert.equal(second.nextOffset, null);
+        assert.equal((await scene.assets()).total, 4);
+        assert.equal(scene.info().revision, revision);
+        await assert.rejects(scene.assets({ type: 'invalid' }), /Unknown asset type/);
+        await assert.rejects(fixture().scene.assets(), /not configured/);
+        await assert.rejects(fixture({ loadAssetManifest: async () => { throw new Error('Manifest unavailable'); } }).scene.assets(), /Manifest unavailable/);
+    });
 
     test('the normal find, look, update, capture and undo loop works', async () => {
         const { scene, store, focused, captures } = fixture();

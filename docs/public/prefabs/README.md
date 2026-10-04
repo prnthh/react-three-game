@@ -16,7 +16,8 @@ Prefab references use full public paths such as `/prefabs/killbox/npc.json`.
 Scene redirects and dialogue paths are relative to the game folder.
 Demo TypeScript stays under `app/demo`; game-specific wiring stays under `games/`.
 
-Run `node docs/public/generate-prefab-manifest.mjs` from the repository root to
-refresh only the prefab manifest, or `npm run generate-manifests --workspace docs`
-for all asset manifests. The prefab manifest includes nested prefab documents and
-includes game entry prefabs and excludes dialogue libraries, which have no prefab root.
+Run `npm run generate-manifests --workspace docs` (or
+`node docs/public/generate-manifest.mjs`) to rebuild `docs/public/manifest.json`.
+This single catalog lists models, textures, sounds, and prefabs. Its `prefabs`
+array includes nested scenes and game entry prefabs, excluding dialogue libraries
+that have no prefab root.

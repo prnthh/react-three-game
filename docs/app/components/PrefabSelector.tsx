@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { withBasePath } from "../basePath";
+import { loadAssetManifest } from "react-three-game/editor";
+import { BASE_PATH, withBasePath } from "../basePath";
 
 type PrefabSelectorProps<T> = {
     selectedName?: string;
@@ -49,24 +50,9 @@ export default function PrefabSelector<T>({
     useEffect(() => {
         let cancelled = false;
 
-        void fetch(withBasePath("/prefabs/manifest.json"))
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error(`Failed to load prefab manifest (${response.status})`);
-                }
-
-                return response.json() as Promise<unknown>;
-            })
-            .then((entries) => {
-                if (cancelled) {
-                    return;
-                }
-
-                const manifestEntries = Array.isArray(entries)
-                    ? entries.filter((entry): entry is string => typeof entry === "string")
-                    : [];
-
-                setPrefabNames(mergePrefabNames(manifestEntries, []));
+        void loadAssetManifest(BASE_PATH)
+            .then(manifest => {
+                if (!cancelled) setPrefabNames(mergePrefabNames(manifest.prefabs, []));
             })
             .catch(() => {
                 if (!cancelled) {

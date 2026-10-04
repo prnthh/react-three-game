@@ -465,3 +465,32 @@ cross-origin iframes. There is no cross-origin message bridge.
 
 The API is available to scripts already running in that page. `agentTools={false}`
 disables window exposure; `editorRef.current.scene` remains available to React code.
+
+## Discover available assets
+
+Browse the project catalog of available assets through the editor API. This catalog
+is independent of the active scene and includes assets available to add to it:
+
+```js
+await scene.assets();
+await scene.assets({ type: 'model', query: 'human', limit: 20 });
+await scene.assets({ type: 'texture', query: 'brick' });
+await scene.assets({ type: 'prefab', offset: 20, limit: 20 });
+```
+
+Types are `model`, `texture`, `sound`, and `prefab`. Results contain `assets`
+(`type` and `path`), `total`, and `nextOffset`; use `nextOffset` for the next page.
+Paths are ready for component properties such as `filename`, `texture`, and prefab
+`url`. Queries match paths case-insensitively. The catalog comes from `/manifest.json`
+under the editor's `basePath`. Use `scene.search()` to inspect nodes in the active scene. Missing or malformed manifests report an error.
+
+The manifest format is:
+
+```json
+{
+  "models": ["/models/hero.glb"],
+  "textures": ["/textures/brick.png"],
+  "sound": ["/sound/jump.wav"],
+  "prefabs": ["/prefabs/room.json"]
+}
+```

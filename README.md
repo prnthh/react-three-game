@@ -24,6 +24,7 @@ scene, adjust components, and try it in Play mode. The same editor exposes
 const scene = window.scene;
 scene.help();
 scene.search({ query: 'Cube' });
+await scene.assets({ type: 'model', query: 'character' });
 scene.update({ id: 'cube', transform: { position: [0, 2, 0] } });
 scene.exportJSON();
 ```
@@ -32,6 +33,10 @@ The API shares the editor's document and undo history. It supports inspecting,
 creating, editing, cloning, and packing nodes, plus screenshots and exports.
 See the [agent guide](docs/public/editor-scene-for-agents.md) for the full workflow.
 The hosted editor includes built-in components; use your own app for custom ones.
+
+Asset pickers and `scene.assets()` read one `/manifest.json`, relative to the editor's
+`basePath`. It contains `models`, `textures`, `sound`, and `prefabs` arrays of asset
+paths. Run `npm --prefix docs run generate-manifests` to rebuild the demo catalog.
 
 ### Local editor
 

@@ -180,9 +180,7 @@ export function createComponentData(
 ): ComponentData {
 	return {
 		type,
-		properties: structuredClone(type === 'Material' && !properties?.name
-            ? { materialType: 'standard', ...properties, name: crypto.randomUUID() }
-            : properties ?? {}),
+		properties: structuredClone(properties ?? {}),
 	};
 }
 

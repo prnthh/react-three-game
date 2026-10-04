@@ -1,3 +1,4 @@
+import { loadAssetManifest, type AssetManifest } from '../../runtime/assets/assetManifest.js';
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, View, PerspectiveCamera } from "@react-three/drei";
 import { useEffect, useLayoutEffect, useState, useRef } from "react";
@@ -519,7 +520,7 @@ function AssetPicker({
     value: string | undefined;
     onChange: (value: string | undefined) => void;
     basePath: string;
-    manifestFolder: string;
+    manifestFolder: keyof AssetManifest;
     preview?: React.ReactNode;
     renderList: (props: {
         files: string[];
@@ -539,10 +540,11 @@ function AssetPicker({
     const triggerRef = useRef<HTMLButtonElement>(null);
 
     useEffect(() => {
-        fetch(`${basePath}/${manifestFolder}/manifest.json`)
-            .then(r => r.json())
-            .then(data => setFiles(Array.isArray(data) ? data : data.files || []))
-            .catch(console.error);
+        let active = true;
+        void loadAssetManifest(basePath)
+            .then(data => { if (active) setFiles(data[manifestFolder]); })
+            .catch(() => { if (active) setFiles([]); });
+        return () => { active = false; };
     }, [basePath, manifestFolder]);
 
     useLayoutEffect(() => {

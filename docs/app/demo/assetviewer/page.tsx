@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { ModelListViewer, SoundListViewer, TextureListViewer } from "react-three-game/editor";
+import { loadAssetManifest, ModelListViewer, SoundListViewer, TextureListViewer } from "react-three-game/editor";
 import { BASE_PATH } from "../../basePath";
 
 export default function AssetViewerPage() {
@@ -8,23 +8,25 @@ export default function AssetViewerPage() {
     const [textures, setTextures] = useState<string[]>([]);
     const [models, setModels] = useState<string[]>([]);
     const [sounds, setSounds] = useState<string[]>([]);
+    const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        Promise.all([
-            fetch(`${basePath}/textures/manifest.json`).then(r => r.json()),
-            fetch(`${basePath}/models/manifest.json`).then(r => r.json()),
-            fetch(`${basePath}/sound/manifest.json`).then(r => r.json()).catch(() => [])
-        ]).then(([textureData, modelData, soundData]) => {
-            setTextures(textureData);
-            setModels(modelData);
-            setSounds(soundData);
-            setLoading(false);
-        });
+        let active = true;
+        void loadAssetManifest(basePath).then(manifest => {
+            if (!active) return;
+            setTextures(manifest.textures);
+            setModels(manifest.models);
+            setSounds(manifest.sound);
+        }).catch(error => { if (active) setError(error.message); })
+            .finally(() => { if (active) setLoading(false); });
+        return () => { active = false; };
     }, [basePath]);
 
+    if (error) return <div role="alert" className="p-4 text-red-300">{error}</div>;
+
     if (loading) {
-        return <div className="p-4 text-gray-300">Loading manifests...</div>;
+        return <div className="p-4 text-gray-300">Loading assets...</div>;
     }
 
     return (

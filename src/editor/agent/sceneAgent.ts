@@ -1,3 +1,4 @@
+import type { AssetManifest } from '../../runtime/assets/assetManifest.js';
 import { analyzeSceneAuthoring } from './sceneAuthoringAdvice.js';
 import { Euler, Quaternion, Vector3 } from 'three';
 import { sceneAgentHelp } from './sceneAgentHelp.js';
@@ -22,6 +23,7 @@ export interface SceneCaptureOptions {
 }
 
 export interface SceneAgentHost {
+    loadAssetManifest?(): Promise<AssetManifest>;
     loadPrefab?(url: string): Promise<Prefab>;
     getBounds?(id: string): { min: number[]; max: number[]; size: number[]; center: number[] } | null;
     setMode?(mode: 'edit' | 'play'): void | Promise<void>;
@@ -294,6 +296,25 @@ export function createSceneAgent(store: PrefabStoreApi, getHost: () => SceneAgen
             const measure = getHost().getBounds;
             if (!measure) throw new Error('Live bounds are not configured for this editor.');
             return { revision, space: 'world' as const, source: 'live-render' as const, bounds: measure(input.id) };
+        },
+        async assets(input: { type?: 'model' | 'texture' | 'sound' | 'prefab'; query?: string; offset?: number; limit?: number } = {}) {
+            options(input, ['type', 'query', 'offset', 'limit']);
+            snapshot();
+            const groups = { model: 'models', texture: 'textures', sound: 'sound', prefab: 'prefabs' } as const;
+            if (input.type !== undefined && !Object.hasOwn(groups, input.type)) throw new Error('Unknown asset type. Use model, texture, sound, or prefab.');
+            if (input.query !== undefined && typeof input.query !== 'string') throw new Error('Asset query must be a string.');
+            const offset = integer(input.offset, 0, 0, Number.MAX_SAFE_INTEGER);
+            const limit = integer(input.limit, 50, 1, 200);
+            const load = getHost().loadAssetManifest;
+            if (!load) throw new Error('Asset discovery is not configured for this editor.');
+            const manifest = await load();
+            snapshot();
+            const query = input.query?.trim().toLowerCase() ?? '';
+            const assets = (Object.keys(groups) as (keyof typeof groups)[])
+                .filter(type => !input.type || type === input.type)
+                .flatMap(type => manifest[groups[type]].filter(path => path.toLowerCase().includes(query)).map(path => ({ type, path })));
+            return { assets: assets.slice(offset, offset + limit), total: assets.length,
+                nextOffset: offset + limit < assets.length ? offset + limit : null };
         },
         materials(input: { ids?: string[]; offset?: number; limit?: number } = {}) {
             options(input, ['ids', 'offset', 'limit']);

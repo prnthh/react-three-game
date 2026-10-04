@@ -1,7 +1,7 @@
 import { useLayoutEffect } from 'react';
 import { useThree } from '@react-three/fiber';
 import type { Light, Object3D, Scene } from 'three';
-import { createNodeComponentType, getSceneComponentRegistry } from './SceneContext';
+import { createNodeComponentType, getSceneComponentRegistry } from './SceneContext.js';
 
 export const SCENE_OBJECT = createNodeComponentType<Object3D>('scene-object');
 export const SCENE_LIGHT = createNodeComponentType<Light>('scene-light');

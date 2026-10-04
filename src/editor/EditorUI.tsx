@@ -1,15 +1,15 @@
-import { getComponentEditor } from "./ComponentEditors";
-import "./components/editors";
+import { getComponentEditor } from "./ComponentEditors.js";
+import "./components/editors.js";
 import { useState } from 'react';
-import { GameObject as GameObjectType } from "../core/types";
-import EditorTree from './EditorTree';
-import { canAddComponentToNode, getComponents, getNextComponentKey, resolveComponentProperties } from '../core/ComponentRegistry';
-import type { Component } from '../core/ComponentRegistry';
-import { FieldRenderer, type FieldDefinition } from './ui/Input';
-import { createComponentData } from '../core/prefab';
-import { useEditorRef } from './EditorContext';
-import { base, colors, inspector, componentCard, radii } from './ui/styles';
-import { usePrefabStore } from "../runtime/prefabs/PrefabStoreContext";
+import { GameObject as GameObjectType } from "../core/types.js";
+import EditorTree from './EditorTree.js';
+import { canAddComponentToNode, getComponents, getNextComponentKey, resolveComponentProperties } from '../core/ComponentRegistry.js';
+import type { Component } from '../core/ComponentRegistry.js';
+import { FieldRenderer, type FieldDefinition } from './ui/Input.js';
+import { createComponentData } from '../core/prefab.js';
+import { useEditorRef } from './EditorContext.js';
+import { base, colors, inspector, componentCard, radii } from './ui/styles.js';
+import { usePrefabStore } from "../runtime/prefabs/PrefabStoreContext.js";
 
 function humanizePropertyName(name: string) {
     return name

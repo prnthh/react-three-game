@@ -49,10 +49,6 @@
                 "type": "Transform",
                 "properties": {}
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {

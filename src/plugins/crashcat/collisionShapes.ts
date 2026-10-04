@@ -1,6 +1,6 @@
 import { box, capsule, convexHull, cylinder, sphere, triangleMesh, transformed, type Shape } from "crashcat";
 import { Matrix4, Vector3, type Object3D } from "three";
-import type { CrashcatPhysicsProperties } from "./CrashcatPhysicsComponent";
+import type { CrashcatPhysicsProperties } from "./CrashcatPhysicsComponent.js";
 
 const inverseWorldMatrix = new Matrix4();
 const childToLocalMatrix = new Matrix4();

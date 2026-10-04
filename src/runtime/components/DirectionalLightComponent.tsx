@@ -1,6 +1,6 @@
 import { Color } from 'three';
-import { CascadedDirectionalLight } from '../lighting/CascadedDirectionalLight';
-import type { Component, ComponentViewProps } from "../../core/ComponentRegistry";
+import { CascadedDirectionalLight } from '../lighting/CascadedDirectionalLight.js';
+import type { Component, ComponentViewProps } from "../../core/ComponentRegistry.js";
 
 import { useHelper } from "@react-three/drei";
 
@@ -10,9 +10,9 @@ import { CameraHelper, Object3D } from "three";
 
 import type { DirectionalLight } from "three";
 
-import { useNode } from "../scene/SceneContext";
+import { useNode } from "../scene/SceneContext.js";
 
-import { EditorLightGizmo, mergeWithDefaults, normalizeShadowMapSize, useShadowMapResolution } from "./lightUtils";
+import { EditorLightGizmo, mergeWithDefaults, normalizeShadowMapSize, useShadowMapResolution } from "./lightUtils.js";
 
 export const directionalLightDefaults = {
     color: '#ffffff',

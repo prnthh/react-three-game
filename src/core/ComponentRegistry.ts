@@ -1,7 +1,7 @@
-import type { ComponentDependency } from "./dependencies";
+import type { ComponentDependency } from "./dependencies.js";
 import type { BufferGeometry } from "three";
 import type { FC } from "react";
-import type { GameObject } from "./types";
+import type { GameObject } from "./types.js";
 
 /** Props every component View receives from the renderer. */
 export interface ComponentViewProps<P = Record<string, unknown>> {
@@ -13,7 +13,7 @@ export interface ComponentViewProps<P = Record<string, unknown>> {
 	children?: React.ReactNode;
 }
 
-export type { NodeInteractionHandlers } from "./nodeInteractions";
+export type { NodeInteractionHandlers } from "./nodeInteractions.js";
 
 export interface ComponentEditorProps<P extends object = Record<string, any>> {
 	node: GameObject;
@@ -91,7 +91,9 @@ export interface Component<P extends object = Record<string, any>> {
 	dependencies?: (properties: P) => readonly ComponentDependency[];
 	/** Keep this render-graph component mounted for preparation while its node is disabled. */
 	renderWhenDisabled?: boolean;
-	/** Optional node slot. Geometry/material render inside the object; other slots wrap it. */
+	/** Optional node slot. Geometry gets an implicit mesh when no object view is present.
+	 * Object views supply their own render object; materials attach inside it.
+	 * Reuse helpers in code, never require a separate base Mesh component on the node. */
 	slot?: 'object' | 'geometry' | 'material' | 'transform' | 'environment' | 'fog' | 'data';
 	/** Serializable property contract and the source of runtime/editor defaults. */
 	properties: ComponentPropertyDefinitions<P>;

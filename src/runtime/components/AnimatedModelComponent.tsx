@@ -1,20 +1,22 @@
-import { AssetBoundary } from '../assets/AssetBoundary';
-import { usePrefabStoreApi } from '../prefabs/PrefabStoreContext';
+import { meshRenderProperties, type MeshRenderProperties } from "../rendering/meshProperties.js";
+import { useModelMeshSettings } from "../rendering/useModelMeshSettings.js";
+import { AssetBoundary } from '../assets/AssetBoundary.js';
+import { usePrefabStoreApi } from '../prefabs/PrefabStoreContext.js';
 import { useFrame } from '@react-three/fiber';
 
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 
-import { AnimationMixer, LoopRepeat, Mesh, type AnimationAction, type AnimationClip, type Object3D } from 'three';
+import { AnimationMixer, LoopRepeat, type AnimationAction, type AnimationClip, type Object3D } from 'three';
 
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 
-import { useModelAsset } from '../assets/AssetRuntime';
+import { useModelAsset } from '../assets/AssetRuntime.js';
 
-import { createNodeComponentType, usePrefab, useRegisterNodeComponent } from '../scene/SceneContext';
+import { createNodeComponentType, usePrefab, useRegisterNodeComponent } from '../scene/SceneContext.js';
 
-import { withBasePath } from "../assets/assetPaths";
+import { withBasePath } from "../assets/assetPaths.js";
 
-import type { Component, ComponentViewProps } from '../../core/ComponentRegistry';
+import type { Component, ComponentViewProps } from '../../core/ComponentRegistry.js';
 
 export interface AnimatedModelHandle {
     readonly object: Object3D;
@@ -32,16 +34,11 @@ export interface AnimatedModelHandle {
 
 export const ANIMATED_MODEL_COMPONENT = createNodeComponentType<AnimatedModelHandle>('AnimatedModel');
 
-export type AnimatedModelProperties = {
+export type AnimatedModelProperties = MeshRenderProperties & {
     filename?: string;
     animationState?: string;
     fadeDuration?: number;
-    castShadow?: boolean;
-    receiveShadow?: boolean;
-    frustumCulled?: boolean;
     autoUpdate?: boolean;
-    emitClickEvent?: boolean;
-    clickEventName?: string;
 };
 
 function findAction(state: string, clips: readonly AnimationClip[], actions: readonly AnimationAction[]) {
@@ -62,17 +59,8 @@ function LoadedAnimatedModel({ properties, enabled, path }: { properties: Animat
     const source = useModelAsset(path);
     const currentActionRef = useRef<AnimationAction | null>(null);
     const stateRef = useRef(properties.animationState ?? '');
-    const object = useMemo(() => {
-        if (!source) return null;
-        const clone = cloneSkeleton(source);
-        clone.traverse(candidate => {
-            if (!(candidate instanceof Mesh)) return;
-            candidate.castShadow = properties.castShadow ?? true;
-            candidate.receiveShadow = properties.receiveShadow ?? true;
-            candidate.frustumCulled = properties.frustumCulled ?? false;
-        });
-        return clone;
-    }, [properties.castShadow, properties.frustumCulled, properties.receiveShadow, source]);
+    const object = useMemo(() => source ? cloneSkeleton(source) : null, [source]);
+    useModelMeshSettings(object, properties, false);
     const clips = source?.animations ?? [];
     const mixer = useMemo(() => object ? new AnimationMixer(object) : null, [object]);
     const actions = useMemo(() => {
@@ -128,7 +116,7 @@ function LoadedAnimatedModel({ properties, enabled, path }: { properties: Animat
     useEffect(() => () => { mixer?.stopAllAction(); }, [mixer]);
     if (!object || !mixer) return null;
     return <>
-        <primitive object={object} />
+        <group visible={properties.visible !== false}><primitive object={object} /></group>
         {enabled && properties.autoUpdate !== false ? <AutoAnimationUpdate mixer={mixer} /> : null}
     </>;
 }
@@ -150,15 +138,12 @@ const AnimatedModelComponent: Component<AnimatedModelProperties> = {
     slot: 'object',
     View: AnimatedModelView,
     properties: {
+        ...meshRenderProperties,
         filename: { type: 'string', default: '' },
         animationState: { type: 'string', default: '' },
         fadeDuration: { default: 0.18 },
-        castShadow: { type: 'boolean', default: true },
-        receiveShadow: { type: 'boolean', default: true },
         frustumCulled: { type: 'boolean', default: false },
         autoUpdate: { type: 'boolean', default: true },
-        emitClickEvent: { type: 'boolean', default: false },
-        clickEventName: { type: 'string', default: '' },
     },
 };
 

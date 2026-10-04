@@ -1,13 +1,13 @@
 import { useContext, useMemo, useState, type ReactNode } from "react";
 
-import { createPrefabRegistry, PrefabContext, PrefabEditorMode, SceneContext } from "./SceneContext";
-import type { PrefabApi, Scene } from "./SceneContext";
-import { useAssetRuntime } from "../assets/AssetRuntime";
-import { SelectionRuntimeProvider } from "./SelectionRuntime";
-import { PrefabStoreProvider } from "../prefabs/PrefabStoreContext";
-import { type PrefabStoreApi } from "../../core/prefabStore";
-import { SceneRuntime } from "../SceneRuntime";
-import { createPrefabApi } from "../prefabs/prefabApi";
+import { createPrefabRegistry, PrefabContext, PrefabEditorMode, SceneContext } from "./SceneContext.js";
+import type { PrefabApi, Scene } from "./SceneContext.js";
+import { useAssetRuntime } from "../assets/AssetRuntime.js";
+import { SelectionRuntimeProvider } from "./SelectionRuntime.js";
+import { PrefabStoreProvider } from "../prefabs/PrefabStoreContext.js";
+import { type PrefabStoreApi } from "../../core/prefabStore.js";
+import { SceneRuntime } from "../SceneRuntime.js";
+import { createPrefabApi } from "../prefabs/prefabApi.js";
 
 export interface SceneProviderProps {
     store: PrefabStoreApi;

@@ -22,7 +22,7 @@ Components stay in the demo that owns them and may be imported by other demos.
 | [Asset Viewer](app/demo/assetviewer/page.tsx) | Asset-browser utility. Next: handle failed manifest requests. |
 | [Custom Component](app/demo/customcomponent/page.tsx) | Minimal scene shared with Viewer; Rotator and Squish are registered for editing. |
 | [Cool stuff](app/demo/coolstuff/page.tsx) | One scene with interior mapping, ragdolls, and a small sleeping-box warehouse, each under its own parent node. |
-| [Jumper](app/demo/jumper/page.tsx) | Player movement, procedural concrete, and static scene shadows. |
+| [Parkour](app/demo/parkour/page.tsx) | Player movement, procedural concrete, and static scene shadows. |
 | [Point n Click](app/demo/stage/page.tsx) | Inline interaction/dialogue/transition flow; shared component registration with its editor. |
 | [Killbox FPS](app/demo/killbox/page.tsx) | Player, NPC and weapon-system integration. Keep page wiring inline; review the large NPC component separately. |
 | [Streamed World](app/demo/grassworld/page.tsx) | A bounded chunk window owns terrain colliders and deterministic grass/flowers with dense billboard blades, layered wind and recovering trails; [Water](app/demo/grassworld/components/Water.tsx) is a reusable, registered scene component. |
@@ -38,28 +38,17 @@ Also available: [general editor](app/editor/page.tsx),
 
 Edit prefab JSON in `public/prefabs` directly. Builds do not generate scenes.
 
-Keep specialized demo components under their demo. Interior mapping and the jumper controller are examples, not built-in engine systems.
+Keep specialized demo components under their demo. Interior mapping and the parkour controller are examples, not built-in engine systems.
 
 See [architecture](ARCHITECTURE.md), [lighting](LIGHTING.md), and [interior mapping](INTERIOR-MAPPING.md).
 
 ## Headless export
 
-Run `npm run sample:headless --workspace docs` from the repository root, or
-`npm run sample:headless` from this directory, with Node 22+.
-This builds the library and runs [the export example](examples/export-prefab.mjs)
-directly in Node, without a browser, DOM root, GPU, or TypeScript loader.
-
-The default input is the unchanged `public/prefabs/brutalist-city/brutalist-skywalk.json`.
-It writes `output/headless/brutalist-skywalk.glb` in this workspace: 37 meshes with
-their authored hierarchy, transforms, and three materials.
-
-After building, specify a different input and output from this directory:
-
 ```sh
-node examples/export-prefab.mjs path/to/scene.json path/to/scene.glb
+npm i -g react-three-game
+rtg convert public/prefabs/brutalist-city/brutalist-skywalk.json skywalk.glb public
+rtg convert skywalk.glb skywalk.json
 ```
 
-The example uses the default untextured geometry support. Models, textures, and
-filesystem prefab references need platform loaders passed to `createHeadlessScene`.
-See the [library API documentation](../README.md#node-scene-construction-and-glb-export)
-for supported components, asset ownership, and export limits.
+Run from `docs/`. Both paths are required; no sample is selected automatically.
+See the [Node API](../README.md#node-scene-conversion) for scripting.

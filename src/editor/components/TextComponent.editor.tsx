@@ -1,6 +1,6 @@
-import type { ComponentEditorProps } from "../../core/ComponentRegistry";
-import { ColorField, FieldGroup, NumberField, SelectField, StringField } from "../ui/Input";
-import { TextProperties } from "../../runtime/components/TextComponent";
+import type { ComponentEditorProps } from "../../core/ComponentRegistry.js";
+import { ColorField, FieldGroup, NumberField, SelectField, StringField } from "../ui/Input.js";
+import { TextProperties } from "../../runtime/components/TextComponent.js";
 
 function TextComponentEditor({ properties, update }: ComponentEditorProps<TextProperties>) {
     return (

@@ -1,8 +1,8 @@
-import { AssetBoundary } from '../assets/AssetBoundary';
+import { AssetBoundary } from '../assets/AssetBoundary.js';
 import { Environment } from '@react-three/drei';
-import { usePrefabStoreApi } from '../prefabs/PrefabStoreContext';
+import { usePrefabStoreApi } from '../prefabs/PrefabStoreContext.js';
 
-import type { Component, ComponentViewProps } from '../../core/ComponentRegistry';
+import type { Component, ComponentViewProps } from '../../core/ComponentRegistry.js';
 
 export type EnvironmentProperties = {
     intensity?: number;

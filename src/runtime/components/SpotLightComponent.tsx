@@ -1,5 +1,5 @@
 import { Color } from 'three';
-import type { Component, ComponentViewProps } from "../../core/ComponentRegistry";
+import type { Component, ComponentViewProps } from "../../core/ComponentRegistry.js";
 
 import { useHelper } from "@react-three/drei";
 
@@ -9,15 +9,15 @@ import { CameraHelper, Object3D, SpotLightHelper } from "three";
 
 import type { SpotLight } from "three";
 
-import { useTextureAsset } from "../assets/AssetRuntime";
+import { useTextureAsset } from "../assets/AssetRuntime.js";
 
-import { useNode } from "../scene/SceneContext";
+import { useNode } from "../scene/SceneContext.js";
 
-import { usePrefab } from "../scene/SceneContext";
+import { usePrefab } from "../scene/SceneContext.js";
 
-import { EditorLightGizmo, MAX_SHADOW_MAP_SIZE, MIN_SHADOW_MAP_SIZE, mergeWithDefaults, normalizeShadowMapSize, useShadowMapResolution } from "./lightUtils";
+import { EditorLightGizmo, MAX_SHADOW_MAP_SIZE, MIN_SHADOW_MAP_SIZE, mergeWithDefaults, normalizeShadowMapSize, useShadowMapResolution } from "./lightUtils.js";
 
-import { withBasePath } from "../assets/assetPaths";
+import { withBasePath } from "../assets/assetPaths.js";
 
 export const spotLightDefaults = {
     color: '#ffffff',

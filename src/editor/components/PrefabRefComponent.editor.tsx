@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import type { ComponentEditorProps } from '../../core/ComponentRegistry';
-import { useEditorRef } from '../EditorContext';
-import { withBasePath } from '../../runtime/assets/assetPaths';
-import { base, colors } from '../ui/styles';
-import { FieldGroup, Label } from '../ui/Input';
-import { isEmbeddedPrefabSource } from '../../runtime/prefabs/prefabSource';
-import { useAssetRuntime } from '../../runtime/assets/AssetRuntime';
-import { PrefabRefProperties } from "../../runtime/components/PrefabRefComponent";
+import type { ComponentEditorProps } from '../../core/ComponentRegistry.js';
+import { useEditorRef } from '../EditorContext.js';
+import { withBasePath } from '../../runtime/assets/assetPaths.js';
+import { base, colors } from '../ui/styles.js';
+import { FieldGroup, Label } from '../ui/Input.js';
+import { isEmbeddedPrefabSource } from '../../runtime/prefabs/prefabSource.js';
+import { useAssetRuntime } from '../../runtime/assets/AssetRuntime.js';
+import { PrefabRefProperties } from "../../runtime/components/PrefabRefComponent.js";
 
 async function fetchJson<T>(url: string): Promise<T> {
     const response = await fetch(url);

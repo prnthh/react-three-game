@@ -1,11 +1,9 @@
-import { GameObject, Prefab, findComponent } from "../core/types";
-import { composeTransform } from "../core/transforms";
-import { exportGLBData } from "../export";
-import { downloadBlob } from "../browser";
-export { exportGLBData } from "../export";
+import { GameObject, Prefab } from "../core/types.js";
+import { exportGLBData } from "../core/modelPrefab.js";
+import { downloadBlob } from "../browser.js";
+export { exportGLBData } from "../core/modelPrefab.js";
 import {
 	Box3,
-	Matrix4,
 	Object3D,
 	PerspectiveCamera,
 	Quaternion,
@@ -40,28 +38,8 @@ export async function saveJson(data: Prefab, filename: string) {
 }
 
 /** Load scene JSON from a file */
-export function loadJson(): Promise<Prefab | undefined> {
-	return new Promise((resolve) => {
-		const input = document.createElement("input");
-		input.type = "file";
-		input.accept = ".json,application/json";
-		input.onchange = (e) => {
-			const file = (e.target as HTMLInputElement).files?.[0];
-			if (!file) return resolve(undefined);
-			const reader = new FileReader();
-			reader.onload = (e) => {
-				try {
-					const text = e.target?.result;
-					if (typeof text === "string") resolve(JSON.parse(text) as Prefab);
-				} catch (err) {
-					console.error("Error parsing scene JSON:", err);
-					resolve(undefined);
-				}
-			};
-			reader.readAsText(file);
-		};
-		input.click();
-	});
+export async function loadJson(): Promise<Prefab | undefined> {
+	return (await loadJsonFile())?.prefab;
 }
 
 /** Load scene JSON from a file, also returning the original filename */
@@ -72,24 +50,16 @@ export function loadJsonFile(): Promise<
 		const input = document.createElement("input");
 		input.type = "file";
 		input.accept = ".json,application/json";
-		input.onchange = (e) => {
-			const file = (e.target as HTMLInputElement).files?.[0];
+		input.oncancel = () => resolve(undefined);
+		input.onchange = async () => {
+			const file = input.files?.[0];
 			if (!file) return resolve(undefined);
-			const reader = new FileReader();
-			reader.onload = (ev) => {
-				try {
-					const text = ev.target?.result;
-					if (typeof text === "string")
-						resolve({
-							prefab: JSON.parse(text) as Prefab,
-							filename: file.name,
-						});
-				} catch (err) {
-					console.error("Error parsing scene JSON:", err);
-					resolve(undefined);
-				}
-			};
-			reader.readAsText(file);
+			try {
+				resolve({ prefab: JSON.parse(await file.text()) as Prefab, filename: file.name });
+			} catch (error) {
+				console.error("Error reading scene JSON:", error);
+				resolve(undefined);
+			}
 		};
 		input.click();
 	});
@@ -158,47 +128,7 @@ export function focusCameraOnObject(
 }
 
 
-/** Compute the parent world matrix for a node using the normalized store data */
-export function computeParentWorldMatrix(
-	state: {
-		nodesById: Record<
-			string,
-			{
-				components?: Record<
-					string,
-					{ properties?: Record<string, any> } | undefined
-				>;
-			}
-		>;
-		parentIdById: Record<string, string | null>;
-	},
-	targetId: string,
-) {
-	const parentWorld = new Matrix4();
-	const chain: string[] = [];
-	let currentId: string | null | undefined = state.parentIdById[targetId];
-
-	while (currentId) {
-		chain.unshift(currentId);
-		currentId = state.parentIdById[currentId];
-	}
-
-	for (const nodeId of chain) {
-		const transform = findComponent(
-			state.nodesById[nodeId],
-			"Transform",
-		)?.properties;
-		parentWorld.multiply(
-			composeTransform(
-				transform?.position,
-				transform?.rotation,
-				transform?.scale,
-			),
-		);
-	}
-
-	return parentWorld;
-}
+export { computeParentWorldMatrix } from "../core/transforms.js";
 
 /** Recursively update all IDs in a node tree */
 export function regenerateIds(node: GameObject): GameObject {

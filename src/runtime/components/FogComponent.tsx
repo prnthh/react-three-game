@@ -1,7 +1,7 @@
 import { useThree } from '@react-three/fiber';
 import { useCallback } from 'react';
 import type { Fog, Object3D } from 'three';
-import type { Component, ComponentViewProps } from '../../core/ComponentRegistry';
+import type { Component, ComponentViewProps } from '../../core/ComponentRegistry.js';
 
 export interface FogProperties {
     color: string;

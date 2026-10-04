@@ -1,5 +1,5 @@
-import { NODE_INTERACTION_EVENT_TYPES, type NodeInteractionHandlerName, type NodeInteractionEventType, type NodeInteractionEvent, type NodeInteractionHandlers, type PointerHandler, type PointerEventHandlers } from '../../core/nodeInteractions';
-export * from '../../core/nodeInteractions';
+import { NODE_INTERACTION_EVENT_TYPES, type NodeInteractionHandlerName, type NodeInteractionEventType, type NodeInteractionEvent, type NodeInteractionHandlers, type PointerHandler, type PointerEventHandlers } from '../../core/nodeInteractions.js';
+export * from '../../core/nodeInteractions.js';
 
 export const NODE_INTERACTION_HANDLER_NAMES = Object.keys(
     NODE_INTERACTION_EVENT_TYPES,

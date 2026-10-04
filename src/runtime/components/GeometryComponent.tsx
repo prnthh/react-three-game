@@ -1,8 +1,10 @@
-import { useGameObject, useNode, usePrefab } from "../scene/SceneContext";
-import { notifyObjectChanged } from '../scene/objectChanges';
-import type { GameObject } from "../../core/types";
-import { useInvalidateMeshInstances } from "../rendering/MeshInstanceProvider";
-import { getComponent, getComponentRegistryVersion, resolveComponentProperties, type Component, type ComponentViewProps } from "../../core/ComponentRegistry";
+import { meshProperties, type MeshProperties } from "../rendering/meshProperties.js";
+import { ComponentLookupContext } from '../prefabs/nodePlan.js';
+import { useGameObject, useNode, usePrefab } from "../scene/SceneContext.js";
+import { notifyObjectChanged } from '../scene/objectChanges.js';
+import type { GameObject } from "../../core/types.js";
+import { useInvalidateMeshInstances } from "../rendering/MeshInstanceProvider.js";
+import { getComponent, getComponentRegistryVersion, resolveComponentProperties, type Component, type ComponentViewProps } from "../../core/ComponentRegistry.js";
 
 import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from "react";
 
@@ -62,7 +64,7 @@ export const GEOMETRY_ARGS: Record<string, {
     },
 };
 
-export type GeometryProperties = {
+export type GeometryProperties = MeshProperties & {
     geometryType?: string;
     args?: number[];
 };
@@ -114,12 +116,12 @@ export function useSharedGeometryResource<T extends BufferGeometry>(key: string,
 }
 
 /** Resolve only this node's modifiers, independently of View nesting or component keys. */
-export function getGeometryModifiers(node: GameObject | null) {
+export function getGeometryModifiers(node: GameObject | null, lookup = getComponent) {
     const transform = Object.values(node?.components ?? {}).find(data => data?.type === 'Transform');
     const context = { scale: (transform?.properties?.scale ?? [1, 1, 1]) as [number, number, number] };
     return Object.values(node?.components ?? {}).flatMap(data => {
         if (!data) return [];
-        const definition = getComponent(data.type);
+        const definition = lookup(data.type);
         if (!definition?.modifyGeometry) return [];
         return [{ type: data.type, modify: definition.modifyGeometry,
             properties: resolveComponentProperties(definition, data.properties), context }];
@@ -147,7 +149,8 @@ function GeometryComponentView({ properties, children }: ComponentViewProps<Geom
     const resolvedArgs = args.length ? args : getDefaultArgs(type);
     const { nodeId } = useNode();
     const prefab = usePrefab();
-    const modifiers = getGeometryModifiers(prefab.get(nodeId));
+    const lookup = useContext(ComponentLookupContext);
+    const modifiers = getGeometryModifiers(prefab.get(nodeId), lookup);
     const signature = JSON.stringify([type, resolvedArgs, modifiers.map(({ type, properties, context }) => [type, properties, context]), getComponentRegistryVersion()]);
     const geometry = useSharedGeometryResource(signature, () => {
         const source = createGeometry(type, resolvedArgs);
@@ -171,6 +174,7 @@ const GeometryComponent: Component<GeometryProperties> = {
     slot: 'geometry',
     View: GeometryComponentView,
     properties: {
+        ...meshProperties,
         geometryType: {
             type: 'select',
             default: 'box',

@@ -1,7 +1,8 @@
-import type { ComponentEditorProps } from "../../core/ComponentRegistry";
-import { BooleanField, FieldGroup } from "../ui/Input";
-import { base, ui } from "../ui/styles";
-import { NumericArray, BufferGeometryProperties, DEFAULT_TRIANGLE_POSITIONS, DEFAULT_TRIANGLE_INDICES, DEFAULT_TRIANGLE_UVS, isFiniteNumberArray, normalizeNumberArray } from "../../runtime/components/BufferGeometryComponent";
+import MeshFields from "./MeshFields.js";
+import type { ComponentEditorProps } from "../../core/ComponentRegistry.js";
+import { BooleanField, FieldGroup } from "../ui/Input.js";
+import { base, ui } from "../ui/styles.js";
+import { NumericArray, BufferGeometryProperties, DEFAULT_TRIANGLE_POSITIONS, DEFAULT_TRIANGLE_INDICES, DEFAULT_TRIANGLE_UVS, isFiniteNumberArray, normalizeNumberArray } from "../../runtime/components/BufferGeometryComponent.js";
 
 function toAttributeText(value: unknown, fallback: NumericArray) {
     return JSON.stringify(normalizeNumberArray(value, fallback));
@@ -99,6 +100,7 @@ function BufferGeometryComponentEditor({ properties, update }: ComponentEditorPr
                 onChange={update}
                 fallback={true}
             />
+            <MeshFields properties={properties} update={update} />
         </FieldGroup>
     );
 }

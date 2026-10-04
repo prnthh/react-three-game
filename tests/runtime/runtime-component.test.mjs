@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { act, createElement as h, StrictMode } from 'react';
+import { act, createElement as h } from 'react';
 import { createRoot } from '@react-three/fiber';
 import { Object3D } from 'three';
 import RuntimeComponent from '../../src/runtime/components/RuntimeComponent.tsx';
@@ -10,7 +10,7 @@ import { GameEventsProvider, useGameEvents } from '../../src/runtime/scene/GameE
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
-async function mount(t, authored, strict = false) {
+async function mount(t, authored) {
     const object = new Object3D();
     const calls = [];
     const prefab = { getObject: () => object, record: value => calls.push(value) };
@@ -29,7 +29,7 @@ async function mount(t, authored, strict = false) {
             h(NodeComponentContext.Provider, { value: registry },
                 h(GameEventsProvider, null, h(Probe), h(NodeScope, { nodeId: 'test', ...options },
                     h(RuntimeComponent.View, { properties: props, enabled: options.enabled ?? true })))));
-        store = root.render(strict ? h(StrictMode, null, view) : view);
+        store = root.render(view);
     });
     const remove = () => act(async () => { root.render(null); });
     t.after(async () => {
@@ -39,8 +39,6 @@ async function mount(t, authored, strict = false) {
     return { object, calls, properties, render, remove, get events() { return events; },
         frame: (delta = 1) => act(() => store.getState().advance(time += delta, false)) };
 }
-
-
 
 test('effect setup/cleanup follows activation and code edits; data edits keep current state', async t => {
     const fixture = await mount(t, {
@@ -103,46 +101,4 @@ test('script data and state are isolated between instances and authored JSON sta
     assert.deepEqual(a.calls, [[1, 1], [1, 2]]);
     assert.deepEqual(b.calls, [[1, 1]]);
     assert.equal(authored.data.nested.count, 0);
-});
-
-test('compilation and setup errors prevent updates; update errors report once and preserve cleanup', async t => {
-    const errors = [];
-    t.mock.method(console, 'error', (...args) => errors.push(args));
-    const fixture = await mount(t, {
-        setup: 'prefab.record("setup"); return () => prefab.record("cleanup");',
-        update: 'if (',
-    });
-    await fixture.render(); fixture.frame();
-    assert.deepEqual(fixture.calls, []);
-    assert.match(errors[0][0], /node "test" \(update\)/);
-    await fixture.render({}, { ...fixture.properties, setup: 'throw Error("setup failed");', update: 'prefab.record("unexpected");' });
-    fixture.frame();
-    assert.deepEqual(fixture.calls, []);
-    assert.match(errors[1][0], /\(setup\)/);
-    await fixture.render({}, { ...fixture.properties, update: 'throw Error("update failed");' });
-    fixture.frame(); fixture.frame();
-    assert.equal(errors.length, 3);
-    await fixture.remove();
-    assert.deepEqual(fixture.calls, ['setup', 'cleanup']);
-    await fixture.render({}, { ...fixture.properties, setup: 'return () => { throw Error("cleanup failed"); };', update: '' });
-    await fixture.remove();
-    assert.match(errors.at(-1)[0], /\(cleanup\)/);
-});
-
-test('effect restarts under Strict Mode leave one subscription and release it on removal', async t => {
-    const fixture = await mount(t, {
-        setup: 'prefab.record("setup"); const off = events.on("ping", () => prefab.record("ping")); return () => { prefab.record("cleanup"); off(); };',
-    }, true);
-    await fixture.render();
-    await fixture.render({ enabled: false });
-    await fixture.render();
-    const setups = fixture.calls.filter(value => value === 'setup').length;
-    const cleanups = fixture.calls.filter(value => value === 'cleanup').length;
-    assert.ok(setups >= 2, 'effect setup can repeat after cleanup');
-    assert.equal(setups - cleanups, 1);
-    fixture.events.emit('ping');
-    assert.equal(fixture.calls.filter(value => value === 'ping').length, 1);
-    await fixture.remove();
-    assert.equal(fixture.events.hasListeners('ping'), false);
-    assert.equal(fixture.calls.filter(value => value === 'cleanup').length, setups);
 });

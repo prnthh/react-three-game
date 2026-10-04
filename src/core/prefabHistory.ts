@@ -1,5 +1,5 @@
-import type { PrefabState } from './prefab';
-import type { PrefabStoreApi } from './prefabStore';
+import type { PrefabState } from './prefab.js';
+import type { PrefabStoreApi } from './prefabStore.js';
 
 /** Capture store edits, grouping synchronous actions into one undo step. */
 export function createPrefabHistory(store: PrefabStoreApi, limit = 50) {

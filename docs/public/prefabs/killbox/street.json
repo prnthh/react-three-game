@@ -45,15 +45,10 @@
               ]
             }
           },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
           "geometry": {
             "type": "Geometry",
             "properties": {
+              "castShadow": false,
               "args": [
                 240,
                 0.25,
@@ -102,16 +97,11 @@
                 "type": "Transform",
                 "properties": {}
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": false
-                }
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
+                  "castShadow": false,
+                  "receiveShadow": false,
                   "geometryType": "sphere",
                   "args": [
                     300,
@@ -234,7 +224,11 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [-15, 0, -7]
+              "position": [
+                -15,
+                0,
+                -7
+              ]
             }
           },
           "prefab": {
@@ -252,7 +246,11 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [-8, 0, -17]
+              "position": [
+                -8,
+                0,
+                -17
+              ]
             }
           },
           "prefab": {
@@ -270,7 +268,11 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [2, 0, -25]
+              "position": [
+                2,
+                0,
+                -25
+              ]
             }
           },
           "prefab": {
@@ -288,7 +290,11 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [12, 0, -14]
+              "position": [
+                12,
+                0,
+                -14
+              ]
             }
           },
           "prefab": {
@@ -306,7 +312,11 @@
           "transform": {
             "type": "Transform",
             "properties": {
-              "position": [18, 0, -3]
+              "position": [
+                18,
+                0,
+                -3
+              ]
             }
           },
           "prefab": {

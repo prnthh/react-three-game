@@ -1,6 +1,6 @@
-import { denormalizePrefab, scopePrefabMaterials, type PrefabState } from '../core/prefab';
-import { encodePrefabSource } from '../runtime/prefabs/prefabSource';
-import { findComponentEntry, type GameObject, type Prefab } from '../core/types';
+import { denormalizePrefab, scopePrefabMaterials, type PrefabState } from '../core/prefab.js';
+import { encodePrefabSource } from '../runtime/prefabs/prefabSource.js';
+import { findComponentEntry, type GameObject, type Prefab } from '../core/types.js';
 
 /** Extract in placement-local coordinates; preserve all shared materials for custom components too. */
 export function extractPrefab(state: PrefabState, id: string): Prefab {

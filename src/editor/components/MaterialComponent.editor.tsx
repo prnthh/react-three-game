@@ -1,14 +1,14 @@
 import { useState } from 'react';
-import type { ComponentEditorProps } from '../../core/ComponentRegistry';
-import { FieldRenderer, Label, NumberInput } from '../ui/Input';
-import type { FieldDefinition } from '../ui/Input';
-import { useEditorRef } from '../EditorContext';
-import { usePrefabStore } from "../../runtime/prefabs/PrefabStoreContext";
-import { createDefaultMaterial, DEFAULT_MATERIAL_ID } from '../../core/prefab';
-import { base, colors } from '../ui/styles';
-import type { MaterialComponentProperties, PrefabMaterial } from '../../core/types';
-import { TexturePicker } from '../assets/AssetBrowser';
-import { withBasePath } from "../../runtime/assets/assetPaths";
+import type { ComponentEditorProps } from '../../core/ComponentRegistry.js';
+import { FieldRenderer, Label, NumberInput } from '../ui/Input.js';
+import type { FieldDefinition } from '../ui/Input.js';
+import { useEditorRef } from '../EditorContext.js';
+import { usePrefabStore } from "../../runtime/prefabs/PrefabStoreContext.js";
+import { createDefaultMaterial, DEFAULT_MATERIAL_ID } from '../../core/prefab.js';
+import { base, colors } from '../ui/styles.js';
+import type { MaterialComponentProperties, PrefabMaterial } from '../../core/types.js';
+import { TexturePicker } from '../assets/AssetBrowser.js';
+import { withBasePath } from "../../runtime/assets/assetPaths.js";
 
 function Vector2Editor({
     label,

@@ -130,12 +130,13 @@ steps its own physics world from R3F frames.
 ## Change a component
 
 Copy [Rotator](app/demo/customcomponent/components/RotatorComponent.tsx) for a behavior, or
-[Mesh](../src/runtime/components/MeshComponent.tsx) for an object view.
+[Model](../src/runtime/components/ModelComponent.tsx) for an object view. Geometry and BufferGeometry supply an implicit mesh with rendering flags on the geometry component; no Mesh component is needed.
 Register it as in the [custom component demo](app/demo/customcomponent/page.tsx).
 
 - Put editable fields/defaults in the definition; views receive resolved values.
 - Return `children` so composition continues through the view.
-- Object, geometry and material views declare their `slot` and implement R3F attachments.
+- Object, geometry and material views declare their `slot` and implement R3F attachments. Geometry views receive an implicit mesh; object views create their own render object. Each visual component must work without a separate base Mesh component.
+- Share mesh property definitions and editor fields as code helpers. Geometry, BufferGeometry, Model and AnimatedModel use the collapsed `Mesh options` inspector section; expose only options the renderer supports.
 - Keep custom inspector imports in `.editor.tsx` modules.
 
 A component may omit `View` entirely when it only stores authored data. For a
@@ -238,15 +239,23 @@ animation or physics. Agent batches validate before committing one undo step.
 | Hierarchy or component mutation | [prefabStore](../src/core/prefabStore.ts) |
 | Undo grouping | [prefabHistory](../src/core/prefabHistory.ts) |
 | Agent query or browser exposure | [sceneAgent](../src/editor/agent/sceneAgent.ts), [sceneAgentBridge](../src/editor/agent/sceneAgentBridge.ts) |
-| Batch operation | [sceneCommands](../src/editor/agent/sceneCommands.ts), [sceneCommandSchema](../src/editor/agent/sceneCommandSchema.ts) |
-| Agent field discovery | [componentSchemas](../src/editor/agent/componentSchemas.ts) |
+| Batch operation | [sceneCommands](../src/core/sceneCommands.ts), [sceneCommandSchema](../src/core/sceneCommandSchema.ts) |
+| Agent field discovery | [componentSchemas](../src/core/componentSchemas.ts) |
 | Editor integration | [PrefabEditor](../src/editor/PrefabEditor.tsx) |
+
+Command schemas supply the allowed fields used by both core validation and editor
+convenience methods. Keep scene-specific checks in the command evaluator. It owns
+input copying; synchronous adapters should pass data through without cloning it
+again. Authored prefab properties are data, copied with `structuredClone`.
 
 ## Keep package boundaries
 
 | Entry | Contains |
 | --- | --- |
-| `/core` | Definitions and document helpers |
+| `/core` | Definitions, document store, command evaluation, schemas, and model serialization |
+| `/node` and `rtg` CLI | Node asset loading and scene conversion; CLI maps command files to core |
+| `/browser` | Browser downloads and audio services |
+| `/headless` | R3F scene construction without a browser or GPU |
 | `/viewer` and package root | R3F views and rendering resources |
 | `/editor` | Visual editor, history and agent API |
 | `/plugins/crashcat` | Optional physics adapter |
@@ -273,3 +282,14 @@ keep authoring out of the viewer and plugins out of core entrypoints.
 
 For resource changes, check startup, activation and unloading in a WebGPU browser.
 Run `npm test`, `npm run build` and `npm --prefix docs run build`.
+
+## Module imports and builds
+
+Library source uses explicit `.js` relative imports, including `/index.js` for
+barrels. TypeScript resolves these to their `.ts`/`.tsx` implementations and emits
+Node-compatible imports and declarations directly; the package build is just
+`tsc`. Keep `bundler` type resolution for peer declarations that do not support
+NodeNext. The docs webpack configuration resolves these paths to source files.
+
+Run `npm run test:package` to check the packed CLI, native Node imports, and a
+NodeNext TypeScript consumer. No import-rewriting build step is required.

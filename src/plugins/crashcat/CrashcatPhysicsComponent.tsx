@@ -4,15 +4,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useStore } from "zustand";
 
-import { type Component, type ComponentViewProps } from "../../core/ComponentRegistry";
+import { type Component, type ComponentViewProps } from "../../core/ComponentRegistry.js";
 
-import { useModelAsset } from "../../runtime/assets/AssetRuntime";
+import { useModelAsset } from "../../runtime/assets/AssetRuntime.js";
 
-import { createNodeComponentType, useGameObject, useNode, usePrefab, useRegisterNodeComponent } from "../../runtime/scene/SceneContext";
+import { createNodeComponentType, useGameObject, useNode, usePrefab, useRegisterNodeComponent } from "../../runtime/scene/SceneContext.js";
 
-import { usePrefabStoreApi } from "../../runtime/prefabs/PrefabStoreContext";
+import { usePrefabStoreApi } from "../../runtime/prefabs/PrefabStoreContext.js";
 
-import { withBasePath } from "../../runtime/assets/assetPaths";
+import { withBasePath } from "../../runtime/assets/assetPaths.js";
 
 import { MotionQuality, MotionType, rigidBody, type RigidBody, type World } from "crashcat";
 
@@ -20,10 +20,10 @@ import { Quaternion, Vector3 } from "three";
 
 import type { Object3D } from "three";
 
-import { useCrashcat, type CrashcatApi, type CrashcatBodySync } from "./CrashcatRuntime";
+import { useCrashcat, type CrashcatApi, type CrashcatBodySync } from "./CrashcatRuntime.js";
 
-import { createShapeForObject } from "./collisionShapes";
-import { moveKinematicBody } from "./kinematic";
+import { createShapeForObject } from "./collisionShapes.js";
+import { moveKinematicBody } from "./kinematic.js";
 
 export const RIGID_BODY_COMPONENT = createNodeComponentType<RigidBody>("RigidBody");
 

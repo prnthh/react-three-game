@@ -1,9 +1,9 @@
-import type { ComponentEditorProps } from '../../core/ComponentRegistry';
-import { BooleanField, FieldGroup, FieldRenderer, ListEditor, NumberField, SelectField, StringField } from '../ui/Input';
-import { colors, ui } from '../ui/styles';
-import { useEditorRef } from '../EditorContext';
-import { SoundPicker } from '../assets/AssetBrowser';
-import { SoundProperties, CLIP_MODE_OPTIONS } from "../../runtime/components/SoundComponent";
+import type { ComponentEditorProps } from '../../core/ComponentRegistry.js';
+import { BooleanField, FieldGroup, FieldRenderer, ListEditor, NumberField, SelectField, StringField } from '../ui/Input.js';
+import { colors, ui } from '../ui/styles.js';
+import { useEditorRef } from '../EditorContext.js';
+import { SoundPicker } from '../assets/AssetBrowser.js';
+import { SoundProperties, CLIP_MODE_OPTIONS } from "../../runtime/components/SoundComponent.js";
 
 function SoundComponentEditor({ properties, update }: ComponentEditorProps<SoundProperties>) {
     const { basePath } = useEditorRef();

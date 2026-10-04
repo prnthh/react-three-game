@@ -1,15 +1,15 @@
-import { analyzeSceneAuthoring } from './sceneAuthoringAdvice';
-import { Euler, Matrix4, Quaternion, Vector3 } from 'three';
-import { sceneAgentHelp } from './sceneAgentHelp';
-import { getComponent, resolveComponentProperties } from '../../core/ComponentRegistry';
-import { describeSceneComponents } from './componentSchemas';
-import { sceneCommandsSchema } from './sceneCommandSchema';
-import { evaluateSceneCommandState, sceneCommandHelp, type SceneCommand, type SceneCommandBatch } from './sceneCommands';
-import { collectSubtreeIds, denormalizePrefab, type PrefabState } from '../../core/prefab';
-import type { PrefabStoreApi } from "../../core/prefabStore";
-import { findComponentEntry, type ComponentData, type Prefab } from '../../core/types';
-import { composeTransform } from "../../core/transforms";
-import { extractPrefab, packPrefabNode, unpackPrefabNode } from '../prefabPacking';
+import { analyzeSceneAuthoring } from './sceneAuthoringAdvice.js';
+import { Euler, Quaternion, Vector3 } from 'three';
+import { sceneAgentHelp } from './sceneAgentHelp.js';
+import { getComponent, resolveComponentProperties } from '../../core/ComponentRegistry.js';
+import { describeSceneComponents } from '../../core/componentSchemas.js';
+import { sceneCommandsSchema, sceneCommandFields } from '../../core/sceneCommandSchema.js';
+import { evaluateSceneCommandState, sceneCommandHelp, type SceneCommand, type SceneCommandBatch } from '../../core/sceneCommands.js';
+import { collectSubtreeIds, denormalizePrefab, type PrefabState } from '../../core/prefab.js';
+import type { PrefabStoreApi } from "../../core/prefabStore.js";
+import { findComponentEntry, type ComponentData, type Prefab } from '../../core/types.js';
+import { composeTransform, computeParentWorldMatrix } from "../../core/transforms.js";
+import { extractPrefab, packPrefabNode, unpackPrefabNode } from '../prefabPacking.js';
 
 export interface SceneView { position: [number, number, number]; target: [number, number, number] }
 export interface SceneCaptureOptions {
@@ -77,13 +77,7 @@ function documentChanged(a: PrefabState, b: PrefabState) {
 }
 function nodeTransform(state: PrefabState, id: string) {
     const local = findComponentEntry(state.nodesById[id], 'Transform')?.[1].properties;
-    const chain: string[] = [];
-    for (let current: string | null = id; current; current = state.parentIdById[current]) chain.unshift(current);
-    const world = new Matrix4();
-    chain.forEach(nodeId => {
-        const properties = findComponentEntry(state.nodesById[nodeId], 'Transform')?.[1].properties;
-        world.multiply(composeTransform(properties?.position, properties?.rotation, properties?.scale));
-    });
+    const world = computeParentWorldMatrix(state, id).multiply(composeTransform(local?.position, local?.rotation, local?.scale));
     const position = new Vector3(), quaternion = new Quaternion(), scale = new Vector3();
     world.decompose(position, quaternion, scale);
     const rotation = new Euler().setFromQuaternion(quaternion);
@@ -141,12 +135,12 @@ export function createSceneAgent(store: PrefabStoreApi, getHost: () => SceneAgen
             mimeType: kind === 'exportGLB' ? 'model/gltf-binary' : 'image/png',
             revision, currentRevision: snapshot().revision };
     };
-    const applyOne = <Op extends SceneCommand['op']>(op: Op, input: SceneAgentCommandInput<Op>, allowed: string[]) => {
-        options(input, ['expectedRevision', ...allowed]);
+    const applyOne = <Op extends SceneCommand['op']>(op: Op, input: SceneAgentCommandInput<Op>) => {
+        options(input, ['expectedRevision', ...sceneCommandFields[op]]);
         const { expectedRevision, ...fields } = input;
         return scene.batch({
             expectedRevision: expectedRevision ?? snapshot().revision,
-            commands: [{ op, ...structuredClone(fields) } as unknown as SceneCommand],
+            commands: [{ op, ...fields } as unknown as SceneCommand],
         });
     };
     const scene = {
@@ -259,7 +253,7 @@ export function createSceneAgent(store: PrefabStoreApi, getHost: () => SceneAgen
             const definitions = new Map<string, { url: string; id: string }>();
             const reused: { id: string; sourceId: string }[] = [];
             // Ignore display names and document identities only. Custom component property values remain exact.
-            const shape = (node: import('../../core/types').GameObject): unknown => ({
+            const shape = (node: import('../../core/types.js').GameObject): unknown => ({
                 components: node.components ?? {}, hidden: node.hidden ?? false, disabled: node.disabled ?? false, locked: node.locked ?? false,
                 children: (node.children ?? []).map(shape),
             });
@@ -331,33 +325,33 @@ export function createSceneAgent(store: PrefabStoreApi, getHost: () => SceneAgen
             }
             return { ...evaluated.result, advisories: analyzeSceneAuthoring(evaluated.state).advisories, changed, revision: snapshot().revision };
         },
-        create(input: SceneAgentCommandInput<'add'>) { return applyOne('add', input, ['parentId', 'node']); },
+        create(input: SceneAgentCommandInput<'add'>) { return applyOne('add', input); },
         update(input: UpdateSceneNode) {
             options(input, ['id', 'expectedRevision', 'patch', 'transform', 'components']);
             if (typeof input.id !== 'string' || !input.id) throw new Error('id must be a nonempty string.');
             const commands: SceneCommand[] = [];
-            if (input.patch !== undefined) commands.push({ op: 'update', id: input.id, patch: structuredClone(input.patch) });
-            if (input.transform !== undefined) commands.push({ op: 'transform', id: input.id, ...structuredClone(input.transform) });
+            if (input.patch !== undefined) commands.push({ op: 'update', id: input.id, patch: input.patch });
+            if (input.transform !== undefined) commands.push({ op: 'transform', id: input.id, ...input.transform });
             if (input.components !== undefined) {
                 if (!input.components || typeof input.components !== 'object' || Array.isArray(input.components)) throw new Error('components must be an object keyed by component instance key.');
                 for (const [key, value] of Object.entries(input.components)) {
-                    if (value === null || Object.hasOwn(value, 'type')) commands.push({ op: 'component', id: input.id, key, component: structuredClone(value as ComponentData | null) });
-                    else commands.push({ op: 'patchComponent', id: input.id, key, ...structuredClone(value) });
+                    if (value === null || Object.hasOwn(value, 'type')) commands.push({ op: 'component', id: input.id, key, component: value as ComponentData | null });
+                    else commands.push({ op: 'patchComponent', id: input.id, key, ...value });
                 }
             }
             if (!commands.length) throw new Error('Provide patch, transform or components.');
             return scene.batch({ expectedRevision: input.expectedRevision ?? snapshot().revision, commands });
         },
-        remove(input: SceneAgentCommandInput<'remove'>) { return applyOne('remove', input, ['id']); },
-        replace(input: SceneAgentCommandInput<'replaceNode'>) { return applyOne('replaceNode', input, ['id', 'node']); },
-        replaceAll(input: SceneAgentCommandInput<'replace'>) { return applyOne('replace', input, ['prefab']); },
-        move(input: SceneAgentCommandInput<'move'>) { return applyOne('move', input, ['id', 'parentId']); },
-        transform(input: SceneAgentCommandInput<'transform'>) { return applyOne('transform', input, ['id', 'space', 'position', 'rotation', 'scale']); },
-        setComponent(input: SceneAgentCommandInput<'component'>) { return applyOne('component', input, ['id', 'key', 'component']); },
-        patchComponent(input: SceneAgentCommandInput<'patchComponent'>) { return applyOne('patchComponent', input, ['id', 'key', 'properties', 'unset']); },
-        setMaterial(input: SceneAgentCommandInput<'material'>) { return applyOne('material', input, ['id', 'material']); },
-        updateMaterial(input: SceneAgentCommandInput<'patchMaterial'>) { return applyOne('patchMaterial', input, ['id', 'patch']); },
-        duplicate(input: SceneAgentCommandInput<'duplicate'>) { return applyOne('duplicate', input, ['id', 'newId', 'parentId']); },
+        remove(input: SceneAgentCommandInput<'remove'>) { return applyOne('remove', input); },
+        replace(input: SceneAgentCommandInput<'replaceNode'>) { return applyOne('replaceNode', input); },
+        replaceAll(input: SceneAgentCommandInput<'replace'>) { return applyOne('replace', input); },
+        move(input: SceneAgentCommandInput<'move'>) { return applyOne('move', input); },
+        transform(input: SceneAgentCommandInput<'transform'>) { return applyOne('transform', input); },
+        setComponent(input: SceneAgentCommandInput<'component'>) { return applyOne('component', input); },
+        patchComponent(input: SceneAgentCommandInput<'patchComponent'>) { return applyOne('patchComponent', input); },
+        setMaterial(input: SceneAgentCommandInput<'material'>) { return applyOne('material', input); },
+        updateMaterial(input: SceneAgentCommandInput<'patchMaterial'>) { return applyOne('patchMaterial', input); },
+        duplicate(input: SceneAgentCommandInput<'duplicate'>) { return applyOne('duplicate', input); },
         async setMode(input: { mode: 'edit' | 'play' }) {
             options(input, ['mode']); snapshot();
             if (input.mode !== 'edit' && input.mode !== 'play') throw new Error('mode must be edit or play.');

@@ -1,36 +1,36 @@
-import { downloadBlob, downloadURL } from '../browser';
-import { isExternalPath, withBasePath } from '../runtime/assets/assetPaths';
-import { SceneRuntime } from "../runtime/SceneRuntime";
+import { downloadBlob, downloadURL } from '../browser.js';
+import { isExternalPath, withBasePath } from '../runtime/assets/assetPaths.js';
+import { SceneRuntime } from "../runtime/SceneRuntime.js";
 import { OrbitControls, TransformControls, useHelper } from "@react-three/drei";
 import { createContext, useContext, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, forwardRef, useImperativeHandle } from "react";
 import { Box3, BoxHelper, Mesh, MeshBasicMaterial, PerspectiveCamera, Plane, Vector2, Vector3 } from "three";
 import type { Color, Intersection, Material, Object3D, Sprite, Texture } from "three";
 import { useFrame, useThree, type RootState } from "@react-three/fiber";
-import { findComponentEntry } from "../core/types";
-import type { GameObject, Prefab } from "../core/types";
-import GameCanvas from "../runtime/GameCanvas";
-import PrefabRoot from "../runtime/prefabs/PrefabRoot";
-import { AssetRuntimeProvider } from "../runtime/assets/AssetRuntime";
-import type { AssetRuntime } from "../runtime/assets/AssetRuntime";
-import { createPrefabRegistry, PrefabEditorMode } from "../runtime/scene/SceneContext";
-import type { PrefabApi, Scene } from "../runtime/scene/SceneContext";
-import { createDefaultMaterial, createImageNode, createModelNode, denormalizePrefab } from "../core/prefab";
-import EditorUI from "./EditorUI";
-import { createSceneAgent, type SceneAgentHost, type SceneCaptureOptions } from "./agent/sceneAgent";
-import { exposeSceneAgent } from "./agent/sceneAgentBridge";
-import { base, toolbar } from "./ui/styles";
-import { exportGLB as exportGLBFile, exportGLBData, focusCameraOnObject } from "./documentIO";
-import type { ExportGLBOptions } from "./documentIO";
-import { loadDroppedAssets } from "./assets";
-import { resolveManifestAssetPath } from "../runtime/assets/assetLoaders";
-import { createPrefabStore } from "../core/prefabStore";
-import { PrefabStoreProvider } from "../runtime/prefabs/PrefabStoreContext";
-import { createPrefabHistory } from "../core/prefabHistory";
-import { createPrefabApi } from "../runtime/prefabs/prefabApi";
-import { GameEventsProvider } from "../runtime/scene/GameEvents";
+import { findComponentEntry } from "../core/types.js";
+import type { GameObject, Prefab } from "../core/types.js";
+import GameCanvas from "../runtime/GameCanvas.js";
+import PrefabRoot from "../runtime/prefabs/PrefabRoot.js";
+import { AssetRuntimeProvider } from "../runtime/assets/AssetRuntime.js";
+import type { AssetRuntime } from "../runtime/assets/AssetRuntime.js";
+import { createPrefabRegistry, PrefabEditorMode } from "../runtime/scene/SceneContext.js";
+import type { PrefabApi, Scene } from "../runtime/scene/SceneContext.js";
+import { createDefaultMaterial, createImageNode, createModelNode, denormalizePrefab } from "../core/prefab.js";
+import EditorUI from "./EditorUI.js";
+import { createSceneAgent, type SceneAgentHost, type SceneCaptureOptions } from "./agent/sceneAgent.js";
+import { exposeSceneAgent } from "./agent/sceneAgentBridge.js";
+import { base, toolbar } from "./ui/styles.js";
+import { exportGLB as exportGLBFile, exportGLBData, focusCameraOnObject } from "./documentIO.js";
+import type { ExportGLBOptions } from "./documentIO.js";
+import { loadDroppedAssets } from "./assets/index.js";
+import { resolveManifestAssetPath } from "../runtime/assets/assetLoaders.js";
+import { createPrefabStore } from "../core/prefabStore.js";
+import { PrefabStoreProvider } from "../runtime/prefabs/PrefabStoreContext.js";
+import { createPrefabHistory } from "../core/prefabHistory.js";
+import { createPrefabApi } from "../runtime/prefabs/prefabApi.js";
+import { GameEventsProvider } from "../runtime/scene/GameEvents.js";
 import type { OrbitControls as OrbitControlsImpl, TransformControls as TransformControlsImpl } from 'three-stdlib';
-import type { DecomposeModelOptions, DecomposedPrefabNodes } from "./modelPrefab";
-import { EditorContext, EditorRefContext, type PrefabEditorRef } from "./EditorContext";
+import type { DecomposeModelOptions, DecomposedPrefabNodes } from "./modelPrefab.js";
+import { EditorContext, EditorRefContext, type PrefabEditorRef } from "./EditorContext.js";
 
 type Vec3 = [number, number, number];
 const DROP_POINTER = new Vector2();
@@ -115,7 +115,7 @@ function isObjectAttachedToRoot(root: Object3D | null | undefined, object: Objec
     return false;
 }
 
-export { isExternalPath as isAbsoluteAssetPath } from "../runtime/assets/assetPaths";
+export { isExternalPath as isAbsoluteAssetPath } from "../runtime/assets/assetPaths.js";
 
 export function resolvePrefabAssetPath(basePath: string, file: string) {
     return withBasePath(basePath, file);
@@ -213,8 +213,8 @@ function RegisteredObject({ id, prefab, children }: { id: string; prefab: Prefab
     return object ? children(object) : null;
 }
 
-export type { EditorContextType, PrefabEditorRef } from "./EditorContext";
-export { EditorContext, EditorRefContext, useEditorContext, useEditorRef } from "./EditorContext";
+export type { EditorContextType, PrefabEditorRef } from "./EditorContext.js";
+export { EditorContext, EditorRefContext, useEditorContext, useEditorRef } from "./EditorContext.js";
 
 export interface PrefabEditorProps {
     basePath?: string;

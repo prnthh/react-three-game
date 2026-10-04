@@ -1,20 +1,22 @@
-import { AssetBoundary } from '../assets/AssetBoundary';
-import { usePrefabStoreApi } from '../prefabs/PrefabStoreContext';
-import { useEffect, useMemo, useRef } from 'react';
+import { meshProperties, type MeshProperties } from "../rendering/meshProperties.js";
+import { useModelMeshSettings } from "../rendering/useModelMeshSettings.js";
+import { AssetBoundary } from '../assets/AssetBoundary.js';
+import { usePrefabStoreApi } from '../prefabs/PrefabStoreContext.js';
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 
 import { Matrix4, Mesh, SkinnedMesh, type BufferGeometry, type Material, type Object3D } from 'three';
 
-import type { Component, ComponentViewProps } from '../../core/ComponentRegistry';
+import type { Component, ComponentViewProps } from '../../core/ComponentRegistry.js';
 
-import { useModelAsset } from '../assets/AssetRuntime';
+import { useModelAsset } from '../assets/AssetRuntime.js';
 
-import { useGameObject, useNode } from '../scene/SceneContext';
+import { useGameObject, useNode } from '../scene/SceneContext.js';
 
-import { withBasePath } from "../assets/assetPaths";
+import { withBasePath } from "../assets/assetPaths.js";
 
-import { usePrefab } from '../scene/SceneContext';
+import { usePrefab } from '../scene/SceneContext.js';
 
-import { useMeshInstanceRegistration } from '../rendering/MeshInstanceProvider';
+import { useMeshInstanceRegistration, useInvalidateMeshInstances } from '../rendering/MeshInstanceProvider.js';
 
 export type RepeatAxisConfig = {
     axis: 'x' | 'y' | 'z';
@@ -73,34 +75,21 @@ function canInstance(model: Object3D) {
     return hasMesh && !hasSkinnedMesh;
 }
 
-export type ModelProperties = {
+export type ModelProperties = MeshProperties & {
     filename?: string;
-    emitClickEvent?: boolean;
-    clickEventName?: string;
     repeat?: boolean;
     repeatAxes?: RepeatAxisConfig[];
 };
 
-function ClonedModel({ source }: { source: Object3D }) {
-    const model = useMemo(() => {
-        const clone = source.clone();
-        clone.traverse(object => {
-            if (object instanceof Mesh) {
-                object.castShadow = true;
-                object.receiveShadow = true;
-            }
-        });
-        return clone;
-    }, [source]);
-
+function ClonedModel({ source, properties }: { source: Object3D; properties: ModelProperties }) {
+    const model = useMemo(() => source.clone(), [source]);
+    useModelMeshSettings(model, properties);
     return <primitive object={model} />;
 }
 
 type RepeatedModelPart = {
     geometry: BufferGeometry;
     material: Material | Material[];
-    castShadow: boolean;
-    receiveShadow: boolean;
 };
 
 function RepeatedMesh({
@@ -108,29 +97,34 @@ function RepeatedMesh({
     part,
     position,
     instanced,
+    properties,
 }: {
     id: string;
     part: RepeatedModelPart;
     position: [number, number, number];
     instanced: boolean;
+    properties: ModelProperties;
 }) {
     const mesh = useRef<Mesh>(null);
     useMeshInstanceRegistration(id, mesh, instanced);
+    const invalidate = useInvalidateMeshInstances();
+    useLayoutEffect(() => invalidate(), [invalidate, properties.castShadow, properties.receiveShadow, properties.frustumCulled]);
     return <mesh
         ref={mesh}
         position={position}
         geometry={part.geometry}
         material={part.material}
-        castShadow={part.castShadow}
-        receiveShadow={part.receiveShadow}
-        frustumCulled={false}
+        castShadow={properties.castShadow !== false}
+        receiveShadow={properties.receiveShadow !== false}
+        frustumCulled={properties.frustumCulled !== false}
     />;
 }
 
-function RepeatedModel({ source, positions, interactive }: {
+function RepeatedModel({ source, positions, interactive, properties }: {
     source: Object3D;
     positions: [number, number, number][];
     interactive: boolean;
+    properties: ModelProperties;
 }) {
     const { isSelected } = useNode();
     const { id: runtimeNodeId } = useGameObject();
@@ -146,8 +140,6 @@ function RepeatedModel({ source, positions, interactive }: {
             result.push({
                 geometry,
                 material: object.material,
-                castShadow: true,
-                receiveShadow: true,
             });
         });
         return result;
@@ -157,7 +149,7 @@ function RepeatedModel({ source, positions, interactive }: {
         parts.forEach(part => part.geometry.dispose());
     }, [parts]);
 
-    const instanced = !interactive && !isSelected;
+    const instanced = properties.instanced !== false && properties.visible !== false && !interactive && !isSelected;
     return <group>
         {positions.map((position, instanceIndex) => parts.map((part, partIndex) => (
             <RepeatedMesh
@@ -166,6 +158,7 @@ function RepeatedModel({ source, positions, interactive }: {
                 part={part}
                 position={position}
                 instanced={instanced}
+                properties={properties}
             />
         )))}
     </group>;
@@ -179,9 +172,9 @@ function LoadedModel({ properties }: ComponentViewProps<ModelProperties>) {
     const sourceModel = useModelAsset(path);
     const positions = useMemo(() => getRepeatPositions(properties), [properties.repeat, properties.repeatAxes]);
     const model = sourceModel && (positions.length > 1 && canInstance(sourceModel)
-        ? <RepeatedModel source={sourceModel} positions={positions} interactive={interactive} />
-        : <ClonedModel source={sourceModel} />);
-    return model;
+        ? <RepeatedModel source={sourceModel} positions={positions} interactive={interactive} properties={properties} />
+        : <ClonedModel source={sourceModel} properties={properties} />);
+    return <group visible={properties.visible !== false}>{model}</group>;
 }
 
 function ModelComponentView(props: ComponentViewProps<ModelProperties>) {
@@ -196,9 +189,9 @@ const ModelComponent: Component<ModelProperties> = {
     slot: 'object',
     View: ModelComponentView,
     properties: {
+        ...meshProperties,
+        instanced: { ...meshProperties.instanced, description: "Allow batching of compatible repeated model parts. Animated and skinned models remain separate." },
         filename: { type: 'string', default: '', description: 'Model asset path, relative to the prefab basePath, or an absolute URL.' },
-        emitClickEvent: { type: 'boolean', default: false },
-        clickEventName: { type: 'string', default: '' },
         repeat: { type: 'boolean', default: false },
         repeatAxes: {
             type: 'array', default: [{ axis: 'x', count: 1, offset: 1 }],

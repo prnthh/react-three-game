@@ -1,10 +1,10 @@
-import type { Component } from '../../core/ComponentRegistry';
-import { resolveComponentProperties } from '../../core/ComponentRegistry';
-import type { PrefabState } from '../../core/prefab';
-import { withBasePath } from "../assets/assetPaths";
-import { describePrefabSource } from './prefabSource';
+import type { Component } from '../../core/ComponentRegistry.js';
+import { resolveComponentProperties } from '../../core/ComponentRegistry.js';
+import type { PrefabState } from '../../core/prefab.js';
+import { withBasePath } from "../assets/assetPaths.js";
+import { describePrefabSource } from './prefabSource.js';
 
-import type { AssetDependency } from '../../core/dependencies';
+import type { AssetDependency } from '../../core/dependencies.js';
 
 export interface PreparedPrefab {
     readonly document: PrefabState;

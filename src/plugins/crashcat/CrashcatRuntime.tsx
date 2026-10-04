@@ -17,13 +17,13 @@ import {
     type World,
     updateWorld,
 } from "crashcat";
-import { getPhysicsScene } from "./physicsScene";
+import { getPhysicsScene } from "./physicsScene.js";
 import { debugRenderer } from "crashcat/three";
 import { useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { Object3D } from "three";
-import { useGameEvents, type GameEvents } from "../../runtime/scene/GameEvents";
-import type { ContactEventPayload } from "../../runtime/scene/GameEvents";
-import { PrefabEditorMode, SceneContext } from "../../runtime/scene/SceneContext";
+import { useGameEvents, type GameEvents } from "../../runtime/scene/GameEvents.js";
+import type { ContactEventPayload } from "../../runtime/scene/GameEvents.js";
+import { PrefabEditorMode, SceneContext } from "../../runtime/scene/SceneContext.js";
 
 const SLEEP_TIME_BEFORE_REST = 0.1;
 const SLEEP_POINT_VELOCITY_THRESHOLD = 0.06;

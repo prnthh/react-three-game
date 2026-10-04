@@ -1,12 +1,12 @@
 import { createContext, useContext, type ReactNode } from 'react';
-import { AssetRuntimeProvider } from './assets/AssetRuntime';
-import { GeometryRuntimeProvider } from './components/GeometryComponent';
-import { MaterialPoolProvider } from './components/MaterialComponent';
-import { SceneComponentsProvider } from './scene/SceneContext';
-import { SceneGraphRegistration } from './scene/SceneGraphRegistration';
-import { DEFAULT_SPATIAL_CELL_SIZE } from './spatial/SpatialGrid';
-import { MeshInstanceProvider, SpatialCellSizeContext } from './rendering/MeshInstanceProvider';
-import { GameEventsProvider } from './scene/GameEvents';
+import { AssetRuntimeProvider } from './assets/AssetRuntime.js';
+import { GeometryRuntimeProvider } from './components/GeometryComponent.js';
+import { MaterialPoolProvider } from './components/MaterialComponent.js';
+import { SceneComponentsProvider } from './scene/SceneContext.js';
+import { SceneGraphRegistration } from './scene/SceneGraphRegistration.js';
+import { DEFAULT_SPATIAL_CELL_SIZE } from './spatial/SpatialGrid.js';
+import { MeshInstanceProvider, SpatialCellSizeContext } from './rendering/MeshInstanceProvider.js';
+import { GameEventsProvider } from './scene/GameEvents.js';
 
 const RuntimeContext = createContext(false);
 

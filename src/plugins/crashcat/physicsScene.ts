@@ -1,5 +1,5 @@
 import type { Scene } from "three";
-import type { CrashcatApi } from "./CrashcatRuntime";
+import type { CrashcatApi } from "./CrashcatRuntime.js";
 
 function createPhysicsScene() {
     let api: CrashcatApi | null = null;

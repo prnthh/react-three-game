@@ -6,9 +6,9 @@ import { useRef } from 'react';
 
 import { CameraHelper, MathUtils, type OrthographicCamera, type PerspectiveCamera } from 'three';
 
-import { useNode } from '../scene/SceneContext';
+import { useNode } from '../scene/SceneContext.js';
 
-import type { Component, ComponentViewProps } from '../../core/ComponentRegistry';
+import type { Component, ComponentViewProps } from '../../core/ComponentRegistry.js';
 
 export const CAMERA_PROJECTION_OPTIONS = [
     { value: 'perspective', label: 'Perspective' },

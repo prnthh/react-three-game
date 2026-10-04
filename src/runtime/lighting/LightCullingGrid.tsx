@@ -1,8 +1,8 @@
 import { useLayoutEffect, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { PointLight, Scene, Vector3 } from 'three';
-import { getSceneComponentRegistry } from '../scene/SceneContext';
-import { retainSceneGraphRegistration, SCENE_LIGHT } from '../scene/SceneGraphRegistration';
+import { getSceneComponentRegistry } from '../scene/SceneContext.js';
+import { retainSceneGraphRegistration, SCENE_LIGHT } from '../scene/SceneGraphRegistration.js';
 
 export type LightCullingGridOptions = {
     /** World-space cell width, clamped to at least 1. Default: 24. */

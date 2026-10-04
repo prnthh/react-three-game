@@ -64,17 +64,12 @@
               ]
             }
           },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "visible": false,
-              "castShadow": false,
-              "receiveShadow": false
-            }
-          },
           "geometry": {
             "type": "Geometry",
             "properties": {
+              "visible": false,
+              "castShadow": false,
+              "receiveShadow": false,
               "geometryType": "cylinder",
               "args": [
                 0.95,

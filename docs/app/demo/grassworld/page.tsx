@@ -72,13 +72,9 @@ const grassWorldPrefab: Prefab = {
                                 type: "Transform",
                                 properties: { position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1] },
                             },
-                            mesh: {
-                                type: "Mesh",
-                                properties: { castShadow: false, receiveShadow: false },
-                            },
                             geometry: {
                                 type: "Geometry",
-                                properties: { geometryType: "sphere", args: [170, 24, 12] },
+                                properties: { geometryType: "sphere", args: [170, 24, 12], castShadow: false, receiveShadow: false },
                             },
                             material: {
                                 type: "Material",
@@ -100,7 +96,6 @@ const grassWorldPrefab: Prefab = {
                             scale: [1, 1, 1],
                         },
                     },
-                    mesh: { type: "Mesh", properties: {} },
                     geometry: {
                         type: "Geometry",
                         properties: { geometryType: "sphere", args: [0.5, 24, 16] },

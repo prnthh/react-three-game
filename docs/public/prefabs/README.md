@@ -10,7 +10,7 @@ prefabs. Assets such as models and textures stay in their own public folders.
 - `detective-oni/detective-oni.json`: point-and-click entry prefab with a scene redirect, with
   `scenes/`, `characters/`, and a shared `dialogue.json`.
 - `the-cave/the-cave.json`: empty point-and-click project scaffold.
-- `jumper-course.json` and `rotator-demo.json`: standalone prefab documents.
+- `parkour-course.json` and `rotator-demo.json`: standalone prefab documents.
 
 Prefab references use full public paths such as `/prefabs/killbox/npc.json`.
 Scene redirects and dialogue paths are relative to the game folder.

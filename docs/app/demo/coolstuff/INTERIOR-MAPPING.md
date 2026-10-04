@@ -12,8 +12,7 @@ A window node composes these components:
 
 ```json
 {
-  "mesh": { "type": "Mesh", "properties": { "castShadow": false } },
-  "geometry": { "type": "Geometry", "properties": { "geometryType": "plane", "args": [2.4, 2.2] } },
+  "geometry": { "type": "Geometry", "properties": { "castShadow": false, "geometryType": "plane", "args": [2.4, 2.2] } },
   "interior": { "type": "InteriorMap", "properties": {
     "texture": "/textures/interiors/room-atlas.webp",
     "roomSize": [2.4, 2.2, 3],

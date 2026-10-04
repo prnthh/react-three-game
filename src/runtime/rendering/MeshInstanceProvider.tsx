@@ -1,11 +1,11 @@
-import { SpatialGrid, DEFAULT_SPATIAL_CELL_SIZE } from '../spatial/SpatialGrid';
+import { SpatialGrid, DEFAULT_SPATIAL_CELL_SIZE } from '../spatial/SpatialGrid.js';
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useSyncExternalStore, type ReactNode, type RefObject } from 'react';
 import { DynamicDrawUsage, InstancedInterleavedBuffer, InstancedMesh, Matrix4, Mesh, Vector3, type Material, type Object3D } from 'three';
 import { instancedDynamicBufferAttribute, mat4 } from 'three/tsl';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
-import { EditPickContext } from '../scene/SelectionRuntime';
-import { registerRenderSources } from '../scene/gameObject';
-import { getInstancedMaterialFactory } from './materialInstancing';
+import { EditPickContext } from '../scene/SelectionRuntime.js';
+import { registerRenderSources } from '../scene/gameObject.js';
+import { getInstancedMaterialFactory } from './materialInstancing.js';
 
 const HIDDEN_MATRIX = new Matrix4().makeScale(0, 0, 0);
 const IDENTITY_MATRIX = new Matrix4();

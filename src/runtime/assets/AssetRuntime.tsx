@@ -1,15 +1,15 @@
-import type { AssetDependency } from '../../core/dependencies';
-import { preparePrefab, type PreparedPrefab, type PrefabPreparationOptions } from "../prefabs/preparePrefab";
-import { getComponent } from "../../core/ComponentRegistry";
+import type { AssetDependency } from '../../core/dependencies.js';
+import { preparePrefab, type PreparedPrefab, type PrefabPreparationOptions } from "../prefabs/preparePrefab.js";
+import { getComponent } from "../../core/ComponentRegistry.js";
 import { createContext, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useState, type ReactNode } from "react";
 import { useStore } from "zustand";
 import { createStore, type StoreApi } from "zustand/vanilla";
 import type { Object3D, Texture } from "three";
-import { useAssetCache, useAsset } from "./assetCache";
-import type { LoadedModels, LoadedSounds, LoadedTextures } from "./assetLoaders";
-import { AudioAssetsContext } from "../audio/AudioRuntime";
-import { denormalizePrefab, type PrefabState } from "../../core/prefab";
-import type { Prefab } from "../../core/types";
+import { useAssetCache, useAsset } from "./assetCache.js";
+import type { LoadedModels, LoadedSounds, LoadedTextures } from "./assetLoaders.js";
+import { AudioAssetsContext } from "../audio/AudioRuntime.js";
+import { denormalizePrefab, type PrefabState } from "../../core/prefab.js";
+import type { Prefab } from "../../core/types.js";
 
 export interface AssetRuntime {
     /** Evict an unused asset from local and shared caches. Returns its source for host-owned disposal.

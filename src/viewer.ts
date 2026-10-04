@@ -1,13 +1,13 @@
-export * from "./core";
+export * from "./core.js";
 
-export { default as GameCanvas } from "./runtime/GameCanvas";
-export type { GameCanvasProps } from "./runtime/GameCanvas";
+export { default as GameCanvas } from "./runtime/GameCanvas.js";
+export type { GameCanvasProps } from "./runtime/GameCanvas.js";
 
-export { sound as soundManager, SoundManager } from "./runtime/audio/SoundManager";
-export type { SoundOptions, SoundPlayback } from "./runtime/audio/SoundManager";
+export { sound as soundManager, SoundManager } from "./runtime/audio/SoundManager.js";
+export type { SoundOptions, SoundPlayback } from "./runtime/audio/SoundManager.js";
 
-export { default as PrefabRoot } from "./runtime/prefabs/PrefabRoot";
-export type { PrefabRootProps } from "./runtime/prefabs/PrefabRoot";
+export { default as PrefabRoot } from "./runtime/prefabs/PrefabRoot.js";
+export type { PrefabRootProps } from "./runtime/prefabs/PrefabRoot.js";
 
 export {
 	PrefabEditorMode,
@@ -20,29 +20,29 @@ export {
 	useGameObject,
 	useRegisterNodeComponent,
 	createNodeComponentType,
-} from "./runtime/scene/SceneContext";
-export { ANIMATED_MODEL_COMPONENT } from "./runtime/components/AnimatedModelComponent";
-export type { AnimatedModelHandle, AnimatedModelProperties } from "./runtime/components/AnimatedModelComponent";
-export type { NodeApi, NodeComponentType, PrefabApi, PrefabNode, Scene, SceneComponent } from "./runtime/scene/SceneContext";
-export { SceneProvider } from "./runtime/scene/SceneProvider";
+} from "./runtime/scene/SceneContext.js";
+export { ANIMATED_MODEL_COMPONENT } from "./runtime/components/AnimatedModelComponent.js";
+export type { AnimatedModelHandle, AnimatedModelProperties } from "./runtime/components/AnimatedModelComponent.js";
+export type { NodeApi, NodeComponentType, PrefabApi, PrefabNode, Scene, SceneComponent } from "./runtime/scene/SceneContext.js";
+export { SceneProvider } from "./runtime/scene/SceneProvider.js";
 
-export type { AssetRuntime } from "./runtime/assets/AssetRuntime";
+export type { AssetRuntime } from "./runtime/assets/AssetRuntime.js";
 export {
 	useAssetRuntime,
 	useTextureAsset,
 	AssetRuntimeProvider,
-} from "./runtime/assets/AssetRuntime";
+} from "./runtime/assets/AssetRuntime.js";
 
-export { GameEventsProvider, createGameEvents, useGameEvents, useGameEvent } from "./runtime/scene/GameEvents";
+export { GameEventsProvider, createGameEvents, useGameEvents, useGameEvent } from "./runtime/scene/GameEvents.js";
 export type {
 	GameEvents,
 	ContactEventPayload,
 	GameEventHandler,
 	GameEventMap,
 	NodePointerEventPayload,
-} from "./runtime/scene/GameEvents";
+} from "./runtime/scene/GameEvents.js";
 
-export { loadModel, loadSound, loadTexture } from "./runtime/assets/assetLoaders";
+export { loadModel, loadSound, loadTexture } from "./runtime/assets/assetLoaders.js";
 export type {
 	LoadedModel,
 	LoadedModels,
@@ -54,49 +54,51 @@ export type {
 	LoadedTextures,
 	TextureLoadResult,
 	ProgressCallback,
-} from "./runtime/assets/assetLoaders";
+} from "./runtime/assets/assetLoaders.js";
 
-export { default as MaterialComponent, MaterialOverridesProvider, useMaterialOverrides } from "./runtime/components/MaterialComponent";
-export type { MaterialOverrides } from "./runtime/components/MaterialComponent";
+export { default as MaterialComponent, MaterialOverridesProvider, useMaterialOverrides } from "./runtime/components/MaterialComponent.js";
+export type { MaterialOverrides } from "./runtime/components/MaterialComponent.js";
 
-export { PrefabInstance } from "./runtime/prefabs/PrefabInstance";
-export type { PrefabInstanceProps, PrefabInstanceStatus } from "./runtime/prefabs/PrefabInstance";
-export type { PreparedPrefab, PrefabPreparationOptions } from "./runtime/prefabs/preparePrefab";
-export { createPrefabStore } from "./core/prefabStore";
-export { usePrefabStore, usePrefabStoreApi } from "./runtime/prefabs/PrefabStoreContext";
-export type { PrefabStoreApi, PrefabStoreState } from "./core/prefabStore";
+export { PrefabInstance } from "./runtime/prefabs/PrefabInstance.js";
+export type { PrefabInstanceProps, PrefabInstanceStatus } from "./runtime/prefabs/PrefabInstance.js";
+export type { PreparedPrefab, PrefabPreparationOptions } from "./runtime/prefabs/preparePrefab.js";
+export { createPrefabStore } from "./core/prefabStore.js";
+export { usePrefabStore, usePrefabStoreApi } from "./runtime/prefabs/PrefabStoreContext.js";
+export type { PrefabStoreApi, PrefabStoreState } from "./core/prefabStore.js";
 
-export type { SharedMaterialOptions } from "./runtime/components/MaterialComponent";
-export { useSharedMaterialResource } from "./runtime/components/MaterialComponent";
-export { useInvalidateMeshInstances } from "./runtime/rendering/MeshInstanceProvider";
+export type { SharedMaterialOptions } from "./runtime/components/MaterialComponent.js";
+export { useSharedMaterialResource } from "./runtime/components/MaterialComponent.js";
+export { useInvalidateMeshInstances } from "./runtime/rendering/MeshInstanceProvider.js";
 
-export { withBasePath as resolveAssetPath } from "./runtime/assets/assetPaths";
+export { withBasePath as resolveAssetPath } from "./runtime/assets/assetPaths.js";
 
-export { CascadedDirectionalLight } from './runtime/lighting/CascadedDirectionalLight';
-export type { CascadedDirectionalLightProps } from './runtime/lighting/CascadedDirectionalLight';
-export { LightCullingGrid, LightCullingGridController } from './runtime/lighting/LightCullingGrid';
-export type { LightCullingGridOptions } from './runtime/lighting/LightCullingGrid';
+export { CascadedDirectionalLight } from './runtime/lighting/CascadedDirectionalLight.js';
+export type { CascadedDirectionalLightProps } from './runtime/lighting/CascadedDirectionalLight.js';
+export { LightCullingGrid, LightCullingGridController } from './runtime/lighting/LightCullingGrid.js';
+export type { LightCullingGridOptions } from './runtime/lighting/LightCullingGrid.js';
 
-export { SceneRuntime } from "./runtime/SceneRuntime";
+export { SceneRuntime } from "./runtime/SceneRuntime.js";
 
-export type { GameObjectHandle } from "./runtime/scene/gameObject";
-export { notifyObjectChanged } from "./runtime/scene/objectChanges";
+export type { GameObjectHandle } from "./runtime/scene/gameObject.js";
+export { notifyObjectChanged } from "./runtime/scene/objectChanges.js";
 
-export { usePrefabDocument } from "./runtime/prefabs/prefabApi";
-export { createPrefabDocumentApi } from "./core/prefabDocumentApi";
-export type { PrefabDocumentApi } from "./core/prefabDocumentApi";
+export { usePrefabDocument } from "./runtime/prefabs/prefabApi.js";
+export { createPrefabDocumentApi } from "./core/prefabDocumentApi.js";
+export type { PrefabDocumentApi } from "./core/prefabDocumentApi.js";
 
-export { default as RuntimeComponent } from "./runtime/components/RuntimeComponent";
-export type { RuntimeComponentProperties, RuntimeScriptContext } from "./runtime/components/RuntimeComponent";
+export { default as RuntimeComponent } from "./runtime/components/RuntimeComponent.js";
+export type { RuntimeComponentProperties, RuntimeScriptContext } from "./runtime/components/RuntimeComponent.js";
 
-export { useSharedGeometryResource } from "./runtime/components/GeometryComponent";
+export { useSharedGeometryResource } from "./runtime/components/GeometryComponent.js";
 
-export { SpatialGrid, DEFAULT_SPATIAL_CELL_SIZE } from './runtime/spatial/SpatialGrid';
-export { getSceneComponentRegistry } from './runtime/scene/SceneContext';
-export { SCENE_OBJECT, SCENE_LIGHT } from './runtime/scene/SceneGraphRegistration';
+export { SpatialGrid, DEFAULT_SPATIAL_CELL_SIZE } from './runtime/spatial/SpatialGrid.js';
+export { getSceneComponentRegistry } from './runtime/scene/SceneContext.js';
+export { SCENE_OBJECT, SCENE_LIGHT } from './runtime/scene/SceneGraphRegistration.js';
 
-export { resolveGameObject, resolveRenderSource, registerGameObjectOwner, registerRenderSources } from './runtime/scene/gameObject';
-export type { NodeComponentRegistry } from './runtime/scene/SceneContext';
+export { resolveGameObject, resolveRenderSource, registerGameObjectOwner, registerRenderSources } from './runtime/scene/gameObject.js';
+export type { NodeComponentRegistry } from './runtime/scene/SceneContext.js';
 
-export { exportGLBData } from './export';
-export { BrowserRuntime } from './browser';
+export { exportGLBData } from './core/modelPrefab.js';
+export { BrowserRuntime } from './browser.js';
+
+export { registerBuiltInComponents } from './runtime/components/index.js';

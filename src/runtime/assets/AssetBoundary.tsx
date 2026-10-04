@@ -1,5 +1,5 @@
 import { Component, createContext, Suspense, useContext, useEffect, type ReactNode } from 'react';
-import { ResourceLoadError } from './assetCache';
+import { ResourceLoadError } from './assetCache.js';
 
 const AtomicAssets = createContext(false);
 

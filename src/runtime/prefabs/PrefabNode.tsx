@@ -1,14 +1,14 @@
-import { AssetBoundary } from '../assets/AssetBoundary';
+import { AssetBoundary } from '../assets/AssetBoundary.js';
 import { memo, useCallback, useContext, useLayoutEffect, useMemo, useRef } from "react";
-import { registerGameObjectOwner } from '../scene/gameObject';
-import { notifyObjectChanged } from '../scene/objectChanges';
+import { registerGameObjectOwner } from '../scene/gameObject.js';
+import { notifyObjectChanged } from '../scene/objectChanges.js';
 import type { Object3D } from "three";
-import { getNodeUserData, type GameObject as GameObjectType } from "../../core/types";
-import { usePrefabRenderNode, usePrefabStoreApi } from "./PrefabStoreContext";
-import { NodeScope, RuntimeNodeIdPrefixContext, useGameObject } from "../scene/SceneContext";
-import { useNodeSelected } from "../scene/SelectionRuntime";
-import { createNodeInteractionHandlers, type NodeInteractionEvent, type NodeInteractionEventType } from "../scene/usePointerEvents";
-import { analyzeNodeComponents, EMPTY_NODE_COMPONENTS } from "./nodePlan";
+import { getNodeUserData, type GameObject as GameObjectType } from "../../core/types.js";
+import { usePrefabRenderNode, usePrefabStoreApi } from "./PrefabStoreContext.js";
+import { NodeScope, RuntimeNodeIdPrefixContext, useGameObject } from "../scene/SceneContext.js";
+import { useNodeSelected } from "../scene/SelectionRuntime.js";
+import { createNodeInteractionHandlers, type NodeInteractionEvent, type NodeInteractionEventType } from "../scene/usePointerEvents.js";
+import { analyzeNodeComponents, ComponentLookupContext, EMPTY_NODE_COMPONENTS } from "./nodePlan.js";
 
 function getNodeMetadataProps(node: GameObjectType, scope: string) {
     const nodeName = node.name?.trim() ?? '';
@@ -40,9 +40,10 @@ function ResolvedPrefabNode({
 }: RendererProps) {
     const [gameObject, childIds] = usePrefabRenderNode(nodeId);
     const scope = useContext(RuntimeNodeIdPrefixContext);
+    const lookup = useContext(ComponentLookupContext);
     const analyzedComponents = useMemo(
-        () => gameObject ? analyzeNodeComponents(gameObject) : EMPTY_NODE_COMPONENTS,
-        [registryVersion, gameObject],
+        () => gameObject ? analyzeNodeComponents(gameObject, lookup) : EMPTY_NODE_COMPONENTS,
+        [registryVersion, gameObject, lookup],
     );
     const isSelected = useNodeSelected(nodeId, Boolean(editMode));
     const { transform } = analyzedComponents;

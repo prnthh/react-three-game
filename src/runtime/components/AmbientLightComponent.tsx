@@ -1,5 +1,5 @@
 import { Color } from 'three';
-import type { Component, ComponentViewProps } from "../../core/ComponentRegistry";
+import type { Component, ComponentViewProps } from "../../core/ComponentRegistry.js";
 
 
 export const ambientLightDefaults = {

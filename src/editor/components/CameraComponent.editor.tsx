@@ -1,8 +1,8 @@
 import { type ReactNode } from 'react';
-import type { ComponentEditorProps } from '../../core/ComponentRegistry';
-import { FieldGroup, NumberField, SelectField } from '../ui/Input';
-import { colors } from '../ui/styles';
-import { CAMERA_PROJECTION_OPTIONS, CAMERA_DEFAULTS, CameraProperties } from "../../runtime/components/CameraComponent";
+import type { ComponentEditorProps } from '../../core/ComponentRegistry.js';
+import { FieldGroup, NumberField, SelectField } from '../ui/Input.js';
+import { colors } from '../ui/styles.js';
+import { CAMERA_PROJECTION_OPTIONS, CAMERA_DEFAULTS, CameraProperties } from "../../runtime/components/CameraComponent.js";
 
 function CameraSection({ title, children }: { title: string; children: ReactNode }) {
     return <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>

@@ -1,7 +1,7 @@
 import { clear, peek, suspend } from 'suspend-react';
 import { createContext, useContext } from 'react';
-import { loadModel, loadSound, loadTexture } from './assetLoaders';
-import { loadPrefabSource, describePrefabSource } from '../prefabs/prefabSource';
+import { loadModel, loadSound, loadTexture } from './assetLoaders.js';
+import { loadPrefabSource, describePrefabSource } from '../prefabs/prefabSource.js';
 
 export const assetLoaders = {
     model: async (path: string) => {

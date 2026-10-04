@@ -1,6 +1,6 @@
-import type { ComponentEditorProps } from '../../core/ComponentRegistry';
-import { BooleanField, FieldRenderer, NumberInput, StringField } from '../ui/Input';
-import { SpriteProps } from "../../runtime/components/SpriteComponent";
+import type { ComponentEditorProps } from '../../core/ComponentRegistry.js';
+import { BooleanField, FieldRenderer, NumberInput, StringField } from '../ui/Input.js';
+import { SpriteProps } from "../../runtime/components/SpriteComponent.js";
 
 function Vector2Editor({
     value,

@@ -1,7 +1,7 @@
 import { ChangeEvent, useRef } from "react";
 import type { DragEvent, HTMLAttributes, MouseEvent, ReactNode } from "react";
-import type { LoadedModel, LoadedSound, LoadedTexture } from "../../runtime/assets/assetLoaders";
-import { canParseModelFile, canParseSoundFile, canParseTextureFile, parseModelFromFile, parseSoundFromFile, parseTextureFromFile } from "../../runtime/assets/assetLoaders";
+import type { LoadedModel, LoadedSound, LoadedTexture } from "../../runtime/assets/assetLoaders.js";
+import { canParseModelFile, canParseSoundFile, canParseTextureFile, parseModelFromFile, parseSoundFromFile, parseTextureFromFile } from "../../runtime/assets/assetLoaders.js";
 
 export interface AssetLoadOptions {
     onModelLoadStart?: (model: Promise<LoadedModel>, filename: string, file: File) => void | Promise<void>;

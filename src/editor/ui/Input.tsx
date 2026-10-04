@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { base, colors, fonts, ui } from './styles';
-import { usePrefabStore } from "../../runtime/prefabs/PrefabStoreContext";
+import { base, colors, fonts, ui } from './styles.js';
+import { usePrefabStore } from "../../runtime/prefabs/PrefabStoreContext.js";
 
 // ============================================================================
 // Field Definition Types

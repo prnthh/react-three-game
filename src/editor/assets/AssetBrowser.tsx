@@ -4,9 +4,9 @@ import { useEffect, useLayoutEffect, useState, useRef } from "react";
 import { createPortal } from 'react-dom';
 import { Material, Mesh, Texture, TextureLoader } from "three";
 import type { Object3D } from "three";
-import { loadModel } from "../../runtime/assets/assetLoaders";
-import { withBasePath } from "../../runtime/assets/assetPaths";
-import { base, colors, fonts } from "../ui/styles";
+import { loadModel } from "../../runtime/assets/assetLoaders.js";
+import { withBasePath } from "../../runtime/assets/assetPaths.js";
+import { base, colors, fonts } from "../ui/styles.js";
 
 const styles: Record<string, any> = {
     errorIcon: { color: colors.danger, fontSize: 12 },

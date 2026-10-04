@@ -1,4 +1,4 @@
-import type { SceneAgent } from './sceneAgent';
+import type { SceneAgent } from './sceneAgent.js';
 
 const announcedAgents = new WeakSet<object>();
 

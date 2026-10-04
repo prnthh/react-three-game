@@ -13,6 +13,24 @@ continuing: saving stale in-memory content can overwrite a newer file.
 
 A **node** is a scene object. Its **components** supply settings such as geometry, material, or behavior. The authored scene is a JSON document called a **prefab**. Animation and physics change live objects; they do not rewrite that document.
 
+## Edit files without a browser
+
+The `rtg` CLI uses the same core command evaluator as `scene.batch()`. Save the
+commands as `{ "commands": [...] }`, omitting the editor session's
+`expectedRevision`, then run:
+
+```sh
+rtg validate scene.json commands.json
+rtg apply scene.json commands.json edited.json
+rtg components Transform
+rtg schema
+```
+
+The CLI supports built-in component contracts. Register custom definitions in a
+Node script and use `evaluateSceneCommands` from `react-three-game/core` for custom
+components. File edits have no live selection, camera, or undo history; reload
+`edited.json` in the editor to inspect the result.
+
 ## Find the right section
 
 | Need | Section |
@@ -79,7 +97,6 @@ for (const [index, geometryType] of ['box', 'sphere', 'torus'].entries()) {
     id, name: geometryType,
     components: {
       transform: { type: 'Transform', properties: { position: [(index - 1) * 3, 1, 0] } },
-      mesh: { type: 'Mesh', properties: {} },
       geometry: { type: 'Geometry', properties: { geometryType } },
       material: { type: 'Material', properties: { materialId: id } }
     }

@@ -1,8 +1,8 @@
 import { useFrame } from '@react-three/fiber';
 import { useRef } from 'react';
 import { Vector3 } from 'three';
-import { PrefabEditorMode, useGameObject, useScene } from '../scene/SceneContext';
-import type { Component, ComponentViewProps } from '../../core/ComponentRegistry';
+import { PrefabEditorMode, useGameObject, useScene } from '../scene/SceneContext.js';
+import type { Component, ComponentViewProps } from '../../core/ComponentRegistry.js';
 
 export type CameraFollowProperties = {
     targetId?: string;

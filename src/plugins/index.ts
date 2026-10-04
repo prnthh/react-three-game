@@ -1,1 +1,1 @@
-export * from "./crashcat";
+export * from "./crashcat/index.js";

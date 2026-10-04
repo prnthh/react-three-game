@@ -9,8 +9,8 @@ const publicRoot = new URL('../public/', import.meta.url);
 const manifest = JSON.parse(readFileSync(new URL('prefabs/manifest.json', publicRoot)));
 
 test('prefab picker preserves project folders and distinguishes identical filenames', () => {
-    const paths = ['/prefabs/one/scene.json', '/prefabs/two/scene.json', '/prefabs/jumper-course.json'];
-    assert.deepEqual(paths.map(normalizePrefabName), ['one/scene', 'two/scene', 'jumper-course']);
+    const paths = ['/prefabs/one/scene.json', '/prefabs/two/scene.json', '/prefabs/parkour-course.json'];
+    assert.deepEqual(paths.map(normalizePrefabName), ['one/scene', 'two/scene', 'parkour-course']);
     for (const path of paths) assert.equal(`/prefabs/${normalizePrefabName(path)}.json`, path);
 });
 

@@ -1,6 +1,6 @@
-import type { GameObject, Prefab, PrefabMaterial } from './types';
-import type { PrefabNodeRecord } from './prefab';
-import type { PrefabStoreApi } from './prefabStore';
+import type { GameObject, Prefab, PrefabMaterial } from './types.js';
+import type { PrefabNodeRecord } from './prefab.js';
+import type { PrefabStoreApi } from './prefabStore.js';
 
 /** Serializable authored state. Reads are immutable snapshots; edits use these methods. */
 export interface PrefabDocumentApi {

@@ -1,10 +1,10 @@
-import { withBasePath } from '../runtime/assets/assetPaths';
+import { withBasePath } from '../runtime/assets/assetPaths.js';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { createEmptyPrefab, createPackedPrefabNode } from '../core/prefab';
-import { menu } from './ui/styles';
-import { useEditorContext, useEditorRef } from './EditorContext';
-import { loadJson, loadJsonFile, regenerateIds, saveJson } from './documentIO';
+import { createEmptyPrefab, createPackedPrefabNode } from '../core/prefab.js';
+import { menu } from './ui/styles.js';
+import { useEditorContext, useEditorRef } from './EditorContext.js';
+import { loadJson, loadJsonFile, regenerateIds, saveJson } from './documentIO.js';
 
 export type TreeContextMenuState = { nodeId: string; x: number; y: number } | null;
 

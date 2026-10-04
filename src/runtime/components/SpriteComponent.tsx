@@ -1,4 +1,4 @@
-import type { Component, ComponentViewProps } from '../../core/ComponentRegistry';
+import type { Component, ComponentViewProps } from '../../core/ComponentRegistry.js';
 
 export interface SpriteProps {
     center?: [number, number];

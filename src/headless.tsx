@@ -2,17 +2,18 @@ import { Component, useEffect, type ReactNode } from 'react';
 import { createRoot, extend, unmountComponentAtNode } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { GLTFExporterOptions } from 'three/examples/jsm/exporters/GLTFExporter.js';
-import type { Prefab } from './core/types';
-import { normalizePrefab } from './core/prefab';
-import { getComponent, registerBuiltInComponents } from './core/ComponentRegistry';
-import { builtInComponents } from './runtime/components';
-import PrefabRoot from './runtime/prefabs/PrefabRoot';
-import { preparePrefab } from './runtime/prefabs/preparePrefab';
-import { encodePrefabSource, loadPrefabSource } from './runtime/prefabs/prefabSource';
-import { createAssetCache, AssetCacheContext, type AssetLoaders } from './runtime/assets/assetCache';
-import { AssetBoundary } from './runtime/assets/AssetBoundary';
-import { SceneRuntime } from './runtime/SceneRuntime';
-import { exportGLBData } from './export';
+import type { Prefab, GameObject } from './core/types.js';
+import { normalizePrefab, type PrefabState } from './core/prefab.js';
+import { getComponent } from './core/ComponentRegistry.js';
+import { builtInComponents, registerBuiltInComponents } from './runtime/components/index.js';
+import { ComponentLookupContext } from './runtime/prefabs/nodePlan.js';
+import PrefabRoot from './runtime/prefabs/PrefabRoot.js';
+import { preparePrefab } from './runtime/prefabs/preparePrefab.js';
+import { encodePrefabSource, loadPrefabSource } from './runtime/prefabs/prefabSource.js';
+import { createAssetCache, AssetCacheContext, type AssetLoaders } from './runtime/assets/assetCache.js';
+import { AssetBoundary } from './runtime/assets/AssetBoundary.js';
+import { SceneRuntime } from './runtime/SceneRuntime.js';
+import { exportGLBData } from './core/modelPrefab.js';
 
 export interface HeadlessSceneOptions {
     basePath?: string;
@@ -50,11 +51,15 @@ function Committed({ ready }: { ready(): void }) {
  * Gameplay is disabled; custom renderWhenDisabled views must support this host.
  */
 export async function createHeadlessScene(prefab: Prefab, options: HeadlessSceneOptions = {}): Promise<HeadlessScene> {
+    return mountHeadlessScene(prefab, options, getComponent);
+}
+
+async function mountHeadlessScene(prefab: Prefab, options: HeadlessSceneOptions, lookup: typeof getComponent): Promise<HeadlessScene> {
     const { width = 1, height = 1, timeoutMs = 30_000, basePath = '' } = options;
     if (!(width > 0 && height > 0 && Number.isFinite(width) && Number.isFinite(height))) throw new Error('Headless dimensions must be finite and positive');
     if (!(timeoutMs > 0 && Number.isFinite(timeoutMs))) throw new Error('Headless timeoutMs must be finite and positive');
     options.signal?.throwIfAborted();
-    registerBuiltInComponents(builtInComponents);
+    registerBuiltInComponents();
     extend(THREE as unknown as Parameters<typeof extend>[0]);
 
     const rootURL = encodePrefabSource(prefab);
@@ -87,7 +92,7 @@ export async function createHeadlessScene(prefab: Prefab, options: HeadlessScene
         // Validate definitions/cycles and settle declared resources before React mounts.
         await preparePrefab({
             getComponent(name) {
-                const definition = getComponent(name);
+                const definition = lookup(name);
                 if (!definition) return undefined;
                 if (name === 'Environment' || name === 'Text') {
                     throw new Error(`Headless scene does not support ${name} yet; it requires a GPU or font host adapter`);
@@ -120,10 +125,10 @@ export async function createHeadlessScene(prefab: Prefab, options: HeadlessScene
                 <HostErrorBoundary onError={fail}>
                     <AssetCacheContext.Provider value={cache}>
                         <AssetBoundary atomic onError={fail}>
-                            <SceneRuntime instancing={false}>
+                            <ComponentLookupContext.Provider value={lookup}><SceneRuntime instancing={false}>
                                 <PrefabRoot data={prefab} basePath={basePath} enabled={false} preparing />
                                 <Committed ready={ready} />
-                            </SceneRuntime>
+                            </SceneRuntime></ComponentLookupContext.Provider>
                         </AssetBoundary>
                     </AssetCacheContext.Provider>
                 </HostErrorBoundary>,
@@ -135,7 +140,6 @@ export async function createHeadlessScene(prefab: Prefab, options: HeadlessScene
             scene,
             async exportGLB(exportOptions) {
                 if (disposed) throw new Error('Headless scene is disposed');
-                ensureBlobReader();
                 return exportGLBData(scene, exportOptions);
             },
             dispose,
@@ -149,45 +153,45 @@ export async function createHeadlessScene(prefab: Prefab, options: HeadlessScene
     }
 }
 
-/** One-shot conversion with guaranteed host cleanup. */
+// Only built-in components that contribute standard static Three.js scene data.
+const exportTypes = new Set(['Transform', 'Geometry', 'BufferGeometry', 'Material',
+    'Model', 'AnimatedModel', 'PrefabRef', 'Camera', 'DirectionalLight', 'PointLight', 'SpotLight']);
+const exportDefinitions = new Map(builtInComponents.filter(component => exportTypes.has(component.name)).map(component => [component.name, component]));
+const exportLookup: typeof getComponent = name => exportDefinitions.get(name);
+
+/** Drop custom components without loading their definitions, preserving child nodes. */
+function staticPrefab(document: Prefab): Prefab {
+    const visit = (node: GameObject): GameObject => {
+        const entries = Object.entries(node.components ?? {});
+        // Environment children are capture-only geometry, not ordinary scene children.
+        if (entries.some(([, component]) => component?.type === 'Environment')) {
+            return { ...node, components: {}, children: [] };
+        }
+        return { ...node,
+            components: Object.fromEntries(entries.filter(([, component]) => component && exportTypes.has(component.type))),
+            children: node.children?.map(visit),
+        };
+    };
+    return { ...document, root: visit(document.root), materials: Object.fromEntries(
+        Object.entries(document.materials ?? {}).map(([id, { texture: _texture, normalMapTexture: _normal, ...material }]) => [id, material]),
+    ) };
+}
+
+function prefabFromState(state: PrefabState): Prefab {
+    // Preserve explicit properties; denormalization compacts using the application registry.
+    const node = (id: string): GameObject => ({ ...state.nodesById[id], children: state.childIdsById[id].map(node) });
+    return { id: state.prefabId, name: state.prefabName, root: node(state.rootId), materials: state.materials };
+}
+
+/** Lossy built-ins-only export. Custom views, dependencies and modifiers never run. */
 export async function exportPrefabToGLB(prefab: Prefab, options: HeadlessSceneOptions = {}): Promise<ArrayBuffer> {
-    const host = await createHeadlessScene(prefab, options);
+    const loadDocument = options.loaders?.prefab ?? loadPrefabSource;
+    const host = await mountHeadlessScene(staticPrefab(prefab), {
+        ...options,
+        loaders: { ...options.loaders, prefab: async path => normalizePrefab(staticPrefab(prefabFromState(await loadDocument(path)))) },
+    }, exportLookup);
     try { return await host.exportGLB(); }
     finally { await host.dispose(); }
 }
 
-export type { AssetLoaders } from './runtime/assets/assetCache';
-
-/** Three's exporter still uses FileReader for Blob bytes, even without textures.
- * Install only that small compatibility surface when the host does not supply it.
- * It is shared/idempotent so simultaneous exports cannot restore each other's shim.
- */
-function ensureBlobReader() {
-    if (typeof globalThis.FileReader !== 'undefined') return;
-    class BlobReader {
-        result: ArrayBuffer | string | null = null;
-        error: unknown = null;
-        onloadend: (() => void) | null = null;
-        onerror: (() => void) | null = null;
-        readAsArrayBuffer(blob: Blob) { void this.read(blob, false); }
-        readAsDataURL(blob: Blob) { void this.read(blob, true); }
-        private async read(blob: Blob, dataURL: boolean) {
-            try {
-                const bytes = await blob.arrayBuffer();
-                if (dataURL) {
-                    const chunks: string[] = [];
-                    const view = new Uint8Array(bytes);
-                    for (let offset = 0; offset < view.length; offset += 8192) {
-                        chunks.push(String.fromCharCode(...view.subarray(offset, offset + 8192)));
-                    }
-                    this.result = `data:${blob.type || 'application/octet-stream'};base64,${btoa(chunks.join(''))}`;
-                } else this.result = bytes;
-            } catch (error) {
-                this.error = error;
-                this.onerror?.();
-            }
-            this.onloadend?.();
-        }
-    }
-    Object.defineProperty(globalThis, 'FileReader', { value: BlobReader, configurable: true, writable: true });
-}
+export type { AssetLoaders } from './runtime/assets/assetCache.js';

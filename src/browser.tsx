@@ -2,8 +2,8 @@ import { useContext, useEffect, useMemo, type ReactNode } from "react";
 import { useThree } from "@react-three/fiber";
 import { AudioListener } from "three";
 
-import { AudioListenerContext, AudioAssetsContext } from './runtime/audio/AudioRuntime';
-import { sound } from './runtime/audio/SoundManager';
+import { AudioListenerContext, AudioAssetsContext } from './runtime/audio/AudioRuntime.js';
+import { sound } from './runtime/audio/SoundManager.js';
 
 /** Owns exactly one listener for a canvas, shared by every authored Sound node. */
 export function AudioRuntimeProvider({ children }: { children: ReactNode }) {
@@ -66,4 +66,32 @@ export function downloadURL(url: string, filename: string) {
     anchor.href = url;
     anchor.download = filename;
     anchor.click();
+}
+
+export function getTextureImageDataUrl(image: unknown) {
+    if (
+        !image
+        || typeof image !== 'object'
+        || !('width' in image) || !('height' in image)
+        || typeof document === 'undefined'
+        || typeof image.width !== 'number'
+        || typeof image.height !== 'number'
+        || image.width <= 0
+        || image.height <= 0
+    ) {
+        return undefined;
+    }
+
+    try {
+        const canvas = document.createElement('canvas');
+        canvas.width = image.width;
+        canvas.height = image.height;
+        const context = canvas.getContext('2d');
+        if (!context) return undefined;
+
+        context.drawImage(image as CanvasImageSource, 0, 0);
+        return canvas.toDataURL('image/png');
+    } catch {
+        return undefined;
+    }
 }

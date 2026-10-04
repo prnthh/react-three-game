@@ -1,78 +1,89 @@
-import test from 'node:test';
+import test, { describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { analyzeNodeComponents } from '../../src/runtime/prefabs/nodePlan.ts';
-import { registerComponent } from '../../src/core/ComponentRegistry.ts';
-import { createPrefabStore } from "../../src/core/prefabStore.ts";
+import { canAddComponentToNode, resolveComponentProperties, registerComponent } from '../../src/core/ComponentRegistry.ts';
 
-const View = () => null;
-test('composition orders behaviors outside objects and attachments, resolving defaults', () => {
-    for (const [name, slot] of [['TestMaterial', 'material'], ['TestObject', 'object'], ['TestBehavior', undefined]]) {
-        registerComponent({ name, slot, properties: { amount: { default: 3 } }, View });
-    }
-    const node = { id: 'node', components: {
-        material: { type: 'TestMaterial', properties: {} },
-        object: { type: 'TestObject', properties: { amount: 5 } },
-        behavior: { type: 'TestBehavior', properties: {} },
-        transform: { type: 'Transform', properties: { position: [1, 2, 3] } },
-    } };
-    const plan = analyzeNodeComponents(node);
-    assert.deepEqual(plan.composition.map(c => c.key), ['behavior', 'object', 'material']);
-    assert.deepEqual(plan.composition.map(c => c.properties.amount), [3, 5, 3]);
-    assert.deepEqual(plan.transform.position, [1, 2, 3]);
-    assert.equal(analyzeNodeComponents(node), plan);
+import { createPrefabStore } from '../../src/core/prefabStore.ts';
+import { act, createElement as h } from 'react';
+import { createRoot, extend } from '@react-three/fiber';
+import { Group } from 'three';
+
+describe('Component contracts', () => {
+    test('schema defaults resolve sparse JSON without replacing authored values', () => {
+        const component = { name: 'Example', properties: {
+            size: { default: 2 },
+            width: { default: values => values.size * 2 },
+            color: { type: 'color', default: '#ffffff' },
+        } };
+        const authored = { size: 3, color: '#000000' };
+        assert.deepEqual(resolveComponentProperties(component, authored), { size: 3, width: 6, color: '#000000' });
+        assert.deepEqual(authored, { size: 3, color: '#000000' });
+    });
+
+    test('exclusive slots reject competing components but allow behaviors and other slots', () => {
+        const material = { name: 'Material', slot: 'material', properties: {} };
+        const custom = { name: 'CustomMaterial', slot: 'material', properties: {} };
+        const geometry = { name: 'Geometry', slot: 'geometry', properties: {} };
+        const behavior = { name: 'Spin', properties: {} };
+        const node = { id: 'box', components: { surface: { type: 'Material', properties: {} } } };
+        const registry = { Material: material };
+        assert.equal(canAddComponentToNode(node, custom, registry), false);
+        assert.equal(canAddComponentToNode(node, geometry, registry), true);
+        assert.equal(canAddComponentToNode(node, behavior, registry), true);
+    });
 });
 
-test('registering or replacing a view invalidates cached composition', () => {
-    const node = { id: 'node', components: { late: { type: 'TestLate', properties: {} } } };
-    assert.equal(analyzeNodeComponents(node).composition.length, 0);
-    registerComponent({ name: 'TestLate', properties: {}, View });
-    assert.equal(analyzeNodeComponents(node).composition[0].View, View);
-    const Replacement = () => null;
-    registerComponent({ name: 'TestLate', properties: {}, View: Replacement });
-    assert.equal(analyzeNodeComponents(node).composition[0].View, Replacement);
-});
+// Exercise the document-to-scene path; custom behavior is application-owned.
+test('JSON attaches registered behaviors and built-ins; editor API edits update the live scene', async t => {
+    const { useFrame } = await import('@react-three/fiber');
+    const { useEffect } = await import('react');
+    const { Mesh, Box3, Vector3 } = await import('three');
+    const { PrefabRoot, registerBuiltInComponents, useGameObject } = await import('../../src/viewer.ts');
+    const { createSceneAgent } = await import('../../src/editor/agent/sceneAgent.ts');
+    const { exposeSceneAgent } = await import('../../src/editor/agent/sceneAgentBridge.ts');
+    registerBuiltInComponents();
+    extend({ Group, Mesh });
+    globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+    let attached = 0;
+    registerComponent({ name: 'TestMotion', properties: { speed: { default: 1 } }, View({ properties, children }) {
+        const object = useGameObject();
+        useEffect(() => { attached++; return () => { attached--; }; }, []);
+        useFrame((_, delta) => { object.transform.position.y += properties.speed * delta; });
+        return children;
+    } });
+    const doc = createPrefabStore(JSON.parse(JSON.stringify({ root: { id: 'world', children: [{
+        id: 'box', name: 'Box', components: {
+            shape: { type: 'Geometry', properties: { geometryType: 'box', args: [2, 2, 2], instanced: false } },
+            paint: { type: 'Material', properties: {} },
+            motion: { type: 'TestMotion', properties: { speed: 2 } },
+        }, children: [{ id: 'child', name: 'Child' }],
+    }] } })));
+    const canvas = { width: 100, height: 100, style: {}, addEventListener() {}, removeEventListener() {} };
+    const root = createRoot(canvas);
+    await root.configure({ gl: { render() {}, setSize() {}, setPixelRatio() {}, domElement: canvas },
+        size: { width: 100, height: 100, top: 0, left: 0 }, frameloop: 'never' });
+    t.after(async () => { await act(async () => root.unmount()); });
+    let state;
+    await act(async () => { state = root.render(h(PrefabRoot, { store: doc })); });
+    const scene = state.getState().scene;
+    const box = scene.getObjectByName('Box');
+    assert.ok(box);
+    assert.ok(box.getObjectByName('Child'), 'behaviors preserve composed children');
+    assert.equal(attached, 1);
+    const size = new Box3().setFromObject(box).getSize(new Vector3());
+    assert.deepEqual(size.toArray(), [2, 2, 2]);
+    await act(async () => state.getState().advance(1, false));
+    assert.equal(box.position.y, 2);
 
-const makeStore = () => createPrefabStore({ root: { id: 'root', children: [
-    { id: 'a', children: [{ id: 'leaf' }] }, { id: 'b' },
-] } });
-
-test('property edits preserve unrelated references and reject hierarchy changes', () => {
-    const store = makeStore();
-    const before = store.getState();
-    before.updateNode('a', node => ({ ...node, name: 'edited' }));
-    const after = store.getState();
-    assert.notEqual(after.nodesById.a, before.nodesById.a);
-    assert.equal(after.nodesById.b, before.nodesById.b);
-    assert.equal(after.childIdsById, before.childIdsById);
-    assert.equal(after.parentIdById, before.parentIdById);
-    assert.throws(() => after.updateNode('a', node => ({ ...node, id: 'renamed' })), /hierarchy actions/);
-    assert.throws(() => after.updateNode('a', node => ({ ...node, children: [] })), /hierarchy actions/);
-    assert.equal(store.getState(), after);
-});
-
-test('hierarchy actions keep parent and child indexes consistent', () => {
-    const store = makeStore();
-    const api = store.getState();
-    api.moveNode('a', 'leaf', 'inside');
-    assert.equal(store.getState(), api, 'cycles are ignored');
-    api.moveNode('leaf', 'b', 'inside');
-    assert.deepEqual(store.getState().childIdsById.a, []);
-    assert.deepEqual(store.getState().childIdsById.b, ['leaf']);
-    assert.equal(store.getState().parentIdById.leaf, 'b');
-    const copy = api.duplicateNode('b');
-    const copiedLeaf = store.getState().childIdsById[copy][0];
-    assert.notEqual(copiedLeaf, 'leaf');
-    assert.equal(store.getState().parentIdById[copiedLeaf], copy);
-    api.deleteNode(copy);
-    assert.equal(store.getState().nodesById[copiedLeaf], undefined);
-    api.replaceNode('b', { id: 'replacement', children: [{ id: 'new-leaf' }] });
-    assert.deepEqual(store.getState().childIdsById.root, ['a', 'replacement']);
-    assert.equal(store.getState().nodesById.leaf, undefined);
-    assert.equal(store.getState().parentIdById['new-leaf'], 'replacement');
-    const before = store.getState();
-    assert.throws(() => api.addChild('root', { id: 'a' }), /Duplicate/);
-    assert.equal(store.getState(), before, 'failed insertion leaves the document unchanged');
-    api.replaceNode('root', { id: 'new-root' });
-    assert.equal(store.getState().rootId, 'new-root');
-    assert.deepEqual(Object.keys(store.getState().nodesById), ['new-root']);
+    const target = {};
+    const agent = createSceneAgent(doc, () => ({ mode: () => 'edit', beforeCommit() {}, transaction: action => action() })).scene;
+    const release = exposeSceneAgent(target, agent);
+    t.after(release);
+    await act(async () => target.scene.update({ id: 'box', components: { motion: { properties: { speed: 4 } } } }));
+    await act(async () => state.getState().advance(2, false));
+    assert.equal(scene.getObjectByName('Box'), box, 'a property edit preserves the live object');
+    assert.equal(box.position.y, 6);
+    assert.equal(JSON.parse(target.scene.exportJSON()).root.children[0].components.motion.properties.speed, 4);
+    await act(async () => target.scene.remove({ id: 'box' }));
+    assert.equal(scene.getObjectByName('Box'), undefined);
+    assert.equal(attached, 0);
 });

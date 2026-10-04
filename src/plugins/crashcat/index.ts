@@ -4,12 +4,12 @@ export {
     type BodyMeta,
     type CrashcatApi,
     type CrashcatEventConfig,
-} from "./CrashcatRuntime";
+} from "./CrashcatRuntime.js";
 export {
     default as CrashcatPhysicsComponent,
     RIGID_BODY_COMPONENT,
     default,
-} from "./CrashcatPhysicsComponent";
+} from "./CrashcatPhysicsComponent.js";
 export {
     CrashcatRagdoll,
     default as CrashcatRagdollComponent,
@@ -18,6 +18,6 @@ export {
     createStaticBoxBody,
     type CrashcatRagdollProps,
     type RagdollSettings,
-} from "./CrashcatRagdoll";
+} from "./CrashcatRagdoll.js";
 
-export { importCollisionModel } from "./importCollisionModel";
+export { importCollisionModel } from "./importCollisionModel.js";

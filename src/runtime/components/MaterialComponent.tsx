@@ -1,6 +1,6 @@
-import { registerInstancedMaterial } from '../rendering/materialInstancing';
+import { registerInstancedMaterial } from '../rendering/materialInstancing.js';
 import type { Node } from 'three/webgpu';
-import { useInvalidateMeshInstances } from "../rendering/MeshInstanceProvider";
+import { useInvalidateMeshInstances } from "../rendering/MeshInstanceProvider.js";
 import { Color, BackSide, DoubleSide, NearestFilter, NearestMipmapNearestFilter, NearestMipmapLinearFilter, LinearMipmapNearestFilter } from "three";
 import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from 'react';
 
@@ -8,21 +8,21 @@ import { applyProps, extend } from '@react-three/fiber';
 
 import type { ThreeElement } from '@react-three/fiber';
 
-import type { Component, ComponentViewProps } from '../../core/ComponentRegistry';
+import type { Component, ComponentViewProps } from '../../core/ComponentRegistry.js';
 
-import { useTextureAsset } from '../assets/AssetRuntime';
+import { useTextureAsset } from '../assets/AssetRuntime.js';
 
-import { usePrefab } from '../scene/SceneContext';
+import { usePrefab } from '../scene/SceneContext.js';
 
-import { usePrefabStore } from "../prefabs/PrefabStoreContext";
+import { usePrefabStore } from "../prefabs/PrefabStoreContext.js";
 
-import { compactPrefabMaterial, DEFAULT_MATERIAL_ID } from '../../core/prefab';
+import { compactPrefabMaterial, DEFAULT_MATERIAL_ID } from '../../core/prefab.js';
 
-import type { MaterialComponentProperties, PrefabMaterial, PrefabMaterialType } from '../../core/types';
+import type { MaterialComponentProperties, PrefabMaterial, PrefabMaterialType } from '../../core/types.js';
 
 import { MeshBasicNodeMaterial, MeshStandardNodeMaterial, SpriteNodeMaterial } from 'three/webgpu';
 
-import { withBasePath } from "../assets/assetPaths";
+import { withBasePath } from "../assets/assetPaths.js";
 
 import { RepeatWrapping, ClampToEdgeWrapping, NoColorSpace, SRGBColorSpace, LinearFilter, LinearMipmapLinearFilter, FrontSide } from 'three';
 

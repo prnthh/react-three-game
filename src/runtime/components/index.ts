@@ -1,31 +1,29 @@
-import AmbientLightComponent from "./AmbientLightComponent";
-import BufferGeometryComponent from "./BufferGeometryComponent";
-import CameraFollowComponent from "./CameraFollowComponent";
-import CameraComponent from "./CameraComponent";
-import DataComponent from "./DataComponent";
-import RuntimeComponent from "./RuntimeComponent";
-import DirectionalLightComponent from "./DirectionalLightComponent";
-import EnvironmentComponent from "./EnvironmentComponent";
-import FogComponent from "./FogComponent";
-import GeometryComponent from "./GeometryComponent";
-import HemisphereLightComponent from "./HemisphereLightComponent";
-import MaterialComponent from "./MaterialComponent";
-import MeshComponent from "./MeshComponent";
-import ModelComponent from "./ModelComponent";
-import PointLightComponent from "./PointLightComponent";
-import PrefabRefComponent from "./PrefabRefComponent";
-import SoundComponent from "./SoundComponent";
-import AnimatedModelComponent from "./AnimatedModelComponent";
-import SpotLightComponent from "./SpotLightComponent";
-import SpriteComponent from "./SpriteComponent";
-import TextComponent from "./TextComponent";
-import TransformComponent from "./TransformComponent";
-import type { Component } from "../../core/ComponentRegistry";
+import AmbientLightComponent from "./AmbientLightComponent.js";
+import BufferGeometryComponent from "./BufferGeometryComponent.js";
+import CameraFollowComponent from "./CameraFollowComponent.js";
+import CameraComponent from "./CameraComponent.js";
+import DataComponent from "./DataComponent.js";
+import RuntimeComponent from "./RuntimeComponent.js";
+import DirectionalLightComponent from "./DirectionalLightComponent.js";
+import EnvironmentComponent from "./EnvironmentComponent.js";
+import FogComponent from "./FogComponent.js";
+import GeometryComponent from "./GeometryComponent.js";
+import HemisphereLightComponent from "./HemisphereLightComponent.js";
+import MaterialComponent from "./MaterialComponent.js";
+import ModelComponent from "./ModelComponent.js";
+import PointLightComponent from "./PointLightComponent.js";
+import PrefabRefComponent from "./PrefabRefComponent.js";
+import SoundComponent from "./SoundComponent.js";
+import AnimatedModelComponent from "./AnimatedModelComponent.js";
+import SpotLightComponent from "./SpotLightComponent.js";
+import SpriteComponent from "./SpriteComponent.js";
+import TextComponent from "./TextComponent.js";
+import TransformComponent from "./TransformComponent.js";
+import { registerBuiltInComponents as registerDefaults, type Component } from "../../core/ComponentRegistry.js";
 
 // Built-in definitions; this order controls their editor display.
 export const builtInComponents: readonly Component<any>[] = [
 	TransformComponent,
-	MeshComponent,
 
 	// Geometry components
 	GeometryComponent,
@@ -55,3 +53,8 @@ export const builtInComponents: readonly Component<any>[] = [
 	RuntimeComponent,
 	PrefabRefComponent,
 ];
+
+/** Install built-in contracts without replacing already registered custom definitions. */
+export function registerBuiltInComponents() {
+    registerDefaults(builtInComponents);
+}

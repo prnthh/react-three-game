@@ -1,9 +1,9 @@
 import { createContext, useContext } from "react";
-import type { PrefabApi, Scene, PrefabEditorMode } from "../runtime/scene/SceneContext";
-import type { Prefab } from "../core/types";
-import type { ExportGLBOptions } from "./documentIO";
+import type { PrefabApi, Scene, PrefabEditorMode } from "../runtime/scene/SceneContext.js";
+import type { Prefab } from "../core/types.js";
+import type { ExportGLBOptions } from "./documentIO.js";
 
-import type { SceneAgent } from "./agent/sceneAgent";
+import type { SceneAgent } from "./agent/sceneAgent.js";
 
 export interface PrefabEditorRef extends Scene, PrefabApi {
     scene: SceneAgent;

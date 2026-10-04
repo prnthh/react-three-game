@@ -1,5 +1,5 @@
 import type { FC } from "react";
-import type { Component, ComponentEditorProps } from "../core/ComponentRegistry";
+import type { Component, ComponentEditorProps } from "../core/ComponentRegistry.js";
 
 const editors = new Map<string, FC<ComponentEditorProps<any>>>();
 

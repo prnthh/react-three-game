@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import type { Object3D } from 'three';
-import { useGameObject, useNode, usePrefab, type PrefabApi } from '../scene/SceneContext';
-import { useGameEvents, type GameEvents } from '../scene/GameEvents';
-import type { GameObjectHandle } from '../scene/gameObject';
-import type { Component, ComponentViewProps } from '../../core/ComponentRegistry';
+import { useGameObject, useNode, usePrefab, type PrefabApi } from '../scene/SceneContext.js';
+import { useGameEvents, type GameEvents } from '../scene/GameEvents.js';
+import type { GameObjectHandle } from '../scene/gameObject.js';
+import type { Component, ComponentViewProps } from '../../core/ComponentRegistry.js';
 
 export type RuntimeComponentProperties = {
     data?: Record<string, unknown>;

@@ -1,12 +1,13 @@
+import MeshFields from "./MeshFields.js";
 import { Texture } from 'three';
-import type { ComponentEditorProps } from '../../core/ComponentRegistry';
-import { BooleanField, FieldGroup, Label, ListEditor, NumberInput, SelectInput, StringField } from '../ui/Input';
-import type { ComponentData } from '../../core/types';
-import { useEditorContext, useEditorRef } from '../EditorContext';
-import { base, colors, ui } from '../ui/styles';
-import { decomposeModelToPrefabNodes } from '../modelPrefab';
-import { ModelPicker } from '../assets/AssetBrowser';
-import { RepeatAxisConfig, normalizeRepeatAxes, ModelProperties } from "../../runtime/components/ModelComponent";
+import type { ComponentEditorProps } from '../../core/ComponentRegistry.js';
+import { BooleanField, FieldGroup, Label, ListEditor, NumberInput, SelectInput } from '../ui/Input.js';
+import type { ComponentData } from '../../core/types.js';
+import { useEditorContext, useEditorRef } from '../EditorContext.js';
+import { base, colors, ui } from '../ui/styles.js';
+import { decomposeModelToPrefabNodes } from '../modelPrefab.js';
+import { ModelPicker } from '../assets/AssetBrowser.js';
+import { RepeatAxisConfig, normalizeRepeatAxes, ModelProperties } from "../../runtime/components/ModelComponent.js";
 
 const AXIS_OPTIONS = [
     { value: 'x', label: 'X' },
@@ -202,22 +203,6 @@ function ModelComponentEditor({ properties, node, update }: ComponentEditorProps
                 Decompose Model
             </button>
             <BooleanField
-                name="emitClickEvent"
-                label="Emit Click Event"
-                values={properties}
-                onChange={update}
-                fallback={false}
-            />
-            {properties.emitClickEvent ? (
-                <StringField
-                    name="clickEventName"
-                    label="Click Event Name"
-                    values={properties}
-                    onChange={update}
-                    placeholder="node:click"
-                />
-            ) : null}
-            <BooleanField
                 name="repeat"
                 label="Repeat"
                 values={properties}
@@ -231,6 +216,7 @@ function ModelComponentEditor({ properties, node, update }: ComponentEditorProps
                     positionSnap={positionSnap}
                 />
             )}
+            <MeshFields properties={properties} update={update} instancing={properties.repeat === true} />
         </FieldGroup>
     );
 }

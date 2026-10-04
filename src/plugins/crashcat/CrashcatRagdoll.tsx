@@ -14,11 +14,11 @@ import { box, DEFAULT_SHAPE_DENSITY, ConstraintSpace, massProperties, motionProp
 
 import { Mesh, Quaternion, Vector3 } from "three";
 
-import type { Component, ComponentViewProps, NodeInteractionHandlers } from "../../core/ComponentRegistry";
+import type { Component, ComponentViewProps, NodeInteractionHandlers } from "../../core/ComponentRegistry.js";
 
-import { useNode, useGameObject } from "../../runtime/scene/SceneContext";
+import { useNode, useGameObject } from "../../runtime/scene/SceneContext.js";
 
-import { useCrashcat, type CrashcatApi } from "./CrashcatRuntime";
+import { useCrashcat, type CrashcatApi } from "./CrashcatRuntime.js";
 
 export enum RagdollBodyPart {
     UpperBody = 0,

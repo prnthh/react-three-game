@@ -1,6 +1,6 @@
-import type { Component, ComponentViewProps } from "../../core/ComponentRegistry";
+import type { Component, ComponentViewProps } from "../../core/ComponentRegistry.js";
 
-import { usePrefab } from "../scene/SceneContext";
+import { usePrefab } from "../scene/SceneContext.js";
 
 import { Text } from 'three-text/three/react';
 
@@ -8,7 +8,7 @@ import { useRef, useState, useCallback } from 'react';
 
 import { BufferGeometry, Color, Mesh } from "three";
 
-import { withBasePath } from "../assets/assetPaths";
+import { withBasePath } from "../assets/assetPaths.js";
 
 export type TextProperties = {
     text?: string;

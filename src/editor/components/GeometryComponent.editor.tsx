@@ -1,6 +1,7 @@
-import type { ComponentEditorProps } from "../../core/ComponentRegistry";
-import { FieldGroup, NumberField, SelectField } from "../ui/Input";
-import { GEOMETRY_ARGS, GeometryProperties, getDefaultArgs } from "../../runtime/components/GeometryComponent";
+import MeshFields from "./MeshFields.js";
+import type { ComponentEditorProps } from "../../core/ComponentRegistry.js";
+import { FieldGroup, NumberField, SelectField } from "../ui/Input.js";
+import { GEOMETRY_ARGS, GeometryProperties, getDefaultArgs } from "../../runtime/components/GeometryComponent.js";
 
 function GeometryComponentEditor({ properties, update }: ComponentEditorProps<GeometryProperties>) {
     const geometryType = properties.geometryType ?? 'box';
@@ -49,6 +50,7 @@ function GeometryComponentEditor({ properties, update }: ComponentEditorProps<Ge
                     step={field.step}
                 />
             ))}
+            <MeshFields properties={properties} update={update} />
         </FieldGroup>
     );
 }

@@ -1,22 +1,22 @@
-import { AssetBoundary } from '../assets/AssetBoundary';
-import { usePrefabStoreApi } from '../prefabs/PrefabStoreContext';
+import { AssetBoundary } from '../assets/AssetBoundary.js';
+import { usePrefabStoreApi } from '../prefabs/PrefabStoreContext.js';
 import { createContext, useContext, useDeferredValue, useEffect, useLayoutEffect, useMemo } from 'react';
 
-import type { Component, ComponentViewProps } from '../../core/ComponentRegistry';
+import type { Component, ComponentViewProps } from '../../core/ComponentRegistry.js';
 
-import { useNode, usePrefab } from '../scene/SceneContext';
+import { useNode, usePrefab } from '../scene/SceneContext.js';
 
-import { reconcilePrefabState } from '../../core/prefab';
+import { reconcilePrefabState } from '../../core/prefab.js';
 
-import { createPrefabStore } from "../../core/prefabStore";
+import { createPrefabStore } from "../../core/prefabStore.js";
 
-import { withBasePath } from "../assets/assetPaths";
+import { withBasePath } from "../assets/assetPaths.js";
 
-import { describePrefabSource, isEmbeddedPrefabSource } from '../prefabs/prefabSource';
+import { describePrefabSource, isEmbeddedPrefabSource } from '../prefabs/prefabSource.js';
 
-import { PrefabRoot } from '../prefabs/PrefabRoot';
+import { PrefabRoot } from '../prefabs/PrefabRoot.js';
 
-import { useAssetCache, useAsset } from '../assets/assetCache';
+import { useAssetCache, useAsset } from '../assets/assetCache.js';
 
 export type PrefabRefProperties = {
     url?: string;

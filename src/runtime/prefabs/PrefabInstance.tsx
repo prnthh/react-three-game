@@ -1,14 +1,14 @@
-import { AssetBoundary } from '../assets/AssetBoundary';
+import { AssetBoundary } from '../assets/AssetBoundary.js';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useThree } from '@react-three/fiber';
 import { Group } from 'three';
 import type { WebGPURenderer } from 'three/webgpu';
-import { PrefabRoot } from './PrefabRoot';
-import { createPrefabStore } from "../../core/prefabStore";
-import { useAssetRuntime } from '../assets/AssetRuntime';
-import { MeshInstanceProvider, useMeshInstanceRevision } from '../rendering/MeshInstanceProvider';
-import { SceneRuntime } from '../SceneRuntime';
-import type { PreparedPrefab } from './preparePrefab';
+import { PrefabRoot } from './PrefabRoot.js';
+import { createPrefabStore } from "../../core/prefabStore.js";
+import { useAssetRuntime } from '../assets/AssetRuntime.js';
+import { MeshInstanceProvider, useMeshInstanceRevision } from '../rendering/MeshInstanceProvider.js';
+import { SceneRuntime } from '../SceneRuntime.js';
+import type { PreparedPrefab } from './preparePrefab.js';
 
 export type PrefabInstanceStatus =
     | { phase: 'loading' }

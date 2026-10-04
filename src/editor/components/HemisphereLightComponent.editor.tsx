@@ -1,8 +1,8 @@
-import type { ComponentEditorProps } from "../../core/ComponentRegistry";
-import { ColorField, NumberField } from "../ui/Input";
-import { mergeWithDefaults } from "../../runtime/components/lightUtils";
-import { LightSection } from "./lightUtils.editor";
-import { hemisphereLightDefaults, HemisphereLightProperties } from "../../runtime/components/HemisphereLightComponent";
+import type { ComponentEditorProps } from "../../core/ComponentRegistry.js";
+import { ColorField, NumberField } from "../ui/Input.js";
+import { mergeWithDefaults } from "../../runtime/components/lightUtils.js";
+import { LightSection } from "./lightUtils.editor.js";
+import { hemisphereLightDefaults, HemisphereLightProperties } from "../../runtime/components/HemisphereLightComponent.js";
 
 function HemisphereLightEditor({ properties, update }: ComponentEditorProps<HemisphereLightProperties>) {
     const values = mergeWithDefaults(hemisphereLightDefaults, properties);

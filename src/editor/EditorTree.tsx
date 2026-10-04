@@ -1,14 +1,14 @@
 import { useShallow } from "zustand/react/shallow";
 import { memo, MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { base, colors, tree } from './ui/styles';
-import { useEditorContext, useEditorRef } from './EditorContext';
-import { Dropdown } from './ui/Dropdown';
-import { FileMenu, TreeContextMenu, TreeContextMenuState, TreeNodeMenu } from './EditorTreeMenus';
-import { createEmptyNode } from '../core/prefab';
-import { PrefabStoreState } from "../core/prefabStore";
-import { usePrefabChildIds, usePrefabNode, usePrefabRootId, usePrefabStore, usePrefabStoreApi } from "../runtime/prefabs/PrefabStoreContext";
-import { hasComponent } from '../core/types';
-import { saveJson } from './documentIO';
+import { base, colors, tree } from './ui/styles.js';
+import { useEditorContext, useEditorRef } from './EditorContext.js';
+import { Dropdown } from './ui/Dropdown.js';
+import { FileMenu, TreeContextMenu, TreeContextMenuState, TreeNodeMenu } from './EditorTreeMenus.js';
+import { createEmptyNode } from '../core/prefab.js';
+import { PrefabStoreState } from "../core/prefabStore.js";
+import { usePrefabChildIds, usePrefabNode, usePrefabRootId, usePrefabStore, usePrefabStoreApi } from "../runtime/prefabs/PrefabStoreContext.js";
+import { hasComponent } from '../core/types.js';
+import { saveJson } from './documentIO.js';
 
 type DropPosition = 'before' | 'inside';
 

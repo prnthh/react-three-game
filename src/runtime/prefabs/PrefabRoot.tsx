@@ -1,23 +1,23 @@
-import { EditPickContext } from '../scene/SelectionRuntime';
-import { editPickIds } from '../scene/editPicking';
+import { EditPickContext } from '../scene/SelectionRuntime.js';
+import { editPickIds } from '../scene/editPicking.js';
 import { forwardRef, memo, useCallback, useContext, useImperativeHandle, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { Object3D } from "three";
 import type { ThreeEvent } from "@react-three/fiber";
 
-import type { GameObject as GameObjectType, Prefab } from "../../core/types";
-import { getComponentRegistryVersion, subscribeComponentRegistry } from "../../core/ComponentRegistry";
-import { createPrefabStore } from "../../core/prefabStore";
-import { usePrefabRootId, usePrefabStore, usePrefabStoreApi } from "./PrefabStoreContext";
-import type { PrefabStoreApi } from "../../core/prefabStore";
-import { useGameEvents, type GameEvents } from "../scene/GameEvents";
-import { PrefabEditorMode, RuntimeNodeIdPrefixContext, RuntimeNodeIdScope, usePrefab, useScene, type PrefabApi, type Scene } from "../scene/SceneContext";
-import { SceneProvider } from "../scene/SceneProvider";
-import { scopedNodeId } from "../scene/gameObject";
-import { PrefabNode, type RendererProps } from "./PrefabNode";
+import type { GameObject as GameObjectType, Prefab } from "../../core/types.js";
+import { getComponentRegistryVersion, subscribeComponentRegistry } from "../../core/ComponentRegistry.js";
+import { createPrefabStore } from "../../core/prefabStore.js";
+import { usePrefabRootId, usePrefabStore, usePrefabStoreApi } from "./PrefabStoreContext.js";
+import type { PrefabStoreApi } from "../../core/prefabStore.js";
+import { useGameEvents, type GameEvents } from "../scene/GameEvents.js";
+import { PrefabEditorMode, RuntimeNodeIdPrefixContext, RuntimeNodeIdScope, usePrefab, useScene, type PrefabApi, type Scene } from "../scene/SceneContext.js";
+import { SceneProvider } from "../scene/SceneProvider.js";
+import { scopedNodeId } from "../scene/gameObject.js";
+import { PrefabNode, type RendererProps } from "./PrefabNode.js";
 import {
     type NodeInteractionEvent,
     type NodeInteractionEventType,
-} from "../scene/usePointerEvents";
+} from "../scene/usePointerEvents.js";
 
 export type { Scene };
 

@@ -1,8 +1,8 @@
-import type { ComponentEditorProps } from '../../core/ComponentRegistry';
-import { BooleanField, ColorField, NumberField } from '../ui/Input';
-import { MAX_SHADOW_MAP_SIZE, MIN_SHADOW_MAP_SIZE, mergeWithDefaults } from "../../runtime/components/lightUtils";
-import { LightSection, ShadowBiasField } from "./lightUtils.editor";
-import { pointLightDefaults, PointLightProperties } from "../../runtime/components/PointLightComponent";
+import type { ComponentEditorProps } from '../../core/ComponentRegistry.js';
+import { BooleanField, ColorField, NumberField } from '../ui/Input.js';
+import { MAX_SHADOW_MAP_SIZE, MIN_SHADOW_MAP_SIZE, mergeWithDefaults } from "../../runtime/components/lightUtils.js";
+import { LightSection, ShadowBiasField } from "./lightUtils.editor.js";
+import { pointLightDefaults, PointLightProperties } from "../../runtime/components/PointLightComponent.js";
 
 function PointLightComponentEditor({ properties, update }: ComponentEditorProps<PointLightProperties>) {
     const values = mergeWithDefaults(pointLightDefaults, properties);

@@ -1,8 +1,8 @@
 import {
 	getComponentDefaultProperties,
 	getComponent,
-} from "./ComponentRegistry";
-import type { ComponentData, GameObject, MaterialComponentProperties, Prefab, PrefabMaterial } from "./types";
+} from "./ComponentRegistry.js";
+import type { ComponentData, GameObject, MaterialComponentProperties, Prefab, PrefabMaterial } from "./types.js";
 
 export type PrefabNodeRecord = Omit<GameObject, "children">;
 
@@ -87,7 +87,7 @@ export function compactPrefabMaterial(material: PrefabMaterial): PrefabMaterial 
 
 	Object.entries(material).forEach(([key, value]) => {
 		if (value === undefined || samePrefabValue(value, defaults[key])) return;
-		compact[key] = clonePrefabValue(value);
+		compact[key] = structuredClone(value);
 	});
 
 	return compact as PrefabMaterial;
@@ -110,26 +110,8 @@ function compactMaterials(materials: Record<string, PrefabMaterial>) {
 function normalizeMaterials(materials?: Record<string, PrefabMaterial>) {
 	return {
 		[DEFAULT_MATERIAL_ID]: createDefaultMaterial(),
-		...clonePrefabValue(materials ?? {}),
+		...structuredClone(materials ?? {}),
 	};
-}
-
-function clonePrefabValue<T>(value: T): T {
-	if (Array.isArray(value)) {
-		return value.map((item) => clonePrefabValue(item)) as T;
-	}
-
-	if (value && typeof value === "object") {
-		const clone: Record<string, unknown> = {};
-
-		Object.entries(value).forEach(([key, entry]) => {
-			clone[key] = clonePrefabValue(entry);
-		});
-
-		return clone as T;
-	}
-
-	return value;
 }
 
 function createComponentMap(
@@ -167,7 +149,7 @@ function denormalizeNode(
 		if (!component) return result;
 		const defaults = getComponentDefaultProperties(getComponent(component.type), component.properties);
 		const properties = Object.entries(component.properties ?? {}).reduce<Record<string, unknown>>((sparse, [name, value]) => {
-			if (!samePrefabValue(value, defaults[name])) sparse[name] = clonePrefabValue(value);
+			if (!samePrefabValue(value, defaults[name])) sparse[name] = structuredClone(value);
 			return sparse;
 		}, {});
 		result[key] = { ...component, properties };
@@ -189,7 +171,7 @@ export function createComponentData(
 ): ComponentData {
 	return {
 		type,
-		properties: clonePrefabValue(properties ?? {}),
+		properties: structuredClone(properties ?? {}),
 	};
 }
 
@@ -240,10 +222,6 @@ export function createImageNode(
 	name?: string,
 ): GameObject {
 	return createNode(getNodeNameFromPath(texturePath, name), {
-		mesh: {
-			type: "Mesh",
-			properties: {},
-		},
 		geometry: {
 			type: "Geometry",
 			properties: { geometryType: "plane", args: [1, 1] },
@@ -384,7 +362,7 @@ export function cloneSubtree(
 	const clonedId = crypto.randomUUID();
 	const clonedNode: PrefabNodeRecord = {
 		...originalNode,
-		components: clonePrefabValue(originalNode.components),
+		components: structuredClone(originalNode.components),
 		id: clonedId,
 		name: `${originalNode.name ?? originalNode.id} Copy`,
 	};

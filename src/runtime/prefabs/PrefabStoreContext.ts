@@ -1,7 +1,7 @@
 import { Fragment, createContext, createElement, type ReactNode, useContext } from "react";
 import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
-import type { PrefabStoreApi, PrefabStoreState } from "../../core/prefabStore";
+import type { PrefabStoreApi, PrefabStoreState } from "../../core/prefabStore.js";
 
 const PrefabStoreContext = createContext<PrefabStoreApi | null>(null);
 const EMPTY_CHILD_IDS: string[] = [];

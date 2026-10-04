@@ -1,9 +1,9 @@
-import type { ComponentEditorProps } from "../../core/ComponentRegistry";
-import { BooleanField, ColorField, NumberField, NumberInput, Vector3Input } from "../ui/Input";
-import { MAX_SHADOW_MAP_SIZE, MIN_SHADOW_MAP_SIZE, mergeWithDefaults } from "../../runtime/components/lightUtils";
-import { LightSection, ShadowBiasField } from "./lightUtils.editor";
-import { colors } from "../ui/styles";
-import { directionalLightDefaults, DirectionalLightValues, DirectionalLightProperties } from "../../runtime/components/DirectionalLightComponent";
+import type { ComponentEditorProps } from "../../core/ComponentRegistry.js";
+import { BooleanField, ColorField, NumberField, NumberInput, Vector3Input } from "../ui/Input.js";
+import { MAX_SHADOW_MAP_SIZE, MIN_SHADOW_MAP_SIZE, mergeWithDefaults } from "../../runtime/components/lightUtils.js";
+import { LightSection, ShadowBiasField } from "./lightUtils.editor.js";
+import { colors } from "../ui/styles.js";
+import { directionalLightDefaults, DirectionalLightValues, DirectionalLightProperties } from "../../runtime/components/DirectionalLightComponent.js";
 
 function ShadowFrustumField({ values, onChange }: { values: DirectionalLightValues; onChange: (values: Partial<DirectionalLightValues>) => void }) {
     // Minimal, no lock UI for simplicity (can add back if needed)

@@ -1,10 +1,11 @@
-import type { Component, ComponentViewProps } from "../../core/ComponentRegistry";
+import { meshProperties, type MeshProperties } from "../rendering/meshProperties.js";
+import type { Component, ComponentViewProps } from "../../core/ComponentRegistry.js";
 
 export type NumericArray = number[];
 
 export type GeometryGroup = { start: number; count: number; materialIndex?: number };
 
-export interface BufferGeometryProperties {
+export interface BufferGeometryProperties extends MeshProperties {
     positions?: NumericArray;
     indices?: NumericArray;
     normals?: NumericArray;
@@ -49,7 +50,7 @@ export function normalizeNumberArray(value: unknown, fallback: NumericArray) {
 
 function getIndexArray(indices: NumericArray) {
     if (indices.length === 0) return null;
-    const maxIndex = Math.max(...indices);
+    const maxIndex = indices.reduce((maximum, value) => Math.max(maximum, value), 0);
     return maxIndex > 65535 ? new Uint32Array(indices) : new Uint16Array(indices);
 }
 
@@ -96,6 +97,7 @@ const BufferGeometryComponent: Component<BufferGeometryProperties> = {
     slot: 'geometry',
     View: BufferGeometryComponentView,
     properties: {
+        ...meshProperties,
         positions: { type: 'number[]', default: DEFAULT_TRIANGLE_POSITIONS },
         indices: { type: 'number[]', default: DEFAULT_TRIANGLE_INDICES },
         normals: { type: 'number[]', default: [] },

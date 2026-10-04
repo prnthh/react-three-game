@@ -18,7 +18,6 @@ function box(id: string, position: Vec3, size: Vec3, materialId: string, dynamic
         id, name: id,
         components: {
             transform: { type: 'Transform', properties: { position, scale: size } },
-            mesh: { type: 'Mesh', properties: {} },
             geometry: { type: 'Geometry', properties: { geometryType: 'box', args: [1, 1, 1] } },
             material: { type: 'Material', properties: { materialId } },
             physics: { type: 'CrashcatPhysics', properties: {

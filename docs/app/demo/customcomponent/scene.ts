@@ -19,7 +19,6 @@ export const rotatorScene: Prefab = {
             id, name,
             components: {
                 transform: { type: 'Transform', properties: { position } },
-                mesh: { type: 'Mesh', properties: {} },
                 geometry: { type: 'Geometry', properties: { geometryType: geometry, args } },
                 material: { type: 'Material', properties: { materialId: material } },
                 rotator: { type: 'Rotator', properties: { speed, axis } },

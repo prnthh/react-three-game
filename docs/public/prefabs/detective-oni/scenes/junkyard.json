@@ -245,17 +245,12 @@
               ]
             }
           },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false,
-              "emitClickEvent": true,
-              "clickEventName": "stage:floor-click"
-            }
-          },
           "geometry": {
             "type": "Geometry",
             "properties": {
+              "castShadow": false,
+              "emitClickEvent": true,
+              "clickEventName": "stage:floor-click",
               "geometryType": "box",
               "args": [
                 34,
@@ -305,16 +300,11 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": false
-                }
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
+                  "castShadow": false,
+                  "receiveShadow": false,
                   "geometryType": "sphere",
                   "args": [
                     45,
@@ -369,10 +359,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -413,10 +399,6 @@
                     1.06
                   ]
                 }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -459,10 +441,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -503,10 +481,6 @@
                     1.06
                   ]
                 }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -549,10 +523,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -593,10 +563,6 @@
                     1.06
                   ]
                 }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -639,10 +605,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -683,10 +645,6 @@
                     -1.06
                   ]
                 }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -729,10 +687,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -773,10 +727,6 @@
                     0
                   ]
                 }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -819,10 +769,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -857,10 +803,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -894,10 +836,6 @@
                     1.39
                   ]
                 }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -949,10 +887,6 @@
                       ]
                     }
                   },
-                  "mesh": {
-                    "type": "Mesh",
-                    "properties": {}
-                  },
                   "geometry": {
                     "type": "Geometry",
                     "properties": {
@@ -986,10 +920,6 @@
                         0
                       ]
                     }
-                  },
-                  "mesh": {
-                    "type": "Mesh",
-                    "properties": {}
                   },
                   "geometry": {
                     "type": "Geometry",
@@ -1025,10 +955,6 @@
                       ]
                     }
                   },
-                  "mesh": {
-                    "type": "Mesh",
-                    "properties": {}
-                  },
                   "geometry": {
                     "type": "Geometry",
                     "properties": {
@@ -1062,10 +988,6 @@
                         0
                       ]
                     }
-                  },
-                  "mesh": {
-                    "type": "Mesh",
-                    "properties": {}
                   },
                   "geometry": {
                     "type": "Geometry",
@@ -1101,10 +1023,6 @@
                       ]
                     }
                   },
-                  "mesh": {
-                    "type": "Mesh",
-                    "properties": {}
-                  },
                   "geometry": {
                     "type": "Geometry",
                     "properties": {
@@ -1139,10 +1057,6 @@
                       ]
                     }
                   },
-                  "mesh": {
-                    "type": "Mesh",
-                    "properties": {}
-                  },
                   "geometry": {
                     "type": "Geometry",
                     "properties": {
@@ -1176,10 +1090,6 @@
                         0.055
                       ]
                     }
-                  },
-                  "mesh": {
-                    "type": "Mesh",
-                    "properties": {}
                   },
                   "geometry": {
                     "type": "Geometry",
@@ -1279,10 +1189,6 @@
                       ]
                     }
                   },
-                  "mesh": {
-                    "type": "Mesh",
-                    "properties": {}
-                  },
                   "geometry": {
                     "type": "Geometry",
                     "properties": {
@@ -1317,10 +1223,6 @@
                       ]
                     }
                   },
-                  "mesh": {
-                    "type": "Mesh",
-                    "properties": {}
-                  },
                   "geometry": {
                     "type": "Geometry",
                     "properties": {
@@ -1354,10 +1256,6 @@
                         0
                       ]
                     }
-                  },
-                  "mesh": {
-                    "type": "Mesh",
-                    "properties": {}
                   },
                   "geometry": {
                     "type": "Geometry",
@@ -1395,10 +1293,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -1433,10 +1327,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -1470,10 +1360,6 @@
                     1.18
                   ]
                 }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -1522,10 +1408,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -1559,10 +1441,6 @@
                     -0.3
                   ]
                 }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -1602,10 +1480,6 @@
                     1.5707963267948966
                   ]
                 }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -1647,10 +1521,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -1685,10 +1555,6 @@
                     -5.05
                   ]
                 }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -1732,10 +1598,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -1777,10 +1639,6 @@
                     -5.05
                   ]
                 }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -1824,10 +1682,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -1869,10 +1723,6 @@
                     -5.05
                   ]
                 }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -1916,10 +1766,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -1961,10 +1807,6 @@
                     -4.85
                   ]
                 }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -2008,10 +1850,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -2053,10 +1891,6 @@
                     -0.25
                   ]
                 }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -2100,10 +1934,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -2145,10 +1975,6 @@
                     4.35
                   ]
                 }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -2199,16 +2025,11 @@
               ]
             }
           },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "emitClickEvent": true,
-              "clickEventName": "stage:inspect-car"
-            }
-          },
           "geometry": {
             "type": "Geometry",
             "properties": {
+              "emitClickEvent": true,
+              "clickEventName": "stage:inspect-car",
               "geometryType": "box",
               "args": [
                 2.25,
@@ -2253,17 +2074,12 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "visible": false,
-                  "castShadow": false,
-                  "receiveShadow": false
-                }
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
+                  "visible": false,
+                  "castShadow": false,
+                  "receiveShadow": false,
                   "geometryType": "box",
                   "args": [
                     2.25,
@@ -2307,10 +2123,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -2349,10 +2161,6 @@
                     -0.03
                   ]
                 }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -2393,10 +2201,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -2435,10 +2239,6 @@
                     -0.36
                   ]
                 }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -2479,10 +2279,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -2522,10 +2318,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -2559,10 +2351,6 @@
                     0.58
                   ]
                 }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -2602,10 +2390,6 @@
                     -0.04
                   ]
                 }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -2657,10 +2441,6 @@
                       ]
                     }
                   },
-                  "mesh": {
-                    "type": "Mesh",
-                    "properties": {}
-                  },
                   "geometry": {
                     "type": "Geometry",
                     "properties": {
@@ -2700,10 +2480,6 @@
                         0
                       ]
                     }
-                  },
-                  "mesh": {
-                    "type": "Mesh",
-                    "properties": {}
                   },
                   "geometry": {
                     "type": "Geometry",
@@ -2758,10 +2534,6 @@
                       ]
                     }
                   },
-                  "mesh": {
-                    "type": "Mesh",
-                    "properties": {}
-                  },
                   "geometry": {
                     "type": "Geometry",
                     "properties": {
@@ -2801,10 +2573,6 @@
                         0
                       ]
                     }
-                  },
-                  "mesh": {
-                    "type": "Mesh",
-                    "properties": {}
                   },
                   "geometry": {
                     "type": "Geometry",
@@ -2859,10 +2627,6 @@
                       ]
                     }
                   },
-                  "mesh": {
-                    "type": "Mesh",
-                    "properties": {}
-                  },
                   "geometry": {
                     "type": "Geometry",
                     "properties": {
@@ -2902,10 +2666,6 @@
                         0
                       ]
                     }
-                  },
-                  "mesh": {
-                    "type": "Mesh",
-                    "properties": {}
                   },
                   "geometry": {
                     "type": "Geometry",
@@ -2960,10 +2720,6 @@
                       ]
                     }
                   },
-                  "mesh": {
-                    "type": "Mesh",
-                    "properties": {}
-                  },
                   "geometry": {
                     "type": "Geometry",
                     "properties": {
@@ -3004,10 +2760,6 @@
                       ]
                     }
                   },
-                  "mesh": {
-                    "type": "Mesh",
-                    "properties": {}
-                  },
                   "geometry": {
                     "type": "Geometry",
                     "properties": {
@@ -3047,16 +2799,11 @@
               ]
             }
           },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "emitClickEvent": true,
-              "clickEventName": "stage:inspect-trashcan"
-            }
-          },
           "geometry": {
             "type": "Geometry",
             "properties": {
+              "emitClickEvent": true,
+              "clickEventName": "stage:inspect-trashcan",
               "geometryType": "cylinder",
               "args": [
                 0.43,
@@ -3102,17 +2849,12 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "visible": false,
-                  "castShadow": false,
-                  "receiveShadow": false
-                }
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
+                  "visible": false,
+                  "castShadow": false,
+                  "receiveShadow": false,
                   "geometryType": "cylinder",
                   "args": [
                     0.43,
@@ -3157,10 +2899,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -3201,10 +2939,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -3240,10 +2974,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -3278,10 +3008,6 @@
                     0
                   ]
                 }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -3346,10 +3072,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -3389,10 +3111,6 @@
                     0.08
                   ]
                 }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -3434,10 +3152,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -3478,10 +3192,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -3521,10 +3231,6 @@
                     0
                   ]
                 }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -3584,10 +3290,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -3634,10 +3336,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -3676,10 +3374,6 @@
                     0.16
                   ]
                 }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -3720,10 +3414,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -3763,10 +3453,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -3804,15 +3490,10 @@
               ]
             }
           },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
           "geometry": {
             "type": "Geometry",
             "properties": {
+              "castShadow": false,
               "geometryType": "box",
               "args": [
                 5.6,
@@ -3849,15 +3530,10 @@
               ]
             }
           },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {
-              "castShadow": false
-            }
-          },
           "geometry": {
             "type": "Geometry",
             "properties": {
+              "castShadow": false,
               "geometryType": "cylinder",
               "args": [
                 0.75,
@@ -3894,10 +3570,6 @@
                 0
               ]
             }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
@@ -3937,10 +3609,6 @@
                 0
               ]
             }
-          },
-          "mesh": {
-            "type": "Mesh",
-            "properties": {}
           },
           "geometry": {
             "type": "Geometry",
@@ -3997,10 +3665,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -4035,10 +3699,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -4072,10 +3732,6 @@
                     0
                   ]
                 }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -4273,10 +3929,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -4310,10 +3962,6 @@
                     -2.2
                   ]
                 }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -4349,10 +3997,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -4387,16 +4031,11 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": false
-                }
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
+                  "castShadow": false,
+                  "receiveShadow": false,
                   "geometryType": "box",
                   "args": [
                     2.25,
@@ -4428,16 +4067,11 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": false
-                }
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
+                  "castShadow": false,
+                  "receiveShadow": false,
                   "geometryType": "box",
                   "args": [
                     2.25,
@@ -4469,16 +4103,11 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": false
-                }
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
+                  "castShadow": false,
+                  "receiveShadow": false,
                   "geometryType": "box",
                   "args": [
                     2.25,
@@ -4510,16 +4139,11 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": false
-                }
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
+                  "castShadow": false,
+                  "receiveShadow": false,
                   "geometryType": "box",
                   "args": [
                     2.25,
@@ -4551,16 +4175,11 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": false
-                }
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
+                  "castShadow": false,
+                  "receiveShadow": false,
                   "geometryType": "box",
                   "args": [
                     2.25,
@@ -4610,10 +4229,6 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
@@ -4647,10 +4262,6 @@
                     -0.66
                   ]
                 }
-              },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {}
               },
               "geometry": {
                 "type": "Geometry",
@@ -4686,16 +4297,11 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true,
                   "geometryType": "box",
                   "args": [
                     0.035,
@@ -4727,16 +4333,11 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true,
                   "geometryType": "box",
                   "args": [
                     0.035,
@@ -4768,16 +4369,11 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true,
                   "geometryType": "box",
                   "args": [
                     0.035,
@@ -4809,16 +4405,11 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true,
                   "geometryType": "box",
                   "args": [
                     0.035,
@@ -4850,16 +4441,11 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true,
                   "geometryType": "box",
                   "args": [
                     0.035,
@@ -4891,16 +4477,11 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true,
                   "geometryType": "box",
                   "args": [
                     0.035,
@@ -4932,16 +4513,11 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true,
                   "geometryType": "box",
                   "args": [
                     0.035,
@@ -4973,16 +4549,11 @@
                   ]
                 }
               },
-              "mesh": {
-                "type": "Mesh",
-                "properties": {
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
+                  "castShadow": false,
+                  "receiveShadow": true,
                   "geometryType": "box",
                   "args": [
                     0.035,

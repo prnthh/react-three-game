@@ -1,10 +1,10 @@
 import { useThree } from '@react-three/fiber';
-import type { PrefabDocumentApi } from '../../core/prefabDocumentApi';
+import type { PrefabDocumentApi } from '../../core/prefabDocumentApi.js';
 import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useSyncExternalStore, type ReactNode } from "react";
 import type { Object3D, Texture } from "three";
-import type { GameObject } from "../../core/types";
-import { createGameObjectHandle } from "./gameObject";
-import type { NodeInteractionHandlers } from "./usePointerEvents";
+import type { GameObject } from "../../core/types.js";
+import { createGameObjectHandle } from "./gameObject.js";
+import type { NodeInteractionHandlers } from "./usePointerEvents.js";
 
 export enum PrefabEditorMode {
     Edit = "edit",

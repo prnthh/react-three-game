@@ -1,20 +1,20 @@
 import { useEffect, useMemo, useRef } from 'react';
 
-import { useAssetRuntime, useSoundAssetRevision } from '../assets/AssetRuntime';
+import { useAssetRuntime, useSoundAssetRevision } from '../assets/AssetRuntime.js';
 
-import { useGameObject, useNode } from '../scene/SceneContext';
+import { useGameObject, useNode } from '../scene/SceneContext.js';
 
-import { useGameEvents, type ContactEventPayload, type NodePointerEventPayload } from '../scene/GameEvents';
+import { useGameEvents, type ContactEventPayload, type NodePointerEventPayload } from '../scene/GameEvents.js';
 
-import type { Component, ComponentViewProps } from '../../core/ComponentRegistry';
+import type { Component, ComponentViewProps } from '../../core/ComponentRegistry.js';
 
 import { PositionalAudio as ThreePositionalAudio } from 'three';
 
-import { useAudioListener } from '../audio/AudioRuntime';
+import { useAudioListener } from '../audio/AudioRuntime.js';
 
-import { withBasePath } from "../assets/assetPaths";
+import { withBasePath } from "../assets/assetPaths.js";
 
-import { usePrefab } from '../scene/SceneContext';
+import { usePrefab } from '../scene/SceneContext.js';
 
 export type ClipMode = 'single' | 'random' | 'sequence';
 

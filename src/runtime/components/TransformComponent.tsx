@@ -1,4 +1,4 @@
-import type { Component } from "../../core/ComponentRegistry";
+import type { Component } from "../../core/ComponentRegistry.js";
 
 export type TransformProperties = {
     position?: [number, number, number];

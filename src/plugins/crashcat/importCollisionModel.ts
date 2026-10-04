@@ -1,5 +1,5 @@
 import { Mesh, type Object3D } from 'three';
-import { decomposeModelToPrefabNodes, type DecomposeModelOptions } from '../../editor/modelPrefab';
+import { decomposeModelToPrefabNodes, type DecomposeModelOptions } from '../../core/modelPrefab.js';
 
 /** Optional editor importer for Blender _col and _colonly meshes. */
 export function importCollisionModel(model: Object3D, options: DecomposeModelOptions = {}) {
@@ -21,9 +21,9 @@ export function importCollisionModel(model: Object3D, options: DecomposeModelOpt
                 hidden: false,
                 components: {
                     ...node.components,
-                    mesh: {
-                        type: 'Mesh', properties: {
-                            ...node.components?.mesh?.properties,
+                    geometry: {
+                        type: 'BufferGeometry', properties: {
+                            ...node.components?.geometry?.properties,
                             visible: match[2].toLowerCase() === 'col',
                         }
                     },

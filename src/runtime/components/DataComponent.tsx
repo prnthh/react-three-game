@@ -1,4 +1,4 @@
-import type { Component } from "../../core/ComponentRegistry";
+import type { Component } from "../../core/ComponentRegistry.js";
 
 export type DataComponentProperties = {
     data?: Record<string, unknown>;

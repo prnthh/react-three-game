@@ -1,7 +1,7 @@
 import type { Intersection, Object3D } from 'three';
-import type { GameObject } from '../../core/types';
+import type { GameObject } from '../../core/types.js';
 
-import { getObjectNodeIdentity, registerRenderSources, resolveRenderSource } from './gameObject';
+import { getObjectNodeIdentity, registerRenderSources, resolveRenderSource } from './gameObject.js';
 
 /** @deprecated Render-source identity is shared by runtime and editor consumers. */
 export const registerEditPickSources = registerRenderSources;

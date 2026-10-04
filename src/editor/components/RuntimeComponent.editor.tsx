@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import type { RuntimeComponentProperties } from '../../runtime/components/RuntimeComponent';
-import type { ComponentEditorProps } from '../../core/ComponentRegistry';
-import { colors, ui } from '../ui/styles';
+import type { RuntimeComponentProperties } from '../../runtime/components/RuntimeComponent.js';
+import type { ComponentEditorProps } from '../../core/ComponentRegistry.js';
+import { colors, ui } from '../ui/styles.js';
 
 function ScriptField({ name, value, commit }: { name: string; value: string; commit: (value: string) => void }) {
     const [draft, setDraft] = useState(value);

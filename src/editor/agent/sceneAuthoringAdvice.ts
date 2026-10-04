@@ -1,5 +1,5 @@
-import type { PrefabState } from '../../core/prefab';
-import { findComponent } from '../../core/types';
+import type { PrefabState } from '../../core/prefab.js';
+import { findComponent } from '../../core/types.js';
 
 export type SceneAuthoringAdvice = { code: string; message: string; count: number; nodeIds: string[] };
 
@@ -15,7 +15,7 @@ export function analyzeSceneAuthoring(state: PrefabState) {
     const boxShapes = new Set<string>(), models = new Set<string>();
     let meshCount = 0, modelCount = 0;
     for (const node of active) {
-        const mesh = findComponent(node, 'Mesh')?.properties;
+        const mesh = (findComponent(node, 'Geometry') ?? findComponent(node, 'BufferGeometry'))?.properties;
         const geometry = findComponent(node, 'Geometry')?.properties;
         const model = findComponent(node, 'Model')?.properties;
         const light = findComponent(node, 'PointLight')?.properties;

@@ -7,11 +7,11 @@ import { PointLightHelper } from 'three';
 
 import type { Object3D, PointLight } from 'three';
 
-import { useNode } from '../scene/SceneContext';
+import { useNode } from '../scene/SceneContext.js';
 
-import type { Component, ComponentViewProps } from '../../core/ComponentRegistry';
+import type { Component, ComponentViewProps } from '../../core/ComponentRegistry.js';
 
-import { EditorLightGizmo, MAX_SHADOW_MAP_SIZE, MIN_SHADOW_MAP_SIZE, mergeWithDefaults, normalizeShadowMapSize, useShadowMapResolution } from './lightUtils';
+import { EditorLightGizmo, MAX_SHADOW_MAP_SIZE, MIN_SHADOW_MAP_SIZE, mergeWithDefaults, normalizeShadowMapSize, useShadowMapResolution } from './lightUtils.js';
 
 export const pointLightDefaults = {
     color: '#ffffff',

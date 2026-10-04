@@ -34,6 +34,22 @@ for the optional physics plugin.
 For scene edits through a browser agent, follow the [agent guide](docs/public/editor-scene-for-agents.md).
 The examples below show how to embed the library in your own app.
 
+## Choose an interface
+
+All interfaces edit the same JSON prefab format.
+
+| Use case | Entry point |
+| --- | --- |
+| Edit files, validate command batches, convert GLB | `rtg` CLI (Node 22+) |
+| Edit documents in application code | `react-three-game/core` |
+| Load local assets and convert scenes in Node | `react-three-game/node` |
+| Embed a visual editor and live agent API | `react-three-game/editor` |
+| Play a scene in React Three Fiber | `react-three-game/viewer` |
+
+For a first React app, start with the [editor example](#minimal-react-app-with-an-editor)
+or [viewer example](#minimal-react-app-with-a-viewer). For files, follow the CLI
+example below.
+
 ## Prepared prefab instances
 
 Use `PrefabInstance` inside your canvas for runtime loading and streamed chunks:
@@ -75,67 +91,91 @@ individual instances; instance-local objects and configured copies keep their ow
 cleanup. Drei's `useProgress` reports underlying Three loader activity; it does not
 include prefab JSON or audio fetched directly.
 
-## Node scene construction and GLB export
+## Node scene conversion
 
-`react-three-game/headless` constructs the same Three.js object graph as
-`PrefabRoot`, using an R3F reconciler in plain Node. It does not launch a browser,
-create a DOM root, allocate a canvas, or initialize WebGL/WebGPU. GLB export
-serializes objects; this host does not render screenshots.
+Node 22+, no browser or GPU:
 
 ```js
-import { readFile, writeFile } from 'node:fs/promises';
-import { exportPrefabToGLB } from 'react-three-game/headless';
+import { convert } from 'react-three-game/node';
 
-const prefab = JSON.parse(await readFile('scene.json', 'utf8'));
-const bytes = await exportPrefabToGLB(prefab);
-await writeFile('scene.glb', new Uint8Array(bytes));
+const glb = await convert(scene, { from: 'scene', to: 'glb', assetRoot: './public' });
+const json = await convert(glb, { from: 'glb', to: 'scene' });
 ```
 
-For direct access to the Three.js scene, use `createHeadlessScene(prefab, options)`.
-It resolves after declared dependencies and the atomic Suspense tree have loaded
-and committed. Always release the host after inspecting or exporting its objects:
+`scene` is a prefab object; `glb` is an ArrayBuffer (Buffer input also works).
+`assetRoot` defaults to cwd. Lossy static conversion: custom components, textures,
+and animation are omitted; compressed models requiring decoders are unsupported.
+Install the CLI globally:
 
-```js
-import { createHeadlessScene } from 'react-three-game/headless';
+```sh
+npm i -g react-three-game
+rtg convert scene.json scene.glb
+rtg convert scene.glb scene.json
+```
 
-const host = await createHeadlessScene(prefab, { timeoutMs: 30_000 });
-try {
-  console.log(host.scene); // THREE.Scene
-  const bytes = await host.exportGLB({ onlyVisible: true });
-  await writeFile('scene.glb', new Uint8Array(bytes));
-} finally {
-  await host.dispose();
+Both paths are required. Optional third argument: asset root (otherwise cwd).
+
+## Edit scene files
+
+Create `scene.json`:
+
+```json
+{ "root": { "id": "world", "children": [{ "id": "player", "name": "Player" }] } }
+```
+
+Create `commands.json`:
+
+```json
+{
+  "commands": [
+    { "op": "update", "id": "player", "patch": { "name": "Hero" } },
+    { "op": "transform", "id": "player", "position": [1, 0, 0] }
+  ]
 }
 ```
 
-The host disables gameplay, audio, and automatic mesh batching. Original meshes,
-transforms, visibility, and materials remain available for export. Built-in render
-components mount in preparation mode; custom components must be registered and
-use `renderWhenDisabled: true` to participate. Their views must work without browser
-APIs or GPU calls and use declared dependencies or Suspense for asynchronous
-readiness. The host does not advance simulation frames. Errors, cycles, cancellation
-via `signal`, and timeouts reject rather than returning a partially loaded scene.
+Validate, then save a new scene:
 
-Each host has a separate asset cache. Untextured built-in geometry works immediately.
-HTTP/data-URL prefab references use Node's `fetch`; filesystem prefab references,
-models, and textures can use `options.loaders` adapters. A prefab loader returns a
-normalized document (`normalizePrefab` from `react-three-game/core`); model and
-texture loaders return Three.js objects. `basePath` uses the same asset-root rules
-as the browser viewer. Adapter resources belong to the caller and must stay alive
-until the host is disposed. Texture export additionally requires an image/canvas
-adapter compatible with Three's GLTFExporter.
+```sh
+rtg validate scene.json commands.json
+rtg apply scene.json commands.json edited.json
+rtg components Transform
+rtg schema > commands.schema.json
+```
 
-GPU environment captures and the current Text component are not supported by this
-host yet and produce explicit errors. GLB preserves supported glTF scene data,
-not gameplay, physics, arbitrary node shaders, fog, or environment lighting. Use
-`host.exportGLB({ animations })` to supply animation clips explicitly. For binary
-output in Node, the host installs a small Blob-reading `FileReader` shim only when
-one is absent; it does not emulate a DOM or replace a native implementation.
+`commands.json` uses the same `{ "commands": [...] }` payload as the editor agent
+(without its session-specific `expectedRevision`). Validation evaluates the whole
+batch without writing a file; apply writes only after all commands succeed.
+`rtg schema` describes the complete command-file object. `rtg components` lists
+built-ins; pass names to see their properties and defaults. Errors go to stderr
+with exit code 1. Run `rtg --help` for usage.
 
-A runnable Node export example lives in the [docs workspace](docs/README.md#headless-export).
-The library build adds explicit `.js` extensions to emitted relative imports for Node ESM.
+The CLI uses built-in contracts. For application-specific components, register
+those definitions with `registerComponent` and use the same core API in a script:
 
-### Browser services
+### Use commands from code
+
+```js
+import { evaluateSceneCommands } from 'react-three-game/core';
+import { registerBuiltInComponents } from 'react-three-game/node';
+
+registerBuiltInComponents(); // Once before validating built-in component properties.
+const scene = { root: { id: 'world', children: [{ id: 'player' }] } };
+const { prefab, result } = evaluateSceneCommands(scene, {
+  commands: [{ op: 'update', id: 'player', patch: { name: 'Hero' } }],
+});
+```
+
+This returns a new prefab without mutating the input. `evaluateSceneCommandState`
+works directly on normalized state for store-backed hosts. Core imports are pure:
+they do not install component definitions. `registerBuiltInComponents` is also
+available from `/viewer`, and preserves custom definitions already registered.
+
+The GUI uses the core document/store API; the editor agent and CLI use the core
+command evaluator. Selection, undo history, camera controls, and file I/O belong
+to their hosts. Core stays independent of editor UI and rendering imports.
+
+## Browser services
 
 `SceneRuntime` and `PrefabRoot` own scene resources and document scopes. They do
 not create audio listeners or install browser interaction listeners. `GameCanvas`
@@ -343,7 +383,6 @@ export const scene: Prefab = {
     id: 'box', name: 'Box',
     components: {
       transform: { type: 'Transform', properties: {} },
-      mesh: { type: 'Mesh', properties: {} },
       geometry: { type: 'Geometry', properties: { geometryType: 'box' } },
       material: { type: 'Material', properties: {} },
       rotator: { type: 'Rotator', properties: { speed: 1 } },
@@ -435,7 +474,7 @@ pass `onSaveScene={saveDocument}` to connect saving, or write the string returne
 | --- | --- |
 | Load and place URL-backed prefabs | [Loading pattern](docs/ARCHITECTURE.md#load-a-prefab) |
 | Connect gameplay code to scene objects | [Gameplay example](docs/ARCHITECTURE.md#connect-a-host-system) |
-| Build a first-person jumper or import character data | [Jumper demo](docs/app/demo/jumper/page.tsx) |
+| Build a first-person parkour or import character data | [Parkour demo](docs/app/demo/parkour/page.tsx) |
 | Add optional physics | [Cool stuff demo](docs/app/demo/coolstuff/page.tsx) |
 | Add a custom inspector | [Inspector example](docs/app/demo/coolstuff/InteriorMapComponent.editor.tsx) |
 | Change rendering or resource ownership | [Implementation map](docs/ARCHITECTURE.md) |
@@ -446,7 +485,7 @@ pass `onSaveScene={saveDocument}` to connect saving, or write the string returne
 ```sh
 npm run dev
 npm test
-npm run build
+npm run test:package
 npm --prefix docs run build
 ```
 
@@ -454,6 +493,28 @@ The docs app imports local source directly; `npm run dev` does not require a lib
 build or a separate TypeScript watcher. `npm run build` generates the published package.
 
 `npm test` runs library and docs tests. Use `npm run test:lib` or `npm run test:docs`
-to run either suite separately. Library tests live in `tests`; demo tests live in `docs/tests`.
+to run either suite separately. Library tests live in `tests`; demo tests live in
+`docs/tests`.
+
+Library tests cover the offered features: loading scene JSON, composing a Three.js
+scene, efficient document mutation and registration, and attaching arbitrary
+registered components. Built-ins are checked through representative scene and
+interface workflows, including the window API bridge and Node CLI. Custom behavior
+fixtures demonstrate extension points; their gameplay choices are not library
+requirements. Demo-specific behavior belongs in `docs/tests`.
+
+Keep one suite per feature and prefer observable results over internal import paths,
+helper call counts, cache eviction sequences, or a particular implementation's
+recovery behavior. Add a regression test only when it protects an intended feature
+contract; a failed development attempt alone does not establish one. Keep targeted
+identity and notification checks where they verify efficient mutation or registration.
+
+The Node rendering tests mount React Three Fiber with a stub renderer. They check
+scene objects and edits, not GPU output or GUI interaction. For changes to built-in
+rendering or editor controls, also smoke-test the affected feature in the GUI:
+load a scene, edit its built-in properties, play it, and export/reload the JSON.
+
+`npm run test:package` builds and packs the library, checks the CLI, and
+compiles a NodeNext TypeScript consumer against the packed files.
 
 License: see [LICENSE](LICENSE).

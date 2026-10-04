@@ -1,6 +1,6 @@
-import type { Component, ComponentViewProps } from "../../core/ComponentRegistry";
+import type { Component, ComponentViewProps } from "../../core/ComponentRegistry.js";
 
-import { mergeWithDefaults } from "./lightUtils";
+import { mergeWithDefaults } from "./lightUtils.js";
 
 export const hemisphereLightDefaults = {
     skyColor: "#ffffff",

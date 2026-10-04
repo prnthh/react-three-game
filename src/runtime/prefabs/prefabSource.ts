@@ -1,5 +1,5 @@
-import { normalizePrefab } from '../../core/prefab';
-import type { Prefab } from '../../core/types';
+import { normalizePrefab } from '../../core/prefab.js';
+import type { Prefab } from '../../core/types.js';
 
 /** Embedded references use the same URL loading contract as external references. */
 export function isEmbeddedPrefabSource(url: string) {

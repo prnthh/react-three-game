@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
-import { base, colors, ui } from '../ui/styles';
-import { FieldGroup, FieldRow, NumberInput } from '../ui/Input';
+import { base, colors, ui } from '../ui/styles.js';
+import { FieldGroup, FieldRow, NumberInput } from '../ui/Input.js';
 
 export function LightSection({ title, children }: { title: string; children: ReactNode }) {
     return (

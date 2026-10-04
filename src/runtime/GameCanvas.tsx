@@ -1,12 +1,11 @@
-import { SceneRuntime } from "./SceneRuntime";
-import { BrowserRuntime } from '../browser';
+import { SceneRuntime } from "./SceneRuntime.js";
+import { BrowserRuntime } from '../browser.js';
 import { Canvas, extend, CanvasProps } from "@react-three/fiber";
 import { WebGPURenderer, MeshBasicNodeMaterial, MeshStandardNodeMaterial, SpriteNodeMaterial, PCFShadowMap } from "three/webgpu";
 import { WebGPURendererParameters } from "three/src/renderers/webgpu/WebGPURenderer.Nodes.js";
 import type { ColorSpace, ShadowMapType, ToneMapping } from "three";
 import { Loader } from "@react-three/drei";
-import { registerBuiltInComponents } from "../core/ComponentRegistry";
-import { builtInComponents } from "./components";
+import { registerBuiltInComponents } from "./components/index.js";
 
 extend({
     MeshBasicNodeMaterial: MeshBasicNodeMaterial,
@@ -14,7 +13,7 @@ extend({
     SpriteNodeMaterial: SpriteNodeMaterial,
 });
 
-registerBuiltInComponents(builtInComponents);
+registerBuiltInComponents();
 
 export interface GameCanvasProps extends Omit<CanvasProps, 'children'> {
     loader?: boolean;

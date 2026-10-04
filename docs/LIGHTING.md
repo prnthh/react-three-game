@@ -31,7 +31,6 @@ scene.batch({ expectedRevision: revision, commands: [
     children: [{
       id: 'sky-sphere', name: 'Sky sphere',
       components: {
-        mesh: { type: 'Mesh', properties: {} },
         geometry: { type: 'Geometry', properties: { geometryType: 'sphere' } },
         material: { type: 'Material', properties: { materialId: 'sky-image' } },
       },

@@ -1,3 +1,5 @@
+import type { PrefabState } from "./prefab.js";
+import { findComponent } from "./types.js";
 import { Euler, Matrix4, Quaternion, Vector3 } from "three";
 
 export function decompose(m: Matrix4) {
@@ -24,4 +26,18 @@ export function composeTransform(
 		new Quaternion().setFromEuler(new Euler(...rotation)),
 		new Vector3(...scale),
 	);
+}
+
+/** Compute the parent world matrix for a node using the normalized store data */
+export function computeParentWorldMatrix(
+	state: Pick<PrefabState, "nodesById" | "parentIdById">,
+	targetId: string,
+) {
+	const parentWorld = new Matrix4();
+	for (let id = state.parentIdById[targetId]; id; id = state.parentIdById[id]) {
+		const transform = findComponent(state.nodesById[id], "Transform")?.properties;
+		parentWorld.premultiply(composeTransform(transform?.position, transform?.rotation, transform?.scale));
+	}
+
+	return parentWorld;
 }

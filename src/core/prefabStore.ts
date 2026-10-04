@@ -1,7 +1,7 @@
 import { subscribeWithSelector } from "zustand/middleware";
 import { createStore, type Mutate, type StoreApi } from "zustand/vanilla";
 
-import { GameObject, Prefab, PrefabMaterial } from "./types";
+import { GameObject, Prefab, PrefabMaterial } from "./types.js";
 import {
     collectSubtreeIds,
     cloneSubtree,
@@ -11,7 +11,7 @@ import {
     normalizePrefab,
     PrefabState,
     PrefabNodeRecord,
-} from "./prefab";
+} from "./prefab.js";
 
 export interface PrefabStoreState extends PrefabState {
     /** Synchronous edits publish once; an uncaught error rolls back the batch. */

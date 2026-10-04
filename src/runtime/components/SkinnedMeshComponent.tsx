@@ -134,17 +134,17 @@ function SkinnedMeshView({ properties, enabled, children }: ComponentViewProps<S
 const SkinnedMeshComponent: Component<SkinnedMeshProperties> = {
     dependencies: properties => properties.filename ? [{ kind: 'model', path: properties.filename }] : [],
     name: 'SkinnedMesh',
-    description: 'Loads a model with cloned skeletons and one animation mixer per instance.',
+    description: "Load a model with skeletal animation. Set filename and animationState to a clip name from the asset; each instance has its own skeleton and animation mixer.",
     renderWhenDisabled: true,
     slot: 'object',
     View: SkinnedMeshView,
     properties: {
         ...meshRenderProperties,
-        filename: { type: 'string', default: '' },
-        animationState: { type: 'string', default: '' },
-        fadeDuration: { default: 0.18 },
+        filename: { description: "Model asset path relative to basePath, or an absolute URL.", type: 'string', default: '' },
+        animationState: { description: "Animation clip name from the loaded model; empty or unknown names stop playback.", type: 'string', default: '' },
+        fadeDuration: { description: "Crossfade time in seconds when switching clips.", default: 0.18 },
         frustumCulled: { type: 'boolean', default: false },
-        autoUpdate: { type: 'boolean', default: true },
+        autoUpdate: { description: "Advance the animation mixer on R3F frames. Disable only when application code advances it.", type: 'boolean', default: true },
     },
 };
 

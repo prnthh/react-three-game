@@ -1,3 +1,4 @@
+import { ComponentHost } from '../scene/ComponentLifecycle.js';
 import { AssetBoundary } from '../assets/AssetBoundary.js';
 import { memo, useCallback, useContext, useLayoutEffect, useMemo, useRef } from "react";
 import { registerGameObjectOwner } from '../scene/gameObject.js';
@@ -151,8 +152,12 @@ function renderNodeContent(
     for (let index = components.length - 1; index >= 0; index -= 1) {
         const component = components[index];
         if (!enabled && !component.renderWhenDisabled) continue;
-        const View = component.View;
-        content = <View key={component.key} properties={component.properties} enabled={enabled}>{content}</View>;
+        if (component.component) {
+            content = <ComponentHost key={component.key} component={component.component} properties={component.properties} enabled={enabled}>{content}</ComponentHost>;
+        } else {
+            const View = component.View!;
+            content = <View key={component.key} properties={component.properties} enabled={enabled}>{content}</View>;
+        }
     }
     return content;
 }

@@ -1,3 +1,4 @@
+import type { ComponentContext } from '../runtime/scene/ComponentLifecycle.js';
 import type { ComponentDependency } from "./dependencies.js";
 import type { BufferGeometry } from "three";
 import type { FC } from "react";
@@ -103,6 +104,12 @@ export interface Component<P extends object = Record<string, any>> {
 	properties: ComponentPropertyDefinitions<P>;
 	/** Pure node-local modifier consumed by Geometry; return a new owned geometry without mutating source. Applied in component order. */
 	modifyGeometry?: (source: BufferGeometry, properties: P, context?: { scale: readonly [number, number, number] }) => BufferGeometry;
+	/** Optional useEffect mapping for authored behavior (e.g. Runtime), active in Play. Return cleanup. */
+    setup?(context: ComponentContext<P>): void | (() => void);
+    /** Optional useFrame mapping. Views may use React/R3F hooks directly instead. */
+    update?(context: ComponentContext<P>): void;
+    /** Property keys whose changes restart activation. Other properties remain live. */
+    restartOn?: readonly Extract<keyof P, string>[];
 	View?: FC<ComponentViewProps<P>>;
 }
 

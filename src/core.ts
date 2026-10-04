@@ -43,3 +43,5 @@ export type { SceneCommand, SceneCommandBatch, SceneCommandResult } from './core
 export { describeSceneComponents } from './core/componentSchemas.js';
 export { sceneCommandsSchema, sceneCommandBatchSchema } from './core/sceneCommandSchema.js';
 export { computeParentWorldMatrix } from './core/transforms.js';
+
+export type { ComponentContext, SceneRuntimeContext } from './runtime/scene/ComponentLifecycle.js';

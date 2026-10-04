@@ -34,20 +34,25 @@ describe('Component contracts', () => {
 
 // Exercise the document-to-scene path; custom behavior is application-owned.
 test('JSON attaches registered behaviors and built-ins; editor API edits update the live scene', async t => {
-    const { useFrame } = await import('@react-three/fiber');
     const { useEffect } = await import('react');
     const { Mesh, Box3, Vector3 } = await import('three');
-    const { PrefabRoot, registerBuiltInComponents, useGameObject } = await import('../../src/viewer.ts');
+    const { PrefabRoot, registerBuiltInComponents } = await import('../../src/viewer.ts');
     const { createSceneAgent } = await import('../../src/editor/agent/sceneAgent.ts');
     const { exposeSceneAgent } = await import('../../src/editor/agent/sceneAgentBridge.ts');
     registerBuiltInComponents();
     extend({ Group, Mesh });
     globalThis.IS_REACT_ACT_ENVIRONMENT = true;
     let attached = 0;
-    registerComponent({ name: 'TestMotion', properties: { speed: { default: 1 } }, View({ properties, children }) {
-        const object = useGameObject();
+    let ready = false;
+    let viewlessUpdates = 0;
+    registerComponent({ name: 'TestLifecycleOnly', properties: {}, update() { viewlessUpdates++; } });
+    registerComponent({ name: 'TestMotion', properties: { speed: { default: 1 } },
+    setup(ctx) {
+        ready = Boolean(ctx.object && ctx.prefab.getObject('child'));
+    },
+    update(ctx) { ctx.object.position.y += ctx.properties.speed * ctx.delta; },
+    View({ children }) {
         useEffect(() => { attached++; return () => { attached--; }; }, []);
-        useFrame((_, delta) => { object.transform.position.y += properties.speed * delta; });
         return children;
     } });
     const doc = createPrefabStore(JSON.parse(JSON.stringify({ root: { id: 'world', children: [{
@@ -55,7 +60,7 @@ test('JSON attaches registered behaviors and built-ins; editor API edits update 
             shape: { type: 'Geometry', properties: { geometryType: 'box', args: [2, 2, 2], instanced: false } },
             paint: { type: 'Material', properties: {} },
             motion: { type: 'TestMotion', properties: { speed: 2 } },
-        }, children: [{ id: 'child', name: 'Child' }],
+        }, children: [{ id: 'child', name: 'Child', components: { behavior: { type: 'TestLifecycleOnly', properties: {} } } }],
     }] } })));
     const canvas = { width: 100, height: 100, style: {}, addEventListener() {}, removeEventListener() {} };
     const root = createRoot(canvas);
@@ -69,10 +74,12 @@ test('JSON attaches registered behaviors and built-ins; editor API edits update 
     assert.ok(box);
     assert.ok(box.getObjectByName('Child'), 'behaviors preserve composed children');
     assert.equal(attached, 1);
+    assert.equal(ready, true, 'own and committed descendant refs are registered before setup');
     const size = new Box3().setFromObject(box).getSize(new Vector3());
     assert.deepEqual(size.toArray(), [2, 2, 2]);
     await act(async () => state.getState().advance(1, false));
     assert.equal(box.position.y, 2);
+    assert.equal(viewlessUpdates, 1);
 
     const target = {};
     const agent = createSceneAgent(doc, () => ({ mode: () => 'edit', beforeCommit() {}, transaction: action => action() })).scene;

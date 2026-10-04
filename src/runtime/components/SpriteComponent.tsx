@@ -12,11 +12,12 @@ function SpriteComponentView({ properties, children }: ComponentViewProps<Sprite
 
 const SpriteComponent: Component<SpriteProps> = {
     name: 'Sprite',
+    description: "Add a camera-facing billboard. Pair with Material {materialType:\"sprite\",texture:\"/textures/image.png\",transparent:true}; Transform.scale sets its size.",
     renderWhenDisabled: true,
     slot: 'object',
     View: SpriteComponentView,
     properties: {
-        center: { type: 'vector2', default: [0.5, 0.5] },
+        center: { description: "Anchor in normalized sprite coordinates: [0.5,0.5] centers it; [0.5,0] anchors its bottom.", type: 'vector2', default: [0.5, 0.5] },
         emitClickEvent: { type: 'boolean', default: false },
         clickEventName: { type: 'string', default: 'node:click' },
     },

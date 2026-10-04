@@ -102,3 +102,6 @@ export { exportGLBData } from './core/modelPrefab.js';
 export { BrowserRuntime } from './browser.js';
 
 export { registerBuiltInComponents } from './runtime/components/index.js';
+
+export { useSceneRuntimeContext } from './runtime/scene/ComponentLifecycle.js';
+export type { ComponentContext, SceneRuntimeContext } from './runtime/scene/ComponentLifecycle.js';

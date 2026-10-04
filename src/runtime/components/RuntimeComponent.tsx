@@ -1,10 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
-import type { Object3D } from 'three';
-import { useGameObject, useNode, usePrefab, type PrefabApi } from '../scene/SceneContext.js';
-import { useGameEvents, type GameEvents } from '../scene/GameEvents.js';
-import type { GameObjectHandle } from '../scene/gameObject.js';
-import type { Component, ComponentViewProps } from '../../core/ComponentRegistry.js';
+import type { Component } from '../../core/ComponentRegistry.js';
+import type { ComponentContext } from '../scene/ComponentLifecycle.js';
 
 export type RuntimeComponentProperties = {
     data?: Record<string, unknown>;
@@ -12,92 +7,51 @@ export type RuntimeComponentProperties = {
     update?: string;
 };
 
-export interface RuntimeScriptContext {
-    /** Local document ID, usable with prefab.get/update/remove. */
-    nodeId: string;
-    node: GameObjectHandle;
-    readonly object: Object3D | null;
+export interface RuntimeScriptContext extends ComponentContext<RuntimeComponentProperties> {
     /** Instance-local copy of authored data, refreshed without restarting setup. */
     readonly data: Record<string, unknown>;
-    /** Mutable state shared by setup and update; fresh for each effect setup. */
-    state: Record<string, any>;
-    prefab: PrefabApi;
-    events: GameEvents;
-    /** Frame duration in seconds; zero outside update. */
-    delta: number;
 }
 
 type Script = (context: RuntimeScriptContext) => unknown;
+const scripts = new WeakMap<ComponentContext<RuntimeComponentProperties>, { script: RuntimeScriptContext; runUpdate: Script }>();
 function compile(source: string): Script {
     return new Function('context',
-        '"use strict"; const { nodeId, node, object, data, state, prefab, events, delta } = context;\n' + source,
+        '"use strict"; const { nodeId, node, object, data, state, prefab, events, delta, three } = context;\n' + source,
     ) as Script;
-}
-
-function RuntimeView({ properties, enabled, children }: ComponentViewProps<RuntimeComponentProperties>) {
-    const node = useGameObject();
-    const prefab = usePrefab();
-    const events = useGameEvents();
-    const { nodeId, editMode, preparing } = useNode();
-    const active = enabled && !editMode && !preparing;
-    const { setup, update, data } = properties;
-    const inputs = useRef<Record<string, unknown>>({});
-    const updateFrame = useRef<((delta: number) => void) | null>(null);
-
-    useEffect(() => {
-        inputs.current = structuredClone(data);
-    }, [data]);
-
-    useEffect(() => {
-        if (!active) return;
-        const context: RuntimeScriptContext = {
-            nodeId, node, get object() { return node.transform; },
-            get data() { return inputs.current; },
-            state: {}, prefab, events, delta: 0,
-        };
-        const report = (field: string, error: unknown) =>
-            console.error(`Runtime component on node "${node.id}" (${field}):`, error);
-        let field = 'setup';
-        let cleanup: unknown;
-        try {
-            const runSetup = compile(setup);
-            field = 'update';
-            const runUpdate = compile(update);
-            field = 'setup';
-            cleanup = runSetup(context);
-            updateFrame.current = delta => {
-                context.delta = delta;
-                try { runUpdate(context); }
-                catch (error) {
-                    updateFrame.current = null;
-                    report('update', error);
-                } finally { context.delta = 0; }
-            };
-        } catch (error) { report(field, error); }
-        return () => {
-            updateFrame.current = null;
-            if (typeof cleanup === 'function') {
-                try { cleanup(); }
-                catch (error) { report('cleanup', error); }
-            }
-        };
-    }, [active, nodeId, node, prefab, events, setup, update]);
-
-    useFrame((_, delta) => {
-        if (active) updateFrame.current?.(delta);
-    });
-    return <>{children}</>;
 }
 
 const RuntimeComponent: Component<RuntimeComponentProperties> = {
     name: 'Runtime',
-    description: 'Run trusted JavaScript using a React effect (setup with returned cleanup) and an R3F frame callback (update).',
+    description: "Run JavaScript on this node in Play. Example properties: {\"data\":{\"speed\":2},\"update\":\"if (object) object.position.x += data.speed * delta;\"}. Bodies receive context and aliases nodeId, node, object, data, state, prefab, events, delta, three; do not redeclare these names.",
     renderWhenDisabled: true,
-    View: RuntimeView,
+    restartOn: ['setup', 'update'],
+    setup(context) {
+        const runSetup = compile(context.properties.setup);
+        const runUpdate = compile(context.properties.update);
+        let source: Record<string, unknown> | undefined;
+        let data: Record<string, unknown> = {};
+        const script: RuntimeScriptContext = Object.create(context, {
+            data: { get() {
+                if (source !== context.properties.data) {
+                    source = context.properties.data;
+                    data = structuredClone(source ?? {});
+                }
+                return data;
+            } },
+        });
+        scripts.set(context, { script, runUpdate });
+        context.onCleanup(() => scripts.delete(context));
+        const cleanup = runSetup(script);
+        if (typeof cleanup === 'function') return cleanup as () => void;
+    },
+    update(context) {
+        const entry = scripts.get(context);
+        if (entry) entry.runUpdate(entry.script);
+    },
     properties: {
-        data: { type: 'object', default: {}, description: 'JSON input copied into this instance; changes do not restart setup.' },
-        setup: { type: 'string', default: '', description: 'Effect body while enabled in Play mode. Return cleanup for disable, removal or code changes. Must tolerate repeated setup/cleanup.' },
-        update: { type: 'string', default: '', description: 'Frame callback while enabled in Play mode; delta is seconds. Shares state with setup.' },
+        data: { description: "JSON inputs, copied per Runtime instance. Read data.speed in update or context.data.speed in a retained callback. Editing data does not restart setup.", type: 'object', default: {} },
+        setup: { description: "JavaScript body run on entry to Play or re-enable; state starts empty. Example: return events.on(\"jump\", () => { const o = context.object; if (o) o.position.y += 1; }); Return cleanup or call context.onCleanup(fn). Cleanup runs on disable, exit from Play, removal or code edits. Setup follows committed object refs; separately loading objects may still be absent.", type: 'string', default: '' },
+        update: { description: "JavaScript body run each R3F frame after setup. delta is seconds; state persists between frames. object is this node transform; prefab.getObject(\"id\") returns a live object in this prefab instance or null. Read context.three.camera, .scene or .gl for current R3F state. Object changes are live, not saved document edits.", type: 'string', default: '' },
     },
 };
 export default RuntimeComponent;

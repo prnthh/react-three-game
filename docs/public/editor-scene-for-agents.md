@@ -1,4 +1,4 @@
-# Editor scene for agents
+# Scene API
 
 This guide covers `window.scene`, the API for inspecting and editing a running
 `PrefabEditor`. It shares undo history with the visual editor.
@@ -232,10 +232,27 @@ Use a registered component when it already provides the behavior. Otherwise, add
 a React component in application source, or use the built-in `Runtime` component
 for JavaScript stored with the scene. Read its schema first.
 
-`Runtime.data` holds JSON inputs. `setup` is an effect body that can return cleanup;
-`update` is a frame callback with `delta` in seconds. Both run only while enabled
-in Play after preparation. These scripts execute as trusted page code, not in a
-sandbox. Use source components for behavior that needs React hooks.
+`setup` maps to a React effect with cleanup; `update` maps to an R3F frame callback.
+Both run only while enabled in Play after preparation. For an existing node ID:
+
+```js
+scene.setComponent({ id, key: 'motion', component: {
+  type: 'Runtime',
+  properties: {
+    data: { speed: 2 },
+    setup: 'return events.on("jump", () => { const o = context.object; if (o) o.position.y += 1; });',
+    update: 'if (object) object.position.x += data.speed * delta;',
+  },
+} });
+```
+
+`delta` is seconds; `object` is this node's live transform. Resolve another node in
+the same prefab instance with `prefab.getObject('id')`; it may return null while
+loading. `state` persists between frames and resets when setup restarts. Code edits
+restart setup; data edits do not. Use `context.data` inside retained callbacks for
+current inputs, and `context.three.camera`, `.scene` or `.gl` for current R3F state.
+Return cleanup or call `context.onCleanup(fn)` for subscriptions and other resources.
+Scripts are trusted page code; use source components for behavior needing React hooks.
 
 ## Control playback and the view
 
@@ -424,10 +441,6 @@ Keep JSON for further scene editing.
   established visual language instead of introducing a new one implicitly.
 - Shared material edits affect every user. Prefer a local material/component change
   unless a scene-wide change is intentional.
-- Author box dimensions directly in `Geometry.args` (width, height, depth), with
-  `Transform.scale` left at `[1, 1, 1]`. Do not stretch unit boxes to set their size.
-  Choose subdivisions for the actual dimensions and desired weathering detail.
-  Matching built-in materials share rendering resources automatically.
 
 Asset URLs resolve against `basePath`; remote URLs require CORS. `Model` keeps its
 embedded materials; a sibling `Material` does not replace them. For primitive materials,

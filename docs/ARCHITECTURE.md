@@ -72,17 +72,16 @@ The window API reads/edits the document; captures and GLB export use live object
 
 ## Runtime scripts
 
-`RuntimeComponent` is an ordinary built-in behavior (`type: "Runtime"`) with two
-JavaScript fields: `setup` and `update`. Its React view compiles the bodies inside
-`useEffect`, runs setup, and returns its cleanup to React. R3F's `useFrame` calls
-update. Refs supply current data without restarting the effect. Each effect setup
-gets fresh local state; disabling, leaving Play, code changes and unmounting clean
-up the effect. Edit mode and asset preparation keep it inactive.
+`RuntimeComponent` (`type: "Runtime"`) compiles its `setup` and `update` strings
+through the optional callbacks on `Component`. The renderer maps setup/cleanup to
+React `useEffect` and update to R3F `useFrame`; built-in Views can use React/R3F
+hooks directly. Runtime runs only while enabled in Play and outside preparation.
+Code edits restart setup with fresh state; data edits keep it running.
 
-This uses the same React effects, refs and R3F frame callbacks as other components.
-There is no separate lifecycle runner, component base class or scheduler. Existing
-components continue to use React directly. See the
-[runtime example](../README.md#runtime-behavior-without-registration).
+Scripts read the current R3F store through `context.three` and resolve local
+objects with `prefab.getObject(id)`. Return cleanup from setup or register it with
+`context.onCleanup(fn)`. See the
+[Runtime usage example](public/editor-scene-for-agents.md#add-behavior-that-is-not-registered).
 
 ## Batch document edits
 
@@ -230,7 +229,7 @@ These are live controls, not serialized settings or window API methods.
 
 ## Change authoring behavior
 
-Use the [agent guide](public/editor-scene-for-agents.md) for copyable read/edit patterns.
+Use the [Scene API guide](public/editor-scene-for-agents.md) for copyable read/edit patterns.
 Both the GUI and API write the document store; neither serializes transient
 animation or physics. Agent batches validate before committing one undo step.
 
@@ -238,7 +237,7 @@ animation or physics. Agent batches validate before committing one undo step.
 | --- | --- |
 | Hierarchy or component mutation | [prefabStore](../src/core/prefabStore.ts) |
 | Undo grouping | [prefabHistory](../src/core/prefabHistory.ts) |
-| Agent query or browser exposure | [sceneAgent](../src/editor/agent/sceneAgent.ts), [sceneAgentBridge](../src/editor/agent/sceneAgentBridge.ts) |
+| Scene API queries or browser exposure | [sceneAgent](../src/editor/agent/sceneAgent.ts), [sceneAgentBridge](../src/editor/agent/sceneAgentBridge.ts) |
 | Batch operation | [sceneCommands](../src/core/sceneCommands.ts), [sceneCommandSchema](../src/core/sceneCommandSchema.ts) |
 | Agent field discovery | [componentSchemas](../src/core/componentSchemas.ts) |
 | Editor integration | [PrefabEditor](../src/editor/PrefabEditor.tsx) |
@@ -257,7 +256,7 @@ again. Authored prefab properties are data, copied with `structuredClone`.
 | `/browser` | Browser downloads and audio services |
 | `/headless` | R3F scene construction without a browser or GPU |
 | `/viewer` and package root | R3F views and rendering resources |
-| `/editor` | Visual editor, history and agent API |
+| `/editor` | Visual editor, history and Scene API |
 | `/plugins/crashcat` | Optional physics adapter |
 | `docs/app` | Host applications and game-specific examples |
 

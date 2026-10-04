@@ -93,17 +93,18 @@ function BufferGeometryComponentView({ properties, children }: ComponentViewProp
 
 const BufferGeometryComponent: Component<BufferGeometryProperties> = {
     name: 'BufferGeometry',
+    description: "Build a mesh from vertex arrays; pair with Material on the same node. Supply positions as xyz triples and indices as triangle vertex indices.",
     renderWhenDisabled: true,
     slot: 'geometry',
     View: BufferGeometryComponentView,
     properties: {
         ...meshProperties,
-        positions: { type: 'number[]', default: DEFAULT_TRIANGLE_POSITIONS },
-        indices: { type: 'number[]', default: DEFAULT_TRIANGLE_INDICES },
-        normals: { type: 'number[]', default: [] },
-        uvs: { type: 'number[]', default: DEFAULT_TRIANGLE_UVS },
-        groups: { type: 'array', default: [] },
-        computeVertexNormals: { type: 'boolean', default: true },
+        positions: { description: "Flat xyz triples in node-local coordinates, e.g. [0,0,0, 1,0,0, 0,1,0].", type: 'number[]', default: DEFAULT_TRIANGLE_POSITIONS },
+        indices: { description: "Zero-based vertex indices in triangle triples, e.g. [0,1,2]. Empty uses non-indexed triangles.", type: 'number[]', default: DEFAULT_TRIANGLE_INDICES },
+        normals: { description: "Optional xyz normal per vertex; leave empty to compute normals.", type: 'number[]', default: [] },
+        uvs: { description: "Flat uv pairs, one per vertex, for texture mapping.", type: 'number[]', default: DEFAULT_TRIANGLE_UVS },
+        groups: { description: "Draw ranges {start,count,materialIndex?}; start/count refer to indices, or vertices for non-indexed geometry.", type: 'array', default: [] },
+        computeVertexNormals: { description: "Compute normals when no normals array is supplied.", type: 'boolean', default: true },
     },
 };
 

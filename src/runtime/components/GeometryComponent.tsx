@@ -169,7 +169,7 @@ function GeometryComponentView({ properties, children }: ComponentViewProps<Geom
 
 const GeometryComponent: Component<GeometryProperties> = {
     name: 'Geometry',
-    description: 'Shared primitive geometry. For repeated boxes use args [1,1,1] and Transform.scale for dimensions, so differently sized pieces can batch.',
+    description: "Add a primitive mesh; pair with Material on the same node. Box args are [width,height,depth].",
     renderWhenDisabled: true,
     slot: 'geometry',
     View: GeometryComponentView,

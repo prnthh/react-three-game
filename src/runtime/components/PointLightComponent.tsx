@@ -87,6 +87,7 @@ function PointLightView({ properties, children }: ComponentViewProps<PointLightP
 
 const PointLightComponent: Component<PointLightProperties> = {
     name: 'PointLight',
+    description: "Emit light in all directions from this node. Position with Transform; set distance for a finite range and castShadow when shadows are needed.",
     category: 'lighting',
     slot: 'object',
     renderWhenDisabled: true,
@@ -94,7 +95,7 @@ const PointLightComponent: Component<PointLightProperties> = {
     properties: {
         color: { type: 'color', default: pointLightDefaults.color },
         intensity: { default: pointLightDefaults.intensity, min: 0, step: 0.1 },
-        distance: { default: pointLightDefaults.distance, min: 0, step: 1 },
+        distance: { description: "Light cutoff distance in scene units; 0 means no finite cutoff.", default: pointLightDefaults.distance, min: 0, step: 1 },
         decay: { default: pointLightDefaults.decay, min: 0, step: 0.1 },
         castShadow: { type: 'boolean', default: pointLightDefaults.castShadow },
         shadowMapSize: { default: pointLightDefaults.shadowMapSize, min: MIN_SHADOW_MAP_SIZE, max: MAX_SHADOW_MAP_SIZE, step: 128 },

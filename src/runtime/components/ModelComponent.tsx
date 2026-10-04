@@ -185,6 +185,7 @@ function ModelComponentView(props: ComponentViewProps<ModelProperties>) {
 const ModelComponent: Component<ModelProperties> = {
     dependencies: properties => properties.filename ? [{ kind: 'model', path: properties.filename }] : [],
     name: 'Model',
+    description: "Load a model asset with its embedded materials. Set filename; use SkinnedMesh for skeletal animation. A sibling Material does not override the loaded materials.",
     renderWhenDisabled: true,
     slot: 'object',
     View: ModelComponentView,
@@ -192,8 +193,8 @@ const ModelComponent: Component<ModelProperties> = {
         ...meshProperties,
         instanced: { ...meshProperties.instanced, description: "Allow batching of compatible repeated model parts. Animated and skinned models remain separate." },
         filename: { type: 'string', default: '', description: 'Model asset path, relative to the prefab basePath, or an absolute URL.' },
-        repeat: { type: 'boolean', default: false },
-        repeatAxes: {
+        repeat: { description: "Create a grid of copies using repeatAxes.", type: 'boolean', default: false },
+        repeatAxes: { description: "Grid axes: {axis:\"x\"|\"y\"|\"z\",count,offset}; count includes the original, offset is local spacing in scene units.",
             type: 'array', default: [{ axis: 'x', count: 1, offset: 1 }],
             schema: { type: 'array', items: { type: 'object', properties: {
                 axis: { type: 'string', enum: ['x', 'y', 'z'] },

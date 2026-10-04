@@ -1,6 +1,6 @@
 # Rendering and authoring examples
 
-For browser-driven scene edits, see the [agent guide](public/editor-scene-for-agents.md).
+For browser-driven scene edits, see the [Scene API guide](public/editor-scene-for-agents.md).
 
 These routes are host applications built with React Three Game. Their game loops,
 controllers, world residency and narrative systems are examples, not engine APIs.
@@ -34,7 +34,7 @@ and `GameCanvas glConfig={{antialias:false}}`. Keep the surface horizontal; it h
 no collider. `followCamera:true` keeps water under a travelling camera; its world-space waves stay anchored.
 
 Also available: [general editor](app/editor/page.tsx),
-[home city composition](app/components/DemoApp.tsx), and the [agent guide](public/editor-scene-for-agents.md).
+[home city composition](app/components/DemoApp.tsx), and the [Scene API guide](public/editor-scene-for-agents.md).
 
 Edit prefab JSON in `public/prefabs` directly. Builds do not generate scenes.
 

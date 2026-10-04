@@ -6,8 +6,8 @@ export default function AgentApiHint() {
         href={withBasePath('/editor-scene-for-agents.md')}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="Editor scene for agents: window.scene.help()"
+        aria-label="Scene API: window.scene.help()"
         title="Start here: window.scene.help()"
         className="fixed bottom-3 right-3 z-50 rounded border border-white/15 bg-slate-950/85 px-2 py-1.5 text-[11px] text-slate-200 hover:text-white"
-    >Agent scene ↗</a>;
+    >Scene API ↗</a>;
 }

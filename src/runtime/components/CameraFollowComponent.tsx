@@ -1,7 +1,7 @@
 import { useFrame } from '@react-three/fiber';
 import { useRef } from 'react';
 import { Vector3 } from 'three';
-import { PrefabEditorMode, useGameObject, useScene } from '../scene/SceneContext.js';
+import { useGameObject, useNode } from '../scene/SceneContext.js';
 import type { Component, ComponentViewProps } from '../../core/ComponentRegistry.js';
 
 export type CameraFollowProperties = {
@@ -11,10 +11,10 @@ export type CameraFollowProperties = {
     followSpeed?: number;
 };
 
-function CameraFollowView({ properties, children }: ComponentViewProps<CameraFollowProperties>) {
+function CameraFollowView({ properties, enabled, children }: ComponentViewProps<CameraFollowProperties>) {
     const camera = useGameObject();
     const targetObject = useGameObject(properties.targetId.trim());
-    const { mode } = useScene();
+    const { editMode, preparing } = useNode();
     const targetPosition = useRef(new Vector3());
     const cameraWorldPosition = useRef(new Vector3());
     const desiredWorldPosition = useRef(new Vector3());
@@ -22,7 +22,7 @@ function CameraFollowView({ properties, children }: ComponentViewProps<CameraFol
     const lookAtPosition = useRef(new Vector3());
 
     useFrame((_, delta) => {
-        if (mode !== PrefabEditorMode.Play) return;
+        if (!enabled || editMode || preparing) return;
         const cameraObject = camera.transform;
         const target = targetObject.transform;
         if (!cameraObject || !target) return;
@@ -51,13 +51,14 @@ function CameraFollowView({ properties, children }: ComponentViewProps<CameraFol
 
 const CameraFollowComponent: Component<CameraFollowProperties> = {
     name: "CameraFollow",
+    description: "Add alongside Camera on the same node. In Play, move toward targetId plus positionOffset and aim at the target plus targetOffset.",
     category: 'camera',
     View: CameraFollowView,
     properties: {
-        targetId: { type: "string", default: "" },
-        positionOffset: { type: "vector3", default: [0, 16, 20] },
-        targetOffset: { type: "vector3", default: [0, 1, 0] },
-        followSpeed: { default: 7.5, min: 0, step: 0.5 },
+        targetId: { description: "Node ID in the same prefab instance; missing targets pause following.", type: "string", default: "" },
+        positionOffset: { description: "World-space xyz offset from the target position, in scene units.", type: "vector3", default: [0, 16, 20] },
+        targetOffset: { description: "World-space xyz offset from the target position to the point the camera aims at.", type: "vector3", default: [0, 1, 0] },
+        followSpeed: { description: "Exponential position smoothing rate per second. Higher values follow faster; 0 stops position following.", default: 7.5, min: 0, step: 0.5 },
     },
 };
 

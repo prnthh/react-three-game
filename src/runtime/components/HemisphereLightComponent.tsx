@@ -20,6 +20,7 @@ function HemisphereLightView({ properties, children }: ComponentViewProps<Hemisp
 
 const HemisphereLightComponent: Component<HemisphereLightProperties> = {
     name: "HemisphereLight",
+    description: "Add sky/ground fill lighting using skyColor, groundColor and intensity. This light does not cast shadows.",
     category: 'lighting',
     slot: "object",
     renderWhenDisabled: true,

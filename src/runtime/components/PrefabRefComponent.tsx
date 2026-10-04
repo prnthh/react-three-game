@@ -67,10 +67,11 @@ function PrefabRefView(props: ComponentViewProps<PrefabRefProperties>) {
 const PrefabRefComponent: Component<PrefabRefProperties> = {
     dependencies: properties => properties.url ? [{ kind: 'prefab', path: properties.url }] : [],
     name: 'PrefabRef',
+    description: "Load a prefab scene below this node; use Transform here to place the instance. Each instance has its own objects and local node IDs.",
     renderWhenDisabled: true,
     View: PrefabRefView,
     properties: {
-        url: { type: 'string', default: '' },
+        url: { description: "Prefab JSON URL relative to basePath, absolute URL, or embedded data URL produced by pack().", type: 'string', default: '' },
     },
 };
 

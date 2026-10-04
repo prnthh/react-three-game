@@ -2,7 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { act, createElement as h } from 'react';
 import { createRoot } from '@react-three/fiber';
-import { Object3D } from 'three';
+import { Object3D, PerspectiveCamera } from 'three';
+import { ComponentHost } from '../../src/runtime/scene/ComponentLifecycle.tsx';
+import CameraFollowComponent from '../../src/runtime/components/CameraFollowComponent.tsx';
 import RuntimeComponent from '../../src/runtime/components/RuntimeComponent.tsx';
 import { resolveComponentProperties } from '../../src/core/ComponentRegistry.ts';
 import { PrefabContext, NodeComponentContext, NodeScope, createNodeComponentRegistry } from '../../src/runtime/scene/SceneContext.tsx';
@@ -10,7 +12,7 @@ import { GameEventsProvider, useGameEvents } from '../../src/runtime/scene/GameE
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
-async function mount(t, authored) {
+async function mount(t, authored, component = RuntimeComponent, View = ComponentHost) {
     const object = new Object3D();
     const calls = [];
     const prefab = { getObject: () => object, record: value => calls.push(value) };
@@ -23,12 +25,12 @@ async function mount(t, authored) {
     });
     let store, events, time = 0;
     function Probe() { events = useGameEvents(); return null; }
-    const properties = resolveComponentProperties(RuntimeComponent, authored);
+    const properties = resolveComponentProperties(component, authored);
     const render = async (options = {}, props = properties) => act(async () => {
         const view = h(PrefabContext.Provider, { value: prefab },
             h(NodeComponentContext.Provider, { value: registry },
                 h(GameEventsProvider, null, h(Probe), h(NodeScope, { nodeId: 'test', ...options },
-                    h(RuntimeComponent.View, { properties: props, enabled: options.enabled ?? true })))));
+                    h(View, { component, properties: props, enabled: options.enabled ?? true })))));
         store = root.render(view);
     });
     const remove = () => act(async () => { root.render(null); });
@@ -36,7 +38,7 @@ async function mount(t, authored) {
         await remove();
         await act(async () => root.unmount());
     });
-    return { object, calls, properties, render, remove, get events() { return events; },
+    return { object, prefab, calls, properties, render, remove, get events() { return events; }, get store() { return store; },
         frame: (delta = 1) => act(() => store.getState().advance(time += delta, false)) };
 }
 
@@ -101,4 +103,82 @@ test('script data and state are isolated between instances and authored JSON sta
     assert.deepEqual(a.calls, [[1, 1], [1, 2]]);
     assert.deepEqual(b.calls, [[1, 1]]);
     assert.equal(authored.data.nested.count, 0);
+});
+
+
+test('component lifecycle maps live R3F state, retains properties and runs before default frame consumers', async t => {
+    let context;
+    const observed = [];
+    const component = {
+        name: 'LifecycleProbe', properties: { speed: { default: 1 } },
+        setup(ctx) { context = ctx; ctx.state.count = 0; },
+        update(ctx) { ctx.state.count++; ctx.object.position.x += ctx.properties.speed * ctx.delta; },
+    };
+    const fixture = await mount(t, {}, component);
+    await fixture.render();
+    const camera = new PerspectiveCamera();
+    fixture.store.getState().set({ camera });
+    assert.equal(context.three, fixture.store.getState());
+    assert.equal(context.three.camera, camera);
+    const unsubscribe = fixture.store.getState().internal.subscribe({ current: () => observed.push(fixture.object.position.x) }, 0, fixture.store);
+    t.after(unsubscribe);
+    fixture.frame(0.5);
+    await fixture.render({}, { speed: 3 });
+    fixture.frame(0.5);
+    assert.deepEqual(observed, [0.5, 2]);
+    assert.equal(context.state.count, 2);
+    assert.equal(context.delta, 0);
+    await fixture.render({ enabled: false });
+    fixture.frame();
+    assert.equal(context.state.count, 2);
+    await fixture.render();
+    assert.equal(context.state.count, 0);
+});
+
+test('lifecycle failures release all resources once and stop updates', async t => {
+    const errors = [];
+    t.mock.method(console, 'error', (...args) => errors.push(args));
+    for (const phase of ['setup', 'update']) {
+        const cleanups = [];
+        let updates = 0;
+        const fixture = await mount(t, {}, {
+            name: 'Failing', properties: {},
+            setup(ctx) {
+                ctx.onCleanup(() => cleanups.push('first'));
+                ctx.onCleanup(() => { cleanups.push('second'); throw Error('cleanup'); });
+                if (phase === 'setup') throw Error('setup');
+                return () => cleanups.push('returned');
+            },
+            update() { updates++; throw Error('update'); },
+        });
+        await fixture.render();
+        fixture.frame(); fixture.frame();
+        await fixture.remove();
+        assert.equal(updates, phase === 'setup' ? 0 : 1);
+        assert.deepEqual(cleanups, phase === 'setup' ? ['second', 'first'] : ['returned', 'second', 'first']);
+    }
+    assert.equal(errors.length, 4);
+});
+
+
+test('CameraFollow uses R3F directly with play/preparation gating and live targets', async t => {
+    const fixture = await mount(t, { targetId: 'target', followSpeed: 100, positionOffset: [0, 0, 5] }, CameraFollowComponent, CameraFollowComponent.View);
+    const target = new Object3D();
+    target.position.x = 10;
+    fixture.prefab.getObject = id => id === 'test' ? fixture.object : id === 'target' ? target : null;
+    await fixture.render({ preparing: true }); fixture.frame();
+    assert.equal(fixture.object.position.x, 0);
+    await fixture.render(); fixture.frame();
+    assert.equal(fixture.object.position.x, 10);
+    assert.equal(fixture.object.position.z, 5);
+    await fixture.render({ enabled: false });
+    target.position.x = 20;
+    fixture.frame();
+    assert.equal(fixture.object.position.x, 10);
+    await fixture.render(); fixture.frame();
+    assert.equal(fixture.object.position.x, 20);
+    await fixture.render({}, { ...fixture.properties, targetId: 'missing' });
+    target.position.x = 30;
+    fixture.frame();
+    assert.equal(fixture.object.position.x, 20);
 });

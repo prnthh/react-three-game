@@ -34,9 +34,6 @@ export function analyzeSceneAuthoring(state: PrefabState) {
     const advise = (code: string, message: string, nodeIds: string[]) => {
         advisories.push({ code, message, count: nodeIds.length, nodeIds: nodeIds.slice(0, 8) });
     };
-    if (boxShapes.size >= 8 && boxShapes.size > boxes.length / 2) {
-        advise('unique-box-geometry', `${boxShapes.size} box sizes prevent geometry sharing. For new repeated pieces, use Geometry box args [1,1,1] and Transform.scale for dimensions. Changing existing node scale also affects children and colliders; do not blindly normalize it.`, boxes);
-    }
     if (optedOut.length >= 8) {
         advise('instancing-disabled', 'Many Mesh nodes explicitly disable instancing. Keep its default enabled for compatible repeated geometry/materials; disable only when the rendering or interaction needs it.', optedOut);
     }

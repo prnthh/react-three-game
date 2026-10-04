@@ -1,0 +1,2972 @@
+{
+  "name": "SKYWARD — Kestrel flight trials",
+  "root": {
+    "id": "skyward",
+    "name": "SKYWARD",
+    "children": [
+      {
+        "id": "jet",
+        "name": "F-27 Kestrel",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                35,
+                30
+              ]
+            }
+          },
+          "flight": {
+            "type": "Runtime",
+            "properties": {
+              "setup": "\n// R3F owns the renderer; use its canvas document for this scene's HUD/input.\nconst document = context.three.gl.domElement.ownerDocument;\nconst window = document.defaultView;\nstate.keys = {}; state.started = false; state.score = 0; state.passed = 0; state.missed = 0; state.speed = 0; state.message = 'ENTER TO LAUNCH'; state.messageTime = 0;\nconst hud = document.createElement('div');\ncontext.onCleanup(() => hud.remove());\nhud.style.cssText = 'position:fixed;left:28px;right:28px;top:82px;bottom:28px;pointer-events:none;z-index:50;color:#e6f7f3;font-family:system-ui,sans-serif';\nhud.innerHTML = '<div style=\"display:flex;justify-content:space-between;gap:20px\"><div style=\"background:#102936e8;padding:18px 24px;border-left:3px solid #63f4dd\"><div style=\"font-size:11px;letter-spacing:4px;color:#63f4dd\">KESTREL / FLIGHT TRIALS</div><div style=\"font-size:30px;font-weight:800;letter-spacing:6px;margin-top:4px\">SKYWARD</div></div><div data-stats style=\"background:#102936e8;padding:18px 24px;font-size:14px;line-height:1.8;text-align:right;font-variant-numeric:tabular-nums\"></div></div><div data-message style=\"position:absolute;top:38%;width:100%;text-align:center;font-size:26px;font-weight:700;letter-spacing:3px;text-shadow:0 2px 15px #102936\"></div><div style=\"position:absolute;bottom:0;left:0;background:#102936e8;padding:15px 22px;border-left:3px solid #ff7048;font-size:12px;letter-spacing:1px\">W / S · CLIMB / DIVE &nbsp;&nbsp; A / D · BANK &nbsp;&nbsp; SHIFT · BOOST &nbsp;&nbsp; R · RESTART<br><span style=\"color:#8eb7bd;font-size:11px;line-height:2\">FLY THROUGH 12 MINT GATES · ARROW KEYS ALSO WORK</span></div>';\ndocument.body.appendChild(hud); state.hud = hud; state.stats = hud.querySelector('[data-stats]'); state.banner = hud.querySelector('[data-message]');\nconst down = e => { if (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return; if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Enter'].includes(e.code)) e.preventDefault(); state.keys[e.code] = true; if(e.code==='Enter' && state.messageTime<900) state.started=true; if(e.code==='KeyR') state.restart=true; };\nconst up = e => {state.keys[e.code]=false;}; const blur = () => {state.keys={};};\nfor (const [type, handler] of [['keydown', down], ['keyup', up], ['blur', blur]]) {\n  window.addEventListener(type, handler);\n  context.onCleanup(() => window.removeEventListener(type, handler));\n}",
+              "update": "\nif (!state.hud) return;\nconst dt=Math.min(context.delta,.05); const get=id => context.prefab.getObject(id);\nconst gates=Array.from({length:8},(_,i)=>get('gate-'+i));\nif(state.restart){ object.position.set(0,35,30); object.rotation.set(0,0,0); state.started=false; state.score=0;state.passed=0;state.missed=0;state.speed=0;state.sequence=8;state.messageTime=0;state.restart=false; gates.forEach((g,i)=>{if(g)g.position.set(Math.sin(i*.7)*26,35+Math.sin(i*.8)*12,-100-i*145);}); for(let i=0;i<30;i++){const o=get('island-'+i);if(o)o.position.z=-70-i*95;}for(let i=0;i<14;i++){const o=get('cloud-'+i);if(o)o.position.z=-i*210;} }\nstate.sequence ??= 8;\nconst k=state.keys, boost=k.ShiftLeft||k.ShiftRight, horizontal=(k.KeyD||k.ArrowRight?1:0)-(k.KeyA||k.ArrowLeft?1:0),vertical=(k.KeyW||k.ArrowUp?1:0)-(k.KeyS||k.ArrowDown?1:0);\nif(state.started){\nstate.speed += ((boost?85:46)-state.speed)*Math.min(1,dt*2);\nobject.position.z -= state.speed*dt;object.position.x=Math.max(-85,Math.min(85,object.position.x+horizontal*32*dt));object.position.y=Math.max(1,Math.min(115,object.position.y+vertical*25*dt));\nobject.rotation.z += (-horizontal*.55-object.rotation.z)*Math.min(1,dt*5);object.rotation.x += (vertical*.2-object.rotation.x)*Math.min(1,dt*4);object.rotation.y += (-horizontal*.12-object.rotation.y)*Math.min(1,dt*4);\nif(object.position.y<3){state.started=false;state.message='SPLASHDOWN — R TO RESTART';state.messageTime=999;}\nfor(const g of gates){if(g && object.position.z<g.position.z){const hit=Math.hypot(object.position.x-g.position.x,object.position.y-g.position.y)<11.5;if(hit){state.passed++;state.score+=boost?150:100;state.message=state.passed>=12?'TRIAL COMPLETE · KEEP FLYING':'GATE CLEARED +'+(boost?150:100);}else{state.missed++;state.message='GATE MISSED';}state.messageTime=1.4;const i=state.sequence++;g.position.set(Math.sin(i*.7)*26,35+Math.sin(i*.8)*12,-100-i*145);}}\nfor(let i=0;i<30;i++){const o=get('island-'+i);if(o&&o.position.z>object.position.z+100)o.position.z-=2850;}\nfor(let i=0;i<14;i++){const o=get('cloud-'+i);if(o&&o.position.z>object.position.z+100)o.position.z-=2940;}\n}\nconst sea=get('sea'),sky=get('sky');if(sea)sea.position.z=object.position.z-600;if(sky)sky.position.z=object.position.z;\nfor(const id of ['flame-left','flame-right']){const f=get(id);if(f)f.scale.y=state.started?(boost?1.8:1):.3;}\nstate.messageTime=Math.max(0,state.messageTime-dt);\nstate.stats.textContent='SPEED '+Math.round(state.speed*3.6)+' KM/H  ·  ALT '+Math.round(object.position.y)+' M | GATES '+state.passed+'/12  ·  SCORE '+state.score;\nstate.banner.textContent=state.messageTime>0?state.message:!state.started?'ENTER TO LAUNCH':'';\n"
+            }
+          }
+        },
+        "children": [
+          {
+            "id": "fuselage",
+            "name": "Fuselage",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "rotation": [
+                    -1.5707963267948966,
+                    0,
+                    0
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.5,
+                    0.85,
+                    7.8,
+                    8
+                  ],
+                  "instanced": false
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "name": "skyward-hull",
+                  "color": "#d7e4ec",
+                  "metalness": 0.45,
+                  "roughness": 0.38
+                }
+              }
+            }
+          },
+          {
+            "id": "nose",
+            "name": "Needle nose",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0,
+                    -5
+                  ],
+                  "rotation": [
+                    -1.5707963267948966,
+                    0,
+                    0
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0,
+                    0.5,
+                    2.3,
+                    8
+                  ],
+                  "instanced": false
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "name": "skyward-trim",
+                  "color": "#24374d",
+                  "metalness": 0.35,
+                  "roughness": 0.5
+                }
+              }
+            }
+          },
+          {
+            "id": "canopy",
+            "name": "Smoked canopy",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    0.65,
+                    -1.9
+                  ],
+                  "scale": [
+                    0.54,
+                    0.52,
+                    1.5
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "sphere",
+                  "args": [
+                    1,
+                    16,
+                    12
+                  ],
+                  "instanced": false
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "name": "skyward-glass",
+                  "color": "#143b51",
+                  "metalness": 0.65,
+                  "roughness": 0.17
+                }
+              }
+            }
+          },
+          {
+            "id": "wing-left",
+            "name": "Port swept wing",
+            "components": {
+              "geometry": {
+                "type": "BufferGeometry",
+                "properties": {
+                  "positions": [
+                    -0.5,
+                    -0.1,
+                    -1,
+                    -5.2,
+                    -0.2,
+                    2.1,
+                    -0.7,
+                    -0.1,
+                    2,
+                    -0.5,
+                    0.1,
+                    -1,
+                    -5.2,
+                    0,
+                    2.1,
+                    -0.7,
+                    0.1,
+                    2
+                  ],
+                  "indices": [
+                    0,
+                    2,
+                    1,
+                    3,
+                    4,
+                    5,
+                    0,
+                    1,
+                    4,
+                    0,
+                    4,
+                    3,
+                    1,
+                    2,
+                    5,
+                    1,
+                    5,
+                    4,
+                    2,
+                    0,
+                    3,
+                    2,
+                    3,
+                    5
+                  ],
+                  "uvs": [
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    1
+                  ],
+                  "instanced": false
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "name": "skyward-hull"
+                }
+              }
+            }
+          },
+          {
+            "id": "wing-right",
+            "name": "Starboard swept wing",
+            "components": {
+              "geometry": {
+                "type": "BufferGeometry",
+                "properties": {
+                  "positions": [
+                    0.5,
+                    -0.1,
+                    -1,
+                    0.7,
+                    -0.1,
+                    2,
+                    5.2,
+                    -0.2,
+                    2.1,
+                    0.5,
+                    0.1,
+                    -1,
+                    0.7,
+                    0.1,
+                    2,
+                    5.2,
+                    0,
+                    2.1
+                  ],
+                  "indices": [
+                    0,
+                    2,
+                    1,
+                    3,
+                    4,
+                    5,
+                    0,
+                    1,
+                    4,
+                    0,
+                    4,
+                    3,
+                    1,
+                    2,
+                    5,
+                    1,
+                    5,
+                    4,
+                    2,
+                    0,
+                    3,
+                    2,
+                    3,
+                    5
+                  ],
+                  "uvs": [
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    1
+                  ],
+                  "instanced": false
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "name": "skyward-hull"
+                }
+              }
+            }
+          },
+          {
+            "id": "tail-left",
+            "name": "Port stabilizer",
+            "components": {
+              "geometry": {
+                "type": "BufferGeometry",
+                "properties": {
+                  "positions": [
+                    -0.4,
+                    0.04999999999999999,
+                    2.5,
+                    -2.4,
+                    0.04999999999999999,
+                    4,
+                    -0.4,
+                    0.04999999999999999,
+                    3.7,
+                    -0.4,
+                    0.25,
+                    2.5,
+                    -2.4,
+                    0.25,
+                    4,
+                    -0.4,
+                    0.25,
+                    3.7
+                  ],
+                  "indices": [
+                    0,
+                    2,
+                    1,
+                    3,
+                    4,
+                    5,
+                    0,
+                    1,
+                    4,
+                    0,
+                    4,
+                    3,
+                    1,
+                    2,
+                    5,
+                    1,
+                    5,
+                    4,
+                    2,
+                    0,
+                    3,
+                    2,
+                    3,
+                    5
+                  ],
+                  "uvs": [
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    1
+                  ],
+                  "instanced": false
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "name": "skyward-trim"
+                }
+              }
+            }
+          },
+          {
+            "id": "tail-right",
+            "name": "Starboard stabilizer",
+            "components": {
+              "geometry": {
+                "type": "BufferGeometry",
+                "properties": {
+                  "positions": [
+                    0.4,
+                    0.04999999999999999,
+                    2.5,
+                    0.4,
+                    0.04999999999999999,
+                    3.7,
+                    2.4,
+                    0.04999999999999999,
+                    4,
+                    0.4,
+                    0.25,
+                    2.5,
+                    0.4,
+                    0.25,
+                    3.7,
+                    2.4,
+                    0.25,
+                    4
+                  ],
+                  "indices": [
+                    0,
+                    2,
+                    1,
+                    3,
+                    4,
+                    5,
+                    0,
+                    1,
+                    4,
+                    0,
+                    4,
+                    3,
+                    1,
+                    2,
+                    5,
+                    1,
+                    5,
+                    4,
+                    2,
+                    0,
+                    3,
+                    2,
+                    3,
+                    5
+                  ],
+                  "uvs": [
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    1
+                  ],
+                  "instanced": false
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "name": "skyward-trim"
+                }
+              }
+            }
+          },
+          {
+            "id": "fin-left",
+            "name": "Twin tail port",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.6,
+                    1.1,
+                    2.7
+                  ],
+                  "scale": [
+                    0.15,
+                    1.8,
+                    1.6
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    -0.18
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "instanced": false
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "name": "skyward-hull"
+                }
+              }
+            }
+          },
+          {
+            "id": "fin-right",
+            "name": "Twin tail starboard",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.6,
+                    1.1,
+                    2.7
+                  ],
+                  "scale": [
+                    0.15,
+                    1.8,
+                    1.6
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0.18
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "instanced": false
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "name": "skyward-hull"
+                }
+              }
+            }
+          },
+          {
+            "id": "engine-left",
+            "name": "Port exhaust",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.46,
+                    -0.15,
+                    3.9
+                  ],
+                  "rotation": [
+                    -1.5707963267948966,
+                    0,
+                    0
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.33,
+                    0.33,
+                    1.2,
+                    12
+                  ],
+                  "instanced": false
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "name": "skyward-trim"
+                }
+              }
+            }
+          },
+          {
+            "id": "engine-right",
+            "name": "Starboard exhaust",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.46,
+                    -0.15,
+                    3.9
+                  ],
+                  "rotation": [
+                    -1.5707963267948966,
+                    0,
+                    0
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.33,
+                    0.33,
+                    1.2,
+                    12
+                  ],
+                  "instanced": false
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "name": "skyward-trim"
+                }
+              }
+            }
+          },
+          {
+            "id": "flame-left",
+            "name": "Port afterburner",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -0.46,
+                    -0.15,
+                    4.9
+                  ],
+                  "rotation": [
+                    -1.5707963267948966,
+                    0,
+                    0
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.27,
+                    0,
+                    1.4,
+                    10
+                  ],
+                  "instanced": false
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "name": "skyward-orange",
+                  "color": "#ff7048",
+                  "materialType": "basic"
+                }
+              }
+            }
+          },
+          {
+            "id": "flame-right",
+            "name": "Starboard afterburner",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0.46,
+                    -0.15,
+                    4.9
+                  ],
+                  "rotation": [
+                    -1.5707963267948966,
+                    0,
+                    0
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "geometryType": "cylinder",
+                  "args": [
+                    0.27,
+                    0,
+                    1.4,
+                    10
+                  ],
+                  "instanced": false
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "name": "skyward-orange"
+                }
+              }
+            }
+          },
+          {
+            "id": "wing-mark-left",
+            "name": "Port orange stripe",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    -2.25,
+                    0.14,
+                    1.35
+                  ],
+                  "scale": [
+                    0.26,
+                    0.06,
+                    1.35
+                  ],
+                  "rotation": [
+                    0,
+                    0.75,
+                    0
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "instanced": false
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "name": "skyward-orange"
+                }
+              }
+            }
+          },
+          {
+            "id": "wing-mark-right",
+            "name": "Starboard orange stripe",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    2.25,
+                    0.14,
+                    1.35
+                  ],
+                  "scale": [
+                    0.26,
+                    0.06,
+                    1.35
+                  ],
+                  "rotation": [
+                    0,
+                    -0.75,
+                    0
+                  ]
+                }
+              },
+              "geometry": {
+                "type": "Geometry",
+                "properties": {
+                  "instanced": false
+                }
+              },
+              "material": {
+                "type": "Material",
+                "properties": {
+                  "name": "skyward-orange"
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "chase-camera",
+        "name": "Chase camera",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                40,
+                48
+              ]
+            }
+          },
+          "camera": {
+            "type": "Camera",
+            "properties": {
+              "fov": 62,
+              "far": 2400
+            }
+          },
+          "follow": {
+            "type": "CameraFollow",
+            "properties": {
+              "targetId": "jet",
+              "positionOffset": [
+                0,
+                5,
+                18
+              ],
+              "targetOffset": [
+                0,
+                1,
+                -22
+              ],
+              "followSpeed": 6
+            }
+          }
+        }
+      },
+      {
+        "id": "sea",
+        "name": "Endless ocean",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                -2,
+                -400
+              ],
+              "scale": [
+                5000,
+                8000,
+                1
+              ],
+              "rotation": [
+                -1.5707963267948966,
+                0,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "plane",
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-ocean",
+              "color": "#165466",
+              "roughness": 0.72
+            }
+          }
+        }
+      },
+      {
+        "id": "sky",
+        "name": "Horizon",
+        "components": {
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                1800,
+                24,
+                16
+              ],
+              "instanced": false,
+              "castShadow": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-sky",
+              "materialType": "basic",
+              "color": "#8bbdcb",
+              "side": "BackSide"
+            }
+          }
+        }
+      },
+      {
+        "id": "ambient",
+        "name": "Sky light",
+        "components": {
+          "light": {
+            "type": "HemisphereLight",
+            "properties": {
+              "skyColor": "#d9f2ff",
+              "groundColor": "#446165",
+              "intensity": 2.4
+            }
+          }
+        }
+      },
+      {
+        "id": "sun",
+        "name": "Late afternoon sun",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                60,
+                120,
+                30
+              ]
+            }
+          },
+          "light": {
+            "type": "DirectionalLight",
+            "properties": {
+              "intensity": 3,
+              "color": "#ffdfbd"
+            }
+          }
+        }
+      },
+      {
+        "id": "fog",
+        "name": "Sea haze",
+        "components": {
+          "fog": {
+            "type": "Fog",
+            "properties": {
+              "color": "#8bbdcb",
+              "near": 230,
+              "far": 1150
+            }
+          }
+        }
+      },
+      {
+        "id": "gate-0",
+        "name": "Flight gate 1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                35,
+                -100
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "torus",
+              "args": [
+                13,
+                0.38,
+                8,
+                48
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-gate",
+              "color": "#63f4dd",
+              "materialType": "basic"
+            }
+          }
+        }
+      },
+      {
+        "id": "gate-1",
+        "name": "Flight gate 2",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                16.749659868179968,
+                43.60827309079427,
+                -245
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "torus",
+              "args": [
+                13,
+                0.38,
+                8,
+                48
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-gate"
+            }
+          }
+        }
+      },
+      {
+        "id": "gate-2",
+        "name": "Flight gate 3",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                25.621692979699965,
+                46.99488323649806,
+                -390
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "torus",
+              "args": [
+                13,
+                0.38,
+                8,
+                48
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-gate"
+            }
+          }
+        }
+      },
+      {
+        "id": "gate-3",
+        "name": "Flight gate 4",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                22.443443532870724,
+                43.105558166613804,
+                -535
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "torus",
+              "args": [
+                13,
+                0.38,
+                8,
+                48
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-gate"
+            }
+          }
+        }
+      },
+      {
+        "id": "gate-4",
+        "name": "Flight gate 5",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                8.709691904053532,
+                34.299510278869036,
+                -680
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "torus",
+              "args": [
+                13,
+                0.38,
+                8,
+                48
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-gate"
+            }
+          }
+        }
+      },
+      {
+        "id": "gate-5",
+        "name": "Flight gate 6",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -9.120363919930115,
+                25.918370056304862,
+                -825
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "torus",
+              "args": [
+                13,
+                0.38,
+                8,
+                48
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-gate"
+            }
+          }
+        }
+      },
+      {
+        "id": "gate-6",
+        "name": "Flight gate 7",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -22.66097008275328,
+                23.046024693969912,
+                -970
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "torus",
+              "args": [
+                13,
+                0.38,
+                8,
+                48
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-gate"
+            }
+          }
+        }
+      },
+      {
+        "id": "gate-7",
+        "name": "Flight gate 8",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -25.543767928232647,
+                27.424800345532148,
+                -1115
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "torus",
+              "args": [
+                13,
+                0.38,
+                8,
+                48
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-gate"
+            }
+          }
+        }
+      },
+      {
+        "id": "island-0",
+        "name": "Basalt island 0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -100,
+                -9,
+                -70
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0,
+                38,
+                40,
+                5
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-rock",
+              "color": "#344d50",
+              "roughness": 1
+            }
+          }
+        }
+      },
+      {
+        "id": "island-1",
+        "name": "Basalt island 1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                131,
+                -9,
+                -165
+              ],
+              "rotation": [
+                0,
+                0.9,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0,
+                50,
+                56,
+                5
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-island",
+              "color": "#537564",
+              "roughness": 1
+            }
+          }
+        }
+      },
+      {
+        "id": "island-2",
+        "name": "Basalt island 2",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -162,
+                -9,
+                -260
+              ],
+              "rotation": [
+                0,
+                1.8,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0,
+                62,
+                72,
+                5
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-island"
+            }
+          }
+        }
+      },
+      {
+        "id": "island-3",
+        "name": "Basalt island 3",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                193,
+                -9,
+                -355
+              ],
+              "rotation": [
+                0,
+                2.7,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0,
+                74,
+                88,
+                5
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-rock"
+            }
+          }
+        }
+      },
+      {
+        "id": "island-4",
+        "name": "Basalt island 4",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -104,
+                -9,
+                -450
+              ],
+              "rotation": [
+                0,
+                3.6,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0,
+                38,
+                104,
+                5
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-island"
+            }
+          }
+        }
+      },
+      {
+        "id": "island-5",
+        "name": "Basalt island 5",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                135,
+                -9,
+                -545
+              ],
+              "rotation": [
+                0,
+                4.5,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0,
+                50,
+                40,
+                5
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-island"
+            }
+          }
+        }
+      },
+      {
+        "id": "island-6",
+        "name": "Basalt island 6",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -166,
+                -9,
+                -640
+              ],
+              "rotation": [
+                0,
+                5.4,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0,
+                62,
+                56,
+                5
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-rock"
+            }
+          }
+        }
+      },
+      {
+        "id": "island-7",
+        "name": "Basalt island 7",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                197,
+                -9,
+                -735
+              ],
+              "rotation": [
+                0,
+                6.3,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0,
+                74,
+                72,
+                5
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-island"
+            }
+          }
+        }
+      },
+      {
+        "id": "island-8",
+        "name": "Basalt island 8",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -108,
+                -9,
+                -830
+              ],
+              "rotation": [
+                0,
+                7.2,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0,
+                38,
+                88,
+                5
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-island"
+            }
+          }
+        }
+      },
+      {
+        "id": "island-9",
+        "name": "Basalt island 9",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                139,
+                -9,
+                -925
+              ],
+              "rotation": [
+                0,
+                8.1,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0,
+                50,
+                104,
+                5
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-rock"
+            }
+          }
+        }
+      },
+      {
+        "id": "island-10",
+        "name": "Basalt island 10",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -170,
+                -9,
+                -1020
+              ],
+              "rotation": [
+                0,
+                9,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0,
+                62,
+                40,
+                5
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-island"
+            }
+          }
+        }
+      },
+      {
+        "id": "island-11",
+        "name": "Basalt island 11",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                201,
+                -9,
+                -1115
+              ],
+              "rotation": [
+                0,
+                9.9,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0,
+                74,
+                56,
+                5
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-island"
+            }
+          }
+        }
+      },
+      {
+        "id": "island-12",
+        "name": "Basalt island 12",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -112,
+                -9,
+                -1210
+              ],
+              "rotation": [
+                0,
+                10.8,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0,
+                38,
+                72,
+                5
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-rock"
+            }
+          }
+        }
+      },
+      {
+        "id": "island-13",
+        "name": "Basalt island 13",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                143,
+                -9,
+                -1305
+              ],
+              "rotation": [
+                0,
+                11.700000000000001,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0,
+                50,
+                88,
+                5
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-island"
+            }
+          }
+        }
+      },
+      {
+        "id": "island-14",
+        "name": "Basalt island 14",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -174,
+                -9,
+                -1400
+              ],
+              "rotation": [
+                0,
+                12.6,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0,
+                62,
+                104,
+                5
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-island"
+            }
+          }
+        }
+      },
+      {
+        "id": "island-15",
+        "name": "Basalt island 15",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                205,
+                -9,
+                -1495
+              ],
+              "rotation": [
+                0,
+                13.5,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0,
+                74,
+                40,
+                5
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-rock"
+            }
+          }
+        }
+      },
+      {
+        "id": "island-16",
+        "name": "Basalt island 16",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -116,
+                -9,
+                -1590
+              ],
+              "rotation": [
+                0,
+                14.4,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0,
+                38,
+                56,
+                5
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-island"
+            }
+          }
+        }
+      },
+      {
+        "id": "island-17",
+        "name": "Basalt island 17",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                147,
+                -9,
+                -1685
+              ],
+              "rotation": [
+                0,
+                15.3,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0,
+                50,
+                72,
+                5
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-island"
+            }
+          }
+        }
+      },
+      {
+        "id": "island-18",
+        "name": "Basalt island 18",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -178,
+                -9,
+                -1780
+              ],
+              "rotation": [
+                0,
+                16.2,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0,
+                62,
+                88,
+                5
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-rock"
+            }
+          }
+        }
+      },
+      {
+        "id": "island-19",
+        "name": "Basalt island 19",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                209,
+                -9,
+                -1875
+              ],
+              "rotation": [
+                0,
+                17.1,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0,
+                74,
+                104,
+                5
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-island"
+            }
+          }
+        }
+      },
+      {
+        "id": "island-20",
+        "name": "Basalt island 20",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -120,
+                -9,
+                -1970
+              ],
+              "rotation": [
+                0,
+                18,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0,
+                38,
+                40,
+                5
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-island"
+            }
+          }
+        }
+      },
+      {
+        "id": "island-21",
+        "name": "Basalt island 21",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                151,
+                -9,
+                -2065
+              ],
+              "rotation": [
+                0,
+                18.900000000000002,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0,
+                50,
+                56,
+                5
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-rock"
+            }
+          }
+        }
+      },
+      {
+        "id": "island-22",
+        "name": "Basalt island 22",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -182,
+                -9,
+                -2160
+              ],
+              "rotation": [
+                0,
+                19.8,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0,
+                62,
+                72,
+                5
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-island"
+            }
+          }
+        }
+      },
+      {
+        "id": "island-23",
+        "name": "Basalt island 23",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                213,
+                -9,
+                -2255
+              ],
+              "rotation": [
+                0,
+                20.7,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0,
+                74,
+                88,
+                5
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-island"
+            }
+          }
+        }
+      },
+      {
+        "id": "island-24",
+        "name": "Basalt island 24",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -124,
+                -9,
+                -2350
+              ],
+              "rotation": [
+                0,
+                21.6,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0,
+                38,
+                104,
+                5
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-rock"
+            }
+          }
+        }
+      },
+      {
+        "id": "island-25",
+        "name": "Basalt island 25",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                155,
+                -9,
+                -2445
+              ],
+              "rotation": [
+                0,
+                22.5,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0,
+                50,
+                40,
+                5
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-island"
+            }
+          }
+        }
+      },
+      {
+        "id": "island-26",
+        "name": "Basalt island 26",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -186,
+                -9,
+                -2540
+              ],
+              "rotation": [
+                0,
+                23.400000000000002,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0,
+                62,
+                56,
+                5
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-island"
+            }
+          }
+        }
+      },
+      {
+        "id": "island-27",
+        "name": "Basalt island 27",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                217,
+                -9,
+                -2635
+              ],
+              "rotation": [
+                0,
+                24.3,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0,
+                74,
+                72,
+                5
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-rock"
+            }
+          }
+        }
+      },
+      {
+        "id": "island-28",
+        "name": "Basalt island 28",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -128,
+                -9,
+                -2730
+              ],
+              "rotation": [
+                0,
+                25.2,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0,
+                38,
+                88,
+                5
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-island"
+            }
+          }
+        }
+      },
+      {
+        "id": "island-29",
+        "name": "Basalt island 29",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                159,
+                -9,
+                -2825
+              ],
+              "rotation": [
+                0,
+                26.1,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "cylinder",
+              "args": [
+                0,
+                50,
+                104,
+                5
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-island"
+            }
+          }
+        }
+      },
+      {
+        "id": "cloud-0",
+        "name": "Cloud bank 0",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -95,
+                105,
+                0
+              ],
+              "scale": [
+                35,
+                6,
+                17
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                1,
+                10,
+                6
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-cloud",
+              "color": "#dae9e6",
+              "roughness": 1
+            }
+          }
+        }
+      },
+      {
+        "id": "cloud-1",
+        "name": "Cloud bank 1",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                140,
+                135,
+                -210
+              ],
+              "scale": [
+                47,
+                6,
+                17
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                1,
+                10,
+                6
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-cloud"
+            }
+          }
+        }
+      },
+      {
+        "id": "cloud-2",
+        "name": "Cloud bank 2",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -185,
+                165,
+                -420
+              ],
+              "scale": [
+                59,
+                6,
+                17
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                1,
+                10,
+                6
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-cloud"
+            }
+          }
+        }
+      },
+      {
+        "id": "cloud-3",
+        "name": "Cloud bank 3",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                230,
+                105,
+                -630
+              ],
+              "scale": [
+                35,
+                6,
+                17
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                1,
+                10,
+                6
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-cloud"
+            }
+          }
+        }
+      },
+      {
+        "id": "cloud-4",
+        "name": "Cloud bank 4",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -95,
+                135,
+                -840
+              ],
+              "scale": [
+                47,
+                6,
+                17
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                1,
+                10,
+                6
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-cloud"
+            }
+          }
+        }
+      },
+      {
+        "id": "cloud-5",
+        "name": "Cloud bank 5",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                140,
+                165,
+                -1050
+              ],
+              "scale": [
+                59,
+                6,
+                17
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                1,
+                10,
+                6
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-cloud"
+            }
+          }
+        }
+      },
+      {
+        "id": "cloud-6",
+        "name": "Cloud bank 6",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -185,
+                105,
+                -1260
+              ],
+              "scale": [
+                35,
+                6,
+                17
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                1,
+                10,
+                6
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-cloud"
+            }
+          }
+        }
+      },
+      {
+        "id": "cloud-7",
+        "name": "Cloud bank 7",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                230,
+                135,
+                -1470
+              ],
+              "scale": [
+                47,
+                6,
+                17
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                1,
+                10,
+                6
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-cloud"
+            }
+          }
+        }
+      },
+      {
+        "id": "cloud-8",
+        "name": "Cloud bank 8",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -95,
+                165,
+                -1680
+              ],
+              "scale": [
+                59,
+                6,
+                17
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                1,
+                10,
+                6
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-cloud"
+            }
+          }
+        }
+      },
+      {
+        "id": "cloud-9",
+        "name": "Cloud bank 9",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                140,
+                105,
+                -1890
+              ],
+              "scale": [
+                35,
+                6,
+                17
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                1,
+                10,
+                6
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-cloud"
+            }
+          }
+        }
+      },
+      {
+        "id": "cloud-10",
+        "name": "Cloud bank 10",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -185,
+                135,
+                -2100
+              ],
+              "scale": [
+                47,
+                6,
+                17
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                1,
+                10,
+                6
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-cloud"
+            }
+          }
+        }
+      },
+      {
+        "id": "cloud-11",
+        "name": "Cloud bank 11",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                230,
+                165,
+                -2310
+              ],
+              "scale": [
+                59,
+                6,
+                17
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                1,
+                10,
+                6
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-cloud"
+            }
+          }
+        }
+      },
+      {
+        "id": "cloud-12",
+        "name": "Cloud bank 12",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -95,
+                105,
+                -2520
+              ],
+              "scale": [
+                35,
+                6,
+                17
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                1,
+                10,
+                6
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-cloud"
+            }
+          }
+        }
+      },
+      {
+        "id": "cloud-13",
+        "name": "Cloud bank 13",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                140,
+                135,
+                -2730
+              ],
+              "scale": [
+                47,
+                6,
+                17
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "sphere",
+              "args": [
+                1,
+                10,
+                6
+              ],
+              "instanced": false
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "skyward-cloud"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

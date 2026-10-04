@@ -14,7 +14,7 @@ those nodes new behavior and editable properties.
 
 ## Three ways to work
 
-### Web editor and API
+### Web editor and Scene API
 
 Open the [web editor](https://prnth.com/react-three-game/editor) to assemble a
 scene, adjust components, and try it in Play mode. The same editor exposes
@@ -31,7 +31,7 @@ scene.exportJSON();
 
 The API shares the editor's document and undo history. It supports inspecting,
 creating, editing, cloning, and packing nodes, plus screenshots and exports.
-See the [agent guide](docs/public/editor-scene-for-agents.md) for the full workflow.
+See the [Scene API guide](docs/public/editor-scene-for-agents.md) for the full workflow.
 The hosted editor includes built-in components; use your own app for custom ones.
 
 Asset pickers and `scene.assets()` read one `/manifest.json`, relative to the editor's
@@ -172,6 +172,32 @@ Select the cube to change its speed, then press **Play**. Your app also gets
 `window.scene`. For code that belongs directly in a scene file, the built-in
 `Runtime` component offers JavaScript setup and update fields; use it only with
 trusted scene files.
+
+### Component callbacks and context
+
+React Views use `useEffect`, `useFrame`, and `useThree` directly. `Component` also
+provides optional `setup(context)` and `update(context)` callbacks, used by Runtime
+to run authored JavaScript. They map to React effects and R3F frames, only while
+enabled in Play and outside preparation.
+
+Setup runs after committed refs/layout effects; separately loading objects may
+still be absent. Return cleanup or use `context.onCleanup(fn)`; resources are
+released in reverse order on disable, exit from Play, removal or code replacement.
+Setup may replay in Strict Mode. `state` is fresh for each setup, while `properties`
+stays current without restarting it. Use `restartOn: ['propertyName']` to opt into
+restarting for selected property changes; Runtime uses this for its source fields.
+
+Read `context.three.camera`, `.scene`, `.gl`, etc. for live R3F state;
+`context.prefab.getObject(id)` resolves an object in this prefab instance.
+`object` is this node's nullable transform, `node` its scoped handle, and `events`
+the gameplay event bus (`events.on` returns cleanup). `delta` is seconds during
+update, zero otherwise. Updates run at priority -1, before default-priority
+callbacks and instance uploads. Setup/update errors stop updates and run cleanup.
+
+React Views can use `useSceneRuntimeContext()` for the same live `three`/`events`
+access or `useThree(selector)` for reactive reads. See the
+[Runtime example](docs/public/editor-scene-for-agents.md#add-behavior-that-is-not-registered)
+for JavaScript stored directly in a scene.
 
 ## Export and play your scene
 

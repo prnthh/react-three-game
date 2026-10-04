@@ -24,12 +24,13 @@ function FogView({ properties: { color, near, far }, children }: ComponentViewPr
 
 const FogComponent: Component<FogProperties> = {
     name: 'Fog',
+    description: "Apply linear distance fog to the scene. Set color to match the background and near/far to the distances where fog begins and becomes opaque.",
     slot: 'fog',
     View: FogView,
     properties: {
         color: { type: 'color', default: '#ffffff' },
-        near: { default: 10, min: 0, step: 1 },
-        far: { default: 100, min: 0, step: 1 },
+        near: { description: "Camera distance in scene units where fog starts.", default: 10, min: 0, step: 1 },
+        far: { description: "Camera distance in scene units where fog is fully opaque; use a value greater than near.", default: 100, min: 0, step: 1 },
     },
 };
 

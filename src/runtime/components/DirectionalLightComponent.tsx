@@ -118,6 +118,7 @@ function DirectionalLightView({ properties, children }: ComponentViewProps<Direc
 
 const DirectionalLightComponent: Component<DirectionalLightProperties> = {
     name: 'DirectionalLight',
+    description: "Add sunlight-like parallel rays aimed from this node toward targetOffset. Use castShadow and shadow camera bounds to cover the objects that need shadows.",
     category: 'lighting',
     slot: 'object',
     renderWhenDisabled: true,
@@ -140,7 +141,7 @@ const DirectionalLightComponent: Component<DirectionalLightProperties> = {
         shadowCameraBottom: { default: directionalLightDefaults.shadowCameraBottom },
         shadowCameraLeft: { default: directionalLightDefaults.shadowCameraLeft },
         shadowCameraRight: { default: directionalLightDefaults.shadowCameraRight },
-        targetOffset: { type: 'vector3', default: directionalLightDefaults.targetOffset },
+        targetOffset: { description: "Aim point relative to this node, in local scene units; the node transform also rotates this offset.", type: 'vector3', default: directionalLightDefaults.targetOffset },
     },
 };
 

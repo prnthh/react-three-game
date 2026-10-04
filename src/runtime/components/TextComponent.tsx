@@ -71,16 +71,17 @@ function TextComponentView({ properties, children }: ComponentViewProps<TextProp
 
 const TextComponent: Component<TextProperties> = {
     name: 'Text',
+    description: "Render text at this node. Set text, font and size; use Transform to place and orient it. Size and width are in scene units.",
     slot: 'object',
     renderWhenDisabled: true,
     View: TextComponentView,
     properties: {
         text: { type: 'string', default: 'Hello World' },
         color: { type: 'color', default: '#888888' },
-        font: { type: 'string', default: '/fonts/NotoSans-Regular.ttf' },
-        size: { default: 0.5, min: 0.01, step: 0.1 },
-        depth: { default: 0, min: 0, step: 0.1 },
-        width: { default: 5, min: 0, step: 0.5 },
+        font: { description: "Font asset path relative to basePath, or an absolute URL.", type: 'string', default: '/fonts/NotoSans-Regular.ttf' },
+        size: { description: "Font size in scene units.", default: 0.5, min: 0.01, step: 0.1 },
+        depth: { description: "Extrusion depth in scene units; 0 is flat text.", default: 0, min: 0, step: 0.1 },
+        width: { description: "Text layout width in scene units.", default: 5, min: 0, step: 0.5 },
         align: {
             type: 'select',
             default: 'center',

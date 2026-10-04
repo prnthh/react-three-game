@@ -8,7 +8,8 @@ export const ComponentLookupContext = createContext(getComponent);
 
 type CompositionComponent = {
     key: string;
-    View: NonNullable<Component["View"]>;
+    View?: Component["View"];
+    component?: Component;
     properties: ComponentData["properties"];
     order: number;
     renderWhenDisabled: boolean;
@@ -61,13 +62,13 @@ export function analyzeNodeComponents(node: GameObjectType, lookup = getComponen
                 rotation: properties.rotation ?? [0, 0, 0],
                 scale: properties.scale ?? [1, 1, 1],
             };
-            continue;
         }
-        if (!registeredComponent?.View) continue;
+        if (!registeredComponent || !(registeredComponent.View || registeredComponent.setup || registeredComponent.update)) continue;
 
         composition.push({
             key,
             View: registeredComponent.View,
+            component: registeredComponent,
             properties,
             order: registeredComponent.slot === 'geometry' || registeredComponent.slot === 'material'
                 ? 2 : registeredComponent.slot === 'object' ? 1 : 0,

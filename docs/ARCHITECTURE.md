@@ -136,7 +136,7 @@ Register it as in the [custom component demo](app/demo/customcomponent/page.tsx)
 - Put editable fields/defaults in the definition; views receive resolved values.
 - Return `children` so composition continues through the view.
 - Object, geometry and material views declare their `slot` and implement R3F attachments. Geometry views receive an implicit mesh; object views create their own render object. Each visual component must work without a separate base Mesh component.
-- Share mesh property definitions and editor fields as code helpers. Geometry, BufferGeometry, Model and AnimatedModel use the collapsed `Mesh options` inspector section; expose only options the renderer supports.
+- Share mesh property definitions and editor fields as code helpers. Geometry, BufferGeometry, Model and SkinnedMesh use the collapsed `Mesh options` inspector section; expose only options the renderer supports.
 - Keep custom inspector imports in `.editor.tsx` modules.
 
 A component may omit `View` entirely when it only stores authored data. For a
@@ -202,15 +202,15 @@ Follow [ComponentRegistry](../src/core/ComponentRegistry.ts) →
 
 ## Control model animation
 
-`AnimatedModel` exposes its existing Three.js mixer and actions through its runtime
-handle. In a component, get the node with `useGameObject()`; in an event handler,
+`SkinnedMesh` clones the loaded model’s skeletons and creates one Three.js
+animation mixer per model instance. Its runtime handle exposes that mixer and its actions. In a component, get the node with `useGameObject()`; in an event handler,
 after the model has loaded:
 
 ```ts
 import { LoopOnce } from 'three';
-import { ANIMATED_MODEL_COMPONENT } from 'react-three-game/viewer';
+import { SKINNED_MESH_COMPONENT } from 'react-three-game/viewer';
 
-const model = object.getComponent(ANIMATED_MODEL_COMPONENT);
+const model = object.getComponent(SKINNED_MESH_COMPONENT);
 const action = model?.getAction('Jump'); // Case-insensitive; null if missing.
 if (model && action) {
   model.stop();

@@ -1,76 +1,6 @@
 {
   "id": "prefab-1",
   "name": "Test Prefab",
-  "materials": {
-    "material": {
-      "side": "BackSide",
-      "texture": "/textures/proto32/checkers_01.png",
-      "repeat": true,
-      "repeatCount": [
-        20,
-        20
-      ]
-    },
-    "material-2": {
-      "materialType": "basic",
-      "color": "#e8e8e8",
-      "side": "BackSide"
-    },
-    "material-3": {
-      "texture": "/textures/proto32/checkers_01.png",
-      "repeat": true,
-      "repeatCount": [
-        29,
-        2
-      ]
-    },
-    "material-4": {
-      "texture": "/textures/proto32/checkers_01.png",
-      "repeat": true,
-      "repeatCount": [
-        4,
-        4
-      ]
-    },
-    "material-5": {
-      "texture": "/textures/proto32/checkers_01.png",
-      "repeat": true,
-      "repeatCount": [
-        3.5,
-        2
-      ]
-    },
-    "material-6": {
-      "color": "#ffac4d",
-      "transparent": true,
-      "opacity": 0.49
-    },
-    "material-7": {
-      "color": "#bababa"
-    },
-    "material-8": {
-      "color": "#ff6b6b",
-      "transparent": true,
-      "opacity": 0.74
-    },
-    "material-9": {
-      "color": "#4ecdc4",
-      "transparent": true,
-      "opacity": 0.68
-    },
-    "material-10": {
-      "transparent": true,
-      "texture": "/textures/proto32/checkers_02.png",
-      "repeat": true,
-      "repeatCount": [
-        1.5,
-        1.5
-      ]
-    },
-    "material-11": {
-      "texture": "/textures/proto32/orange_ochre.png"
-    }
-  },
   "root": {
     "id": "root",
     "components": {
@@ -143,7 +73,15 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material"
+              "materialType": "standard",
+              "side": "BackSide",
+              "texture": "/textures/proto32/checkers_01.png",
+              "repeat": true,
+              "repeatCount": [
+                20,
+                20
+              ],
+              "name": "prefabs/killbox/killbox:material"
             }
           },
           "crashcatPhysics": {
@@ -195,7 +133,10 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "material-2"
+                  "materialType": "basic",
+                  "color": "#e8e8e8",
+                  "side": "BackSide",
+                  "name": "prefabs/killbox/killbox:material-2"
                 }
               }
             },
@@ -236,7 +177,14 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-3"
+              "materialType": "standard",
+              "texture": "/textures/proto32/checkers_01.png",
+              "repeat": true,
+              "repeatCount": [
+                29,
+                2
+              ],
+              "name": "prefabs/killbox/killbox:material-3"
             }
           },
           "crashcatPhysics": {
@@ -281,7 +229,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-3"
+              "name": "prefabs/killbox/killbox:material-3"
             }
           },
           "crashcatPhysics": {
@@ -321,7 +269,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-3"
+              "name": "prefabs/killbox/killbox:material-3"
             }
           },
           "crashcatPhysics": {
@@ -361,7 +309,14 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-4"
+              "materialType": "standard",
+              "texture": "/textures/proto32/checkers_01.png",
+              "repeat": true,
+              "repeatCount": [
+                4,
+                4
+              ],
+              "name": "prefabs/killbox/killbox:material-4"
             }
           },
           "crashcatPhysics": {
@@ -401,7 +356,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-4"
+              "name": "prefabs/killbox/killbox:material-4"
             }
           },
           "crashcatPhysics": {
@@ -441,7 +396,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-4"
+              "name": "prefabs/killbox/killbox:material-4"
             }
           },
           "crashcatPhysics": {
@@ -481,7 +436,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-4"
+              "name": "prefabs/killbox/killbox:material-4"
             }
           },
           "crashcatPhysics": {
@@ -521,7 +476,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-4"
+              "name": "prefabs/killbox/killbox:material-4"
             }
           },
           "crashcatPhysics": {
@@ -561,7 +516,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-4"
+              "name": "prefabs/killbox/killbox:material-4"
             }
           },
           "crashcatPhysics": {
@@ -606,7 +561,14 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-5"
+              "materialType": "standard",
+              "texture": "/textures/proto32/checkers_01.png",
+              "repeat": true,
+              "repeatCount": [
+                3.5,
+                2
+              ],
+              "name": "prefabs/killbox/killbox:material-5"
             }
           },
           "crashcatPhysics": {
@@ -664,7 +626,11 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "material-6"
+                  "materialType": "standard",
+                  "color": "#ffac4d",
+                  "transparent": true,
+                  "opacity": 0.49,
+                  "name": "prefabs/killbox/killbox:material-6"
                 }
               }
             },
@@ -697,7 +663,9 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "material-7"
+                  "materialType": "standard",
+                  "color": "#bababa",
+                  "name": "prefabs/killbox/killbox:material-7"
                 }
               },
               "crashcatPhysics": {
@@ -731,7 +699,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "material-7"
+                  "name": "prefabs/killbox/killbox:material-7"
                 }
               },
               "crashcatPhysics": {
@@ -773,7 +741,11 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-8"
+              "materialType": "standard",
+              "color": "#ff6b6b",
+              "transparent": true,
+              "opacity": 0.74,
+              "name": "prefabs/killbox/killbox:material-8"
             }
           },
           "sound": {
@@ -837,7 +809,11 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-9"
+              "materialType": "standard",
+              "color": "#4ecdc4",
+              "transparent": true,
+              "opacity": 0.68,
+              "name": "prefabs/killbox/killbox:material-9"
             }
           },
           "sound": {
@@ -914,7 +890,15 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-10"
+              "materialType": "standard",
+              "transparent": true,
+              "texture": "/textures/proto32/checkers_02.png",
+              "repeat": true,
+              "repeatCount": [
+                1.5,
+                1.5
+              ],
+              "name": "prefabs/killbox/killbox:material-10"
             }
           },
           "crashcatPhysics": {
@@ -967,7 +951,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-10"
+              "name": "prefabs/killbox/killbox:material-10"
             }
           },
           "crashcatPhysics": {
@@ -1014,7 +998,9 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-11"
+              "materialType": "standard",
+              "texture": "/textures/proto32/orange_ochre.png",
+              "name": "prefabs/killbox/killbox:material-11"
             }
           }
         },

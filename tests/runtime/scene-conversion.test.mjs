@@ -11,11 +11,11 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { convert } from '../../src/node.ts';
 import { createHeadlessScene } from '../../src/headless.tsx';
 
-const prefab = { materials: { paint: { color: '#806040', roughness: 0.6 } }, root: {
+const prefab = { root: {
     id: 'box', name: 'Box', components: {
         transform: { type: 'Transform', properties: { position: [3, 4, 5] } },
         geometry: { type: 'Geometry', properties: { geometryType: 'box', args: [2, 4, 6] } },
-        material: { type: 'Material', properties: { materialId: 'paint' } },
+        material: { type: 'Material', properties: { name: 'paint', color: '#806040', roughness: 0.6 } },
     },
 } };
 const meshes = scene => { const found = []; scene.traverse(o => { if (o.isMesh) found.push(o); }); return found; };

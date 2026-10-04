@@ -3,9 +3,9 @@ import { useEditorRef } from '../EditorContext.js';
 import type { ComponentEditorProps } from '../../core/ComponentRegistry.js';
 import { BooleanField, FieldGroup, NumberField, StringField } from '../ui/Input.js';
 import { ModelPicker } from '../assets/AssetBrowser.js';
-import { AnimatedModelProperties } from "../../runtime/components/AnimatedModelComponent.js";
+import { SkinnedMeshProperties } from "../../runtime/components/SkinnedMeshComponent.js";
 
-function AnimatedModelEditor({ node, properties, update }: ComponentEditorProps<AnimatedModelProperties>) {
+function SkinnedMeshEditor({ node, properties, update }: ComponentEditorProps<SkinnedMeshProperties>) {
     const { basePath } = useEditorRef();
     return <FieldGroup>
         <ModelPicker value={properties.filename} onChange={filename => update({ filename })} basePath={basePath} pickerKey={node.id} />
@@ -16,4 +16,4 @@ function AnimatedModelEditor({ node, properties, update }: ComponentEditorProps<
     </FieldGroup>;
 }
 
-export default AnimatedModelEditor;
+export default SkinnedMeshEditor;

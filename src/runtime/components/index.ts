@@ -14,7 +14,7 @@ import ModelComponent from "./ModelComponent.js";
 import PointLightComponent from "./PointLightComponent.js";
 import PrefabRefComponent from "./PrefabRefComponent.js";
 import SoundComponent from "./SoundComponent.js";
-import AnimatedModelComponent from "./AnimatedModelComponent.js";
+import SkinnedMeshComponent from "./SkinnedMeshComponent.js";
 import SpotLightComponent from "./SpotLightComponent.js";
 import SpriteComponent from "./SpriteComponent.js";
 import TextComponent from "./TextComponent.js";
@@ -29,7 +29,7 @@ export const builtInComponents: readonly Component<any>[] = [
 	GeometryComponent,
 	BufferGeometryComponent,
 	ModelComponent,
-	AnimatedModelComponent,
+	SkinnedMeshComponent,
 	SpriteComponent,
 	TextComponent,
 

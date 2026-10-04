@@ -33,7 +33,7 @@ function isPrefab(value: unknown): value is Prefab {
       nodes.push(...node.children);
     }
   }
-  return value.materials === undefined || (record(value.materials) && Object.values(value.materials).every(record));
+  return value.materials === undefined;
 }
 
 /** Host-owned persistence. Pending edits flush before navigation or explicit API saves. */

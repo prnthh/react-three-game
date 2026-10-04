@@ -51,6 +51,7 @@ function CameraFollowView({ properties, children }: ComponentViewProps<CameraFol
 
 const CameraFollowComponent: Component<CameraFollowProperties> = {
     name: "CameraFollow",
+    category: 'camera',
     View: CameraFollowView,
     properties: {
         targetId: { type: "string", default: "" },

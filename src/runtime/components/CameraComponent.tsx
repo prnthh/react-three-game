@@ -117,6 +117,7 @@ function CameraComponentView({ properties, enabled, children }: ComponentViewPro
 const CameraComponent: Component<CameraProperties> = {
     renderWhenDisabled: true,
     name: 'Camera',
+    category: 'camera',
     slot: 'object',
     View: CameraComponentView,
     properties: {

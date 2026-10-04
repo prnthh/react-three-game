@@ -282,9 +282,8 @@ export function createSceneAgent(store: PrefabStoreApi, getHost: () => SceneAgen
             // Reject intervening edits after asynchronous loading; never overwrite a newer document.
             checkRevision(revision);
             const placement = denormalizePrefab({ ...state, rootId: input.id }).root;
-            const { node, materials } = unpackPrefabNode(placement, prefab, `${input.id}:${crypto.randomUUID()}`);
+            const { node } = unpackPrefabNode(placement, prefab, `${input.id}:${crypto.randomUUID()}`);
             return scene.batch({ expectedRevision: revision, commands: [
-                ...Object.entries(materials).map(([id, material]): SceneCommand => ({ op: 'material', id, material })),
                 { op: 'replaceNode', id: input.id, node },
             ] });
         },
@@ -309,7 +308,7 @@ export function createSceneAgent(store: PrefabStoreApi, getHost: () => SceneAgen
             }
             const offset = integer(input.offset, 0, 0, Number.MAX_SAFE_INTEGER), limit = integer(input.limit, 50, 1, 200);
             const names = Object.keys(state.materials);
-            return { revision, materials: names.slice(offset, offset + limit).map(id => ({ id, name: state.materials[id].name })), nextOffset: offset + limit < names.length ? offset + limit : null };
+            return { revision, materials: names.slice(offset, offset + limit).map(id => ({ id, name: id })), nextOffset: offset + limit < names.length ? offset + limit : null };
         },
         validate(input: SceneBatch) {
             const evaluated = evaluate(input);

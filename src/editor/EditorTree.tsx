@@ -7,7 +7,8 @@ import { FileMenu, TreeContextMenu, TreeContextMenuState, TreeNodeMenu } from '.
 import { createEmptyNode } from '../core/prefab.js';
 import { PrefabStoreState } from "../core/prefabStore.js";
 import { usePrefabChildIds, usePrefabNode, usePrefabRootId, usePrefabStore, usePrefabStoreApi } from "../runtime/prefabs/PrefabStoreContext.js";
-import { hasComponent } from '../core/types.js';
+import { findComponent, hasComponent } from '../core/types.js';
+import { isEmbeddedPrefabSource } from '../runtime/prefabs/prefabSource.js';
 import { saveJson } from './documentIO.js';
 
 type DropPosition = 'before' | 'inside';
@@ -160,7 +161,10 @@ export default function EditorTree({
         onFocusNode?.(nodeId);
     };
 
-    const renderTreeNodeMenu = (nodeId: string, isRoot: boolean, onClose: () => void) => (
+    const renderTreeNodeMenu = (nodeId: string, isRoot: boolean, onClose: () => void) => {
+        const source = findComponent(store.getState().nodesById[nodeId], 'PrefabRef')?.properties?.url;
+        const canExport = typeof source === 'string' && isEmbeddedPrefabSource(source);
+        return (
         <TreeNodeMenu
             isRoot={isRoot}
             nodeId={nodeId}
@@ -171,11 +175,12 @@ export default function EditorTree({
             onDuplicate={isRoot ? undefined : handleDuplicate}
             onPack={!isRoot && !hasComponent(store.getState().nodesById[nodeId], 'PrefabRef') ? id => void handlePrefabAction(id, 'pack') : undefined}
             onUnpack={hasComponent(store.getState().nodesById[nodeId], 'PrefabRef') ? id => void handlePrefabAction(id, 'unpack') : undefined}
-            onExport={id => void handlePrefabAction(id, 'export')}
+            onExport={canExport ? id => void handlePrefabAction(id, 'export') : undefined}
             onDelete={isRoot ? undefined : handleDelete}
             onClose={onClose}
         />
-    );
+        );
+    };
 
     const handleDragStart = (e: React.DragEvent, id: string) => {
         if (id === rootId) return e.preventDefault();

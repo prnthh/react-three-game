@@ -67,6 +67,7 @@ function InteractionColliderView({ properties, children }: ComponentViewProps<In
 
 const InteractionCollider: Component<InteractionColliderProperties> = {
     name: "InteractionCollider",
+    category: 'physics',
     View: InteractionColliderView,
     properties: {
         sensorRadius: { default: 0.8, min: 0.05, step: 0.05 },

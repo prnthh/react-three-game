@@ -156,9 +156,6 @@ function ModelComponentEditor({ properties, node, update }: ComponentEditorProps
         textureRefs.forEach((texture, path) => {
             editor.addTexture(path, texture);
         });
-        Object.entries(decomposed.materials).forEach(([id, material]) => {
-            editor.setMaterial(id, material);
-        });
         const preservedComponents = Object.entries(node.components ?? {}).reduce<Record<string, ComponentData>>((result, [key, entry]) => {
             if (!entry?.type) return result;
             if (entry.type === 'Model' || entry.type === 'Geometry' || entry.type === 'BufferGeometry' || entry.type === 'Material') {

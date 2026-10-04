@@ -1,47 +1,6 @@
 {
   "id": "brutalist-city-chunk",
   "name": "Brutalist City Chunk",
-  "materials": {
-    "material-2": {
-      "name": "Sand-textured concrete",
-      "materialType": "standard",
-      "color": "#607b9d",
-      "texture": "/textures/floor/terrain/sand-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        160,
-        64
-      ],
-      "roughness": 0.98,
-      "metalness": 0
-    },
-    "material-5": {
-      "name": "Sand-textured concrete",
-      "materialType": "standard",
-      "color": "#a2bddf",
-      "texture": "/textures/floor/terrain/sand-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        3,
-        80
-      ],
-      "roughness": 0.98,
-      "metalness": 0
-    },
-    "entry-concrete": {
-      "name": "Sand-textured concrete",
-      "materialType": "standard",
-      "color": "#a2bddf",
-      "texture": "/textures/floor/terrain/sand-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        4,
-        1
-      ],
-      "roughness": 0.98,
-      "metalness": 0
-    }
-  },
   "root": {
     "id": "city-chunk-root",
     "name": "City Chunk",
@@ -88,7 +47,17 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "material-2"
+                  "materialType": "standard",
+                  "name": "prefabs/brutalist-city/city-chunk:material-2",
+                  "color": "#607b9d",
+                  "texture": "/textures/floor/terrain/sand-512.jpg",
+                  "repeat": true,
+                  "repeatCount": [
+                    160,
+                    64
+                  ],
+                  "roughness": 0.98,
+                  "metalness": 0
                 }
               }
             },
@@ -389,7 +358,17 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-5"
+              "materialType": "standard",
+              "name": "prefabs/brutalist-city/city-chunk:material-5",
+              "color": "#a2bddf",
+              "texture": "/textures/floor/terrain/sand-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                3,
+                80
+              ],
+              "roughness": 0.98,
+              "metalness": 0
             }
           }
         },
@@ -423,7 +402,17 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "entry-concrete"
+              "materialType": "standard",
+              "name": "prefabs/brutalist-city/city-chunk:entry-concrete",
+              "color": "#a2bddf",
+              "texture": "/textures/floor/terrain/sand-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                4,
+                1
+              ],
+              "roughness": 0.98,
+              "metalness": 0
             }
           }
         },
@@ -457,7 +446,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "entry-concrete"
+              "name": "prefabs/brutalist-city/city-chunk:entry-concrete"
             }
           }
         },
@@ -491,7 +480,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "entry-concrete"
+              "name": "prefabs/brutalist-city/city-chunk:entry-concrete"
             }
           }
         },
@@ -525,7 +514,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "entry-concrete"
+              "name": "prefabs/brutalist-city/city-chunk:entry-concrete"
             }
           }
         },
@@ -559,7 +548,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "entry-concrete"
+              "name": "prefabs/brutalist-city/city-chunk:entry-concrete"
             }
           }
         },
@@ -593,7 +582,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "entry-concrete"
+              "name": "prefabs/brutalist-city/city-chunk:entry-concrete"
             }
           }
         },
@@ -627,7 +616,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "entry-concrete"
+              "name": "prefabs/brutalist-city/city-chunk:entry-concrete"
             }
           }
         },
@@ -661,7 +650,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "entry-concrete"
+              "name": "prefabs/brutalist-city/city-chunk:entry-concrete"
             }
           }
         },

@@ -240,6 +240,7 @@ function CrashcatPhysicsView({ properties, children }: ComponentViewProps<Crashc
 
 const CrashcatPhysicsComponent: Component<CrashcatPhysicsProperties> = {
     name: "CrashcatPhysics",
+    category: 'physics',
     View: CrashcatPhysicsView,
     properties: {
         type: {

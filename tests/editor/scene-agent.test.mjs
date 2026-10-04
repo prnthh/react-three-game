@@ -100,14 +100,14 @@ describe('Editor API', () => {
 
     test('pack preserves placement, snapshots materials, survives JSON, duplicates and unpacks atomically', async () => {
         registerComponent({ name: 'PrefabRef', properties: { url: { type: 'string', default: '' } } });
-        registerComponent({ name: 'Material', properties: { materialId: { type: 'string', default: '' } } });
-        const original = { materials: { brass: { color: '#aa8822' } }, root: { id: 'world', children: [
+        registerComponent({ name: 'Material', properties: { name: { type: 'string', default: '' }, color: { type: 'color', default: undefined } } });
+        const original = { root: { id: 'world', children: [
             { id: 'assembly', name: 'Étagère', hidden: true, components: {
                 pose: { type: 'Transform', properties: { position: [5, 6, 7], rotation: [0, .4, 0], scale: [2, 3, 4] } },
                 custom: { type: 'AgentFixture', properties: { enabled: false } },
             }, children: [{ id: 'leg', components: {
                 transform: { type: 'Transform', properties: { position: [1, 2, 3] } },
-                material: { type: 'Material', properties: { materialId: 'brass' } },
+                material: { type: 'Material', properties: { name: 'brass', color: '#aa8822' } },
             } }] },
         ] } };
         const store = createPrefabStore(original);
@@ -129,7 +129,8 @@ describe('Editor API', () => {
         assert.equal(packed.childCount, 0);
         const asset = await (await fetch(packed.components.prefabref.properties.url)).json();
         assert.equal(asset.name, 'Étagère');
-        assert.equal(asset.materials.brass.color, '#aa8822');
+        assert.equal(asset.materials, undefined);
+        assert.equal(asset.root.children[0].components.material.properties.color, '#aa8822');
         assert.equal(asset.root.components.custom.properties.enabled, false);
         assert.throws(() => scene.pack({ id: 'assembly' }), /already/);
         const roundtrip = JSON.parse(scene.exportJSON());
@@ -141,12 +142,12 @@ describe('Editor API', () => {
         assert.equal(copy.node.components.prefabref, undefined);
         assert.equal(copy.descendants.length, 2);
         const child = copy.descendants.find(n => n.components.material);
-        const materialId = child.components.material.properties.materialId;
-        assert.equal(scene.materials({ ids: [materialId] }).materials[0].color, '#aa8822');
+        const materialName = child.components.material.properties.name;
+        assert.equal(scene.materials({ ids: [materialName] }).materials[0].color, '#aa8822');
         assert.equal(scene.get({ id: 'assembly' }).node.childCount, 0);
         scene.undo();
         assert.ok(scene.get({ id: 'copy' }).node.components.prefabref);
-        assert.throws(() => scene.materials({ ids: [materialId] }), /does not exist/);
+        assert.throws(() => scene.materials({ ids: [materialName] }), /does not exist/);
         scene.undo(); // duplicate
         scene.undo(); // pack
         assert.deepEqual(scene.export().prefab.root, original.root);

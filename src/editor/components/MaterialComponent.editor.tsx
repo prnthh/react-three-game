@@ -4,7 +4,7 @@ import { FieldRenderer, Label, NumberInput } from '../ui/Input.js';
 import type { FieldDefinition } from '../ui/Input.js';
 import { useEditorRef } from '../EditorContext.js';
 import { usePrefabStore } from "../../runtime/prefabs/PrefabStoreContext.js";
-import { createDefaultMaterial, DEFAULT_MATERIAL_ID } from '../../core/prefab.js';
+import { getMaterialDefinition, MATERIAL_FIELDS } from '../../core/prefab.js';
 import { base, colors } from '../ui/styles.js';
 import type { MaterialComponentProperties, PrefabMaterial } from '../../core/types.js';
 import { TexturePicker } from '../assets/AssetBrowser.js';
@@ -51,13 +51,6 @@ function Vector2Editor({
             </div>
         </div>
     );
-}
-
-function getNewMaterialId(materials: Record<string, PrefabMaterial>) {
-    let id = 'material';
-    let index = 2;
-    while (materials[id]) id = `material-${index++}`;
-    return id;
 }
 
 function MaterialPreview({ material, basePath }: { material: PrefabMaterial; basePath: string }) {
@@ -113,21 +106,28 @@ function MaterialComponentEditor({
     update,
 }: ComponentEditorProps<MaterialComponentProperties>) {
     const [settingsOpen, setSettingsOpen] = useState(false);
+    const [materialError, setMaterialError] = useState('');
     const editor = useEditorRef();
     const { basePath } = editor;
     const materials = usePrefabStore(state => state.materials);
-    const materialIds = Object.keys(materials);
-    const materialId = properties.materialId && materials[properties.materialId]
-        ? properties.materialId
-        : materialIds[0] ?? DEFAULT_MATERIAL_ID;
-    const material = materials[materialId] ?? createDefaultMaterial();
+    const materialName = properties.name ?? '';
+    const definition = getMaterialDefinition(properties);
+    const material = materials[materialName] ?? definition ?? {};
+    const canEditMaterial = !!materials[materialName] || !!definition || !materialName;
+    const replaceMaterial = (patch: Partial<MaterialComponentProperties>) => editor.batch(() => {
+        update({ ...Object.fromEntries(MATERIAL_FIELDS.map(key => [key, undefined])), ...patch });
+        // Keep the old shared definition available after its owning mesh switches away.
+        if (materialName && definition && !editor.getMaterial(materialName)) {
+            editor.setMaterial(materialName, definition);
+        }
+    });
     const materialType = material.materialType ?? 'standard';
     const hasTexture = !!material.texture;
     const hasRepeat = material.repeat;
     const isStandardMaterial = materialType === 'standard';
     const isSpriteMaterial = materialType === 'sprite';
     const editorValues: PrefabMaterial = {
-        name: material.name ?? '',
+        name: materialName,
         materialType,
         color: material.color ?? '#ffffff',
         toneMapped: material.toneMapped ?? true,
@@ -290,9 +290,7 @@ function MaterialComponentEditor({
     }
 
     const createMaterialEntry = () => {
-        const id = getNewMaterialId(materials);
-        editor.setMaterial(id, {});
-        update({ materialId: id });
+        replaceMaterial({ name: crypto.randomUUID(), materialType: 'standard' });
     };
 
     return <>
@@ -308,16 +306,16 @@ function MaterialComponentEditor({
             scrollbarWidth: 'thin',
             scrollbarColor: colors.borderFaint + ' transparent',
         }}>
-            {materialIds.map(id => {
-                const entry = materials[id];
-                const selected = id === materialId;
+            {Object.entries(materials).map(([id, entry]) => {
+                const selected = id === materialName;
+                const label = entry.name || id;
                 return (
                     <button
                         key={id}
                         type="button"
-                        title={entry.name ? entry.name + ' (' + id + ')' : id}
+                        title={label}
                         aria-pressed={selected}
-                        onClick={() => update({ materialId: id })}
+                        onClick={() => { if (!selected) replaceMaterial({ name: id }); }}
                         style={{
                             ...base.btn,
                             minWidth: 0,
@@ -338,7 +336,7 @@ function MaterialComponentEditor({
                             whiteSpace: 'nowrap',
                             textAlign: 'center',
                         }}>
-                            {entry.name || id}
+                            {label}
                         </span>
                     </button>
                 );
@@ -366,7 +364,7 @@ function MaterialComponentEditor({
             values={properties}
             onChange={update}
         />
-        <button
+        {canEditMaterial && <button
             type="button"
             style={{ ...base.header, borderRadius: base.btn.borderRadius, marginTop: 4 }}
             onClick={() => setSettingsOpen(open => !open)}
@@ -374,21 +372,31 @@ function MaterialComponentEditor({
         >
             <span>Material Settings</span>
             <span>{settingsOpen ? '▼' : '▶'}</span>
-        </button>
-        {settingsOpen && (
+        </button>}
+        {materialError && <div role="alert" style={{ color: colors.danger }}>{materialError}</div>}
+        {canEditMaterial && settingsOpen && (
             <div style={{ paddingTop: 4 }}>
                 <FieldRenderer
                     fields={fields}
                     values={editorValues}
-                    onChange={patch => editor.setMaterial(materialId, {
-                        ...material,
-                        ...(patch.materialType === 'sprite' && materialType !== 'sprite' ? {
-                            transparent: true,
-                            depthTest: false,
-                            depthWrite: false,
-                        } : null),
-                        ...patch,
-                    })}
+                    onChange={patch => {
+                        const next = {
+                            ...material,
+                            ...(patch.materialType === 'sprite' && materialType !== 'sprite' ? {
+                                transparent: true,
+                                depthTest: false,
+                                depthWrite: false,
+                            } : null),
+                            ...patch,
+                        };
+                        try {
+                            if (materialName && materials[materialName]) editor.setMaterial(materialName, next);
+                            else update(next);
+                            setMaterialError('');
+                        } catch (error) {
+                            setMaterialError(error instanceof Error ? error.message : 'Could not update material.');
+                        }
+                    }}
                 />
             </div>
         )}

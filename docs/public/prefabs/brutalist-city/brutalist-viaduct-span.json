@@ -1,26 +1,6 @@
 {
   "id": "brutalist-viaduct-span",
   "name": "Brutalist Viaduct Span",
-  "materials": {
-    "material": {
-      "materialType": "standard",
-      "color": "#c5bba6",
-      "roughness": 0.8,
-      "metalness": 0
-    },
-    "material-2": {
-      "materialType": "standard",
-      "color": "#384c51",
-      "roughness": 0.8,
-      "metalness": 0
-    },
-    "material-3": {
-      "materialType": "standard",
-      "color": "#a66f49",
-      "roughness": 0.5,
-      "metalness": 0.25
-    }
-  },
   "root": {
     "id": "brutalist-viaduct-span-root",
     "components": {
@@ -56,7 +36,11 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material"
+              "materialType": "standard",
+              "color": "#c5bba6",
+              "roughness": 0.8,
+              "metalness": 0,
+              "name": "prefabs/brutalist-city/brutalist-viaduct-span:material"
             }
           },
           "crashcatPhysics": {
@@ -95,7 +79,11 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-2"
+              "materialType": "standard",
+              "color": "#384c51",
+              "roughness": 0.8,
+              "metalness": 0,
+              "name": "prefabs/brutalist-city/brutalist-viaduct-span:material-2"
             }
           },
           "crashcatPhysics": {
@@ -134,7 +122,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-2"
+              "name": "prefabs/brutalist-city/brutalist-viaduct-span:material-2"
             }
           },
           "crashcatPhysics": {
@@ -173,7 +161,11 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-3"
+              "materialType": "standard",
+              "color": "#a66f49",
+              "roughness": 0.5,
+              "metalness": 0.25,
+              "name": "prefabs/brutalist-city/brutalist-viaduct-span:material-3"
             }
           },
           "crashcatPhysics": {
@@ -212,7 +204,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-3"
+              "name": "prefabs/brutalist-city/brutalist-viaduct-span:material-3"
             }
           },
           "crashcatPhysics": {
@@ -251,7 +243,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-3"
+              "name": "prefabs/brutalist-city/brutalist-viaduct-span:material-3"
             }
           },
           "crashcatPhysics": {
@@ -290,7 +282,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-3"
+              "name": "prefabs/brutalist-city/brutalist-viaduct-span:material-3"
             }
           },
           "crashcatPhysics": {
@@ -329,7 +321,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-3"
+              "name": "prefabs/brutalist-city/brutalist-viaduct-span:material-3"
             }
           },
           "crashcatPhysics": {
@@ -368,7 +360,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-3"
+              "name": "prefabs/brutalist-city/brutalist-viaduct-span:material-3"
             }
           },
           "crashcatPhysics": {
@@ -407,7 +399,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-3"
+              "name": "prefabs/brutalist-city/brutalist-viaduct-span:material-3"
             }
           },
           "crashcatPhysics": {
@@ -446,7 +438,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-3"
+              "name": "prefabs/brutalist-city/brutalist-viaduct-span:material-3"
             }
           },
           "crashcatPhysics": {
@@ -492,7 +484,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-3"
+              "name": "prefabs/brutalist-city/brutalist-viaduct-span:material-3"
             }
           }
         }
@@ -530,7 +522,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-3"
+              "name": "prefabs/brutalist-city/brutalist-viaduct-span:material-3"
             }
           }
         }

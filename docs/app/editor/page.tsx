@@ -1,26 +1,14 @@
 "use client";
 
-import SceneRedirect from "../demo/stage/components/SceneRedirect";
-import Walkable from "../demo/stage/components/Walkable";
-
-import PrefabGridStreamerComponent from "../components/PrefabGridStreamerComponent";
-import ConstantVelocityComponent from "../components/ConstantVelocityComponent";
-import CameraShadowFollowerComponent from "../demo/grassworld/components/CameraShadowFollowerComponent";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { PrefabEditorProvider, PrefabEditorScene, PrefabEditorPanel, usePrefabStoreApi } from "react-three-game/editor";
 import { GameCanvas } from "react-three-game/viewer";
 import type { Prefab } from "react-three-game/core";
-import { denormalizePrefab, registerComponent } from "react-three-game/core";
+import { denormalizePrefab } from "react-three-game/core";
 import { BASE_PATH, withBasePath } from "../basePath";
 import AgentApiHint from "../components/AgentApiHint";
 import { createPrefabPersistence, readSavedPrefab } from "./persistence";
-import { CrashcatPhysicsComponent, CrashcatRuntime } from "react-three-game/plugins/crashcat";
-import ActivationCollider from "../demo/stage/components/ActivationColliderComponent";
-import InteractionDriver from "../demo/stage/components/InteractionDriver";
-import InteractionCollider from "../demo/stage/components/InteractionCollider";
-import CharacterDriver from "../demo/stage/components/CharacterDriver";
-import StageCameraFollow from "../demo/stage/components/StageCameraFollow";
 import starterScene from "../../public/prefabs/starter-scene.json";
 
 const createStarterScene = (): Prefab => structuredClone(starterScene) as Prefab;
@@ -148,7 +136,7 @@ function EditorPage() {
         >
           <Autosave writer={writer} />
           <GameCanvas camera={{ position: cameraPosition }}>
-            <PrefabEditorScene><CrashcatRuntime /></PrefabEditorScene>
+            <PrefabEditorScene />
           </GameCanvas>
           <PrefabEditorPanel />
         </PrefabEditorProvider>
@@ -172,16 +160,3 @@ export default function Home() {
     </Suspense>
   );
 }
-
-registerComponent(PrefabGridStreamerComponent);
-registerComponent(ConstantVelocityComponent);
-registerComponent(CameraShadowFollowerComponent);
-
-registerComponent(CrashcatPhysicsComponent);
-registerComponent(ActivationCollider);
-registerComponent(InteractionDriver);
-registerComponent(SceneRedirect);
-registerComponent(Walkable);
-registerComponent(InteractionCollider);
-registerComponent(CharacterDriver);
-registerComponent(StageCameraFollow);

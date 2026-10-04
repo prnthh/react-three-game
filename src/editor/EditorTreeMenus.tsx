@@ -1,7 +1,7 @@
 import { withBasePath } from '../runtime/assets/assetPaths.js';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { createEmptyPrefab, createPackedPrefabNode } from '../core/prefab.js';
+import { createEmptyPrefab, createPackedPrefabNode, scopePrefabMaterials } from '../core/prefab.js';
 import { menu } from './ui/styles.js';
 import { useEditorContext, useEditorRef } from './EditorContext.js';
 import { loadJson, loadJsonFile, regenerateIds, saveJson } from './documentIO.js';
@@ -250,7 +250,8 @@ export function FileMenu({
             // manifest not available, fall through to full import
         }
 
-        editor.add(regenerateIds(loaded.prefab.root));
+        const imported = scopePrefabMaterials(loaded.prefab, crypto.randomUUID());
+        editor.add(regenerateIds(imported.root));
         onClose();
     };
 

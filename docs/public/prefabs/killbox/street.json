@@ -1,26 +1,6 @@
 {
   "id": "street",
   "name": "Street",
-  "materials": {
-    "street-ground": {
-      "color": "#3f4449",
-      "roughness": 0.96,
-      "metalness": 0.02,
-      "texture": "/textures/floor/terrain/rock-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        48,
-        48
-      ]
-    },
-    "street-sky": {
-      "materialType": "basic",
-      "color": "#d7ecff",
-      "side": "BackSide",
-      "toneMapped": false,
-      "texture": "/textures/skybox/skybox3.jpg"
-    }
-  },
   "root": {
     "id": "street-root",
     "name": "Street Root",
@@ -59,7 +39,17 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "street-ground"
+              "materialType": "standard",
+              "color": "#3f4449",
+              "roughness": 0.96,
+              "metalness": 0.02,
+              "texture": "/textures/floor/terrain/rock-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                48,
+                48
+              ],
+              "name": "prefabs/killbox/street:street-ground"
             }
           },
           "crashcatPhysics": {
@@ -113,7 +103,12 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "street-sky"
+                  "materialType": "basic",
+                  "color": "#d7ecff",
+                  "side": "BackSide",
+                  "toneMapped": false,
+                  "texture": "/textures/skybox/skybox3.jpg",
+                  "name": "prefabs/killbox/street:street-sky"
                 }
               }
             }

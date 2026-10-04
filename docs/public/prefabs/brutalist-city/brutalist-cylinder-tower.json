@@ -1,65 +1,6 @@
 {
   "id": "brutalist-cylinder-tower",
   "name": "Circular Observatory",
-  "materials": {
-    "concrete": {
-      "name": "Sand-textured concrete",
-      "materialType": "standard",
-      "color": "#829abd",
-      "texture": "/textures/floor/terrain/sand-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        10,
-        10
-      ],
-      "roughness": 0.98,
-      "metalness": 0
-    },
-    "concrete-dark": {
-      "name": "Sand-textured concrete",
-      "materialType": "standard",
-      "color": "#4d607c",
-      "texture": "/textures/floor/terrain/sand-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        8,
-        8
-      ],
-      "roughness": 0.98,
-      "metalness": 0
-    },
-    "concrete-light": {
-      "name": "Sand-textured concrete",
-      "materialType": "standard",
-      "color": "#abc4e7",
-      "texture": "/textures/floor/terrain/sand-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        10,
-        3
-      ],
-      "roughness": 0.98,
-      "metalness": 0
-    },
-    "metal": {
-      "materialType": "standard",
-      "color": "#856046",
-      "roughness": 0.45,
-      "metalness": 0.3
-    },
-    "glazing": {
-      "materialType": "standard",
-      "color": "#244b59",
-      "roughness": 0.22,
-      "metalness": 0.3
-    },
-    "warm-glazing": {
-      "materialType": "standard",
-      "color": "#c39355",
-      "roughness": 0.4,
-      "metalness": 0.15
-    }
-  },
   "root": {
     "id": "brutalist-cylinder-tower-root",
     "components": {
@@ -103,7 +44,17 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "concrete"
+              "materialType": "standard",
+              "name": "prefabs/brutalist-city/brutalist-cylinder-tower:concrete",
+              "color": "#829abd",
+              "texture": "/textures/floor/terrain/sand-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                10,
+                10
+              ],
+              "roughness": 0.98,
+              "metalness": 0
             }
           }
         },
@@ -143,7 +94,17 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "concrete-dark"
+              "materialType": "standard",
+              "name": "prefabs/brutalist-city/brutalist-cylinder-tower:concrete-dark",
+              "color": "#4d607c",
+              "texture": "/textures/floor/terrain/sand-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                8,
+                8
+              ],
+              "roughness": 0.98,
+              "metalness": 0
             }
           }
         },
@@ -183,7 +144,11 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "glazing"
+              "materialType": "standard",
+              "color": "#244b59",
+              "roughness": 0.22,
+              "metalness": 0.3,
+              "name": "prefabs/brutalist-city/brutalist-cylinder-tower:glazing"
             }
           }
         },
@@ -223,7 +188,17 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "concrete-light"
+              "materialType": "standard",
+              "name": "prefabs/brutalist-city/brutalist-cylinder-tower:concrete-light",
+              "color": "#abc4e7",
+              "texture": "/textures/floor/terrain/sand-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                10,
+                3
+              ],
+              "roughness": 0.98,
+              "metalness": 0
             }
           }
         },
@@ -263,7 +238,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "glazing"
+              "name": "prefabs/brutalist-city/brutalist-cylinder-tower:glazing"
             }
           }
         },
@@ -303,7 +278,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "concrete-light"
+              "name": "prefabs/brutalist-city/brutalist-cylinder-tower:concrete-light"
             }
           }
         },
@@ -343,7 +318,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "glazing"
+              "name": "prefabs/brutalist-city/brutalist-cylinder-tower:glazing"
             }
           }
         },
@@ -383,7 +358,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "concrete-light"
+              "name": "prefabs/brutalist-city/brutalist-cylinder-tower:concrete-light"
             }
           }
         },
@@ -423,7 +398,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "glazing"
+              "name": "prefabs/brutalist-city/brutalist-cylinder-tower:glazing"
             }
           }
         },
@@ -463,7 +438,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "concrete-light"
+              "name": "prefabs/brutalist-city/brutalist-cylinder-tower:concrete-light"
             }
           }
         },
@@ -503,7 +478,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "glazing"
+              "name": "prefabs/brutalist-city/brutalist-cylinder-tower:glazing"
             }
           }
         },
@@ -543,7 +518,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "concrete-light"
+              "name": "prefabs/brutalist-city/brutalist-cylinder-tower:concrete-light"
             }
           }
         },
@@ -583,7 +558,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "glazing"
+              "name": "prefabs/brutalist-city/brutalist-cylinder-tower:glazing"
             }
           }
         },
@@ -623,7 +598,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "concrete-light"
+              "name": "prefabs/brutalist-city/brutalist-cylinder-tower:concrete-light"
             }
           }
         },
@@ -663,7 +638,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "glazing"
+              "name": "prefabs/brutalist-city/brutalist-cylinder-tower:glazing"
             }
           }
         },
@@ -703,7 +678,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "concrete-light"
+              "name": "prefabs/brutalist-city/brutalist-cylinder-tower:concrete-light"
             }
           }
         },
@@ -743,7 +718,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "glazing"
+              "name": "prefabs/brutalist-city/brutalist-cylinder-tower:glazing"
             }
           }
         },
@@ -783,7 +758,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "concrete-light"
+              "name": "prefabs/brutalist-city/brutalist-cylinder-tower:concrete-light"
             }
           }
         },
@@ -827,7 +802,11 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "metal"
+              "materialType": "standard",
+              "color": "#856046",
+              "roughness": 0.45,
+              "metalness": 0.3,
+              "name": "prefabs/brutalist-city/brutalist-cylinder-tower:metal"
             }
           }
         },
@@ -871,7 +850,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "metal"
+              "name": "prefabs/brutalist-city/brutalist-cylinder-tower:metal"
             }
           }
         },
@@ -915,7 +894,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "metal"
+              "name": "prefabs/brutalist-city/brutalist-cylinder-tower:metal"
             }
           }
         },
@@ -959,7 +938,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "metal"
+              "name": "prefabs/brutalist-city/brutalist-cylinder-tower:metal"
             }
           }
         },
@@ -1003,7 +982,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "metal"
+              "name": "prefabs/brutalist-city/brutalist-cylinder-tower:metal"
             }
           }
         },
@@ -1047,7 +1026,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "metal"
+              "name": "prefabs/brutalist-city/brutalist-cylinder-tower:metal"
             }
           }
         },
@@ -1091,7 +1070,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "metal"
+              "name": "prefabs/brutalist-city/brutalist-cylinder-tower:metal"
             }
           }
         },
@@ -1135,7 +1114,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "metal"
+              "name": "prefabs/brutalist-city/brutalist-cylinder-tower:metal"
             }
           }
         },
@@ -1175,7 +1154,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "metal"
+              "name": "prefabs/brutalist-city/brutalist-cylinder-tower:metal"
             }
           }
         },
@@ -1215,7 +1194,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "glazing"
+              "name": "prefabs/brutalist-city/brutalist-cylinder-tower:glazing"
             }
           }
         },
@@ -1255,7 +1234,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "concrete-light"
+              "name": "prefabs/brutalist-city/brutalist-cylinder-tower:concrete-light"
             }
           }
         },
@@ -1294,11 +1273,27 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "metal"
+              "name": "prefabs/brutalist-city/brutalist-cylinder-tower:metal"
             }
           }
         },
         "children": []
+      },
+      {
+        "id": "material:prefabs/brutalist-city/brutalist-cylinder-tower:warm-glazing",
+        "name": "warm-glazing",
+        "components": {
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#c39355",
+              "roughness": 0.4,
+              "metalness": 0.15,
+              "name": "prefabs/brutalist-city/brutalist-cylinder-tower:warm-glazing"
+            }
+          }
+        }
       }
     ],
     "name": "Circular Observatory"

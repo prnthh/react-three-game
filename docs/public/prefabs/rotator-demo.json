@@ -62,7 +62,15 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material"
+              "materialType": "standard",
+              "color": "#ffffff",
+              "texture": "/textures/floor/terrain/rock-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                10,
+                10
+              ],
+              "name": "prefabs/rotator-demo:material"
             }
           }
         },
@@ -105,7 +113,10 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-2"
+              "materialType": "standard",
+              "color": "#ff6b6b",
+              "texture": "/textures/proto32/white.png",
+              "name": "prefabs/rotator-demo:material-2"
             }
           },
           "rotator": {
@@ -155,7 +166,10 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-3"
+              "materialType": "standard",
+              "color": "#4ecdc4",
+              "texture": "/textures/proto32/white.png",
+              "name": "prefabs/rotator-demo:material-3"
             }
           },
           "rotator": {
@@ -205,7 +219,10 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-4"
+              "materialType": "standard",
+              "color": "#ffe66d",
+              "texture": "/textures/proto32/white.png",
+              "name": "prefabs/rotator-demo:material-4"
             }
           },
           "rotator": {
@@ -255,7 +272,10 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-5"
+              "materialType": "standard",
+              "color": "#8fd694",
+              "texture": "/textures/proto32/white.png",
+              "name": "prefabs/rotator-demo:material-5"
             }
           },
           "squish": {
@@ -349,32 +369,5 @@
         "children": []
       }
     ]
-  },
-  "materials": {
-    "material": {
-      "color": "#ffffff",
-      "texture": "/textures/floor/terrain/rock-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        10,
-        10
-      ]
-    },
-    "material-2": {
-      "color": "#ff6b6b",
-      "texture": "/textures/proto32/white.png"
-    },
-    "material-3": {
-      "color": "#4ecdc4",
-      "texture": "/textures/proto32/white.png"
-    },
-    "material-4": {
-      "color": "#ffe66d",
-      "texture": "/textures/proto32/white.png"
-    },
-    "material-5": {
-      "color": "#8fd694",
-      "texture": "/textures/proto32/white.png"
-    }
   }
 }

@@ -1,13 +1,6 @@
 {
   "id": "game-level",
   "name": "Infinite Brutalist City Demo",
-  "materials": {
-    "material": {
-      "materialType": "basic",
-      "side": "BackSide",
-      "texture": "/textures/skybox/skybox3.jpg"
-    }
-  },
   "root": {
     "id": "root",
     "components": {
@@ -58,7 +51,10 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "material"
+                  "materialType": "basic",
+                  "side": "BackSide",
+                  "texture": "/textures/skybox/skybox3.jpg",
+                  "name": "prefabs/brutalist-city/game-level:material"
                 }
               }
             }

@@ -225,6 +225,7 @@ function SoundWithListener({ properties, children, listener }: Pick<ComponentVie
 const SoundComponent: Component<SoundProperties> = {
     dependencies: properties => (properties.clips ?? []).filter(Boolean).map(path => ({ kind: 'sound', path })),
     name: 'Sound',
+    category: 'audio',
     View: SoundComponentView,
     properties: {
         eventName: { type: 'string', default: '' },

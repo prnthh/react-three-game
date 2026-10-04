@@ -1,133 +1,6 @@
 {
   "id": "stage-outside",
   "name": "Stage Junkyard Exterior",
-  "materials": {
-    "yard-dirt": {
-      "color": "#68543c",
-      "roughness": 0.98
-    },
-    "yard-gravel": {
-      "color": "#81715c",
-      "roughness": 0.98
-    },
-    "sky": {
-      "materialType": "basic",
-      "side": "BackSide",
-      "texture": "/textures/skybox/skybox3.jpg"
-    },
-    "office-brick": {
-      "color": "#9b5f3e",
-      "roughness": 0.92
-    },
-    "office-trim": {
-      "color": "#d0b98e",
-      "roughness": 0.9
-    },
-    "office-foundation": {
-      "color": "#625d55",
-      "roughness": 0.96
-    },
-    "roof": {
-      "color": "#292b2c",
-      "roughness": 0.88
-    },
-    "glass": {
-      "color": "#335363",
-      "roughness": 0.28,
-      "metalness": 0.12
-    },
-    "fence": {
-      "color": "#9aa3a6",
-      "roughness": 0.58,
-      "metalness": 0.48,
-      "transparent": true,
-      "opacity": 0.42
-    },
-    "fence-metal": {
-      "color": "#687276",
-      "roughness": 0.58,
-      "metalness": 0.52
-    },
-    "rust": {
-      "color": "#873d25",
-      "roughness": 0.96,
-      "metalness": 0.12
-    },
-    "rust-light": {
-      "color": "#b26538",
-      "roughness": 0.94,
-      "metalness": 0.08
-    },
-    "car-dark": {
-      "color": "#24282a",
-      "roughness": 0.82,
-      "metalness": 0.2
-    },
-    "rubber": {
-      "color": "#17191a",
-      "roughness": 0.98
-    },
-    "hub": {
-      "color": "#8d8e8b",
-      "roughness": 0.5,
-      "metalness": 0.5
-    },
-    "trash": {
-      "color": "#53656c",
-      "roughness": 0.76,
-      "metalness": 0.38
-    },
-    "junk": {
-      "color": "#77736b",
-      "roughness": 0.88,
-      "metalness": 0.24
-    },
-    "junk-dark": {
-      "color": "#42484a",
-      "roughness": 0.82,
-      "metalness": 0.32
-    },
-    "road": {
-      "color": "#303438",
-      "roughness": 0.96
-    },
-    "curb": {
-      "color": "#a09d96",
-      "roughness": 0.92
-    },
-    "pavement": {
-      "color": "#928d83",
-      "roughness": 0.94
-    },
-    "pavement-joint": {
-      "color": "#6f6c66",
-      "roughness": 0.98
-    },
-    "line": {
-      "color": "#d6c66f",
-      "roughness": 0.8
-    },
-    "puddle": {
-      "color": "#263c44",
-      "roughness": 0.2,
-      "metalness": 0.08
-    },
-    "paper": {
-      "color": "#d9cfb2",
-      "roughness": 0.96
-    },
-    "warning": {
-      "color": "#d39a35",
-      "roughness": 0.84
-    },
-    "invisible": {
-      "materialType": "basic",
-      "color": "#60a5fa",
-      "transparent": true,
-      "opacity": 0.08,
-      "depthWrite": false
-    }
-  },
   "root": {
     "id": "stage-root",
     "name": "junkyard root",
@@ -262,7 +135,10 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "yard-dirt"
+              "materialType": "standard",
+              "color": "#68543c",
+              "roughness": 0.98,
+              "name": "prefabs/detective-oni/scenes/junkyard:yard-dirt"
             }
           },
           "walkable": {
@@ -316,7 +192,10 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "sky"
+                  "materialType": "basic",
+                  "side": "BackSide",
+                  "texture": "/textures/skybox/skybox3.jpg",
+                  "name": "prefabs/detective-oni/scenes/junkyard:sky"
                 }
               }
             },
@@ -373,7 +252,10 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "office-foundation"
+                  "materialType": "standard",
+                  "color": "#625d55",
+                  "roughness": 0.96,
+                  "name": "prefabs/detective-oni/scenes/junkyard:office-foundation"
                 }
               },
               "crashcatPhysics": {
@@ -414,7 +296,10 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "office-brick"
+                  "materialType": "standard",
+                  "color": "#9b5f3e",
+                  "roughness": 0.92,
+                  "name": "prefabs/detective-oni/scenes/junkyard:office-brick"
                 }
               },
               "crashcatPhysics": {
@@ -455,7 +340,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "office-brick"
+                  "name": "prefabs/detective-oni/scenes/junkyard:office-brick"
                 }
               },
               "crashcatPhysics": {
@@ -496,7 +381,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "office-brick"
+                  "name": "prefabs/detective-oni/scenes/junkyard:office-brick"
                 }
               },
               "crashcatPhysics": {
@@ -537,7 +422,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "office-brick"
+                  "name": "prefabs/detective-oni/scenes/junkyard:office-brick"
                 }
               },
               "crashcatPhysics": {
@@ -578,7 +463,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "office-brick"
+                  "name": "prefabs/detective-oni/scenes/junkyard:office-brick"
                 }
               },
               "crashcatPhysics": {
@@ -619,7 +504,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "office-brick"
+                  "name": "prefabs/detective-oni/scenes/junkyard:office-brick"
                 }
               },
               "crashcatPhysics": {
@@ -660,7 +545,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "office-brick"
+                  "name": "prefabs/detective-oni/scenes/junkyard:office-brick"
                 }
               },
               "crashcatPhysics": {
@@ -701,7 +586,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "office-brick"
+                  "name": "prefabs/detective-oni/scenes/junkyard:office-brick"
                 }
               },
               "crashcatPhysics": {
@@ -742,7 +627,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "office-brick"
+                  "name": "prefabs/detective-oni/scenes/junkyard:office-brick"
                 }
               },
               "crashcatPhysics": {
@@ -783,7 +668,10 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "roof"
+                  "materialType": "standard",
+                  "color": "#292b2c",
+                  "roughness": 0.88,
+                  "name": "prefabs/detective-oni/scenes/junkyard:roof"
                 }
               }
             },
@@ -817,7 +705,10 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "office-trim"
+                  "materialType": "standard",
+                  "color": "#d0b98e",
+                  "roughness": 0.9,
+                  "name": "prefabs/detective-oni/scenes/junkyard:office-trim"
                 }
               }
             },
@@ -851,7 +742,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "office-foundation"
+                  "name": "prefabs/detective-oni/scenes/junkyard:office-foundation"
                 }
               }
             },
@@ -901,7 +792,11 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "glass"
+                      "materialType": "standard",
+                      "color": "#335363",
+                      "roughness": 0.28,
+                      "metalness": 0.12,
+                      "name": "prefabs/detective-oni/scenes/junkyard:glass"
                     }
                   }
                 },
@@ -935,7 +830,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "office-trim"
+                      "name": "prefabs/detective-oni/scenes/junkyard:office-trim"
                     }
                   }
                 },
@@ -969,7 +864,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "office-trim"
+                      "name": "prefabs/detective-oni/scenes/junkyard:office-trim"
                     }
                   }
                 },
@@ -1003,7 +898,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "office-trim"
+                      "name": "prefabs/detective-oni/scenes/junkyard:office-trim"
                     }
                   }
                 },
@@ -1037,7 +932,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "office-trim"
+                      "name": "prefabs/detective-oni/scenes/junkyard:office-trim"
                     }
                   }
                 },
@@ -1071,7 +966,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "office-trim"
+                      "name": "prefabs/detective-oni/scenes/junkyard:office-trim"
                     }
                   }
                 },
@@ -1105,7 +1000,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "office-trim"
+                      "name": "prefabs/detective-oni/scenes/junkyard:office-trim"
                     }
                   }
                 },
@@ -1203,7 +1098,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "office-trim"
+                      "name": "prefabs/detective-oni/scenes/junkyard:office-trim"
                     }
                   }
                 },
@@ -1237,7 +1132,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "office-trim"
+                      "name": "prefabs/detective-oni/scenes/junkyard:office-trim"
                     }
                   }
                 },
@@ -1271,7 +1166,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "office-trim"
+                      "name": "prefabs/detective-oni/scenes/junkyard:office-trim"
                     }
                   }
                 },
@@ -1307,7 +1202,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "office-trim"
+                  "name": "prefabs/detective-oni/scenes/junkyard:office-trim"
                 }
               }
             },
@@ -1341,7 +1236,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "roof"
+                  "name": "prefabs/detective-oni/scenes/junkyard:roof"
                 }
               }
             },
@@ -1376,7 +1271,11 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "fence-metal"
+                  "materialType": "standard",
+                  "color": "#687276",
+                  "roughness": 0.58,
+                  "metalness": 0.52,
+                  "name": "prefabs/detective-oni/scenes/junkyard:fence-metal"
                 }
               }
             },
@@ -1422,7 +1321,13 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "fence"
+                  "materialType": "standard",
+                  "color": "#9aa3a6",
+                  "roughness": 0.58,
+                  "metalness": 0.48,
+                  "transparent": true,
+                  "opacity": 0.42,
+                  "name": "prefabs/detective-oni/scenes/junkyard:fence"
                 }
               }
             },
@@ -1456,7 +1361,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "fence"
+                  "name": "prefabs/detective-oni/scenes/junkyard:fence"
                 }
               }
             },
@@ -1496,7 +1401,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "fence-metal"
+                  "name": "prefabs/detective-oni/scenes/junkyard:fence-metal"
                 }
               }
             },
@@ -1536,7 +1441,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "fence-metal"
+                  "name": "prefabs/detective-oni/scenes/junkyard:fence-metal"
                 }
               }
             },
@@ -1571,7 +1476,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "fence-metal"
+                  "name": "prefabs/detective-oni/scenes/junkyard:fence-metal"
                 }
               },
               "crashcatPhysics": {
@@ -1613,7 +1518,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "fence-metal"
+                  "name": "prefabs/detective-oni/scenes/junkyard:fence-metal"
                 }
               },
               "crashcatPhysics": {
@@ -1655,7 +1560,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "fence-metal"
+                  "name": "prefabs/detective-oni/scenes/junkyard:fence-metal"
                 }
               },
               "crashcatPhysics": {
@@ -1697,7 +1602,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "fence-metal"
+                  "name": "prefabs/detective-oni/scenes/junkyard:fence-metal"
                 }
               },
               "crashcatPhysics": {
@@ -1739,7 +1644,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "fence-metal"
+                  "name": "prefabs/detective-oni/scenes/junkyard:fence-metal"
                 }
               },
               "crashcatPhysics": {
@@ -1781,7 +1686,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "fence-metal"
+                  "name": "prefabs/detective-oni/scenes/junkyard:fence-metal"
                 }
               },
               "crashcatPhysics": {
@@ -1823,7 +1728,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "fence-metal"
+                  "name": "prefabs/detective-oni/scenes/junkyard:fence-metal"
                 }
               },
               "crashcatPhysics": {
@@ -1865,7 +1770,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "fence-metal"
+                  "name": "prefabs/detective-oni/scenes/junkyard:fence-metal"
                 }
               },
               "crashcatPhysics": {
@@ -1907,7 +1812,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "fence-metal"
+                  "name": "prefabs/detective-oni/scenes/junkyard:fence-metal"
                 }
               },
               "crashcatPhysics": {
@@ -1949,7 +1854,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "fence-metal"
+                  "name": "prefabs/detective-oni/scenes/junkyard:fence-metal"
                 }
               },
               "crashcatPhysics": {
@@ -1991,7 +1896,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "fence-metal"
+                  "name": "prefabs/detective-oni/scenes/junkyard:fence-metal"
                 }
               },
               "crashcatPhysics": {
@@ -2041,7 +1946,11 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "rust"
+              "materialType": "standard",
+              "color": "#873d25",
+              "roughness": 0.96,
+              "metalness": 0.12,
+              "name": "prefabs/detective-oni/scenes/junkyard:rust"
             }
           },
           "interactionDriver": {
@@ -2091,7 +2000,12 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "invisible"
+                  "materialType": "basic",
+                  "color": "#60a5fa",
+                  "transparent": true,
+                  "opacity": 0.08,
+                  "depthWrite": false,
+                  "name": "prefabs/detective-oni/scenes/junkyard:invisible"
                 }
               },
               "crashcatPhysics": {
@@ -2137,7 +2051,11 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "rust-light"
+                  "materialType": "standard",
+                  "color": "#b26538",
+                  "roughness": 0.94,
+                  "metalness": 0.08,
+                  "name": "prefabs/detective-oni/scenes/junkyard:rust-light"
                 }
               }
             },
@@ -2176,7 +2094,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "rust"
+                  "name": "prefabs/detective-oni/scenes/junkyard:rust"
                 }
               }
             },
@@ -2215,7 +2133,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "rust-light"
+                  "name": "prefabs/detective-oni/scenes/junkyard:rust-light"
                 }
               }
             },
@@ -2254,7 +2172,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "glass"
+                  "name": "prefabs/detective-oni/scenes/junkyard:glass"
                 }
               }
             },
@@ -2293,7 +2211,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "glass"
+                  "name": "prefabs/detective-oni/scenes/junkyard:glass"
                 }
               }
             },
@@ -2332,7 +2250,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "glass"
+                  "name": "prefabs/detective-oni/scenes/junkyard:glass"
                 }
               }
             },
@@ -2366,7 +2284,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "rust-light"
+                  "name": "prefabs/detective-oni/scenes/junkyard:rust-light"
                 }
               }
             },
@@ -2405,7 +2323,11 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "hub"
+                  "materialType": "standard",
+                  "color": "#8d8e8b",
+                  "roughness": 0.5,
+                  "metalness": 0.5,
+                  "name": "prefabs/detective-oni/scenes/junkyard:hub"
                 }
               }
             },
@@ -2456,7 +2378,10 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "rubber"
+                      "materialType": "standard",
+                      "color": "#17191a",
+                      "roughness": 0.98,
+                      "name": "prefabs/detective-oni/scenes/junkyard:rubber"
                     }
                   }
                 },
@@ -2496,7 +2421,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "hub"
+                      "name": "prefabs/detective-oni/scenes/junkyard:hub"
                     }
                   }
                 },
@@ -2549,7 +2474,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "rubber"
+                      "name": "prefabs/detective-oni/scenes/junkyard:rubber"
                     }
                   }
                 },
@@ -2589,7 +2514,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "hub"
+                      "name": "prefabs/detective-oni/scenes/junkyard:hub"
                     }
                   }
                 },
@@ -2642,7 +2567,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "rubber"
+                      "name": "prefabs/detective-oni/scenes/junkyard:rubber"
                     }
                   }
                 },
@@ -2682,7 +2607,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "hub"
+                      "name": "prefabs/detective-oni/scenes/junkyard:hub"
                     }
                   }
                 },
@@ -2735,7 +2660,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "rubber"
+                      "name": "prefabs/detective-oni/scenes/junkyard:rubber"
                     }
                   }
                 },
@@ -2775,7 +2700,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "hub"
+                      "name": "prefabs/detective-oni/scenes/junkyard:hub"
                     }
                   }
                 },
@@ -2816,7 +2741,11 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "trash"
+              "materialType": "standard",
+              "color": "#53656c",
+              "roughness": 0.76,
+              "metalness": 0.38,
+              "name": "prefabs/detective-oni/scenes/junkyard:trash"
             }
           },
           "interactionDriver": {
@@ -2867,7 +2796,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "invisible"
+                  "name": "prefabs/detective-oni/scenes/junkyard:invisible"
                 }
               },
               "crashcatPhysics": {
@@ -2914,7 +2843,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "fence-metal"
+                  "name": "prefabs/detective-oni/scenes/junkyard:fence-metal"
                 }
               }
             },
@@ -2954,7 +2883,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "fence-metal"
+                  "name": "prefabs/detective-oni/scenes/junkyard:fence-metal"
                 }
               }
             },
@@ -2989,7 +2918,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "trash"
+                  "name": "prefabs/detective-oni/scenes/junkyard:trash"
                 }
               }
             },
@@ -3024,7 +2953,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "fence-metal"
+                  "name": "prefabs/detective-oni/scenes/junkyard:fence-metal"
                 }
               }
             },
@@ -3087,7 +3016,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "rubber"
+                  "name": "prefabs/detective-oni/scenes/junkyard:rubber"
                 }
               }
             },
@@ -3127,7 +3056,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "rubber"
+                  "name": "prefabs/detective-oni/scenes/junkyard:rubber"
                 }
               }
             },
@@ -3167,7 +3096,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "rubber"
+                  "name": "prefabs/detective-oni/scenes/junkyard:rubber"
                 }
               }
             },
@@ -3207,7 +3136,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "rubber"
+                  "name": "prefabs/detective-oni/scenes/junkyard:rubber"
                 }
               }
             },
@@ -3247,7 +3176,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "hub"
+                  "name": "prefabs/detective-oni/scenes/junkyard:hub"
                 }
               }
             },
@@ -3304,7 +3233,11 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "junk"
+                  "materialType": "standard",
+                  "color": "#77736b",
+                  "roughness": 0.88,
+                  "metalness": 0.24,
+                  "name": "prefabs/detective-oni/scenes/junkyard:junk"
                 }
               },
               "crashcatPhysics": {
@@ -3350,7 +3283,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "rust-light"
+                  "name": "prefabs/detective-oni/scenes/junkyard:rust-light"
                 }
               }
             },
@@ -3389,7 +3322,11 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "junk-dark"
+                  "materialType": "standard",
+                  "color": "#42484a",
+                  "roughness": 0.82,
+                  "metalness": 0.32,
+                  "name": "prefabs/detective-oni/scenes/junkyard:junk-dark"
                 }
               }
             },
@@ -3428,7 +3365,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "rust"
+                  "name": "prefabs/detective-oni/scenes/junkyard:rust"
                 }
               }
             },
@@ -3468,7 +3405,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "fence-metal"
+                  "name": "prefabs/detective-oni/scenes/junkyard:fence-metal"
                 }
               }
             },
@@ -3505,7 +3442,10 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "yard-gravel"
+              "materialType": "standard",
+              "color": "#81715c",
+              "roughness": 0.98,
+              "name": "prefabs/detective-oni/scenes/junkyard:yard-gravel"
             }
           }
         },
@@ -3546,7 +3486,11 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "puddle"
+              "materialType": "standard",
+              "color": "#263c44",
+              "roughness": 0.2,
+              "metalness": 0.08,
+              "name": "prefabs/detective-oni/scenes/junkyard:puddle"
             }
           }
         },
@@ -3585,7 +3529,10 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "paper"
+              "materialType": "standard",
+              "color": "#d9cfb2",
+              "roughness": 0.96,
+              "name": "prefabs/detective-oni/scenes/junkyard:paper"
             }
           }
         },
@@ -3624,7 +3571,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "paper"
+              "name": "prefabs/detective-oni/scenes/junkyard:paper"
             }
           }
         },
@@ -3679,7 +3626,10 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "warning"
+                  "materialType": "standard",
+                  "color": "#d39a35",
+                  "roughness": 0.84,
+                  "name": "prefabs/detective-oni/scenes/junkyard:warning"
                 }
               }
             },
@@ -3713,7 +3663,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "office-trim"
+                  "name": "prefabs/detective-oni/scenes/junkyard:office-trim"
                 }
               }
             },
@@ -3747,7 +3697,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "office-trim"
+                  "name": "prefabs/detective-oni/scenes/junkyard:office-trim"
                 }
               }
             },
@@ -3943,7 +3893,10 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "road"
+                  "materialType": "standard",
+                  "color": "#303438",
+                  "roughness": 0.96,
+                  "name": "prefabs/detective-oni/scenes/junkyard:road"
                 }
               }
             },
@@ -3977,7 +3930,10 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "curb"
+                  "materialType": "standard",
+                  "color": "#a09d96",
+                  "roughness": 0.92,
+                  "name": "prefabs/detective-oni/scenes/junkyard:curb"
                 }
               }
             },
@@ -4011,7 +3967,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "curb"
+                  "name": "prefabs/detective-oni/scenes/junkyard:curb"
                 }
               }
             },
@@ -4047,7 +4003,10 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "line"
+                  "materialType": "standard",
+                  "color": "#d6c66f",
+                  "roughness": 0.8,
+                  "name": "prefabs/detective-oni/scenes/junkyard:line"
                 }
               }
             },
@@ -4083,7 +4042,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "line"
+                  "name": "prefabs/detective-oni/scenes/junkyard:line"
                 }
               }
             },
@@ -4119,7 +4078,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "line"
+                  "name": "prefabs/detective-oni/scenes/junkyard:line"
                 }
               }
             },
@@ -4155,7 +4114,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "line"
+                  "name": "prefabs/detective-oni/scenes/junkyard:line"
                 }
               }
             },
@@ -4191,7 +4150,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "line"
+                  "name": "prefabs/detective-oni/scenes/junkyard:line"
                 }
               }
             },
@@ -4243,7 +4202,10 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "pavement"
+                  "materialType": "standard",
+                  "color": "#928d83",
+                  "roughness": 0.94,
+                  "name": "prefabs/detective-oni/scenes/junkyard:pavement"
                 }
               }
             },
@@ -4277,7 +4239,10 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "pavement-joint"
+                  "materialType": "standard",
+                  "color": "#6f6c66",
+                  "roughness": 0.98,
+                  "name": "prefabs/detective-oni/scenes/junkyard:pavement-joint"
                 }
               }
             },
@@ -4313,7 +4278,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "pavement-joint"
+                  "name": "prefabs/detective-oni/scenes/junkyard:pavement-joint"
                 }
               }
             },
@@ -4349,7 +4314,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "pavement-joint"
+                  "name": "prefabs/detective-oni/scenes/junkyard:pavement-joint"
                 }
               }
             },
@@ -4385,7 +4350,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "pavement-joint"
+                  "name": "prefabs/detective-oni/scenes/junkyard:pavement-joint"
                 }
               }
             },
@@ -4421,7 +4386,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "pavement-joint"
+                  "name": "prefabs/detective-oni/scenes/junkyard:pavement-joint"
                 }
               }
             },
@@ -4457,7 +4422,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "pavement-joint"
+                  "name": "prefabs/detective-oni/scenes/junkyard:pavement-joint"
                 }
               }
             },
@@ -4493,7 +4458,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "pavement-joint"
+                  "name": "prefabs/detective-oni/scenes/junkyard:pavement-joint"
                 }
               }
             },
@@ -4529,7 +4494,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "pavement-joint"
+                  "name": "prefabs/detective-oni/scenes/junkyard:pavement-joint"
                 }
               }
             },
@@ -4565,7 +4530,7 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "pavement-joint"
+                  "name": "prefabs/detective-oni/scenes/junkyard:pavement-joint"
                 }
               }
             },
@@ -4614,6 +4579,22 @@
             "type": "PrefabRef",
             "properties": {
               "url": "/prefabs/detective-oni/characters/oni.json"
+            }
+          }
+        }
+      },
+      {
+        "id": "material:prefabs/detective-oni/scenes/junkyard:car-dark",
+        "name": "car-dark",
+        "components": {
+          "material": {
+            "type": "Material",
+            "properties": {
+              "materialType": "standard",
+              "color": "#24282a",
+              "roughness": 0.82,
+              "metalness": 0.2,
+              "name": "prefabs/detective-oni/scenes/junkyard:car-dark"
             }
           }
         }

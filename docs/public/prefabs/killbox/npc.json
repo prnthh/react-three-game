@@ -9,8 +9,8 @@
         "type": "Transform",
         "properties": {}
       },
-      "animatedModel": {
-        "type": "AnimatedModel",
+      "skinnedMesh": {
+        "type": "SkinnedMesh",
         "properties": {
           "filename": "/models/human/onimilio.glb",
           "animationState": "idle",

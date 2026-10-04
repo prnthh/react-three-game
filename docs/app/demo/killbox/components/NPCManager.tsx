@@ -3,14 +3,14 @@
 import { useFrame } from "@react-three/fiber";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import {
-    ANIMATED_MODEL_COMPONENT,
+    SKINNED_MESH_COMPONENT,
     createNodeComponentType,
     PrefabEditorMode,
     useRegisterNodeComponent,
     useScene,
     useSceneComponents,
 } from "react-three-game/viewer";
-import type { AnimatedModelHandle, Component, ComponentViewProps, SceneComponent } from "react-three-game/viewer";
+import type { SkinnedMeshHandle, Component, ComponentViewProps, SceneComponent } from "react-three-game/viewer";
 import {
     box,
     capsule,
@@ -124,7 +124,7 @@ type NPCAnimState = "idle" | "walk" | "run";
 export type NPCData = {
     id: string;
     position: readonly [number, number, number];
-    model: AnimatedModelHandle;
+    model: SkinnedMeshHandle;
     scale?: number;
     speed?: number;
     ragdollLifetime?: number;
@@ -145,7 +145,7 @@ type StoredNPC = {
     randomState: number;
     hp: number;
     maxHp: number;
-    model: AnimatedModelHandle;
+    model: SkinnedMeshHandle;
     scale: number;
     speed: number;
     ragdollLifetime: number;
@@ -171,7 +171,7 @@ type BoneBinding = {
 type NPCRuntime = {
     data: StoredNPC;
     root: Object3D;
-    model: AnimatedModelHandle;
+    model: SkinnedMeshHandle;
     localPosition: Vector3;
     localQuaternion: Quaternion;
     localScale: Vector3;
@@ -202,7 +202,7 @@ export type NPCManagerRef = {
 
 type NPCSystemProps = {
     player: PlayerRegistration;
-    models: readonly SceneComponent<AnimatedModelHandle>[];
+    models: readonly SceneComponent<SkinnedMeshHandle>[];
     settings: NPCManagerProperties;
 };
 
@@ -219,7 +219,7 @@ export const NPC_MANAGER_COMPONENT = createNodeComponentType<NPCManagerRef>("NPC
 function NPCManagerView({ properties, children }: ComponentViewProps<NPCManagerProperties>) {
     const { mode } = useScene();
     const players = useSceneComponents(PLAYER_CONTROLLER_COMPONENT);
-    const models = useSceneComponents(ANIMATED_MODEL_COMPONENT);
+    const models = useSceneComponents(SKINNED_MESH_COMPONENT);
     const [manager, setManager] = useState<NPCManagerRef | null>(null);
     useRegisterNodeComponent(NPC_MANAGER_COMPONENT, manager);
     const playing = mode === PrefabEditorMode.Play;
@@ -713,7 +713,7 @@ function LoadedNPCInstance({
     register,
 }: {
     data: StoredNPC;
-    model: AnimatedModelHandle;
+    model: SkinnedMeshHandle;
     register: (runtime: NPCRuntime | null, id: string) => void;
 }) {
     const api = useCrashcat();
@@ -768,7 +768,7 @@ function LoadedNPCInstance({
         return nextRuntime;
     }, [data, model]);
 
-    // The instance owns physics resources while AnimatedModel owns rendering and animation.
+    // The instance owns physics resources while SkinnedMesh owns rendering and animation.
     /* eslint-disable react-hooks/immutability */
     useEffect(() => {
         if (!api) return;

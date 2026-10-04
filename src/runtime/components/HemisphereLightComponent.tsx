@@ -20,6 +20,7 @@ function HemisphereLightView({ properties, children }: ComponentViewProps<Hemisp
 
 const HemisphereLightComponent: Component<HemisphereLightProperties> = {
     name: "HemisphereLight",
+    category: 'lighting',
     slot: "object",
     renderWhenDisabled: true,
     View: HemisphereLightView,

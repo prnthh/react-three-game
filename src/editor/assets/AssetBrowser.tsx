@@ -19,7 +19,7 @@ const styles: Record<string, any> = {
 const assetViewerColors = {
     panelBg: colors.bg,
     controlBg: colors.bgSurface,
-    previewBg: colors.bgLight,
+    previewBg: '#686868',
     text: colors.text,
     border: colors.border,
     borderFaint: colors.borderFaint,

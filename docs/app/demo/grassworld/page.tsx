@@ -27,16 +27,6 @@ const grassWorldConfig = {
 const grassWorldPrefab: Prefab = {
     id: "grassworld",
     name: "Grass World",
-    materials: {
-        sky: {
-            materialType: "basic",
-            color: "#d7ecff",
-            side: "BackSide",
-            toneMapped: false,
-            texture: "/textures/skybox/skybox3.jpg",
-        },
-        ball: { color: "#d9d5c7", roughness: 0.72, metalness: 0 },
-    },
     root: {
         id: "grassworld-root",
         name: "Grass World",
@@ -78,7 +68,7 @@ const grassWorldPrefab: Prefab = {
                             },
                             material: {
                                 type: "Material",
-                                properties: { materialId: "sky" },
+                                properties: { name: "sky", materialType: "basic", color: "#d7ecff", side: "BackSide", toneMapped: false, texture: "/textures/skybox/skybox3.jpg" },
                             },
                         },
                     },
@@ -102,7 +92,7 @@ const grassWorldPrefab: Prefab = {
                     },
                     material: {
                         type: "Material",
-                        properties: { materialId: "ball" },
+                        properties: { name: "ball", color: "#d9d5c7", roughness: 0.72, metalness: 0 },
                     },
                     input: {
                         type: "GrassWorldBallInput",

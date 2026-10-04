@@ -87,6 +87,7 @@ function PointLightView({ properties, children }: ComponentViewProps<PointLightP
 
 const PointLightComponent: Component<PointLightProperties> = {
     name: 'PointLight',
+    category: 'lighting',
     slot: 'object',
     renderWhenDisabled: true,
     View: PointLightView,

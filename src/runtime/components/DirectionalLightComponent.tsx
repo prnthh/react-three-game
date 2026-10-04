@@ -118,6 +118,7 @@ function DirectionalLightView({ properties, children }: ComponentViewProps<Direc
 
 const DirectionalLightComponent: Component<DirectionalLightProperties> = {
     name: 'DirectionalLight',
+    category: 'lighting',
     slot: 'object',
     renderWhenDisabled: true,
     View: DirectionalLightView,

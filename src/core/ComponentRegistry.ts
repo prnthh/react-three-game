@@ -84,8 +84,12 @@ export type ComponentPropertyDefinitions<P extends object> = {
 	[Name in keyof Required<P>]: ComponentPropertyDefinition<P[Name]>;
 };
 
+export type ComponentCategory = 'mesh' | 'materials' | 'lighting' | 'camera' | 'audio' | 'transform' | 'physics' | 'misc';
+
 export interface Component<P extends object = Record<string, any>> {
 	name: string;
+    /** Optional editor grouping; otherwise inferred from the render slot. */
+    category?: ComponentCategory;
     description?: string;
 	/** Declare resources without mounting a view; paths are relative to the prefab basePath. */
 	dependencies?: (properties: P) => readonly ComponentDependency[];

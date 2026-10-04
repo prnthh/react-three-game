@@ -486,7 +486,6 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
         }, position);
         {
             const s = prefabStore.getState();
-            Object.entries(decomposed.materials).forEach(([id, material]) => s.setMaterial(id, material));
             if (replaceId && s.nodesById[replaceId]) s.replaceNode(replaceId, node);
             else s.addChild(s.rootId, node);
         }
@@ -496,13 +495,12 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
     const addImageNode = useCallback((filename: string, file: File, position: Vec3) => {
         const path = getPrefabAssetRef(filename, 'textures');
         const name = file.name.replace(/\.[^.]+$/, '');
-        const materialId = `material-${crypto.randomUUID()}`;
-        const node = offsetNodePosition(createImageNode(path, materialId, name), position);
+        const materialName = `material-${crypto.randomUUID()}`;
+        const node = offsetNodePosition(createImageNode(path, materialName, name), position);
         {
             const s = prefabStore.getState();
-            s.setMaterial(materialId, {
+            s.setMaterial(materialName, {
                 ...createDefaultMaterial(),
-                name,
                 materialType: 'basic',
                 texture: path,
                 transparent: true,

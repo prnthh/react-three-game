@@ -123,6 +123,7 @@ function SpotLightView({ properties, children }: ComponentViewProps<SpotLightPro
 
 const SpotLightComponent: Component<SpotLightProperties> = {
     name: 'SpotLight',
+    category: 'lighting',
     slot: 'object',
     renderWhenDisabled: true,
     View: SpotLightView,

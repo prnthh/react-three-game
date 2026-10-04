@@ -78,7 +78,7 @@ export const sceneAgentHelp = {
     ],
     authoring: [
         'Group related nodes under a named parent; child transforms are relative to it. Use unique IDs and add parents before children.',
-        'Repeated boxes: Geometry {geometryType:"box",args:[1,1,1]}, dimensions in Transform.scale, Mesh defaults (instanced:true). Matching built-in materials share automatically; reuse materialId for linked edits.',
+        'Repeated boxes: Geometry {geometryType:"box",args:[1,1,1]}, dimensions in Transform.scale, Mesh defaults (instanced:true). Matching built-in materials share automatically; reuse the material name for linked edits.',
         'Inspect nearby peers before composing a node. Preserve the scene’s conventions for component ownership, hierarchy, naming and the distinction between functional objects and visual-only details.',
         'Prefer a few well-placed objects over repeated decoration. Reuse the scene’s established visual language rather than introducing a new one implicitly.',
         'Shared material edits affect every user. Prefer a local component/material change unless a scene-wide change is intentional.',

@@ -5,7 +5,7 @@ import { findComponentEntry, type ComponentData, type GameObject, type Prefab, t
 import { composeTransform, computeParentWorldMatrix } from "./transforms.js";
 import { createPrefabStore } from "./prefabStore.js";
 import { createPrefabDocumentApi } from './prefabDocumentApi.js';
-import { collectSubtreeIds, normalizePrefab, denormalizePrefab, type PrefabState } from './prefab.js';
+import { cloneComponentsForDuplicate, collectSubtreeIds, normalizePrefab, denormalizePrefab, type PrefabState } from './prefab.js';
 
 type Vec3 = [number, number, number];
 export type SceneCommand =
@@ -134,13 +134,11 @@ export function evaluateSceneCommandState(initial: PrefabState, input: unknown):
             };
             if (command.op === 'replace') {
                 const prefab = record(command.prefab, 'prefab');
-                keys(prefab, ['id', 'name', 'root', 'materials']);
+                keys(prefab, ['id', 'name', 'root']);
                 if (prefab.id !== undefined) id(prefab.id);
                 if (prefab.name !== undefined && typeof prefab.name !== 'string') throw new Error('Invalid prefab name.');
                 validateNode(prefab.root, new Set());
-                if (prefab.materials !== undefined) {
-                    for (const [key, value] of Object.entries(record(prefab.materials, 'materials'))) { id(key); material(value); }
-                }
+
                 removed.push(...Object.keys(state.nodesById));
                 document.replace(prefab as unknown as Prefab);
                 created.push(...Object.keys(staging.getState().nodesById));
@@ -194,6 +192,7 @@ export function evaluateSceneCommandState(initial: PrefabState, input: unknown):
                     lookup(destination);
                     const copy = (sourceId: string): GameObject => ({
                         ...structuredClone(state.nodesById[sourceId]),
+                        components: cloneComponentsForDuplicate(state.nodesById[sourceId].components),
                         id: sourceId === node.id ? command.newId : `${command.newId}/${sourceId}`,
                         children: state.childIdsById[sourceId].map(copy),
                     });

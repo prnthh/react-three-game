@@ -2,7 +2,7 @@ import { registerInstancedMaterial } from '../rendering/materialInstancing.js';
 import type { Node } from 'three/webgpu';
 import { useInvalidateMeshInstances } from "../rendering/MeshInstanceProvider.js";
 import { Color, BackSide, DoubleSide, NearestFilter, NearestMipmapNearestFilter, NearestMipmapLinearFilter, LinearMipmapNearestFilter } from "three";
-import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
 
 import { applyProps, extend } from '@react-three/fiber';
 
@@ -14,9 +14,8 @@ import { useTextureAsset } from '../assets/AssetRuntime.js';
 
 import { usePrefab } from '../scene/SceneContext.js';
 
-import { usePrefabStore } from "../prefabs/PrefabStoreContext.js";
 
-import { compactPrefabMaterial, DEFAULT_MATERIAL_ID } from '../../core/prefab.js';
+import { compactPrefabMaterial, getMaterialDefinition } from '../../core/prefab.js';
 
 import type { MaterialComponentProperties, PrefabMaterial, PrefabMaterialType } from '../../core/types.js';
 
@@ -146,6 +145,21 @@ type MaterialEntry = {
 class SceneMaterialPool {
     readonly entries = new Map<string, MaterialEntry>();
     lifetime: object | null = null;
+    private definitions = new Map<symbol, { id: string; material: PrefabMaterial; basePath: string }>();
+    private listeners = new Set<() => void>();
+    subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
+    resolve(id: string) {
+        for (const entry of this.definitions.values()) if (entry.id === id) return entry;
+        return null;
+    }
+    upsertDefinition(owner: symbol, definition: { id: string; material: PrefabMaterial; basePath: string }) {
+        // Map.set preserves the owner's position when its properties change.
+        this.definitions.set(owner, definition);
+        this.listeners.forEach(listener => listener());
+    }
+    unregister(owner: symbol) {
+        if (this.definitions.delete(owner)) this.listeners.forEach(listener => listener());
+    }
     get(key: string, create: () => Material) {
         let entry = this.entries.get(key);
         if (!entry) {
@@ -268,10 +282,42 @@ function applyMaterialProperties(
     material.needsUpdate = true;
 }
 
-function MaterialComponentView({ properties, children }: ComponentViewProps<MaterialComponentProperties>) {
-    const materialId = properties.materialId ?? DEFAULT_MATERIAL_ID;
-    const material = usePrefabStore(state => state.materials[materialId] ?? state.materials[DEFAULT_MATERIAL_ID]);
+function MaterialComponentView({ properties, children }: { properties: MaterialComponentProperties; children?: ReactNode; enabled: boolean }) {
+    const pool = useContext(SceneMaterialPoolContext);
+    if (!pool) throw new Error('Materials require a scene material pool');
     const { basePath } = usePrefab();
+    const [owner] = useState(() => Symbol('material definition'));
+    const materialName = properties.name ?? '';
+    const authoredDefinition = getMaterialDefinition(properties);
+    const definitionKey = JSON.stringify(authoredDefinition);
+    const definition = useMemo(() => authoredDefinition, [definitionKey]);
+    useLayoutEffect(() => {
+        if (materialName && definition) pool.upsertDefinition(owner, { id: materialName, material: definition, basePath });
+        else pool.unregister(owner);
+    }, [pool, owner, materialName, definition, basePath]);
+    useLayoutEffect(() => () => pool.unregister(owner), [pool, owner]);
+    const entry = useSyncExternalStore(pool.subscribe, () => pool.resolve(materialName), () => null);
+    // A defining node can render immediately, before its layout effect publishes to the pool.
+    // This also lets one-shot environment captures wait for its textures on the first render.
+    const material = entry?.material ?? definition ?? (materialName ? undefined : {});
+    return <>
+        {material
+            ? <ResolvedMaterial material={material} basePath={entry?.basePath ?? basePath} attach={properties.attach} />
+            : <UnresolvedMaterial attach={properties.attach} />}
+        {children}
+    </>;
+}
+
+function UnresolvedMaterial({ attach }: { attach?: string }) {
+    const material = useSharedMaterialResource('unresolved', () => {
+        const value = new MeshBasicNodeMaterial();
+        value.visible = false;
+        return value;
+    });
+    return <primitive object={material} attach={attach ?? 'material'} dispose={null} />;
+}
+
+function ResolvedMaterial({ material, basePath, attach }: { material: PrefabMaterial; basePath: string; attach?: string }) {
     const texture = useTextureAsset(material.texture ? withBasePath(basePath, material.texture) : null);
     const normal = useTextureAsset(material.normalMapTexture ? withBasePath(basePath, material.normalMapTexture) : null);
     const sharedMaterial = useSharedMaterialResource(
@@ -301,14 +347,11 @@ function MaterialComponentView({ properties, children }: ComponentViewProps<Mate
         ? applyMaterialOverrides(sharedMaterial.clone(), overrides) : null, [sharedMaterial, overrides, ownsMaterial, overrideKey]);
     useEffect(() => () => localMaterial?.dispose(), [localMaterial]);
     const resolvedMaterial = ownsMaterial && overrideKey !== undefined
-        ? <SharedOverrideMaterial source={sharedMaterial} overrides={overrides} cacheKey={overrideKey} attach={properties.attach} />
-        : <primitive object={localMaterial ?? sharedMaterial} attach={properties.attach} dispose={null} />;
+        ? <SharedOverrideMaterial source={sharedMaterial} overrides={overrides} cacheKey={overrideKey} attach={attach ?? 'material'} />
+        : <primitive object={localMaterial ?? sharedMaterial} attach={attach ?? 'material'} dispose={null} />;
     const invalidateInstances = useInvalidateMeshInstances();
     useLayoutEffect(invalidateInstances, [localMaterial, sharedMaterial, invalidateInstances]);
-    return <>
-        {resolvedMaterial}
-        {children}
-    </>;
+    return resolvedMaterial;
 }
 
 function SharedOverrideMaterial({ source, overrides, cacheKey, attach }: {
@@ -318,16 +361,48 @@ function SharedOverrideMaterial({ source, overrides, cacheKey, attach }: {
     return <primitive object={material} attach={attach} dispose={null} />;
 }
 
-const MaterialComponent: Component<MaterialComponentProperties> = {
+const MaterialComponent = {
     name: 'Material',
-    description: 'Named material definition. Matching built-in definitions share rendering resources automatically, even across IDs; edits to separate IDs stay independent.',
+    description: 'Define a shared material with a name and settings, or reference a loaded scene material using only its name. Unresolved references remain invisible.',
     slot: 'material',
     renderWhenDisabled: true,
     View: MaterialComponentView,
+    dependencies: properties => [properties.texture, properties.normalMapTexture]
+        .filter((path): path is string => !!path).map(path => ({ kind: 'texture' as const, path })),
     properties: {
         attach: { type: 'string', default: 'material' },
-        materialId: { type: 'string', default: DEFAULT_MATERIAL_ID, description: 'Reuse an ID to link edits across meshes. Different IDs with matching settings still share GPU resources.' },
+        name: { type: 'string', default: '', description: 'Scene-wide material name. With settings, defines this material; alone, references a definition on any loaded node.' },
+        materialType: { type: 'select', default: undefined, options: [
+            { value: 'standard', label: 'Standard' }, { value: 'basic', label: 'Basic' }, { value: 'sprite', label: 'Sprite' },
+        ] },
+        color: { type: 'color', default: undefined },
+        toneMapped: { type: 'boolean', default: undefined },
+        wireframe: { type: 'boolean', default: undefined },
+        transparent: { type: 'boolean', default: undefined },
+        opacity: { default: undefined, min: 0, max: 1 },
+        alphaTest: { default: undefined, min: 0, max: 1 },
+        depthTest: { type: 'boolean', default: undefined },
+        depthWrite: { type: 'boolean', default: undefined },
+        metalness: { default: undefined, min: 0, max: 1 },
+        roughness: { default: undefined, min: 0, max: 1 },
+        transmission: { default: undefined, min: 0, max: 1 },
+        thickness: { default: undefined, min: 0 },
+        ior: { default: undefined, min: 1 },
+        rotation: { default: undefined },
+        sizeAttenuation: { type: 'boolean', default: undefined },
+        texture: { type: 'string', default: undefined },
+        normalMapTexture: { type: 'string', default: undefined },
+        offset: { type: 'vector2', default: undefined },
+        repeat: { type: 'boolean', default: undefined },
+        repeatCount: { type: 'vector2', default: undefined },
+        normalScale: { type: 'vector2', default: undefined },
+        generateMipmaps: { type: 'boolean', default: undefined },
+        minFilter: { type: 'string', default: undefined },
+        magFilter: { type: 'string', default: undefined },
+        side: { type: 'select', default: undefined, options: [
+            { value: 'FrontSide', label: 'Front' }, { value: 'BackSide', label: 'Back' }, { value: 'DoubleSide', label: 'Double' },
+        ] },
     },
-};
+} satisfies Component<MaterialComponentProperties>;
 
 export default MaterialComponent;

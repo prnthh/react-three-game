@@ -126,6 +126,7 @@ const bubbleStyles: Record<string, CSSProperties> = {
 
 const ActivationColliderComponent: Component<ActivationColliderProperties> = {
     name: "ActivationCollider",
+    category: 'physics',
     View: ActivationColliderView,
     properties: {
         targetNodeId: { type: "string", default: DEFAULT_TARGET_NODE },

@@ -22,6 +22,7 @@ function AmbientLightComponentView({ properties, children }: ComponentViewProps<
 
 const AmbientLightComponent: Component<AmbientLightProperties> = {
     name: 'AmbientLight',
+    category: 'lighting',
     slot: 'object',
     renderWhenDisabled: true,
     View: AmbientLightComponentView,

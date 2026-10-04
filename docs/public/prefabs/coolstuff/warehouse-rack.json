@@ -1,18 +1,6 @@
 {
   "id": "warehouse-rack",
   "name": "Warehouse shelf rack",
-  "materials": {
-    "steel": {
-      "color": "#315b70",
-      "metalness": 0.65,
-      "roughness": 0.4
-    },
-    "shelf": {
-      "color": "#d77b32",
-      "metalness": 0.35,
-      "roughness": 0.6
-    }
-  },
   "root": {
     "id": "rack-root",
     "name": "Stackable rack · 4 × 3.9 × 1.8 m",
@@ -45,7 +33,11 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "shelf"
+              "materialType": "standard",
+              "color": "#d77b32",
+              "metalness": 0.35,
+              "roughness": 0.6,
+              "name": "prefabs/coolstuff/warehouse-rack:shelf"
             }
           },
           "physics": {
@@ -86,7 +78,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "shelf"
+              "name": "prefabs/coolstuff/warehouse-rack:shelf"
             }
           },
           "physics": {
@@ -127,7 +119,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "shelf"
+              "name": "prefabs/coolstuff/warehouse-rack:shelf"
             }
           },
           "physics": {
@@ -168,7 +160,11 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "steel"
+              "materialType": "standard",
+              "color": "#315b70",
+              "metalness": 0.65,
+              "roughness": 0.4,
+              "name": "prefabs/coolstuff/warehouse-rack:steel"
             }
           },
           "physics": {
@@ -209,7 +205,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "steel"
+              "name": "prefabs/coolstuff/warehouse-rack:steel"
             }
           },
           "physics": {
@@ -250,7 +246,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "steel"
+              "name": "prefabs/coolstuff/warehouse-rack:steel"
             }
           },
           "physics": {
@@ -291,7 +287,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "steel"
+              "name": "prefabs/coolstuff/warehouse-rack:steel"
             }
           },
           "physics": {

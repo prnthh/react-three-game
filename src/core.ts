@@ -7,6 +7,7 @@ export {
 } from "./core/ComponentRegistry.js";
 export type {
 	Component,
+	ComponentCategory,
 	ComponentPropertySchema,
 	ComponentPropertyDefinition,
 	ComponentPropertyDefinitions,

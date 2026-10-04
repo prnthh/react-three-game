@@ -60,10 +60,6 @@ export async function preparePrefab(
                 check();
                 const references: string[] = [];
                 edges.set(url, references);
-                for (const material of Object.values(document.materials)) {
-                    if (material.texture) enqueueAsset({ kind: 'texture', path: material.texture });
-                    if (material.normalMapTexture) enqueueAsset({ kind: 'texture', path: material.normalMapTexture });
-                }
                 for (const node of Object.values(document.nodesById)) {
                     for (const component of Object.values(node.components ?? {})) {
                         if (!component) continue;

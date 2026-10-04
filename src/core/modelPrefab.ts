@@ -190,7 +190,7 @@ type MaterialCollector = {
     definitions: Record<string, PrefabMaterial>;
 };
 
-function getMaterialId(material: Material, options: Required<DecomposeModelOptions>, collector: MaterialCollector) {
+function getMaterialName(material: Material, options: Required<DecomposeModelOptions>, collector: MaterialCollector) {
     const existing = collector.ids.get(material);
     if (existing) return existing;
 
@@ -217,10 +217,13 @@ function decomposeObject(
 
     const parts = getMeshParts(object);
     const materialComponents = parts.reduce<Record<string, ComponentData>>((result, part) => {
+        const defining = !materials.ids.has(part.material);
+        const materialName = getMaterialName(part.material, options, materials);
         result[part.key] = {
             type: 'Material',
             properties: {
-                materialId: getMaterialId(part.material, options, materials),
+                ...(defining ? { materialType: 'standard' as const, ...materials.definitions[materialName] } : {}),
+                name: materialName,
                 attach: part.attach,
             } satisfies MaterialComponentProperties,
         };
@@ -247,7 +250,6 @@ function decomposeObject(
  */
 export interface DecomposedPrefabNodes {
     root: GameObject;
-    materials: Record<string, PrefabMaterial>;
 }
 
 export function decomposeModelToPrefabNodes(
@@ -263,7 +265,7 @@ export function decomposeModelToPrefabNodes(
     const materials: MaterialCollector = { ids: new Map(), definitions: {} };
     const root = decomposeObject(object, resolvedOptions, materials)
         ?? createNode(object, resolvedOptions.idPrefix);
-    return { root, materials: materials.definitions };
+    return { root };
 }
 
 /** Standard Three.js GLB serialization, independent of browser downloads. */

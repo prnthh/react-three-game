@@ -1,11 +1,30 @@
-import { denormalizePrefab, scopePrefabMaterials, type PrefabState } from '../core/prefab.js';
+import { denormalizePrefab, getMaterialDefinition, scopePrefabMaterials, type PrefabState } from '../core/prefab.js';
 import { encodePrefabSource } from '../runtime/prefabs/prefabSource.js';
 import { findComponentEntry, type GameObject, type Prefab } from '../core/types.js';
 
-/** Extract in placement-local coordinates; preserve all shared materials for custom components too. */
+/** Extract in placement-local coordinates and include referenced document material definitions. */
 export function extractPrefab(state: PrefabState, id: string): Prefab {
     if (!Object.hasOwn(state.nodesById, id)) throw new Error(`Node "${id}" does not exist.`);
     const prefab = structuredClone(denormalizePrefab({ ...state, rootId: id }));
+    const definitions = new Set<string>();
+    const collect = (node: GameObject) => {
+        for (const component of Object.values(node.components ?? {})) {
+            if (component?.type === 'Material' && getMaterialDefinition(component.properties)) definitions.add(component.properties.name);
+        }
+        node.children?.forEach(collect);
+    };
+    collect(prefab.root);
+    const include = (node: GameObject) => {
+        for (const component of Object.values(node.components ?? {})) {
+            if (component?.type !== 'Material') continue;
+            const id = component.properties.name;
+            if (!id || definitions.has(id) || !state.materials[id]) continue;
+            component.properties = { ...structuredClone(state.materials[id]), ...component.properties };
+            definitions.add(id);
+        }
+        node.children?.forEach(include);
+    };
+    include(prefab.root);
     prefab.id = id;
     prefab.name = prefab.root.name ?? id;
     const transform = findComponentEntry(prefab.root, 'Transform');
@@ -46,5 +65,5 @@ export function unpackPrefabNode(placement: GameObject, prefab: Prefab, scope: s
     const node = structuredClone(placement);
     delete node.components![ref[0]];
     node.children = [rename(scoped.root), ...(node.children ?? [])];
-    return { node, materials: scoped.materials ?? {} };
+    return { node };
 }

@@ -4,6 +4,7 @@ import { MOVE_EVENT } from "../stage";
 
 const Walkable: Component = {
     name: "Walkable",
+    category: 'physics',
     View: function WalkableView({ children }) {
         const events = useGameEvents();
         const object = useGameObject();

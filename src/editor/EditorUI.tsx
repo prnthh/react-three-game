@@ -1,3 +1,5 @@
+import { MissingComponentEditor } from './MissingComponentEditor.js';
+import { AddComponentPicker } from './AddComponentPicker.js';
 import { getComponentEditor } from "./ComponentEditors.js";
 import "./components/editors.js";
 import { useState } from 'react';
@@ -127,8 +129,6 @@ function NodeInspector({
     const ALL_COMPONENTS = getComponents();
     const allKeys = Object.keys(ALL_COMPONENTS);
     const available = allKeys.filter(k => canAddComponentToNode(node, ALL_COMPONENTS[k], ALL_COMPONENTS));
-    const [preferredAddType, setAddType] = useState(available[0] || "");
-    const addType = available.includes(preferredAddType) ? preferredAddType : (available[0] || "");
 
     return <div style={inspector.content}>
         {/* Node Name */}
@@ -164,9 +164,14 @@ function NodeInspector({
                 if (!comp) return null;
                 const registeredComponent = ALL_COMPONENTS[comp.type];
                 const ComponentEditor = getComponentEditor(comp.type);
-                if (!registeredComponent) return <div key={key} style={{ color: colors.danger, fontSize: 11 }}>
-                    Unknown: {comp.type}
-                </div>;
+                if (!registeredComponent) return <MissingComponentEditor
+                    key={`${key}:${comp.type}`}
+                    component={comp}
+                    componentKey={key}
+                    onSave={component => updateNode(n => ({
+                        ...n, components: { ...n.components, [key]: component },
+                    }))}
+                />;
 
                 return (
                     <div key={`${key}:${comp.type}`} style={componentCard.container}>
@@ -217,46 +222,16 @@ function NodeInspector({
             })}
         </div>
 
-        {/* Add Component */}
-        {available.length > 0 && (
-            <div>
-                <div style={base.row}>
-                    <select
-                        style={{
-                            ...base.input,
-                            flex: 1,
-                            background: colors.bgInput,
-                            border: `1px solid ${colors.border}`,
-                        }}
-                        value={addType}
-                        onChange={e => setAddType(e.target.value)}
-                    >
-                        {available.map(k => <option key={k} value={k}>{k}</option>)}
-                    </select>
-                    <button
-                        type="button"
-                        style={base.btn}
-                        disabled={!addType}
-                        onClick={() => {
-                            if (!addType) return;
-                            const registeredComponent = ALL_COMPONENTS[addType];
-                            if (registeredComponent) {
-                                updateNode(n => ({
-                                    ...n,
-                                    components: {
-                                        ...n.components,
-                                        [getNextComponentKey(n, registeredComponent.name)]: createComponentData(registeredComponent.name)
-                                    }
-                                }));
-                            }
-                        }}
-                        title="Add Component"
-                    >
-                        +
-                    </button>
-                </div>
-            </div>
-        )}
+        <AddComponentPicker
+            components={available.map(key => ALL_COMPONENTS[key])}
+            onAdd={component => updateNode(n => ({
+                ...n,
+                components: {
+                    ...n.components,
+                    [getNextComponentKey(n, component.name)]: createComponentData(component.name),
+                },
+            }))}
+        />
     </div>
 }
 

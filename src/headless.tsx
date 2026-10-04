@@ -3,7 +3,7 @@ import { createRoot, extend, unmountComponentAtNode } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { GLTFExporterOptions } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import type { Prefab, GameObject } from './core/types.js';
-import { normalizePrefab, type PrefabState } from './core/prefab.js';
+import { getMaterialDefinition, normalizePrefab, type PrefabState } from './core/prefab.js';
 import { getComponent } from './core/ComponentRegistry.js';
 import { builtInComponents, registerBuiltInComponents } from './runtime/components/index.js';
 import { ComponentLookupContext } from './runtime/prefabs/nodePlan.js';
@@ -155,7 +155,7 @@ async function mountHeadlessScene(prefab: Prefab, options: HeadlessSceneOptions,
 
 // Only built-in components that contribute standard static Three.js scene data.
 const exportTypes = new Set(['Transform', 'Geometry', 'BufferGeometry', 'Material',
-    'Model', 'AnimatedModel', 'PrefabRef', 'Camera', 'DirectionalLight', 'PointLight', 'SpotLight']);
+    'Model', 'SkinnedMesh', 'PrefabRef', 'Camera', 'DirectionalLight', 'PointLight', 'SpotLight']);
 const exportDefinitions = new Map(builtInComponents.filter(component => exportTypes.has(component.name)).map(component => [component.name, component]));
 const exportLookup: typeof getComponent = name => exportDefinitions.get(name);
 
@@ -168,19 +168,22 @@ function staticPrefab(document: Prefab): Prefab {
             return { ...node, components: {}, children: [] };
         }
         return { ...node,
-            components: Object.fromEntries(entries.filter(([, component]) => component && exportTypes.has(component.type))),
+            components: Object.fromEntries(entries.filter(([, component]) => component && exportTypes.has(component.type)).map(([key, component]) => {
+                if (component?.type !== 'Material') return [key, component];
+                const { texture, normalMapTexture, ...properties } = component.properties;
+                return [key, { ...component, properties: getMaterialDefinition(component.properties)
+                    ? { materialType: 'standard', ...properties } : properties }];
+            })),
             children: node.children?.map(visit),
         };
     };
-    return { ...document, root: visit(document.root), materials: Object.fromEntries(
-        Object.entries(document.materials ?? {}).map(([id, { texture: _texture, normalMapTexture: _normal, ...material }]) => [id, material]),
-    ) };
+    return { ...document, root: visit(document.root) };
 }
 
 function prefabFromState(state: PrefabState): Prefab {
     // Preserve explicit properties; denormalization compacts using the application registry.
     const node = (id: string): GameObject => ({ ...state.nodesById[id], children: state.childIdsById[id].map(node) });
-    return { id: state.prefabId, name: state.prefabName, root: node(state.rootId), materials: state.materials };
+    return { id: state.prefabId, name: state.prefabName, root: node(state.rootId) };
 }
 
 /** Lossy built-ins-only export. Custom views, dependencies and modifiers never run. */

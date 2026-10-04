@@ -18,7 +18,7 @@ import { withBasePath } from "../assets/assetPaths.js";
 
 import type { Component, ComponentViewProps } from '../../core/ComponentRegistry.js';
 
-export interface AnimatedModelHandle {
+export interface SkinnedMeshHandle {
     readonly object: Object3D;
     /** This model instance's mixer. Disable autoUpdate when advancing it yourself. */
     readonly mixer: AnimationMixer;
@@ -32,9 +32,9 @@ export interface AnimatedModelHandle {
     update(delta: number): void;
 }
 
-export const ANIMATED_MODEL_COMPONENT = createNodeComponentType<AnimatedModelHandle>('AnimatedModel');
+export const SKINNED_MESH_COMPONENT = createNodeComponentType<SkinnedMeshHandle>('SkinnedMesh');
 
-export type AnimatedModelProperties = MeshRenderProperties & {
+export type SkinnedMeshProperties = MeshRenderProperties & {
     filename?: string;
     animationState?: string;
     fadeDuration?: number;
@@ -55,7 +55,7 @@ function AutoAnimationUpdate({ mixer }: { mixer: AnimationMixer }) {
     return null;
 }
 
-function LoadedAnimatedModel({ properties, enabled, path }: { properties: AnimatedModelProperties; enabled: boolean; path: string }) {
+function LoadedSkinnedMesh({ properties, enabled, path }: { properties: SkinnedMeshProperties; enabled: boolean; path: string }) {
     const source = useModelAsset(path);
     const currentActionRef = useRef<AnimationAction | null>(null);
     const stateRef = useRef(properties.animationState ?? '');
@@ -95,7 +95,7 @@ function LoadedAnimatedModel({ properties, enabled, path }: { properties: Animat
         next.play();
         currentActionRef.current = next;
     }, [actions, clips, properties.fadeDuration]);
-    const handle = useMemo<AnimatedModelHandle | null>(() => object && mixer ? ({
+    const handle = useMemo<SkinnedMeshHandle | null>(() => object && mixer ? ({
         object,
         mixer,
         animations: clips,
@@ -107,7 +107,7 @@ function LoadedAnimatedModel({ properties, enabled, path }: { properties: Animat
         update: delta => mixer.update(delta),
     }) : null, [actions, clips, mixer, object, setAnimationState, stop]);
 
-    useRegisterNodeComponent(ANIMATED_MODEL_COMPONENT, handle);
+    useRegisterNodeComponent(SKINNED_MESH_COMPONENT, handle);
     useEffect(() => {
         if (!handle) return;
         handle.setAnimationState(properties.animationState ?? clips[0]?.name ?? '', true);
@@ -121,22 +121,23 @@ function LoadedAnimatedModel({ properties, enabled, path }: { properties: Animat
     </>;
 }
 
-function AnimatedModelView({ properties, enabled, children }: ComponentViewProps<AnimatedModelProperties>) {
+function SkinnedMeshView({ properties, enabled, children }: ComponentViewProps<SkinnedMeshProperties>) {
     const { basePath } = usePrefab();
     const store = usePrefabStoreApi();
     const resolvedFilename = properties.filename ? withBasePath(basePath, properties.filename) : '';
     return <>
-        {resolvedFilename ? <AssetBoundary subscribeToRetry={store.subscribe}><LoadedAnimatedModel properties={properties} enabled={enabled} path={resolvedFilename} /></AssetBoundary> : null}
+        {resolvedFilename ? <AssetBoundary subscribeToRetry={store.subscribe}><LoadedSkinnedMesh properties={properties} enabled={enabled} path={resolvedFilename} /></AssetBoundary> : null}
         {children}
     </>;
 }
 
-const AnimatedModelComponent: Component<AnimatedModelProperties> = {
+const SkinnedMeshComponent: Component<SkinnedMeshProperties> = {
     dependencies: properties => properties.filename ? [{ kind: 'model', path: properties.filename }] : [],
-    name: 'AnimatedModel',
+    name: 'SkinnedMesh',
+    description: 'Loads a model with cloned skeletons and one animation mixer per instance.',
     renderWhenDisabled: true,
     slot: 'object',
-    View: AnimatedModelView,
+    View: SkinnedMeshView,
     properties: {
         ...meshRenderProperties,
         filename: { type: 'string', default: '' },
@@ -147,4 +148,4 @@ const AnimatedModelComponent: Component<AnimatedModelProperties> = {
     },
 };
 
-export default AnimatedModelComponent;
+export default SkinnedMeshComponent;

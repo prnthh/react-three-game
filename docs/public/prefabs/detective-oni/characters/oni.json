@@ -58,7 +58,7 @@
             }
           },
           "model": {
-            "type": "AnimatedModel",
+            "type": "SkinnedMesh",
             "properties": {
               "filename": "/models/human/onimilio.glb",
               "animationState": "idle"

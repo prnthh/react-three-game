@@ -1,49 +1,6 @@
 {
   "id": "cool-stuff",
   "name": "Cool stuff",
-  "materials": {
-    "expansive-floor-material": {
-      "color": "#858b8e",
-      "roughness": 0.95
-    },
-    "sky-sphere-material": {
-      "materialType": "basic",
-      "side": "BackSide",
-      "texture": "/textures/skybox/skybox3.jpg"
-    },
-    "trim": {
-      "color": "#bda782",
-      "roughness": 0.7
-    },
-    "ragdoll-floor": {
-      "color": "#334155",
-      "roughness": 0.9
-    },
-    "floor": {
-      "color": "#38434b",
-      "roughness": 0.95
-    },
-    "carton-0": {
-      "color": "#ae7846",
-      "roughness": 0.95
-    },
-    "carton-1": {
-      "color": "#c6945a",
-      "roughness": 0.95
-    },
-    "carton-2": {
-      "color": "#dbb783",
-      "roughness": 0.95
-    },
-    "carton-3": {
-      "color": "#8d623e",
-      "roughness": 0.95
-    },
-    "interior-building": {
-      "color": "#36444e",
-      "roughness": 0.9
-    }
-  },
   "root": {
     "id": "cool-stuff",
     "name": "Cool stuff",
@@ -85,7 +42,10 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "interior-building"
+                  "materialType": "standard",
+                  "color": "#36444e",
+                  "roughness": 0.9,
+                  "name": "prefabs/coolstuff/coolstuff:interior-building"
                 }
               }
             }
@@ -162,7 +122,10 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "trim"
+                      "materialType": "standard",
+                      "color": "#bda782",
+                      "roughness": 0.7,
+                      "name": "prefabs/coolstuff/coolstuff:trim"
                     }
                   }
                 }
@@ -200,7 +163,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "trim"
+                      "name": "prefabs/coolstuff/coolstuff:trim"
                     }
                   }
                 }
@@ -238,7 +201,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "trim"
+                      "name": "prefabs/coolstuff/coolstuff:trim"
                     }
                   }
                 }
@@ -276,7 +239,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "trim"
+                      "name": "prefabs/coolstuff/coolstuff:trim"
                     }
                   }
                 }
@@ -355,7 +318,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "trim"
+                      "name": "prefabs/coolstuff/coolstuff:trim"
                     }
                   }
                 }
@@ -393,7 +356,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "trim"
+                      "name": "prefabs/coolstuff/coolstuff:trim"
                     }
                   }
                 }
@@ -431,7 +394,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "trim"
+                      "name": "prefabs/coolstuff/coolstuff:trim"
                     }
                   }
                 }
@@ -469,7 +432,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "trim"
+                      "name": "prefabs/coolstuff/coolstuff:trim"
                     }
                   }
                 }
@@ -548,7 +511,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "trim"
+                      "name": "prefabs/coolstuff/coolstuff:trim"
                     }
                   }
                 }
@@ -586,7 +549,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "trim"
+                      "name": "prefabs/coolstuff/coolstuff:trim"
                     }
                   }
                 }
@@ -624,7 +587,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "trim"
+                      "name": "prefabs/coolstuff/coolstuff:trim"
                     }
                   }
                 }
@@ -662,7 +625,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "trim"
+                      "name": "prefabs/coolstuff/coolstuff:trim"
                     }
                   }
                 }
@@ -741,7 +704,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "trim"
+                      "name": "prefabs/coolstuff/coolstuff:trim"
                     }
                   }
                 }
@@ -779,7 +742,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "trim"
+                      "name": "prefabs/coolstuff/coolstuff:trim"
                     }
                   }
                 }
@@ -817,7 +780,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "trim"
+                      "name": "prefabs/coolstuff/coolstuff:trim"
                     }
                   }
                 }
@@ -855,7 +818,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "trim"
+                      "name": "prefabs/coolstuff/coolstuff:trim"
                     }
                   }
                 }
@@ -934,7 +897,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "trim"
+                      "name": "prefabs/coolstuff/coolstuff:trim"
                     }
                   }
                 }
@@ -972,7 +935,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "trim"
+                      "name": "prefabs/coolstuff/coolstuff:trim"
                     }
                   }
                 }
@@ -1010,7 +973,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "trim"
+                      "name": "prefabs/coolstuff/coolstuff:trim"
                     }
                   }
                 }
@@ -1048,7 +1011,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "trim"
+                      "name": "prefabs/coolstuff/coolstuff:trim"
                     }
                   }
                 }
@@ -1127,7 +1090,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "trim"
+                      "name": "prefabs/coolstuff/coolstuff:trim"
                     }
                   }
                 }
@@ -1165,7 +1128,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "trim"
+                      "name": "prefabs/coolstuff/coolstuff:trim"
                     }
                   }
                 }
@@ -1203,7 +1166,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "trim"
+                      "name": "prefabs/coolstuff/coolstuff:trim"
                     }
                   }
                 }
@@ -1241,7 +1204,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "trim"
+                      "name": "prefabs/coolstuff/coolstuff:trim"
                     }
                   }
                 }
@@ -1299,7 +1262,10 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "ragdoll-floor"
+                  "materialType": "standard",
+                  "color": "#334155",
+                  "roughness": 0.9,
+                  "name": "prefabs/coolstuff/coolstuff:ragdoll-floor"
                 }
               },
               "physics": {
@@ -1440,7 +1406,10 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "floor"
+                  "materialType": "standard",
+                  "color": "#38434b",
+                  "roughness": 0.95,
+                  "name": "prefabs/coolstuff/coolstuff:floor"
                 }
               },
               "physics": {
@@ -1520,7 +1489,10 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "materialType": "standard",
+                      "color": "#ae7846",
+                      "roughness": 0.95,
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -1568,7 +1540,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -1616,7 +1588,10 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "materialType": "standard",
+                      "color": "#c6945a",
+                      "roughness": 0.95,
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -1664,7 +1639,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -1712,7 +1687,10 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "materialType": "standard",
+                      "color": "#8d623e",
+                      "roughness": 0.95,
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -1760,7 +1738,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -1808,7 +1786,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -1856,7 +1834,10 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "materialType": "standard",
+                      "color": "#dbb783",
+                      "roughness": 0.95,
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -1904,7 +1885,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -1952,7 +1933,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -2000,7 +1981,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -2048,7 +2029,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -2096,7 +2077,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -2144,7 +2125,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -2192,7 +2173,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -2240,7 +2221,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -2288,7 +2269,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -2336,7 +2317,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -2384,7 +2365,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -2432,7 +2413,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -2480,7 +2461,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -2528,7 +2509,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -2576,7 +2557,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -2624,7 +2605,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -2672,7 +2653,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -2720,7 +2701,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -2768,7 +2749,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -2816,7 +2797,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -2864,7 +2845,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -2912,7 +2893,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -2960,7 +2941,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -3008,7 +2989,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -3056,7 +3037,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -3104,7 +3085,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -3152,7 +3133,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -3200,7 +3181,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -3282,7 +3263,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -3330,7 +3311,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -3378,7 +3359,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -3426,7 +3407,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -3474,7 +3455,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -3522,7 +3503,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -3570,7 +3551,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -3618,7 +3599,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -3666,7 +3647,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -3714,7 +3695,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -3762,7 +3743,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -3810,7 +3791,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -3858,7 +3839,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -3906,7 +3887,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -3954,7 +3935,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -4002,7 +3983,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -4050,7 +4031,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -4098,7 +4079,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -4146,7 +4127,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -4194,7 +4175,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -4242,7 +4223,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -4290,7 +4271,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -4338,7 +4319,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -4386,7 +4367,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -4434,7 +4415,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -4482,7 +4463,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -4530,7 +4511,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -4578,7 +4559,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -4626,7 +4607,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -4674,7 +4655,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -4722,7 +4703,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -4770,7 +4751,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -4818,7 +4799,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -4866,7 +4847,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -4914,7 +4895,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -4962,7 +4943,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -5044,7 +5025,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -5092,7 +5073,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -5140,7 +5121,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -5188,7 +5169,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -5236,7 +5217,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -5284,7 +5265,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -5332,7 +5313,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -5380,7 +5361,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -5428,7 +5409,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -5476,7 +5457,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -5524,7 +5505,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -5572,7 +5553,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -5620,7 +5601,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -5668,7 +5649,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -5716,7 +5697,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -5764,7 +5745,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -5812,7 +5793,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -5860,7 +5841,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -5908,7 +5889,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -5956,7 +5937,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -6004,7 +5985,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -6052,7 +6033,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -6100,7 +6081,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -6148,7 +6129,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -6196,7 +6177,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -6244,7 +6225,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -6292,7 +6273,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -6340,7 +6321,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -6388,7 +6369,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -6436,7 +6417,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -6484,7 +6465,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -6532,7 +6513,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -6580,7 +6561,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -6628,7 +6609,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -6676,7 +6657,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -6724,7 +6705,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -6806,7 +6787,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -6854,7 +6835,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -6902,7 +6883,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -6950,7 +6931,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -6998,7 +6979,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -7046,7 +7027,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -7094,7 +7075,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -7142,7 +7123,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -7190,7 +7171,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -7238,7 +7219,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -7286,7 +7267,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -7334,7 +7315,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -7382,7 +7363,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -7430,7 +7411,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -7478,7 +7459,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -7526,7 +7507,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -7574,7 +7555,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -7622,7 +7603,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -7670,7 +7651,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -7718,7 +7699,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -7766,7 +7747,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -7814,7 +7795,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -7862,7 +7843,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -7910,7 +7891,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -7958,7 +7939,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -8006,7 +7987,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -8054,7 +8035,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-1"
+                      "name": "prefabs/coolstuff/coolstuff:carton-1"
                     }
                   },
                   "physics": {
@@ -8102,7 +8083,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -8150,7 +8131,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -8198,7 +8179,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -8246,7 +8227,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-2"
+                      "name": "prefabs/coolstuff/coolstuff:carton-2"
                     }
                   },
                   "physics": {
@@ -8294,7 +8275,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -8342,7 +8323,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -8390,7 +8371,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -8438,7 +8419,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-0"
+                      "name": "prefabs/coolstuff/coolstuff:carton-0"
                     }
                   },
                   "physics": {
@@ -8486,7 +8467,7 @@
                   "material": {
                     "type": "Material",
                     "properties": {
-                      "materialId": "carton-3"
+                      "name": "prefabs/coolstuff/coolstuff:carton-3"
                     }
                   },
                   "physics": {
@@ -8550,7 +8531,10 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "expansive-floor-material"
+              "materialType": "standard",
+              "color": "#858b8e",
+              "roughness": 0.95,
+              "name": "prefabs/coolstuff/coolstuff:expansive-floor-material"
             }
           },
           "physics": {
@@ -8590,7 +8574,10 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "sky-sphere-material"
+                  "materialType": "basic",
+                  "side": "BackSide",
+                  "texture": "/textures/skybox/skybox3.jpg",
+                  "name": "prefabs/coolstuff/coolstuff:sky-sphere-material"
                 }
               }
             }

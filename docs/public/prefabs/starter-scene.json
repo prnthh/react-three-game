@@ -28,7 +28,8 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "default"
+              "materialType": "standard",
+              "name": "476c7695-a8df-4eac-b22e-04080532898b"
             }
           }
         }
@@ -92,7 +93,10 @@
               "material": {
                 "type": "Material",
                 "properties": {
-                  "materialId": "sky"
+                  "materialType": "basic",
+                  "side": "BackSide",
+                  "texture": "/textures/skybox/skybox3.jpg",
+                  "name": "prefabs/starter-scene:sky"
                 }
               }
             }
@@ -100,12 +104,5 @@
         ]
       }
     ]
-  },
-  "materials": {
-    "sky": {
-      "materialType": "basic",
-      "side": "BackSide",
-      "texture": "/textures/skybox/skybox3.jpg"
-    }
   }
 }

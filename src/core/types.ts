@@ -1,7 +1,6 @@
 export interface Prefab {
     id?: string;
     name?: string;
-    materials?: Record<string, PrefabMaterial>;
     root: GameObject;
 }
 
@@ -37,8 +36,7 @@ export interface PrefabMaterial {
     side?: 'FrontSide' | 'BackSide' | 'DoubleSide';
 }
 
-export interface MaterialComponentProperties {
-    materialId?: string;
+export interface MaterialComponentProperties extends PrefabMaterial {
     attach?: string;
 }
 

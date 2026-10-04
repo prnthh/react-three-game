@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import { ANIMATED_MODEL_COMPONENT, useRegisterNodeComponent, useGameEvents, useGameObject, useNode, type Component, type ComponentViewProps } from "react-three-game/viewer";
+import { SKINNED_MESH_COMPONENT, useRegisterNodeComponent, useGameEvents, useGameObject, useNode, type Component, type ComponentViewProps } from "react-three-game/viewer";
 import { Quaternion, Vector3 } from "three";
 import type { StagePoint } from "../game";
 import { MOVE_EVENT, TRANSITION_EVENT, type MoveRequest } from "../stage";
@@ -65,7 +65,7 @@ function PlayerController({ properties, children }: ComponentViewProps<Character
                 player.position.addScaledVector(direction.current, Math.min(distance, properties.walkSpeed * Math.min(delta, 0.1)));
             } else destination.current = null;
         }
-        model.getComponent(ANIMATED_MODEL_COMPONENT)?.setAnimationState(walking ? "walk" : "idle");
+        model.getComponent(SKINNED_MESH_COMPONENT)?.setAnimationState(walking ? "walk" : "idle");
         player.updateMatrixWorld(true);
     }, -3);
     return <>{children}</>;

@@ -1,45 +1,6 @@
 {
   "id": "city-planter",
   "name": "Courtyard Tree and Bench",
-  "materials": {
-    "stone": {
-      "name": "Sand-textured concrete",
-      "materialType": "standard",
-      "color": "#91aacb",
-      "texture": "/textures/floor/terrain/sand-512.jpg",
-      "repeat": true,
-      "repeatCount": [
-        2,
-        2
-      ],
-      "roughness": 0.98,
-      "metalness": 0
-    },
-    "soil": {
-      "materialType": "standard",
-      "color": "#353c30",
-      "roughness": 0.8,
-      "metalness": 0
-    },
-    "wood": {
-      "materialType": "standard",
-      "color": "#78513a",
-      "roughness": 0.8,
-      "metalness": 0
-    },
-    "leaves": {
-      "materialType": "standard",
-      "color": "#496d4e",
-      "roughness": 0.8,
-      "metalness": 0
-    },
-    "leaves-light": {
-      "materialType": "standard",
-      "color": "#729058",
-      "roughness": 0.8,
-      "metalness": 0
-    }
-  },
   "root": {
     "id": "planter-root",
     "name": "Planter",
@@ -77,7 +38,17 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "stone"
+              "materialType": "standard",
+              "name": "prefabs/brutalist-city/city-planter:stone",
+              "color": "#91aacb",
+              "texture": "/textures/floor/terrain/sand-512.jpg",
+              "repeat": true,
+              "repeatCount": [
+                2,
+                2
+              ],
+              "roughness": 0.98,
+              "metalness": 0
             }
           }
         },
@@ -116,7 +87,11 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "soil"
+              "materialType": "standard",
+              "color": "#353c30",
+              "roughness": 0.8,
+              "metalness": 0,
+              "name": "prefabs/brutalist-city/city-planter:soil"
             }
           }
         },
@@ -156,7 +131,11 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "wood"
+              "materialType": "standard",
+              "color": "#78513a",
+              "roughness": 0.8,
+              "metalness": 0,
+              "name": "prefabs/brutalist-city/city-planter:wood"
             }
           }
         },
@@ -195,7 +174,11 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "leaves"
+              "materialType": "standard",
+              "color": "#496d4e",
+              "roughness": 0.8,
+              "metalness": 0,
+              "name": "prefabs/brutalist-city/city-planter:leaves"
             }
           }
         },
@@ -234,7 +217,11 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "leaves-light"
+              "materialType": "standard",
+              "color": "#729058",
+              "roughness": 0.8,
+              "metalness": 0,
+              "name": "prefabs/brutalist-city/city-planter:leaves-light"
             }
           }
         },
@@ -273,7 +260,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "wood"
+              "name": "prefabs/brutalist-city/city-planter:wood"
             }
           }
         },
@@ -312,7 +299,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "stone"
+              "name": "prefabs/brutalist-city/city-planter:stone"
             }
           }
         },
@@ -351,7 +338,7 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "stone"
+              "name": "prefabs/brutalist-city/city-planter:stone"
             }
           }
         },

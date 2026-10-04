@@ -9,6 +9,7 @@ export type PrefabNodeRecord = Omit<GameObject, "children">;
 export interface PrefabState {
 	prefabId?: string;
 	prefabName?: string;
+	/** Derived from component definitions for authoring tools; never persisted. */
 	materials: Record<string, PrefabMaterial>;
 	rootId: string;
 	nodesById: Record<string, PrefabNodeRecord>;
@@ -20,7 +21,6 @@ export const DEFAULT_MATERIAL_ID = "default";
 
 export function createDefaultMaterial(): PrefabMaterial {
 	return {
-		name: "Default",
 		materialType: "standard",
 		color: "#ffffff",
 		toneMapped: true,
@@ -93,25 +93,34 @@ export function compactPrefabMaterial(material: PrefabMaterial): PrefabMaterial 
 	return compact as PrefabMaterial;
 }
 
-function compactMaterials(materials: Record<string, PrefabMaterial>) {
-	const compact: Record<string, PrefabMaterial> = {};
+/** Authored fields only: a name with no settings is a reference, not a definition. */
+export const MATERIAL_FIELDS = [
+    ...Object.keys(MATERIAL_DEFAULTS), 'transparent', 'depthTest', 'depthWrite', 'texture', 'normalMapTexture',
+] as (keyof PrefabMaterial)[];
 
-	Object.entries(materials).forEach(([id, material]) => {
-		const definition = compactPrefabMaterial(material);
-		const isImplicitDefault = Object.keys(definition).length === 0
-			|| (Object.keys(definition).length === 1 && definition.name === "Default");
-		if (id === DEFAULT_MATERIAL_ID && isImplicitDefault) return;
-		compact[id] = definition;
-	});
-
-	return compact;
+export function getMaterialDefinition(properties: MaterialComponentProperties): PrefabMaterial | null {
+    const entries = MATERIAL_FIELDS.flatMap(key => {
+        const value = properties[key];
+        return value === undefined || value === null || value === '' ? [] : [[key, value]];
+    });
+    return entries.length ? Object.fromEntries(entries) : null;
 }
 
-function normalizeMaterials(materials?: Record<string, PrefabMaterial>) {
-	return {
-		[DEFAULT_MATERIAL_ID]: createDefaultMaterial(),
-		...structuredClone(materials ?? {}),
-	};
+/** A derived authoring index, never serialized as a separate material table. */
+const materialDefinitionCache = new WeakMap<ComponentData, PrefabMaterial | null>();
+
+export function collectMaterialDefinitions(nodes: Record<string, PrefabNodeRecord>): Record<string, PrefabMaterial> {
+    const materials: Record<string, PrefabMaterial> = {};
+    for (const node of Object.values(nodes)) for (const component of Object.values(node.components ?? {})) {
+        if (component?.type !== 'Material') continue;
+        const { name: materialName } = component.properties;
+        if (!materialDefinitionCache.has(component)) {
+            materialDefinitionCache.set(component, getMaterialDefinition(component.properties));
+        }
+        const definition = materialDefinitionCache.get(component);
+        if (materialName && definition && !Object.hasOwn(materials, materialName)) materials[materialName] = definition;
+    }
+    return materials;
 }
 
 function createComponentMap(
@@ -171,7 +180,9 @@ export function createComponentData(
 ): ComponentData {
 	return {
 		type,
-		properties: structuredClone(properties ?? {}),
+		properties: structuredClone(type === 'Material' && !properties?.name
+            ? { materialType: 'standard', ...properties, name: crypto.randomUUID() }
+            : properties ?? {}),
 	};
 }
 
@@ -218,7 +229,7 @@ export function createModelNode(filename: string, name?: string): GameObject {
 
 export function createImageNode(
 	texturePath: string,
-	materialId: string,
+	materialName: string,
 	name?: string,
 ): GameObject {
 	return createNode(getNodeNameFromPath(texturePath, name), {
@@ -228,7 +239,7 @@ export function createImageNode(
 		},
 		material: {
 			type: "Material",
-			properties: { materialId } satisfies MaterialComponentProperties,
+			properties: { name: materialName } satisfies MaterialComponentProperties,
 		},
 	});
 }
@@ -242,42 +253,27 @@ export function createPackedPrefabNode(url: string): GameObject {
 	});
 }
 
-/** Give a prefab's materials collision-safe ids while keeping every reference in sync. */
+/** Give a prefab's materials collision-safe names while keeping every reference in sync. */
 export function scopePrefabMaterials(prefab: Prefab, scope: string): Prefab {
-	const ids: Record<string, string> = {};
-	const materials: Record<string, PrefabMaterial> = {};
-	Object.entries(normalizeMaterials(prefab.materials)).forEach(([id, material]) => {
-		ids[id] = `${scope}:${id}`;
-		materials[ids[id]] = material;
-	});
-
-	const remap = (node: GameObject): GameObject => {
-		const components = { ...node.components };
-		Object.entries(components).forEach(([key, component]) => {
-			if (component?.type === "Material") {
-				const materialId = component.properties.materialId ?? DEFAULT_MATERIAL_ID;
-				components[key] = {
-					...component,
-					properties: {
-						...component.properties,
-						materialId: ids[materialId] ?? ids[DEFAULT_MATERIAL_ID],
-					},
-				};
-			}
-		});
-
-		return {
-			...node,
-			components,
-			children: node.children?.map(remap),
-		};
-	};
-
-	return {
-		...prefab,
-		materials,
-		root: remap(prefab.root),
-	};
+    const defined = new Set<string>();
+    const collect = (node: GameObject) => {
+        for (const component of Object.values(node.components ?? {})) {
+            if (component?.type === 'Material' && component.properties.name && getMaterialDefinition(component.properties)) {
+                defined.add(component.properties.name);
+            }
+        }
+        node.children?.forEach(collect);
+    };
+    collect(prefab.root);
+    const remap = (node: GameObject): GameObject => ({ ...node,
+        components: Object.fromEntries(Object.entries(node.components ?? {}).map(([key, component]) => {
+            const id = component?.properties.name;
+            return [key, component && (component.type === 'Material' || getComponent(component.type)?.slot === 'material') && defined.has(id) ? { ...component, properties: {
+                ...component.properties, name: `${scope}:${id}`,
+            } } : component];
+        })), children: node.children?.map(remap),
+    });
+    return { ...prefab, root: remap(prefab.root) };
 }
 
 export function normalizePrefab(prefab: Prefab): PrefabState {
@@ -287,7 +283,7 @@ export function normalizePrefab(prefab: Prefab): PrefabState {
 
 	insertSubtree(prefab.root, null, nodesById, childIdsById, parentIdById);
 
-	const materials = normalizeMaterials(prefab.materials);
+	const materials = collectMaterialDefinitions(nodesById);
 	return {
 		prefabId: prefab.id,
 		prefabName: prefab.name,
@@ -302,15 +298,13 @@ export function normalizePrefab(prefab: Prefab): PrefabState {
 export function denormalizePrefab(
 	state: Pick<
 		PrefabState,
-		"prefabId" | "prefabName" | "materials" | "rootId" | "nodesById" | "childIdsById"
+		"prefabId" | "prefabName" | "rootId" | "nodesById" | "childIdsById"
 	>,
 ): Prefab {
-	const materials = compactMaterials(state.materials);
 
 	return {
 		id: state.prefabId,
 		name: state.prefabName,
-		...(Object.keys(materials).length > 0 ? { materials } : null),
 		root: denormalizeNode(state.rootId, state.nodesById, state.childIdsById),
 	};
 }
@@ -348,6 +342,16 @@ export function insertSubtree(
 	});
 }
 
+/** Same-scene copies share named materials instead of defining them again. */
+export function cloneComponentsForDuplicate(components: PrefabNodeRecord['components']) {
+    const copy = structuredClone(components);
+    for (const component of Object.values(copy ?? {})) {
+        if (component?.type !== 'Material' || !component.properties.name) continue;
+        for (const field of MATERIAL_FIELDS) delete component.properties[field];
+    }
+    return copy;
+}
+
 export function cloneSubtree(
 	id: string,
 	parentId: string | null,
@@ -362,7 +366,7 @@ export function cloneSubtree(
 	const clonedId = crypto.randomUUID();
 	const clonedNode: PrefabNodeRecord = {
 		...originalNode,
-		components: structuredClone(originalNode.components),
+		components: cloneComponentsForDuplicate(originalNode.components),
 		id: clonedId,
 		name: `${originalNode.name ?? originalNode.id} Copy`,
 	};

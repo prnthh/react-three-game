@@ -87,6 +87,7 @@ function CameraShadowFollowerView({ properties, children }: ComponentViewProps<C
 
 const CameraShadowFollowerComponent: Component<CameraShadowFollowerProperties> = {
     name: "CameraShadowFollower",
+    category: 'lighting',
     View: CameraShadowFollowerView,
     properties: {
         interval: { default: DEFAULT_INTERVAL, min: MIN_INTERVAL, step: 0.05 },

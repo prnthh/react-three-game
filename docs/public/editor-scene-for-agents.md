@@ -98,7 +98,7 @@ for (const [index, geometryType] of ['box', 'sphere', 'torus'].entries()) {
     components: {
       transform: { type: 'Transform', properties: { position: [(index - 1) * 3, 1, 0] } },
       geometry: { type: 'Geometry', properties: { geometryType } },
-      material: { type: 'Material', properties: { materialId: id } }
+      material: { type: 'Material', properties: { name: id } }
     }
   } });
 }
@@ -312,7 +312,7 @@ await scene.unpack({ id: 'assembly-2' });
 const { prefab } = scene.exportPrefab({ id: 'assembly-2' });
 ```
 
-`pack` and `unpack` each create one undo step. Unpack retains a placement wrapper and expands the asset below it, so scaled/rotated parents, reference transforms, extra components, and pre-existing children are preserved. Loading errors or revision changes during loading leave the document untouched. Unpacked node/material IDs receive a unique scope to avoid collisions. Arbitrary ID strings in custom scripts or component properties are not rewritten: inspect behaviors that cross prefab boundaries before and after packing/unpacking.
+`pack` and `unpack` each create one undo step. Unpack retains a placement wrapper and expands the asset below it, so scaled/rotated parents, reference transforms, extra components, and pre-existing children are preserved. Loading errors or revision changes during loading leave the document untouched. Unpacked node IDs/material names receive a unique scope to avoid collisions. Arbitrary ID strings in custom scripts or component properties are not rewritten: inspect behaviors that cross prefab boundaries before and after packing/unpacking.
 
 `exportPrefab({id})` returns a complete nested subtree with shared materials, with the selected root's placement transform and visibility flags removed. It does not truncate or save. The GUI export uses the same extraction with the existing Save As/download flow. Unlike this nested export, `get()` returns a `node` with `childIds` and a separate flat `descendants` array; it does not return `node.children`.
 
@@ -331,7 +331,7 @@ scene.packMany({ ids: ['assembly-a', 'assembly-b'], reuse: true });
 ### Unpack the version currently on screen
 
 Unpack uses the cached definition currently rendered by the reference. It scopes
-node and material IDs, including default materials, to preserve appearance inside
+node IDs and material names, including default materials, to preserve appearance inside
 the outer scene. Custom ID strings are not remapped; verify behaviors that refer
 across the prefab boundary. Each instance owns its editable state.
 
@@ -410,6 +410,13 @@ Keep JSON for further scene editing.
 
 ## Scene authoring rules
 
+- Define materials on a node's `Material` component, for example
+  `{ name: "concrete", color: "#888888", roughness: 0.9 }`. Other nodes
+  reference it with `{ name: "concrete" }` only. Do not write a top-level
+  `materials` table. Names resolve across loaded prefabs in one scene; unresolved
+  references stay invisible until a definition loads. `scene.materials()` is a
+  derived index of definitions in the current document, and `setMaterial` edits
+  their owning components (or creates a definition node for a new name).
 - Keep related nodes under a named parent; child transforms are relative to it.
 - Inspect nearby peers before composing a node. Preserve the scene's conventions for
   component ownership, hierarchy, naming and functional versus visual-only details.

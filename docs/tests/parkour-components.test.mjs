@@ -79,7 +79,7 @@ describe('Materials', () => {
     test('ConcreteMaterial extends the regular Material contract',()=>{
         assert.equal(ConcreteMaterialComponent.name,'ConcreteMaterial');
         assert.equal(ConcreteMaterialComponent.slot,MaterialComponent.slot);
-        assert.equal(ConcreteMaterialComponent.properties.materialId,MaterialComponent.properties.materialId);
+        assert.equal(ConcreteMaterialComponent.properties.name,MaterialComponent.properties.name);
         assert.equal(ConcreteMaterialComponent.properties.attach,MaterialComponent.properties.attach);
     });
 });

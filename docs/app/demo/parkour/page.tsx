@@ -1,18 +1,31 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { registerComponent, LightCullingGrid, type Prefab } from 'react-three-game/viewer';
+import { registerComponent, LightCullingGrid, PrefabEditorMode, useScene, type Prefab } from 'react-three-game/viewer';
 import { PrefabEditor } from 'react-three-game/editor';
 import { BASE_PATH, withBasePath } from '../../basePath';
 import { CharacterComponent } from './components/CharacterComponent';
 import { CollisionSurfaceComponent } from './components/CollisionSurfaceComponent';
 import { ConcreteMaterialComponent } from './components/ConcreteMaterialComponent';
 import WeatheredGeometryComponent from './components/WeatheredGeometryComponent';
+import WebGPUPostProcessing from '../../components/WebGPUPostProcessing';
 
 registerComponent(CharacterComponent);
 registerComponent(CollisionSurfaceComponent);
 registerComponent(ConcreteMaterialComponent);
 registerComponent(WeatheredGeometryComponent);
+
+function ParkourPostProcessing() {
+    const { mode } = useScene();
+    if (mode !== PrefabEditorMode.Play) return null;
+    return <WebGPUPostProcessing
+        ambientOcclusion
+        ambientOcclusionIntensity={0.65}
+        ambientOcclusionRadius={0.25}
+        ambientOcclusionResolutionScale={0.5}
+        ambientOcclusionSamples={8}
+    />;
+}
 
 export default function ParkourDemo() {
     const [prefab, setPrefab] = useState<Prefab | null>(null);
@@ -36,6 +49,7 @@ export default function ParkourDemo() {
             {error ? <p role="alert">{error}</p> : !prefab ? <p>Loading Parkour…</p> :
                 <PrefabEditor prefab={prefab} basePath={BASE_PATH} canvasProps={{ rendererConfig: { toneMappingExposure: 1.15 } }}>
                     <LightCullingGrid cellSize={24} neighborRadius={1} />
+                    <ParkourPostProcessing />
                     <color attach="background" args={['#171910']} />
                 </PrefabEditor>}
         </div>

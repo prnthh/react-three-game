@@ -21,8 +21,8 @@ export {
 	useRegisterNodeComponent,
 	createNodeComponentType,
 } from "./runtime/scene/SceneContext.js";
-export { ANIMATED_MODEL_COMPONENT } from "./runtime/components/AnimatedModelComponent.js";
-export type { AnimatedModelHandle, AnimatedModelProperties } from "./runtime/components/AnimatedModelComponent.js";
+export { SKINNED_MESH_COMPONENT } from "./runtime/components/SkinnedMeshComponent.js";
+export type { SkinnedMeshHandle, SkinnedMeshProperties } from "./runtime/components/SkinnedMeshComponent.js";
 export type { NodeApi, NodeComponentType, PrefabApi, PrefabNode, Scene, SceneComponent } from "./runtime/scene/SceneContext.js";
 export { SceneProvider } from "./runtime/scene/SceneProvider.js";
 

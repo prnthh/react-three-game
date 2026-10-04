@@ -25,8 +25,8 @@
           ]
         }
       },
-      "animatedModel": {
-        "type": "AnimatedModel",
+      "skinnedMesh": {
+        "type": "SkinnedMesh",
         "properties": {
           "filename": "models/human/mixamo-anatomical-character.fbx",
           "animationState": "idle",
@@ -82,7 +82,12 @@
           "material": {
             "type": "Material",
             "properties": {
-              "materialId": "material-24"
+              "materialType": "basic",
+              "color": "#fbbf24",
+              "transparent": true,
+              "opacity": 0.08,
+              "depthWrite": false,
+              "name": "prefabs/detective-oni/characters/partner:material-24"
             }
           },
           "activationCollider": {
@@ -109,14 +114,5 @@
         }
       }
     ]
-  },
-  "materials": {
-    "material-24": {
-      "materialType": "basic",
-      "color": "#fbbf24",
-      "transparent": true,
-      "opacity": 0.08,
-      "depthWrite": false
-    }
   }
 }

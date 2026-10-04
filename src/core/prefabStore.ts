@@ -1,9 +1,12 @@
+import { getComponent } from './ComponentRegistry.js';
 import { subscribeWithSelector } from "zustand/middleware";
 import { createStore, type Mutate, type StoreApi } from "zustand/vanilla";
 
 import { GameObject, Prefab, PrefabMaterial } from "./types.js";
 import {
     collectSubtreeIds,
+    collectMaterialDefinitions,
+    getMaterialDefinition,
     cloneSubtree,
     denormalizePrefab,
     insertSubtree,
@@ -68,6 +71,13 @@ export function createPrefabStore(prefab: Prefab | PrefabState): PrefabStoreApi 
     const store = createStore<PrefabStoreState>()(subscribeWithSelector((publish, read) => {
         const get = () => draft ?? read();
         const set = (patch: Partial<PrefabStoreState>) => {
+            if (patch.nodesById) {
+                const materials = collectMaterialDefinitions(patch.nodesById);
+                const previous = get().materials;
+                patch.materials = Object.keys(materials).length === Object.keys(previous).length
+                    && Object.entries(materials).every(([id, material]) => previous[id] === material)
+                    ? previous : materials;
+            }
             if (draft) draft = { ...draft, ...patch };
             else publish(patch);
         };
@@ -122,11 +132,32 @@ export function createPrefabStore(prefab: Prefab | PrefabState): PrefabStoreApi 
             },
             setMaterial: (id, material) => {
                 const state = get();
-                const current = state.materials[id];
-                if (current === material) return;
-                const materials = writable(state.materials);
-                materials[id] = material;
-                set({ materials });
+                const name = material.name ?? id;
+                if (!name.trim()) throw new Error('Material name cannot be empty.');
+                if (name !== id && Object.hasOwn(state.materials, name)) throw new Error(`Material "${name}" already exists.`);
+                get().batch(() => {
+                    let found = false;
+                    for (const node of Object.values(state.nodesById)) {
+                        for (const [key, component] of Object.entries(node.components ?? {})) {
+                            if (!component || (component.type !== 'Material' && getComponent(component.type)?.slot !== 'material') || component.properties.name !== id) continue;
+                            const defines = component.type === 'Material' && !found && !!getMaterialDefinition(component.properties);
+                            if (defines) found = true;
+                            if (!defines && name === id) continue;
+                            get().updateNode(node.id, current => ({ ...current, components: {
+                                ...current.components,
+                                [key]: { ...component, properties: defines
+                                    ? { materialType: 'standard', ...material, name, attach: component.properties.attach }
+                                    : { ...component.properties, name } },
+                            } }));
+                        }
+                    }
+                    if (found) return;
+                    let nodeId = `material:${name}`;
+                    while (state.nodesById[nodeId]) nodeId += '_';
+                    get().addChild(state.rootId, { id: nodeId, name, components: {
+                        material: { type: 'Material', properties: { materialType: 'standard', ...material, name } },
+                    } });
+                });
             },
             replaceNode: (id, node) => {
                 const state = get();

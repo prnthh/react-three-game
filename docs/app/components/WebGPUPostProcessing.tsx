@@ -33,7 +33,9 @@ export default function WebGPUPostProcessing({
     const camera = useThree(state => state.camera);
     const pipeline = useMemo(() => {
         const value = new RenderPipeline(renderer);
-        const scenePass = pass(scene, camera);
+        // r186 GTAO uses textureGather, which cannot read multisampled depth.
+        // https://github.com/mrdoob/three.js/issues/34598
+        const scenePass = pass(scene, camera, ambientOcclusion ? { samples: 0 } : {});
         scenePass.setMRT(mrt({ output, normal: normalView, emissive }));
         let outputNode: Node<"vec4"> = scenePass.getTextureNode("output");
         if (ambientOcclusion) {

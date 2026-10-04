@@ -56,7 +56,8 @@ function CollisionSurfaceView({ children, enabled }: ComponentViewProps) {
     </>;
 }
 export const CollisionSurfaceComponent: Component = {
-    name: 'CollisionSurface', renderWhenDisabled: true, description: 'Collision-only box inferred from this node\'s geometry and transform.',
+    name: 'CollisionSurface',
+    category: 'physics', renderWhenDisabled: true, description: 'Collision-only box inferred from this node\'s geometry and transform.',
     properties: {},
     View: CollisionSurfaceView,
 };

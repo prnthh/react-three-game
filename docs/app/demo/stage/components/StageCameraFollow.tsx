@@ -81,6 +81,7 @@ function StageCameraFollowView({ properties, children }: ComponentViewProps<Came
 
 const StageCameraFollow: Component<CameraFollowProperties> = {
     name: "StageCameraFollow",
+    category: 'camera',
     View: StageCameraFollowView,
     properties: {
         targetNodeId: { type: "string", default: "" },

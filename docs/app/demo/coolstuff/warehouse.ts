@@ -13,13 +13,13 @@ function randomSequence(seed: number) {
     };
 }
 
-function box(id: string, position: Vec3, size: Vec3, materialId: string, dynamic = false): GameObject {
+function box(id: string, position: Vec3, size: Vec3, materialName: string, dynamic = false): GameObject {
     return {
         id, name: id,
         components: {
             transform: { type: 'Transform', properties: { position, scale: size } },
             geometry: { type: 'Geometry', properties: { geometryType: 'box', args: [1, 1, 1] } },
-            material: { type: 'Material', properties: { materialId } },
+            material: { type: 'Material', properties: { name: materialName } },
             physics: { type: 'CrashcatPhysics', properties: {
                 type: dynamic ? 'dynamic' : 'fixed', colliders: 'cuboid',
                 startSleeping: dynamic, friction: 0.8, restitution: 0,
@@ -65,14 +65,18 @@ export function createWarehouse({ seed = 42, rows = 6, bays = 8, stacks = 2 } = 
             }
         }
     }
+    const defined = new Set<string>();
+    for (const node of children) {
+        const material = node.components?.material;
+        if (!material || defined.has(material.properties.name)) continue;
+        const id = material.properties.name;
+        material.properties = { ...material.properties, roughness: 0.95,
+            color: id === 'floor' ? '#38434b' : ['#ae7846', '#c6945a', '#dbb783', '#8d623e'][Number(id.split('-')[1])],
+        };
+        defined.add(id);
+    }
     const prefab: Prefab = {
         id: 'warehouse', name: 'Warehouse',
-        materials: {
-            floor: { color: '#38434b', roughness: 0.95 },
-            ...Object.fromEntries(['#ae7846', '#c6945a', '#dbb783', '#8d623e'].map((color, i) => [
-                `carton-${i}`, { color, roughness: 0.95 },
-            ])),
-        },
         root: { id: 'warehouse-root', name: 'Warehouse', children },
     };
     return { prefab, boxIds, rackCount: rows * bays * stacks };

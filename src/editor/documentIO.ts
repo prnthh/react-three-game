@@ -1,6 +1,6 @@
 import { GameObject, Prefab } from "../core/types.js";
 import { exportGLBData } from "../core/modelPrefab.js";
-import { downloadBlob } from "../browser.js";
+import { downloadBlob } from "../browser/index.js";
 export { exportGLBData } from "../core/modelPrefab.js";
 import {
 	Box3,

@@ -1,6 +1,6 @@
 import { AssetBoundary } from '../assets/AssetBoundary.js';
 import { usePrefabStoreApi } from '../prefabs/PrefabStoreContext.js';
-import { createContext, useContext, useDeferredValue, useEffect, useLayoutEffect, useMemo } from 'react';
+import { createContext, useContext, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 
 import type { Component, ComponentViewProps } from '../../core/ComponentRegistry.js';
 
@@ -12,11 +12,11 @@ import { createPrefabStore } from "../../core/prefabStore.js";
 
 import { withBasePath } from "../assets/assetPaths.js";
 
-import { describePrefabSource, isEmbeddedPrefabSource } from '../prefabs/prefabSource.js';
+import { describePrefabSource } from '../prefabs/prefabSource.js';
 
 import { PrefabRoot } from '../prefabs/PrefabRoot.js';
 
-import { useAssetCache, useAsset } from '../assets/assetCache.js';
+import { useAsset } from '../assets/assetCache.js';
 
 export type PrefabRefProperties = {
     url?: string;
@@ -27,22 +27,24 @@ const PrefabSourceAncestry = createContext<readonly string[]>([]);
 
 function LoadedPrefabRef({ properties, enabled }: ComponentViewProps<PrefabRefProperties>) {
     const { basePath } = usePrefab();
-    const { clear: clearAsset } = useAssetCache();
     const { nodeId, preparing } = useNode();
     const url = useDeferredValue(properties.url ? withBasePath(basePath, properties.url) : '');
     const ancestors = useContext(PrefabSourceAncestry);
     const cyclic = ancestors.includes(url);
     const document = useAsset('prefab', cyclic ? null : url);
-    const store = useMemo(() => document ? createPrefabStore(document) : null,
-        [document?.prefabId, document?.rootId]);
-    useEffect(() => () => {
-        if (isEmbeddedPrefabSource(url)) clearAsset('prefab', url);
-    }, [url, clearAsset]);
+    // A revised definition at the same source updates this instance's store below.
+    const store = useMemo(() => document ? createPrefabStore(document) : null, [url]);
+    // Definitions belong to the shared asset cache. Instance cleanup must not
+    // evict a definition still used by siblings or React's effect replay.
     const ancestry = useMemo(() => [...ancestors, url], [ancestors, url]);
 
+    const applied = useRef({ store, document });
     useLayoutEffect(() => {
         if (!document || !store) return;
-        store.getState().restoreState(reconcilePrefabState(store.getState(), document));
+        if (applied.current.store === store && applied.current.document !== document) {
+            store.getState().restoreState(reconcilePrefabState(store.getState(), document));
+        }
+        applied.current = { store, document };
     }, [document, store]);
     useEffect(() => {
         if (cyclic) console.warn('[PrefabRef] Cyclic prefab reference:', describePrefabSource(url));

@@ -4,7 +4,7 @@ import { BoxGeometry, AudioContext, Group, Mesh } from 'three';
 import { roughenGeometry } from '../app/demo/parkour/components/WeatheredGeometryComponent.ts';
 import { MeshStandardNodeMaterial } from 'three/webgpu';
 import { applyProps, createRoot, extend } from '@react-three/fiber';
-import { MaterialComponent } from '../../src/viewer.ts';
+import { MaterialComponent } from '../../src/viewer/index.ts';
 import { ConcreteMaterialComponent, createConcreteMaterialOverrides } from '../app/demo/parkour/components/ConcreteMaterialComponent.tsx';
 import { act, createElement as h } from 'react';
 import { PrefabRoot, createPrefabStore, registerComponent, useSceneComponents } from 'react-three-game/viewer';

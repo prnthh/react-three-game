@@ -4,7 +4,7 @@ import { SoundManager, sound } from '../../src/runtime/audio/SoundManager.ts';
 import { act, createElement as h } from 'react';
 import { createRoot, extend } from '@react-three/fiber';
 import { AudioContext, Group } from 'three';
-import { BrowserRuntime } from '../../src/browser.tsx';
+import { BrowserRuntime } from '../../src/browser/index.tsx';
 import { useAudioListener } from '../../src/runtime/audio/AudioRuntime.tsx';
 import { AssetRuntimeProvider } from '../../src/runtime/assets/AssetRuntime.tsx';
 

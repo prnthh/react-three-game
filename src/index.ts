@@ -1,1 +1,1 @@
-export * from "./viewer.js";
+export * from "./viewer/index.js";

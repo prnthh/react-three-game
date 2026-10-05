@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { act, createElement as h } from 'react';
 import { createRoot } from '@react-three/fiber';
 import { Object3D, PerspectiveCamera } from 'three';
-import { ComponentHost } from '../../src/runtime/scene/ComponentLifecycle.tsx';
+import { ComponentLifecycle } from '../../src/runtime/scene/ComponentLifecycle.tsx';
 import CameraFollowComponent from '../../src/runtime/components/CameraFollowComponent.tsx';
 import RuntimeComponent from '../../src/runtime/components/RuntimeComponent.tsx';
 import { resolveComponentProperties } from '../../src/core/ComponentRegistry.ts';
@@ -12,7 +12,7 @@ import { GameEventsProvider, useGameEvents } from '../../src/runtime/scene/GameE
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
-async function mount(t, authored, component = RuntimeComponent, View = ComponentHost) {
+async function mount(t, authored, component = RuntimeComponent, View = ComponentLifecycle) {
     const object = new Object3D();
     const calls = [];
     const prefab = { getObject: () => object, record: value => calls.push(value) };

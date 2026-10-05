@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { act, createElement as h } from 'react';
 import { createRoot, extend } from '@react-three/fiber';
 import { Color, Group, Mesh } from 'three';
-import { PrefabRoot, registerBuiltInComponents } from '../../src/viewer.ts';
+import { PrefabRoot, registerBuiltInComponents } from '../../src/viewer/index.ts';
 import { createPrefabStore, prefabStoreToPrefab } from '../../src/core/prefabStore.ts';
 import { SceneRuntime } from '../../src/runtime/SceneRuntime.tsx';
 

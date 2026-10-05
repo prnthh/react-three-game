@@ -58,7 +58,7 @@ async function main() {
     if (!((from === '.json' && to === '.glb') || (from === '.glb' && to === '.json'))) {
         throw new Error('Supported conversions: .json → .glb and .glb → .json');
     }
-    const { convert } = await import('./node.js');
+    const { convert } = await import('./node/index.js');
     const result = from === '.json'
         ? new Uint8Array(await convert(await readJSON(input), { from: 'scene', to: 'glb', assetRoot: args[2] }))
         : json(await convert(await readFile(input), { from: 'glb', to: 'scene' }));

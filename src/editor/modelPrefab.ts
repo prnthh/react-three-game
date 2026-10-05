@@ -1,6 +1,6 @@
 import type { Object3D } from 'three';
 import { decomposeModelToPrefabNodes as decompose, type DecomposeModelOptions } from '../core/modelPrefab.js';
-import { getTextureImageDataUrl } from '../browser.js';
+import { getTextureImageDataUrl } from '../browser/index.js';
 
 export type { DecomposeModelOptions, DecomposedPrefabNodes } from '../core/modelPrefab.js';
 

@@ -96,8 +96,8 @@ export interface Component<P extends object = Record<string, any>> {
 	dependencies?: (properties: P) => readonly ComponentDependency[];
 	/** Keep this render-graph component mounted for preparation while its node is disabled. */
 	renderWhenDisabled?: boolean;
-	/** Optional node slot. Geometry gets an implicit mesh when no object view is present.
-	 * Object views supply their own render object; materials attach inside it.
+	/** Optional node slot. Geometry gets an implicit mesh when no attachment host is present.
+	 * Object views supply the render object that receives geometry and material.
 	 * Reuse helpers in code, never require a separate base Mesh component on the node. */
 	slot?: 'object' | 'geometry' | 'material' | 'transform' | 'environment' | 'fog' | 'data';
 	/** Serializable property contract and the source of runtime/editor defaults. */

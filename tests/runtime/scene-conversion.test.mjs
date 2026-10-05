@@ -8,8 +8,8 @@ import { promisify } from 'node:util';
 import { tmpdir } from 'node:os';
 import { Box3, Color } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { convert } from '../../src/node.ts';
-import { createHeadlessScene } from '../../src/headless.tsx';
+import { convert } from '../../src/node/index.ts';
+import { createHeadlessScene } from '../../src/headless/index.tsx';
 
 const prefab = { root: {
     id: 'box', name: 'Box', components: {

@@ -1,5 +1,5 @@
 import { SceneRuntime } from "./SceneRuntime.js";
-import { BrowserRuntime } from '../browser.js';
+import { BrowserRuntime } from '../browser/index.js';
 import { Canvas, extend, CanvasProps } from "@react-three/fiber";
 import { WebGPURenderer, MeshBasicNodeMaterial, MeshStandardNodeMaterial, SpriteNodeMaterial, PCFShadowMap } from "three/webgpu";
 import { WebGPURendererParameters } from "three/src/renderers/webgpu/WebGPURenderer.Nodes.js";

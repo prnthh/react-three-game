@@ -27,6 +27,7 @@ export const sceneAgentHelp = {
         help: 'help() — this compact guide; no scene changes.',
         analyze: 'analyze() — document counts and bounded rendering/organization advice. It does not judge visual or behavioral correctness, draw calls or FPS.',
         info: 'info() — mode, revision, rootId, selection, history and saveMethod. saveMethod names the next callable persistence method.',
+        assets: 'assets({type?, query?, offset?, limit?}) — search the configured asset manifest without changing the scene.',
         find: 'find({query?, component?, parentId?}) — require exactly one search match and return its ID, flags, components and local/world transform.',
         search: 'search({query?, component?, parentId?, recursive?, groupsOnly?, offset?, limit?}) — search IDs/names; recursive includes all descendants of parentId; groupsOnly filters assemblies before pagination.',
         get: 'get({id, depth?, resolved?}) — node plus flat descendants and truncated flag; node.childIds lists children (not node.children). Use exportPrefab for a complete nested subtree.',

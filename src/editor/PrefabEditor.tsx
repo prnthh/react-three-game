@@ -1,5 +1,5 @@
 import { loadAssetManifest } from '../runtime/assets/assetManifest.js';
-import { downloadBlob, downloadURL } from '../browser.js';
+import { downloadBlob, downloadURL } from '../browser/index.js';
 import { isExternalPath, withBasePath } from '../runtime/assets/assetPaths.js';
 import { SceneRuntime } from "../runtime/SceneRuntime.js";
 import { OrbitControls, TransformControls, useHelper } from "@react-three/drei";

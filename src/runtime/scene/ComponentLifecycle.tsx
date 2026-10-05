@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree, type RootState } from '@react-three/fiber';
 import type { Object3D } from 'three';
 import type { Component, ComponentViewProps } from '../../core/ComponentRegistry.js';
@@ -32,35 +32,30 @@ export interface ComponentContext<P extends object = Record<string, unknown>> ex
     onCleanup(cleanup: () => void): void;
 }
 
-/** @internal Optional effect/frame adapter. Views can own their behavior through React/R3F hooks. */
-export function ComponentHost<P extends object>({ component, properties, enabled, children }: ComponentViewProps<P> & {
+/** @internal Effect/frame adapter for components that declare setup or update. */
+export function ComponentLifecycle<P extends object>({ component, properties, enabled, children }: ComponentViewProps<P> & {
     component: Component<P>;
 }) {
     const View = component.View;
-    const content = View ? <View properties={properties} enabled={enabled}>{children}</View> : children;
-    return component.setup || component.update
-        ? <Lifecycle component={component} properties={properties} enabled={enabled}>{content}</Lifecycle>
-        : content;
-}
-
-function Lifecycle<P extends object>({ component, properties, enabled, children }: ComponentViewProps<P> & {
-    component: Component<P>; children?: ReactNode;
-}) {
     const scene = useSceneRuntimeContext();
     const node = useGameObject();
     const prefab = usePrefab();
     const { nodeId, editMode, preparing } = useNode();
     const active = enabled && !editMode && !preparing;
     const latest = useRef(properties);
-    useLayoutEffect(() => { latest.current = properties; }, [properties]);
     const frame = useRef<((delta: number) => void) | null>(null);
-    // Compare restart inputs without a variable-length effect dependency array.
+    // Compare with committed inputs. An abandoned render must not change activation.
     const values = (component.restartOn ?? []).map(key => properties[key]);
-    const restart = useRef({ values, token: {} });
-    if (values.length !== restart.current.values.length || values.some((value, index) => !Object.is(value, restart.current.values[index]))) {
-        restart.current = { values, token: {} };
-    }
-    const token = restart.current.token;
+    const committed = useRef({ component, values, token: {} });
+    const previous = committed.current;
+    const same = component === previous.component
+        && values.length === previous.values.length
+        && values.every((value, index) => Object.is(value, previous.values[index]));
+    const token = same ? previous.token : {};
+    useLayoutEffect(() => {
+        latest.current = properties;
+        committed.current = { component, values, token };
+    });
     useEffect(() => {
         if (!active) return;
         const cleanups: (() => void)[] = [];
@@ -99,5 +94,5 @@ function Lifecycle<P extends object>({ component, properties, enabled, children 
     }, [active, component, nodeId, node, prefab, scene, token]);
     // Negative priority preserves R3F's render ownership and precedes instance uploads.
     useFrame((_, delta) => { if (active) frame.current?.(delta); }, -1);
-    return children;
+    return View ? <View properties={properties} enabled={enabled}>{children}</View> : children;
 }

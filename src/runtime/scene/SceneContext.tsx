@@ -185,8 +185,6 @@ export const RuntimeNodeIdPrefixContext = createContext("");
 
 /** Owns one runtime-component index for the complete scene. */
 export function SceneComponentsProvider({ children }: { children: ReactNode }) {
-    const inherited = useContext(NodeComponentContext);
-    if (inherited) return children;
     return <SceneComponentsOwner>{children}</SceneComponentsOwner>;
 }
 

@@ -30,13 +30,25 @@ describe('Component contracts', () => {
         assert.equal(canAddComponentToNode(node, geometry, registry), true);
         assert.equal(canAddComponentToNode(node, behavior, registry), true);
     });
+
+    test('a light does not replace the mesh needed by geometry and material', async () => {
+        const { analyzeNodeComponents } = await import('../../src/runtime/prefabs/nodePlan.ts');
+        const { registerBuiltInComponents } = await import('../../src/viewer/index.ts');
+        registerBuiltInComponents();
+        const plan = analyzeNodeComponents({ id: 'lit-mesh', components: {
+            light: { type: 'PointLight', properties: {} },
+            geometry: { type: 'Geometry', properties: {} },
+            material: { type: 'Material', properties: {} },
+        } });
+        assert.ok(plan.composition.some(component => component.key === '$mesh'));
+    });
 });
 
 // Exercise the document-to-scene path; custom behavior is application-owned.
 test('JSON attaches registered behaviors and built-ins; editor API edits update the live scene', async t => {
     const { useEffect } = await import('react');
     const { Mesh, Box3, Vector3 } = await import('three');
-    const { PrefabRoot, registerBuiltInComponents } = await import('../../src/viewer.ts');
+    const { PrefabRoot, registerBuiltInComponents } = await import('../../src/viewer/index.ts');
     const { createSceneAgent } = await import('../../src/editor/agent/sceneAgent.ts');
     const { exposeSceneAgent } = await import('../../src/editor/agent/sceneAgentBridge.ts');
     registerBuiltInComponents();
@@ -93,4 +105,22 @@ test('JSON attaches registered behaviors and built-ins; editor API edits update 
     await act(async () => target.scene.remove({ id: 'box' }));
     assert.equal(scene.getObjectByName('Box'), undefined);
     assert.equal(attached, 0);
+});
+
+test('changing prefab metadata updates the mounted root without replacing its object', async t => {
+    const { PrefabRoot } = await import('../../src/viewer/index.ts');
+    extend({ Group });
+    globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+    const store = createPrefabStore({ id: 'first', root: { id: 'root', name: 'Before' } });
+    const canvas = { width: 100, height: 100, style: {}, addEventListener() {}, removeEventListener() {} };
+    const root = createRoot(canvas);
+    await root.configure({ gl: { render() {}, setSize() {}, setPixelRatio() {}, domElement: canvas },
+        size: { width: 100, height: 100, top: 0, left: 0 }, frameloop: 'never' });
+    t.after(async () => { await act(async () => root.unmount()); });
+    let state;
+    await act(async () => { state = root.render(h(PrefabRoot, { store })); });
+    const before = state.getState().scene.getObjectByName('Before');
+    assert.ok(before);
+    await act(async () => store.getState().replacePrefab({ id: 'second', root: { id: 'root', name: 'After' } }));
+    assert.equal(state.getState().scene.getObjectByName('After'), before);
 });

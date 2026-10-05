@@ -13,7 +13,8 @@ export interface RuntimeScriptContext extends ComponentContext<RuntimeComponentP
 }
 
 type Script = (context: RuntimeScriptContext) => unknown;
-const scripts = new WeakMap<ComponentContext<RuntimeComponentProperties>, { script: RuntimeScriptContext; runUpdate: Script }>();
+const runtimeScript = Symbol('Runtime script');
+type ScriptState = { script: RuntimeScriptContext; runUpdate: Script };
 function compile(source: string): Script {
     return new Function('context',
         '"use strict"; const { nodeId, node, object, data, state, prefab, events, delta, three } = context;\n' + source,
@@ -39,13 +40,12 @@ const RuntimeComponent: Component<RuntimeComponentProperties> = {
                 return data;
             } },
         });
-        scripts.set(context, { script, runUpdate });
-        context.onCleanup(() => scripts.delete(context));
+        (context.state as Record<symbol, ScriptState>)[runtimeScript] = { script, runUpdate };
         const cleanup = runSetup(script);
         if (typeof cleanup === 'function') return cleanup as () => void;
     },
     update(context) {
-        const entry = scripts.get(context);
+        const entry = (context.state as Record<symbol, ScriptState>)[runtimeScript];
         if (entry) entry.runUpdate(entry.script);
     },
     properties: {

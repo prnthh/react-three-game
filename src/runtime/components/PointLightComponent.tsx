@@ -89,7 +89,6 @@ const PointLightComponent: Component<PointLightProperties> = {
     name: 'PointLight',
     description: "Emit light in all directions from this node. Position with Transform; set distance for a finite range and castShadow when shadows are needed.",
     category: 'lighting',
-    slot: 'object',
     renderWhenDisabled: true,
     View: PointLightView,
     properties: {

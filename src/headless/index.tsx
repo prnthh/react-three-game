@@ -2,18 +2,18 @@ import { Component, useEffect, type ReactNode } from 'react';
 import { createRoot, extend, unmountComponentAtNode } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { GLTFExporterOptions } from 'three/examples/jsm/exporters/GLTFExporter.js';
-import type { Prefab, GameObject } from './core/types.js';
-import { getMaterialDefinition, normalizePrefab, type PrefabState } from './core/prefab.js';
-import { getComponent } from './core/ComponentRegistry.js';
-import { builtInComponents, registerBuiltInComponents } from './runtime/components/index.js';
-import { ComponentLookupContext } from './runtime/prefabs/nodePlan.js';
-import PrefabRoot from './runtime/prefabs/PrefabRoot.js';
-import { preparePrefab } from './runtime/prefabs/preparePrefab.js';
-import { encodePrefabSource, loadPrefabSource } from './runtime/prefabs/prefabSource.js';
-import { createAssetCache, AssetCacheContext, type AssetLoaders } from './runtime/assets/assetCache.js';
-import { AssetBoundary } from './runtime/assets/AssetBoundary.js';
-import { SceneRuntime } from './runtime/SceneRuntime.js';
-import { exportGLBData } from './core/modelPrefab.js';
+import type { Prefab, GameObject } from '../core/types.js';
+import { getMaterialDefinition, normalizePrefab, type PrefabState } from '../core/prefab.js';
+import { getComponent } from '../core/ComponentRegistry.js';
+import { builtInComponents, registerBuiltInComponents } from '../runtime/components/index.js';
+import { ComponentLookupContext } from '../runtime/prefabs/nodePlan.js';
+import PrefabRoot from '../runtime/prefabs/PrefabRoot.js';
+import { preparePrefab } from '../runtime/prefabs/preparePrefab.js';
+import { encodePrefabSource, loadPrefabSource } from '../runtime/prefabs/prefabSource.js';
+import { createAssetCache, AssetCacheContext, type AssetLoaders } from '../runtime/assets/assetCache.js';
+import { AssetBoundary } from '../runtime/assets/AssetBoundary.js';
+import { SceneRuntime } from '../runtime/SceneRuntime.js';
+import { exportGLBData } from '../core/modelPrefab.js';
 
 export interface HeadlessSceneOptions {
     basePath?: string;
@@ -197,4 +197,4 @@ export async function exportPrefabToGLB(prefab: Prefab, options: HeadlessSceneOp
     finally { await host.dispose(); }
 }
 
-export type { AssetLoaders } from './runtime/assets/assetCache.js';
+export type { AssetLoaders } from '../runtime/assets/assetCache.js';

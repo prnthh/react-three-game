@@ -125,7 +125,6 @@ const SpotLightComponent: Component<SpotLightProperties> = {
     name: 'SpotLight',
     description: "Emit a cone of light from this node toward targetOffset. Position with Transform; angle controls cone width and penumbra softens its edge.",
     category: 'lighting',
-    slot: 'object',
     renderWhenDisabled: true,
     View: SpotLightView,
     properties: {

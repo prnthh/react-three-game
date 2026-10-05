@@ -2,10 +2,10 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Object3D } from 'three';
-import type { Prefab } from './core/types.js';
-import { normalizePrefab } from './core/prefab.js';
-import { importGLBData, loadGLBScene, disposeModelResources } from './core/modelPrefab.js';
-import { exportPrefabToGLB } from './headless.js';
+import type { Prefab } from '../core/types.js';
+import { normalizePrefab } from '../core/prefab.js';
+import { importGLBData, loadGLBScene, disposeModelResources } from '../core/modelPrefab.js';
+import { exportPrefabToGLB } from '../headless/index.js';
 
 interface AssetOptions {
     /** Root for prefab/model paths, including /prefabs/... paths. Defaults to cwd. */
@@ -64,4 +64,4 @@ export async function convert(input: Prefab | ArrayBuffer | ArrayBufferView, opt
     throw new Error('Supported conversions: scene → glb and glb → scene');
 }
 
-export { registerBuiltInComponents } from './runtime/components/index.js';
+export { registerBuiltInComponents } from '../runtime/components/index.js';

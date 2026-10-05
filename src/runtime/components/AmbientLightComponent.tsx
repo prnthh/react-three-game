@@ -24,7 +24,6 @@ const AmbientLightComponent: Component<AmbientLightProperties> = {
     name: 'AmbientLight',
     description: "Add uniform fill lighting to the scene using color and intensity. Position has no effect; this light does not cast shadows.",
     category: 'lighting',
-    slot: 'object',
     renderWhenDisabled: true,
     View: AmbientLightComponentView,
     properties: {

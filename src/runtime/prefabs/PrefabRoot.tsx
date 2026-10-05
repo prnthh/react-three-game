@@ -151,9 +151,8 @@ const PrefabRootBody = memo(forwardRef<Scene, PrefabRootProps>(({ onSelect, onPo
 }));
 
 function StoreRootNode(props: Omit<RendererProps, "nodeId">) {
-    const prefabId = usePrefabStore(state => state.prefabId);
     const rootId = usePrefabRootId();
-    return <PrefabNode key={`${prefabId ?? ''}:${rootId}`} {...props} nodeId={rootId} />;
+    return <PrefabNode key={rootId} {...props} nodeId={rootId} />;
 }
 
 function emitNodePointerEvent(

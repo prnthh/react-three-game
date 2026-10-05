@@ -2,8 +2,8 @@ import { useContext, useEffect, useMemo, type ReactNode } from "react";
 import { useThree } from "@react-three/fiber";
 import { AudioListener } from "three";
 
-import { AudioListenerContext, AudioAssetsContext } from './runtime/audio/AudioRuntime.js';
-import { sound } from './runtime/audio/SoundManager.js';
+import { AudioListenerContext, AudioAssetsContext } from '../runtime/audio/AudioRuntime.js';
+import { sound } from '../runtime/audio/SoundManager.js';
 
 /** Owns exactly one listener for a canvas, shared by every authored Sound node. */
 export function AudioRuntimeProvider({ children }: { children: ReactNode }) {

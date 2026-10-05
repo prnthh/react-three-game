@@ -1,7 +1,7 @@
 import { clear, peek, suspend } from 'suspend-react';
 import { createContext, useContext } from 'react';
 import { loadModel, loadSound, loadTexture } from './assetLoaders.js';
-import { loadPrefabSource, describePrefabSource } from '../prefabs/prefabSource.js';
+import { loadPrefabSource, decodeEmbeddedPrefabSource, describePrefabSource, isEmbeddedPrefabSource } from '../prefabs/prefabSource.js';
 
 export const assetLoaders = {
     model: async (path: string) => {
@@ -30,22 +30,33 @@ export function createAssetCache(overrides: Partial<AssetLoaders> = {}) {
     let disposed = false;
     const keys = Object.fromEntries(Object.keys(assetLoaders).map(kind => [kind, {}])) as Record<AssetKind, object>;
     const paths = new Map<string, [object, string]>();
+    const embeddedPrefabs = new Map<string, AssetValue<'prefab'>>();
     function key(kind: AssetKind, path: string): [object, string] {
         const value: [object, string] = [keys[kind], path];
         paths.set(`${kind}:${path}`, value);
         return value;
     }
     function get<K extends AssetKind>(kind: K, path: string): AssetValue<K> | null {
+        if (kind === 'prefab' && embeddedPrefabs.has(path)) return embeddedPrefabs.get(path) as AssetValue<K>;
         return peek(key(kind, path)) as AssetValue<K> ?? null;
     }
     function evict<K extends AssetKind>(kind: K, path: string): AssetValue<K> | null {
         const value = get(kind, path);
+        if (kind === 'prefab') embeddedPrefabs.delete(path);
         clear(key(kind, path));
         paths.delete(`${kind}:${path}`);
         return value;
     }
     function read<K extends AssetKind>(kind: K, path: string): AssetValue<K> {
         if (disposed) throw new Error('Asset cache is disposed');
+        if (kind === 'prefab' && !overrides.prefab && isEmbeddedPrefabSource(path)) {
+            let document = embeddedPrefabs.get(path);
+            if (!document) {
+                document = decodeEmbeddedPrefabSource(path);
+                embeddedPrefabs.set(path, document);
+            }
+            return document as AssetValue<K>;
+        }
         return suspend(() => (overrides[kind] ?? assetLoaders[kind])(path), key(kind, path)) as AssetValue<K>;
     }
     async function load<K extends AssetKind>(kind: K, path: string): Promise<AssetValue<K>> {
@@ -57,7 +68,7 @@ export function createAssetCache(overrides: Partial<AssetLoaders> = {}) {
             }
         }
     }
-    const clearAll = () => { paths.forEach(value => clear(value)); paths.clear(); };
+    const clearAll = () => { paths.forEach(value => clear(value)); paths.clear(); embeddedPrefabs.clear(); };
     return { get, clear: evict, read, load, clearAll, dispose() { disposed = true; clearAll(); } };
 }
 

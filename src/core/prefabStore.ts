@@ -70,13 +70,15 @@ export function createPrefabStore(prefab: Prefab | PrefabState): PrefabStoreApi 
     });
     const store = createStore<PrefabStoreState>()(subscribeWithSelector((publish, read) => {
         const get = () => draft ?? read();
+        const deriveMaterials = (nodesById: PrefabState['nodesById'], previous: PrefabState['materials']) => {
+            const materials = collectMaterialDefinitions(nodesById);
+            return Object.keys(materials).length === Object.keys(previous).length
+                && Object.entries(materials).every(([id, material]) => previous[id] === material)
+                ? previous : materials;
+        };
         const set = (patch: Partial<PrefabStoreState>) => {
-            if (patch.nodesById) {
-                const materials = collectMaterialDefinitions(patch.nodesById);
-                const previous = get().materials;
-                patch.materials = Object.keys(materials).length === Object.keys(previous).length
-                    && Object.entries(materials).every(([id, material]) => previous[id] === material)
-                    ? previous : materials;
+            if (patch.nodesById && !draft) {
+                patch.materials = deriveMaterials(patch.nodesById, get().materials);
             }
             if (draft) draft = { ...draft, ...patch };
             else publish(patch);
@@ -99,7 +101,12 @@ export function createPrefabStore(prefab: Prefab | PrefabState): PrefabStoreApi 
                     draft = null;
                     owned = new WeakSet();
                 }
-                if (next !== before) publish(next);
+                if (next !== before) {
+                    if (next.nodesById !== before.nodesById) {
+                        next = { ...next, materials: deriveMaterials(next.nodesById, before.materials) };
+                    }
+                    publish(next);
+                }
             },
             replacePrefab: (nextPrefab) => {
                 set(normalizePrefab(nextPrefab));

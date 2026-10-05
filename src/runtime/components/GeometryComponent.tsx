@@ -81,8 +81,6 @@ const GEOMETRY_ELEMENTS = {
 const SceneGeometryPoolContext = createContext<Map<string, BufferGeometry> | null>(null);
 
 export function GeometryRuntimeProvider({ children }: { children: ReactNode }) {
-    const pool = useContext(SceneGeometryPoolContext);
-    if (pool) return children;
     return <SceneGeometryPoolOwner>{children}</SceneGeometryPoolOwner>;
 }
 

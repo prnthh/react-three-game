@@ -4,7 +4,7 @@ import test, { describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { normalizePrefab } from '../../src/core/prefab.ts';
 import { createPrefabStore } from '../../src/core/prefabStore.ts';
-import { assetLoaders, clearAsset, getAsset, loadAsset, defaultAssetCache } from '../../src/runtime/assets/assetCache.ts';
+import { assetLoaders, clearAsset, getAsset, loadAsset, defaultAssetCache, createAssetCache } from '../../src/runtime/assets/assetCache.ts';
 import { preparePrefab } from '../../src/runtime/prefabs/preparePrefab.ts';
 
 describe('Caching and ownership', () => {
@@ -14,6 +14,19 @@ describe('Caching and ownership', () => {
         a.getState().updateNode('child', n => ({ ...n, name: 'changed' }));
         assert.equal(b.getState().nodesById.child.name, 'original');
         assert.equal(document.nodesById.child.name, 'original');
+    });
+
+    test('embedded definitions are ready on the first cache read and can be cleared', () => {
+        const cache = createAssetCache();
+        const path = encodePrefabSource({ root: { id: 'inline' } });
+        const document = cache.read('prefab', path);
+        assert.equal(document.rootId, 'inline');
+        assert.equal(cache.get('prefab', path), document);
+        assert.equal(cache.read('prefab', path), document);
+        assert.equal(cache.clear('prefab', path), document);
+        assert.equal(cache.get('prefab', path), null);
+        assert.notEqual(cache.read('prefab', path), document);
+        cache.dispose();
     });
 
     test('imperative preparation and Suspense reads share pending and decoded assets in either order', async t => {
@@ -124,7 +137,7 @@ describe('Prefab preparation', () => {
 test('URL, percent-encoded and base64 prefabs normalize identically and reject bad documents', async () => {
     const prefab={name:'Étagère',root:{id:'asset',name:'木'}};
     const remote=await loadPrefabSource('/asset.json',async()=>new Response(JSON.stringify(prefab)));
-    const embedded=await loadPrefabSource(encodePrefabSource(prefab));
+    const embedded=await loadPrefabSource(encodePrefabSource(prefab), () => { throw Error('Embedded sources must decode locally'); });
     const base64=`data:application/json;base64,${Buffer.from(JSON.stringify(prefab)).toString('base64')}`;
     assert.deepEqual(remote,embedded);
     assert.deepEqual(await loadPrefabSource(base64),embedded);
@@ -141,7 +154,7 @@ test('URL, percent-encoded and base64 prefabs normalize identically and reject b
 });
 
 test('nested prefab references load JSON and render independent placements', async t => {
-    const { createHeadlessScene } = await import('../../src/headless.tsx');
+    const { createHeadlessScene } = await import('../../src/headless/index.tsx');
     const source = { root: { id: 'asset', name: 'Loaded asset', children: [{ id: 'child', name: 'Loaded child' }] } };
     const ref = id => ({ id, name: id, components: { ref: { type: 'PrefabRef', properties: { url: '/asset.json' } } } });
     let loads = 0;
@@ -156,5 +169,43 @@ test('nested prefab references load JSON and render independent placements', asy
     assert.notEqual(a, b);
     a.position.x = 5;
     assert.equal(b.position.x, 0);
+    assert.equal(loads, 1);
+});
+
+test('embedded prefab instances keep their shared definition across mode switches and sibling removal', async t => {
+    const { act, createElement: h, StrictMode } = await import('react');
+    const { createRoot, extend } = await import('@react-three/fiber');
+    const { Group } = await import('three');
+    const { PrefabRoot, registerBuiltInComponents } = await import('../../src/viewer/index.ts');
+    const { createAssetCache, AssetCacheContext } = await import('../../src/runtime/assets/assetCache.ts');
+    registerBuiltInComponents();
+    extend({ Group });
+    globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+    const source = { root: { id: 'asset', name: 'Embedded asset' } };
+    const url = encodePrefabSource(source);
+    let loads = 0;
+    const cache = createAssetCache({ prefab: async () => { loads++; return normalizePrefab(source); } });
+    const definition = await cache.load('prefab', url);
+    const ref = id => ({ id, name: id, components: { ref: { type: 'PrefabRef', properties: { url } } } });
+    const doc = createPrefabStore({ root: { id: 'world', children: [ref('a'), ref('b')] } });
+    const canvas = { width: 100, height: 100, style: {}, addEventListener() {}, removeEventListener() {} };
+    const root = createRoot(canvas);
+    await root.configure({ gl: { render() {}, setSize() {}, setPixelRatio() {}, domElement: canvas },
+        size: { width: 100, height: 100, top: 0, left: 0 }, frameloop: 'never' });
+    t.after(async () => { await act(async () => root.unmount()); cache.dispose(); });
+    let state;
+    const render = async editMode => act(async () => {
+        state = root.render(h(StrictMode, null, h(AssetCacheContext.Provider, { value: cache }, h(PrefabRoot, { store: doc, editMode }))));
+    });
+    await render(true);
+    assert.equal(cache.get('prefab', url), definition, 'Strict Mode cleanup must not evict a mounted definition');
+    const object = state.getState().scene.getObjectByName('b').getObjectByName('Embedded asset');
+    await render(false);
+    await render(true);
+    assert.equal(loads, 1, 'mode changes must not reload visible prefabs');
+    await act(async () => doc.getState().deleteNode('a'));
+    assert.equal(cache.get('prefab', url), definition, 'removing one instance must preserve the other instance’s definition');
+    await render(false);
+    assert.equal(state.getState().scene.getObjectByName('b').getObjectByName('Embedded asset'), object);
     assert.equal(loads, 1);
 });

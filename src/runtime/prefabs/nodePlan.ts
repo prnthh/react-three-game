@@ -1,7 +1,7 @@
 import { MeshNode } from "../rendering/MeshNode.js";
 import { createContext } from 'react';
 import type { ComponentData, GameObject as GameObjectType } from "../../core/types.js";
-import { getComponent, getComponentRegistryVersion, resolveComponentProperties, type Component } from "../../core/ComponentRegistry.js";
+import { getComponent, resolveComponentProperties, type Component } from "../../core/ComponentRegistry.js";
 
 /** A host can use engine definitions without changing the application's registry. */
 export const ComponentLookupContext = createContext(getComponent);
@@ -40,12 +40,7 @@ export const EMPTY_NODE_COMPONENTS: AnalyzedNodeComponents = {
     },
 };
 
-const cache = new WeakMap<GameObjectType, { version: number; lookup: typeof getComponent; plan: AnalyzedNodeComponents }>();
 export function analyzeNodeComponents(node: GameObjectType, lookup = getComponent): AnalyzedNodeComponents {
-    const version = getComponentRegistryVersion();
-    const cached = cache.get(node);
-    if (cached?.version === version && cached.lookup === lookup) return cached.plan;
-
     const componentMap = node.components ?? {};
     const composition: CompositionComponent[] = [];
     let clickEvent: ClickEventConfig = EMPTY_NODE_COMPONENTS.clickEvent;
@@ -85,8 +80,7 @@ export function analyzeNodeComponents(node: GameObjectType, lookup = getComponen
     }
 
     // Geometry supplies an implicit mesh unless an object component owns the attachments.
-    const geometry = composition.find(component => component.order === 2
-        && lookup(componentMap[component.key]!.type)?.slot === 'geometry');
+    const geometry = composition.find(component => component.component?.slot === 'geometry');
     if (geometry && !composition.some(component => component.order === 1)) {
         composition.push({ key: '$mesh', View: MeshNode, properties: geometry.properties,
             order: 1, renderWhenDisabled: true });
@@ -94,12 +88,9 @@ export function analyzeNodeComponents(node: GameObjectType, lookup = getComponen
 
     composition.sort((left, right) => left.order - right.order);
 
-    const value = {
+    return {
         clickEvent,
         composition,
         transform,
     };
-    cache.set(node, { version, lookup, plan: value });
-    return value;
 }
-

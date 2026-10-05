@@ -120,7 +120,6 @@ const DirectionalLightComponent: Component<DirectionalLightProperties> = {
     name: 'DirectionalLight',
     description: "Add sunlight-like parallel rays aimed from this node toward targetOffset. Use castShadow and shadow camera bounds to cover the objects that need shadows.",
     category: 'lighting',
-    slot: 'object',
     renderWhenDisabled: true,
     View: DirectionalLightView,
     properties: {

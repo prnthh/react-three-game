@@ -10,7 +10,7 @@ import { useGameObject, useNode } from '../scene/SceneContext.js';
 import { useMeshInstanceRegistration, useInvalidateMeshInstances } from '../rendering/MeshInstanceProvider.js';
 
 export function MeshNode({ properties, children }: ComponentViewProps<MeshProperties>) {
-    const { isSelected } = useNode();
+    const isSelected = useNode(node => node.isSelected);
     const { id: runtimeNodeId } = useGameObject();
     const mesh = useRef<Mesh>(null);
     const visible = properties.visible !== false;
@@ -33,4 +33,3 @@ export function MeshNode({ properties, children }: ComponentViewProps<MeshProper
         </mesh>
     );
 }
-

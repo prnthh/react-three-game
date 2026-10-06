@@ -1,16 +1,15 @@
 import { EditPickContext } from '../scene/SelectionRuntime.js';
 import { editPickIds } from '../scene/editPicking.js';
-import { forwardRef, memo, useCallback, useContext, useImperativeHandle, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { forwardRef, memo, useCallback, useContext, useImperativeHandle, useLayoutEffect, useRef, useState } from "react";
 import type { Object3D } from "three";
 import type { ThreeEvent } from "@react-three/fiber";
 
 import type { GameObject as GameObjectType, Prefab } from "../../core/types.js";
-import { getComponentRegistryVersion, subscribeComponentRegistry } from "../../core/ComponentRegistry.js";
 import { createPrefabStore } from "../../core/prefabStore.js";
 import { usePrefabRootId, usePrefabStore, usePrefabStoreApi } from "./PrefabStoreContext.js";
 import type { PrefabStoreApi } from "../../core/prefabStore.js";
 import { useGameEvents, type GameEvents } from "../scene/GameEvents.js";
-import { PrefabEditorMode, RuntimeNodeIdPrefixContext, RuntimeNodeIdScope, usePrefab, useScene, type PrefabApi, type Scene } from "../scene/SceneContext.js";
+import { PrefabEditorMode, PrefabModeContext, RuntimeNodeIdPrefixContext, RuntimeNodeIdScope, usePrefab, useScene, type PrefabApi, type Scene } from "../scene/SceneContext.js";
 import { SceneProvider } from "../scene/SceneProvider.js";
 import { scopedNodeId } from "../scene/gameObject.js";
 import { PrefabNode, type RendererProps } from "./PrefabNode.js";
@@ -29,40 +28,24 @@ export interface PrefabRootProps {
     store?: PrefabStoreApi;
     selectedId?: string | null;
     enabled?: boolean;
-    /** Internal staging: build visual resources while gameplay is disabled. */
-    preparing?: boolean;
     onSelect?: (id: string | null) => void;
     onPointerEvent?: (eventType: NodeInteractionEventType, event: NodeInteractionEvent, node: GameObjectType) => void;
     onEditNodeClick?: (event: ThreeEvent<MouseEvent>, node: GameObjectType) => void;
     basePath?: string;
-    /** Advanced: inject the outer scene and document APIs, as PrefabEditor does. */
-    scene?: Scene;
+    /** Use the editor's document API for its shared object registry and asset access. */
     prefab?: PrefabApi;
     children?: React.ReactNode;
 }
 
 export const PrefabRoot = forwardRef<Scene, PrefabRootProps>((props, ref) => {
     const { data, store, selectedId, editMode, ...bodyProps } = props;
-    const [ownedStore] = useState<PrefabStoreApi | null>(() => {
-        if (store) return null;
-        if (data) return createPrefabStore(data);
-        throw new Error("PrefabRoot requires either a `data` or `store` prop");
-    });
-    const lastAppliedDataRef = useRef(data);
+    const [ownedStore] = useState(() => data ? createPrefabStore(data) : null);
     const resolvedStore = store ?? ownedStore;
     if (!resolvedStore) throw new Error("PrefabRoot requires either a `data` or `store` prop");
-
-    useLayoutEffect(() => {
-        if (!store && data && data !== lastAppliedDataRef.current) {
-            lastAppliedDataRef.current = data;
-            resolvedStore.getState().replacePrefab(data);
-        }
-    }, [data, resolvedStore, store]);
 
     return (
         <RuntimeNodeIdScope prefix={props.id ?? ""}><SceneProvider
             store={resolvedStore}
-            scene={props.scene}
             prefab={props.prefab}
             editMode={editMode}
             basePath={props.basePath}
@@ -75,18 +58,19 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>((props, ref) => {
 
 });
 
-const PrefabRootBody = memo(forwardRef<Scene, PrefabRootProps>(({ onSelect, onPointerEvent, onEditNodeClick, enabled = true, preparing = false, children }, ref) => {
+const PrefabRootBody = memo(forwardRef<Scene, PrefabRootProps>(({ onSelect, onPointerEvent, onEditNodeClick, enabled = true, children }, ref) => {
     const inheritedEditPick = useContext(EditPickContext);
     const scene = useScene();
     const gameEvents = useGameEvents();
     const prefix = useContext(RuntimeNodeIdPrefixContext);
     const editMode = scene.mode === PrefabEditorMode.Edit;
     const prefab = usePrefab();
-    const registryVersion = useSyncExternalStore(subscribeComponentRegistry, getComponentRegistryVersion, getComponentRegistryVersion);
     const storeApi = usePrefabStoreApi();
     useImperativeHandle(ref, () => scene, [scene]);
 
     const lastPick = useRef<{ x: number; y: number; ids: string[]; index: number } | null>(null);
+    const editModeRef = useRef(editMode);
+    useLayoutEffect(() => { editModeRef.current = editMode; }, [editMode]);
 
     const handleNodePointerEvent = useCallback((
         eventType: NodeInteractionEventType,
@@ -102,6 +86,7 @@ const PrefabRootBody = memo(forwardRef<Scene, PrefabRootProps>(({ onSelect, onPo
     }, [gameEvents, onPointerEvent, prefix, storeApi]);
 
     const handleEditClick = useCallback((event: ThreeEvent<MouseEvent>) => {
+        if (!editModeRef.current) return;
         // Nested PrefabRef roots need an edit handler so their descendant meshes
         // participate in raycasting, but selection belongs to the outer document.
         // Leave the event unconsumed when this root has no selection callbacks.
@@ -134,19 +119,18 @@ const PrefabRootBody = memo(forwardRef<Scene, PrefabRootProps>(({ onSelect, onPo
     }, [onEditNodeClick, onSelect, prefix, storeApi]);
 
     return (
-        <EditPickContext.Provider value={editMode ? (onSelect || onEditNodeClick ? handleEditClick : inheritedEditPick) : undefined}>
-            <group onClick={editMode ? handleEditClick : undefined}>
-                <StoreRootNode
-                    onPointerEvent={editMode ? undefined : handleNodePointerEvent}
-                    registerRef={prefab.registerObject}
-                    editMode={editMode}
-                    registryVersion={registryVersion}
-                    isEnabled={enabled}
-                    preparing={preparing}
-                />
-                {children}
-            </group>
-        </EditPickContext.Provider>
+        <PrefabModeContext.Provider value={editMode}>
+            <EditPickContext.Provider value={onSelect || onEditNodeClick ? handleEditClick : inheritedEditPick}>
+                <group onClick={editMode ? handleEditClick : undefined}>
+                    <StoreRootNode
+                        onPointerEvent={handleNodePointerEvent}
+                        registerRef={prefab.registerObject}
+                        isEnabled={enabled}
+                    />
+                    {children}
+                </group>
+            </EditPickContext.Provider>
+        </PrefabModeContext.Provider>
     );
 }));
 

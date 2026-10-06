@@ -536,7 +536,8 @@ function CrashcatRagdollView({
     children,
 }: ComponentViewProps<CrashcatRagdollComponentProperties>) {
     const scene = useThree((state) => state.scene);
-    const { editMode, nodeInteractionHandlers } = useNode();
+    const editMode = useNode(node => node.editMode);
+    const nodeInteractionHandlers = useNode(node => node.nodeInteractionHandlers);
     const object = useGameObject();
     const [worldPosition, setWorldPosition] = useState<Vec3 | null>(null);
     const position = useRef(new Vector3());

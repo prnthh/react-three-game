@@ -145,7 +145,7 @@ function GeometryComponentView({ properties, children }: ComponentViewProps<Geom
     const { geometryType, args = [] } = properties;
     const type = geometryType && geometryType in GEOMETRY_ELEMENTS ? geometryType as keyof typeof GEOMETRY_ELEMENTS : 'box';
     const resolvedArgs = args.length ? args : getDefaultArgs(type);
-    const { nodeId } = useNode();
+    const nodeId = useNode(node => node.nodeId);
     const prefab = usePrefab();
     const lookup = useContext(ComponentLookupContext);
     const modifiers = getGeometryModifiers(prefab.get(nodeId), lookup);

@@ -115,18 +115,12 @@ export interface Component<P extends object = Record<string, any>> {
 
 const REGISTRY: Record<string, Component<any>> = {};
 let registryVersion = 0;
-const registryListeners = new Set<() => void>();
 export const getComponentRegistryVersion = () => registryVersion;
-export function subscribeComponentRegistry(listener: () => void) {
-    registryListeners.add(listener);
-    return () => { registryListeners.delete(listener); };
-}
 
 export function registerComponent(component: Component<any>) {
     if (REGISTRY[component.name] === component) return;
     REGISTRY[component.name] = component;
     registryVersion += 1;
-    registryListeners.forEach(listener => listener());
 }
 
 /** @internal Install engine defaults without replacing runtime plugins. */

@@ -27,7 +27,7 @@ const PrefabSourceAncestry = createContext<readonly string[]>([]);
 
 function LoadedPrefabRef({ properties, enabled }: ComponentViewProps<PrefabRefProperties>) {
     const { basePath } = usePrefab();
-    const { nodeId, preparing } = useNode();
+    const nodeId = useNode(node => node.nodeId);
     const url = useDeferredValue(properties.url ? withBasePath(basePath, properties.url) : '');
     const ancestors = useContext(PrefabSourceAncestry);
     const cyclic = ancestors.includes(url);
@@ -54,7 +54,7 @@ function LoadedPrefabRef({ properties, enabled }: ComponentViewProps<PrefabRefPr
         {store && (
             <group>
                 <PrefabSourceAncestry.Provider value={ancestry}>
-                    <PrefabRoot id={nodeId} store={store} basePath={basePath} enabled={enabled} preparing={preparing} />
+                    <PrefabRoot id={nodeId} store={store} basePath={basePath} enabled={enabled} />
                 </PrefabSourceAncestry.Provider>
             </group>
         )}

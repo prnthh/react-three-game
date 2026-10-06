@@ -124,3 +124,111 @@ test('changing prefab metadata updates the mounted root without replacing its ob
     await act(async () => store.getState().replacePrefab({ id: 'second', root: { id: 'root', name: 'After' } }));
     assert.equal(state.getState().scene.getObjectByName('After'), before);
 });
+
+test('switching edit mode preserves composed views and skips unrelated renders', async t => {
+    const { useContext, useEffect } = await import('react');
+    const { PrefabRoot, registerBuiltInComponents, useGameObject, useNode } = await import('../../src/viewer/index.ts');
+    const { EditPickContext } = await import('../../src/runtime/scene/SelectionRuntime.tsx');
+    registerBuiltInComponents();
+    extend({ Group });
+    globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+    let mounts = 0;
+    let unmounts = 0;
+    let renders = 0;
+    let pickReaderRenders = 0;
+    let gameObjectReaderRenders = 0;
+    const observedModes = [];
+    const observedSelection = [];
+    registerComponent({
+        name: 'ModeSwitchViewProbe',
+        properties: {},
+        View({ children }) {
+            renders++;
+            useEffect(() => {
+                mounts++;
+                return () => { unmounts++; };
+            }, []);
+            return h('group', { name: 'mode-switch-view' }, children);
+        },
+    });
+    registerComponent({
+        name: 'ModeSwitchReaderProbe',
+        properties: {},
+        View({ children }) {
+            observedModes.push(useNode(node => node.editMode));
+            return children;
+        },
+    });
+    registerComponent({
+        name: 'ModeSwitchPickReaderProbe',
+        properties: {},
+        View({ children }) {
+            useContext(EditPickContext);
+            pickReaderRenders++;
+            return children;
+        },
+    });
+    registerComponent({
+        name: 'ModeSwitchObjectReaderProbe',
+        properties: {},
+        View({ children }) {
+            assert.equal(useGameObject().id, 'child');
+            gameObjectReaderRenders++;
+            return children;
+        },
+    });
+    registerComponent({
+        name: 'ModeSwitchSelectionReaderProbe',
+        properties: {},
+        View({ children }) {
+            observedSelection.push(useNode(node => node.isSelected));
+            return children;
+        },
+    });
+    const store = createPrefabStore({ root: { id: 'root', children: [{
+        id: 'child', name: 'child', components: {
+            probe: { type: 'ModeSwitchViewProbe', properties: {} },
+            reader: { type: 'ModeSwitchReaderProbe', properties: {} },
+            pickReader: { type: 'ModeSwitchPickReaderProbe', properties: {} },
+            objectReader: { type: 'ModeSwitchObjectReaderProbe', properties: {} },
+            selectionReader: { type: 'ModeSwitchSelectionReaderProbe', properties: {} },
+        },
+    }] } });
+    const canvas = { width: 100, height: 100, style: {}, addEventListener() {}, removeEventListener() {} };
+    const root = createRoot(canvas);
+    await root.configure({ gl: { render() {}, setSize() {}, setPixelRatio() {}, domElement: canvas },
+        size: { width: 100, height: 100, top: 0, left: 0 }, frameloop: 'never' });
+    t.after(async () => { await act(async () => root.unmount()); });
+
+    let state;
+    const onSelect = () => {};
+    const render = async (editMode, selectedId = null) => act(async () => {
+        state = root.render(h(PrefabRoot, { store, editMode, selectedId, onSelect }));
+    });
+    await render(true);
+    const child = state.getState().scene.getObjectByName('child');
+    const viewObject = state.getState().scene.getObjectByName('mode-switch-view');
+    assert.ok(child);
+    assert.ok(viewObject);
+    assert.equal(mounts, 1);
+    assert.equal(renders, 1);
+    assert.equal(pickReaderRenders, 1);
+    assert.equal(gameObjectReaderRenders, 1);
+
+    await render(false);
+    await render(true);
+    assert.equal(state.getState().scene.getObjectByName('child'), child);
+    assert.equal(state.getState().scene.getObjectByName('mode-switch-view'), viewObject);
+    assert.equal(mounts, 1, 'mode changes preserve composed views');
+    assert.equal(unmounts, 0);
+    assert.equal(renders, 1, 'views that do not use mode skip mode-only renders');
+    assert.equal(pickReaderRenders, 1, 'edit-pick consumers keep a stable callback across mode changes');
+    assert.equal(gameObjectReaderRenders, 1, 'object lookup does not subscribe to mode');
+    assert.deepEqual(observedModes, [true, false, true], 'mode readers still update');
+    assert.deepEqual(observedSelection, [false]);
+
+    await render(true, 'child');
+    await render(true);
+    assert.deepEqual(observedSelection, [false, true, false], 'selection readers still update');
+    assert.deepEqual(observedModes, [true, false, true], 'mode readers skip selection-only updates');
+});

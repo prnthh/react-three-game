@@ -10,7 +10,6 @@ export interface PrefabDocumentApi {
     batch(action: () => void): void;
     add(node: GameObject, parentId?: string): GameObject;
     update(id: string, fn: (node: PrefabNodeRecord) => PrefabNodeRecord): void;
-    setMaterial(id: string, material: PrefabMaterial): void;
     replaceNode(id: string, node: GameObject): void;
     remove(id: string): void;
     duplicate(id: string): string | null;
@@ -30,7 +29,6 @@ export function createPrefabDocumentApi(store: PrefabStoreApi): PrefabDocumentAp
             return node;
         },
         update: (id, fn) => store.getState().updateNode(id, fn),
-        setMaterial: (id, material) => store.getState().setMaterial(id, material),
         replaceNode: (id, node) => store.getState().replaceNode(id, node),
         remove: id => store.getState().deleteNode(id),
         duplicate: id => store.getState().duplicateNode(id),
@@ -38,4 +36,3 @@ export function createPrefabDocumentApi(store: PrefabStoreApi): PrefabDocumentAp
         replace: prefab => store.getState().replacePrefab(prefab),
     };
 }
-

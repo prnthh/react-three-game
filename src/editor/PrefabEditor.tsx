@@ -1,7 +1,6 @@
 import { loadAssetManifest } from '../runtime/assets/assetManifest.js';
 import { downloadBlob, downloadURL } from '../browser/index.js';
 import { isExternalPath, withBasePath } from '../runtime/assets/assetPaths.js';
-import { SceneRuntime } from "../runtime/SceneRuntime.js";
 import { OrbitControls, TransformControls, useHelper } from "@react-three/drei";
 import { createContext, useContext, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, forwardRef, useImperativeHandle } from "react";
 import { Box3, BoxHelper, Mesh, MeshBasicMaterial, PerspectiveCamera, Plane, Vector2, Vector3 } from "three";
@@ -493,15 +492,18 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
         const path = getPrefabAssetRef(filename, 'textures');
         const name = file.name.replace(/\.[^.]+$/, '');
         const materialName = `material-${crypto.randomUUID()}`;
-        const node = offsetNodePosition(createImageNode(path, materialName, name), position);
+        const image = createImageNode(path, materialName, name);
+        const node = offsetNodePosition({
+            ...image,
+            components: {
+                ...image.components,
+                material: { type: 'Material', properties: {
+                    name: materialName, ...createDefaultMaterial(), materialType: 'basic', texture: path, transparent: true,
+                } },
+            },
+        }, position);
         {
             const s = prefabStore.getState();
-            s.setMaterial(materialName, {
-                ...createDefaultMaterial(),
-                materialType: 'basic',
-                texture: path,
-                transparent: true,
-            });
             s.addChild(s.rootId, node);
         }
         setSelectedId(node.id);
@@ -857,7 +859,7 @@ export function PrefabEditorScene({ children }: { children?: React.ReactNode; })
         });
         return () => state.set({ onPointerMissed: previous });
     }, [get, isEditMode, setSelection]);
-    return <SceneRuntime>
+    return <>
         {isEditMode ? <gridHelper args={[10, 10]} position={[0, -0.001, 0]} /> : null}
         <PrefabRoot
             key={runtimeVersion}
@@ -867,7 +869,6 @@ export function PrefabEditorScene({ children }: { children?: React.ReactNode; })
             onSelect={setSelection}
             onPointerEvent={onPointerEvent}
             basePath={basePath}
-            scene={sceneValue}
             prefab={prefabValue}
         >
             {children}
@@ -899,7 +900,7 @@ export function PrefabEditorScene({ children }: { children?: React.ReactNode; })
                 )}
             </>
         )}
-    </SceneRuntime>;
+    </>;
 }
 
 /** HTML controls: mount beside the canvas under the same provider. */

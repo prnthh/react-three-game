@@ -35,7 +35,7 @@ export function analyzeSceneAuthoring(state: PrefabState) {
         advisories.push({ code, message, count: nodeIds.length, nodeIds: nodeIds.slice(0, 8) });
     };
     if (optedOut.length >= 8) {
-        advise('instancing-disabled', 'Many Mesh nodes explicitly disable instancing. Keep its default enabled for compatible repeated geometry/materials; disable only when the rendering or interaction needs it.', optedOut);
+        advise('instancing-disabled', 'Many renderable nodes explicitly disable instancing. Keep it enabled for compatible repeated geometry and materials; disable only when rendering or interaction needs separate objects.', optedOut);
     }
     if (pointShadows.length >= 2) {
         advise('live-point-shadows', 'Multiple PointLights request continuously updated shadows (six faces per light). For static content consider shadowAutoUpdate:false with explicit invalidation after changes. Keep live shadows for moving casters/lights. Host code may override these authored settings.', pointShadows);

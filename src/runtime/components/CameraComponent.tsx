@@ -42,7 +42,8 @@ export type CameraProperties = {
 };
 
 function CameraComponentView({ properties, enabled, children }: ComponentViewProps<CameraProperties>) {
-    const { editMode, isSelected, preparing } = useNode();
+    const editMode = useNode(node => node.editMode);
+    const isSelected = useNode(node => node.isSelected);
     const { size } = useThree();
     const merged = properties;
     const projection = merged.projection;
@@ -78,7 +79,7 @@ function CameraComponentView({ properties, enabled, children }: ComponentViewPro
             <group>
                 <DreiOrthographicCamera
                     ref={orthographicCameraRef}
-                    makeDefault={enabled && !editMode && !preparing}
+                    makeDefault={enabled && !editMode}
                     near={near}
                     zoom={zoom}
                     far={far}
@@ -98,7 +99,7 @@ function CameraComponentView({ properties, enabled, children }: ComponentViewPro
         <group>
             <DreiPerspectiveCamera
                 ref={perspectiveCameraRef}
-                makeDefault={enabled && !editMode && !preparing}
+                makeDefault={enabled && !editMode}
                 fov={fov}
                 near={near}
                 zoom={zoom}

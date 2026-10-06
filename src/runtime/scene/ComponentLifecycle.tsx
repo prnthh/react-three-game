@@ -40,8 +40,9 @@ export function ComponentLifecycle<P extends object>({ component, properties, en
     const scene = useSceneRuntimeContext();
     const node = useGameObject();
     const prefab = usePrefab();
-    const { nodeId, editMode, preparing } = useNode();
-    const active = enabled && !editMode && !preparing;
+    const nodeId = useNode(node => node.nodeId);
+    const editMode = useNode(node => node.editMode);
+    const active = enabled && !editMode;
     const latest = useRef(properties);
     const frame = useRef<((delta: number) => void) | null>(null);
     // Compare with committed inputs. An abandoned render must not change activation.

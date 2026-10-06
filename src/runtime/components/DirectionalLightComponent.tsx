@@ -40,7 +40,8 @@ export type DirectionalLightValues = typeof directionalLightDefaults;
 export type DirectionalLightProperties = Partial<DirectionalLightValues>;
 
 function DirectionalLightView({ properties, children }: ComponentViewProps<DirectionalLightProperties>) {
-    const { editMode, isSelected } = useNode();
+    const editMode = useNode(node => node.editMode);
+    const isSelected = useNode(node => node.isSelected);
     const merged = mergeWithDefaults(directionalLightDefaults, properties);
     const shadowMapSize = normalizeShadowMapSize(merged.shadowMapSize);
     const lightProps = {

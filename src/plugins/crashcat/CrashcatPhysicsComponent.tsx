@@ -160,7 +160,7 @@ function createAndRegisterBody(
 }
 
 function CrashcatPhysicsView({ properties, children }: ComponentViewProps<CrashcatPhysicsProperties>) {
-    const { nodeId } = useNode();
+    const nodeId = useNode(node => node.nodeId);
     const gameObject = useGameObject();
     const runtimeNodeId = gameObject.id;
     const api = useCrashcat();

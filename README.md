@@ -105,7 +105,7 @@ type Props = { speed: number };
 
 function RotatorView({ properties, children }: ComponentViewProps<Props>) {
   const object = useGameObject();
-  const { editMode } = useNode();
+  const editMode = useNode(node => node.editMode);
   useFrame((_, delta) => {
     if (!editMode && object.transform) {
       object.transform.rotation.y += properties.speed * delta;

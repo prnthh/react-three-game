@@ -93,7 +93,6 @@ export { useSharedGeometryResource } from "../runtime/components/GeometryCompone
 
 export { SpatialGrid, DEFAULT_SPATIAL_CELL_SIZE } from '../runtime/spatial/SpatialGrid.js';
 export { getSceneComponentRegistry } from '../runtime/scene/SceneContext.js';
-export { SCENE_OBJECT, SCENE_LIGHT } from '../runtime/scene/SceneGraphRegistration.js';
 
 export { resolveGameObject, resolveRenderSource, registerGameObjectOwner, registerRenderSources } from '../runtime/scene/gameObject.js';
 export type { NodeComponentRegistry } from '../runtime/scene/SceneContext.js';

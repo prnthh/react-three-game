@@ -206,19 +206,28 @@ function createMaterial(type: PrefabMaterialType = 'standard'): RuntimeMaterial 
     return new MeshStandardNodeMaterial();
 }
 
+const unresolvedMaterial = new MeshBasicNodeMaterial();
+unresolvedMaterial.visible = false;
+
+// Node edits replace material property objects, so repeated references can share a signature.
+const materialSignatures = new WeakMap<PrefabMaterial, Map<string, string>>();
+
 function getMaterialSignature(material: PrefabMaterial, basePath: string) {
+    const cached = materialSignatures.get(material)?.get(basePath);
+    if (cached) return cached;
     const { texture, normalMapTexture, name: _name, ...properties } = compactPrefabMaterial(material);
-    return JSON.stringify(Object.entries({
+    const signature = JSON.stringify(Object.entries({
         ...properties,
         ...(texture ? { texture: withBasePath(basePath, texture) } : null),
         ...(normalMapTexture ? { normalMapTexture: withBasePath(basePath, normalMapTexture) } : null),
     }).sort(([left], [right]) => left.localeCompare(right)));
+    let byPath = materialSignatures.get(material);
+    if (!byPath) materialSignatures.set(material, byPath = new Map());
+    byPath.set(basePath, signature);
+    return signature;
 }
 
 export function MaterialPoolProvider({ children }: { children: ReactNode }) {
-    return <SceneMaterialPoolOwner>{children}</SceneMaterialPoolOwner>;
-}
-function SceneMaterialPoolOwner({ children }: { children: ReactNode }) {
     const [pool] = useState(() => new SceneMaterialPool());
     useEffect(() => {
         const lifetime = {};
@@ -258,7 +267,6 @@ function applyMaterialProperties(
     properties: PrefabMaterial,
     map: Texture | null | undefined,
     normalMap: Texture | null | undefined,
-    overrides: MaterialOverrides,
 ) {
     const materialType = properties.materialType ?? 'standard';
     const common = {
@@ -278,7 +286,6 @@ function applyMaterialProperties(
         ...common,
         rotation: properties.rotation ?? 0,
         sizeAttenuation: properties.sizeAttenuation ?? true,
-        ...overrides,
     } : {
         ...common,
         wireframe: properties.wireframe ?? false,
@@ -292,7 +299,6 @@ function applyMaterialProperties(
             normalMap: normalMap ?? null,
             normalScale: normalMap ? properties.normalScale ?? [1, 1] : [1, 1],
         } : null),
-        ...overrides,
     });
     material.needsUpdate = true;
 }
@@ -302,10 +308,12 @@ function MaterialComponentView({ properties, children }: { properties: MaterialC
     if (!pool) throw new Error('Materials require a scene material pool');
     const { basePath } = usePrefab();
     const node = useGameObject();
-    const childIds = usePrefabStore(state => state.childIdsById[state.parentIdById[node.nodeId] ?? state.rootId] ?? []);
     const materialName = properties.name ?? '';
     const localMaterial = useMemo(() => getMaterialDefinition(properties), [properties]);
-    const order = childIds.indexOf(node.nodeId);
+    const prefabMaterial = usePrefabStore(state => state.materials[materialName]);
+    const order = usePrefabStore(state => localMaterial
+        ? (state.childIdsById[state.parentIdById[node.nodeId] ?? state.rootId] ?? []).indexOf(node.nodeId)
+        : -1);
     const [owner] = useState(() => ({}));
     const subscribe = useMemo(() => (listener: () => void) => pool.subscribe(materialName, listener), [pool, materialName]);
     const resolve = useMemo(() => () => pool.resolve(materialName), [pool, materialName]);
@@ -315,22 +323,13 @@ function MaterialComponentView({ properties, children }: { properties: MaterialC
         pool.registerDefinition(owner, materialName, localMaterial, basePath, order < 0 ? Number.MAX_SAFE_INTEGER : order);
         return () => pool.unregisterDefinition(owner);
     }, [pool, owner, materialName, localMaterial, basePath, order]);
-    const material = definition?.material ?? localMaterial ?? (materialName ? undefined : {});
+    const material = materialName ? definition?.material ?? prefabMaterial : localMaterial ?? {};
     return <>
         {material
             ? <ResolvedMaterial material={material} basePath={definition?.basePath ?? basePath} attach={properties.attach} />
-            : <UnresolvedMaterial attach={properties.attach} />}
+            : <primitive object={unresolvedMaterial} attach={properties.attach ?? 'material'} dispose={null} />}
         {children}
     </>;
-}
-
-function UnresolvedMaterial({ attach }: { attach?: string }) {
-    const material = useSharedMaterialResource('unresolved', () => {
-        const value = new MeshBasicNodeMaterial();
-        value.visible = false;
-        return value;
-    });
-    return <primitive object={material} attach={attach ?? 'material'} dispose={null} />;
 }
 
 function ResolvedMaterial({ material, basePath, attach }: { material: PrefabMaterial; basePath: string; attach?: string }) {
@@ -350,7 +349,7 @@ function ResolvedMaterial({ material, basePath, attach }: { material: PrefabMate
             };
             configureTexture(map, { ...config, colorSpace: SRGBColorSpace });
             configureTexture(normalMap, { ...config, colorSpace: NoColorSpace });
-            applyMaterialProperties(result, material, map, normalMap, EMPTY_MATERIAL_OVERRIDES);
+            applyMaterialProperties(result, material, map, normalMap);
             result.addEventListener('dispose', () => { map?.dispose(); normalMap?.dispose(); });
             return result;
         },

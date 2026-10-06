@@ -10,16 +10,12 @@ sees the image from inside the sphere without lighting changing its colors.
 Any supported image texture works; an equirectangular panorama wraps naturally,
 while an ordinary photo stretches around the sphere.
 
-This window API batch adds both the material and its nodes. Obtain `scene` from
+This window API batch adds the material user and its settings. Obtain `scene` from
 `window.scene`; only one agent-enabled editor is supported per page.
 
 ```js
 const { rootId, revision } = scene.info();
 scene.batch({ expectedRevision: revision, commands: [
-  { op: 'material', id: 'sky-image', material: {
-    materialType: 'basic', side: 'BackSide',
-    texture: '/textures/skybox/skybox3.jpg', // Replace with your image URL.
-  } },
   { op: 'add', parentId: rootId, node: {
     id: 'sky', name: 'Sky environment',
     components: {
@@ -32,7 +28,10 @@ scene.batch({ expectedRevision: revision, commands: [
       id: 'sky-sphere', name: 'Sky sphere',
       components: {
         geometry: { type: 'Geometry', properties: { geometryType: 'sphere' } },
-        material: { type: 'Material', properties: { name: 'sky-image' } },
+        material: { type: 'Material', properties: {
+          name: 'sky-image', materialType: 'basic', side: 'BackSide',
+          texture: '/textures/skybox/skybox3.jpg', // Replace with your image URL.
+        } },
       },
     }],
   } },

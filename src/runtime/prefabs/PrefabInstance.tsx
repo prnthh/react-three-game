@@ -126,5 +126,5 @@ function InstanceView({ id, prepared, static: isStatic = false, basePath, onStat
 
     useEffect(() => { container.visible = compiled; invalidate(); }, [compiled, container, invalidate]);
 
-    return <PrefabRoot id={id} store={store} basePath={basePath} enabled={compiled} preparing={!compiled}>{children}</PrefabRoot>;
+    return <PrefabRoot id={id} store={store} basePath={basePath} enabled={compiled}>{children}</PrefabRoot>;
 }

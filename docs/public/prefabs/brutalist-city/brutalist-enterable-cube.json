@@ -1004,22 +1004,6 @@
           }
         },
         "children": []
-      },
-      {
-        "id": "material:prefabs/brutalist-city/brutalist-enterable-cube:warm-glazing",
-        "name": "warm-glazing",
-        "components": {
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialType": "standard",
-              "color": "#c39355",
-              "roughness": 0.4,
-              "metalness": 0.15,
-              "name": "prefabs/brutalist-city/brutalist-enterable-cube:warm-glazing"
-            }
-          }
-        }
       }
     ],
     "name": "Civic Gallery"

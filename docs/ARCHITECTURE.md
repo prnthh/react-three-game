@@ -146,7 +146,8 @@ import { registerComponent, useNode,
   type ComponentViewProps } from 'react-three-game/viewer';
 
 function GuideView({ properties, children }: ComponentViewProps<{ radius: number }>) {
-  const { editMode, isSelected } = useNode();
+  const editMode = useNode(node => node.editMode);
+  const isSelected = useNode(node => node.isSelected);
   return <>
     {editMode && <mesh>
       <sphereGeometry args={[properties.radius, 12, 8]} />

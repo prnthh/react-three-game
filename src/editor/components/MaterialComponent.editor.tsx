@@ -3,7 +3,7 @@ import type { ComponentEditorProps } from '../../core/ComponentRegistry.js';
 import { FieldRenderer, Label, NumberInput } from '../ui/Input.js';
 import type { FieldDefinition } from '../ui/Input.js';
 import { useEditorRef } from '../EditorContext.js';
-import { usePrefabStore, usePrefabStoreApi } from "../../runtime/prefabs/PrefabStoreContext.js";
+import { usePrefabStore } from "../../runtime/prefabs/PrefabStoreContext.js";
 import { getMaterialDefinition, MATERIAL_FIELDS } from '../../core/prefab.js';
 import { base, colors } from '../ui/styles.js';
 import type { MaterialComponentProperties, PrefabMaterial } from '../../core/types.js';
@@ -108,28 +108,14 @@ function MaterialComponentEditor({
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [materialError, setMaterialError] = useState('');
     const editor = useEditorRef();
-    const store = usePrefabStoreApi();
     const { basePath } = editor;
     const materials = usePrefabStore(state => state.materials);
     const materialName = properties.name ?? '';
     const definition = getMaterialDefinition(properties);
     const material = materials[materialName] ?? definition ?? {};
-    const canEditMaterial = !!materials[materialName] || !!definition;
-    const replaceMaterial = (patch: Partial<MaterialComponentProperties>) => editor.batch(() => {
+    const canEditMaterial = !!definition;
+    const replaceMaterial = (patch: Partial<MaterialComponentProperties>) =>
         update({ ...Object.fromEntries(MATERIAL_FIELDS.map(key => [key, undefined])), ...patch });
-        // Move shared settings to a remaining user; unused definitions simply disappear.
-        if (!materialName || !definition || editor.getMaterial(materialName)) return;
-        for (const node of Object.values(store.getState().nodesById)) {
-            for (const [key, component] of Object.entries(node.components ?? {})) {
-                if (component?.type !== 'Material' || component.properties.name !== materialName) continue;
-                editor.update(node.id, current => ({ ...current, components: {
-                    ...current.components,
-                    [key]: { ...component, properties: { ...component.properties, ...definition } },
-                } }));
-                return;
-            }
-        }
-    });
     const materialType = material.materialType ?? 'standard';
     const hasTexture = !!material.texture;
     const hasRepeat = material.repeat;
@@ -299,7 +285,7 @@ function MaterialComponentEditor({
     }
 
     const createMaterialEntry = () => {
-        replaceMaterial({ name: crypto.randomUUID(), materialType: 'standard' });
+        replaceMaterial({ name: crypto.randomUUID(), materialType: 'standard', color: '#ffffff' });
     };
 
     return <>
@@ -399,8 +385,7 @@ function MaterialComponentEditor({
                             ...patch,
                         };
                         try {
-                            if (materialName && materials[materialName]) editor.setMaterial(materialName, next);
-                            else update(next);
+                            update(next);
                             setMaterialError('');
                         } catch (error) {
                             setMaterialError(error instanceof Error ? error.message : 'Could not update material.');

@@ -90,7 +90,9 @@ test('editing a material definition keeps its priority over a duplicate definiti
     await act(async () => { state = root.render(h(PrefabRoot, { store })); });
     const scene = state.getState().scene;
     for (const metalness of [0.8, 0.4, 1]) {
-        await act(async () => store.getState().setMaterial('metal', { materialType: 'standard', metalness, roughness: 0.2 }));
+        await act(async () => store.getState().updateNode('owner', node => ({ ...node, components: {
+            ...node.components, material: { ...node.components.material, properties: { ...node.components.material.properties, materialType: 'standard', metalness, roughness: 0.2 } },
+        } })));
         for (const id of ['owner', 'duplicate', 'reference']) {
             assert.equal(mesh(scene, id).material.metalness, metalness);
             assert.equal(mesh(scene, id).material, mesh(scene, 'owner').material);
@@ -114,16 +116,16 @@ test('UI and command duplicates keep material references and attachment without 
     assert.equal(original.components.material.properties.metalness, 0.8);
 });
 
-test('renaming a material updates references atomically and rejects existing names', () => {
+test('renaming a material component only changes that node', () => {
     const store = document('root', [box('owner', { name: 'metal', metalness: 1 }), box('ref', { name: 'metal' }), box('other', { name: 'wood', color: '#884422' })]);
     let updates = 0;
     store.subscribe(() => updates++);
-    store.getState().setMaterial('metal', { name: 'steel', metalness: 0.9 });
+    store.getState().updateNode('owner', node => ({ ...node, components: {
+        ...node.components, material: { ...node.components.material, properties: { ...node.components.material.properties, name: 'steel', metalness: 0.9 } },
+    } }));
     assert.equal(updates, 1);
-    assert.equal(store.getState().nodesById.ref.components.material.properties.name, 'steel');
-    assert.deepEqual(store.getState().nodesById.ref.components.material.properties, { name: 'steel' });
+    assert.equal(store.getState().nodesById.ref.components.material.properties.name, 'metal');
     assert.equal(store.getState().materials.metal, undefined);
     assert.equal(store.getState().materials.steel.metalness, 0.9);
-    assert.throws(() => store.getState().setMaterial('steel', { name: 'wood' }), /already exists/);
     assert.equal(updates, 1);
 });

@@ -8162,53 +8162,6 @@
             }
           }
         }
-      },
-      {
-        "id": "material:prefabs/detective-oni/scenes/office:material-21",
-        "name": "material-21",
-        "components": {
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialType": "standard",
-              "color": "#28566f",
-              "roughness": 0.8,
-              "name": "prefabs/detective-oni/scenes/office:material-21"
-            }
-          }
-        }
-      },
-      {
-        "id": "material:prefabs/detective-oni/scenes/office:material-24",
-        "name": "material-24",
-        "components": {
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialType": "basic",
-              "color": "#fbbf24",
-              "transparent": true,
-              "opacity": 0.08,
-              "depthWrite": false,
-              "name": "prefabs/detective-oni/scenes/office:material-24"
-            }
-          }
-        }
-      },
-      {
-        "id": "material:prefabs/detective-oni/scenes/office:material-31",
-        "name": "material-31",
-        "components": {
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialType": "standard",
-              "color": "#6e594b",
-              "roughness": 0.95,
-              "name": "prefabs/detective-oni/scenes/office:material-31"
-            }
-          }
-        }
       }
     ]
   }

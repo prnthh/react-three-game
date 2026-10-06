@@ -126,7 +126,7 @@ async function mountHeadlessScene(prefab: Prefab, options: HeadlessSceneOptions,
                     <AssetCacheContext.Provider value={cache}>
                         <AssetBoundary atomic onError={fail}>
                             <ComponentLookupContext.Provider value={lookup}><SceneRuntime instancing={false}>
-                                <PrefabRoot data={prefab} basePath={basePath} enabled={false} preparing />
+                                <PrefabRoot data={prefab} basePath={basePath} enabled={false} />
                                 <Committed ready={ready} />
                             </SceneRuntime></ComponentLookupContext.Provider>
                         </AssetBoundary>

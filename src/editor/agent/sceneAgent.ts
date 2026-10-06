@@ -369,8 +369,6 @@ export function createSceneAgent(store: PrefabStoreApi, getHost: () => SceneAgen
         transform(input: SceneAgentCommandInput<'transform'>) { return applyOne('transform', input); },
         setComponent(input: SceneAgentCommandInput<'component'>) { return applyOne('component', input); },
         patchComponent(input: SceneAgentCommandInput<'patchComponent'>) { return applyOne('patchComponent', input); },
-        setMaterial(input: SceneAgentCommandInput<'material'>) { return applyOne('material', input); },
-        updateMaterial(input: SceneAgentCommandInput<'patchMaterial'>) { return applyOne('patchMaterial', input); },
         duplicate(input: SceneAgentCommandInput<'duplicate'>) { return applyOne('duplicate', input); },
         async setMode(input: { mode: 'edit' | 'play' }) {
             options(input, ['mode']); snapshot();

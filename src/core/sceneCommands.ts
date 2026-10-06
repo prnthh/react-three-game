@@ -1,7 +1,7 @@
 import { sceneCommandFields } from './sceneCommandSchema.js';
 import { Euler, Matrix4, Quaternion, Vector3 } from 'three';
 import { getComponents } from './ComponentRegistry.js';
-import { findComponentEntry, type ComponentData, type GameObject, type Prefab, type PrefabMaterial } from './types.js';
+import { findComponentEntry, type ComponentData, type GameObject, type Prefab } from './types.js';
 import { composeTransform, computeParentWorldMatrix } from "./transforms.js";
 import { createPrefabStore } from "./prefabStore.js";
 import { createPrefabDocumentApi } from './prefabDocumentApi.js';
@@ -17,9 +17,7 @@ export type SceneCommand =
     | { op: 'move'; id: string; parentId: string }
     | { op: 'transform'; id: string; space?: 'local' | 'world'; position?: Vec3; rotation?: Vec3; scale?: Vec3 }
     | { op: 'component'; id: string; key: string; component: ComponentData | null }
-    | { op: 'material'; id: string; material: PrefabMaterial }
     | { op: 'patchComponent'; id: string; key: string; properties: Record<string, unknown>; unset?: string[] }
-    | { op: 'patchMaterial'; id: string; patch: Partial<PrefabMaterial> }
     | { op: 'duplicate'; id: string; newId: string; parentId?: string };
 export interface SceneCommandBatch { commands: SceneCommand[] }
 export interface SceneCommandResult { commandCount: number; changedIds: string[]; createdIds: string[]; removedIds: string[] }
@@ -91,19 +89,6 @@ function validateNode(node: GameObject, ids: Set<string>, existing?: PrefabState
         children.forEach(child => validateNode(child, ids, existing));
     }
 }
-function material(value: unknown) {
-    const data = record(value, 'material');
-    const strings = ['name', 'color', 'texture', 'minFilter', 'magFilter', 'normalMapTexture'];
-    const numbers = ['opacity', 'alphaTest', 'metalness', 'roughness', 'transmission', 'thickness', 'ior', 'rotation'];
-    const booleans = ['toneMapped', 'wireframe', 'transparent', 'depthTest', 'depthWrite', 'sizeAttenuation', 'repeat', 'generateMipmaps'];
-    keys(data, [...strings, ...numbers, ...booleans, 'materialType', 'side', 'offset', 'repeatCount', 'normalScale']);
-    for (const [key, value] of Object.entries(data)) {
-        if (strings.includes(key) && typeof value !== 'string' || numbers.includes(key) && typeof value !== 'number' || booleans.includes(key) && typeof value !== 'boolean') throw new Error(`Invalid material ${key}.`);
-        if (['offset', 'repeatCount', 'normalScale'].includes(key)) vector(value, key, 2);
-        if (key === 'materialType' && !['standard', 'basic', 'sprite'].includes(value as string)) throw new Error('Invalid materialType.');
-        if (key === 'side' && !['FrontSide', 'BackSide', 'DoubleSide'].includes(value as string)) throw new Error('Invalid material side.');
-    }
-}
 /** Stages immutable store edits, sharing untouched nodes. Never mutates the live store. */
 export function evaluateSceneCommandState(initial: PrefabState, input: unknown): { state: PrefabState; result: SceneCommandResult } {
     const batch = JSON.parse(JSON.stringify(input, (key, value) => {
@@ -151,15 +136,6 @@ export function evaluateSceneCommandState(initial: PrefabState, input: unknown):
                 document.add(command.node, command.parentId);
                 created.push(...collectSubtreeIds(command.node.id, staging.getState().childIdsById));
                 changed.add(command.node.id);
-                return;
-            }
-            if (command.op === 'material' || command.op === 'patchMaterial') {
-                id(command.id);
-                if (command.op === 'patchMaterial' && !Object.hasOwn(state.materials, command.id)) throw new Error(`Material "${command.id}" does not exist.`);
-                const next = command.op === 'material' ? command.material : { ...state.materials[command.id], ...record(command.patch, 'patch') };
-                material(next);
-                if (JSON.stringify(next) !== JSON.stringify(state.materials[command.id])) document.setMaterial(command.id, next);
-                changed.add(command.id);
                 return;
             }
             const node = lookup(command.id);
@@ -282,7 +258,7 @@ export function evaluateSceneCommandState(initial: PrefabState, input: unknown):
 export const sceneCommandHelp = `Commands execute in order, atomically, as one undo step. Y up; XYZ Euler rotations in radians.
 Local transforms are relative to parentId. World means prefab document space including its root, not external host transforms.
 Use components() to discover registered property contracts, search() to search, and get()/getMany() for exact reads. Pass any valid sequence below to batch(); validate() stages the same sequence without committing it.
-component and material replace their named entry; null component removes it. patchComponent shallow-merges properties; unset restores defaults. patchMaterial shallow-merges fields. Arrays and nested objects are replaced, not deep-merged.
+component replaces its named entry; null component removes it. patchComponent shallow-merges properties; unset restores defaults. Arrays and nested objects are replaced, not deep-merged.
 move keeps local transforms. duplicate uses newId for the root and newId/originalId for descendants; component reference strings are preserved, not remapped.
 World transforms require position, rotation and scale; singular parents and shear are rejected.
 Applying changes the live scene. Persistence requires a host-provided save callback. Use the latest scene revision as expectedRevision.`;

@@ -14,7 +14,7 @@ export type CameraFollowProperties = {
 function CameraFollowView({ properties, enabled, children }: ComponentViewProps<CameraFollowProperties>) {
     const camera = useGameObject();
     const targetObject = useGameObject(properties.targetId.trim());
-    const { editMode, preparing } = useNode();
+    const editMode = useNode(node => node.editMode);
     const targetPosition = useRef(new Vector3());
     const cameraWorldPosition = useRef(new Vector3());
     const desiredWorldPosition = useRef(new Vector3());
@@ -22,7 +22,7 @@ function CameraFollowView({ properties, enabled, children }: ComponentViewProps<
     const lookAtPosition = useRef(new Vector3());
 
     useFrame((_, delta) => {
-        if (!enabled || editMode || preparing) return;
+        if (!enabled || editMode) return;
         const cameraObject = camera.transform;
         const target = targetObject.transform;
         if (!cameraObject || !target) return;

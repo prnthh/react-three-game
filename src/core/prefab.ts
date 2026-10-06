@@ -99,11 +99,13 @@ export const MATERIAL_FIELDS = [
 ] as (keyof PrefabMaterial)[];
 
 export function getMaterialDefinition(properties: MaterialComponentProperties): PrefabMaterial | null {
-    const entries = MATERIAL_FIELDS.flatMap(key => {
+    let definition: Record<string, unknown> | null = null;
+    for (const key of MATERIAL_FIELDS) {
         const value = properties[key];
-        return value === undefined || value === null || value === '' ? [] : [[key, value]];
-    });
-    return entries.length ? Object.fromEntries(entries) : null;
+        if (value === undefined || value === null || value === '') continue;
+        (definition ??= {})[key] = value;
+    }
+    return definition as PrefabMaterial | null;
 }
 
 /** A derived authoring index, never serialized as a separate material table. */

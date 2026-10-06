@@ -4,6 +4,7 @@ import Link from "next/link";
 import ClickToCopy from "./components/ClickToCopy";
 import DemoApp from "./components/DemoAppLoader";
 import Dropdown from "./components/Dropdown";
+import { withBasePath } from './basePath';
 
 function Features() {
   return (
@@ -80,6 +81,7 @@ export const viewport: Viewport = {
 
 export default function Home() {
   return <>
+    <link rel="preload" as="fetch" crossOrigin="anonymous" href={withBasePath('/prefabs/brutalist-city/city-chunk.json')} />
     <main className="relative flex h-screen w-full flex-col items-center justify-center px-4 text-zinc-900">
       <div className="relative z-10 flex flex-col items-center">
         <div className="text-center font-bold">

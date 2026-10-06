@@ -4582,22 +4582,6 @@
             }
           }
         }
-      },
-      {
-        "id": "material:prefabs/detective-oni/scenes/junkyard:car-dark",
-        "name": "car-dark",
-        "components": {
-          "material": {
-            "type": "Material",
-            "properties": {
-              "materialType": "standard",
-              "color": "#24282a",
-              "roughness": 0.82,
-              "metalness": 0.2,
-              "name": "prefabs/detective-oni/scenes/junkyard:car-dark"
-            }
-          }
-        }
       }
     ]
   }

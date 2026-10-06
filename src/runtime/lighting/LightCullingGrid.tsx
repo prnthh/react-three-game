@@ -1,8 +1,6 @@
 import { useLayoutEffect, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { PointLight, Scene, Vector3 } from 'three';
-import { getSceneComponentRegistry } from '../scene/SceneContext.js';
-import { retainSceneGraphRegistration, SCENE_LIGHT } from '../scene/SceneGraphRegistration.js';
 
 export type LightCullingGridOptions = {
     /** World-space cell width, clamped to at least 1. Default: 24. */
@@ -21,22 +19,20 @@ export class LightCullingGridController {
     private slots: Slot[] = [];
     private occupancyKey = '';
     private cameraCell: number[] = [];
-    private releaseLights: () => void;
     constructor(private scene: Scene, private policy: LightCullingGridOptions = {}) {
-        this.releaseLights = retainSceneGraphRegistration(scene);
     }
 
     private discover() {
         const ownLights = new Set(this.slots.map(slot => slot.light));
         const found = new Set<PointLight>();
-        // Registry includes hidden branches: toggling an area must not change capacity.
-        for (const { value: object } of getSceneComponentRegistry(this.scene).getAll(SCENE_LIGHT)) {
+        // Include hidden branches so toggling visibility does not change slot capacity.
+        this.scene.traverse(object => {
             const light = object as PointLight;
-            if (!light.isPointLight || ownLights.has(light)) continue;
+            if (!light.isPointLight || ownLights.has(light)) return;
             found.add(light);
             if (!this.sources.has(light)) this.sources.set(light, { light, layers: light.layers.mask });
             light.layers.mask = 0;
-        }
+        });
         for (const [light, source] of this.sources) if (!found.has(light)) {
             light.layers.mask = source.layers;
             this.sources.delete(light);
@@ -113,7 +109,6 @@ export class LightCullingGridController {
 
     stats() { return {authored:this.sources.size,slots:this.slots.length,active:this.slots.filter(s=>s.source).length,cell:this.cameraCell,activeIds:this.slots.flatMap(s=>s.source?[s.source.light.id]:[])}; }
     dispose() {
-        this.releaseLights();
         this.slots.forEach(slot => { this.scene.remove(slot.light); slot.light.dispose(); });
         this.sources.forEach(source => { source.light.layers.mask = source.layers; });
         this.slots = [];

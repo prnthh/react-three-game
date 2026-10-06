@@ -1,6 +1,6 @@
 import { useThree } from '@react-three/fiber';
 import type { PrefabDocumentApi } from '../../core/prefabDocumentApi.js';
-import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useSyncExternalStore, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useRef, useSyncExternalStore, type ReactNode } from "react";
 import type { Object3D, Texture } from "three";
 import type { GameObject } from "../../core/types.js";
 import { createGameObjectHandle } from "./gameObject.js";
@@ -25,8 +25,6 @@ export type NodeComponentType<T> = symbol & { readonly [NODE_COMPONENT_VALUE]?: 
 export type SceneComponent<T> = Readonly<{
     /** Registry identity; graph entries use Three UUIDs, gameplay entries use scoped node IDs. */
     key: string;
-    /** @deprecated Use key; this is not necessarily an authored node ID. */
-    nodeId: string;
     value: T;
 }>;
 
@@ -102,7 +100,7 @@ export function createNodeComponentRegistry(): NodeComponentRegistry {
             let snapshot = snapshots.get(type);
             if (!snapshot) {
                 const current = components.get(type);
-                snapshot = current ? Array.from(current, ([key, { value }]) => ({ key, nodeId: key, value })) : EMPTY_SCENE_COMPONENTS;
+                snapshot = current ? Array.from(current, ([key, { value }]) => ({ key, value })) : EMPTY_SCENE_COMPONENTS;
                 snapshots.set(type, snapshot);
             }
             return snapshot as readonly SceneComponent<T>[];
@@ -180,8 +178,16 @@ export interface PrefabApi extends PrefabDocumentApi, PrefabRegistry {
 export const SceneContext = createContext<Scene | null>(null);
 export const PrefabContext = createContext<PrefabApi | null>(null);
 export const NodeComponentContext = createContext<NodeComponentRegistry | null>(null);
-const NodeContext = createContext<NodeApi | null>(null);
+interface NodeStore {
+    current: NodeApi;
+    published: NodeApi;
+    listeners: Set<() => void>;
+    subscribe(listener: () => void): () => void;
+}
+const NodeContext = createContext<NodeStore | null>(null);
 export const RuntimeNodeIdPrefixContext = createContext("");
+/** Mode is read at each node boundary without threading it through the authored tree. */
+export const PrefabModeContext = createContext(false);
 
 /** Owns one runtime-component index for the complete scene. */
 export function SceneComponentsProvider({ children }: { children: ReactNode }) {
@@ -196,7 +202,6 @@ function SceneComponentsOwner({ children }: { children: ReactNode }) {
 
 export interface NodeApi {
     nodeId: string;
-    preparing?: boolean;
     editMode?: boolean;
     isSelected?: boolean;
     nodeInteractionHandlers?: NodeInteractionHandlers;
@@ -218,10 +223,16 @@ export function usePrefab() {
     return prefab;
 }
 
-export function useNode() {
-    const node = useContext(NodeContext);
-    if (!node) throw new Error("useNode must be used inside a component View rendered by <PrefabRoot>");
-    return node;
+const selectNode = (node: NodeApi) => node;
+
+/** Select a stable node value to skip renders when other node fields change. */
+export function useNode(): NodeApi;
+export function useNode<T>(selector: (node: NodeApi) => T): T;
+export function useNode<T>(selector?: (node: NodeApi) => T): NodeApi | T {
+    const store = useContext(NodeContext);
+    if (!store) throw new Error("useNode must be used inside a component View rendered by <PrefabRoot>");
+    const select: (node: NodeApi) => NodeApi | T = selector ?? selectNode;
+    return useSyncExternalStore(store.subscribe, () => select(store.current), () => select(store.current));
 }
 
 function useNodeComponentRegistry() {
@@ -255,35 +266,53 @@ export function useGameObject(nodeId?: string) {
     const node = useContext(NodeContext);
     const prefix = useContext(RuntimeNodeIdPrefixContext);
     const components = useNodeComponentRegistry();
-    const localId = nodeId ?? node?.nodeId;
+    const localId = nodeId ?? node?.current.nodeId;
     if (localId === undefined) throw new Error('useGameObject requires a node id outside a component View');
     return useMemo(() => createGameObjectHandle(localId, prefix, prefab, components), [localId, prefix, prefab, components]);
 }
 
 export function NodeScope({
     nodeId,
-    preparing,
     editMode,
     isSelected,
     nodeInteractionHandlers,
     children,
 }: {
     nodeId: string;
-    preparing?: boolean;
     editMode?: boolean;
     isSelected?: boolean;
     nodeInteractionHandlers?: NodeInteractionHandlers;
     children: ReactNode;
 }) {
-    const value = useMemo<NodeApi>(() => ({
-        nodeId,
-        preparing,
-        editMode,
-        isSelected,
-        nodeInteractionHandlers,
-    }), [preparing, editMode, isSelected, nodeId, nodeInteractionHandlers]);
+    const storeRef = useRef<NodeStore | null>(null);
+    if (!storeRef.current) {
+        const initial = { nodeId, editMode, isSelected, nodeInteractionHandlers };
+        const listeners = new Set<() => void>();
+        storeRef.current = {
+            current: initial,
+            published: initial,
+            listeners,
+            subscribe(listener) {
+                listeners.add(listener);
+                return () => { listeners.delete(listener); };
+            },
+        };
+    }
+    const store = storeRef.current;
+    // Children rendered in this commit must read the new props; listeners are notified after commit.
+    const previous = store.current;
+    if (previous.nodeId !== nodeId || previous.editMode !== editMode || previous.isSelected !== isSelected ||
+        previous.nodeInteractionHandlers !== nodeInteractionHandlers) {
+        store.current = { nodeId, editMode, isSelected, nodeInteractionHandlers };
+    }
+    useLayoutEffect(() => {
+        if (store.published !== store.current) {
+            store.published = store.current;
+            store.listeners.forEach(listener => listener());
+        }
+    });
 
-    return <NodeContext.Provider value={value}>{children}</NodeContext.Provider>;
+    return <NodeContext.Provider value={store}>{children}</NodeContext.Provider>;
 }
 
 export function RuntimeNodeIdScope({ prefix, children }: { prefix: string; children: ReactNode }) {

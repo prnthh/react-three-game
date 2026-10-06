@@ -126,7 +126,7 @@ function RepeatedModel({ source, positions, interactive, properties }: {
     interactive: boolean;
     properties: ModelProperties;
 }) {
-    const { isSelected } = useNode();
+    const isSelected = useNode(node => node.isSelected);
     const { id: runtimeNodeId } = useGameObject();
     const parts = useMemo(() => {
         const result: RepeatedModelPart[] = [];
@@ -166,7 +166,7 @@ function RepeatedModel({ source, positions, interactive, properties }: {
 
 function LoadedModel({ properties }: ComponentViewProps<ModelProperties>) {
     const { basePath } = usePrefab();
-    const { nodeInteractionHandlers } = useNode();
+    const nodeInteractionHandlers = useNode(node => node.nodeInteractionHandlers);
     const interactive = Boolean(nodeInteractionHandlers);
     const path = properties.filename ? withBasePath(basePath, properties.filename) : '';
     const sourceModel = useModelAsset(path);

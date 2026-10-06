@@ -3,7 +3,6 @@ import { AssetRuntimeProvider } from './assets/AssetRuntime.js';
 import { GeometryRuntimeProvider } from './components/GeometryComponent.js';
 import { MaterialPoolProvider } from './components/MaterialComponent.js';
 import { SceneComponentsProvider } from './scene/SceneContext.js';
-import { SceneGraphRegistration } from './scene/SceneGraphRegistration.js';
 import { DEFAULT_SPATIAL_CELL_SIZE } from './spatial/SpatialGrid.js';
 import { MeshInstanceProvider, SpatialCellSizeContext } from './rendering/MeshInstanceProvider.js';
 import { GameEventsProvider } from './scene/GameEvents.js';
@@ -21,7 +20,6 @@ export function SceneRuntime({ children, spatialCellSize = DEFAULT_SPATIAL_CELL_
                     <GeometryRuntimeProvider>
                         <MaterialPoolProvider>
                             <SceneComponentsProvider>
-                                <SceneGraphRegistration />
                                 <MeshInstanceProvider enabled={instancing}>{children}</MeshInstanceProvider>
                             </SceneComponentsProvider>
                         </MaterialPoolProvider>

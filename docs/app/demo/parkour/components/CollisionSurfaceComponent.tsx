@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import { Box3, Quaternion, Vector3 } from 'three';
-import { createNodeComponentType, findComponent, useNode, useGameObject, usePrefab, useRegisterNodeComponent, type Component, type ComponentViewProps, type GameObject } from 'react-three-game/viewer';
+import { Box3, BoxGeometry, MeshBasicMaterial, Quaternion, Vector3 } from 'three';
+import { createNodeComponentType, findComponent, useNode, useGameObject, usePrefab, useRegisterNodeComponent, useSharedGeometryResource, useSharedMaterialResource, type Component, type ComponentViewProps, type GameObject } from 'react-three-game/viewer';
 import type { Surface } from '../collision';
 
 export const COLLISION_SURFACE = createNodeComponentType<{ bounds(): Surface | null }>('CollisionSurface');
@@ -16,10 +16,14 @@ export function resolveCollisionSurfaceSize(node: GameObject | null): BoxSize | 
     return [args[0], args[1], args[2]];
 }
 
-function ColliderWireframe({ size }: { size: BoxSize }) {
-    return <mesh raycast={() => {}} renderOrder={1000} userData={{ editorHelper: true }}>
-        <boxGeometry args={size} />
-        <meshBasicMaterial color="#52f5a5" depthWrite={false} toneMapped={false} wireframe />
+function ColliderWireframe({ size, visible }: { size: BoxSize; visible: boolean }) {
+    const geometry = useSharedGeometryResource(`parkour:collision:${size.join(',')}`, () => new BoxGeometry(...size));
+    const material = useSharedMaterialResource('parkour:collision-wireframe', () => new MeshBasicMaterial({
+        color: '#52f5a5', depthWrite: false, toneMapped: false, wireframe: true,
+    }));
+    return <mesh visible={visible} raycast={() => {}} renderOrder={1000} userData={{ editorHelper: true }}>
+        <primitive object={geometry} attach="geometry" dispose={null} />
+        <primitive object={material} attach="material" dispose={null} />
     </mesh>;
 }
 
@@ -51,7 +55,7 @@ function CollisionSurfaceView({ children, enabled }: ComponentViewProps) {
     } }), [object, size?.[0], size?.[1], size?.[2]]);
     useRegisterNodeComponent(COLLISION_SURFACE, enabled ? capability : null);
     return <>
-        {enabled && editMode && size && <ColliderWireframe size={size} />}
+        {enabled && size && <ColliderWireframe size={size} visible={Boolean(editMode)} />}
         {children}
     </>;
 }

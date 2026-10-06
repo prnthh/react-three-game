@@ -6,7 +6,10 @@ import Transform from '../../src/runtime/components/TransformComponent.tsx';
 import { denormalizePrefab, normalizePrefab } from '../../src/core/prefab.ts';
 registerComponent(Transform);
 const transform = (position, rotation = [0, 0, 0], scale = [1, 1, 1]) => ({ type: 'Transform', properties: { position, rotation, scale } });
-const scene = () => ({ root: { id: 'root', children: [{ id: 'parent', components: { transform: transform([3, 0, 0], [0, Math.PI / 2, 0], [2, 2, 2]) }, children: [{ id: 'child' }] }] } });
+const scene = () => ({ root: { id: 'root', children: [
+    { id: 'parent', components: { transform: transform([3, 0, 0], [0, Math.PI / 2, 0], [2, 2, 2]) }, children: [{ id: 'child' }] },
+    { id: 'material-user', components: { material: { type: 'Material', properties: { name: 'red' } } } },
+] } });
 const run = (prefab, ...commands) => {
     const { state, result } = evaluateSceneCommandState(normalizePrefab(prefab), { commands });
     return { prefab: denormalizePrefab(state), result };
@@ -21,12 +24,12 @@ test('validation stages sequential commands without mutating scene or input', ()
         { op: 'transform', id: 'new', position: [2, 3, 4] },
         { op: 'update', id: 'new', patch: { name: 'Box', hidden: true } },
         { op: 'move', id: 'new', parentId: 'parent' },
-        { op: 'material', id: 'red', material: { color: '#ff0000' } });
+        { op: 'patchComponent', id: 'material-user', key: 'material', properties: { color: '#ff0000' } });
     assert.deepEqual(original, snapshot);
     assert.deepEqual(node, { id: 'new' });
     assert.equal(evaluated.prefab.root.children[0].children[1].name, 'Box');
     assert.equal(evaluated.result.commandCount, 5);
-    assert.deepEqual(evaluated.result.changedIds, ['new', 'red']);
+    assert.deepEqual(evaluated.result.changedIds, ['new', 'material-user']);
 });
 
 test('a late failure never partially edits the source', () => {
@@ -49,7 +52,7 @@ test('hierarchy and malformed command validation reject unsafe mutations', () =>
         { op: 'transform', id: 'child', space: 'world', position: [0, 0, 0] },
         { op: 'component', id: 'child', key: 't', component: { type: 'Transform', properties: { position: 'bad' } } },
         { op: 'component', id: 'parent', key: 'second', component: transform([0, 0, 0]) },
-        { op: 'material', id: 'red', material: { opacity: 'bad' } },
+        { op: 'patchComponent', id: 'material-user', key: 'material', properties: { opacity: 'bad' } },
         { op: 'typo', id: 'child' },
         { op: 'remove', id: 'child', typo: true },
     ]) assert.throws(() => run(scene(), command), undefined, JSON.stringify(command));

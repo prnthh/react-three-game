@@ -42,7 +42,8 @@ export const spotLightDefaults = {
 export type SpotLightProperties = Partial<typeof spotLightDefaults>;
 
 function SpotLightView({ properties, children }: ComponentViewProps<SpotLightProperties>) {
-    const { editMode, isSelected } = useNode();
+    const editMode = useNode(node => node.editMode);
+    const isSelected = useNode(node => node.isSelected);
     const { basePath } = usePrefab();
 
     const merged = mergeWithDefaults(spotLightDefaults, properties);

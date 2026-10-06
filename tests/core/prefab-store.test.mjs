@@ -17,8 +17,7 @@ const fixture = () => {
 
 test('API and direct store edits use the same undo history, including synchronous multi-action edits', async () => {
     const { store, history, disconnect, api } = fixture();
-    api.add({ id: 'child' });
-    store.getState().setMaterial('concrete', { color: '#888' });
+    api.add({ id: 'child', components: { material: { type: 'Material', properties: { name: 'concrete', color: '#888' } } } });
     await tick();
     api.update('child', node => ({ ...node, name: 'renamed' }));
     history.undo(); // flush pending edits before undoing
@@ -63,12 +62,11 @@ test('a document batch publishes once, supports dependent edits, and preserves u
     let notifications = 0;
     store.subscribe(() => notifications++);
     api.batch(() => {
-        api.add({ id: 'group' });
+        api.add({ id: 'group', components: { material: { type: 'Material', properties: { name: 'paint', color: '#fff' } } } });
         api.batch(() => api.add({ id: 'child' }, 'group'));
         assert.ok(api.get('child'), 'reads see preceding edits');
         api.update('child', node => ({ ...node, name: 'updated' }));
-        api.setMaterial('paint', { color: '#fff' });
-        api.setMaterial('paint', { color: '#000' });
+        api.update('group', node => ({ ...node, components: { ...node.components, material: { ...node.components.material, properties: { ...node.components.material.properties, color: '#000' } } } }));
         assert.equal(notifications, 0);
     });
     assert.equal(notifications, 1);
@@ -96,8 +94,7 @@ test('failed and empty document batches do not publish or modify committed state
     let notifications = 0;
     store.subscribe(() => notifications++);
     assert.throws(() => api.batch(() => {
-        api.add({ id: 'child' });
-        api.setMaterial('paint', { color: '#fff' });
+        api.add({ id: 'child', components: { material: { type: 'Material', properties: { name: 'paint', color: '#fff' } } } });
         throw new Error('abort');
     }), /abort/);
     api.batch(() => {});

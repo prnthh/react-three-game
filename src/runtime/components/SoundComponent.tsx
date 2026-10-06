@@ -140,7 +140,7 @@ function SoundComponentView({ properties, children }: ComponentViewProps<SoundPr
 function SoundWithListener({ properties, children, listener }: Pick<ComponentViewProps<SoundProperties>, 'properties' | 'children'> & { listener: NonNullable<ReturnType<typeof useAudioListener>> }) {
     const { basePath } = usePrefab();
     const { getSound } = useAssetRuntime();
-    const { editMode } = useNode();
+    const editMode = useNode(node => node.editMode);
     const { id: nodeId } = useGameObject();
     const gameEvents = useGameEvents();
     const { eventName, autoplay = false, positional = false, refDistance = 1, maxDistance = 24, rolloffFactor = 1, distanceModel = 'inverse' } = properties;

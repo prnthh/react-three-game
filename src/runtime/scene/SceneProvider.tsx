@@ -43,9 +43,7 @@ function PrefabScope({ store, scene, prefab, editMode, basePath = "", children }
         mode: editMode ? PrefabEditorMode.Edit : PrefabEditorMode.Play,
     }), [editMode, parentScene, resolvedPrefab, scene]);
 
-    return <SceneContext.Provider value={resolvedScene}>
-        <PrefabContext.Provider value={resolvedPrefab}>
-            {children}
-        </PrefabContext.Provider>
-    </SceneContext.Provider>;
+    const content = <PrefabContext.Provider value={resolvedPrefab}>{children}</PrefabContext.Provider>;
+
+    return parentScene ? content : <SceneContext.Provider value={resolvedScene}>{content}</SceneContext.Provider>;
 }

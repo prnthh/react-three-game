@@ -22,8 +22,6 @@ const commands = [
     operation('transform', { id: string, space: { enum: ['local', 'world'], default: 'local' }, position: vector, rotation: vector, scale: vector }, ['id']),
     operation('component', { id: string, key: string, component: { anyOf: [component, { type: 'null' }] } }, ['id', 'key', 'component']),
     operation('patchComponent', { id: string, key: string, properties, unset: { type: 'array', items: string } }, ['id', 'key', 'properties']),
-    operation('material', { id: string, material: { type: 'object', description: 'PrefabMaterial definition; replaces the named shared material.' } }, ['id', 'material']),
-    operation('patchMaterial', { id: string, patch: { type: 'object', description: 'Shallow patch of an existing shared PrefabMaterial.' } }, ['id', 'patch']),
 ];
 
 /** Shared by command validation and editor convenience methods. */

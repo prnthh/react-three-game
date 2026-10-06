@@ -90,15 +90,14 @@ scene.replaceAll({ prefab: starter });
 scene.remove({ id: 'cube' }); // Keep the starter light and sky environment.
 for (const [index, geometryType] of ['box', 'sphere', 'torus'].entries()) {
   const id = `shape-${index}`;
-  scene.setMaterial({ id, material: {
-    color: ['#ff7659', '#51bca8', '#a58cff'][index], roughness: 0.4
-  } });
   scene.create({ parentId: scene.info().rootId, node: {
     id, name: geometryType,
     components: {
       transform: { type: 'Transform', properties: { position: [(index - 1) * 3, 1, 0] } },
       geometry: { type: 'Geometry', properties: { geometryType } },
-      material: { type: 'Material', properties: { name: id } }
+      material: { type: 'Material', properties: {
+        name: id, color: ['#ff7659', '#51bca8', '#a58cff'][index], roughness: 0.4
+      } }
     }
   } });
 }
@@ -396,8 +395,6 @@ IDs created earlier in a batch can be used by later commands.
 | `transform` | `id, space?, position?, rotation?, scale?` | Set local or world transform |
 | `component` | `id, key, component` | Replace a component instance; null removes it |
 | `patchComponent` | `id, key, properties, unset?` | Shallow property patch; unset restores defaults |
-| `material` | `id, material` | Add/replace a shared material |
-| `patchMaterial` | `id, patch` | Shallow patch of an existing shared material |
 
 `key` is a component **instance key**, not its type; discover it with node queries.
 Nested objects and arrays are replaced as values, never implicitly deep-merged.
@@ -432,8 +429,8 @@ Keep JSON for further scene editing.
   reference it with `{ name: "concrete" }` only. Do not write a top-level
   `materials` table. Names resolve across loaded prefabs in one scene; unresolved
   references stay invisible until a definition loads. `scene.materials()` is a
-  derived index of definitions in the current document, and `setMaterial` edits
-  their owning components (or creates a definition node for a new name).
+  derived index of definitions in the current document. Add and edit settings
+  through the user's `Material` component with ordinary component mutations.
 - Keep related nodes under a named parent; child transforms are relative to it.
 - Inspect nearby peers before composing a node. Preserve the scene's conventions for
   component ownership, hierarchy, naming and functional versus visual-only details.

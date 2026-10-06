@@ -6,7 +6,7 @@ import { notifyObjectChanged } from '../scene/objectChanges.js';
 import type { Object3D } from "three";
 import { getNodeUserData, type GameObject as GameObjectType } from "../../core/types.js";
 import { usePrefabRenderNode, usePrefabStoreApi } from "./PrefabStoreContext.js";
-import { NodeScope, RuntimeNodeIdPrefixContext, useGameObject } from "../scene/SceneContext.js";
+import { NodeScope, PrefabModeContext, RuntimeNodeIdPrefixContext, useGameObject } from "../scene/SceneContext.js";
 import { useNodeSelected } from "../scene/SelectionRuntime.js";
 import { createNodeInteractionHandlers, type NodeInteractionEvent, type NodeInteractionEventType } from "../scene/usePointerEvents.js";
 import { analyzeNodeComponents, ComponentLookupContext, EMPTY_NODE_COMPONENTS } from "./nodePlan.js";
@@ -31,28 +31,62 @@ export const PrefabNode = memo(function PrefabNode(props: RendererProps) {
 
 function ResolvedPrefabNode({
     nodeId,
-    registryVersion,
     onPointerEvent,
     registerRef,
-    editMode,
     isVisible = true,
     isEnabled = true,
-    preparing = false,
 }: RendererProps) {
     const [gameObject, childIds] = usePrefabRenderNode(nodeId);
     const scope = useContext(RuntimeNodeIdPrefixContext);
     const lookup = useContext(ComponentLookupContext);
     const analyzedComponents = useMemo(
         () => gameObject ? analyzeNodeComponents(gameObject, lookup) : EMPTY_NODE_COMPONENTS,
-        [registryVersion, gameObject, lookup],
+        [gameObject, lookup],
     );
-    const isSelected = useNodeSelected(nodeId, Boolean(editMode));
-    const { transform } = analyzedComponents;
 
+    if (!gameObject) return null;
+
+    const nodeEnabled = isEnabled && !gameObject.disabled;
+    const nodeVisible = isVisible && !gameObject.hidden && !gameObject.disabled;
+    const metadataProps = getNodeMetadataProps(gameObject, scope);
+
+    const childNodes = <ChildNodes childIds={childIds}
+        onPointerEvent={onPointerEvent}
+        registerRef={registerRef}
+        isVisible={nodeVisible}
+        isEnabled={nodeEnabled}
+    />;
+    const inner = renderNodeContent(analyzedComponents, childNodes, nodeEnabled);
+
+    return <NodePresentation
+        nodeId={nodeId}
+        childIds={childIds}
+        analyzedComponents={analyzedComponents}
+        metadataProps={metadataProps}
+        onPointerEvent={onPointerEvent}
+        registerRef={registerRef}
+        nodeVisible={nodeVisible}
+    >{inner}</NodePresentation>;
+}
+
+/** Mode changes update interaction and interested Views while preserving composed children. */
+function NodePresentation({ nodeId, childIds, analyzedComponents, metadataProps, onPointerEvent, registerRef, nodeVisible, children }: {
+    nodeId: string;
+    childIds: string[];
+    analyzedComponents: ReturnType<typeof analyzeNodeComponents>;
+    metadataProps: ReturnType<typeof getNodeMetadataProps>;
+    onPointerEvent?: RendererProps['onPointerEvent'];
+    registerRef: RendererProps['registerRef'];
+    nodeVisible: boolean;
+    children: React.ReactNode;
+}) {
+    const editMode = useContext(PrefabModeContext);
+    const isSelected = useNodeSelected(nodeId, editMode);
     const owner = useGameObject(nodeId);
     const unregisterOwner = useRef<(() => void) | null>(null);
     const unregisterObject = useRef<(() => void) | null>(null);
     const groupRef = useRef<Object3D | null>(null);
+    const { transform } = analyzedComponents;
     useLayoutEffect(() => {
         if (groupRef.current) notifyObjectChanged(groupRef.current);
     }, [...transform.position, ...transform.rotation, ...transform.scale]);
@@ -70,34 +104,16 @@ function ResolvedPrefabNode({
             unregisterObject.current = cleanup ?? (() => registerRef(nodeId, null));
         }
     }, [nodeId, registerRef, owner]);
-
-    const primaryInteractionHandlers = !editMode && analyzedComponents.clickEvent.enabled && onPointerEvent
+    const primaryInteractionHandlers = useMemo(() => !editMode && analyzedComponents.clickEvent.enabled && onPointerEvent
         ? createNodeInteractionHandlers((eventType, event) => {
             event.stopPropagation();
             onPointerEvent(eventType, event, nodeId, groupRef.current, analyzedComponents.clickEvent.eventName);
         })
-        : undefined;
-
-    if (!gameObject) return null;
-
-    const nodeEnabled = isEnabled && !gameObject.disabled;
-    const nodeVisible = (nodeEnabled || preparing) && isVisible && !gameObject.hidden && !gameObject.disabled;
-    const metadataProps = getNodeMetadataProps(gameObject, scope);
-
-    const childNodes = <ChildNodes childIds={childIds} registryVersion={registryVersion}
-        onPointerEvent={onPointerEvent}
-        registerRef={registerRef}
-        editMode={editMode}
-        isVisible={nodeVisible}
-        isEnabled={nodeEnabled}
-        preparing={preparing}
-    />;
-    const inner = renderNodeContent(analyzedComponents, childNodes, nodeEnabled);
+        : undefined, [editMode, analyzedComponents.clickEvent.enabled, analyzedComponents.clickEvent.eventName, onPointerEvent, nodeId]);
 
     return (
         <NodeScope
             nodeId={nodeId}
-            preparing={preparing}
             editMode={editMode}
             isSelected={isSelected}
             nodeInteractionHandlers={primaryInteractionHandlers}
@@ -109,14 +125,13 @@ function ResolvedPrefabNode({
                 {...primaryInteractionHandlers}
                 visible={nodeVisible}
             >
-                {inner}
+                {children}
             </group>
         </NodeScope>
     );
 }
 
 export interface RendererProps {
-    registryVersion: number;
     nodeId: string;
     onPointerEvent?: (
         eventType: NodeInteractionEventType,
@@ -126,10 +141,8 @@ export interface RendererProps {
         eventName: string | null,
     ) => void;
     registerRef: (id: string, obj: Object3D | null) => (() => void) | void;
-    editMode?: boolean;
     isVisible?: boolean;
     isEnabled?: boolean;
-    preparing?: boolean;
 }
 
 function ChildNodes({ childIds, ...props }: { childIds: string[] } & Omit<RendererProps, 'nodeId'>) {

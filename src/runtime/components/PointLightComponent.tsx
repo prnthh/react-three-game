@@ -32,7 +32,8 @@ export const pointLightDefaults = {
 export type PointLightProperties = Partial<typeof pointLightDefaults>;
 
 function PointLightView({ properties, children }: ComponentViewProps<PointLightProperties>) {
-    const { editMode, isSelected } = useNode();
+    const editMode = useNode(node => node.editMode);
+    const isSelected = useNode(node => node.isSelected);
     const merged = mergeWithDefaults(pointLightDefaults, properties);
     const shadowMapSize = normalizeShadowMapSize(merged.shadowMapSize);
     const shadowCameraNear = Math.max(0.001, Number(merged.shadowCameraNear) || 0.5);

@@ -191,10 +191,6 @@ export const PrefabModeContext = createContext(false);
 
 /** Owns one runtime-component index for the complete scene. */
 export function SceneComponentsProvider({ children }: { children: ReactNode }) {
-    return <SceneComponentsOwner>{children}</SceneComponentsOwner>;
-}
-
-function SceneComponentsOwner({ children }: { children: ReactNode }) {
     const scene = useThree(state => state.scene);
     const registry = getSceneComponentRegistry(scene);
     return <NodeComponentContext.Provider value={registry}>{children}</NodeComponentContext.Provider>;

@@ -26,5 +26,5 @@ Demo TypeScript stays under `app/demo`; game-specific wiring stays under `games/
 Run `npm run generate-manifests --workspace docs` (or
 `node docs/public/generate-manifest.mjs`) to rebuild `docs/public/manifest.json`.
 This single catalog lists models, textures, sounds, and prefabs. Its `prefabs`
-array includes nested scenes and game entry prefabs, excluding dialogue libraries
-that have no prefab root.
+array includes documents with a prefab root, including nested scenes and game
+entry prefabs.

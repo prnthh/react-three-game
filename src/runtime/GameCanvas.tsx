@@ -6,7 +6,6 @@ import { WebGPURendererParameters } from "three/src/renderers/webgpu/WebGPURende
 import type { ColorSpace, ShadowMapType, ToneMapping } from "three";
 import { Loader } from "@react-three/drei";
 import { registerBuiltInComponents } from "./components/index.js";
-import { ProgressiveMountProvider } from './prefabs/ProgressiveMount.js';
 
 extend({
     MeshBasicNodeMaterial: MeshBasicNodeMaterial,
@@ -20,8 +19,6 @@ export interface GameCanvasProps extends Omit<CanvasProps, 'children'> {
     loader?: boolean;
     /** World-space cell size for automatic spatial mesh batches. Default: 24. */
     spatialCellSize?: number;
-    /** Opt in to incremental mesh mounting across prefabs. Children arrive over multiple frames. Zero disables it. */
-    mountBatchSize?: number;
     children: React.ReactNode;
     glConfig?: Omit<WebGPURendererParameters, 'forceWebGL' | 'getFallback'>;
     rendererConfig?: {
@@ -32,7 +29,7 @@ export interface GameCanvasProps extends Omit<CanvasProps, 'children'> {
     };
 }
 
-export default function GameCanvas({ loader = false, children, spatialCellSize, mountBatchSize = 0, glConfig, rendererConfig, onCreated, raycaster, style, ...props }: GameCanvasProps) {
+export default function GameCanvas({ loader = false, children, spatialCellSize, glConfig, rendererConfig, onCreated, raycaster, style, ...props }: GameCanvasProps) {
 
     return <Canvas
         style={{
@@ -67,7 +64,7 @@ export default function GameCanvas({ loader = false, children, spatialCellSize, 
         onCreated={onCreated}
         {...props}
     >
-        <BrowserRuntime><ProgressiveMountProvider batchSize={mountBatchSize}><SceneRuntime spatialCellSize={spatialCellSize}>{children}</SceneRuntime></ProgressiveMountProvider></BrowserRuntime>
+        <BrowserRuntime><SceneRuntime spatialCellSize={spatialCellSize}>{children}</SceneRuntime></BrowserRuntime>
 
         {loader ? <Loader /> : null}
     </Canvas>;

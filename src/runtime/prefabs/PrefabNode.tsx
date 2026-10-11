@@ -10,7 +10,6 @@ import { NodeScope, PrefabModeContext, RuntimeNodeIdPrefixContext, useGameObject
 import { useNodeSelected } from "../scene/SelectionRuntime.js";
 import { createNodeInteractionHandlers, type NodeInteractionEvent, type NodeInteractionEventType } from "../scene/usePointerEvents.js";
 import { analyzeNodeComponents, ComponentLookupContext, EMPTY_NODE_COMPONENTS } from "./nodePlan.js";
-import { MountParentContext, useProgressiveMount } from './ProgressiveMount.js';
 
 function getNodeMetadataProps(node: GameObjectType, scope: string) {
     const nodeName = node.name?.trim() ?? '';
@@ -44,21 +43,18 @@ function ResolvedPrefabNode({
         () => gameObject ? analyzeNodeComponents(gameObject, lookup) : EMPTY_NODE_COMPONENTS,
         [gameObject, lookup],
     );
-    const ready = useProgressiveMount(analyzedComponents.composition.some(entry =>
-        entry.component?.slot === 'geometry' || ['Model', 'SkinnedMesh'].includes(entry.component?.name ?? '')), analyzedComponents.transform.position);
-
-    if (!gameObject || !ready) return null;
+    if (!gameObject) return null;
 
     const nodeEnabled = isEnabled && !gameObject.disabled;
     const nodeVisible = isVisible && !gameObject.hidden && !gameObject.disabled;
     const metadataProps = getNodeMetadataProps(gameObject, scope);
 
-    const childNodes = <ChildNodes childIds={childIds}
+    const childNodes = childIds.map(childId => <PrefabNode key={childId} nodeId={childId}
         onPointerEvent={onPointerEvent}
         registerRef={registerRef}
         isVisible={nodeVisible}
         isEnabled={nodeEnabled}
-    />;
+    />);
     const inner = renderNodeContent(analyzedComponents, childNodes, nodeEnabled);
 
     return <NodePresentation
@@ -128,7 +124,7 @@ function NodePresentation({ nodeId, childIds, analyzedComponents, metadataProps,
                 {...primaryInteractionHandlers}
                 visible={nodeVisible}
             >
-                <MountParentContext.Provider value={groupRef}>{children}</MountParentContext.Provider>
+                {children}
             </group>
         </NodeScope>
     );
@@ -148,29 +144,20 @@ export interface RendererProps {
     isEnabled?: boolean;
 }
 
-function ChildNodes({ childIds, ...props }: { childIds: string[] } & Omit<RendererProps, 'nodeId'>) {
-    return childIds.map(childId =>
-        <PrefabNode
-            key={childId}
-            nodeId={childId}
-            {...props}
-        />
-    );
-}
-
 function renderNodeContent(
     analyzedComponents: ReturnType<typeof analyzeNodeComponents>,
     childNodes?: React.ReactNode,
     enabled = true,
 ) {
     const components = analyzedComponents.composition;
-    // Activation effects are siblings of Views, so they cannot move authored children.
-    const lifecycles: React.ReactNode[] = [];
+    // Keep behavior boundaries across toggles, but avoid empty Fragment fibers on View-only nodes.
+    let lifecycles: React.ReactNode[] | null = null;
     let content = childNodes;
     for (let index = components.length - 1; index >= 0; index -= 1) {
         const component = components[index];
-        if (enabled && (component.component?.setup || component.component?.update)) {
-            lifecycles.push(<ComponentLifecycle key={component.key} component={component.component} properties={component.properties} enabled={enabled} />);
+        if (component.component?.setup || component.component?.update) {
+            lifecycles ??= [];
+            if (enabled) lifecycles.push(<ComponentLifecycle key={component.key} component={component.component} properties={component.properties} enabled={enabled} />);
         }
         if (component.component && !enabled && !component.component.renderWhenDisabled) continue;
         const View = component.View;

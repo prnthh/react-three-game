@@ -6,6 +6,52 @@ import { normalizePrefab } from '../../src/core/prefab.ts';
 import { createPrefabStore } from '../../src/core/prefabStore.ts';
 import { assetLoaders, clearAsset, getAsset, loadAsset, defaultAssetCache, createAssetCache } from '../../src/runtime/assets/assetCache.ts';
 import { preparePrefab } from '../../src/runtime/prefabs/preparePrefab.ts';
+import { loadModel, parseSoundFromFile } from '../../src/runtime/assets/assetLoaders.ts';
+import { Group } from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
+
+test('sound file imports preserve bytes and read/decode failures', async t => {
+    const input = new Uint8Array([1, 2, 3]).buffer, sound = {}, error = new Error('read failed');
+    let fail = false;
+    const previousWindow = globalThis.window;
+    globalThis.window = { AudioContext: class { async decodeAudioData(bytes) {
+        assert.notEqual(bytes, input);
+        assert.deepEqual([...new Uint8Array(bytes)], [1, 2, 3]);
+        if (fail) throw error;
+        return sound;
+    } } };
+    t.after(() => { if (previousWindow === undefined) delete globalThis.window; else globalThis.window = previousWindow; });
+    const file = { arrayBuffer: async () => input };
+    assert.deepEqual(await parseSoundFromFile(file), { success: true, sound });
+    fail = true;
+    assert.deepEqual(await parseSoundFromFile(file), { success: false, error });
+    assert.deepEqual(await parseSoundFromFile({ arrayBuffer: async () => { throw error; } }), { success: false, error });
+});
+
+test('model loaders preserve progress, animation identity and error results', async t => {
+    for (const [extension, Loader] of [['glb', GLTFLoader], ['fbx', FBXLoader]]) {
+        const model = new Group(), animations = [], error = new Error('decode failed'), progress = [];
+        let fail = false;
+        const path = `/model.${extension}?version=1`;
+        const mocked = t.mock.method(Loader.prototype, 'load', (url, onLoad, onProgress, onError) => {
+            assert.equal(url, path);
+            onProgress({ loaded: 4, total: 0 });
+            onProgress({ loaded: 8, total: 10 });
+            if (fail) onError(error);
+            else onLoad(extension === 'glb' ? { scene: model, animations } : model);
+        });
+        assert.deepEqual(await loadModel(path, (...args) => progress.push(args)), { success: true, model });
+        assert.deepEqual(progress, [[path, 4, 4], [path, 8, 10]]);
+        if (extension === 'glb') assert.equal(model.animations, animations);
+        fail = true;
+        assert.deepEqual(await loadModel(path), { success: false, error });
+        mocked.mock.mockImplementation(() => { throw error; });
+        await assert.rejects(loadModel(path), value => value === error);
+        mocked.mock.restore();
+    }
+    assert.equal((await loadModel('/model.unsupported')).success, false);
+});
 
 describe('Caching and ownership', () => {
     test('instances share immutable definitions but edits stay local', () => {

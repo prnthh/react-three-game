@@ -1,4 +1,4 @@
-import { useContext, useLayoutEffect, useMemo, useState, type ReactNode } from "react";
+import { useContext, useMemo, useState, type ReactNode } from "react";
 
 import { createPrefabRegistry, PrefabContext, PrefabEditorMode, SceneContext } from "./SceneContext.js";
 import type { PrefabApi, Scene } from "./SceneContext.js";
@@ -8,7 +8,6 @@ import { PrefabStoreProvider } from "../prefabs/PrefabStoreContext.js";
 import { type PrefabStoreApi } from "../../core/prefabStore.js";
 import { SceneRuntime } from "../SceneRuntime.js";
 import { createPrefabApi } from "../prefabs/prefabApi.js";
-import { PrefabMountContext, PrefabMountScope } from '../prefabs/ProgressiveMount.js';
 
 export interface SceneProviderProps {
     store: PrefabStoreApi;
@@ -36,11 +35,6 @@ function PrefabScope({ store, scene, prefab, editMode, basePath = "", children }
     const parentScene = useContext(SceneContext);
     const runtime = useAssetRuntime();
     const [registry] = useState(createPrefabRegistry);
-    const parentMount = useContext(PrefabMountContext);
-    const mount = useMemo(() => new PrefabMountScope(parentMount), [parentMount]);
-    // Descendant layout effects enqueue their work before this prefab is ready.
-    useLayoutEffect(() => { mount.commit(); }, [mount]);
-
     const localPrefab = useMemo(() => createPrefabApi(store, registry, () => runtime, basePath), [basePath, registry, runtime, store]);
     const resolvedPrefab = prefab ?? localPrefab;
     const resolvedScene = useMemo<Scene>(() => parentScene ?? scene ?? ({
@@ -49,7 +43,7 @@ function PrefabScope({ store, scene, prefab, editMode, basePath = "", children }
     }), [editMode, parentScene, resolvedPrefab, scene]);
 
     const content = <PrefabContext.Provider value={resolvedPrefab}>
-        <PrefabMountContext.Provider value={mount}>{children}</PrefabMountContext.Provider>
+        {children}
     </PrefabContext.Provider>;
 
     return parentScene ? content : <SceneContext.Provider value={resolvedScene}>{content}</SceneContext.Provider>;

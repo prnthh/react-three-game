@@ -8,7 +8,7 @@ const DemoApp = dynamic(() => import("./DemoApp"), {
 
 export default function DemoAppLoader() {
   return (
-    <div className="absolute inset-0 -z-1 h-full w-full">
+    <div className="absolute inset-0 -z-1 h-full w-full bg-[#a2b9ce]">
       <DemoApp />
     </div>
   );

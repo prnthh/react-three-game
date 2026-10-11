@@ -110,18 +110,14 @@ instances it needs and unmounts them to release their objects; URL assets stay i
 the shared cache. `static` freezes placement and content for immutable chunks;
 remount to change either.
 
-For large scenes, `<GameCanvas mountBatchSize={8}>` admits up to eight new mesh
-nodes per frame, nearest first. The default `0` mounts them together. Readiness
-is internal to each prefab subtree, including nested references. Gameplay starts
-after that subtree mounts; loading another placement does not pause it. Component
-Disabled Views unmount by default. `renderWhenDisabled` opts into keeping a View
-mounted for preparation or a persistent scene graph; those Views use `enabled`
-to gate behavior. `setup` and `update` are gated automatically. `PrefabInstance` additionally waits for shader compilation
-and owns an independent activation lifetime, so streamed placements do not disable
-the host component that keeps them mounted.
-Environment captures mount their contents together. Measure preparation as well
-as steady frame time: individual geometry, decoding, or shader work can still be
-expensive. The editor accepts this setting through `canvasProps`.
+Prefab nodes mount through React reconciliation. Disabled Views unmount by
+default. `renderWhenDisabled` opts into keeping a View mounted for preparation or a persistent scene graph; those Views
+use `enabled` to gate behavior. `setup` and `update` are gated automatically.
+`PrefabInstance` waits for assets and shader compilation before activation.
+Each streamed placement has its own activation lifetime.
+Shader compilation runs in slices between frames. Individual geometry creation,
+decoding, and shader work contribute to startup time; measure preparation as well as
+steady frame time.
 
 Follow [PrefabInstance](../src/runtime/prefabs/PrefabInstance.tsx) →
 [preparePrefab](../src/runtime/prefabs/preparePrefab.ts) →
@@ -145,8 +141,8 @@ const move = () => object.transform?.position.set(1, 0, 0);
 ```
 
 Run edits in event handlers or effects. Components and
-physics adapters can still mutate Three.js objects directly. Instance matrix
-scanning remains the fallback until every writer can reliably report changes.
+physics adapters can mutate Three.js objects directly. Instance matrix scanning
+detects changes to their transforms.
 The window API reads/edits the document; captures and GLB export use live objects.
 
 ## Runtime scripts
@@ -154,7 +150,7 @@ The window API reads/edits the document; captures and GLB export use live object
 `RuntimeComponent` (`type: "Runtime"`) compiles its `setup` and `update` strings
 through the optional callbacks on `Component`. The renderer maps setup/cleanup to
 React `useEffect` and update to R3F `useFrame`; built-in Views can use React/R3F
-hooks directly. Runtime runs only while enabled in Play and outside preparation.
+hooks directly. Runtime runs while enabled in Play, after preparation.
 Code edits restart setup with fresh state; data edits keep it running.
 
 Scripts read the current R3F store through `context.three` and resolve local
@@ -214,11 +210,11 @@ Register it as in the [custom component demo](app/demo/customcomponent/page.tsx)
 - Put editable fields/defaults in the definition; views receive resolved values.
 - Return `children` so composition continues through the view.
 - Object, geometry and material views declare their `slot` and implement R3F attachments. Geometry views receive an implicit mesh; object views create their own render object. Each visual component supplies its render-graph part directly.
-- Share mesh property definitions and editor fields as code helpers. Geometry, BufferGeometry, Model and SkinnedMesh use the collapsed `Mesh options` inspector section; expose only options the renderer supports.
+- Share mesh property definitions and editor fields as code helpers. Geometry, BufferGeometry, Model and SkinnedMesh use the collapsed `Mesh options` inspector section; expose the options the renderer supports.
 - Keep custom inspector imports in `.editor.tsx` modules.
 
-A component may omit `View` entirely when it only stores authored data. For a
-custom visual helper, use an ordinary view:
+A data component supplies a definition and properties. A visual component also
+supplies a `View`. For a custom visual helper, use an ordinary view:
 
 ```tsx
 import { registerComponent, useNode,
@@ -244,10 +240,10 @@ registerComponent({
 
 The view inherits the node's transform; changing its settings supplies new
 `properties` automatically. Ordinary descendant meshes participate in editor
-picking. Keep `children` so other components and child nodes still render.
+picking. Return `children` to render other components and child nodes.
 Import the registration module before loading its prefab in both editor and viewer.
 The same property definitions generate inspector fields and window API
-`describeComponents` output. Use `registerComponentEditor` from `/editor` only
+`describeComponents` output. Use `registerComponentEditor` from `/editor`
 when the generated inspector needs custom UI. Agents discover the property schemas.
 
 For a separate tool watching another node, subscribe to just the data it needs:
@@ -328,7 +324,7 @@ input copying; synchronous adapters pass data through directly. Authored prefab 
 | `/core` | Definitions, document store, command evaluation, schemas, and model serialization |
 | `/node` and `rtg` CLI | Node asset loading and scene conversion; CLI maps command files to core |
 | `/browser` | Browser downloads and audio services |
-| `/headless` | R3F scene construction without a browser or GPU |
+| `/headless` | R3F scene construction in Node.js |
 | `/viewer` and package root | R3F views and rendering resources |
 | `/editor` | Visual editor, history and Scene API |
 | `/plugins/crashcat` | Optional physics adapter |
@@ -360,8 +356,8 @@ Run `npm test`, `npm run build` and `npm --prefix docs run build`.
 Library source uses explicit `.js` relative imports, including `/index.js` for
 barrels. TypeScript resolves these to their `.ts`/`.tsx` implementations and emits
 Node-compatible imports and declarations directly; the package build is just
-`tsc`. Keep `bundler` type resolution for peer declarations that do not support
-NodeNext. The docs webpack configuration resolves these paths to source files.
+`tsc`. The library uses `bundler` type resolution for compatibility with peer
+declarations. The docs webpack configuration resolves these paths to source files.
 
 Run `npm run test:package` to check the packed CLI, native Node imports, and a
 NodeNext TypeScript consumer.

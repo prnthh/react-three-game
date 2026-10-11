@@ -6,7 +6,6 @@ import { CubeCamera, HalfFloatType, Scene, type Mesh, type Texture } from 'three
 import { CubeRenderTarget } from 'three/webgpu';
 import { MeshInstanceProvider } from '../rendering/MeshInstanceProvider.js';
 import { usePrefabStoreApi } from '../prefabs/PrefabStoreContext.js';
-import { ProgressiveMountProvider } from '../prefabs/ProgressiveMount.js';
 
 import type { Component, ComponentViewProps } from '../../core/ComponentRegistry.js';
 
@@ -67,9 +66,7 @@ function EnvironmentView({ properties, children }: ComponentViewProps<Environmen
     return <>
         <Environment {...props} map={capture.target.texture} environmentIntensity={intensity} />
         {createPortal(<AssetBoundary atomic subscribeToRetry={store.subscribe}>
-            <ProgressiveMountProvider batchSize={0}>
-                <MeshInstanceProvider isolated enabled={false}>{children}</MeshInstanceProvider>
-            </ProgressiveMountProvider>
+            <MeshInstanceProvider isolated enabled={false}>{children}</MeshInstanceProvider>
         </AssetBoundary>, scene)}
     </>;
 }

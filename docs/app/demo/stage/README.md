@@ -81,10 +81,9 @@ The driver's `id` selects the entry and `action` selects its lines. The driver
 loads that file when activated, owns the page index, and cancels stale dialogue
 requests when another entity is clicked or the scene changes.
 
-`OverlayHUD` only presents the active entity's text and advance callback. The
-entity still owns dialogue progress. The HUD is regular DOM outside the canvas,
-avoiding Drei Html's separate React-root lifecycle. It owns the voice toggle;
-advancing, closing, muting, or unmounting cancels speech.
+`OverlayHUD` presents the active entity's text and advance callback. The entity
+owns dialogue progress. The HUD renders regular DOM alongside the canvas and owns
+the voice toggle. Advancing, closing, muting, or unmounting cancels speech.
 
 ## Content and editing
 

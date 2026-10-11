@@ -13,7 +13,6 @@ import { PrefabEditorMode, PrefabModeContext, RuntimeNodeIdPrefixContext, Runtim
 import { SceneProvider } from "../scene/SceneProvider.js";
 import { scopedNodeId } from "../scene/gameObject.js";
 import { PrefabNode, type RendererProps } from "./PrefabNode.js";
-import { usePrefabMountPending } from './ProgressiveMount.js';
 import {
     type NodeInteractionEvent,
     type NodeInteractionEventType,
@@ -65,7 +64,6 @@ const PrefabRootBody = memo(forwardRef<Scene, PrefabRootProps>(({ onSelect, onPo
     const gameEvents = useGameEvents();
     const prefix = useContext(RuntimeNodeIdPrefixContext);
     const editMode = scene.mode === PrefabEditorMode.Edit;
-    const mounting = usePrefabMountPending();
     const prefab = usePrefab();
     const storeApi = usePrefabStoreApi();
     useImperativeHandle(ref, () => scene, [scene]);
@@ -127,7 +125,7 @@ const PrefabRootBody = memo(forwardRef<Scene, PrefabRootProps>(({ onSelect, onPo
                     <StoreRootNode
                         onPointerEvent={handleNodePointerEvent}
                         registerRef={prefab.registerObject}
-                        isEnabled={enabled && !mounting}
+                        isEnabled={enabled}
                     />
                     {children}
                 </group>

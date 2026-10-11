@@ -89,10 +89,7 @@ function PrefabGridStreamerView({ properties, children }: ComponentViewProps<Pro
 
     return <>
         {url && tiles.map(tile => <group key={`${url}:${tile.key}`} position={tile.coordinate.map((value, axis) => value * tileSize[axis]) as Coordinate}>
-            <PrefabInstance id={`${nodeId}/${tile.key}`} url={url} basePath={basePath} static={properties.static === true && mode === PrefabEditorMode.Play} onStatus={status => {
-                if (status.phase === 'active') grid.activate(tile.key);
-                report?.(status);
-            }} />
+            <PrefabInstance id={`${nodeId}/${tile.key}`} url={url} basePath={basePath} static={properties.static === true && mode === PrefabEditorMode.Play} onActivate={() => grid.activate(tile.key)} onStatus={report ?? undefined} />
         </group>)}
         {children}
     </>;

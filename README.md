@@ -55,8 +55,8 @@ export default function App() {
 ```
 
 Node IDs are unique within a prefab. Component keys such as `geometry` identify
-entries on a node; `type` selects the registered component. Properties omitted
-from the document use that component's defaults.
+entries on a node; `type` selects the registered component. Each component supplies
+defaults for its properties.
 
 ## 2. Edit the same prefab
 

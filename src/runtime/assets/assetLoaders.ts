@@ -1,4 +1,5 @@
 import type { Object3D, Texture } from "three";
+import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { SRGBColorSpace, TextureLoader } from "three";
 
 export type LoadedModel = Object3D;
@@ -195,30 +196,12 @@ export function parseTextureFromFile(file: File): Promise<TextureLoadResult> {
     });
 }
 
-export function parseSoundFromFile(file: File): Promise<SoundLoadResult> {
-    return new Promise(resolve => {
-        const reader = new FileReader();
-
-        reader.onload = async event => {
-            const arrayBuffer = event.target?.result as ArrayBuffer;
-
-            if (!arrayBuffer) {
-                resolve({ success: false, error: new Error('Failed to read file') });
-                return;
-            }
-
-            try {
-                const context = getAudioContext();
-                const sound = await context.decodeAudioData(arrayBuffer.slice(0));
-                resolve({ success: true, sound });
-            } catch (error) {
-                resolve({ success: false, error });
-            }
-        };
-
-        reader.onerror = () => resolve({ success: false, error: reader.error });
-        reader.readAsArrayBuffer(file);
-    });
+export async function parseSoundFromFile(file: File): Promise<SoundLoadResult> {
+    try {
+        const bytes = await file.arrayBuffer();
+        const sound = await getAudioContext().decodeAudioData(bytes.slice(0));
+        return { success: true, sound };
+    } catch (error) { return { success: false, error }; }
 }
 
 export async function loadModel(
@@ -226,51 +209,21 @@ export async function loadModel(
     onProgress?: ProgressCallback,
 ): Promise<ModelLoadResult> {
     try {
-        const fullPath = filename;
-        const modelFileKind = getModelFileKind(filename);
-
-        if (modelFileKind === "gltf") {
-            const gltfLoader = await getGLTFLoader();
-            return new Promise(resolve => {
-                gltfLoader.load(
-                    fullPath,
-                    gltf => {
-                        gltf.scene.animations = gltf.animations;
-                        resolve({ success: true, model: gltf.scene });
-                    },
-                    progressEvent => {
-                        if (!onProgress) {
-                            return;
-                        }
-
-                        const total = progressEvent.total || progressEvent.loaded;
-                        onProgress(filename, progressEvent.loaded, total);
-                    },
-                    error => resolve({ success: false, error }),
-                );
-            });
-        }
-
-        if (modelFileKind === "fbx") {
-            const fbxLoader = await getFBXLoader();
-            return new Promise(resolve => {
-                fbxLoader.load(
-                    fullPath,
-                    model => resolve({ success: true, model }),
-                    progressEvent => {
-                        if (!onProgress) {
-                            return;
-                        }
-
-                        const total = progressEvent.total || progressEvent.loaded;
-                        onProgress(filename, progressEvent.loaded, total);
-                    },
-                    error => resolve({ success: false, error }),
-                );
-            });
-        }
-
-        return { success: false, error: new Error(`Unsupported file format: ${filename}`) };
+        const kind = getModelFileKind(filename);
+        if (!kind) return { success: false, error: new Error(`Unsupported file format: ${filename}`) };
+        const loader = kind === 'gltf' ? await getGLTFLoader() : await getFBXLoader();
+        return new Promise(resolve => loader.load(
+            filename,
+            result => {
+                if (kind === 'gltf') {
+                    const gltf = result as GLTF;
+                    gltf.scene.animations = gltf.animations;
+                    resolve({ success: true, model: gltf.scene });
+                } else resolve({ success: true, model: result as Object3D });
+            },
+            progress => onProgress?.(filename, progress.loaded, progress.total || progress.loaded),
+            error => resolve({ success: false, error }),
+        ));
     } catch (error) {
         return { success: false, error };
     }

@@ -10,7 +10,6 @@ import { MeshInstanceProvider, useMeshInstanceRevision } from '../rendering/Mesh
 import { SceneRuntime } from '../SceneRuntime.js';
 import type { PreparedPrefab } from './preparePrefab.js';
 import { compileInSlices } from '../rendering/compileInSlices.js';
-import { MountParentContext, PrefabMountContext, usePrefabMountPending } from './ProgressiveMount.js';
 
 export type PrefabInstanceStatus =
     | { phase: 'loading' }
@@ -32,11 +31,9 @@ export interface PrefabInstanceProps {
 
 /** Load a shared definition, build an isolated instance, compile it, then activate gameplay. */
 export function PrefabInstance(props: PrefabInstanceProps) {
-    // Streamed placements have their own activation lifetime. Their loading must
-    // not disable the host behavior that keeps them mounted.
-    return <SceneRuntime><PrefabMountContext.Provider value={null}>
+    return <SceneRuntime>
         <InstanceResource key={`${props.id}:${props.basePath ?? ''}:${props.url}:${!!props.static}`} {...props} />
-    </PrefabMountContext.Provider></SceneRuntime>;
+    </SceneRuntime>;
 }
 
 function InstanceResource(props: PrefabInstanceProps) {
@@ -61,15 +58,12 @@ function InstanceResource(props: PrefabInstanceProps) {
 
 function InstanceMount(props: PrefabInstanceProps & { prepared: PreparedPrefab }) {
     const container = useMemo(() => new Group(), []);
-    const mountParent = useMemo(() => ({ current: container }), [container]);
     return <primitive object={container} visible={false} dispose={null}>
-        <MountParentContext.Provider value={mountParent}>
-            <MeshInstanceProvider isolated static={props.static}>
-                <AssetBoundary atomic onError={error => props.onStatus?.({ phase: 'error', error })}>
-                    <InstanceView {...props} container={container} />
-                </AssetBoundary>
-            </MeshInstanceProvider>
-        </MountParentContext.Provider>
+        <MeshInstanceProvider isolated static={props.static}>
+            <AssetBoundary atomic onError={error => props.onStatus?.({ phase: 'error', error })}>
+                <InstanceView {...props} container={container} />
+            </AssetBoundary>
+        </MeshInstanceProvider>
     </primitive>;
 }
 
@@ -90,13 +84,12 @@ function InstancePreparation({ prepared, static: isStatic = false, onStatus, onA
 }) {
     const { gl, camera, scene, invalidate } = useThree();
     const compiled = compileMs !== null;
-    const pendingMounts = usePrefabMountPending(!compiled);
-    const revision = useMeshInstanceRevision(!compiled && !pendingMounts);
+    const revision = useMeshInstanceRevision(!compiled);
     const callbacks = useRef({ onStatus, onActivate });
     callbacks.current = { onStatus, onActivate };
 
     useEffect(() => {
-        if (compiled || pendingMounts) return;
+        if (compiled) return;
         const controller = new AbortController();
         callbacks.current.onStatus?.({ phase: 'compiling', loadMs: prepared.durationMs });
         const started = performance.now();
@@ -115,7 +108,7 @@ function InstancePreparation({ prepared, static: isStatic = false, onStatus, onA
             if (!controller.signal.aborted) callbacks.current.onStatus?.({ phase: 'error', error });
         });
         return () => controller.abort();
-    }, [camera, compiled, container, isStatic, gl, invalidate, prepared, revision, scene, pendingMounts]);
+    }, [camera, compiled, container, isStatic, gl, invalidate, prepared, revision, scene]);
 
     useEffect(() => {
         if (compileMs === null) return;

@@ -81,10 +81,6 @@ const GEOMETRY_ELEMENTS = {
 const SceneGeometryPoolContext = createContext<Map<string, BufferGeometry> | null>(null);
 
 export function GeometryRuntimeProvider({ children }: { children: ReactNode }) {
-    return <SceneGeometryPoolOwner>{children}</SceneGeometryPoolOwner>;
-}
-
-function SceneGeometryPoolOwner({ children }: { children: ReactNode }) {
     const [pool] = useState(() => new Map<string, BufferGeometry>());
     useEffect(() => () => pool.forEach(geometry => geometry.dispose()), [pool]);
     return <SceneGeometryPoolContext.Provider value={pool}>{children}</SceneGeometryPoolContext.Provider>;

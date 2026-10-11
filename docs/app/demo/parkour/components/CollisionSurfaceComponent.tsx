@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
+import { useLayoutEffect, useMemo, useState } from 'react';
 import { Box3, BoxGeometry, MeshBasicMaterial, Quaternion, Vector3 } from 'three';
-import { createNodeComponentType, findComponent, useNode, useGameObject, usePrefab, useRegisterNodeComponent, useSharedGeometryResource, useSharedMaterialResource, type Component, type ComponentViewProps, type GameObject } from 'react-three-game/viewer';
-import type { Surface } from '../collision';
+import { createNodeComponentType, findComponent, usePendingMounts, useSceneComponents, useNode, useGameObject, usePrefab, useRegisterNodeComponent, useSharedGeometryResource, useSharedMaterialResource, type Component, type ComponentViewProps, type GameObject } from 'react-three-game/viewer';
+import { CollisionWorld, type Surface } from '../collision';
 
 export const COLLISION_SURFACE = createNodeComponentType<{ bounds(): Surface | null }>('CollisionSurface');
 type BoxSize = [number, number, number];
@@ -16,12 +16,12 @@ export function resolveCollisionSurfaceSize(node: GameObject | null): BoxSize | 
     return [args[0], args[1], args[2]];
 }
 
-function ColliderWireframe({ size, visible }: { size: BoxSize; visible: boolean }) {
+function ColliderWireframe({ size }: { size: BoxSize }) {
     const geometry = useSharedGeometryResource(`parkour:collision:${size.join(',')}`, () => new BoxGeometry(...size));
     const material = useSharedMaterialResource('parkour:collision-wireframe', () => new MeshBasicMaterial({
         color: '#52f5a5', depthWrite: false, toneMapped: false, wireframe: true,
     }));
-    return <mesh visible={visible} raycast={() => {}} renderOrder={1000} userData={{ editorHelper: true }}>
+    return <mesh raycast={() => {}} renderOrder={1000} userData={{ editorHelper: true }}>
         <primitive object={geometry} attach="geometry" dispose={null} />
         <primitive object={material} attach="material" dispose={null} />
     </mesh>;
@@ -55,7 +55,7 @@ function CollisionSurfaceView({ children, enabled }: ComponentViewProps) {
     } }), [object, size?.[0], size?.[1], size?.[2]]);
     useRegisterNodeComponent(COLLISION_SURFACE, enabled ? capability : null);
     return <>
-        {enabled && size && <ColliderWireframe size={size} visible={Boolean(editMode)} />}
+        {enabled && editMode && size && <ColliderWireframe size={size} />}
         {children}
     </>;
 }
@@ -65,3 +65,21 @@ export const CollisionSurfaceComponent: Component = {
     properties: {},
     View: CollisionSurfaceView,
 };
+
+/** One static physics world per consumer; ready after collider registration finishes. */
+export function useCollisionWorld() {
+    const pending = usePendingMounts();
+    const components = useSceneComponents(COLLISION_SURFACE);
+    const [world, setWorld] = useState<CollisionWorld | null>(null);
+    useLayoutEffect(() => {
+        const bounds = pending ? [] : components.map(component => component.value.bounds());
+        if (pending || bounds.some(surface => surface === null)) {
+            setWorld(null);
+            return;
+        }
+        const collision = new CollisionWorld(bounds as Surface[]);
+        setWorld(collision);
+        return () => collision.dispose();
+    }, [pending, components]);
+    return pending ? null : world;
+}

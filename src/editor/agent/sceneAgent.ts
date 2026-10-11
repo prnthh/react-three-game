@@ -6,11 +6,12 @@ import { getComponent, resolveComponentProperties } from '../../core/ComponentRe
 import { describeSceneComponents } from '../../core/componentSchemas.js';
 import { sceneCommandsSchema, sceneCommandFields } from '../../core/sceneCommandSchema.js';
 import { evaluateSceneCommandState, sceneCommandHelp, type SceneCommand, type SceneCommandBatch } from '../../core/sceneCommands.js';
-import { collectSubtreeIds, denormalizePrefab, type PrefabState } from '../../core/prefab.js';
+import { resolveInlinePrefab } from '../../core/inlinePrefabs.js';
+import { collectSubtreeIds, normalizePrefab, packedReference, denormalizeNode, denormalizePrefab, type PrefabState } from '../../core/prefab.js';
 import type { PrefabStoreApi } from "../../core/prefabStore.js";
 import { findComponentEntry, type ComponentData, type Prefab } from '../../core/types.js';
 import { composeTransform, computeParentWorldMatrix } from "../../core/transforms.js";
-import { extractPrefab, packPrefabNode, unpackPrefabNode } from '../prefabPacking.js';
+import { extractPrefab, assertPackableNode, unpackPrefabNode } from '../prefabPacking.js';
 
 export interface SceneView { position: [number, number, number]; target: [number, number, number] }
 export interface SceneCaptureOptions {
@@ -75,7 +76,7 @@ function vector(value: unknown, name: string): asserts value is [number, number,
     }
 }
 function documentChanged(a: PrefabState, b: PrefabState) {
-    return a.nodesById !== b.nodesById || a.materials !== b.materials || a.childIdsById !== b.childIdsById || a.parentIdById !== b.parentIdById || a.rootId !== b.rootId || a.prefabId !== b.prefabId || a.prefabName !== b.prefabName;
+    return a.prefabs !== b.prefabs || a.nodesById !== b.nodesById || a.materials !== b.materials || a.childIdsById !== b.childIdsById || a.parentIdById !== b.parentIdById || a.rootId !== b.rootId || a.prefabId !== b.prefabId || a.prefabName !== b.prefabName;
 }
 function nodeTransform(state: PrefabState, id: string) {
     const local = findComponentEntry(state.nodesById[id], 'Transform')?.[1].properties;
@@ -237,8 +238,10 @@ export function createSceneAgent(store: PrefabStoreApi, getHost: () => SceneAgen
             options(input, ['id', 'expectedRevision']); requireEdit();
             const { state, revision } = input.expectedRevision === undefined ? snapshot() : checkRevision(input.expectedRevision);
             lookup(state, input.id);
-            const { node } = packPrefabNode(state, input.id);
-            return scene.batch({ expectedRevision: revision, commands: [{ op: 'replaceNode', id: input.id, node }] });
+            assertPackableNode(state, input.id);
+            return scene.batch({ expectedRevision: revision, commands: [
+                { op: 'update', id: input.id, patch: { packed: true } },
+            ] });
         },
         packMany(input: { ids: string[]; reuse?: boolean; expectedRevision?: string }) {
             options(input, ['ids', 'reuse', 'expectedRevision']); requireEdit(); ids(input.ids);
@@ -252,39 +255,49 @@ export function createSceneAgent(store: PrefabStoreApi, getHost: () => SceneAgen
                     if (selected.has(parent)) throw new Error('Pack either an ancestor or its descendants in one batch, not both.');
                 }
             }
-            const definitions = new Map<string, { url: string; id: string }>();
+            const definitions = new Map<string, string>();
             const reused: { id: string; sourceId: string }[] = [];
             // Ignore display names and document identities only. Custom component property values remain exact.
             const shape = (node: import('../../core/types.js').GameObject): unknown => ({
                 components: node.components ?? {}, hidden: node.hidden ?? false, disabled: node.disabled ?? false, locked: node.locked ?? false,
                 children: (node.children ?? []).map(shape),
             });
-            const commands = input.ids.map((id): SceneCommand => {
-                const { node, prefab } = packPrefabNode(state, id);
-                const ref = findComponentEntry(node, 'PrefabRef')![1];
-                const signature = JSON.stringify(shape(prefab.root));
-                const previous = definitions.get(signature);
-                if (input.reuse && previous) {
-                    ref.properties.url = previous.url;
-                    reused.push({ id, sourceId: previous.id });
-                } else definitions.set(signature, { id, url: ref.properties.url });
-                return { op: 'replaceNode', id, node };
-            });
+            const commands: SceneCommand[] = [];
+            for (const id of input.ids) {
+                assertPackableNode(state, id);
+                const signature = input.reuse ? JSON.stringify(shape(extractPrefab(state, id).root)) : '';
+                const previous = input.reuse ? definitions.get(signature) : undefined;
+                if (previous) {
+                    commands.push({ op: 'replaceNode', id, node: packedReference(state.nodesById[id], previous) });
+                    reused.push({ id, sourceId: previous });
+                } else {
+                    definitions.set(signature, id);
+                    commands.push({ op: 'update', id, patch: { packed: true } });
+                }
+            }
             return { ...scene.batch({ expectedRevision: revision, commands }), reused };
         },
         async unpack(input: { id: string; expectedRevision?: string }) {
             options(input, ['id', 'expectedRevision']); requireEdit();
             const { state, revision } = input.expectedRevision === undefined ? snapshot() : checkRevision(input.expectedRevision);
             const original = lookup(state, input.id);
-            const url = findComponentEntry(original, 'PrefabRef')?.[1].properties.url;
-            if (typeof url !== 'string' || !url) throw new Error('Node has no populated PrefabRef URL.');
-            const load = getHost().loadPrefab;
-            if (!load) throw new Error('Prefab loading is not configured for this editor.');
-            const prefab = await load(url);
+            if (original.packed) {
+                return scene.batch({ expectedRevision: revision, commands: [{ op: 'update', id: input.id, patch: { packed: false } }] });
+            }
+            const properties = findComponentEntry(original, 'PrefabRef')?.[1].properties;
+            if (!properties?.prefabId && !properties?.url) throw new Error('Node has no populated PrefabRef source.');
+            let prefab: Prefab;
+            if (properties.prefabId) {
+                prefab = denormalizePrefab(resolveInlinePrefab(state, properties.prefabId));
+            } else {
+                const load = getHost().loadPrefab;
+                if (!load) throw new Error('Prefab loading is not configured for this editor.');
+                prefab = denormalizePrefab(normalizePrefab(await load(properties.url)));
+            }
             // Reject intervening edits after asynchronous loading; never overwrite a newer document.
             checkRevision(revision);
-            const placement = denormalizePrefab({ ...state, rootId: input.id }).root;
-            const { node } = unpackPrefabNode(placement, prefab, `${input.id}:${crypto.randomUUID()}`);
+            const placement = denormalizeNode(input.id, state.nodesById, state.childIdsById);
+            const node = unpackPrefabNode(placement, prefab, `${input.id}:${crypto.randomUUID()}`);
             return scene.batch({ expectedRevision: revision, commands: [
                 { op: 'replaceNode', id: input.id, node },
             ] });

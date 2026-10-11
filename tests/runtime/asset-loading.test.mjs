@@ -209,3 +209,98 @@ test('embedded prefab instances keep their shared definition across mode switche
     assert.equal(state.getState().scene.getObjectByName('b').getObjectByName('Embedded asset'), object);
     assert.equal(loads, 1);
 });
+
+test('inline and external definitions prepare together, sharing dependencies and detecting cycles', async () => {
+    const { default: PrefabRef } = await import('../../src/runtime/components/PrefabRefComponent.tsx');
+    const ref = (id, properties) => ({ id, components: { ref: { type: 'PrefabRef', properties } } });
+    const leaf = { root: { id: 'leaf', components: { image: { type: 'Image', properties: { path: '/stone.png' } } } } };
+    const document = normalizePrefab({
+        prefabs: { building: { root: ref('building', { prefabId: 'leaf' }) }, leaf },
+        root: { id: 'root', children: [ref('a', { prefabId: 'building' }), ref('b', { prefabId: 'building' }), ref('c', { url: '/external.json' })] },
+    });
+    const requests = [];
+    const runtime = {
+        getComponent: name => name === 'PrefabRef' ? PrefabRef : { name, properties: { path: { type: 'string' } }, dependencies: p => [{ kind: 'texture', path: p.path }] },
+        loadDocument: async path => { requests.push(path); return path.endsWith('/root.json') ? document : normalizePrefab(leaf); },
+        loadAsset: async dependency => { requests.push(dependency.path); },
+    };
+    const prepared = await preparePrefab(runtime, '/root.json', { basePath: '/app' });
+    assert.equal(prepared.documentCount, 4);
+    assert.equal(prepared.assetCount, 1);
+    assert.deepEqual(requests.sort(), ['/app/external.json', '/app/root.json', '/app/stone.png']);
+    const cycle = normalizePrefab({ root: ref('root', { prefabId: 'loop' }), prefabs: { loop: { root: ref('loop', { prefabId: 'loop' }) } } });
+    await assert.rejects(preparePrefab({ ...runtime, loadDocument: async () => cycle }, '/cycle'), /Cyclic prefab/);
+    const missing = normalizePrefab({ root: ref('root', { prefabId: 'missing' }) });
+    await assert.rejects(preparePrefab({ ...runtime, loadDocument: async () => missing }, '/missing'), /Unknown inline prefab/);
+});
+
+test('inline instances update together, preserve placements, and survive original placement removal', async t => {
+    const { act, createElement: h } = await import('react');
+    const { createRoot, extend } = await import('@react-three/fiber');
+    const { Group } = await import('three');
+    const { PrefabRoot, registerBuiltInComponents } = await import('../../src/viewer/index.ts');
+    const { createSceneAgent } = await import('../../src/editor/agent/sceneAgent.ts');
+    registerBuiltInComponents(); extend({ Group });
+    globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+    const source = { root: { id: 'asset', name: 'Inline asset' } };
+    const ref = (id, x) => ({ id, name: id, components: {
+        transform: { type: 'Transform', properties: { position: [x, 0, 0] } },
+        ref: { type: 'PrefabRef', properties: { prefabId: 'building' } },
+    } });
+    const doc = createPrefabStore({ root: { id: 'world', children: [{ id: 'building', packed: true, children: [source.root] }, ref('a', 1), ref('b', 5)] } });
+    const cache = createAssetCache({ prefab: async () => { throw Error('Inline prefabs must not fetch'); } });
+    const { AssetCacheContext } = await import('../../src/runtime/assets/assetCache.ts');
+    const canvas = { width: 100, height: 100, style: {}, addEventListener() {}, removeEventListener() {} };
+    const root = createRoot(canvas);
+    await root.configure({ gl: { render() {}, setSize() {}, setPixelRatio() {}, domElement: canvas },
+        size: { width: 100, height: 100, top: 0, left: 0 }, frameloop: 'never' });
+    t.after(async () => { await act(async () => root.unmount()); cache.dispose(); });
+    let state;
+    const render = async editMode => act(async () => { state = root.render(h(AssetCacheContext.Provider, { value: cache }, h(PrefabRoot, { store: doc, editMode }))); });
+    await render(true);
+    const a = state.getState().scene.getObjectByName('a');
+    const b = state.getState().scene.getObjectByName('b');
+    assert.notEqual(a.getObjectByName('Inline asset'), b.getObjectByName('Inline asset'));
+    const agent = createSceneAgent(doc, () => ({ mode: () => 'edit', beforeCommit() {}, transaction: fn => fn() })).scene;
+    await act(async () => agent.batch({ expectedRevision: agent.export().revision, commands: [
+        { op: 'update', id: 'asset', patch: { name: 'Updated asset' } },
+    ] }));
+    assert.ok(a.getObjectByName('Updated asset'));
+    const inner = b.getObjectByName('Updated asset');
+    assert.ok(inner);
+    assert.equal(b.position.x, 5);
+    await render(false); await render(true);
+    await act(async () => doc.getState().deleteNode('a'));
+    assert.equal(b.getObjectByName('Updated asset'), inner);
+    await act(async () => doc.getState().deleteNode('building'));
+    assert.ok(b.getObjectByName('Updated asset'));
+    assert.equal(b.position.x, 5);
+    assert.equal(doc.getState().prefabs.building.root.children[0].name, 'Updated asset');
+});
+
+test('headless static export handles inline definitions and strips custom behavior inside them', async () => {
+    const { exportPrefabToGLB } = await import('../../src/headless/index.tsx');
+    const glb = await exportPrefabToGLB({ root: { id: 'world', children: [{ id: 'block', packed: true, components: {
+        geometry: { type: 'Geometry', properties: { geometryType: 'box' } },
+        custom: { type: 'UnknownGameBehavior', properties: {} },
+    } }, { id: 'a', components: { ref: { type: 'PrefabRef', properties: { prefabId: 'block' } } } }] } });
+    assert.equal(new DataView(glb).getUint32(0, true), 0x46546c67);
+});
+
+test('preparation resolves packed owners and detects packed reference cycles', async () => {
+    const ref = (id, prefabId) => ({ id, components: { ref: { type: 'PrefabRef', properties: { prefabId } } } });
+    const document = normalizePrefab({ root: { id: 'world', children: [
+        { id: 'building', packed: true, children: [{ id: 'part' }] }, ref('copy', 'building'),
+    ] } });
+    const runtime = {
+        getComponent: name => name === 'PrefabRef' ? { properties: { prefabId: { type: 'string', default: '' } } } : undefined,
+        loadDocument: async () => document,
+        loadAsset: async () => { throw Error('No external dependencies'); },
+    };
+    const prepared = await preparePrefab(runtime, '/scene.json');
+    assert.equal(prepared.documentCount, 2);
+    const cycle = normalizePrefab({ root: { id: 'world', children: [
+        { id: 'loop', packed: true, children: [ref('self', 'loop')] },
+    ] } });
+    await assert.rejects(preparePrefab({ ...runtime, loadDocument: async () => cycle }, '/cycle.json'), /Cyclic prefab reference/);
+});

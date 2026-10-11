@@ -1,182 +1,179 @@
 # Scene API
 
-This guide covers `window.scene`, the API for inspecting and editing a running
-`PrefabEditor`. It shares undo history with the visual editor.
+`window.scene` edits a running `PrefabEditor` and shares its undo history. Start
+with a node, pack it into an inline prefab, and duplicate it. Export a separate
+file when you want to share that assembly across scenes.
 
-Use this path for live scene changes. You can also edit prefab JSON directly or add
-custom components in application source, then load the result in an editor or viewer.
-See the [agent skill's workflow chooser](https://github.com/prnthh/react-three-game-skill/blob/main/react-three-game/SKILL.md#choose-how-to-work).
-`PrefabRoot` renders JSON inside `GameCanvas` or the user's R3F canvas, alongside
-their own JSX and gameplay systems, without this authoring API.
-When switching between file edits and the editor, reload the changed file before
-continuing: saving stale in-memory content can overwrite a newer file.
-
-A **node** is a scene object. Its **components** supply settings such as geometry, material, or behavior. The authored scene is a JSON document called a **prefab**. Animation and physics change live objects; they do not rewrite that document.
-
-## Edit files without a browser
-
-The `rtg` CLI uses the same core command evaluator as `scene.batch()`. Save the
-commands as `{ "commands": [...] }`, omitting the editor session's
-`expectedRevision`, then run:
-
-```sh
-rtg validate scene.json commands.json
-rtg apply scene.json commands.json edited.json
-rtg components Transform
-rtg schema
-```
-
-The CLI supports built-in component contracts. Register custom definitions in a
-Node script and use `evaluateSceneCommands` from `react-three-game/core` for custom
-components. File edits have no live selection, camera, or undo history; reload
-`edited.json` in the editor to inspect the result.
-
-## Find the right section
-
-| Need | Section |
-| --- | --- |
-| Make a first edit | [Connect](#1-connect), [find](#2-find-the-object), [edit](#3-edit-and-review), [save](#4-save) |
-| Change component settings or add behavior | [Components](#edit-component-settings) |
-| Check motion or restore authored placement | [Playback and reset](#control-playback-and-the-view) |
-| Choose a capture angle or hide guides | [Capture options](#capture-options) |
-| Align objects or check ground contact | [Placement](#measuring-placement) |
-| Reuse an assembly | [Reusable subtrees](#reusable-subtrees) |
-| Commit dependent changes together | [Atomic batches](#atomic-batches-and-revision-guards) |
-| Export an image or model | [Downloads](#download-png-or-glb) |
-| Connect through a browser tool | [Browser connection](#browser-tool-connection) |
+For application setup, follow the [inline React walkthrough](https://github.com/prnthh/react-three-game#1-render-an-inline-prefab).
+For saved-file editing, see [CLI edits](#edit-files-with-the-cli).
 
 ## 1. Connect
 
-Execute JavaScript in the browser frame containing the editor:
+Open the [web editor](https://prnth.com/react-three-game/editor), or `/editor` in
+a local app. Run the following in the browser frame containing the editor:
 
 ```js
 const scene = window.scene;
 scene.info(); // Mode, revision, rootId, selection, history, saveMethod.
+await scene.setMode({ mode: 'edit' });
 ```
 
-If `window.scene` is absent, check the frame, wait for `PrefabEditor` to mount, and
-check that `agentTools` is not false. `GameCanvas`/`PrefabRoot` alone do not expose
-this API. `showUI={false}` hides panels but keeps the API. Only one agent-enabled
-editor is supported per page. Reacquire `window.scene` after navigation or reload.
+The API becomes available when `PrefabEditor` mounts with `agentTools` enabled.
+Use one agent-enabled editor per page and reacquire `window.scene` after reload.
+`showUI={false}` keeps the API available while hiding panels.
 
-For application setup, see the [minimal editor and viewer apps](https://github.com/prnthh/react-three-game#minimal-react-app-with-an-editor).
+## 2. Create and edit an assembly
 
-## Standalone editor: create shapes and export GLB
-
-Open `/react-three-game/editor` on the hosted site (or `/editor` locally).
-It restores the saved prefab from this browser, or uses the starter template:
-a default-material cube, directional light, and visible image-textured sky sphere
-environment. New Prefab replaces the current scene with a fresh copy of the template.
-Changes autosave to one storage slot after a short delay; pending edits flush when
-the page is hidden or left. `await scene.save()` writes immediately and rejects if
-storage is unavailable or full. Autosave failures are reported in the browser console.
-The demo pages do not opt into this persistence.
-
-`?map=/prefabs/brutalist-city/game-level.json` explicitly loads that source instead of restoring
-storage. Edits still save to the same slot; return to `/editor` to resume them.
-The saved prefab belongs to this browser and origin; it is not synced, a source-file
-edit, or a portable asset backup. Multiple editor tabs share that slot; the latest
-write wins. Clearing browser data removes it. `scene.reset()` only resets live
-objects and does not discard authored edits. Use New Prefab or `replaceAll` below
-to intentionally start over.
+This adds a pedestal to the current scene. Use fresh IDs when running it again:
 
 ```js
-const scene = window.scene;
-await scene.setMode({ mode: 'edit' });
-// Intentionally replaces the current document; undo is available.
-const base = location.pathname.replace(/\/editor\/?$/, '');
-const starter = await fetch(`${base}/prefabs/starter-scene.json`).then(r => r.json());
-scene.replaceAll({ prefab: starter });
-scene.remove({ id: 'cube' }); // Keep the starter light and sky environment.
-for (const [index, geometryType] of ['box', 'sphere', 'torus'].entries()) {
-  const id = `shape-${index}`;
-  scene.create({ parentId: scene.info().rootId, node: {
-    id, name: geometryType,
-    components: {
-      transform: { type: 'Transform', properties: { position: [(index - 1) * 3, 1, 0] } },
-      geometry: { type: 'Geometry', properties: { geometryType } },
-      material: { type: 'Material', properties: {
-        name: id, color: ['#ff7659', '#51bca8', '#a58cff'][index], roughness: 0.4
-      } }
-    }
-  } });
-}
-await scene.save();
+scene.create({ parentId: scene.info().rootId, node: {
+  id: 'assembly', name: 'Pedestal',
+  children: [
+    { id: 'pedestal-base', components: {
+      transform: { type: 'Transform', properties: { position: [0, 1, 0] } },
+      geometry: { type: 'Geometry', properties: { geometryType: 'box', args: [2, 2, 2] } },
+      material: { type: 'Material', properties: { name: 'stone', color: '#aaa995' } },
+    } },
+    { id: 'pedestal-cap', components: {
+      transform: { type: 'Transform', properties: { position: [0, 2.2, 0] } },
+      geometry: { type: 'Geometry', properties: { geometryType: 'box', args: [2.5, 0.4, 2.5] } },
+      material: { type: 'Material', properties: { name: 'stone' } },
+    } },
+  ],
+} });
+scene.look({ id: 'assembly' });
 ```
 
-Allow the objects to mount, then use `scene.look({id: scene.info().rootId})`
-and `await scene.capture({helpers:false})` to review. Set your browser tool's
-download listener **before** calling
-`await scene.downloadGLB({filename:'three-shapes.glb'})` and verify the downloaded
-file. GLB carries rendered geometry and materials; retain `scene.exportJSON()`
-as well when you need editable components and behavior. Reacquire `window.scene`
-after refreshing, then inspect `scene.info()` to continue.
-
-## 2. Find the object
+The base defines the shared `stone` material; the cap references it by name.
+Child transforms are relative to their parent. Move the assembly as a unit:
 
 ```js
-const { node } = scene.find({ query: 'north brace' });
-const id = node.id;
-await scene.setMode({ mode: 'edit' });
+const id = 'assembly';
+scene.update({ id, transform: { position: [2, 0, 0] } });
 scene.look({ id });
-```
-
-`find()` requires exactly one match. If the name is ambiguous, use
-`scene.search({query:'brace',limit:20})` and choose an ID from its results.
-Search summaries include component keys/types and local/world transforms, so they
-are enough for framing and moving an object. Use `scene.get({id,resolved:true})`
-when you need full properties: `components` contains authored values and
-`resolvedComponents` includes defaults.
-
-Only document nodes are editable. Imported model internals and generated geometry
-are not separate editable nodes. See [reusable subtrees](#reusable-subtrees) to
-unpack a prefab reference before editing its contents.
-
-## 3. Edit and review
-
-Writes and `look()` require Edit mode. Inspect the selected object and nearby peers
-before changing it; use the scene's existing hierarchy and conventions.
-
-```js
-await scene.setMode({ mode: 'edit' });
-scene.update({ id, transform: { position: [2, 4, 0] } });
-scene.look({ id }); // Reframe after moving it.
 const image = await scene.capture({ helpers: false });
 ```
 
-Display `image.dataUrl` with the browser/agent tool and inspect the result.
-Capture returns PNG data, dimensions, `revision`, and `currentRevision`. Wait for
-assets to appear first: capture waits two animation frames, not for asset loading.
-If its revisions differ, the document changed during capture; read and capture again.
+After the geometry appears, display `image.dataUrl` through your browser tool.
+Each update is one undo step; `scene.undo()` and `scene.redo()` navigate edits.
+Capture waits two frames. If `revision` and `currentRevision` differ, read and
+capture again to review the latest document. Check gameplay separately in Play.
 
-`update()` can combine metadata, transform, and component patches into one undo
-step. `scene.undo()` reverses an authored edit; `scene.redo()` reapplies it. Begin
-with small edits you can review. Create missing objects with `create()`; use
-[atomic batches](#atomic-batches-and-revision-guards) when changes depend on one another.
+To work on an existing object, `scene.search({query:'Pedestal'})` lists matching
+IDs and transforms. `scene.find({query:'Pedestal'})` returns `{node}` when exactly
+one matches. `scene.get({id,resolved:true})` adds properties and their defaults.
 
-Check animation and physics in [Play mode](#control-playback-and-the-view), then
-return to Edit before saving. A capture verifies appearance; it does not establish
-that gameplay works.
+<a id="reusable-subtrees"></a>
+
+## 3. Pack and place copies
+
+Pack the assembly from step 2, then add two placements:
+
+```js
+scene.pack({ id: 'assembly' });
+scene.duplicate({ id: 'assembly', newId: 'assembly-2' });
+scene.transform({ id: 'assembly-2', position: [6, 0, 0] });
+scene.duplicate({ id: 'assembly', newId: 'assembly-3' });
+scene.transform({ id: 'assembly-3', position: [-2, 0, 0] });
+scene.look({ id: scene.info().rootId });
+```
+
+**Pack as Prefab** keeps the original subtree in place and adds `packed: true`.
+Copies use `PrefabRef` with the original node's ID as `prefabId`. The runtime
+builds its shared lookup from those packed nodes. If the owner is deleted, its
+data moves into a remaining user so saving and reloading preserves the copies.
+
+### Update every placement
+
+Edit a component on the original packed subtree:
+
+```js
+scene.patchComponent({
+  id: 'pedestal-base', key: 'material', properties: { color: '#d9b58b' },
+});
+```
+
+### Edit one copy
+
+```js
+await scene.unpack({ id: 'assembly-2' });
+const parts = scene.search({ parentId: 'assembly-2', recursive: true });
+// Inspect parts.nodes to choose an expanded node's ID before editing it.
+```
+
+Unpack expands the rendered definition beneath its placement wrapper and scopes
+IDs and material names. Edit those nodes, then pack the placement again. Other
+copies continue using the original packed subtree. `pack` and `unpack` each create one undo
+step. Keep behavior references local to their prefab; verify custom ID strings
+when crossing a packing boundary because those strings retain their values.
+
+### Share across scenes
+
+Export the unpacked assembly when another scene needs it:
+
+```js
+const { prefab } = scene.exportPrefab({ id: 'assembly-2' });
+const json = JSON.stringify(prefab, null, 2);
+// Save json as public/prefabs/pedestal.json in your app.
+```
+
+Export produces a complete nested subtree with shared material definitions,
+relative to the selected root. **Export Prefab…** provides the file download
+flow. Once the file is served, add a file-based placement:
+
+```js
+scene.create({ parentId: scene.info().rootId, node: {
+  id: 'shared-pedestal',
+  components: {
+    transform: { type: 'Transform', properties: { position: [10, 0, 0] } },
+    prefabref: { type: 'PrefabRef', properties: { url: '/prefabs/pedestal.json' } },
+  },
+} });
+```
+
+### Pack existing repeated assemblies
+
+```js
+scene.search({ parentId: scene.info().rootId, recursive: true, groupsOnly: true });
+scene.duplicate({ id: 'assembly-2', newId: 'assembly-4' });
+scene.transform({ id: 'assembly-4', position: [14, 0, 0] });
+scene.packMany({ ids: ['assembly-2', 'assembly-4'], reuse: true });
+```
+
+`packMany` accepts 1–200 disjoint groups and commits one undo step. With
+`reuse:true`, groups with matching serialized components and ordered children
+share the first definition's ID. Root placement, IDs, and display names are
+ignored for comparison; custom reference strings retain their original values.
+Pack inner modules before their containing assemblies for nested reuse.
 
 ## 4. Save
 
 ```js
-const current = scene.info();
-if (current.saveMethod === 'save') {
-  const saved = await scene.save();
-  // savedRevision is the saved document; currentRevision may include later edits.
+if (scene.info().saveMethod === 'save') {
+  await scene.save();
 } else {
   const json = scene.exportJSON();
-  // Replace the scene file this page loads with this complete JSON string.
+  // Write this complete string to the scene file your application loads.
 }
 ```
 
-`exportJSON()` is always available and returns the complete authored scene as
-pretty-printed JSON; it does not trigger a browser download. `export()` remains
-available when a structured object is more useful. `save()` calls the function supplied
-as `<PrefabEditor onSaveScene={saveDocument} ... />`; it does not open a file dialog.
-If no save function or file destination is configured, return the JSON and state that
-it has not been saved. Report what changed and what you verified.
+`save()` calls the host's `onSaveScene` callback. `exportJSON()` returns a complete
+JSON string; `export()` returns the structured document. Report the actual save
+destination and what you verified. After source-file edits, reload the editor to
+work from the latest saved document.
+
+## Next steps
+
+| Need | Section |
+| --- | --- |
+| Configure components or add behavior | [Component settings](#edit-component-settings) |
+| Test motion and reset | [Playback](#control-playback-and-the-view) |
+| Frame a capture | [Capture options](#capture-options) |
+| Align objects | [Placement](#measuring-placement) |
+| Commit dependent changes together | [Batches](#atomic-batches-and-revision-guards) |
+| Export PNG or GLB | [Downloads](#download-png-or-glb) |
+| Understand local editor storage | [Standalone editor](#standalone-editor-storage) |
 
 ## Edit component settings
 
@@ -184,14 +181,18 @@ Discover available types with `scene.components()`, then request only the schema
 you need. A schema describes supported properties, types, and defaults:
 
 ```js
+await scene.unpack({ id: 'assembly' });
+const { node: base } = scene.find({
+  parentId: 'assembly', recursive: true, component: 'Geometry', query: 'pedestal-base',
+});
+const surfaceId = base.id;
 scene.components({ names: ['Material'] });
-const { node } = scene.get({ id, resolved: true });
-// Inspect node.components and choose the intended instance key.
-scene.patchComponent({ id, key: 'material', properties: { roughness: 0.8 } });
+scene.get({ id: surfaceId, resolved: true }); // Inspect instance keys and defaults.
+scene.patchComponent({ id: surfaceId, key: 'material', properties: { roughness: 0.8 } });
 ```
 
-Here `material` must be a key found on that node; it is not necessarily the type
-name `Material`. Use `setComponent({id,key,component})` to replace an instance,
+Here `material` is the instance key found on that node; `Material` is its type.
+Use `setComponent({id,key,component})` to replace an instance,
 or pass `component:null` to remove it.
 
 For properties whose defaults depend on other settings, include that context:
@@ -223,9 +224,11 @@ function configureComponent(scene, id, type, properties) {
 // Example after discovery: configureComponent(scene, chosenNodeId, 'Rotator', { speed: 2 });
 ```
 
-If multiple components share a type, choose the intended instance key explicitly with `patchComponent`. Nested objects and arrays replace complete values; patches do not deep-merge them.
+If multiple components share a type, choose the intended instance key explicitly with `patchComponent`. Supply complete values when patching nested objects or arrays.
 
-### Add behavior that is not registered
+<a id="add-behavior-that-is-not-registered"></a>
+
+### Add scripted behavior
 
 Use a registered component when it already provides the behavior. Otherwise, add
 a React component in application source, or use the built-in `Runtime` component
@@ -248,7 +251,7 @@ scene.setComponent({ id, key: 'motion', component: {
 `delta` is seconds; `object` is this node's live transform. Resolve another node in
 the same prefab instance with `prefab.getObject('id')`; it may return null while
 loading. `state` persists between frames and resets when setup restarts. Code edits
-restart setup; data edits do not. Use `context.data` inside retained callbacks for
+restart setup; data edits keep the current state. Use `context.data` inside retained callbacks for
 current inputs, and `context.three.camera`, `.scene` or `.gl` for current R3F state.
 Return cleanup or call `context.onCleanup(fn)` for subscriptions and other resources.
 Scripts are trusted page code; use source components for behavior needing React hooks.
@@ -265,10 +268,9 @@ scene.setCamera({ position: [8, 5, 8], target: [0, 1, 0] });
 const image = await scene.capture();
 ```
 
-Reset remounts the live prefab subtree from the current document and clears
-selection. It preserves mode, document revisions and undo history. It does not
-reload the original file or undo authored edits. Assets may still be loading;
-capture/export does not promise asset readiness. The host can pass `onResetScene`
+Reset remounts live objects from the current authored document and clears
+selection, preserving mode, revisions, and undo history. Wait for assets to appear
+before capturing or exporting. The host can pass `onResetScene`
 to reset external game state before remounting. `getCamera()` reads camera position
 and target; `setCamera()` works in Edit mode so gameplay cameras do not compete.
 
@@ -304,52 +306,15 @@ if (!base.bounds || !ground.bounds) throw new Error('Wait for geometry to mount.
 const gap = base.bounds.min[1] - ground.bounds.max[1];
 ```
 
-`bounds` reports `{min,max,size,center}` in world coordinates for the live mounted subtree, or `null` if it has no geometry. It includes hidden meshes, instancing source meshes, and mounted helpers. It is not a collision query or a guarantee that assets have finished loading. Frame the contact points and inspect a low-angle capture after moving geometry; do not assume the ground is at zero.
+`bounds` reports `{min,max,size,center}` for mounted geometry, including hidden
+meshes and helpers; it returns `null` while geometry is unavailable. Use the
+floor’s measured top to align an object, then inspect a low-angle capture. Use
+your physics integration for collision queries.
 
-Y is up; rotations are XYZ Euler radians. World means prefab document space,
-including the root transform; an enclosing application object's transform is not included.
+Y is up; rotations are XYZ Euler radians. World coordinates are relative to the prefab document, including its root
+transform. Account for enclosing application transforms separately.
 World commands require position, rotation and scale and reject singular parents,
 degenerate decompositions and shear that cannot be represented as local TRS.
-
-## Reusable subtrees
-
-Use inline (embedded) prefabs for objects reused within one scene. Use a separate
-prefab file for a reusable concept shared across scenes. Choose the form based on
-where it is reused; repetition within a single scene does not require a separate file.
-
-Use the tree's right-click menu (or node action menu): **Pack as Prefab**, **Unpack Prefab**, and **Export Prefab…**.
-Packing captures the selected node and all descendants, including shared materials, into a self-contained JSON `PrefabRef` URL. The reference retains the selected node's ID, placement transform, name, and visibility flags. Duplicate it to place more instances. Embedded definitions survive ordinary scene saves without a file server; they are immutable snapshots, not an editable global prefab library. Relative assets still use the editor's `basePath`.
-
-```js
-scene.pack({ id: 'assembly' });
-scene.duplicate({ id: 'assembly', newId: 'assembly-2' });
-scene.transform({ id: 'assembly-2', position: [12, 0, 4] });
-await scene.unpack({ id: 'assembly-2' });
-const { prefab } = scene.exportPrefab({ id: 'assembly-2' });
-```
-
-`pack` and `unpack` each create one undo step. Unpack retains a placement wrapper and expands the asset below it, so scaled/rotated parents, reference transforms, extra components, and pre-existing children are preserved. Loading errors or revision changes during loading leave the document untouched. Unpacked node IDs/material names receive a unique scope to avoid collisions. Arbitrary ID strings in custom scripts or component properties are not rewritten: inspect behaviors that cross prefab boundaries before and after packing/unpacking.
-
-`exportPrefab({id})` returns a complete nested subtree with shared materials, with the selected root's placement transform and visibility flags removed. It does not truncate or save. The GUI export uses the same extraction with the existing Save As/download flow. Unlike this nested export, `get()` returns a `node` with `childIds` and a separate flat `descendants` array; it does not return `node.children`.
-
-### Discover and pack multiple assemblies
-
-```js
-const groups = scene.search({ parentId: 'world', recursive: true, groupsOnly: true, limit: 200 });
-// Check nextOffset for pagination. Select disjoint assemblies from these results.
-scene.packMany({ ids: ['assembly-a', 'assembly-b'], reuse: true });
-```
-
-`groupsOnly` filters before pagination; `recursive` searches all descendants of `parentId` instead of only direct children. `packMany` accepts 1–200 unique, disjoint node IDs and commits one undo step. Ancestor/descendant overlap, invalid nodes, or stale revisions reject the entire batch. To create nested prefabs, pack deepest modules first, then their containing assemblies.
-
-`reuse: true` is an explicit choice for self-contained assemblies. It compares component values and ordered child structures within the batch, ignoring node IDs/display names and the selected root's placement. Equivalent assemblies share the first definition's URL, while every placement retains its own ID, name, flags, and transform. The returned `reused` list identifies each shared source. Internal display names come from that source; arbitrary custom ID references are not remapped. The default packs independent snapshots. Matching currently uses exact serialized component values; semantically equivalent defaults or differently ordered property keys need not deduplicate.
-
-### Unpack the version currently on screen
-
-Unpack uses the cached definition currently rendered by the reference. It scopes
-node IDs and material names, including default materials, to preserve appearance inside
-the outer scene. Custom ID strings are not remapped; verify behaviors that refer
-across the prefab boundary. Each instance owns its editable state.
 
 ## Atomic batches and revision guards
 
@@ -373,10 +338,9 @@ scene.validate(batch);
 scene.batch(batch);
 ```
 
-Validation is read-only and does not reserve the revision. Applying commits one
-shared undo step in Edit mode. `validate()` checks schemas; `analyze()` offers
-bounded structure/rendering hints. Neither measures draw calls/FPS or verifies
-visual and behavioral correctness.
+Validation checks command schemas against the inspected revision. Applying
+rechecks it and commits one undo step in Edit mode. `analyze()` provides structure
+and rendering hints; use captures, Play mode, and profiling to review the result.
 
 Both `validate({expectedRevision, commands})` and `batch({expectedRevision, commands})`
 require the revision from a recent read, unlike individual edits where it is optional.
@@ -396,8 +360,8 @@ IDs created earlier in a batch can be used by later commands.
 | `component` | `id, key, component` | Replace a component instance; null removes it |
 | `patchComponent` | `id, key, properties, unset?` | Shallow property patch; unset restores defaults |
 
-`key` is a component **instance key**, not its type; discover it with node queries.
-Nested objects and arrays are replaced as values, never implicitly deep-merged.
+`key` is the component **instance key** found through node queries.
+Supply complete replacement values for nested objects and arrays.
 Duplicates use `newId` for their root and `newId/originalId` for descendants;
 reference strings inside components remain unchanged, including external refs.
 Returned `createdIds` lists the generated IDs.
@@ -413,65 +377,64 @@ Set the browser tool's download listener before calling. These work in Edit or P
 clear selection, and request a download without opening menus. Defaults are
 `screenshot.png` and `scene.glb`; filenames cannot include directory paths.
 Results contain `downloadRequested`, `filename`, `mimeType`, `revision`, and
-`currentRevision`. Verify the browser tool's download result: a request does not
-confirm that a file reached disk. Errors reject the call.
+`currentRevision`. Verify the saved file through the browser tool's download result. Errors reject the call.
 
 `downloadScreenshot()` captures the current camera; use `capture()` for inline PNG data.
 `downloadGLB()` exports the rendered prefab object tree, excluding sibling JSX and
-HTML. Wait for assets to load. GLB is useful for inspecting geometry in another tool,
-but does not preserve React behavior; custom shaders may not survive export.
-Keep JSON for further scene editing.
+HTML. Wait for assets to load. Use GLB for static geometry in other tools. Keep JSON and component code for
+editable scenes, React behavior, and custom shaders.
 
-## Scene authoring rules
+## Materials and assets
 
-- Define materials on a node's `Material` component, for example
-  `{ name: "concrete", color: "#888888", roughness: 0.9 }`. Other nodes
-  reference it with `{ name: "concrete" }` only. Do not write a top-level
-  `materials` table. Names resolve across loaded prefabs in one scene; unresolved
-  references stay invisible until a definition loads. `scene.materials()` is a
-  derived index of definitions in the current document. Add and edit settings
-  through the user's `Material` component with ordinary component mutations.
-- Keep related nodes under a named parent; child transforms are relative to it.
-- Inspect nearby peers before composing a node. Preserve the scene's conventions for
-  component ownership, hierarchy, naming and functional versus visual-only details.
-- Prefer a few well-placed objects over repeated decoration. Reuse the scene's
-  established visual language instead of introducing a new one implicitly.
-- Shared material edits affect every user. Prefer a local material/component change
-  unless a scene-wide change is intentional.
+Define a shared material on one node and reference its name on another:
 
-Asset URLs resolve against `basePath`; remote URLs require CORS. `Model` keeps its
-embedded materials; a sibling `Material` does not replace them. For primitive materials,
-`texture` is the color map and `normalMapTexture` the normal map. Groups alone do not
-reduce draw calls, and scaling a parent also affects children and colliders.
+```js
+scene.setComponent({ id: surfaceId, key: 'material', component: {
+  type: 'Material', properties: { name: 'warm-stone', color: '#aa9980', roughness: 0.9 },
+} });
+const { node: cap } = scene.find({
+  parentId: 'assembly', recursive: true, component: 'Geometry', query: 'pedestal-cap',
+});
+scene.setComponent({ id: cap.id, key: 'material', component: {
+  type: 'Material', properties: { name: 'warm-stone' },
+} });
+```
 
-For image-based lighting/reflections, add an `Environment` node containing a sphere
-with a `basic`, `BackSide` image material. A standalone sky sphere only draws the
-image; the parent captures it as an environment map. Capture uses `frames={1}` and
-refreshes when environment settings or visual assets change, not every frame.
-See the [image environment batch example](https://github.com/prnthh/react-three-game/blob/main/docs/LIGHTING.md#image-environment).
+This continues from the unpacked geometry in [component settings](#edit-component-settings).
+Names resolve across loaded prefabs; load the defining node alongside its users. `scene.materials()` lists the current
+document's definitions. Edit a shared definition to change all its users, or give
+one node its own definition for a local variation.
+
+Asset URLs resolve against `basePath`; remote URLs require CORS. `Model` uses the
+materials embedded in its asset. Primitive `Material` components accept `texture`
+for color and `normalMapTexture` for normals.
+
+For image lighting, add an `Environment` node containing a sphere with a `basic`,
+`BackSide` image material. It captures once per mount and refreshes when settings
+or visual assets change. See the [image environment example](https://github.com/prnthh/react-three-game/blob/main/docs/LIGHTING.md#image-environment).
 
 ## Query limits and API discovery
 
 Use `scene.help()` for callable methods, `scene.components()` for component
 schemas, and `scene.commands()` for batch inputs. These reflect the running version.
 `get()` returns a node with `childIds` and flat `descendants`; use `exportPrefab()`
-when you need a complete nested subtree. Neither saves a file.
+when you need a complete nested subtree. Write the returned data to your chosen destination.
 
 Custom `description` and property `schema` metadata can explain units, references,
-arrays and objects. Validation checks registered names/base types, not arbitrary
-JSON Schema extensions.
+arrays and objects. Validation checks registered names and base types; metadata documents richer
+component-specific structures.
 
 Queries return copies. Search/material pages default to 50 entries (max 200).
 `getMany` defaults to depth 0 and 100 nodes (max depth 5, 200 nodes); check `truncated`
-and paginate larger results. Only nodes in the document are editable, not expanded
-model/prefab internals or generated runtime geometry.
+and paginate larger results. Edit authored document nodes directly; unpack prefab references to expose their
+children as editable nodes.
 
 ## Browser tool connection
 
-Calls use ordinary page JavaScript; no MCP server is required. With CDP, use
+Calls use ordinary page JavaScript. With CDP, use
 `Runtime.evaluate`, `returnByValue:true`, and `awaitPromise:true` for async methods;
 check `exceptionDetails`. Target the frame containing the editor, including for
-cross-origin iframes. There is no cross-origin message bridge.
+cross-origin iframes. Execute calls in that frame's JavaScript context.
 
 The API is available to scripts already running in that page. `agentTools={false}`
 disables window exposure; `editorRef.current.scene` remains available to React code.
@@ -504,3 +467,31 @@ The manifest format is:
   "prefabs": ["/prefabs/room.json"]
 }
 ```
+
+## Standalone editor storage
+
+`/editor` restores a scene from this browser's storage, or opens a starter cube,
+light, and sky environment. Changes autosave to one slot; `await scene.save()`
+flushes it immediately and reports storage errors. Multiple tabs share the slot,
+with the latest write winning. Download JSON for a portable backup.
+
+`?map=/prefabs/parkour-course.json` loads a source file, then saves edits to the
+same browser slot. Return to `/editor` to resume. **New Prefab** starts from the
+template. Demo pages use their own persistence settings. `scene.reset()` restores
+live objects from the current authored document.
+
+## Edit files with the CLI
+
+Save commands as `{"commands":[...]}` and run:
+
+```sh
+rtg validate scene.json commands.json
+rtg apply scene.json commands.json edited.json
+rtg components Transform
+rtg schema
+```
+
+The CLI uses the same core evaluator as `scene.batch()` with built-in component
+contracts. For custom definitions, register them in a Node script and call
+`evaluateSceneCommands` from `react-three-game/core`. Load `edited.json` in the
+editor to review the result. See the [CLI walkthrough](https://github.com/prnthh/react-three-game#node-cli).

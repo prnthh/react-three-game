@@ -21,7 +21,9 @@ A window node composes these components:
 }
 ```
 
-The plane faces local +Z and the virtual room extends toward -Z. Keep room width/height equal to plane width/height. The shader intersects the view ray with the virtual room, then samples an atlas; no room geometry is created. The supplied material treats the atlas as already lit. It does not create interior shadows, collision, or volumetric furniture.
+The plane faces local +Z and the virtual room extends toward -Z. Keep room width/height equal to plane width/height. The shader intersects the view ray with a virtual room and samples an already-lit
+atlas on the window plane. Add real room geometry and colliders when the player
+needs to enter the interior.
 
 The atlas has three columns (X, Y, Z) and two rows (positive faces at the top of the image, negative faces at the bottom). The +Z tile is unused when viewing from outside. `room-atlas.svg` is the editable original; `room-atlas.webp` is the runtime texture. Regenerate it with:
 
@@ -33,7 +35,6 @@ The component supports both ordinary and instanced meshes.
 
 Its `useSharedMaterialResource(key, create, { createInstanced })` callback creates
 an instance-aware shader variant using the supplied inverse instance matrix.
-Return a new material without mutating the shared source; the renderer disposes
+Return a new material from the callback; the renderer disposes
 variants when their batches unmount. Include shader inputs in the resource key.
-The hook handles regrouping automatically—no `userData` marker or manual batch
-invalidation is needed. Ordinary custom materials can omit this option.
+The hook handles regrouping automatically. Ordinary custom materials can omit this option.

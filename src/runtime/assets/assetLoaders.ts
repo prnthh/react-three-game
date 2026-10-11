@@ -1,8 +1,5 @@
 import type { Object3D, Texture } from "three";
 import { SRGBColorSpace, TextureLoader } from "three";
-import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
-import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 export type LoadedModel = Object3D;
 export type LoadedTexture = Texture;
@@ -31,13 +28,24 @@ export type SoundLoadResult = {
 
 export type ProgressCallback = (filename: string, loaded: number, total: number) => void;
 
-const dracoLoader = new DRACOLoader();
-dracoLoader.setDecoderPath("https://www.gstatic.com/draco/v1/decoders/");
-
-const gltfLoader = new GLTFLoader();
-gltfLoader.setDRACOLoader(dracoLoader);
-
-const fbxLoader = new FBXLoader();
+// Geometry-only scenes should not download or initialize model codecs.
+let gltfLoaderPromise: Promise<import('three/examples/jsm/loaders/GLTFLoader.js').GLTFLoader> | undefined;
+function getGLTFLoader() {
+    return gltfLoaderPromise ??= Promise.all([
+        import('three/examples/jsm/loaders/GLTFLoader.js'),
+        import('three/examples/jsm/loaders/DRACOLoader.js'),
+    ]).then(([{ GLTFLoader }, { DRACOLoader }]) => {
+        const decoder = new DRACOLoader();
+        decoder.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
+        return new GLTFLoader().setDRACOLoader(decoder);
+    }).catch(error => { gltfLoaderPromise = undefined; throw error; });
+}
+let fbxLoaderPromise: Promise<import('three/examples/jsm/loaders/FBXLoader.js').FBXLoader> | undefined;
+function getFBXLoader() {
+    return fbxLoaderPromise ??= import('three/examples/jsm/loaders/FBXLoader.js')
+        .then(({ FBXLoader }) => new FBXLoader())
+        .catch(error => { fbxLoaderPromise = undefined; throw error; });
+}
 const textureLoader = new TextureLoader();
 
 type ModelFileKind = "gltf" | "fbx";
@@ -134,35 +142,17 @@ export function canParseSoundFile(file: File | string) {
     return SOUND_FILE_EXTENSIONS.some(extension => normalizedName.endsWith(extension));
 }
 
-function parseModelBuffer(arrayBuffer: ArrayBuffer, sourceName: string): Promise<ModelLoadResult> {
-    const modelFileKind = getModelFileKind(sourceName);
-
-    if (modelFileKind === "gltf") {
-        return new Promise(resolve => {
-            gltfLoader.parse(
-                arrayBuffer,
-                "",
-                gltf => {
-                    gltf.scene.animations = gltf.animations;
-                    resolve({ success: true, model: gltf.scene });
-                },
-                error => {
-                    resolve({ success: false, error });
-                },
-            );
-        });
-    }
-
-    if (modelFileKind === "fbx") {
-        try {
-            const model = fbxLoader.parse(arrayBuffer, "");
-            return Promise.resolve({ success: true, model });
-        } catch (error) {
-            return Promise.resolve({ success: false, error });
+async function parseModelBuffer(arrayBuffer: ArrayBuffer, sourceName: string): Promise<ModelLoadResult> {
+    try {
+        const kind = getModelFileKind(sourceName);
+        if (kind === 'gltf') {
+            const gltf = await (await getGLTFLoader()).parseAsync(arrayBuffer, '');
+            gltf.scene.animations = gltf.animations;
+            return { success: true, model: gltf.scene };
         }
-    }
-
-    return Promise.resolve({ success: false, error: new Error(`Unsupported file format: ${sourceName}`) });
+        if (kind === 'fbx') return { success: true, model: (await getFBXLoader()).parse(arrayBuffer, '') };
+        return { success: false, error: new Error(`Unsupported file format: ${sourceName}`) };
+    } catch (error) { return { success: false, error }; }
 }
 
 export function parseModelFromFile(file: File): Promise<ModelLoadResult> {
@@ -240,6 +230,7 @@ export async function loadModel(
         const modelFileKind = getModelFileKind(filename);
 
         if (modelFileKind === "gltf") {
+            const gltfLoader = await getGLTFLoader();
             return new Promise(resolve => {
                 gltfLoader.load(
                     fullPath,
@@ -261,6 +252,7 @@ export async function loadModel(
         }
 
         if (modelFileKind === "fbx") {
+            const fbxLoader = await getFBXLoader();
             return new Promise(resolve => {
                 fbxLoader.load(
                     fullPath,

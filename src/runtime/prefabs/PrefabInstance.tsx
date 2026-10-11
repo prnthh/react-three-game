@@ -1,5 +1,5 @@
 import { AssetBoundary } from '../assets/AssetBoundary.js';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { startTransition, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useThree } from '@react-three/fiber';
 import { Group } from 'three';
 import type { WebGPURenderer } from 'three/webgpu';
@@ -9,6 +9,8 @@ import { useAssetRuntime } from '../assets/AssetRuntime.js';
 import { MeshInstanceProvider, useMeshInstanceRevision } from '../rendering/MeshInstanceProvider.js';
 import { SceneRuntime } from '../SceneRuntime.js';
 import type { PreparedPrefab } from './preparePrefab.js';
+import { compileInSlices } from '../rendering/compileInSlices.js';
+import { MountParentContext, usePendingMounts } from './ProgressiveMount.js';
 
 export type PrefabInstanceStatus =
     | { phase: 'loading' }
@@ -43,7 +45,7 @@ function InstanceResource(props: PrefabInstanceProps) {
         callbacks.current.onStatus?.({ phase: 'loading' });
         void runtime.preparePrefab(props.url, { basePath: props.basePath, signal: controller.signal }).then(value => {
             if (controller.signal.aborted) return;
-            setPrepared(value);
+            startTransition(() => setPrepared(value));
         }, error => {
             if (!controller.signal.aborted) callbacks.current.onStatus?.({ phase: 'error', error });
         });
@@ -53,55 +55,37 @@ function InstanceResource(props: PrefabInstanceProps) {
     return <InstanceMount {...props} prepared={prepared} />;
 }
 
-// Three's compiler temporarily changes renderer state; serialize preparation per renderer.
-const compilationQueues = new WeakMap<object, Promise<unknown>>();
-function enqueueCompilation(renderer: WebGPURenderer, compile: () => Promise<void>) {
-    const previous = compilationQueues.get(renderer) ?? Promise.resolve();
-    const next = previous.catch(() => {}).then(compile);
-    compilationQueues.set(renderer, next);
-    void next.finally(() => {
-        if (compilationQueues.get(renderer) === next) compilationQueues.delete(renderer);
-    }).catch(() => {});
-    return next;
-}
-
 function InstanceMount(props: PrefabInstanceProps & { prepared: PreparedPrefab }) {
     const container = useMemo(() => new Group(), []);
+    const mountParent = useMemo(() => ({ current: container }), [container]);
     return <primitive object={container} visible={false} dispose={null}>
-        <MeshInstanceProvider isolated static={props.static}>
-            <AssetBoundary atomic onError={error => props.onStatus?.({ phase: 'error', error })}>
-                <InstanceView {...props} container={container} />
-            </AssetBoundary>
-        </MeshInstanceProvider>
+        <MountParentContext.Provider value={mountParent}>
+            <MeshInstanceProvider isolated static={props.static}>
+                <AssetBoundary atomic onError={error => props.onStatus?.({ phase: 'error', error })}>
+                    <InstanceView {...props} container={container} />
+                </AssetBoundary>
+            </MeshInstanceProvider>
+        </MountParentContext.Provider>
     </primitive>;
 }
 
 function InstanceView({ id, prepared, static: isStatic = false, basePath, onStatus, onActivate, children, container }: PrefabInstanceProps & { prepared: PreparedPrefab; container: Group }) {
     const store = useMemo(() => createPrefabStore(prepared.document), [prepared]);
     const { gl, camera, scene, invalidate } = useThree();
-    const revision = useMeshInstanceRevision();
-    const [compiled, setCompiled] = useState(false);
-    const [compileMs, setCompileMs] = useState(0);
+    const [compileMs, setCompileMs] = useState<number | null>(null);
+    const compiled = compileMs !== null;
+    const pendingMounts = usePendingMounts(!compiled);
+    const revision = useMeshInstanceRevision(!compiled && !pendingMounts);
     const callbacks = useRef({ onStatus, onActivate });
     callbacks.current = { onStatus, onActivate };
 
     useEffect(() => {
-        if (compiled) return;
-        let cancelled = false;
+        if (compiled || pendingMounts) return;
+        const controller = new AbortController();
         callbacks.current.onStatus?.({ phase: 'compiling', loadMs: prepared.durationMs });
-        void enqueueCompilation(gl as unknown as WebGPURenderer, async () => {
-            if (cancelled) return;
-            const started = performance.now();
-            // Projection happens synchronously before compileAsync awaits its pipelines.
-            // Restore visibility immediately so staging never appears in a normal frame.
-            const visible = container.visible;
-            container.visible = true;
-            container.updateWorldMatrix(true, true);
-            let work: Promise<void>;
-            try { work = (gl as unknown as WebGPURenderer).compileAsync(container, camera, scene); }
-            finally { container.visible = visible; }
-            await work;
-            if (cancelled) return;
+        const started = performance.now();
+        void compileInSlices(gl as unknown as WebGPURenderer, container, camera, scene, { signal: controller.signal }).then(() => {
+            if (controller.signal.aborted) return;
             if (isStatic) {
                 container.updateWorldMatrix(true, true);
                 container.traverse(object => {
@@ -110,16 +94,15 @@ function InstanceView({ id, prepared, static: isStatic = false, basePath, onStat
                 });
             }
             setCompileMs(performance.now() - started);
-            setCompiled(true);
             invalidate();
         }).catch(error => {
-            if (!cancelled) callbacks.current.onStatus?.({ phase: 'error', error });
+            if (!controller.signal.aborted) callbacks.current.onStatus?.({ phase: 'error', error });
         });
-        return () => { cancelled = true; };
-    }, [camera, compiled, container, isStatic, gl, invalidate, prepared, revision, scene]);
+        return () => controller.abort();
+    }, [camera, compiled, container, isStatic, gl, invalidate, prepared, revision, scene, pendingMounts]);
 
     useEffect(() => {
-        if (!compiled) return;
+        if (compileMs === null) return;
         callbacks.current.onStatus?.({ phase: 'active', loadMs: prepared.durationMs, compileMs });
         callbacks.current.onActivate?.();
     }, [compiled, compileMs, prepared]);

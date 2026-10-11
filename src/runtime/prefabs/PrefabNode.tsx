@@ -10,6 +10,7 @@ import { NodeScope, PrefabModeContext, RuntimeNodeIdPrefixContext, useGameObject
 import { useNodeSelected } from "../scene/SelectionRuntime.js";
 import { createNodeInteractionHandlers, type NodeInteractionEvent, type NodeInteractionEventType } from "../scene/usePointerEvents.js";
 import { analyzeNodeComponents, ComponentLookupContext, EMPTY_NODE_COMPONENTS } from "./nodePlan.js";
+import { MountParentContext, useProgressiveMount } from './ProgressiveMount.js';
 
 function getNodeMetadataProps(node: GameObjectType, scope: string) {
     const nodeName = node.name?.trim() ?? '';
@@ -43,8 +44,10 @@ function ResolvedPrefabNode({
         () => gameObject ? analyzeNodeComponents(gameObject, lookup) : EMPTY_NODE_COMPONENTS,
         [gameObject, lookup],
     );
+    const ready = useProgressiveMount(analyzedComponents.composition.some(entry =>
+        entry.component?.slot === 'geometry' || ['Model', 'SkinnedMesh'].includes(entry.component?.name ?? '')), analyzedComponents.transform.position);
 
-    if (!gameObject) return null;
+    if (!gameObject || !ready) return null;
 
     const nodeEnabled = isEnabled && !gameObject.disabled;
     const nodeVisible = isVisible && !gameObject.hidden && !gameObject.disabled;
@@ -125,7 +128,7 @@ function NodePresentation({ nodeId, childIds, analyzedComponents, metadataProps,
                 {...primaryInteractionHandlers}
                 visible={nodeVisible}
             >
-                {children}
+                <MountParentContext.Provider value={groupRef}>{children}</MountParentContext.Provider>
             </group>
         </NodeScope>
     );

@@ -13,6 +13,7 @@ const options: DemoOption[] = [
     { label: "Viewer Mode", href: "/viewer" },
     { label: "Asset Viewer", href: "/demo/assetviewer" },
     { label: "Custom Component", href: "/demo/customcomponent" },
+    { label: "Music Video", href: "/demo/musicvideo" },
     { label: "Cool stuff", href: "/demo/coolstuff" },
     { label: "Parkour", href: "/demo/parkour" },
     { label: "Point n Click", href: "/demo/stage" },

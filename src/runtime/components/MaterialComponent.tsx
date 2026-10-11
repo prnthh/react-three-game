@@ -12,8 +12,7 @@ import type { Component, ComponentViewProps } from '../../core/ComponentRegistry
 
 import { useTextureAsset } from '../assets/AssetRuntime.js';
 
-import { useGameObject, usePrefab } from '../scene/SceneContext.js';
-import { usePrefabStore } from '../prefabs/PrefabStoreContext.js';
+import { usePrefab } from '../scene/SceneContext.js';
 
 
 import { compactPrefabMaterial, getMaterialDefinition } from '../../core/prefab.js';
@@ -143,12 +142,17 @@ type MaterialEntry = {
     references: number;
 };
 
-class SceneMaterialPool {
+type MaterialName = string | object;
+type MaterialDefinition = { name: MaterialName; material: PrefabMaterial; basePath: string; order: number };
+
+export class SceneMaterialPool {
     readonly entries = new Map<string, MaterialEntry>();
-    private definitions = new Map<object, { name: string; material: PrefabMaterial; basePath: string; order: number }>();
+    private definitions = new Map<object, MaterialDefinition>();
+    private definitionsByName = new Map<MaterialName, Map<object, MaterialDefinition>>();
+    private nextOrder = 0;
     lifetime: object | null = null;
-    private listeners = new Map<string, Set<() => void>>();
-    subscribe = (name: string, listener: () => void) => {
+    private listeners = new Map<MaterialName, Set<() => void>>();
+    subscribe = (name: MaterialName, listener: () => void) => {
         let listeners = this.listeners.get(name);
         if (!listeners) this.listeners.set(name, listeners = new Set());
         listeners.add(listener);
@@ -157,10 +161,19 @@ class SceneMaterialPool {
             if (listeners?.size === 0) this.listeners.delete(name);
         };
     };
-    private notify(name: string) { this.listeners.get(name)?.forEach(listener => listener()); }
-    registerDefinition(owner: object, name: string, material: PrefabMaterial, basePath: string, order: number) {
+    private notify(name: MaterialName) { this.listeners.get(name)?.forEach(listener => listener()); }
+    registerDefinition(owner: object, name: MaterialName, material: PrefabMaterial, basePath: string) {
         const previous = this.definitions.get(owner);
-        this.definitions.set(owner, { name, material, basePath, order });
+        if (previous && previous.name !== name) {
+            const peers = this.definitionsByName.get(previous.name)!;
+            peers.delete(owner);
+            if (!peers.size) this.definitionsByName.delete(previous.name);
+        }
+        const definition = { name, material, basePath, order: previous?.order ?? this.nextOrder++ };
+        this.definitions.set(owner, definition);
+        let peers = this.definitionsByName.get(name);
+        if (!peers) this.definitionsByName.set(name, peers = new Map());
+        peers.set(owner, definition);
         if (previous && previous.name !== name) this.notify(previous.name);
         this.notify(name);
     }
@@ -168,12 +181,15 @@ class SceneMaterialPool {
         const definition = this.definitions.get(owner);
         if (!definition) return;
         this.definitions.delete(owner);
+        const peers = this.definitionsByName.get(definition.name)!;
+        peers.delete(owner);
+        if (!peers.size) this.definitionsByName.delete(definition.name);
         this.notify(definition.name);
     }
-    resolve(name: string) {
-        let resolved: { name: string; material: PrefabMaterial; basePath: string; order: number } | null = null;
-        for (const definition of this.definitions.values()) {
-            if (definition.name === name && (!resolved || definition.order < resolved.order)) resolved = definition;
+    resolve(name: MaterialName) {
+        let resolved: MaterialDefinition | null = null;
+        for (const definition of this.definitionsByName.get(name)?.values() ?? []) {
+            if (!resolved || definition.order > resolved.order) resolved = definition;
         }
         return resolved;
     }
@@ -303,33 +319,37 @@ function applyMaterialProperties(
     material.needsUpdate = true;
 }
 
+const DEFAULT_MATERIAL: PrefabMaterial = Object.freeze({});
+
 function MaterialComponentView({ properties, children }: { properties: MaterialComponentProperties; children?: ReactNode; enabled: boolean }) {
-    const pool = useContext(SceneMaterialPoolContext);
-    if (!pool) throw new Error('Materials require a scene material pool');
     const { basePath } = usePrefab();
-    const node = useGameObject();
-    const materialName = properties.name ?? '';
-    const localMaterial = useMemo(() => getMaterialDefinition(properties), [properties]);
-    const prefabMaterial = usePrefabStore(state => state.materials[materialName]);
-    const order = usePrefabStore(state => localMaterial
-        ? (state.childIdsById[state.parentIdById[node.nodeId] ?? state.rootId] ?? []).indexOf(node.nodeId)
-        : -1);
-    const [owner] = useState(() => ({}));
-    const subscribe = useMemo(() => (listener: () => void) => pool.subscribe(materialName, listener), [pool, materialName]);
-    const resolve = useMemo(() => () => pool.resolve(materialName), [pool, materialName]);
-    const definition = useSyncExternalStore(subscribe, resolve, () => null);
-    useLayoutEffect(() => {
-        if (!materialName || !localMaterial) return;
-        pool.registerDefinition(owner, materialName, localMaterial, basePath, order < 0 ? Number.MAX_SAFE_INTEGER : order);
-        return () => pool.unregisterDefinition(owner);
-    }, [pool, owner, materialName, localMaterial, basePath, order]);
-    const material = materialName ? definition?.material ?? prefabMaterial : localMaterial ?? {};
+    const material = useMemo(() => getMaterialDefinition(properties), [properties]);
     return <>
-        {material
-            ? <ResolvedMaterial material={material} basePath={definition?.basePath ?? basePath} attach={properties.attach} />
-            : <primitive object={unresolvedMaterial} attach={properties.attach ?? 'material'} dispose={null} />}
+        {properties.name
+            ? <NamedMaterial name={properties.name} material={material} basePath={basePath} attach={properties.attach} />
+            : <ResolvedMaterial material={material ?? DEFAULT_MATERIAL} basePath={basePath} attach={properties.attach} />}
         {children}
     </>;
+}
+
+// Only named references need a registry subscription and definition lifecycle.
+function NamedMaterial({ name, material, basePath, attach }: {
+    name: string; material: PrefabMaterial | null; basePath: string; attach?: string;
+}) {
+    const pool = useContext(SceneMaterialPoolContext);
+    if (!pool) throw new Error('Materials require a scene material pool');
+    const [owner] = useState(() => ({}));
+    const subscribe = useMemo(() => (listener: () => void) => pool.subscribe(name, listener), [pool, name]);
+    const resolve = useMemo(() => () => pool.resolve(name), [pool, name]);
+    const definition = useSyncExternalStore(subscribe, resolve, () => null);
+    useLayoutEffect(() => {
+        if (!material) return;
+        pool.registerDefinition(owner, name, material, basePath);
+        return () => pool.unregisterDefinition(owner);
+    }, [pool, owner, name, material, basePath]);
+    return definition
+        ? <ResolvedMaterial material={definition.material} basePath={definition.basePath} attach={attach} />
+        : <primitive object={unresolvedMaterial} attach={attach ?? 'material'} dispose={null} />;
 }
 
 function ResolvedMaterial({ material, basePath, attach }: { material: PrefabMaterial; basePath: string; attach?: string }) {

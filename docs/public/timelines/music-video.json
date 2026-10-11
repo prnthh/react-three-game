@@ -1,0 +1,86 @@
+{
+  "commands": [
+    {
+      "time": 0,
+      "action": "playAudio",
+      "clip": "/sound/CodeTalkerSong.mp3",
+      "volume": 1
+    },
+    {
+      "time": 0,
+      "nodeId": "oni",
+      "component": "model",
+      "properties": {
+        "animationState": "idle"
+      }
+    },
+    {
+      "time": 0,
+      "nodeId": "key",
+      "component": "light",
+      "properties": {
+        "color": "#ffffff",
+        "intensity": 3
+      }
+    },
+    {
+      "time": 4,
+      "nodeId": "key",
+      "component": "light",
+      "properties": {
+        "color": "#ff6eaa",
+        "intensity": 4
+      }
+    },
+    {
+      "time": 8,
+      "nodeId": "oni",
+      "component": "model",
+      "properties": {
+        "animationState": "walk"
+      }
+    },
+    {
+      "time": 8,
+      "nodeId": "key",
+      "component": "light",
+      "properties": {
+        "color": "#66ccff",
+        "intensity": 5
+      }
+    },
+    {
+      "time": 12,
+      "nodeId": "fill",
+      "component": "light",
+      "properties": {
+        "intensity": 0.3
+      }
+    },
+    {
+      "time": 16,
+      "nodeId": "oni",
+      "component": "model",
+      "properties": {
+        "animationState": "idle"
+      }
+    },
+    {
+      "time": 16,
+      "nodeId": "key",
+      "component": "light",
+      "properties": {
+        "color": "#ffffff",
+        "intensity": 3
+      }
+    },
+    {
+      "time": 16,
+      "nodeId": "fill",
+      "component": "light",
+      "properties": {
+        "intensity": 0.65
+      }
+    }
+  ]
+}

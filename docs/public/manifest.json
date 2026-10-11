@@ -76,6 +76,7 @@
     "/textures/water1.png"
   ],
   "sound": [
+    "/sound/CodeTalkerSong.mp3",
     "/sound/blow.mp3",
     "/sound/explode.mp3",
     "/sound/hit.mp3",
@@ -86,6 +87,7 @@
     "/sound/wind2.mp3"
   ],
   "prefabs": [
+    "/prefabs/agent-api.json",
     "/prefabs/brutalist-city/brutalist-cube-building.json",
     "/prefabs/brutalist-city/brutalist-cylinder-tower.json",
     "/prefabs/brutalist-city/brutalist-enterable-cube.json",
@@ -105,7 +107,9 @@
     "/prefabs/killbox/npc.json",
     "/prefabs/killbox/player.json",
     "/prefabs/killbox/street.json",
+    "/prefabs/music-video.json",
     "/prefabs/parkour-course.json",
+    "/prefabs/parkour2.json",
     "/prefabs/prefab.json",
     "/prefabs/rotator-demo.json",
     "/prefabs/starter-scene.json",

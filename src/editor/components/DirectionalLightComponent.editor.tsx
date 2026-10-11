@@ -51,6 +51,11 @@ function DirectionalLightComponentEditor({ properties, update }: ComponentEditor
             <LightSection title="Light">
                 <ColorField name="color" label="Color" values={values} onChange={update} />
                 <NumberField name="intensity" label="Intensity" values={values} onChange={update} min={0} step={0.1} fallback={1} />
+                <BooleanField name="followCamera" label="Follow camera" values={values} onChange={update} fallback={false} />
+                {values.followCamera && <>
+                    <NumberField name="followCameraStep" label="Step size (X/Z)" values={values} onChange={update} min={0.01} step={1} fallback={8} />
+                    <NumberField name="followCameraInterval" label="Update interval (s)" values={values} onChange={update} min={0.01} step={0.05} fallback={0.25} />
+                </>}
                 <Vector3Input
                     label="Target Offset"
                     value={values.targetOffset}

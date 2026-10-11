@@ -6,10 +6,15 @@ import { base, colors } from '../ui/styles.js';
 import { FieldGroup, Label } from '../ui/Input.js';
 import { isEmbeddedPrefabSource } from '../../runtime/prefabs/prefabSource.js';
 import { useAssetRuntime } from '../../runtime/assets/AssetRuntime.js';
+import { usePrefabStore } from '../../runtime/prefabs/PrefabStoreContext.js';
 import { PrefabRefProperties } from "../../runtime/components/PrefabRefComponent.js";
 
 function PrefabRefEditor({ node, properties, update }: ComponentEditorProps<PrefabRefProperties>) {
     const url = properties.url ?? '';
+    const prefabId = properties.prefabId ?? '';
+    const definitions = usePrefabStore(state => state.prefabs);
+    const inline = !!prefabId;
+    const hasSource = inline || !!url;
     const [manifest, setManifest] = useState<string[]>([]);
     const [error, setError] = useState<string | null>(null);
     const embedded = isEmbeddedPrefabSource(url);
@@ -52,7 +57,7 @@ function PrefabRefEditor({ node, properties, update }: ComponentEditorProps<Pref
     }, [basePath]);
 
     const handleUnpack = async () => {
-        if (!node || !url) return;
+        if (!node || !hasSource) return;
         setUnpacking(true);
         try {
             setError(null);
@@ -67,20 +72,31 @@ function PrefabRefEditor({ node, properties, update }: ComponentEditorProps<Pref
     return (
         <FieldGroup>
             <div>
-                <Label>{embedded ? 'Prefab (saved with scene)' : 'Prefab URL'}</Label>
+                <Label>{inline || embedded ? 'Prefab (saved with scene)' : 'Prefab URL'}</Label>
+                {inline && <div>{definitions?.[prefabId]?.name ?? prefabId}</div>}
+                {!!Object.keys(definitions ?? {}).length && <select
+                    style={{ ...base.input, width: '100%', marginBottom: 4 }}
+                    value={prefabId}
+                    onChange={e => update({ prefabId: e.target.value, url: '' })}
+                >
+                    <option value="">— inline definition —</option>
+                    {Object.entries(definitions ?? {}).map(([id, prefab]) => <option key={id} value={id}>
+                        {prefab.name ?? id} ({id})
+                    </option>)}
+                </select>}
                 {embedded && <div title={embeddedLabel} style={{ overflowWrap: 'anywhere', marginBottom: 4 }}>{embeddedLabel}</div>}
                 <input
                     type="text"
                     style={{ ...base.input, width: '100%', boxSizing: 'border-box', fontFamily: 'monospace' }}
-                    value={embedded ? '' : url}
-                    onChange={e => update({ url: e.target.value })}
+                    value={inline || embedded ? '' : url}
+                    onChange={e => update({ url: e.target.value, prefabId: '' })}
                     placeholder={embedded ? "Replace with a prefab URL…" : "/prefabs/my-prefab.json"}
                 />
                 {manifest.length > 0 && (
                     <select
                         style={{ ...base.input, width: '100%', marginTop: 4, background: colors.bgInput, boxSizing: 'border-box' }}
                         value={url}
-                        onChange={e => update({ url: e.target.value })}
+                        onChange={e => update({ url: e.target.value, prefabId: '' })}
                     >
                         {embedded && <option value={url}>{embeddedLabel} (saved with scene)</option>}
                         <option value="">— pick from manifest —</option>
@@ -95,8 +111,8 @@ function PrefabRefEditor({ node, properties, update }: ComponentEditorProps<Pref
             {error && <div role="alert">{error}</div>}
             <button
                 type="button"
-                style={{ ...base.btn, width: '100%', opacity: unpacking || !url ? 0.5 : 1 }}
-                disabled={unpacking || !url}
+                style={{ ...base.btn, width: '100%', opacity: unpacking || !hasSource ? 0.5 : 1 }}
+                disabled={unpacking || !hasSource}
                 onClick={handleUnpack}
             >
                 {unpacking ? 'Unpacking…' : 'Unpack'}

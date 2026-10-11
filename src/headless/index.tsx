@@ -177,13 +177,15 @@ function staticPrefab(document: Prefab): Prefab {
             children: node.children?.map(visit),
         };
     };
-    return { ...document, root: visit(document.root) };
+    return { ...document, root: visit(document.root), ...(document.prefabs ? {
+        prefabs: Object.fromEntries(Object.entries(document.prefabs).map(([id, prefab]) => [id, staticPrefab(prefab)])),
+    } : {}) };
 }
 
 function prefabFromState(state: PrefabState): Prefab {
     // Preserve explicit properties; denormalization compacts using the application registry.
     const node = (id: string): GameObject => ({ ...state.nodesById[id], children: state.childIdsById[id].map(node) });
-    return { id: state.prefabId, name: state.prefabName, root: node(state.rootId) };
+    return { id: state.prefabId, name: state.prefabName, prefabs: state.prefabs, root: node(state.rootId) };
 }
 
 /** Lossy built-ins-only export. Custom views, dependencies and modifiers never run. */

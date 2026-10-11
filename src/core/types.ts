@@ -2,6 +2,8 @@ export interface Prefab {
     id?: string;
     name?: string;
     root: GameObject;
+    /** Legacy input format; new documents keep packed definitions on scene nodes. */
+    prefabs?: Record<string, Prefab>;
 }
 
 export type PrefabMaterialType = 'standard' | 'basic' | 'sprite';
@@ -41,6 +43,8 @@ export interface MaterialComponentProperties extends PrefabMaterial {
 }
 
 export interface GameObject {
+    /** This subtree defines a reusable prefab under this node’s ID. */
+    packed?: boolean;
     id: string;
     name?: string;
     disabled?: boolean;

@@ -18,7 +18,7 @@ export default function DemoApp() {
         if (value.phase === 'error') setError(String(value.error));
     }, []);
     return <DemoChunkStatusContext.Provider value={status}>
-        <GameCanvas rendererConfig={{ outputColorSpace: SRGBColorSpace, toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1.2 }}>
+        <GameCanvas mountBatchSize={8} rendererConfig={{ outputColorSpace: SRGBColorSpace, toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1.2 }}>
             <PrefabRoot basePath={BASE_PATH} data={homePrefab as Prefab} />
         </GameCanvas>
         {error && <div role="alert" className="absolute bottom-4 left-4 text-sm text-red-300">Scene failed to load: {error}</div>}

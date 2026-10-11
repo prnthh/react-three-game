@@ -1,24 +1,23 @@
-import { SurfaceGrid } from './spatial';
+import type { CollisionQueries, Position } from './collision';
 import { createParkourSimulation, PARKOUR_STEP } from './simulation';
 import { stepParkour, type MovementSettings } from './movement';
-import { type Position, type Surface } from './collision';
 
-export const Buttons = { forward: 1, back: 2, left: 4, right: 8, jump: 16, crouch: 32, detach: 64 } as const;
+export const Buttons = { forward: 1, back: 2, left: 4, right: 8, jump: 16, crouch: 32 } as const;
 const TAU = Math.PI * 2;
 const YAW_STEPS = 65536;
 
 /** Quantize before simulation: live physics and replay consume the same command. */
 export function packCommand(buttons: number, yaw: number) {
     const angle = Math.round(((yaw % TAU + TAU) % TAU) * YAW_STEPS / TAU) & 0xffff;
-    return (angle << 7) | (buttons & 127);
+    return (angle << 6) | (buttons & 63);
 }
 export function unpackCommand(packed: number) {
-    const yaw = (packed >>> 7) * TAU / YAW_STEPS;
+    const yaw = (packed >>> 6) * TAU / YAW_STEPS;
     const facingX = -Math.sin(yaw), facingZ = -Math.cos(yaw);
     const ahead = Number(!!(packed & Buttons.forward)) - Number(!!(packed & Buttons.back));
     const right = Number(!!(packed & Buttons.right)) - Number(!!(packed & Buttons.left));
     return { x: facingX * ahead - facingZ * right, z: facingZ * ahead + facingX * right,
-        facingX, facingZ, jump: !!(packed & Buttons.jump), crouch: !!(packed & Buttons.crouch), detach: !!(packed & Buttons.detach) };
+        facingX, facingZ, jump: !!(packed & Buttons.jump), crouch: !!(packed & Buttons.crouch) };
 }
 
 /** One packed command per tick. Capacity doubles as needed. */
@@ -45,17 +44,10 @@ export class Recording {
     }
 }
 
-export function createAttempt(spawn: Position, settings: MovementSettings, surfaces: Surface[]) {
-    return { spawn: [...spawn] as Position, settings: { ...settings }, surfaces: structuredClone(surfaces), recording: new Recording() };
+export function createAttempt(spawn: Position, settings: MovementSettings, collision: CollisionQueries) {
+    return { spawn: [...spawn] as Position, settings: { ...settings }, collision, recording: new Recording() };
 }
 export type Attempt = ReturnType<typeof createAttempt>;
-const collisionGrids = new WeakMap<Attempt, SurfaceGrid>();
-export function attemptCollision(attempt: Attempt) {
-    let grid = collisionGrids.get(attempt);
-    if (!grid) { grid = new SurfaceGrid(attempt.surfaces); collisionGrids.set(attempt, grid); }
-    return grid;
-}
-
 /** Playback indexes the finished commands directly, once per live physics tick. */
 export class Replay {
     readonly simulation;
@@ -72,7 +64,7 @@ export class Replay {
         this.command = unpackCommand(this.commands[this.tick++]);
         const sim = this.simulation;
         sim.previous = sim.current;
-        sim.current = stepParkour(sim.current, this.command, this.attempt.settings, attemptCollision(this.attempt), PARKOUR_STEP);
+        sim.current = stepParkour(sim.current, this.command, this.attempt.settings, this.attempt.collision, PARKOUR_STEP);
         return true;
     }
 }

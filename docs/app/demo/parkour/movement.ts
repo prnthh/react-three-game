@@ -1,12 +1,12 @@
-import type { SurfaceGrid } from './spatial';
-import { PLAYER_RADIUS, overlaps, touchesHeight, surfaceTopAt, uprightWall, wallAt, sameNormal, sweepWall,
-    type Position, type Surface } from './collision';
+import { type CollisionQueries, sameNormal, resolveWallVelocity, type Position } from './collision';
 
-// Demo-owned kinematic movement with yaw-aware box collision.
+// Demo-owned kinematic movement against the static collision world.
 export type ParkourState = {
     position: Position; velocityY: number; velocity: [number, number]; grounded: boolean;
     crouched: boolean;
     wallNormal: [number, number] | null;
+    wallJumpAvailable: boolean;
+    departedWall: [number, number] | null; // Prevent re-latching the departure contact margin.
     wallTime: number; // Seconds since attaching to this wall.
     climbRemaining: number | null; // Seconds of climb support; null means unused, zero means spent.
     jumpBuffer: number; // Seconds remaining to consume an early jump press.
@@ -28,7 +28,7 @@ const SLIDE_DECELERATION = 14;
 const SLIDE_BOOST_SPEED_LIMIT = 27;
 const WALL_JUMP_IMPULSE = 4;
 const WALL_PUSH_IMPULSE = 2;
-const WALLRUN_JUMP_MIN_ANGLE = Math.PI / 6; // Minimum departure angle from the wall tangent.
+const WALLRUN_JUMP_MIN_ANGLE = Math.PI / 6;
 // Retain early jump presses until contact or expiry.
 const JUMP_BUFFER = 0.1;
 // Timed climb drives upward toward this cap, once per attachment.
@@ -43,57 +43,52 @@ export function isWallClimbing(normal: [number, number] | null, facingX: number,
     return !!normal && -(normal[0] * facingX + normal[1] * facingZ) >= Math.cos(WALLCLIMB_CUTOFF_ANGLE);
 }
 
-// Remove inward velocity, optionally preserving speed along the wall.
-function resolveWallVelocity(velocityX: number, velocityZ: number, [normalX, normalZ]: [number, number], preserveSpeed: boolean): [number, number] {
-    const horizontalSpeed = Math.hypot(velocityX, velocityZ);
-    const inwardSpeed = Math.min(0, velocityX * normalX + velocityZ * normalZ);
-    velocityX -= normalX * inwardSpeed; velocityZ -= normalZ * inwardSpeed;
-    const projectedSpeed = Math.hypot(velocityX, velocityZ);
-    if (preserveSpeed && projectedSpeed > 1e-6) {
-        velocityX *= horizontalSpeed / projectedSpeed; velocityZ *= horizontalSpeed / projectedSpeed;
-    }
-    return [velocityX, velocityZ];
+function wallJumpVelocity(velocityX: number, velocityZ: number, normal: [number, number], facingX: number, facingZ: number): [number, number] {
+    const climbing = isWallClimbing(normal, facingX, facingZ);
+    const velocity = resolveWallVelocity(velocityX, velocityZ, normal, !climbing);
+    if (climbing) return velocity;
+    const [nx, nz] = normal;
+    const tangent = -facingX * nz + facingZ * nx;
+    const outward = facingX * nx + facingZ * nz;
+    const angle = Math.max(WALLRUN_JUMP_MIN_ANGLE, Math.atan2(outward, Math.abs(tangent)));
+    const speed = Math.hypot(...velocity);
+    const outwardSpeed = Math.sin(angle) * speed + WALL_PUSH_IMPULSE;
+    const tangentSpeed = Math.cos(angle) * Math.sign(tangent) * speed;
+    return [nx * outwardSpeed - nz * tangentSpeed, nz * outwardSpeed + nx * tangentSpeed];
 }
 
 export function createParkourState(position: Position): ParkourState {
     return { position: [...position], velocityY: 0, velocity: [0, 0], grounded: false,
-        crouched: false, wallNormal: null, wallTime: 0, climbRemaining: null, jumpBuffer: 0 };
+        crouched: false, wallNormal: null, wallJumpAvailable: false, departedWall: null, wallTime: 0, climbRemaining: null, jumpBuffer: 0 };
 }
 export function stepParkour(state: ParkourState,
-    input: { x: number; z: number; jump: boolean; crouch?: boolean; detach?: boolean; facingX?: number; facingZ?: number },
-    settings: MovementSettings, world: Surface[] | SurfaceGrid, deltaTime: number): ParkourState {
+    input: { x: number; z: number; jump: boolean; crouch?: boolean; facingX?: number; facingZ?: number },
+    settings: MovementSettings, world: CollisionQueries, deltaTime: number): ParkourState {
     // Read input, stance, and wall contact
-    const [x, y, z] = state.position;
-    const clearanceReach = Math.SQRT2 * (PLAYER_RADIUS + 0.08) + 0.001;
-    let surfaces = Array.isArray(world) ? world : world.query({
-        minX: x - clearanceReach, maxX: x + clearanceReach,
-        minY: y, maxY: y + STANDING_HEIGHT,
-        minZ: z - clearanceReach, maxZ: z + clearanceReach,
-    });
-    const blockedStanding = state.crouched && surfaces.some(surface => overlaps(x, z, surface) && touchesHeight(y, STANDING_HEIGHT, surface));
-    const crouched = !!input.crouch || blockedStanding;
+    const crouched = !!input.crouch || (state.crouched && !world.canStand(state.position, STANDING_HEIGHT));
     const height = crouched ? CROUCH_HEIGHT : STANDING_HEIGHT;
     const inputMagnitude = Math.hypot(input.x, input.z);
     const inputX = input.x / Math.max(1, inputMagnitude), inputZ = input.z / Math.max(1, inputMagnitude);
     let [velocityX, velocityZ] = state.velocity;
     let velocityY = state.velocityY;
     const facingX = input.facingX ?? inputX, facingZ = input.facingZ ?? inputZ;
-    const previousWallContact = state.wallNormal && wallAt(x, y, z, height, surfaces, state.wallNormal);
-    const wallContact = previousWallContact ?? wallAt(x, y, z, height, surfaces);
-    const wallMovementEnabled = !state.grounded && !crouched && !input.detach;
+    // Forward input holds contact; releasing it ends this latch and its jump budget.
     const movingForward = inputX * facingX + inputZ * facingZ > 1e-6;
+    const canLatch = movingForward && !state.grounded && !crouched;
+    const wallContact = canLatch ? world.wallAt(state.position, height, state.wallNormal) : null;
+    const previousWallContact = sameNormal(state.wallNormal, wallContact);
+    const departedWall = !input.crouch && state.departedWall
+        && sameNormal(world.wallAt(state.position, height, state.departedWall), state.departedWall) ? state.departedWall : null;
+    const approachingWall = wallContact && velocityX * wallContact[0] + velocityZ * wallContact[1] <= 1e-6;
+    let wallNormal = canLatch && wallContact && !sameNormal(departedWall, wallContact) && (previousWallContact || approachingWall) ? wallContact : null;
+    let wallJumpAvailable = !!wallNormal && (!sameNormal(state.wallNormal, wallNormal) || state.wallJumpAvailable);
     let jumpBuffer = input.jump ? JUMP_BUFFER : Math.max(0, state.jumpBuffer - deltaTime);
-    // Nearby contact permits a jump only while we are not already moving away.
-    const jumpWallNormal = wallMovementEnabled && wallContact && velocityX * wallContact[0] + velocityZ * wallContact[1] <= 1e-6 ? wallContact : null;
-    const jumping = jumpBuffer > 0 && (state.grounded || !!jumpWallNormal);
-    if (jumping) jumpBuffer = 0;
-    const acceptsWall = (normal: [number, number]) => {
-        if (!wallMovementEnabled || !movingForward || jumping) return false;
-        // An established wallrun permits looking away; a climb releases outward.
-        if (sameNormal(previousWallContact, normal) && state.climbRemaining === null) return true;
-        return inputX * normal[0] + inputZ * normal[1] <= 0.1;
-    };
-    let wallNormal = wallContact && acceptsWall(wallContact) && (previousWallContact || jumpWallNormal) ? wallContact : null;
+    const jumping = jumpBuffer > 0 && (state.grounded || wallJumpAvailable);
+    const jumpWallNormal = jumping ? wallNormal : null;
+    const separating = !!jumpWallNormal && !isWallClimbing(jumpWallNormal, facingX, facingZ);
+    if (jumping) { jumpBuffer = 0; wallJumpAvailable = false; }
+    if (separating) wallNormal = null;
+    const acceptsWall = (normal: [number, number]) => canLatch && !separating && !sameNormal(departedWall, normal);
 
     const groundedMovement = state.grounded && !jumping;
 
@@ -154,52 +149,13 @@ export function stepParkour(state: ParkourState,
         velocityX *= speedScale; velocityZ *= speedScale;
     }
 
-    // Apply jump impulses
+    // Redirect wallrun momentum toward the camera, at least 30 degrees away from the wall.
+    // A climb jump stays attached and spends the latch's single jump.
     if (jumping) {
         velocityY += jumpWallNormal ? WALL_JUMP_IMPULSE : settings.jumpSpeed;
         if (jumpWallNormal) {
-            const climbing = isWallClimbing(jumpWallNormal, facingX, facingZ);
-            [velocityX, velocityZ] = resolveWallVelocity(velocityX, velocityZ, jumpWallNormal, !climbing);
-            if (!climbing) {
-                const [normalX, normalZ] = jumpWallNormal;
-                const tangentAlignment = -facingX * normalZ + facingZ * normalX;
-                const outwardAlignment = facingX * normalX + facingZ * normalZ;
-                const departureAngle = Math.max(WALLRUN_JUMP_MIN_ANGLE, Math.atan2(outwardAlignment, Math.abs(tangentAlignment)));
-                const horizontalSpeed = Math.hypot(velocityX, velocityZ);
-                const outwardSpeed = Math.sin(departureAngle) * horizontalSpeed + WALL_PUSH_IMPULSE;
-                const tangentSpeed = Math.cos(departureAngle) * Math.sign(tangentAlignment) * horizontalSpeed;
-                velocityX = normalX * outwardSpeed - normalZ * tangentSpeed;
-                velocityZ = normalZ * outwardSpeed + normalX * tangentSpeed;
-            }
+            [velocityX, velocityZ] = wallJumpVelocity(velocityX, velocityZ, jumpWallNormal, facingX, facingZ);
         }
-    }
-
-    // Move horizontally and resolve collisions
-    if (!Array.isArray(world)) {
-        // Query the full travel radius to cover redirection along surfaces.
-        const collisionPadding = 2 * PLAYER_RADIUS + 0.001;
-        const sweepReach = Math.hypot(velocityX, velocityZ) * deltaTime + collisionPadding;
-        const highestY = y + Math.max(0, velocityY) * deltaTime;
-        surfaces = world.query({
-            minX: x - sweepReach, maxX: x + sweepReach,
-            minY: Math.min(y, y + (velocityY - GRAVITY * deltaTime) * deltaTime) - collisionPadding, maxY: highestY + STANDING_HEIGHT + collisionPadding,
-            minZ: z - sweepReach, maxZ: z + sweepReach,
-        });
-    }
-    // Sweep against expanded local boxes, selecting the earliest face across
-    // all surfaces. Resolve velocity once and use it for the remaining tick.
-    let nextX = x, nextZ = z;
-    let remainingTime = deltaTime;
-    for (let iteration = 0; iteration < 8; iteration++) {
-        const remainingDistanceX = velocityX * remainingTime, remainingDistanceZ = velocityZ * remainingTime;
-        const hit = sweepWall(nextX, y, nextZ, height, remainingDistanceX, remainingDistanceZ, surfaces);
-        if (!hit) { nextX += remainingDistanceX; nextZ += remainingDistanceZ; break; }
-        nextX += remainingDistanceX * hit.time; nextZ += remainingDistanceZ * hit.time;
-        remainingTime *= 1 - hit.time;
-        const attaching = uprightWall(hit.wall) && acceptsWall(hit.normal);
-        [velocityX, velocityZ] = resolveWallVelocity(velocityX, velocityZ, hit.normal, attaching && !isWallClimbing(hit.normal, facingX, facingZ));
-        if (attaching) wallNormal = hit.normal;
-        if (Math.hypot(velocityX * remainingTime, velocityZ * remainingTime) < 1e-10) break;
     }
 
     // Apply wall support and vertical motion
@@ -214,31 +170,27 @@ export function stepParkour(state: ParkourState,
     velocityY -= GRAVITY * gravityScale * deltaTime;
     if (climbing && climbRemaining !== null && climbRemaining > 0) velocityY += Math.min(Math.max(0, WALL_CLIMB_SPEED - velocityY), RUN_ACCELERATION * deltaTime);
     if (climbRemaining !== null) climbRemaining = Math.max(0, climbRemaining - deltaTime);
-    // Move vertically and resolve ceilings and landings
-    let nextY = y + velocityY * deltaTime;
-    if (velocityY > 0) for (const surface of surfaces) {
-        if (surface.bottom !== undefined && overlaps(nextX, nextZ, surface) && y + height <= surface.bottom + 0.001 && nextY + height > surface.bottom) {
-            nextY = Math.min(nextY, surface.bottom - height); velocityY = 0;
+    const moved = world.move(state.position, height, [velocityX, velocityY, velocityZ], deltaTime, (normal, velocity) => {
+        const attaching = acceptsWall(normal);
+        if (attaching) {
+            const climbing = isWallClimbing(normal, facingX, facingZ);
+            if (!sameNormal(wallNormal, normal)) {
+                wallJumpAvailable = true;
+                if (!climbing) velocity[1] = 0;
+            }
+            wallNormal = normal;
         }
-    }
-    let landingHeight: number | undefined;
-    if (velocityY <= 0) for (const surface of surfaces) {
-        const previousTop = surfaceTopAt(surface, x, z, PLAYER_RADIUS);
-        const nextTop = surfaceTopAt(surface, nextX, nextZ, PLAYER_RADIUS);
-        if (previousTop === null || nextTop === null || y < previousTop - 0.001) continue;
-        const crossedTop = nextY <= nextTop;
-        const followedSlope = state.grounded && Math.abs(y - previousTop) <= 0.01
-            && nextTop <= y && y - nextTop <= 0.2;
-        if ((crossedTop || followedSlope) && (landingHeight === undefined || nextTop > landingHeight)) landingHeight = nextTop;
-    }
-    if (landingHeight !== undefined) {
-        nextY = landingHeight; velocityY = 0;
-    }
-    if (wallNormal && (landingHeight !== undefined || !wallAt(nextX, nextY, nextZ, height, surfaces, wallNormal))) wallNormal = null;
+        const [vx, vz] = resolveWallVelocity(velocity[0], velocity[2], normal, attaching && !isWallClimbing(normal, facingX, facingZ));
+        return [vx, velocity[1], vz];
+    });
+    const grounded = moved.grounded;
+    [velocityX, velocityY, velocityZ] = moved.velocity;
+    if (wallNormal && (grounded || !sameNormal(world.wallAt(moved.position, height, wallNormal), wallNormal))) wallNormal = null;
     // Return the resolved movement state
     return {
-        position: [nextX, nextY, nextZ], velocity: [velocityX, velocityZ], velocityY,
-        grounded: landingHeight !== undefined, crouched, wallNormal,
+        position: moved.position, velocity: [velocityX, velocityZ], velocityY,
+        grounded, crouched, wallNormal, wallJumpAvailable: !!wallNormal && wallJumpAvailable,
+        departedWall: grounded ? null : separating ? jumpWallNormal : departedWall,
         wallTime: wallNormal ? wallTime + deltaTime : 0, climbRemaining: wallNormal ? climbRemaining : null, jumpBuffer,
     };
 }

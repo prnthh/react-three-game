@@ -1,12 +1,18 @@
-import test from 'node:test';
+import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import { advanceParkour, createParkourSimulation, PARKOUR_STEP } from '../app/demo/parkour/simulation.ts';
-import { Buttons, createAttempt, packCommand, unpackCommand, Replay } from '../app/demo/parkour/replay.ts';
+import { Buttons, createAttempt as makeAttempt, packCommand, unpackCommand, Replay } from '../app/demo/parkour/replay.ts';
+
+import { CollisionWorld } from '../app/demo/parkour/collision.ts';
+
+const attempts = [];
+const createAttempt = (spawn, settings, surfaces) => { const attempt = makeAttempt(spawn, settings, new CollisionWorld(surfaces)); attempts.push(attempt); return attempt; };
+after(() => attempts.forEach(attempt => attempt.collision.dispose()));
 
 const settings = { speed: 13, jumpSpeed: 9, slideBoost: 3 };
 const surfaces = [{ minX: -100, maxX: 100, minZ: -100, maxZ: 100, top: 0 }];
 function advance(attempt, live, packed, delta, onStep) {
-    return advanceParkour(live, delta, unpackCommand(packed), attempt.settings, attempt.surfaces, command => {
+    return advanceParkour(live, delta, unpackCommand(packed), attempt.settings, attempt.collision, command => {
         attempt.recording.append(command.jump ? packed : packed & ~Buttons.jump);
         onStep?.();
     });
@@ -17,12 +23,12 @@ test('binary input reproduces every physics state across buffer growth and rende
     const live = createParkourSimulation(attempt.spawn);
     const expected = [];
     for (let frame = 0; frame < 5000; frame++) {
-        // Exercise all seven button bits, opposing keys, yaw wrapping and catch-up ticks.
-        const packed = packCommand(frame % 128, (frame - 1000) * 0.015);
-        assert.equal(packed & 127, frame % 128);
+        // Exercise all six button bits, opposing keys, yaw wrapping and catch-up ticks.
+        const packed = packCommand(frame % 64, (frame - 1000) * 0.015);
+        assert.equal(packed & 63, frame % 64);
         const decoded = unpackCommand(packed);
         const yaw = Math.atan2(-decoded.facingX, -decoded.facingZ);
-        assert.equal(packCommand(packed & 127, yaw), packed);
+        assert.equal(packCommand(packed & 63, yaw), packed);
         advance(attempt, live, packed, frame % 2 ? 1 / 30 : 1 / 240, () => expected.push(structuredClone(live.current)));
     }
     const commands = attempt.recording.finish();
@@ -32,7 +38,7 @@ test('binary input reproduces every physics state across buffer growth and rende
     const clock = createParkourSimulation([0, 0, 0]);
     let checked = 0;
     while (checked < expected.length) {
-        advanceParkour(clock, 1 / 60, unpackCommand(0), settings, surfaces, () => {
+        advanceParkour(clock, 1 / 60, unpackCommand(0), settings, attempt.collision, () => {
             if (replay.step()) assert.deepEqual(replay.simulation.current, expected[checked++]);
         });
     }
@@ -59,14 +65,16 @@ test('each physics tick records one command, jumps last one tick, and substep fr
     assert.deepEqual(replay.simulation.current, sim.current);
 });
 
-test('attempts snapshot settings and geometry; finished recordings support independent replay cursors', () => {
+test('attempts snapshot settings and borrow a world; recordings support independent replay cursors', () => {
     const geometry = [{ ...surfaces[0], orientation: { center: [0, -1, 0], halfSize: [100, 1, 100], quaternion: [0, 0, 0, 1] } }];
     const config = { ...settings };
     const attempt = createAttempt([1, 0, 2], config, geometry);
     config.speed = 99;
     geometry[0].orientation.center[1] = 50;
     assert.equal(attempt.settings.speed, 13);
-    assert.equal(attempt.surfaces[0].orientation.center[1], -1);
+    const next = makeAttempt([1, 0, 2], settings, attempt.collision);
+    assert.equal(next.collision, attempt.collision, 'restarts reuse the scene world');
+    assert.equal(attempt.collision.move([0, 0, 0], 1.8, [0, -1, 0], 1 / 120, (_, v) => v).grounded, true);
     attempt.recording.append(packCommand(Buttons.right, 0));
     const a = new Replay(attempt), b = new Replay(attempt);
     a.step();
@@ -79,19 +87,20 @@ test('attempts snapshot settings and geometry; finished recordings support indep
     assert.equal(empty.step(), false);
 });
 
-test('wall attachment, right-click release and wall jumps replay identically', () => {
+test('wall attachment, crouching off walls and wall jumps replay identically', () => {
     const wall = { minX: -2, maxX: -0.3, minZ: -100, maxZ: 100, bottom: -100, top: 100 };
     const attempt = createAttempt([0, 5, 0], settings, [wall]);
     const live = createParkourSimulation(attempt.spawn);
     const expected = [];
     for (let tick = 0; tick < 120; tick++) {
-        const buttons = Buttons.forward | (tick % 30 === 10 ? Buttons.detach : 0)
+        const buttons = Buttons.forward | (tick % 30 === 10 ? Buttons.crouch : 0)
             | (tick % 30 === 11 ? Buttons.jump : 0);
         advance(attempt, live, packCommand(buttons, Math.PI / 2), PARKOUR_STEP,
             () => expected.push(structuredClone(live.current)));
     }
     assert.ok(expected.some(state => state.wallNormal));
     assert.equal(expected[10].wallNormal, null);
+    assert.equal(expected[10].crouched, true);
     assert.ok(expected[11].velocityY > expected[10].velocityY);
     const replay = new Replay(attempt);
     for (const state of expected) {

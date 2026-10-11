@@ -9,7 +9,7 @@ Open `/demo/stage`. Detective Oni is playable; The Cave is an empty project.
 
 `GameDriver` takes `rootFolder="/prefabs/detective-oni"` and loads
 `detective-oni.json` as a normal prefab. Its `SceneRedirect` component points to
-`scenes/office.json`. There is no game manifest or separate scene schema.
+`scenes/office.json`. Both files use the ordinary prefab schema.
 
 `useGameDriver()` provides the current prefab and `changeScene(path, spawn?)`.
 Paths are relative to the game root. Door components point directly to scene JSON;
@@ -22,11 +22,13 @@ prefab. `Walkable` components on floor nodes issue player movement requests.
 The player's registered component handle lets cameras and interaction sensors
 find it across nested prefab scopes.
 
-The catalog in `games/` contains only names and root folders; no JSON imports.
+The catalog in `games/` supplies names and root folders for URL loading.
 
 ## Entity drivers
 
-Every character is a prefab file under `public/prefabs/<game>/characters/`.
+This demo shares characters across scenes using files under
+`public/prefabs/<game>/characters/`. For scene-local props, pack inline assemblies
+and duplicate their placements.
 Its model component loads the skinned model and animations; its collider and
 `CharacterDriver` are authored in the same prefab. For example:
 
@@ -46,7 +48,7 @@ Its model component loads the skinned model and animations; its collider and
 
 The registered component type is the pointer to its controller script:
 `CharacterDriver` maps to `components/CharacterDriver.tsx`. JSON references
-registered behaviors; it does not execute arbitrary JavaScript URLs.
+the behaviors registered by the application.
 
 - A player `CharacterDriver` owns movement destination, facing, and idle/walk state.
 - An NPC `CharacterDriver` owns its pending interaction and dialogue cursor.
@@ -58,7 +60,7 @@ registered behaviors; it does not execute arbitrary JavaScript URLs.
 Entities listen to the library's existing `click` and contact events. They issue
 movement requests to the player and scene changes to the game driver. A transition
 notification temporarily locks entity input while a door animates and loads its
-next scene. There is no central list of pending entity interactions.
+next scene. Each entity owns its pending interaction.
 
 ## Dialogue
 
@@ -96,9 +98,9 @@ public/prefabs/detective-oni/
 
 Use the standard editor to author scenes and component properties:
 `/editor?map=game:detective-oni/office` or
-`/editor?map=game:detective-oni/junkyard`. Entity drivers remain inert without a game
-driver; full gameplay runs in `/demo/stage`. The editor saves to browser storage
-and exports JSON, rather than writing source files.
+`/editor?map=game:detective-oni/junkyard`. Test full gameplay with its game driver
+in `/demo/stage`. The editor saves to browser storage; export JSON and write it
+to the source file to update the checked-in scene.
 
 To start The Cave, add its character and scene prefabs, add a `SceneRedirect` component to `the-cave.json`, and
-add dialogue entries. No TypeScript asset import list is needed.
+add dialogue entries. The game driver discovers content through these URLs.

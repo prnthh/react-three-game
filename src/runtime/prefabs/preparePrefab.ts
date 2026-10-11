@@ -1,9 +1,10 @@
 import type { Component } from '../../core/ComponentRegistry.js';
 import { resolveComponentProperties } from '../../core/ComponentRegistry.js';
 import type { PrefabState } from '../../core/prefab.js';
-import { withBasePath } from "../assets/assetPaths.js";
+import type { Prefab } from '../../core/types.js';
+import { resolveInlinePrefab } from '../../core/inlinePrefabs.js';
+import { withBasePath } from '../assets/assetPaths.js';
 import { describePrefabSource } from './prefabSource.js';
-
 import type { AssetDependency } from '../../core/dependencies.js';
 
 export interface PreparedPrefab {
@@ -19,27 +20,29 @@ export interface PrefabPreparationRuntime {
     loadAsset(dependency: AssetDependency): Promise<unknown>;
 }
 
-/** Discover and load dependencies through the shared loader cache before mounting. */
+/** Resolve inline and URL definitions through one dependency graph before activation. */
 export async function preparePrefab(
     runtime: PrefabPreparationRuntime,
     path: string,
     { basePath = '', signal }: PrefabPreparationOptions = {},
 ): Promise<PreparedPrefab> {
     const started = performance.now();
-    const documents = new Map<string, Promise<PrefabState>>();
+    type Source = string | Prefab;
+    const documents = new Map<Source, Promise<PrefabState>>();
     const assets = new Map<string, Promise<unknown>>();
-    const edges = new Map<string, string[]>();
-    const queue: string[] = [];
+    const edges = new Map<Source, Source[]>();
+    const queue: Source[] = [];
+    const describe = (source: Source) => typeof source === 'string' ? describePrefabSource(source) : source.name ?? source.id ?? 'inline prefab';
     const check = () => {
         if (signal?.aborted) throw signal.reason ?? new Error('Prefab preparation cancelled');
     };
-    const enqueue = (url: string) => {
+    const enqueue = (source: Source, inline?: PrefabState) => {
         check();
-        if (documents.has(url)) return;
-        const ready = runtime.loadDocument(url);
-        documents.set(url, ready);
+        if (documents.has(source)) return;
+        const ready = inline ? Promise.resolve(inline) : runtime.loadDocument(source as string);
+        documents.set(source, ready);
         void ready.catch(() => {});
-        queue.push(url);
+        queue.push(source);
     };
     const enqueueAsset = (dependency: AssetDependency) => {
         check();
@@ -53,19 +56,24 @@ export async function preparePrefab(
     const rootUrl = withBasePath(basePath, path);
     const run = async () => {
         enqueue(rootUrl);
-        // Breadth-first discovery avoids cached recursive promises deadlocking on cycles.
         while (queue.length) {
-            await Promise.all(queue.splice(0).map(async url => {
-                const document = await documents.get(url)!;
+            await Promise.all(queue.splice(0).map(async source => {
+                const document = await documents.get(source)!;
                 check();
-                const references: string[] = [];
-                edges.set(url, references);
+                const references: Source[] = [];
+                edges.set(source, references);
                 for (const node of Object.values(document.nodesById)) {
                     for (const component of Object.values(node.components ?? {})) {
                         if (!component) continue;
                         const definition = runtime.getComponent(component.type);
-                        if (!definition) throw new Error(`Unknown component "${component.type}" in ${describePrefabSource(url)}, node "${node.id}"`);
+                        if (!definition) throw new Error(`Unknown component "${component.type}" in ${describe(source)}, node "${node.id}"`);
                         const properties = resolveComponentProperties(definition, component.properties);
+                        if (component.type === 'PrefabRef' && properties.prefabId) {
+                            const inline = resolveInlinePrefab(document, properties.prefabId);
+                            const next = document.prefabs![properties.prefabId];
+                            references.push(next);
+                            enqueue(next, inline);
+                        }
                         for (const dependency of definition.dependencies?.(properties) ?? []) {
                             if (!dependency.path) continue;
                             if (dependency.kind === 'prefab') {
@@ -78,15 +86,15 @@ export async function preparePrefab(
                 }
             }));
         }
-        const visited = new Set<string>();
-        const visiting = new Set<string>();
-        const validate = (url: string) => {
-            if (visiting.has(url)) throw new Error(`Cyclic prefab reference: ${[...visiting, url].map(describePrefabSource).join(' -> ')}`);
-            if (visited.has(url)) return;
-            visiting.add(url);
-            for (const next of edges.get(url) ?? []) validate(next);
-            visiting.delete(url);
-            visited.add(url);
+        const visited = new Set<Source>();
+        const visiting = new Set<Source>();
+        const validate = (source: Source) => {
+            if (visiting.has(source)) throw new Error(`Cyclic prefab reference: ${[...visiting, source].map(describe).join(' -> ')}`);
+            if (visited.has(source)) return;
+            visiting.add(source);
+            for (const next of edges.get(source) ?? []) validate(next);
+            visiting.delete(source);
+            visited.add(source);
         };
         validate(rootUrl);
         await Promise.all(assets.values());
@@ -101,9 +109,6 @@ export async function preparePrefab(
         onAbort = () => reject(signal?.reason ?? new Error('Prefab preparation cancelled'));
         signal?.addEventListener('abort', onAbort, { once: true });
     });
-    try {
-        return await Promise.race([run(), cancelled]);
-    } finally {
-        signal?.removeEventListener('abort', onAbort);
-    }
+    try { return await Promise.race([run(), cancelled]); }
+    finally { signal?.removeEventListener('abort', onAbort); }
 }

@@ -4,6 +4,23 @@ import { DoubleSide, Quaternion, Vector3 } from 'three';
 export const MIN_SHADOW_MAP_SIZE = 64;
 export const MAX_SHADOW_MAP_SIZE = 2048;
 
+export function createFollowState() {
+    return { elapsed: 0, x: NaN, z: NaN };
+}
+
+/** Sample once per interval, then quantize space; never run catch-up updates. */
+export function stepCameraFollow(state: ReturnType<typeof createFollowState>, delta: number,
+    x: number, z: number, interval: number, grid: number) {
+    state.elapsed += delta;
+    if (Number.isFinite(state.x) && state.elapsed < interval) return false;
+    state.elapsed %= interval;
+    const nextX = Math.round(x / grid) * grid, nextZ = Math.round(z / grid) * grid;
+    if (state.x === nextX && state.z === nextZ) return false;
+    state.x = nextX;
+    state.z = nextZ;
+    return true;
+}
+
 /** A small, raycastable Unity-style scene gizmo for otherwise invisible lights. */
 export function EditorLightGizmo({
     color,
@@ -49,14 +66,12 @@ export function normalizeShadowMapSize(value: unknown, fallback = 512) {
 
 interface ShadowMapOwner {
     shadow: {
-        map: { dispose(): void } | null;
-        mapPass?: { dispose(): void } | null;
         mapSize: { set(width: number, height: number): unknown };
         needsUpdate: boolean;
     };
 }
 
-/** Recreate an expensive shadow target only after an authored value is committed. */
+/** Let the renderer resize its own shadow target after the authored value commits. */
 export function useShadowMapResolution<T extends ShadowMapOwner>(
     lightRef: RefObject<T | null>,
     mapSize: number,
@@ -69,16 +84,8 @@ export function useShadowMapResolution<T extends ShadowMapOwner>(
         const shadow = owner.shadow;
         if (applied.current?.owner === owner && applied.current.size === mapSize) return;
 
-        const replacingTarget = applied.current?.owner === owner;
         applied.current = { owner, size: mapSize };
         shadow.mapSize.set(mapSize, mapSize);
-
-        if (replacingTarget) {
-            shadow.map?.dispose();
-            shadow.map = null;
-            shadow.mapPass?.dispose();
-            shadow.mapPass = null;
-        }
 
         shadow.needsUpdate = true;
     });

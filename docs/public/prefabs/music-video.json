@@ -1,0 +1,166 @@
+{
+  "id": "music-video",
+  "name": "Music Video",
+  "root": {
+    "id": "music-video-root",
+    "name": "Music Video",
+    "children": [
+      {
+        "id": "oni",
+        "name": "Oni",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "model": {
+            "type": "SkinnedMesh",
+            "properties": {
+              "filename": "/models/human/onimilio.glb",
+              "animationState": "idle",
+              "castShadow": true,
+              "receiveShadow": true
+            }
+          }
+        }
+      },
+      {
+        "id": "song",
+        "name": "Cutscene Director",
+        "components": {
+          "director": {
+            "type": "CutsceneDirector",
+            "properties": {
+              "timeline": "/timelines/music-video.json"
+            }
+          }
+        }
+      },
+      {
+        "id": "camera",
+        "name": "Music video camera",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                1.6,
+                4.5
+              ],
+              "rotation": [
+                -0.12,
+                0,
+                0
+              ]
+            }
+          },
+          "camera": {
+            "type": "Camera",
+            "properties": {
+              "fov": 45,
+              "near": 0.1,
+              "far": 100
+            }
+          }
+        }
+      },
+      {
+        "id": "stage",
+        "name": "Stage floor",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0,
+                -0.1,
+                0
+              ]
+            }
+          },
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "geometryType": "box",
+              "args": [
+                12,
+                0.2,
+                12
+              ],
+              "castShadow": false,
+              "receiveShadow": true
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "music-video-stage",
+              "color": "#ffffff",
+              "roughness": 0.85,
+              "metalness": 0
+            }
+          }
+        }
+      },
+      {
+        "id": "fill",
+        "name": "Stage fill",
+        "components": {
+          "light": {
+            "type": "AmbientLight",
+            "properties": {
+              "color": "#ffffff",
+              "intensity": 0.65
+            }
+          }
+        }
+      },
+      {
+        "id": "key",
+        "name": "Stage key",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                3,
+                5,
+                4
+              ]
+            }
+          },
+          "light": {
+            "type": "DirectionalLight",
+            "properties": {
+              "color": "#ffffff",
+              "intensity": 3,
+              "targetOffset": [
+                -3,
+                -4,
+                -4
+              ],
+              "castShadow": true,
+              "shadowMapSize": 2048,
+              "shadowBias": -0.0001,
+              "shadowNormalBias": 0.02,
+              "shadowCameraNear": 0.1,
+              "shadowCameraFar": 20,
+              "shadowCameraLeft": -4,
+              "shadowCameraRight": 4,
+              "shadowCameraTop": 4,
+              "shadowCameraBottom": -4,
+              "shadowAutoUpdate": true
+            }
+          }
+        }
+      }
+    ]
+  }
+}

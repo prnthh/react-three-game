@@ -6,7 +6,7 @@ const string = { type: 'string', minLength: 1 };
 const vector = { type: 'array', items: { type: 'number' }, minItems: 3, maxItems: 3 };
 const properties = { type: 'object', description: 'Discover field names, types and defaults with scene.components(). Nested values and arrays replace the entire field.' };
 const component = objectSchema({ type: string, properties }, ['type', 'properties']);
-const nodeFields = { name: { type: 'string' }, hidden: { type: 'boolean' }, disabled: { type: 'boolean' }, locked: { type: 'boolean' } };
+const nodeFields = { packed: { type: 'boolean' }, name: { type: 'string' }, hidden: { type: 'boolean' }, disabled: { type: 'boolean' }, locked: { type: 'boolean' } };
 type CommandField<Op extends SceneCommand['op']> = Exclude<keyof Extract<SceneCommand, { op: Op }>, 'op'> & string;
 const operation = <Op extends SceneCommand['op']>(op: Op, fields: Record<CommandField<Op>, JsonSchema>, required: CommandField<Op>[]) =>
     objectSchema({ op: { const: op }, ...fields }, ['op', ...required]);

@@ -21,7 +21,7 @@ test('instancing preserves source geometry for collider rebuilding and restores 
 });
 
 test('spatial batches split distant peers, retain oversized bounds and migrate moving nodes', async t => {
-    const {act,createElement:h,useRef}=await import('react');
+    const {act,createElement:h,useRef,Profiler}=await import('react');
     const {createRoot,extend}=await import('@react-three/fiber');
     const {InstancedMesh,Vector3}=await import('three');
     const {MeshInstanceProvider,SpatialCellSizeContext,useMeshInstanceRegistration}=await import('../../src/runtime/rendering/MeshInstanceProvider.tsx');
@@ -33,14 +33,18 @@ test('spatial batches split distant peers, retain oversized bounds and migrate m
     const meshes=[0,1,100,101].map(x=>{const mesh=new Mesh(geometry,material);mesh.position.x=x;return mesh;});
     meshes[0].scale.x=80;
     function Source({mesh}){useMeshInstanceRegistration(mesh.uuid,useRef(mesh),true);return h('primitive',{object:mesh});}
-    let store;await act(async()=>{store=root.render(h(SpatialCellSizeContext.Provider,{value:10},h(MeshInstanceProvider,null,...meshes.map(mesh=>h(Source,{key:mesh.uuid,mesh})))));});
+    let commits=0;
+    let store;await act(async()=>{store=root.render(h(Profiler,{id:'batches',onRender:()=>commits++},h(SpatialCellSizeContext.Provider,{value:10},h(MeshInstanceProvider,{minInstances:2},...meshes.map(mesh=>h(Source,{key:mesh.uuid,mesh}))))));});
     t.after(async()=>{await act(async()=>root.unmount());geometry.dispose();material.dispose();});
-    const batches=()=>store.getState().scene.children.filter(o=>o.isInstancedMesh);
+    const batches=()=>{const result=[];store.getState().scene.traverse(o=>{if(o.isInstancedMesh) result.push(o);});return result;};
     assert.equal(batches().length,2);
+    assert.equal(store.getState().internal.subscribers.length,1,'all instance batches share one frame callback');
     assert.ok(batches().every(batch=>batch.frustumCulled && batch.count===2));
     assert.ok(batches().some(batch=>batch.boundingSphere.containsPoint(new Vector3(-40,0,0))), 'bounds include geometry outside its cell');
     meshes[1].position.x=102;
+    const previousCommits=commits;
     await act(async()=>store.getState().advance(1,false));
+    assert.equal(commits,previousCommits,'cell migration updates GPU batches without a React commit');
     assert.equal(batches().length,1);
     assert.equal(batches()[0].count,3);
     assert.equal(meshes[0].layers.mask,1,'singleton returns to ordinary rendering');
@@ -48,4 +52,64 @@ test('spatial batches split distant peers, retain oversized bounds and migrate m
     assert.ok(batches()[0].boundingSphere.containsPoint(new Vector3(102,0,0)));
     await act(async()=>root.render(null));
     assert.ok(meshes.every(mesh=>mesh.layers.mask===1),'cleanup restores all source meshes');
+});
+
+test('imperative batches retain GPU identity, edit picking, and ownership across incremental changes', async () => {
+    const { MeshInstanceRegistry } = await import('../../src/runtime/rendering/MeshInstanceRuntime.ts');
+    const { resolveRenderSource } = await import('../../src/runtime/scene/gameObject.ts');
+    const { Matrix4 } = await import('three');
+    const scene = new Group(), container = new Group(); scene.add(container);
+    container.position.x = 5;
+    const geometry = new BoxGeometry(), material = new MeshBasicMaterial();
+    geometry.userData.prefabGeometrySignature = 'retained';
+    let sourceDisposals = 0;
+    geometry.addEventListener('dispose',()=>sourceDisposals++);
+    material.addEventListener('dispose',()=>sourceDisposals++);
+    const registry = new MeshInstanceRegistry(false, 10, 2);
+    const disconnect = registry.connect(container);
+    const clicks = [];
+    const meshes = [0,1,2,3,100,101].map(x=>{const mesh=new Mesh(geometry,material);mesh.position.x=x;scene.add(mesh);return mesh;});
+    const register = mesh => registry.register({id:mesh.uuid,mesh,onEditClick:()=>clicks.push(mesh)});
+    const cleanup = [0,1,2,4,5].map(i=>register(meshes[i]));
+    registry.update();
+    const [near,far] = container.children;
+    const addFourth = register(meshes[3]); registry.update();
+    assert.equal(container.children[0],near,'grow within allocated capacity without recreating the mesh');
+    assert.equal(container.children[1],far,'an unrelated batch keeps its identity');
+    assert.equal(near.count,4);
+    registry.handleClick({object:near,instanceId:3,delta:0});
+    assert.equal(clicks[0],meshes[3]);
+    assert.equal(resolveRenderSource(near,3),meshes[3]);
+    const matrix = new Matrix4(); near.getMatrixAt(0,matrix);
+    assert.equal(matrix.elements[12],-5,'instance matrices account for the batch parent transform');
+    meshes[0].scale.x=-1; registry.update();
+    assert.equal(meshes[0].layers.mask,1,'reflections retain ordinary rendering');
+    near.getMatrixAt(0,matrix); assert.equal(matrix.determinant(),0);
+    addFourth(); registry.update();
+    assert.equal(container.children[0],near,'shrinking a batch retains its GPU allocation');
+    assert.equal(near.count,3);
+    let disposed=0;near.addEventListener('dispose',()=>disposed++);
+    cleanup.forEach(remove=>remove()); registry.update();
+    assert.equal(container.children.length,0); assert.equal(disposed,1);
+    assert.ok(meshes.every(mesh=>mesh.layers.mask===1));
+    assert.equal(sourceDisposals,0,'batch disposal must not free shared geometry or materials');
+    disconnect(); await Promise.resolve(); geometry.dispose(); material.dispose();
+});
+
+test('instance material variants are released when the provider disconnects', async () => {
+    const { MeshInstanceRegistry } = await import('../../src/runtime/rendering/MeshInstanceRuntime.ts');
+    const { registerInstancedMaterial } = await import('../../src/runtime/rendering/materialInstancing.ts');
+    const geometry = new BoxGeometry(), material = new MeshBasicMaterial(), root = new Group();
+    geometry.userData.prefabGeometrySignature='custom';
+    let variants=0,disposed=0;
+    registerInstancedMaterial(material,()=>{
+        variants++;const variant=new MeshBasicMaterial();variant.addEventListener('dispose',()=>disposed++);return variant;
+    });
+    const registry=new MeshInstanceRegistry(false,24,2), disconnect=registry.connect(root);
+    const meshes=[new Mesh(geometry,material),new Mesh(geometry,material)];
+    meshes.forEach(mesh=>registry.register({id:mesh.uuid,mesh}));registry.update();
+    assert.equal(variants,1);
+    registry.invalidate();registry.update();assert.equal(variants,1,'unrelated invalidations reuse the shader variant');
+    disconnect();assert.equal(disposed,1);assert.ok(meshes.every(mesh=>mesh.layers.mask===1));
+    await Promise.resolve();geometry.dispose();material.dispose();
 });

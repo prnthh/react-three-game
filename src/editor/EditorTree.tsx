@@ -173,8 +173,8 @@ export default function EditorTree({
             onFocus={handleFocus}
             onToggleLock={isRoot ? undefined : handleToggleLocked}
             onDuplicate={isRoot ? undefined : handleDuplicate}
-            onPack={!isRoot && !hasComponent(store.getState().nodesById[nodeId], 'PrefabRef') ? id => void handlePrefabAction(id, 'pack') : undefined}
-            onUnpack={hasComponent(store.getState().nodesById[nodeId], 'PrefabRef') ? id => void handlePrefabAction(id, 'unpack') : undefined}
+            onPack={!isRoot && !hasComponent(store.getState().nodesById[nodeId], 'PrefabRef') && !store.getState().nodesById[nodeId].packed ? id => void handlePrefabAction(id, 'pack') : undefined}
+            onUnpack={hasComponent(store.getState().nodesById[nodeId], 'PrefabRef') || store.getState().nodesById[nodeId].packed ? id => void handlePrefabAction(id, 'unpack') : undefined}
             onExport={canExport ? id => void handlePrefabAction(id, 'export') : undefined}
             onDelete={isRoot ? undefined : handleDelete}
             onClose={onClose}
@@ -426,7 +426,7 @@ const TreeNode = memo(function TreeNode({
     const isDropTarget = dropTarget?.id === nodeId;
     const showDropBefore = isDropTarget && dropTarget?.position === 'before';
     const showDropInside = isDropTarget && dropTarget?.position === 'inside';
-    const isPrefabReference = hasComponent(node, 'PrefabRef');
+    const isPrefabReference = node.packed || hasComponent(node, 'PrefabRef');
 
     return (
         <div>

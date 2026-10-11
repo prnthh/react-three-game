@@ -187,6 +187,8 @@ test('switching edit mode preserves composed views and skips unrelated renders',
     });
     const store = createPrefabStore({ root: { id: 'root', children: [{
         id: 'child', name: 'child', components: {
+            geometry: { type: 'Geometry', properties: { instanced: false } },
+            material: { type: 'Material', properties: { name: 'mode-paint', color: '#ff0000' } },
             probe: { type: 'ModeSwitchViewProbe', properties: {} },
             reader: { type: 'ModeSwitchReaderProbe', properties: {} },
             pickReader: { type: 'ModeSwitchPickReaderProbe', properties: {} },
@@ -208,8 +210,11 @@ test('switching edit mode preserves composed views and skips unrelated renders',
     await render(true);
     const child = state.getState().scene.getObjectByName('child');
     const viewObject = state.getState().scene.getObjectByName('mode-switch-view');
+    let material;
+    child.traverse(object => { if (object.isMesh) material = object.material; });
     assert.ok(child);
     assert.ok(viewObject);
+    assert.ok(material);
     assert.equal(mounts, 1);
     assert.equal(renders, 1);
     assert.equal(pickReaderRenders, 1);
@@ -219,6 +224,7 @@ test('switching edit mode preserves composed views and skips unrelated renders',
     await render(true);
     assert.equal(state.getState().scene.getObjectByName('child'), child);
     assert.equal(state.getState().scene.getObjectByName('mode-switch-view'), viewObject);
+    child.traverse(object => { if (object.isMesh) assert.equal(object.material, material); });
     assert.equal(mounts, 1, 'mode changes preserve composed views');
     assert.equal(unmounts, 0);
     assert.equal(renders, 1, 'views that do not use mode skip mode-only renders');

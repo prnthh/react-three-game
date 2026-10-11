@@ -10,10 +10,11 @@ sees the image from inside the sphere without lighting changing its colors.
 Any supported image texture works; an equirectangular panorama wraps naturally,
 while an ordinary photo stretches around the sphere.
 
-This window API batch adds the material user and its settings. Obtain `scene` from
-`window.scene`; only one agent-enabled editor is supported per page.
+In an editor, add an environment and its image sphere:
 
 ```js
+const scene = window.scene;
+await scene.setMode({ mode: 'edit' });
 const { rootId, revision } = scene.info();
 scene.batch({ expectedRevision: revision, commands: [
   { op: 'add', parentId: rootId, node: {
@@ -39,16 +40,14 @@ scene.batch({ expectedRevision: revision, commands: [
 ```
 
 The captured map lights standard/physical materials, including compatible loaded
-model materials; unlit/basic materials do not respond. `intensity` controls the
+model materials. Basic materials display their own unlit colors. `intensity` controls the
 environment lighting. `backgroundIntensity` and `backgroundBlurriness` affect
 only the visible sky; material roughness controls reflection blur. Set
 `background: false` to retain lighting/reflections without showing the sky.
 
-`Environment` uses `frames={1}`: it captures its children once per mount and reuses
-the map, rather than recapturing every render frame. Environment setting changes
-and visual-asset revisions remount the capture so newly loaded imagery is included.
-This is a static environment, not a live reflection probe; animating its children
-does not continuously update the map. The normal scene still renders each frame.
+`Environment` uses `frames={1}` to capture a static map once per mount. Changes to
+environment settings or visual assets refresh the capture. Use it for stable sky
+and reflection lighting; the main scene continues rendering every frame.
 
 ## Shadows
 
@@ -63,7 +62,7 @@ lightRef.current.shadow.needsUpdate = true;
 invalidate(); // useThree(state => state.invalidate), for demand-rendered canvases
 ```
 
-This uses Three's native shadow state; no registration or game event is required.
+This refreshes Three's native shadow map.
 
 For moving outdoor views, set `DirectionalLight.shadowCascades` to 2 or 3 and choose `shadowDistance`. Cascades follow the camera and update every frame. `shadowCascades: 1` uses an ordinary shadow map.
 

@@ -1,10 +1,11 @@
-import { Color } from 'three';
+import { Color, Group, Vector3 } from 'three';
+import { useFrame } from '@react-three/fiber';
 import { CascadedDirectionalLight } from '../lighting/CascadedDirectionalLight.js';
 import type { Component, ComponentViewProps } from "../../core/ComponentRegistry.js";
 
 import { useHelper } from "@react-three/drei";
 
-import { useMemo, useRef } from "react";
+import { useLayoutEffect, useMemo, useRef } from "react";
 
 import { CameraHelper, Object3D } from "three";
 
@@ -12,11 +13,14 @@ import type { DirectionalLight } from "three";
 
 import { useNode } from "../scene/SceneContext.js";
 
-import { EditorLightGizmo, mergeWithDefaults, normalizeShadowMapSize, useShadowMapResolution } from "./lightUtils.js";
+import { createFollowState, stepCameraFollow, EditorLightGizmo, mergeWithDefaults, normalizeShadowMapSize, useShadowMapResolution } from "./lightUtils.js";
 
 export const directionalLightDefaults = {
     color: '#ffffff',
     intensity: 1,
+    followCamera: false,
+    followCameraStep: 8,
+    followCameraInterval: 0.25,
     castShadow: false,
     shadowMapSize: 512,
     shadowBias: 0,
@@ -64,6 +68,30 @@ function DirectionalLightView({ properties, children }: ComponentViewProps<Direc
     const helperTargetRef = useRef<Object3D>(null!);
     const target = useMemo(() => new Object3D(), []);
     useShadowMapResolution(directionalLightRef, shadowMapSize);
+    const rig = useRef<Group>(null);
+    const follow = useMemo(createFollowState, [merged.followCamera, merged.followCameraStep, merged.followCameraInterval]);
+    const cameraPosition = useMemo(() => new Vector3(), []);
+    const offset = useMemo(() => new Vector3(), []);
+    useLayoutEffect(() => {
+        rig.current?.position.set(0, 0, 0);
+        if (directionalLightRef.current) directionalLightRef.current.shadow.needsUpdate = true;
+    }, [follow]);
+    useFrame(({ camera }, delta) => {
+        const root = rig.current;
+        if (!merged.followCamera || !root) return;
+        camera.getWorldPosition(cameraPosition);
+        if (!stepCameraFollow(follow, delta, cameraPosition.x, cameraPosition.z,
+            Math.max(0.01, merged.followCameraInterval), Math.max(0.01, merged.followCameraStep))) return;
+        // Move light and target together in world X/Z; keep authored height and direction.
+        if (root.parent) {
+            root.parent.getWorldPosition(offset);
+            offset.x += follow.x;
+            offset.z += follow.z;
+            root.parent.worldToLocal(offset);
+        } else offset.set(follow.x, 0, follow.z);
+        root.position.copy(offset);
+        if (directionalLightRef.current) directionalLightRef.current.shadow.needsUpdate = true;
+    });
 
     // Show CameraHelper only in edit mode, selected, and castShadow
     const showHelper = editMode && isSelected && merged.castShadow;
@@ -75,7 +103,7 @@ function DirectionalLightView({ properties, children }: ComponentViewProps<Direc
     const cascadeProps = Light === CascadedDirectionalLight
         ? { cascades: merged.shadowCascades, maxFar: merged.shadowDistance } : {};
     return (
-        <group>
+        <group ref={rig}>
             <Light
                 {...cascadeProps}
                 ref={directionalLightRef}
@@ -126,6 +154,9 @@ const DirectionalLightComponent: Component<DirectionalLightProperties> = {
     properties: {
         color: { type: 'color', default: directionalLightDefaults.color },
         intensity: { default: directionalLightDefaults.intensity },
+        followCamera: { type: 'boolean', default: false, label: 'Follow camera', description: 'Translate the light and target with camera X/Z in timed grid steps; preserve authored height and direction.' },
+        followCameraStep: { default: directionalLightDefaults.followCameraStep, min: 0.01, step: 1, description: 'Shared X/Z step size in world units when Follow camera is enabled.' },
+        followCameraInterval: { default: directionalLightDefaults.followCameraInterval, min: 0.01, step: 0.05, description: 'Seconds between camera position samples when Follow camera is enabled.' },
         castShadow: { type: 'boolean', default: directionalLightDefaults.castShadow },
         shadowMapSize: { default: directionalLightDefaults.shadowMapSize },
         shadowBias: { default: directionalLightDefaults.shadowBias },

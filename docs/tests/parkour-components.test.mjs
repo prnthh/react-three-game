@@ -1,3 +1,4 @@
+import { CharacterPartComponent, CharacterVisualsComponent, CharacterVisualsContext, createVisualRig, resetVisualGait, stepVisualGait } from '../app/demo/parkour/components/CharacterVisuals.tsx';
 import test, { describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { BoxGeometry, AudioContext, Group, Mesh } from 'three';
@@ -8,7 +9,7 @@ import { MaterialComponent } from '../../src/viewer/index.ts';
 import { ConcreteMaterialComponent, createConcreteMaterialOverrides } from '../app/demo/parkour/components/ConcreteMaterialComponent.tsx';
 import { act, createElement as h } from 'react';
 import { PrefabRoot, createPrefabStore, registerComponent, useSceneComponents } from 'react-three-game/viewer';
-import { CollisionSurfaceComponent, COLLISION_SURFACE } from '../app/demo/parkour/components/CollisionSurfaceComponent.tsx';
+import { CollisionSurfaceComponent, COLLISION_SURFACE, resolveCollisionSurfaceSize } from '../app/demo/parkour/components/CollisionSurfaceComponent.tsx';
 
 describe('Geometry', () => {
     test('ruin displacement is repeatable, bounded and keeps seams closed without changing its source',()=>{
@@ -106,4 +107,118 @@ describe('Collision lifecycle', () => {
       assert.equal(caps.length,disabled?0:1);
      }
     });
+});
+
+test('collision dimensions come from the primitive independently of weathering',()=>{
+    const node={id:'piece',components:{
+        shape:{type:'Geometry',properties:{geometryType:'box',args:[2,6,4,3,8,3]}},
+        damage:{type:'WeatheredGeometry',properties:{amount:.4,seed:3}},
+    }};
+    assert.deepEqual(resolveCollisionSurfaceSize(node),[2,6,4]);
+    delete node.components.damage;
+    assert.deepEqual(resolveCollisionSurfaceSize(node),[2,6,4]);
+    node.components.shape.properties.geometryType='cylinder';
+    assert.deepEqual(resolveCollisionSurfaceSize(node),null);
+});
+
+test('authored body and arms share a pose while replay visuals move independently', async t => {
+    extend({ Group, Mesh });
+    globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+    const previousWindow = globalThis.window;
+    globalThis.window = { addEventListener() {}, removeEventListener() {} };
+    AudioContext.setContext({ createGain: () => ({ connect() {} }), destination: {}, listener: {} });
+    registerComponent(CharacterVisualsComponent);
+    registerComponent(CharacterPartComponent);
+    const canvas = { width: 100, height: 100, style: {}, addEventListener() {}, removeEventListener() {} };
+    const root = createRoot(canvas);
+    await root.configure({ gl: { render() {}, setSize() {}, setPixelRatio() {}, domElement: canvas },
+        size: { width: 100, height: 100, top: 0, left: 0 }, frameloop: 'never' });
+    t.after(async () => { await act(async () => root.unmount()); globalThis.window = previousWindow; });
+    const visuals = { player: createVisualRig(), replay: createVisualRig(), color: '#b8a47d' };
+    const data = { root: { id: 'runner', children: [false, true].map(replay => ({
+        id: replay ? 'replay' : 'player',
+        components: { visuals: { type: 'ParkourVisuals', properties: { replay } } },
+        children: ['body', 'left-arm', 'right-arm'].map((part, index) => ({
+            id: `${replay}-${part}`, name: part,
+            components: {
+                transform: { type: 'Transform', properties: { position: [index, 0, 0] } },
+                ...(index ? { joint: { type: 'ParkourBodyPart', properties: { shape: 'none', joint: part } } }
+                    : { part: { type: 'ParkourBodyPart', properties: { radius: 0.1, length: 0.6 } } }),
+            },
+            children: index ? [
+                { id: `${replay}-${part}-upper`, components: { part: { type: 'ParkourBodyPart', properties: {} } } },
+                { id: `${replay}-${part}-elbow`, components: {
+                    transform: { type: 'Transform', properties: { position: [0, -0.3, 0] } },
+                    joint: { type: 'ParkourBodyPart', properties: { shape: 'none', joint: part.replace('arm', 'forearm') } },
+                }, children: [{ id: `${replay}-${part}-lower`, components: { part: { type: 'ParkourBodyPart', properties: {} } } }] },
+            ] : [],
+        })),
+    })) } };
+    const render = editMode => h(CharacterVisualsContext.Provider, { value: visuals }, h(PrefabRoot, { data, editMode }));
+    await act(async () => { root.render(render(false)); });
+    for (const [key, replay] of [['player', false], ['replay', true]]) {
+        const { root: body, pose } = visuals[key];
+        const meshes = [];
+        pose.current.traverse(object => { if (object.isMesh) meshes.push(object); });
+        assert.equal(meshes.length, 5);
+        assert.equal(new Set(meshes.map(mesh => mesh.material)).size, 1, 'parts share one material per rig');
+        for (const mesh of meshes) {
+            assert.equal(mesh.castShadow, !replay);
+            assert.equal(mesh.material.transparent, replay);
+        }
+        for (const name of ['body', 'left-arm', 'right-arm']) assert.ok(pose.current.getObjectByName(name));
+        assert.equal(body.current.visible, !replay);
+        const arm = visuals[key].joints.get('left-arm');
+        const elbow = visuals[key].joints.get('left-forearm');
+        let ancestor = elbow.parent;
+        while (ancestor && ancestor !== arm) ancestor = ancestor.parent;
+        assert.equal(ancestor, arm, 'the forearm inherits shoulder rotation');
+        stepVisualGait(visuals[key], { grounded: true, crouched: false, velocity: [0, -13] }, 0.1);
+        assert.ok(arm.rotation.x > 0);
+        assert.ok(elbow.rotation.x > 0.15);
+    }
+    assert.notEqual(visuals.player.root.current.parent, visuals.replay.root.current.parent);
+    visuals.player.pose.current.rotation.x = 1;
+    visuals.player.root.current.position.x = 10;
+    assert.equal(visuals.replay.pose.current.rotation.x, 0);
+    assert.equal(visuals.replay.root.current.position.x, 0);
+    await act(async () => { root.render(render(true)); });
+    assert.equal(visuals.player.pose.current.rotation.x, 0, 'editing restores the standing pose');
+    assert.equal(visuals.replay.root.current.visible, true);
+    assert.equal(visuals.replay.root.current.position.x, 3, 'editing shows the replay beside the player');
+});
+
+
+test('running gait opposes arms and legs, bends elbows, and resets independently for replay', () => {
+    const player = createVisualRig(), replay = createVisualRig();
+    for (const rig of [player, replay]) {
+        for (const side of ['left', 'right']) for (const part of ['arm', 'forearm', 'leg']) {
+            rig.joints.set(`${side}-${part}`, new Group());
+        }
+    }
+    const state = { grounded: true, crouched: false, velocity: [0, -13] };
+    const dt = 1 / 120;
+    for (let i = 0; i < 20; i++) stepVisualGait(player, state, dt);
+    // Playback receives the same fixed ticks, independent of render grouping.
+    for (let frame = 0; frame < 5; frame++) for (let i = 0; i < 4; i++) stepVisualGait(replay, state, dt);
+    for (const [name, joint] of player.joints) assert.deepEqual(joint.rotation.toArray(), replay.joints.get(name).rotation.toArray());
+    for (const joint of player.joints.values()) {
+        assert.equal(joint.rotation.y, 0, 'gait only animates X rotation');
+        assert.equal(joint.rotation.z, 0, 'sideways angles belong to prefab transforms');
+    }
+    const angle = name => player.joints.get(name).rotation.x;
+    assert.ok(Math.abs(angle('left-arm')) > 0.1);
+    assert.equal(angle('left-arm'), -angle('right-arm'));
+    assert.ok(angle('left-arm') * angle('left-leg') < 0);
+    assert.ok(angle('left-forearm') > 0.5);
+    for (const resting of [{ ...state, velocity: [0, 0] }, { ...state, crouched: true }, { ...state, grounded: false }]) {
+        for (let i = 0; i < 120; i++) stepVisualGait(player, resting, dt);
+        assert.ok(Math.abs(angle('left-arm')) < 0.0001);
+    }
+    resetVisualGait(replay);
+    assert.equal(replay.phase, 0);
+    assert.equal(replay.joints.get('left-arm').rotation.x, 0);
+    assert.equal(replay.joints.get('left-forearm').rotation.x, 0.15);
+    assert.equal(Math.abs(replay.joints.get('left-arm').rotation.y), 0);
+    assert.equal(Math.abs(replay.joints.get('left-forearm').rotation.z), 0);
 });

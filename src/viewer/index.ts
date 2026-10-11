@@ -2,6 +2,7 @@ export * from "../core/index.js";
 
 export { default as GameCanvas } from "../runtime/GameCanvas.js";
 export type { GameCanvasProps } from "../runtime/GameCanvas.js";
+export { usePendingMounts } from "../runtime/prefabs/ProgressiveMount.js";
 
 export { sound as soundManager, SoundManager } from "../runtime/audio/SoundManager.js";
 export type { SoundOptions, SoundPlayback } from "../runtime/audio/SoundManager.js";

@@ -5,6 +5,7 @@ import { GameObject, Prefab } from "./types.js";
 import {
     collectSubtreeIds,
     collectMaterialDefinitions,
+    collectPackedPrefabs,
     cloneSubtree,
     denormalizePrefab,
     insertSubtree,
@@ -77,6 +78,22 @@ export function createPrefabStore(prefab: Prefab | PrefabState): PrefabStoreApi 
             if (patch.nodesById && !draft) {
                 patch.materials = deriveMaterials(patch.nodesById, get().materials);
             }
+            if (patch.nodesById || patch.childIdsById) {
+                const before = get();
+                const replacesPool = Object.hasOwn(patch, 'prefabs');
+                const inherited = replacesPool ? patch.prefabs : Object.fromEntries(
+                    Object.entries(before.prefabs ?? {}).filter(([id]) => !before.nodesById[id]?.packed));
+                patch.prefabs = collectPackedPrefabs({ ...before, ...patch }, inherited, before.prefabs);
+                // When an owner is removed or unpacked, move its data to a surviving user.
+                const next = { ...before, ...patch };
+                const missing = !replacesPool && Object.values(next.nodesById).some(node => Object.values(node.components ?? {}).some(component =>
+                    component?.type === 'PrefabRef' && component.properties.prefabId
+                    && !next.prefabs?.[component.properties.prefabId] && before.prefabs?.[component.properties.prefabId]));
+                if (missing) {
+                    const portable = denormalizePrefab({ ...next, prefabs: { ...before.prefabs, ...next.prefabs } });
+                    Object.assign(patch, normalizePrefab(portable));
+                }
+            }
             if (draft) draft = { ...draft, ...patch };
             else publish(patch);
         };
@@ -112,6 +129,7 @@ export function createPrefabStore(prefab: Prefab | PrefabState): PrefabStoreApi 
                 set({
                     prefabId: snapshot.prefabId,
                     prefabName: snapshot.prefabName,
+                    prefabs: snapshot.prefabs,
                     materials: snapshot.materials,
                     rootId: snapshot.rootId,
                     nodesById: snapshot.nodesById,

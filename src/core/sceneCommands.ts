@@ -5,12 +5,12 @@ import { findComponentEntry, type ComponentData, type GameObject, type Prefab } 
 import { composeTransform, computeParentWorldMatrix } from "./transforms.js";
 import { createPrefabStore } from "./prefabStore.js";
 import { createPrefabDocumentApi } from './prefabDocumentApi.js';
-import { cloneComponentsForDuplicate, collectSubtreeIds, normalizePrefab, denormalizePrefab, type PrefabState } from './prefab.js';
+import { packedReference, cloneComponentsForDuplicate, collectSubtreeIds, normalizePrefab, denormalizePrefab, type PrefabState } from './prefab.js';
 
 type Vec3 = [number, number, number];
 export type SceneCommand =
     | { op: 'add'; parentId: string; node: GameObject }
-    | { op: 'update'; id: string; patch: Partial<Pick<GameObject, 'name' | 'hidden' | 'disabled' | 'locked'>> }
+    | { op: 'update'; id: string; patch: Partial<Pick<GameObject, 'name' | 'hidden' | 'disabled' | 'locked' | 'packed'>> }
     | { op: 'remove'; id: string }
     | { op: 'replaceNode'; id: string; node: GameObject }
     | { op: 'replace'; prefab: Prefab }
@@ -40,7 +40,7 @@ function vector(value: unknown, label: string, length = 3) {
 }
 function nodePatch(value: unknown) {
     const patch = record(value, 'patch');
-    keys(patch, ['name', 'hidden', 'disabled', 'locked']);
+    keys(patch, ['name', 'hidden', 'disabled', 'locked', 'packed']);
     for (const [key, value] of Object.entries(patch)) {
         if (typeof value !== (key === 'name' ? 'string' : 'boolean')) throw new Error(`Invalid ${key}.`);
     }
@@ -67,7 +67,7 @@ function component(value: unknown) {
 }
 function validateNode(node: GameObject, ids: Set<string>, existing?: PrefabState["nodesById"]) {
     record(node, 'node');
-    keys(node as unknown as Record<string, unknown>, ['id', 'name', 'hidden', 'disabled', 'locked', 'components', 'children']);
+    keys(node as unknown as Record<string, unknown>, ['id', 'name', 'hidden', 'disabled', 'locked', 'packed', 'components', 'children']);
     id(node.id);
     if (ids.has(node.id) || existing && Object.hasOwn(existing, node.id)) throw new Error(`Duplicate node ID "${node.id}".`);
     ids.add(node.id);
@@ -89,7 +89,21 @@ function validateNode(node: GameObject, ids: Set<string>, existing?: PrefabState
         children.forEach(child => validateNode(child, ids, existing));
     }
 }
-/** Stages immutable store edits, sharing untouched nodes. Never mutates the live store. */
+function validatePrefab(value: unknown) {
+    const prefab = record(value, 'prefab');
+    keys(prefab, ['id', 'name', 'root', 'prefabs']);
+    if (prefab.id !== undefined) id(prefab.id);
+    if (prefab.name !== undefined && typeof prefab.name !== 'string') throw new Error('Invalid prefab name.');
+    validateNode(prefab.root, new Set());
+    if (prefab.prefabs !== undefined) {
+        for (const [key, definition] of Object.entries(record(prefab.prefabs, 'prefabs'))) {
+            id(key);
+            validatePrefab(definition);
+        }
+    }
+}
+
+/** Stages immutable store edits, sharing untouched nodes. */
 export function evaluateSceneCommandState(initial: PrefabState, input: unknown): { state: PrefabState; result: SceneCommandResult } {
     const batch = JSON.parse(JSON.stringify(input, (key, value) => {
         if (unsafeKeys.has(key)) throw new Error(`Reserved key "${key}".`);
@@ -119,10 +133,7 @@ export function evaluateSceneCommandState(initial: PrefabState, input: unknown):
             };
             if (command.op === 'replace') {
                 const prefab = record(command.prefab, 'prefab');
-                keys(prefab, ['id', 'name', 'root']);
-                if (prefab.id !== undefined) id(prefab.id);
-                if (prefab.name !== undefined && typeof prefab.name !== 'string') throw new Error('Invalid prefab name.');
-                validateNode(prefab.root, new Set());
+                validatePrefab(prefab);
 
                 removed.push(...Object.keys(state.nodesById));
                 document.replace(prefab as unknown as Prefab);
@@ -167,10 +178,9 @@ export function evaluateSceneCommandState(initial: PrefabState, input: unknown):
                     const destination = command.parentId ?? parentId;
                     lookup(destination);
                     const copy = (sourceId: string): GameObject => ({
-                        ...structuredClone(state.nodesById[sourceId]),
-                        components: cloneComponentsForDuplicate(state.nodesById[sourceId].components),
+                        ...(state.nodesById[sourceId].packed ? packedReference(state.nodesById[sourceId]) : { ...structuredClone(state.nodesById[sourceId]), components: cloneComponentsForDuplicate(state.nodesById[sourceId].components) }),
                         id: sourceId === node.id ? command.newId : `${command.newId}/${sourceId}`,
-                        children: state.childIdsById[sourceId].map(copy),
+                        children: state.nodesById[sourceId].packed ? undefined : state.childIdsById[sourceId].map(copy),
                     });
                     const duplicated = copy(node.id);
                     validateNode(duplicated, new Set(), state.nodesById);

@@ -47,6 +47,7 @@ describe('Light culling', () => {
      const scene=new Scene(), area=new Group(), nested=new Group(), light=new PointLight();
      nested.add(light);area.add(nested);scene.add(area);
      const controller=new LightCullingGridController(scene);
+     scene.traverse=()=>{throw new Error('light updates must not traverse the whole scene');};
      controller.update(new Vector3());assert.equal(controller.stats().authored,1);
      scene.remove(area);controller.update(new Vector3());assert.equal(controller.stats().authored,0);
      scene.add(area);controller.update(new Vector3());assert.equal(controller.stats().authored,1);

@@ -116,7 +116,7 @@ describe('Editor API', () => {
     });
 
     test('pack preserves placement, snapshots materials, survives JSON, duplicates and unpacks atomically', async () => {
-        registerComponent({ name: 'PrefabRef', properties: { url: { type: 'string', default: '' } } });
+        registerComponent({ name: 'PrefabRef', properties: { url: { type: 'string', default: '' }, prefabId: { type: 'string', default: '' } } });
         registerComponent({ name: 'Material', properties: { name: { type: 'string', default: '' }, color: { type: 'color', default: undefined } } });
         const original = { root: { id: 'world', children: [
             { id: 'assembly', name: 'Étagère', hidden: true, components: {
@@ -143,15 +143,17 @@ describe('Editor API', () => {
         const packed = scene.get({ id: 'assembly' }).node;
         assert.deepEqual(packed.components.pose, original.root.children[0].components.pose);
         assert.equal(packed.hidden, true);
-        assert.equal(packed.childCount, 0);
-        const asset = await (await fetch(packed.components.prefabref.properties.url)).json();
+        assert.equal(packed.childCount, 1);
+        assert.equal(packed.packed, true);
+        const asset = scene.exportPrefab({ id: 'assembly' }).prefab;
         assert.equal(asset.name, 'Étagère');
         assert.equal(asset.materials, undefined);
         assert.equal(asset.root.children[0].components.material.properties.color, '#aa8822');
         assert.equal(asset.root.components.custom.properties.enabled, false);
         assert.throws(() => scene.pack({ id: 'assembly' }), /already/);
         const roundtrip = JSON.parse(scene.exportJSON());
-        assert.equal(roundtrip.root.children[0].components.prefabref.properties.url, packed.components.prefabref.properties.url);
+        assert.equal(roundtrip.root.children[0].packed, true);
+        assert.equal(roundtrip.prefabs, undefined);
         scene.duplicate({ id: 'assembly', newId: 'copy' });
         await scene.unpack({ id: 'copy' });
         const copy = scene.get({ id: 'copy', depth: 2 });
@@ -161,7 +163,7 @@ describe('Editor API', () => {
         const child = copy.descendants.find(n => n.components.material);
         const materialName = child.components.material.properties.name;
         assert.equal(scene.materials({ ids: [materialName] }).materials[0].color, '#aa8822');
-        assert.equal(scene.get({ id: 'assembly' }).node.childCount, 0);
+        assert.equal(scene.get({ id: 'assembly' }).node.childCount, 1);
         scene.undo();
         assert.ok(scene.get({ id: 'copy' }).node.components.prefabref);
         assert.throws(() => scene.materials({ ids: [materialName] }), /does not exist/);
@@ -192,8 +194,10 @@ describe('Editor API', () => {
         assert.throws(() => scene.packMany({ ids: ['a','missing'] }), /does not exist/);
         assert.equal(scene.exportJSON(), before);
         const result = scene.packMany({ ids: ['a','b'], reuse: true });
+        assert.equal(scene.export().prefab.prefabs, undefined);
+        assert.equal(scene.get({ id: 'a' }).node.packed, true);
         assert.deepEqual(result.reused, [{ id: 'b', sourceId: 'a' }]);
-        assert.equal(scene.get({ id: 'a' }).node.components.prefabref.properties.url, scene.get({ id: 'b' }).node.components.prefabref.properties.url);
+        assert.equal(scene.get({ id: 'b' }).node.components.prefabref.properties.prefabId, 'a');
         assert.deepEqual(scene.find({ query: 'Second assembly' }).node.local.position, [5,0,0]);
         scene.undo();
         assert.equal(scene.exportJSON(), before);

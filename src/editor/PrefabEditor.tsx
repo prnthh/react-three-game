@@ -2,7 +2,7 @@ import { loadAssetManifest } from '../runtime/assets/assetManifest.js';
 import { downloadBlob, downloadURL } from '../browser/index.js';
 import { isExternalPath, withBasePath } from '../runtime/assets/assetPaths.js';
 import { OrbitControls, TransformControls, useHelper } from "@react-three/drei";
-import { createContext, useContext, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, forwardRef, useImperativeHandle } from "react";
+import { createContext, startTransition, useContext, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, forwardRef, useImperativeHandle } from "react";
 import { Box3, BoxHelper, Mesh, MeshBasicMaterial, PerspectiveCamera, Plane, Vector2, Vector3 } from "three";
 import type { Color, Intersection, Material, Object3D, Sprite, Texture } from "three";
 import { useFrame, useThree, type RootState } from "@react-three/fiber";
@@ -289,11 +289,8 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
     }, [prefabStore]);
 
     const updateMode = useCallback((nextMode: PrefabEditorMode) => {
-        setMode(prev => {
-            if (prev === nextMode) return prev;
-            if (nextMode === PrefabEditorMode.Play) { setSelectedId(null); }
-            return nextMode;
-        });
+        if (nextMode === PrefabEditorMode.Play) setSelectedId(null);
+        setMode(nextMode);
     }, []);
 
     const resetScene = useCallback(async () => {
@@ -305,7 +302,7 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
     }, [detachTransformControls, onResetScene]);
 
     const toggleMode = () => {
-        updateMode(isEditMode ? PrefabEditorMode.Play : PrefabEditorMode.Edit);
+        startTransition(() => updateMode(isEditMode ? PrefabEditorMode.Play : PrefabEditorMode.Edit));
     };
 
     const loadPrefab = useCallback((nextPrefab: Prefab) => {
@@ -841,6 +838,9 @@ export function PrefabEditorScene({ children }: { children?: React.ReactNode; })
         positionSnap, rotationSnap, scaleSnap, handleTransformChange,
     } = useEditorStateContext();
     const get = useThree(state => state.get);
+    // Keep editor controls on the canvas camera even while a scene camera is
+    // still active during the Play -> Edit render, before its layout cleanup.
+    const [editorCamera] = useState(() => get().camera);
     useLayoutEffect(() => {
         const state = get();
         canvasRef.current = state.gl.domElement as HTMLCanvasElement;
@@ -877,7 +877,7 @@ export function PrefabEditorScene({ children }: { children?: React.ReactNode; })
 
         {isEditMode && (
             <>
-                <OrbitControls ref={controlsRef} enableDamping={false} makeDefault />
+                <OrbitControls ref={controlsRef} camera={editorCamera} enableDamping={false} makeDefault />
                 <EditorCameraKeyboardControls controlsRef={controlsRef} />
                 {selectedId && (
                     <RegisteredObject id={selectedId} prefab={prefabValue}>

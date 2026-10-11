@@ -1,5 +1,4 @@
-import { GLTFExporter, type GLTFExporterOptions } from 'three/examples/jsm/exporters/GLTFExporter.js';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import type { GLTFExporterOptions } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import {
     BackSide,
     BufferAttribute,
@@ -270,6 +269,7 @@ export function decomposeModelToPrefabNodes(
 
 /** Standard Three.js GLB serialization, independent of browser downloads. */
 export async function exportGLBData(sceneRoot: Object3D, options: Omit<GLTFExporterOptions, 'binary'> = {}): Promise<ArrayBuffer> {
+    const { GLTFExporter } = await import('three/examples/jsm/exporters/GLTFExporter.js');
     ensureBlobReader();
     sceneRoot.updateMatrixWorld(true);
     return new GLTFExporter().parseAsync(sceneRoot, { ...options, binary: true }) as Promise<ArrayBuffer>;
@@ -283,6 +283,7 @@ export async function loadGLBScene(data: ArrayBuffer | ArrayBufferView): Promise
     if (bytes.byteLength < 12 || new DataView(bytes).getUint32(0, true) !== 0x46546c67) {
         throw new Error('Expected a binary glTF (GLB) file');
     }
+    const { GLTFLoader } = await import('three/examples/jsm/loaders/GLTFLoader.js');
     const loader = new GLTFLoader();
     loader.register(parser => ({
         name: 'RTG_static_import',

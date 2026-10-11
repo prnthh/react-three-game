@@ -1,5 +1,10 @@
 # Prefab organization
 
+Start with an inline definition in application code. Use **Pack as Prefab** to
+mark an assembly `packed: true` in place, then duplicate it. Copies use its node
+ID in `PrefabRef.prefabId`; the original keeps the full subtree. Export a separate prefab file when several
+scenes share the same assembly or it needs independent URL loading.
+
 Single-file demos live directly in this folder. Projects with multiple JSON files
 have a folder named after the project, containing the main JSON and its supporting
 prefabs. Assets such as models and textures stay in their own public folders.
@@ -10,9 +15,11 @@ prefabs. Assets such as models and textures stay in their own public folders.
 - `detective-oni/detective-oni.json`: point-and-click entry prefab with a scene redirect, with
   `scenes/`, `characters/`, and a shared `dialogue.json`.
 - `the-cave/the-cave.json`: empty point-and-click project scaffold.
-- `parkour-course.json` and `rotator-demo.json`: standalone prefab documents.
+- `parkour-course.json`: parkour playground with a spawn column and three packed inline brutalist towers.
+- `parkour2.json`: preserved original parkour course.
+- `rotator-demo.json`: standalone prefab document.
 
-Prefab references use full public paths such as `/prefabs/killbox/npc.json`.
+File-based prefab references use full public paths such as `/prefabs/killbox/npc.json`.
 Scene redirects and dialogue paths are relative to the game folder.
 Demo TypeScript stays under `app/demo`; game-specific wiring stays under `games/`.
 

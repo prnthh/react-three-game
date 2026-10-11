@@ -9,6 +9,8 @@ export type PrefabNodeRecord = Omit<GameObject, "children">;
 export interface PrefabState {
 	prefabId?: string;
 	prefabName?: string;
+    /** Derived lookup of packed nodes and inherited definitions; never serialized. */
+    prefabs?: Record<string, Prefab>;
 	/** Derived from component definitions for authoring tools; never persisted. */
 	materials: Record<string, PrefabMaterial>;
 	rootId: string;
@@ -149,7 +151,7 @@ function getNodeNameFromPath(path: string, name?: string) {
 	return name ?? path.replace(/^.*[\/]/, "").replace(/\.[^.]+$/, "");
 }
 
-function denormalizeNode(
+export function denormalizeNode(
 	id: string,
 	nodesById: Record<string, PrefabNodeRecord>,
 	childIdsById: Record<string, string[]>,
@@ -264,7 +266,11 @@ export function scopePrefabMaterials(prefab: Prefab, scope: string): Prefab {
         }
         node.children?.forEach(collect);
     };
-    collect(prefab.root);
+    const collectDocument = (document: Prefab) => {
+        collect(document.root);
+        Object.values(document.prefabs ?? {}).forEach(collectDocument);
+    };
+    collectDocument(prefab);
     const remap = (node: GameObject): GameObject => ({ ...node,
         components: Object.fromEntries(Object.entries(node.components ?? {}).map(([key, component]) => {
             const id = component?.properties.name;
@@ -273,7 +279,11 @@ export function scopePrefabMaterials(prefab: Prefab, scope: string): Prefab {
             } } : component];
         })), children: node.children?.map(remap),
     });
-    return { ...prefab, root: remap(prefab.root) };
+    const remapDocument = (document: Prefab): Prefab => ({ ...document, root: remap(document.root),
+        ...(document.prefabs ? { prefabs: Object.fromEntries(Object.entries(document.prefabs)
+            .map(([id, child]) => [id, remapDocument(child)])) } : {}),
+    });
+    return remapDocument(prefab);
 }
 
 export function normalizePrefab(prefab: Prefab): PrefabState {
@@ -287,6 +297,7 @@ export function normalizePrefab(prefab: Prefab): PrefabState {
 	return {
 		prefabId: prefab.id,
 		prefabName: prefab.name,
+        prefabs: collectPackedPrefabs({ nodesById, childIdsById }, prefab.prefabs),
 		materials,
 		rootId: prefab.root.id,
 		nodesById,
@@ -298,15 +309,116 @@ export function normalizePrefab(prefab: Prefab): PrefabState {
 export function denormalizePrefab(
 	state: Pick<
 		PrefabState,
-		"prefabId" | "prefabName" | "rootId" | "nodesById" | "childIdsById"
+		"prefabId" | "prefabName" | "prefabs" | "rootId" | "nodesById" | "childIdsById"
 	>,
 ): Prefab {
 
 	return {
 		id: state.prefabId,
 		name: state.prefabName,
-		root: denormalizeNode(state.rootId, state.nodesById, state.childIdsById),
+
+		root: embedPrefabDefinitions(denormalizeNode(state.rootId, state.nodesById, state.childIdsById), state.prefabs),
 	};
+}
+
+/** Build the runtime pool from authored packed subtrees. Placement transforms stay on their owner. */
+export function collectPackedPrefabs(
+    state: Pick<PrefabState, 'nodesById' | 'childIdsById'>,
+    inherited: Record<string, Prefab> = {},
+    previous?: Record<string, Prefab>,
+): Record<string, Prefab> | undefined {
+    const result = { ...inherited };
+    for (const node of Object.values(state.nodesById)) {
+        if (!node.packed) continue;
+        const root = denormalizeNode(node.id, state.nodesById, state.childIdsById);
+        delete root.packed;
+        delete root.hidden; delete root.disabled; delete root.locked;
+        for (const [key, component] of Object.entries(root.components ?? {})) {
+            if (component?.type === 'Transform') delete root.components![key];
+        }
+        const definition = { id: node.id, name: node.name, root };
+        const old = previous?.[node.id];
+        result[node.id] = old && JSON.stringify(old) === JSON.stringify(definition) ? old : definition;
+    }
+    if (!Object.keys(result).length) return undefined;
+    if (previous && Object.keys(result).length === Object.keys(previous).length
+        && Object.entries(result).every(([id, value]) => previous[id] === value)) return previous;
+    return result;
+}
+
+/** A portable subtree carries missing definitions on the first reference that uses them. */
+export function embedPrefabDefinitions(root: GameObject, definitions: Record<string, Prefab> = {}): GameObject {
+    const available = new Set<string>();
+    const aliases = new Map<string, string>();
+    const ids = new Set<string>();
+    const scan = (node: GameObject) => { ids.add(node.id); if (node.packed) available.add(node.id); node.children?.forEach(scan); };
+    scan(root);
+    const visit = (node: GameObject) => {
+        for (const [key, component] of Object.entries(node.components ?? {})) {
+            const id = component?.type === 'PrefabRef' && component.properties.prefabId;
+            if (!id || available.has(id)) continue;
+            const definition = definitions[id];
+            if (!definition) throw new Error(`Unknown inline prefab "${id}".`);
+            available.add(id);
+            const owner = remapPrefabNodeIds(definition.root, nodeId => {
+                let nextId = nodeId === definition.root.id ? id : `${id}/${nodeId}`;
+                while (ids.has(nextId)) nextId += '-copy';
+                ids.add(nextId);
+                return nextId;
+            });
+            if (owner.id !== id) aliases.set(id, owner.id);
+            owner.packed = true;
+            scan(owner);
+            delete node.components![key];
+            node.children = [owner, ...(node.children ?? [])];
+        }
+        node.children?.forEach(visit);
+    };
+    visit(root);
+    const rewrite = (node: GameObject) => {
+        for (const component of Object.values(node.components ?? {})) {
+            const id = component?.type === 'PrefabRef' && component.properties.prefabId;
+            if (id && aliases.has(id)) component!.properties.prefabId = aliases.get(id);
+        }
+        node.children?.forEach(rewrite);
+    };
+    rewrite(root);
+    return root;
+}
+
+/** Rename a subtree and its internal prefab references together. */
+export function remapPrefabNodeIds(root: GameObject, rename: (id: string) => string): GameObject {
+    const ids = new Map<string, string>();
+    const copy = (node: GameObject): GameObject => {
+        const { children, ...record } = node;
+        const id = rename(node.id);
+        ids.set(node.id, id);
+        return { ...structuredClone(record), id, children: children?.map(copy) };
+    };
+    const result = copy(root);
+    const rewrite = (node: GameObject) => {
+        for (const component of Object.values(node.components ?? {})) {
+            const id = component?.type === 'PrefabRef' && component.properties.prefabId;
+            if (id && ids.has(id)) component!.properties.prefabId = ids.get(id);
+        }
+        node.children?.forEach(rewrite);
+    };
+    rewrite(result);
+    return result;
+}
+
+/** Duplicate a packed owner as a lightweight reference. */
+export function packedReference(node: PrefabNodeRecord, prefabId = node.id): PrefabNodeRecord {
+    const components: NonNullable<GameObject['components']> = {};
+    for (const [key, component] of Object.entries(node.components ?? {})) {
+        if (component?.type === 'Transform') components[key] = structuredClone(component);
+    }
+    let key = 'prefabref';
+    while (components[key]) key += '_';
+    components[key] = { type: 'PrefabRef', properties: { prefabId } };
+    const copy = { ...node, components };
+    delete copy.packed;
+    return copy;
 }
 
 export function collectSubtreeIds(
@@ -365,8 +477,7 @@ export function cloneSubtree(
 
 	const clonedId = crypto.randomUUID();
 	const clonedNode: PrefabNodeRecord = {
-		...originalNode,
-		components: cloneComponentsForDuplicate(originalNode.components),
+		...(originalNode.packed ? packedReference(originalNode) : { ...originalNode, components: cloneComponentsForDuplicate(originalNode.components) }),
 		id: clonedId,
 		name: `${originalNode.name ?? originalNode.id} Copy`,
 	};
@@ -374,7 +485,7 @@ export function cloneSubtree(
 	nodesById[clonedId] = clonedNode;
 	parentIdById[clonedId] = parentId;
 
-	const clonedChildIds = (source.childIdsById[id] ?? [])
+	const clonedChildIds = (originalNode.packed ? [] : source.childIdsById[id] ?? [])
 		.map((childId) =>
 			cloneSubtree(
 				childId,

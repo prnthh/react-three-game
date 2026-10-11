@@ -1,7 +1,7 @@
 import { useFrame, useThree } from '@react-three/fiber';
-import { createContext, useContext, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Vector3 } from 'three';
-import { PrefabEditorMode, PrefabInstance, useNode, useGameObject, usePrefab, useScene, type Component, type ComponentViewProps, type PrefabInstanceStatus } from 'react-three-game/viewer';
+import { PrefabEditorMode, PrefabInstance, useNode, useGameObject, usePrefab, useScene, type Component, type ComponentViewProps } from 'react-three-game/viewer';
 
 type Coordinate = [number, number, number];
 type Tile = { key: string; coordinate: Coordinate };
@@ -64,16 +64,12 @@ function createPrefabGrid(size: Coordinate, maxTiles: number) {
 }
 
 type Properties = { url?: string; tileSize?: Coordinate; tileCenter?: Coordinate; maxTiles?: number; static?: boolean };
-/** Demo UI observes real instance phases instead of guessing from download counters. */
-export const DemoChunkStatusContext = createContext<((status: PrefabInstanceStatus) => void) | null>(null);
-
 function PrefabGridStreamerView({ properties, children }: ComponentViewProps<Properties>) {
     const { basePath } = usePrefab();
     const { mode } = useScene();
     const host = useGameObject();
     const { nodeId } = useNode();
     const camera = useThree(state => state.camera);
-    const report = useContext(DemoChunkStatusContext);
     const [grid] = useState(() => createPrefabGrid(properties.tileSize, properties.maxTiles));
     const [tiles, setTiles] = useState(grid.tiles);
     const position = useRef(new Vector3());
@@ -89,7 +85,7 @@ function PrefabGridStreamerView({ properties, children }: ComponentViewProps<Pro
 
     return <>
         {url && tiles.map(tile => <group key={`${url}:${tile.key}`} position={tile.coordinate.map((value, axis) => value * tileSize[axis]) as Coordinate}>
-            <PrefabInstance id={`${nodeId}/${tile.key}`} url={url} basePath={basePath} static={properties.static === true && mode === PrefabEditorMode.Play} onActivate={() => grid.activate(tile.key)} onStatus={report ?? undefined} />
+            <PrefabInstance id={`${nodeId}/${tile.key}`} url={url} basePath={basePath} static={properties.static === true && mode === PrefabEditorMode.Play} onActivate={() => grid.activate(tile.key)} />
         </group>)}
         {children}
     </>;

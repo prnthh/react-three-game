@@ -2,7 +2,7 @@
 import type { Viewport } from "next";
 import Link from "next/link";
 import ClickToCopy from "./components/ClickToCopy";
-import DemoApp from "./components/DemoAppLoader";
+import DemoApp from "./components/DemoApp";
 import Dropdown from "./components/Dropdown";
 import { withBasePath } from './basePath';
 

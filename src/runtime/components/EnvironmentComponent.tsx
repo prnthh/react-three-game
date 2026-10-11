@@ -1,6 +1,6 @@
 import { AssetBoundary } from '../assets/AssetBoundary.js';
 import { Environment } from '@react-three/drei';
-import { createPortal, useFrame } from '@react-three/fiber';
+import { createPortal, useFrame, useThree } from '@react-three/fiber';
 import { useEffect, useMemo } from 'react';
 import { CubeCamera, HalfFloatType, Scene, type Mesh, type Texture } from 'three';
 import { CubeRenderTarget } from 'three/webgpu';
@@ -41,6 +41,7 @@ function environmentSnapshot(scene: Scene): unknown[] {
 
 function EnvironmentView({ properties, children }: ComponentViewProps<EnvironmentProperties>) {
     const store = usePrefabStoreApi();
+    const mainScene = useThree(state => state.scene);
     const { intensity, frames = 1, resolution = 256, ...props } = properties;
     const scene = useMemo(() => new Scene(), []);
     const capture = useMemo(() => {
@@ -64,8 +65,8 @@ function EnvironmentView({ properties, children }: ComponentViewProps<Environmen
         } finally { gl.autoClear = autoClear; }
     });
     return <>
-        <Environment {...props} map={capture.target.texture} environmentIntensity={intensity} />
         {createPortal(<AssetBoundary atomic subscribeToRetry={store.subscribe}>
+            <Environment {...props} scene={mainScene} map={capture.target.texture} environmentIntensity={intensity} />
             <MeshInstanceProvider isolated enabled={false}>{children}</MeshInstanceProvider>
         </AssetBoundary>, scene)}
     </>;

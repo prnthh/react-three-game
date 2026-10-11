@@ -75,8 +75,8 @@ function EnvironmentView({ properties, children }: ComponentViewProps<Environmen
 }
 
 const EnvironmentComponent: Component<EnvironmentProperties> = {
-    renderWhenDisabled: true,
     name: 'Environment',
+    renderWhenDisabled: true,
     description: "Capture child objects as the scene lighting/reflection environment. For an image, add a child sphere with a basic BackSide image material. background also displays the captured map.",
     slot: 'environment',
     View: EnvironmentView,

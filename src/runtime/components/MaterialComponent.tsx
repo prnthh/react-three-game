@@ -398,9 +398,9 @@ function SharedOverrideMaterial({ source, overrides, cacheKey, attach }: {
 
 const MaterialComponent = {
     name: 'Material',
+    renderWhenDisabled: true,
     description: 'Define a shared material with a name and settings, or reference a loaded scene material using only its name. Unresolved references remain invisible.',
     slot: 'material',
-    renderWhenDisabled: true,
     View: MaterialComponentView,
     dependencies: properties => [properties.texture, properties.normalMapTexture]
         .filter((path): path is string => !!path).map(path => ({ kind: 'texture' as const, path })),

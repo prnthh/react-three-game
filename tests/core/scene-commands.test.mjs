@@ -3,8 +3,10 @@ import assert from 'node:assert/strict';
 import { evaluateSceneCommandState } from '../../src/core/sceneCommands.ts';
 import { registerComponent } from '../../src/core/ComponentRegistry.ts';
 import Transform from '../../src/runtime/components/TransformComponent.tsx';
+import MaterialComponent from '../../src/runtime/components/MaterialComponent.tsx';
 import { denormalizePrefab, normalizePrefab } from '../../src/core/prefab.ts';
 registerComponent(Transform);
+registerComponent(MaterialComponent);
 const transform = (position, rotation = [0, 0, 0], scale = [1, 1, 1]) => ({ type: 'Transform', properties: { position, rotation, scale } });
 const scene = () => ({ root: { id: 'root', children: [
     { id: 'parent', components: { transform: transform([3, 0, 0], [0, Math.PI / 2, 0], [2, 2, 2]) }, children: [{ id: 'child' }] },
@@ -86,5 +88,16 @@ test('component replacement/removal and subtree removal', () => {
         { op: 'component', id: 'child', key: 'pose', component: transform([1, 2, 3]) },
         { op: 'component', id: 'child', key: 'pose', component: null },
         { op: 'remove', id: 'parent' });
-    assert.deepEqual(result.prefab.root.children ?? [], []);
+    assert.deepEqual(result.prefab.root.children, [scene().root.children[1]], 'removing a subtree preserves unrelated siblings');
+});
+
+test('equivalent component properties in a different key order preserve the staged node', () => {
+    const initial = normalizePrefab(scene());
+    const { state } = evaluateSceneCommandState(initial, { commands: [{
+        op: 'component', id: 'parent', key: 'transform', component: {
+            properties: { scale: [2, 2, 2], rotation: [0, Math.PI / 2, 0], position: [3, 0, 0] },
+            type: 'Transform',
+        },
+    }] });
+    assert.equal(state.nodesById.parent, initial.nodesById.parent);
 });

@@ -72,6 +72,7 @@ function VisualsView({ properties, children }: ComponentViewProps<{ replay: bool
 
 export const CharacterVisualsComponent: Component<{ replay: boolean }> = {
     name: 'ParkourVisuals',
+    renderWhenDisabled: true,
     description: 'Visible character parts. The controller poses this subtree independently of collision.',
     properties: { replay: { type: 'boolean', default: false } },
     View: VisualsView,
@@ -115,6 +116,7 @@ function PartMesh({ shape, radius, length, cornerRadius }: PartProperties) {
 
 export const CharacterPartComponent: Component<PartProperties> = {
     name: 'ParkourBodyPart',
+    renderWhenDisabled: true,
     description: 'A visual part or joint pivot. Animation changes only X; set resting angles with Transform.',
     properties: {
         joint: { type: 'string', default: '', description: 'Optional animated joint: left/right-arm, left/right-forearm or left/right-leg.' },

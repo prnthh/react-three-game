@@ -24,7 +24,6 @@ function compile(source: string): Script {
 const RuntimeComponent: Component<RuntimeComponentProperties> = {
     name: 'Runtime',
     description: "Run JavaScript on this node in Play. Example properties: {\"data\":{\"speed\":2},\"update\":\"if (object) object.position.x += data.speed * delta;\"}. Bodies receive context and aliases nodeId, node, object, data, state, prefab, events, delta, three; do not redeclare these names.",
-    renderWhenDisabled: true,
     restartOn: ['setup', 'update'],
     setup(context) {
         const runSetup = compile(context.properties.setup);

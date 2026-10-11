@@ -10,8 +10,6 @@ import {
 import type { BufferGeometry, Texture } from 'three';
 import type { ComponentData, GameObject, MaterialComponentProperties, PrefabMaterial, Prefab } from './types.js';
 
-type NumericArray = number[];
-
 export interface DecomposeModelOptions {
     /** Prefix used for generated prefab node ids. Defaults to "model". */
     idPrefix?: string;
@@ -27,11 +25,11 @@ function createId(prefix: string) {
     return `${prefix}-${crypto.randomUUID()}`;
 }
 
-function toArrayAttribute(attribute: BufferAttribute | undefined, itemSize: number, vertexIndices: number[]) {
+function toArrayAttribute(attribute: BufferAttribute | undefined, itemSize: number, vertexCount: number) {
     if (!attribute || attribute.itemSize < itemSize) return undefined;
 
-    const values: NumericArray = [];
-    for (const vertexIndex of vertexIndices) {
+    const values: number[] = [];
+    for (let vertexIndex = 0; vertexIndex < vertexCount; vertexIndex += 1) {
         for (let axis = 0; axis < itemSize; axis += 1) {
             values.push(attribute.getComponent(vertexIndex, axis));
         }
@@ -39,29 +37,20 @@ function toArrayAttribute(attribute: BufferAttribute | undefined, itemSize: numb
     return values;
 }
 
-function getSequentialVertexIndices(count: number) {
-    return Array.from({ length: count }, (_, index) => index);
-}
-
 function serializeGeometry(geometry: BufferGeometry) {
     const position = geometry.getAttribute('position') as BufferAttribute | undefined;
     const normal = geometry.getAttribute('normal') as BufferAttribute | undefined;
     const uv = geometry.getAttribute('uv') as BufferAttribute | undefined;
-    const vertexIndices = getSequentialVertexIndices(position?.count ?? 0);
+    const vertexCount = position?.count ?? 0;
     const index = geometry.index;
     const indices: number[] = [];
-
-    if (index) {
-        for (let offset = 0; offset < index.count; offset += 1) {
-            indices.push(index.getX(offset));
-        }
-    } else {
-        for (const index of vertexIndices) indices.push(index);
+    for (let offset = 0; offset < (index?.count ?? vertexCount); offset += 1) {
+        indices.push(index ? index.getX(offset) : offset);
     }
 
-    const positions = toArrayAttribute(position, 3, vertexIndices) ?? [];
-    const normals = toArrayAttribute(normal, 3, vertexIndices) ?? [];
-    const uvs = toArrayAttribute(uv, 2, vertexIndices) ?? [];
+    const positions = toArrayAttribute(position, 3, vertexCount) ?? [];
+    const normals = toArrayAttribute(normal, 3, vertexCount) ?? [];
+    const uvs = toArrayAttribute(uv, 2, vertexCount) ?? [];
     const groups = geometry.groups.map(group => ({
         start: group.start,
         count: group.count,
@@ -83,11 +72,6 @@ function getSideName(side: Material['side']) {
     if (side === BackSide) return 'BackSide';
     if (side === DoubleSide) return 'DoubleSide';
     return 'FrontSide';
-}
-
-function getMaterialColor(material: Material) {
-    const maybeColor = material as Material & { color?: { getStyle?: () => string } };
-    return maybeColor.color?.getStyle?.();
 }
 
 function getTextureImagePath(texture: Texture | null | undefined) {
@@ -126,7 +110,7 @@ function serializeMaterial(material: Material, options: Required<DecomposeModelO
     return {
         name: material.name || undefined,
         materialType,
-        color: getMaterialColor(material) ?? '#ffffff',
+        color: source.color?.getStyle?.() ?? '#ffffff',
         ...(texture ? { texture } : null),
         ...(normalMapTexture ? { normalMapTexture } : null),
         ...(normalScale ? { normalScale: normalScale as [number, number] } : null),
@@ -140,18 +124,6 @@ function serializeMaterial(material: Material, options: Required<DecomposeModelO
             roughness: source.roughness ?? 1,
         } : null),
     };
-}
-
-function getMeshParts(mesh: Mesh) {
-    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-
-    return materials.map((material, index) => {
-        return {
-            key: materials.length > 1 ? `material_${index}` : 'material',
-            material,
-            attach: materials.length > 1 ? `material-${index}` : 'material',
-        };
-    }).filter(part => part.material);
 }
 
 function createTransformComponent(object: Object3D): ComponentData {
@@ -184,25 +156,10 @@ function createNode(
     };
 }
 
-type MaterialCollector = {
-    ids: Map<Material, string>;
-    definitions: Record<string, PrefabMaterial>;
-};
-
-function getMaterialName(material: Material, options: Required<DecomposeModelOptions>, collector: MaterialCollector) {
-    const existing = collector.ids.get(material);
-    if (existing) return existing;
-
-    const id = createId(`${options.idPrefix}-material`);
-    collector.ids.set(material, id);
-    collector.definitions[id] = serializeMaterial(material, options);
-    return id;
-}
-
 function decomposeObject(
     object: Object3D,
     options: Required<DecomposeModelOptions>,
-    materials: MaterialCollector,
+    materials: Map<Material, string>,
 ): GameObject | null {
     if (!options.includeInvisible && !object.visible) return null;
 
@@ -214,20 +171,22 @@ function decomposeObject(
         return options.mapNode(createNode(object, options.idPrefix, childNodes), object);
     }
 
-    const parts = getMeshParts(object);
-    const materialComponents = parts.reduce<Record<string, ComponentData>>((result, part) => {
-        const defining = !materials.ids.has(part.material);
-        const materialName = getMaterialName(part.material, options, materials);
-        result[part.key] = {
+    const meshMaterials = Array.isArray(object.material) ? object.material : [object.material];
+    const materialComponents: Record<string, ComponentData> = {};
+    meshMaterials.forEach((material, index) => {
+        if (!material) return;
+        const existing = materials.get(material);
+        const materialName = existing ?? createId(`${options.idPrefix}-material`);
+        materials.set(material, materialName);
+        materialComponents[meshMaterials.length > 1 ? `material_${index}` : 'material'] = {
             type: 'Material',
             properties: {
-                ...(defining ? { materialType: 'standard' as const, ...materials.definitions[materialName] } : {}),
+                ...(!existing ? serializeMaterial(material, options) : {}),
                 name: materialName,
-                attach: part.attach,
+                attach: meshMaterials.length > 1 ? `material-${index}` : 'material',
             } satisfies MaterialComponentProperties,
         };
-        return result;
-    }, {});
+    });
 
     return options.mapNode(createNode(object, options.idPrefix, childNodes, {
         geometry: {
@@ -261,7 +220,7 @@ export function decomposeModelToPrefabNodes(
         mapNode: options.mapNode ?? (node => node),
         getTexturePath: options.getTexturePath ?? (() => undefined),
     };
-    const materials: MaterialCollector = { ids: new Map(), definitions: {} };
+    const materials = new Map<Material, string>();
     const root = decomposeObject(object, resolvedOptions, materials)
         ?? createNode(object, resolvedOptions.idPrefix);
     return { root };

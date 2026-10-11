@@ -147,9 +147,9 @@ function DirectionalLightView({ properties, children }: ComponentViewProps<Direc
 
 const DirectionalLightComponent: Component<DirectionalLightProperties> = {
     name: 'DirectionalLight',
+    renderWhenDisabled: true,
     description: "Add sunlight-like parallel rays aimed from this node toward targetOffset. Use castShadow and shadow camera bounds to cover the objects that need shadows.",
     category: 'lighting',
-    renderWhenDisabled: true,
     View: DirectionalLightView,
     properties: {
         color: { type: 'color', default: directionalLightDefaults.color },

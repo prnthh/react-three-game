@@ -132,12 +132,12 @@ function playBufferedAudio(audio: ThreePositionalAudio, buffer: AudioBuffer, pro
     audio.play();
 }
 
-function SoundComponentView({ properties, children }: ComponentViewProps<SoundProperties>) {
+function SoundComponentView({ properties, children, enabled }: ComponentViewProps<SoundProperties>) {
     const listener = useAudioListener();
-    return listener ? <SoundWithListener properties={properties} listener={listener}>{children}</SoundWithListener> : <>{children}</>;
+    return <>{enabled && listener && <SoundWithListener properties={properties} listener={listener} />}{children}</>;
 }
 
-function SoundWithListener({ properties, children, listener }: Pick<ComponentViewProps<SoundProperties>, 'properties' | 'children'> & { listener: NonNullable<ReturnType<typeof useAudioListener>> }) {
+function SoundWithListener({ properties, listener }: Pick<ComponentViewProps<SoundProperties>, 'properties'> & { listener: NonNullable<ReturnType<typeof useAudioListener>> }) {
     const { basePath } = usePrefab();
     const { getSound } = useAssetRuntime();
     const editMode = useNode(node => node.editMode);
@@ -217,7 +217,6 @@ function SoundWithListener({ properties, children, listener }: Pick<ComponentVie
     return (
         <>
             <positionalAudio ref={positionalAudioRef} args={[listener]} />
-            {children}
         </>
     );
 }

@@ -8,7 +8,7 @@ import type { GameObject } from "./types.js";
 export interface ComponentViewProps<P = Record<string, unknown>> {
 	/** This component's own data from the prefab JSON. */
 	properties: IsAny<P> extends true ? P : Required<P>;
-	/** False while the node is disabled; render-graph components may still prepare resources. */
+	/** False while disabled or preparing; Views that opt into staying mounted must gate behavior with this value. */
 	enabled: boolean;
 	/** Children to render for components that wrap the current subtree. */
 	children?: React.ReactNode;
@@ -94,7 +94,7 @@ export interface Component<P extends object = Record<string, any>> {
     description?: string;
 	/** Declare resources without mounting a view; paths are relative to the prefab basePath. */
 	dependencies?: (properties: P) => readonly ComponentDependency[];
-	/** Keep this render-graph component mounted for preparation while its node is disabled. */
+	/** Keep the View mounted while disabled, for resource preparation or persistent scene graphs. */
 	renderWhenDisabled?: boolean;
 	/** Optional node slot. Geometry gets an implicit mesh when no attachment host is present.
 	 * Object views supply the render object that receives geometry and material.
@@ -175,11 +175,10 @@ export function canAddComponentToNode(node: GameObject, component: Component<any
 
 export function getNextComponentKey(node: GameObject, componentName: string) {
 	const baseKey = componentName.toLowerCase();
-	const existingKeys = new Set(Object.keys(node.components ?? {}));
 	let nextKey = baseKey;
 	let index = 1;
 
-	while (existingKeys.has(nextKey)) {
+	while (Object.hasOwn(node.components ?? {}, nextKey)) {
 		nextKey = `${baseKey}_${index}`;
 		index += 1;
 	}

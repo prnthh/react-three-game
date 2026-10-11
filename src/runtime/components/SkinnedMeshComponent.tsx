@@ -134,8 +134,8 @@ function SkinnedMeshView({ properties, enabled, children }: ComponentViewProps<S
 const SkinnedMeshComponent: Component<SkinnedMeshProperties> = {
     dependencies: properties => properties.filename ? [{ kind: 'model', path: properties.filename }] : [],
     name: 'SkinnedMesh',
-    description: "Load a model with skeletal animation. Set filename and animationState to a clip name from the asset; each instance has its own skeleton and animation mixer.",
     renderWhenDisabled: true,
+    description: "Load a model with skeletal animation. Set filename and animationState to a clip name from the asset; each instance has its own skeleton and animation mixer.",
     slot: 'object',
     View: SkinnedMeshView,
     properties: {

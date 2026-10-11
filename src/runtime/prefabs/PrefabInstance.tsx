@@ -10,7 +10,7 @@ import { MeshInstanceProvider, useMeshInstanceRevision } from '../rendering/Mesh
 import { SceneRuntime } from '../SceneRuntime.js';
 import type { PreparedPrefab } from './preparePrefab.js';
 import { compileInSlices } from '../rendering/compileInSlices.js';
-import { MountParentContext, usePendingMounts } from './ProgressiveMount.js';
+import { MountParentContext, PrefabMountContext, usePrefabMountPending } from './ProgressiveMount.js';
 
 export type PrefabInstanceStatus =
     | { phase: 'loading' }
@@ -32,7 +32,11 @@ export interface PrefabInstanceProps {
 
 /** Load a shared definition, build an isolated instance, compile it, then activate gameplay. */
 export function PrefabInstance(props: PrefabInstanceProps) {
-    return <SceneRuntime><InstanceResource key={`${props.id}:${props.basePath ?? ''}:${props.url}:${!!props.static}`} {...props} /></SceneRuntime>;
+    // Streamed placements have their own activation lifetime. Their loading must
+    // not disable the host behavior that keeps them mounted.
+    return <SceneRuntime><PrefabMountContext.Provider value={null}>
+        <InstanceResource key={`${props.id}:${props.basePath ?? ''}:${props.url}:${!!props.static}`} {...props} />
+    </PrefabMountContext.Provider></SceneRuntime>;
 }
 
 function InstanceResource(props: PrefabInstanceProps) {
@@ -69,12 +73,24 @@ function InstanceMount(props: PrefabInstanceProps & { prepared: PreparedPrefab }
     </primitive>;
 }
 
-function InstanceView({ id, prepared, static: isStatic = false, basePath, onStatus, onActivate, children, container }: PrefabInstanceProps & { prepared: PreparedPrefab; container: Group }) {
-    const store = useMemo(() => createPrefabStore(prepared.document), [prepared]);
-    const { gl, camera, scene, invalidate } = useThree();
+type InstanceViewProps = PrefabInstanceProps & { prepared: PreparedPrefab; container: Group };
+
+function InstanceView(props: InstanceViewProps) {
+    const store = useMemo(() => createPrefabStore(props.prepared.document), [props.prepared]);
     const [compileMs, setCompileMs] = useState<number | null>(null);
+    return <PrefabRoot id={props.id} store={store} basePath={props.basePath} enabled={compileMs !== null}>
+        <InstancePreparation {...props} compileMs={compileMs} setCompileMs={setCompileMs} />
+        {props.children}
+    </PrefabRoot>;
+}
+
+function InstancePreparation({ prepared, static: isStatic = false, onStatus, onActivate, container, compileMs, setCompileMs }: InstanceViewProps & {
+    compileMs: number | null;
+    setCompileMs: (duration: number) => void;
+}) {
+    const { gl, camera, scene, invalidate } = useThree();
     const compiled = compileMs !== null;
-    const pendingMounts = usePendingMounts(!compiled);
+    const pendingMounts = usePrefabMountPending(!compiled);
     const revision = useMeshInstanceRevision(!compiled && !pendingMounts);
     const callbacks = useRef({ onStatus, onActivate });
     callbacks.current = { onStatus, onActivate };
@@ -109,5 +125,5 @@ function InstanceView({ id, prepared, static: isStatic = false, basePath, onStat
 
     useEffect(() => { container.visible = compiled; invalidate(); }, [compiled, container, invalidate]);
 
-    return <PrefabRoot id={id} store={store} basePath={basePath} enabled={compiled}>{children}</PrefabRoot>;
+    return null;
 }

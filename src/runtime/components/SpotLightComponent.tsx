@@ -124,9 +124,9 @@ function SpotLightView({ properties, children }: ComponentViewProps<SpotLightPro
 
 const SpotLightComponent: Component<SpotLightProperties> = {
     name: 'SpotLight',
+    renderWhenDisabled: true,
     description: "Emit a cone of light from this node toward targetOffset. Position with Transform; angle controls cone width and penumbra softens its edge.",
     category: 'lighting',
-    renderWhenDisabled: true,
     View: SpotLightView,
     properties: {
         color: { type: 'color', default: spotLightDefaults.color },

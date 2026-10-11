@@ -4,7 +4,9 @@ import CharacterView, { type CharacterProperties } from './CharacterView';
 
 // Keep the definition outside the React module so controller edits stop at its Fast Refresh boundary.
 export const CharacterComponent: Component<CharacterProperties> = {
-    name: 'ParkourCharacter', description: 'Parkour player controller. Runs in Play; movement stays in demo state.',
+    name: 'ParkourCharacter',
+    renderWhenDisabled: true,
+    description: 'Parkour player controller. Runs in Play; movement stays in demo state.',
     properties: {
         speed: { default: DEFAULT_MOVEMENT_SETTINGS.speed, min: 1, max: 27, step: 0.5, description: 'Acceleration target in world units per second; carried momentum may exceed it.' },
         jumpSpeed: { default: DEFAULT_MOVEMENT_SETTINGS.jumpSpeed, min: 1, max: 15, step: 0.5, description: 'Upward impulse for ground jumps; default rises approximately 1.4 world units. Wall jumps add a smaller impulse.' },

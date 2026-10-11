@@ -111,9 +111,14 @@ the shared cache. `static` freezes placement and content for immutable chunks;
 remount to change either.
 
 For large scenes, `<GameCanvas mountBatchSize={8}>` admits up to eight new mesh
-nodes per frame, nearest first. The default `0` mounts them together. Components
-using progressive mounting handle children arriving over several frames;
-`PrefabInstance` activates gameplay after mounting and shader compilation.
+nodes per frame, nearest first. The default `0` mounts them together. Readiness
+is internal to each prefab subtree, including nested references. Gameplay starts
+after that subtree mounts; loading another placement does not pause it. Component
+Disabled Views unmount by default. `renderWhenDisabled` opts into keeping a View
+mounted for preparation or a persistent scene graph; those Views use `enabled`
+to gate behavior. `setup` and `update` are gated automatically. `PrefabInstance` additionally waits for shader compilation
+and owns an independent activation lifetime, so streamed placements do not disable
+the host component that keeps them mounted.
 Environment captures mount their contents together. Measure preparation as well
 as steady frame time: individual geometry, decoding, or shader work can still be
 expensive. The editor accepts this setting through `canvasProps`.

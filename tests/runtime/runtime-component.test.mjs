@@ -50,7 +50,6 @@ test('effect setup/cleanup follows activation and code edits; data edits keep cu
     });
     const { render, frame, calls, object, properties, remove } = fixture;
     await render({ editMode: true }); frame();
-    await render({ preparing: true }); frame();
     await render({ enabled: false }); frame();
     assert.deepEqual(calls, []);
     await render();
@@ -161,12 +160,12 @@ test('lifecycle failures release all resources once and stop updates', async t =
 });
 
 
-test('CameraFollow uses R3F directly with play/preparation gating and live targets', async t => {
+test('CameraFollow uses R3F directly with enabled gating and live targets', async t => {
     const fixture = await mount(t, { targetId: 'target', followSpeed: 100, positionOffset: [0, 0, 5] }, CameraFollowComponent, CameraFollowComponent.View);
     const target = new Object3D();
     target.position.x = 10;
     fixture.prefab.getObject = id => id === 'test' ? fixture.object : id === 'target' ? target : null;
-    await fixture.render({ preparing: true }); fixture.frame();
+    await fixture.render({ enabled: false }); fixture.frame();
     assert.equal(fixture.object.position.x, 0);
     await fixture.render(); fixture.frame();
     assert.equal(fixture.object.position.x, 10);

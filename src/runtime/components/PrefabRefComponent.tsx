@@ -5,7 +5,6 @@ import type { Component, ComponentViewProps } from '../../core/ComponentRegistry
 import { useNode, usePrefab } from '../scene/SceneContext.js';
 import { resolveInlinePrefab } from '../../core/inlinePrefabs.js';
 import type { Prefab } from '../../core/types.js';
-import { reconcilePrefabState } from '../../core/prefab.js';
 import { createPrefabStore } from "../../core/prefabStore.js";
 import { withBasePath } from "../assets/assetPaths.js";
 import { describePrefabSource } from '../prefabs/prefabSource.js';
@@ -39,7 +38,7 @@ function LoadedPrefabRef({ properties, enabled }: ComponentViewProps<PrefabRefPr
         if (!document || !store) return;
         const current = store.getState();
         if (current.nodesById !== document.nodesById || current.prefabs !== document.prefabs) {
-            current.restoreState(reconcilePrefabState(current, document));
+            current.restoreState(document);
         }
     }, [document, store]);
     useEffect(() => {
@@ -65,8 +64,8 @@ function PrefabRefView(props: ComponentViewProps<PrefabRefProperties>) {
 const PrefabRefComponent: Component<PrefabRefProperties> = {
     dependencies: properties => !properties.prefabId && properties.url ? [{ kind: 'prefab', path: properties.url }] : [],
     name: 'PrefabRef',
-    description: "Place an inline definition by prefabId or load a prefab by URL; use Transform here to place the instance. Each instance has its own objects and local node IDs.",
     renderWhenDisabled: true,
+    description: "Place an inline definition by prefabId or load a prefab by URL; use Transform here to place the instance. Each instance has its own objects and local node IDs.",
     View: PrefabRefView,
     properties: {
         prefabId: { description: "ID of a packed node in this scene. Takes precedence over URL.", type: 'string', default: '' },

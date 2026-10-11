@@ -164,16 +164,17 @@ function renderNodeContent(
     enabled = true,
 ) {
     const components = analyzedComponents.composition;
+    // Activation effects are siblings of Views, so they cannot move authored children.
+    const lifecycles: React.ReactNode[] = [];
     let content = childNodes;
     for (let index = components.length - 1; index >= 0; index -= 1) {
         const component = components[index];
-        if (!enabled && !component.renderWhenDisabled) continue;
-        if (component.component?.setup || component.component?.update) {
-            content = <ComponentLifecycle key={component.key} component={component.component} properties={component.properties} enabled={enabled}>{content}</ComponentLifecycle>;
-        } else {
-            const View = component.View!;
-            content = <View key={component.key} properties={component.properties} enabled={enabled}>{content}</View>;
+        if (enabled && (component.component?.setup || component.component?.update)) {
+            lifecycles.push(<ComponentLifecycle key={component.key} component={component.component} properties={component.properties} enabled={enabled} />);
         }
+        if (component.component && !enabled && !component.component.renderWhenDisabled) continue;
+        const View = component.View;
+        if (View) content = <View key={component.key} properties={component.properties} enabled={enabled}>{content}</View>;
     }
-    return content;
+    return <>{lifecycles}{content}</>;
 }

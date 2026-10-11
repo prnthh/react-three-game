@@ -1,11 +1,11 @@
 import { sceneCommandFields } from './sceneCommandSchema.js';
 import { Euler, Matrix4, Quaternion, Vector3 } from 'three';
-import { getComponents } from './ComponentRegistry.js';
+import { getComponent } from './ComponentRegistry.js';
 import { findComponentEntry, type ComponentData, type GameObject, type Prefab } from './types.js';
 import { composeTransform, computeParentWorldMatrix } from "./transforms.js";
 import { createPrefabStore } from "./prefabStore.js";
 import { createPrefabDocumentApi } from './prefabDocumentApi.js';
-import { packedReference, cloneComponentsForDuplicate, collectSubtreeIds, normalizePrefab, denormalizePrefab, type PrefabState } from './prefab.js';
+import { packedReference, cloneComponentsForDuplicate, collectSubtreeIds, normalizePrefab, denormalizePrefab, samePrefabValue, isDescendant, type PrefabState } from './prefab.js';
 
 type Vec3 = [number, number, number];
 export type SceneCommand =
@@ -49,7 +49,7 @@ function component(value: unknown) {
     const data = record(value, 'component');
     keys(data, ['type', 'properties']);
     id(data.type);
-    const definition = getComponents()[data.type];
+    const definition = getComponent(data.type);
     if (!definition) throw new Error(`Unknown component type "${data.type}". Use scene.components() for available types.`);
     const props = record(data.properties, 'properties');
     for (const [key, value] of Object.entries(props)) {
@@ -79,7 +79,7 @@ function validateNode(node: GameObject, ids: Set<string>, existing?: PrefabState
         for (const [key, value] of Object.entries(components)) {
             id(key);
             component(value);
-            const slot = getComponents()[value!.type].slot;
+            const slot = getComponent(value!.type)!.slot;
             if (slot && slots.has(slot)) throw new Error(`Node "${node.id}" has multiple components in slot "${slot}".`);
             if (slot) slots.add(slot);
         }
@@ -129,7 +129,7 @@ export function evaluateSceneCommandState(initial: PrefabState, input: unknown):
                 return state.nodesById[value];
             };
             const update = (node: GameObject) => {
-                if (JSON.stringify(state.nodesById[node.id]) !== JSON.stringify(node)) document.update(node.id, () => node);
+                if (!samePrefabValue(state.nodesById[node.id], node)) document.update(node.id, () => node);
             };
             if (command.op === 'replace') {
                 const prefab = record(command.prefab, 'prefab');
@@ -192,11 +192,7 @@ export function evaluateSceneCommandState(initial: PrefabState, input: unknown):
                 case 'move': {
                     if (!parentId) throw new Error('Cannot move the scene root.');
                     lookup(command.parentId);
-                    let ancestor: string | null = command.parentId;
-                    while (ancestor) {
-                        if (ancestor === node.id) throw new Error('Cannot move a node into its own subtree.');
-                        ancestor = state.parentIdById[ancestor];
-                    }
+                    if (isDescendant(command.parentId, node.id, state.parentIdById)) throw new Error('Cannot move a node into its own subtree.');
                     if (parentId !== command.parentId) document.move(node.id, command.parentId, 'inside');
                     break;
                 }
@@ -213,7 +209,7 @@ export function evaluateSceneCommandState(initial: PrefabState, input: unknown):
                             command.unset.forEach((key: unknown) => {
                                 id(key);
                                 if (Object.hasOwn(command.properties, key)) throw new Error(`Cannot patch and unset "${key}" together.`);
-                                if (!Object.hasOwn(getComponents()[current.type]?.properties ?? {}, key)) throw new Error(`Unknown property "${key}".`);
+                                if (!Object.hasOwn(getComponent(current.type)?.properties ?? {}, key)) throw new Error(`Unknown property "${key}".`);
                                 delete properties[key];
                             });
                         }

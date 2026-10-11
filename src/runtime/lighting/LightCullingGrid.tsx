@@ -1,6 +1,5 @@
 import { useLayoutEffect, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { usePendingMounts } from '../prefabs/ProgressiveMount.js';
 import { PointLight, Scene, Vector3, type Object3D } from 'three';
 
 export type LightCullingGridOptions = {
@@ -19,7 +18,7 @@ const cellAt = (p: Vector3, size: number) => [Math.floor(p.x/size),Math.floor(p.
 export class LightCullingGridController {
     private sources = new Map<PointLight, Source>();
     private slots: Slot[] = [];
-    private preparing = false;
+    private warmShadows = true;
     private occupancyKey = '';
     private cameraCell: number[] = [];
     private ownLights = new Set<PointLight>();
@@ -33,6 +32,7 @@ export class LightCullingGridController {
     private watch(object: Object3D) {
         if (this.watched.has(object) || this.ownLights.has(object as PointLight)) return;
         this.watched.add(object);
+        this.warmShadows = true;
         object.addEventListener('childadded', this.added);
         object.addEventListener('childremoved', this.removed);
         const light = object as PointLight;
@@ -45,6 +45,7 @@ export class LightCullingGridController {
 
     private unwatch(object: Object3D) {
         if (!this.watched.delete(object)) return;
+        this.warmShadows = true;
         object.removeEventListener('childadded', this.added);
         object.removeEventListener('childremoved', this.removed);
         const light = object as PointLight;
@@ -56,9 +57,9 @@ export class LightCullingGridController {
         object.children.forEach(child => this.unwatch(child));
     }
 
-    update(cameraPosition: Vector3, preparing = false) {
-        const finishPreparation = this.preparing && !preparing;
-        this.preparing = preparing;
+    update(cameraPosition: Vector3) {
+        const warmShadows = this.warmShadows;
+        this.warmShadows = false;
         const size = Math.max(1, this.policy.cellSize ?? 24);
         const radius = Math.max(0, Math.min(4, Math.floor(this.policy.neighborRadius ?? 1)));
         this.cameraCell=cellAt(cameraPosition,size);
@@ -118,7 +119,7 @@ export class LightCullingGridController {
             const light=slot.light,source=slot.source;
             // Prepare dormant shadow passes as geometry streams, rather than compiling
             // all of their casters on the first cell crossing. No idle work afterward.
-            const warmSource = !source && (preparing || finishPreparation)
+            const warmSource = !source && warmShadows
                 ? sources.find(({source}) => !assigned.has(source) && shadowResolution(source.light) === shadowResolution(light))?.source
                 : null;
             if (warmSource) assigned.add(warmSource);
@@ -133,7 +134,7 @@ export class LightCullingGridController {
             const cameraChanged=shadow.camera.near!==authored.camera.near||shadow.camera.far!==authored.camera.far;
             shadow.camera.near=authored.camera.near;shadow.camera.far=authored.camera.far;
             if(cameraChanged) shadow.camera.updateProjectionMatrix();
-            shadow.autoUpdate=light.castShadow&&(source ? authored.autoUpdate : preparing);
+            shadow.autoUpdate=light.castShadow&&(source ? authored.autoUpdate : false);
             shadow.needsUpdate=light.castShadow&&(shadow.needsUpdate||!!warmSource||authored.needsUpdate||cameraChanged||!previous.equals(light.position));
             authored.needsUpdate=false;
         }
@@ -158,7 +159,6 @@ export class LightCullingGridController {
  */
 export function LightCullingGrid({cellSize = 24, neighborRadius = 1}: LightCullingGridOptions) {
     const scene = useThree(state => state.scene);
-    const preparing = usePendingMounts();
     const controller = useRef<LightCullingGridController | null>(null);
     const cameraPosition = useRef(new Vector3());
     useLayoutEffect(() => {
@@ -168,7 +168,7 @@ export function LightCullingGrid({cellSize = 24, neighborRadius = 1}: LightCulli
     }, [scene, cellSize, neighborRadius]);
     useFrame(({camera}) => {
         camera.getWorldPosition(cameraPosition.current);
-        controller.current?.update(cameraPosition.current, preparing);
+        controller.current?.update(cameraPosition.current);
     });
     return null;
 }

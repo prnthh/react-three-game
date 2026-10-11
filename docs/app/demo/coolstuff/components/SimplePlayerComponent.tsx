@@ -100,10 +100,10 @@ function Controller({ speed, jumpSpeed, radius, height, sensitivity, pushForce }
     return <PerspectiveCamera ref={camera} makeDefault position={[0, height / 2 - radius * 0.5, 0]} fov={75} near={0.05} far={500} />;
 }
 
-function View({ properties, children }: ComponentViewProps<Properties>) {
-    const { editMode, preparing } = useNode();
+function View({ properties, children, enabled }: ComponentViewProps<Properties>) {
+    const { editMode } = useNode();
     return <>
-        {editMode || preparing ? <mesh>
+        {editMode || !enabled ? <mesh>
             <capsuleGeometry args={[properties.radius, Math.max(0, properties.height - properties.radius * 2), 4, 12]} />
             <meshBasicMaterial color="#38bdf8" wireframe />
         </mesh> : <Controller {...properties} />}

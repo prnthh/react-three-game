@@ -12,7 +12,6 @@ type CompositionComponent = {
     component?: Component;
     properties: ComponentData["properties"];
     order: number;
-    renderWhenDisabled: boolean;
 };
 
 type AnalyzedNodeComponents = {
@@ -67,7 +66,6 @@ export function analyzeNodeComponents(node: GameObjectType, lookup = getComponen
             properties,
             order: registeredComponent.slot === 'geometry' || registeredComponent.slot === 'material'
                 ? 2 : registeredComponent.slot === 'object' ? 1 : 0,
-            renderWhenDisabled: registeredComponent.renderWhenDisabled === true,
         });
 
         if (!clickEvent.enabled && 'emitClickEvent' in registeredComponent.properties && properties.emitClickEvent) {
@@ -83,7 +81,7 @@ export function analyzeNodeComponents(node: GameObjectType, lookup = getComponen
     const geometry = composition.find(component => component.component?.slot === 'geometry');
     if (geometry && !composition.some(component => component.order === 1)) {
         composition.push({ key: '$mesh', View: MeshNode, properties: geometry.properties,
-            order: 1, renderWhenDisabled: true });
+            order: 1 });
     }
 
     composition.sort((left, right) => left.order - right.order);

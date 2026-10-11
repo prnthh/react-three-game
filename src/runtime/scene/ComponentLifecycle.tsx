@@ -33,10 +33,9 @@ export interface ComponentContext<P extends object = Record<string, unknown>> ex
 }
 
 /** @internal Effect/frame adapter for components that declare setup or update. */
-export function ComponentLifecycle<P extends object>({ component, properties, enabled, children }: ComponentViewProps<P> & {
+export function ComponentLifecycle<P extends object>({ component, properties, enabled }: ComponentViewProps<P> & {
     component: Component<P>;
 }) {
-    const View = component.View;
     const scene = useSceneRuntimeContext();
     const node = useGameObject();
     const prefab = usePrefab();
@@ -95,5 +94,5 @@ export function ComponentLifecycle<P extends object>({ component, properties, en
     }, [active, component, nodeId, node, prefab, scene, token]);
     // Negative priority preserves R3F's render ownership and precedes instance uploads.
     useFrame((_, delta) => { if (active) frame.current?.(delta); }, -1);
-    return View ? <View properties={properties} enabled={enabled}>{children}</View> : children;
+    return null;
 }

@@ -341,13 +341,13 @@ function Controller(settings: CharacterProperties) {
         <PointerLockControls camera={aim} domElement={gl.domElement} selector="#parkour-canvas canvas" />
     </>;
 }
-export default function CharacterView({ properties, children }: ComponentViewProps<CharacterProperties>) {
+export default function CharacterView({ properties, children, enabled }: ComponentViewProps<CharacterProperties>) {
     const { editMode } = useNode();
     const player = useMemo(createVisualRig, []);
     const replay = useMemo(createVisualRig, []);
     const visuals = useMemo(() => ({ player, replay, color: properties.color }), [player, replay, properties.color]);
     return <CharacterVisualsContext.Provider value={visuals}>
-        {!editMode && <Controller {...properties} />}
+        {enabled && !editMode && <Controller {...properties} />}
         {children}
     </CharacterVisualsContext.Provider>;
 }

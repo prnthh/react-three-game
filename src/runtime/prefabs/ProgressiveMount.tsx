@@ -28,25 +28,18 @@ export class MountQueue {
     lifetime: object | null = null;
     private waiting = new Set<MountTask>();
     private mounting = new Set<MountTask>();
-    private listeners = new Set<() => void>();
     private frame: number | null = null;
     constructor(private batchSize: number, private schedule = (callback: FrameRequestCallback) => requestAnimationFrame(callback), private cancel = (id: number) => cancelAnimationFrame(id)) {}
-    subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
     getSnapshot = () => this.waiting.size + this.mounting.size > 0;
-    private changed() { this.listeners.forEach(listener => listener()); }
 
     enqueue(activate: () => void, priority = () => 0) {
-        const wasPending = this.getSnapshot();
         const task = { activate, priority, distance: 0 };
         this.waiting.add(task);
-        if (!wasPending) this.changed();
         this.scheduleFrame();
         // The same cleanup cancels waiting work or acknowledges a committed mount.
         return () => {
-            const wasPending = this.getSnapshot();
             this.waiting.delete(task);
             this.mounting.delete(task);
-            if (wasPending && !this.getSnapshot()) this.changed();
             this.scheduleFrame();
         };
     }
@@ -77,6 +70,38 @@ export class MountQueue {
 
 const MountContext = createContext<{ queue: MountQueue | null; getCamera: () => Camera } | null>(null);
 
+/** Readiness belongs to a prefab subtree; unrelated placements share only the frame budget. */
+export class PrefabMountScope {
+    private pending = 1;
+    private committed = false;
+    private listeners = new Set<() => void>();
+    constructor(private parent: PrefabMountScope | null = null) {}
+    subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
+    getSnapshot = () => this.pending > 0;
+    private changed() { this.listeners.forEach(listener => listener()); }
+    commit() {
+        if (this.committed) return;
+        this.committed = true;
+        this.pending--;
+        this.changed();
+    }
+    begin() {
+        const releaseParent = this.parent?.begin();
+        this.pending++;
+        this.changed();
+        let released = false;
+        return () => {
+            if (released) return;
+            released = true;
+            this.pending--;
+            this.changed();
+            releaseParent?.();
+        };
+    }
+}
+
+export const PrefabMountContext = createContext<PrefabMountScope | null>(null);
+
 export function ProgressiveMountProvider({ batchSize, children }: { batchSize: number; children: ReactNode }) {
     const get = useThree(state => state.get);
     const queue = useMemo(() => Number.isFinite(batchSize) && batchSize > 0 ? new MountQueue(Math.max(1, Math.floor(batchSize))) : null, [batchSize]);
@@ -93,6 +118,7 @@ export function useProgressiveMount(defer: boolean, position: readonly [number, 
     const context = useContext(MountContext);
     const queue = context?.queue;
     const parent = useContext(MountParentContext);
+    const scope = useContext(PrefabMountContext);
     const [admitted, setAdmitted] = useState(false);
     const ready = !queue || !defer || admitted;
     const [x, y, z] = position;
@@ -100,20 +126,24 @@ export function useProgressiveMount(defer: boolean, position: readonly [number, 
     useLayoutEffect(() => {
         if (ready || !queue || !context) return;
         const point = new Vector3(), cameraPosition = new Vector3();
-        return queue.enqueue(() => setAdmitted(true), () => {
+        const release = scope?.begin();
+        const acknowledge = queue.enqueue(() => setAdmitted(true), () => {
             point.set(x, y, z);
             parent?.current?.localToWorld(point);
             context.getCamera().getWorldPosition(cameraPosition);
             return point.distanceToSquared(cameraPosition);
         });
-    }, [queue, ready, parent, context, x, y, z]);
+        return () => { acknowledge(); release?.(); };
+    }, [queue, ready, parent, context, scope, x, y, z]);
     return ready;
 }
 
 const noSubscribe = () => () => {};
 const noPending = () => false;
-export function usePendingMounts(enabled = true) {
-    const queue = useContext(MountContext)?.queue;
-    return useSyncExternalStore(enabled && queue ? queue.subscribe : noSubscribe,
-        enabled && queue ? queue.getSnapshot : noPending, noPending);
+/** Internal readiness signal, including nested prefab roots. */
+export function usePrefabMountPending(enabled = true) {
+    const scope = useContext(PrefabMountContext);
+    const mounting = useContext(MountContext)?.queue && enabled ? scope : null;
+    return useSyncExternalStore(mounting ? mounting.subscribe : noSubscribe,
+        mounting ? mounting.getSnapshot : noPending, noPending);
 }

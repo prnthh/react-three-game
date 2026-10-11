@@ -167,8 +167,8 @@ function GeometryComponentView({ properties, children }: ComponentViewProps<Geom
 
 const GeometryComponent: Component<GeometryProperties> = {
     name: 'Geometry',
-    description: "Add a primitive mesh; pair with Material on the same node. Box args are [width,height,depth].",
     renderWhenDisabled: true,
+    description: "Add a primitive mesh; pair with Material on the same node. Box args are [width,height,depth].",
     slot: 'geometry',
     View: GeometryComponentView,
     properties: {

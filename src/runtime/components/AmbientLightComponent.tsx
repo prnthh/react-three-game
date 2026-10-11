@@ -22,9 +22,9 @@ function AmbientLightComponentView({ properties, children }: ComponentViewProps<
 
 const AmbientLightComponent: Component<AmbientLightProperties> = {
     name: 'AmbientLight',
+    renderWhenDisabled: true,
     description: "Add uniform fill lighting to the scene using color and intensity. Position has no effect; this light does not cast shadows.",
     category: 'lighting',
-    renderWhenDisabled: true,
     View: AmbientLightComponentView,
     properties: {
         color: { type: 'color', default: ambientLightDefaults.color },

@@ -1,9 +1,10 @@
 import { useLayoutEffect, useMemo, useState } from 'react';
-import { Box3, BoxGeometry, MeshBasicMaterial, Quaternion, Vector3 } from 'three';
-import { createNodeComponentType, findComponent, usePendingMounts, useSceneComponents, useNode, useGameObject, usePrefab, useRegisterNodeComponent, useSharedGeometryResource, useSharedMaterialResource, type Component, type ComponentViewProps, type GameObject } from 'react-three-game/viewer';
+import { Box3, BoxGeometry, MeshBasicMaterial, Quaternion, Vector3, type Object3D } from 'three';
+import { createNodeComponentType, findComponent, useSceneComponents, useNode, useGameObject, usePrefab, useRegisterNodeComponent, useSharedGeometryResource, useSharedMaterialResource, type Component, type ComponentViewProps, type GameObject } from 'react-three-game/viewer';
 import { CollisionWorld, type Surface } from '../collision';
 
-export const COLLISION_SURFACE = createNodeComponentType<{ bounds(): Surface | null }>('CollisionSurface');
+type CollisionSurface = { belongsTo(root: Object3D | null): boolean; bounds(): Surface | null };
+export const COLLISION_SURFACE = createNodeComponentType<CollisionSurface>('CollisionSurface');
 type BoxSize = [number, number, number];
 
 /** Collision dimensions come only from the authored box geometry. */
@@ -32,7 +33,13 @@ function CollisionSurfaceView({ children, enabled }: ComponentViewProps) {
     const prefab = usePrefab();
     const { editMode, nodeId } = useNode();
     const size = resolveCollisionSurfaceSize(prefab.get(nodeId));
-    const capability = useMemo(() => ({ bounds() {
+    const capability = useMemo(() => ({ belongsTo(root: Object3D | null) {
+        if (!root) return false;
+        for (let parent = object.transform; parent; parent = parent.parent) {
+            if (parent === root) return true;
+        }
+        return false;
+    }, bounds() {
         const transform = object.transform;
         if (!transform || !size) return null;
         transform.updateWorldMatrix(true, false);
@@ -61,25 +68,32 @@ function CollisionSurfaceView({ children, enabled }: ComponentViewProps) {
 }
 export const CollisionSurfaceComponent: Component = {
     name: 'CollisionSurface',
-    category: 'physics', renderWhenDisabled: true, description: 'Collision-only box inferred from this node\'s geometry and transform.',
+    renderWhenDisabled: true,
+    category: 'physics', description: 'Collision-only box inferred from this node\'s geometry and transform.',
     properties: {},
     View: CollisionSurfaceView,
 };
 
 /** One static physics world per consumer; ready after collider registration finishes. */
 export function useCollisionWorld() {
-    const pending = usePendingMounts();
+    const prefab = usePrefab();
     const components = useSceneComponents(COLLISION_SURFACE);
+    const next = components.map(component => component.value).filter(surface => surface.belongsTo(prefab.root));
+    const [surfaces, setSurfaces] = useState(next);
+    // The registry is scene-wide, but sibling prefab colliders must not reset this player.
+    if (next.length !== surfaces.length || next.some((surface, index) => surface !== surfaces[index])) {
+        setSurfaces(next);
+    }
     const [world, setWorld] = useState<CollisionWorld | null>(null);
     useLayoutEffect(() => {
-        const bounds = pending ? [] : components.map(component => component.value.bounds());
-        if (pending || bounds.some(surface => surface === null)) {
+        const bounds = surfaces.map(surface => surface.bounds());
+        if (bounds.some(surface => surface === null)) {
             setWorld(null);
             return;
         }
         const collision = new CollisionWorld(bounds as Surface[]);
         setWorld(collision);
         return () => collision.dispose();
-    }, [pending, components]);
-    return pending ? null : world;
+    }, [surfaces]);
+    return world;
 }

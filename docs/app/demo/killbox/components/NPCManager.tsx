@@ -830,7 +830,7 @@ function LoadedNPCInstance({
 
 const NPCSystem = forwardRef<NPCManagerRef, NPCSystemProps>(function NPCSystem({ models, settings, player }, ref) {
     const api = useCrashcat();
-    const [npcs] = useState(() => models.map(({ nodeId: id, value: model }) => {
+    const [npcs] = useState(() => models.map(({ key: id, value: model }) => {
         model.object.updateWorldMatrix(true, false);
         model.object.getWorldPosition(objectWorldPosition);
         return createStoredNPC({

@@ -9,7 +9,7 @@ import { MaterialComponent } from '../../src/viewer/index.ts';
 import { ConcreteMaterialComponent, createConcreteMaterialOverrides } from '../app/demo/parkour/components/ConcreteMaterialComponent.tsx';
 import { act, createElement as h } from 'react';
 import { PrefabRoot, createPrefabStore, registerComponent, useSceneComponents } from 'react-three-game/viewer';
-import { CollisionSurfaceComponent, COLLISION_SURFACE, resolveCollisionSurfaceSize } from '../app/demo/parkour/components/CollisionSurfaceComponent.tsx';
+import { CollisionSurfaceComponent, COLLISION_SURFACE, resolveCollisionSurfaceSize, useCollisionWorld } from '../app/demo/parkour/components/CollisionSurfaceComponent.tsx';
 
 describe('Geometry', () => {
     test('ruin displacement is repeatable, bounded and keeps seams closed without changing its source',()=>{
@@ -88,6 +88,30 @@ describe('Materials', () => {
 describe('Collision lifecycle', () => {
     extend({Group,Mesh});
     globalThis.IS_REACT_ACT_ENVIRONMENT=true;
+    test('loading sibling prefab colliders preserves the active collision world', async t => {
+        registerComponent(CollisionSurfaceComponent);
+        const canvas = { width: 100, height: 100, style: {}, addEventListener() {}, removeEventListener() {} };
+        const root = createRoot(canvas);
+        await root.configure({ gl: { render() {}, setSize() {}, setPixelRatio() {}, domElement: canvas },
+            size: { width: 100, height: 100, top: 0, left: 0 }, frameloop: 'never' });
+        t.after(async () => { await act(async () => root.unmount()); });
+        const document = { root: { id: 'root', children: [{ id: 'floor', components: {
+            collision: { type: 'CollisionSurface', properties: {} },
+            geometry: { type: 'Geometry', properties: { geometryType: 'box', args: [10, 1, 10] } },
+        } }] } };
+        let world;
+        function Probe() { world = useCollisionWorld(); return null; }
+        const render = async sibling => act(async () => { root.render(h('group', null,
+            h(PrefabRoot, { key: 'a', id: 'a', data: document }, h(Probe)),
+            sibling && h(PrefabRoot, { key: 'b', id: 'b', data: document }))); });
+        await render(false);
+        assert.ok(world);
+        const original = world;
+        await render(true);
+        assert.equal(world, original);
+        await render(false);
+        assert.equal(world, original);
+    });
     test('disabling an area unregisters collisions without remounting its mesh subtree',async t=>{
      const previousWindow=globalThis.window;globalThis.window={addEventListener(){},removeEventListener(){}};
      AudioContext.setContext({createGain:()=>({connect(){}}),destination:{},listener:{}});

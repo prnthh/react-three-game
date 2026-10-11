@@ -88,9 +88,9 @@ function PointLightView({ properties, children }: ComponentViewProps<PointLightP
 
 const PointLightComponent: Component<PointLightProperties> = {
     name: 'PointLight',
+    renderWhenDisabled: true,
     description: "Emit light in all directions from this node. Position with Transform; set distance for a finite range and castShadow when shadows are needed.",
     category: 'lighting',
-    renderWhenDisabled: true,
     View: PointLightView,
     properties: {
         color: { type: 'color', default: pointLightDefaults.color },

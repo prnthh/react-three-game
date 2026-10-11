@@ -93,8 +93,8 @@ function BufferGeometryComponentView({ properties, children }: ComponentViewProp
 
 const BufferGeometryComponent: Component<BufferGeometryProperties> = {
     name: 'BufferGeometry',
-    description: "Build a mesh from vertex arrays; pair with Material on the same node. Supply positions as xyz triples and indices as triangle vertex indices.",
     renderWhenDisabled: true,
+    description: "Build a mesh from vertex arrays; pair with Material on the same node. Supply positions as xyz triples and indices as triangle vertex indices.",
     slot: 'geometry',
     View: BufferGeometryComponentView,
     properties: {

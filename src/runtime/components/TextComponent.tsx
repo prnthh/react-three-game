@@ -15,9 +15,9 @@ const TextComponentView = lazy(() => import("./TextComponentView.js"));
 
 const TextComponent: Component<TextProperties> = {
     name: 'Text',
+    renderWhenDisabled: true,
     description: "Render text at this node. Set text, font and size; use Transform to place and orient it. Size and width are in scene units.",
     slot: 'object',
-    renderWhenDisabled: true,
     View: TextComponentView,
     properties: {
         text: { type: 'string', default: 'Hello World' },

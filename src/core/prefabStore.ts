@@ -46,15 +46,14 @@ function removeSubtreeFromGraph(
         delete next.childIdsById[nodeId];
         delete next.parentIdById[nodeId];
     });
-
-    return ids;
 }
 
 export function createPrefabStore(prefab: Prefab | PrefabState): PrefabStoreApi {
     const initialState = 'nodesById' in prefab ? prefab : normalizePrefab(prefab);
     let draft: PrefabStoreState | null = null;
     let owned = new WeakSet<object>();
-    // Only transaction-owned containers may be mutated. Committed snapshots stay immutable.
+    // Copy each container once per batch instead of once per edit. Only those
+    // batch-owned copies may be mutated; undo snapshots stay immutable.
     function writable<T extends object>(value: T): T {
         if (draft && owned.has(value)) return value;
         const copy = (Array.isArray(value) ? [...value] : { ...value }) as T;
@@ -68,15 +67,9 @@ export function createPrefabStore(prefab: Prefab | PrefabState): PrefabStoreApi 
     });
     const store = createStore<PrefabStoreState>()(subscribeWithSelector((publish, read) => {
         const get = () => draft ?? read();
-        const deriveMaterials = (nodesById: PrefabState['nodesById'], previous: PrefabState['materials']) => {
-            const materials = collectMaterialDefinitions(nodesById);
-            return Object.keys(materials).length === Object.keys(previous).length
-                && Object.entries(materials).every(([id, material]) => previous[id] === material)
-                ? previous : materials;
-        };
         const set = (patch: Partial<PrefabStoreState>) => {
             if (patch.nodesById && !draft) {
-                patch.materials = deriveMaterials(patch.nodesById, get().materials);
+                patch.materials = collectMaterialDefinitions(patch.nodesById);
             }
             if (patch.nodesById || patch.childIdsById) {
                 const before = get();
@@ -117,7 +110,7 @@ export function createPrefabStore(prefab: Prefab | PrefabState): PrefabStoreApi 
                 }
                 if (next !== before) {
                     if (next.nodesById !== before.nodesById) {
-                        next = { ...next, materials: deriveMaterials(next.nodesById, before.materials) };
+                        next = { ...next, materials: collectMaterialDefinitions(next.nodesById) };
                     }
                     publish(next);
                 }
@@ -233,12 +226,11 @@ export function createPrefabStore(prefab: Prefab | PrefabState): PrefabStoreApi 
                     ? targetId
                     : state.parentIdById[targetId];
                 if (!destinationParentId) return;
-                if (destinationParentId === draggedId || isDescendant(destinationParentId, draggedId, state.parentIdById)) return;
 
                 const nextChildIdsById = writable(state.childIdsById);
                 const nextParentIdById = writable(state.parentIdById);
                 nextParentIdById[draggedId] = destinationParentId;
-                const sourceChildren = [...(nextChildIdsById[currentParentId] ?? [])].filter(childId => childId !== draggedId);
+                const sourceChildren = (nextChildIdsById[currentParentId] ?? []).filter(childId => childId !== draggedId);
                 nextChildIdsById[currentParentId] = sourceChildren;
 
                 if (position === "inside") {

@@ -1,4 +1,4 @@
-import { normalizePrefab, reconcilePrefabState } from '../../src/core/prefab.ts';
+import { collectMaterialDefinitions, normalizePrefab } from '../../src/core/prefab.ts';
 import test, { describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { createPrefabStore } from "../../src/core/prefabStore.ts";
@@ -155,17 +155,41 @@ describe('Document edits', () => {
     });
 });
 
-test('prefab reconciliation preserves unchanged selector identities and removes deleted records', () => {
-    const before=normalizePrefab({root:{id:'root',children:[{id:'a',name:'A'},{id:'b',name:'B'}]}});
-    const next=normalizePrefab({root:{id:'root',children:[{id:'a',name:'changed'},{id:'b',name:'B'}]}});
-    const reconciled=reconcilePrefabState(before,next);
-    assert.equal(reconciled.nodesById.b,before.nodesById.b);
-    assert.equal(reconciled.nodesById.root,before.nodesById.root);
-    assert.notEqual(reconciled.nodesById.a,before.nodesById.a);
-    assert.equal(reconciled.childIdsById,before.childIdsById);
-    assert.equal(reconciled.materials,before.materials);
-    assert.equal(reconciled.parentIdById,before.parentIdById);
-    const removed=reconcilePrefabState(reconciled,normalizePrefab({root:{id:'root',children:[{id:'b',name:'B'}]}}));
-    assert.equal(removed.nodesById.a,undefined);
-    assert.deepEqual(removed.childIdsById.root,['b']);
+test('restoring a document replaces its records and removes deleted nodes', () => {
+    const store = createPrefabStore({ root: { id: 'root', children: [{ id: 'a' }, { id: 'b' }] } });
+    store.getState().restoreState(normalizePrefab({ root: { id: 'root', children: [{ id: 'b', name: 'updated' }] } }));
+    assert.equal(store.getState().nodesById.a, undefined);
+    assert.equal(store.getState().nodesById.b.name, 'updated');
+    assert.deepEqual(store.getState().childIdsById.root, ['b']);
+});
+
+test('material indexing reuses unchanged components and reads replacement data', () => {
+    const component = { type: 'Material', properties: { name: 'paint', color: '#ff0000' } };
+    const nodes = { owner: { id: 'owner', components: { material: component } } };
+    const first = collectMaterialDefinitions(nodes).paint;
+    assert.equal(first.color, '#ff0000');
+    assert.equal(collectMaterialDefinitions(nodes).paint, first);
+    nodes.owner.components.material = { ...component, properties: { ...component.properties, color: '#00ff00' } };
+    assert.equal(collectMaterialDefinitions(nodes).paint.color, '#00ff00');
+});
+
+test('material indexing preserves first-definition precedence across edits', () => {
+    const store = createPrefabStore({ root: { id: 'root', children: [
+        { id: 'reference', components: { material: { type: 'Material', properties: { name: 'paint' } } } },
+        { id: 'owner', components: { material: { type: 'Material', properties: { name: 'paint', color: '#ff0000', normalScale: [1, 1] } } } },
+        { id: 'fallback', components: { material: { type: 'Material', properties: { name: 'paint', color: '#0000ff' } } } },
+        { id: 'other', components: { material: { type: 'Material', properties: { name: 'other', color: '#ffffff' } } } },
+    ] } });
+    const before = store.getState();
+    assert.equal(before.materials.paint.color, '#ff0000');
+    before.updateNode('owner', node => ({ ...node, components: { material: {
+        type: 'Material', properties: { name: 'paint', color: '#00ff00' },
+    } } }));
+    assert.equal(store.getState().materials.paint.color, '#00ff00');
+    assert.equal(before.materials.paint.color, '#ff0000', 'committed snapshots remain unchanged');
+    assert.deepEqual(store.getState().materials.other, before.materials.other);
+    before.deleteNode('owner');
+    assert.equal(store.getState().materials.paint.color, '#0000ff');
+    before.deleteNode('fallback');
+    assert.equal(store.getState().materials.paint, undefined);
 });

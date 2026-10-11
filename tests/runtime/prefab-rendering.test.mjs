@@ -140,7 +140,7 @@ test('switching edit mode preserves composed views and skips unrelated renders',
     const observedModes = [];
     const observedSelection = [];
     registerComponent({
-        name: 'ModeSwitchViewProbe',
+        name: 'ModeSwitchViewProbe', renderWhenDisabled: true,
         properties: {},
         View({ children }) {
             renders++;
@@ -204,8 +204,8 @@ test('switching edit mode preserves composed views and skips unrelated renders',
 
     let state;
     const onSelect = () => {};
-    const render = async (editMode, selectedId = null) => act(async () => {
-        state = root.render(h(PrefabRoot, { store, editMode, selectedId, onSelect }));
+    const render = async (editMode, selectedId = null, enabled = true) => act(async () => {
+        state = root.render(h(PrefabRoot, { store, editMode, selectedId, onSelect, enabled }));
     });
     await render(true);
     const child = state.getState().scene.getObjectByName('child');
@@ -216,9 +216,11 @@ test('switching edit mode preserves composed views and skips unrelated renders',
     assert.ok(viewObject);
     assert.ok(material);
     assert.equal(mounts, 1);
-    assert.equal(renders, 1);
-    assert.equal(pickReaderRenders, 1);
-    assert.equal(gameObjectReaderRenders, 1);
+    const initialRenders = renders;
+    const initialPickReaderRenders = pickReaderRenders;
+    const initialObjectReaderRenders = gameObjectReaderRenders;
+    const initialModes = [...observedModes];
+    const initialSelection = [...observedSelection];
 
     await render(false);
     await render(true);
@@ -227,14 +229,71 @@ test('switching edit mode preserves composed views and skips unrelated renders',
     child.traverse(object => { if (object.isMesh) assert.equal(object.material, material); });
     assert.equal(mounts, 1, 'mode changes preserve composed views');
     assert.equal(unmounts, 0);
-    assert.equal(renders, 1, 'views that do not use mode skip mode-only renders');
-    assert.equal(pickReaderRenders, 1, 'edit-pick consumers keep a stable callback across mode changes');
-    assert.equal(gameObjectReaderRenders, 1, 'object lookup does not subscribe to mode');
-    assert.deepEqual(observedModes, [true, false, true], 'mode readers still update');
-    assert.deepEqual(observedSelection, [false]);
+    assert.equal(renders, initialRenders, 'views that do not use mode skip mode-only renders');
+    assert.equal(pickReaderRenders, initialPickReaderRenders, 'edit-pick consumers keep a stable callback across mode changes');
+    assert.equal(gameObjectReaderRenders, initialObjectReaderRenders, 'object lookup does not subscribe to mode');
+    assert.deepEqual(observedModes, [...initialModes, false, true], 'mode readers still update');
+    assert.deepEqual(observedSelection, initialSelection);
 
     await render(true, 'child');
     await render(true);
-    assert.deepEqual(observedSelection, [false, true, false], 'selection readers still update');
-    assert.deepEqual(observedModes, [true, false, true], 'mode readers skip selection-only updates');
+    assert.deepEqual(observedSelection, [...initialSelection, true, false], 'selection readers still update');
+    assert.deepEqual(observedModes, [...initialModes, false, true], 'mode readers skip selection-only updates');
+
+    await render(false, null, false);
+    assert.equal(state.getState().scene.getObjectByName('mode-switch-view'), viewObject);
+    assert.equal(mounts, 1, 'disabled Views and their descendants stay mounted');
+    assert.equal(unmounts, 0);
+    await render(false);
+    assert.equal(state.getState().scene.getObjectByName('mode-switch-view'), viewObject);
+    assert.equal(mounts, 1, 'reenabling does not rebuild the scene graph');
+});
+
+test('Views choose their disabled lifetime independently of setup/update activation', async t => {
+    const { useEffect } = await import('react');
+    const { PrefabRoot } = await import('../../src/runtime/prefabs/PrefabRoot.tsx');
+    extend({ Group });
+    globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+    const counts = {};
+    for (const persistent of [false, true]) {
+        const name = persistent ? 'PersistentLifecycleView' : 'DefaultLifecycleView';
+        const count = counts[name] = { mounts: 0, unmounts: 0, starts: 0, stops: 0, updates: 0 };
+        registerComponent({ name, renderWhenDisabled: persistent, properties: {},
+            setup() { count.starts++; return () => { count.stops++; }; },
+            update() { count.updates++; },
+            View({ children }) {
+                useEffect(() => { count.mounts++; return () => { count.unmounts++; }; }, []);
+                return h('group', { name }, children);
+            },
+        });
+    }
+    const data = { root: { id: 'root', children: Object.keys(counts).map(name => ({
+        id: name, components: { behavior: { type: name, properties: {} } },
+    })) } };
+    const canvas = { width: 100, height: 100, style: {}, addEventListener() {}, removeEventListener() {} };
+    const root = createRoot(canvas);
+    await root.configure({ gl: { render() {}, setSize() {}, setPixelRatio() {}, domElement: canvas },
+        size: { width: 100, height: 100, top: 0, left: 0 }, frameloop: 'never' });
+    t.after(async () => { await act(async () => root.unmount()); });
+    let state;
+    const render = async enabled => act(async () => { state = root.render(h(PrefabRoot, { data, enabled })); });
+    await render(false);
+    assert.equal(counts.DefaultLifecycleView.mounts, 0);
+    assert.equal(counts.PersistentLifecycleView.mounts, 1);
+    await render(true);
+    const persistentObject = state.getState().scene.getObjectByName('PersistentLifecycleView');
+    await act(async () => state.getState().advance(1, false));
+    await render(false);
+    await act(async () => state.getState().advance(2, false));
+    for (const count of Object.values(counts)) {
+        assert.equal(count.starts, 1);
+        assert.equal(count.stops, 1);
+        assert.equal(count.updates, 1, 'disabled behavior does not run');
+    }
+    assert.equal(counts.DefaultLifecycleView.unmounts, 1);
+    assert.equal(counts.PersistentLifecycleView.unmounts, 0);
+    await render(true);
+    assert.equal(state.getState().scene.getObjectByName('PersistentLifecycleView'), persistentObject);
+    assert.equal(counts.DefaultLifecycleView.mounts, 2);
+    assert.equal(counts.PersistentLifecycleView.mounts, 1);
 });

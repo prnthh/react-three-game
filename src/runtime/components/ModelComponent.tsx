@@ -185,8 +185,8 @@ function ModelComponentView(props: ComponentViewProps<ModelProperties>) {
 const ModelComponent: Component<ModelProperties> = {
     dependencies: properties => properties.filename ? [{ kind: 'model', path: properties.filename }] : [],
     name: 'Model',
-    description: "Load a model asset with its embedded materials. Set filename; use SkinnedMesh for skeletal animation. A sibling Material does not override the loaded materials.",
     renderWhenDisabled: true,
+    description: "Load a model asset with its embedded materials. Set filename; use SkinnedMesh for skeletal animation. A sibling Material does not override the loaded materials.",
     slot: 'object',
     View: ModelComponentView,
     properties: {

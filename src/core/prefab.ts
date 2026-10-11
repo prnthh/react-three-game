@@ -60,9 +60,11 @@ const MATERIAL_DEFAULTS: Record<string, unknown> = {
 	side: "FrontSide",
 };
 
-function samePrefabValue(left: unknown, right: unknown): boolean {
-	if (Array.isArray(left) && Array.isArray(right)) {
-		return left.length === right.length
+/** @internal Compare prefab data by value, independently of object key order. */
+export function samePrefabValue(left: unknown, right: unknown): boolean {
+	if (left === right) return true;
+	if (Array.isArray(left) || Array.isArray(right)) {
+		return Array.isArray(left) && Array.isArray(right) && left.length === right.length
 			&& left.every((value, index) => samePrefabValue(value, right[index]));
 	}
 
@@ -70,7 +72,7 @@ function samePrefabValue(left: unknown, right: unknown): boolean {
 		const leftEntries = Object.entries(left);
 		const rightRecord = right as Record<string, unknown>;
 		return leftEntries.length === Object.keys(rightRecord).length
-			&& leftEntries.every(([key, value]) => samePrefabValue(value, rightRecord[key]));
+			&& leftEntries.every(([key, value]) => Object.hasOwn(rightRecord, key) && samePrefabValue(value, rightRecord[key]));
 	}
 
 	return left === right;
@@ -110,19 +112,22 @@ export function getMaterialDefinition(properties: MaterialComponentProperties): 
     return definition as PrefabMaterial | null;
 }
 
-/** A derived authoring index, never serialized as a separate material table. */
 const materialDefinitionCache = new WeakMap<ComponentData, PrefabMaterial | null>();
 
+/** Derive the authoring index from immutable document snapshots. */
 export function collectMaterialDefinitions(nodes: Record<string, PrefabNodeRecord>): Record<string, PrefabMaterial> {
     const materials: Record<string, PrefabMaterial> = {};
     for (const node of Object.values(nodes)) for (const component of Object.values(node.components ?? {})) {
         if (component?.type !== 'Material') continue;
         const { name: materialName } = component.properties;
+        if (!materialName || Object.hasOwn(materials, materialName)) continue;
+        // Document edits replace components; unchanged snapshots share definitions.
         if (!materialDefinitionCache.has(component)) {
             materialDefinitionCache.set(component, getMaterialDefinition(component.properties));
         }
         const definition = materialDefinitionCache.get(component);
-        if (materialName && definition && !Object.hasOwn(materials, materialName)) materials[materialName] = definition;
+        if (!definition) continue;
+        materials[materialName] = definition;
     }
     return materials;
 }
@@ -338,7 +343,7 @@ export function collectPackedPrefabs(
         }
         const definition = { id: node.id, name: node.name, root };
         const old = previous?.[node.id];
-        result[node.id] = old && JSON.stringify(old) === JSON.stringify(definition) ? old : definition;
+        result[node.id] = old && samePrefabValue(old, definition) ? old : definition;
     }
     if (!Object.keys(result).length) return undefined;
     if (previous && Object.keys(result).length === Object.keys(previous).length
@@ -515,27 +520,4 @@ export function isDescendant(
 	}
 
 	return false;
-}
-
-
-/** Preserve selector identities when a new prefab version changes only part of the document. */
-export function reconcilePrefabState(previous: PrefabState, next: PrefabState): PrefabState {
-    const share = <T,>(before: Record<string, T>, after: Record<string, T>): Record<string, T> => {
-        let unchanged = Object.keys(before).length === Object.keys(after).length;
-        const result: Record<string, T> = {};
-        for (const [id, value] of Object.entries(after)) {
-            const same = Object.hasOwn(before, id)
-                && (before[id] === value || JSON.stringify(before[id]) === JSON.stringify(value));
-            result[id] = same ? before[id] : value;
-            unchanged = unchanged && same;
-        }
-        return unchanged ? before : result;
-    };
-    return {
-        ...next,
-        nodesById: share(previous.nodesById, next.nodesById),
-        childIdsById: share(previous.childIdsById, next.childIdsById),
-        parentIdById: share(previous.parentIdById, next.parentIdById),
-        materials: share(previous.materials, next.materials),
-    };
 }

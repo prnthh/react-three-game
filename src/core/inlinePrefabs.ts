@@ -1,6 +1,8 @@
 import { normalizePrefab, type PrefabState } from './prefab.js';
 import type { Prefab } from './types.js';
 
+// A replaced definition pool invalidates its normalized documents together.
+// Stable document identities also keep unchanged PrefabRef placements mounted.
 const documents = new WeakMap<Record<string, Prefab>, Map<string, PrefabState>>();
 
 /** Packed nodes share normalized definitions; each placement owns its runtime store. */

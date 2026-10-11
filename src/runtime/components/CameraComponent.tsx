@@ -116,8 +116,8 @@ function CameraComponentView({ properties, enabled, children }: ComponentViewPro
 }
 
 const CameraComponent: Component<CameraProperties> = {
-    renderWhenDisabled: true,
     name: 'Camera',
+    renderWhenDisabled: true,
     description: "Add a playback camera; position and rotate its node with Transform. An enabled camera becomes active in Play and looks along local -Z. The editor keeps its own camera.",
     category: 'camera',
     slot: 'object',

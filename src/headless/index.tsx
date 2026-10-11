@@ -48,7 +48,7 @@ function Committed({ ready }: { ready(): void }) {
 }
 
 /** Construct an authored scene through R3F, without a DOM root or a GPU.
- * Gameplay is disabled; custom renderWhenDisabled views must support this host.
+ * Gameplay is disabled; custom renderWhenDisabled Views must support this host.
  */
 export async function createHeadlessScene(prefab: Prefab, options: HeadlessSceneOptions = {}): Promise<HeadlessScene> {
     return mountHeadlessScene(prefab, options, getComponent);

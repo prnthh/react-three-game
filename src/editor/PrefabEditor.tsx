@@ -1,3 +1,4 @@
+import { createEditorToolController, EditorToolsContext } from "./tools/EditorTools.js";
 import { loadAssetManifest } from '../runtime/assets/assetManifest.js';
 import { downloadBlob, downloadURL } from '../browser/index.js';
 import { isExternalPath, withBasePath } from '../runtime/assets/assetPaths.js';
@@ -260,6 +261,14 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
     const controlsRef = useRef<OrbitControlsImpl | null>(null);
     const transformControlsRef = useRef<TransformControlsImpl | null>(null);
     const isEditMode = mode === PrefabEditorMode.Edit;
+    const editModeRef = useRef(isEditMode);
+    editModeRef.current = isEditMode;
+    const [editorTools] = useState(() => createEditorToolController(id => prefabStore.getState().nodesById[id], () => editModeRef.current));
+    const activeTool = useSyncExternalStore(editorTools.subscribe, editorTools.getSnapshot, editorTools.getSnapshot);
+    useLayoutEffect(() => { editorTools.validate(); }, [editorTools, isEditMode]);
+    useEffect(() => editorTools.connect(), [editorTools]);
+    useEffect(() => prefabStore.subscribe(editorTools.validate), [prefabStore, editorTools]);
+    useEffect(() => () => editorTools.end(), [editorTools]);
 
     useEffect(() => {
         let active = true;
@@ -280,37 +289,40 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
     useLayoutEffect(() => history.setEnabled(isEditMode), [history, isEditMode]);
 
     const setSelection = useCallback((nodeId: string | null) => {
+        if (editorTools.getSnapshot()) return;
         const nextNode = nodeId ? prefabStore.getState().nodesById[nodeId] : null;
         if (nextNode?.locked) {
             return;
         }
 
         setSelectedId(nodeId);
-    }, [prefabStore]);
+    }, [prefabStore, editorTools]);
 
     const updateMode = useCallback((nextMode: PrefabEditorMode) => {
-        if (nextMode === PrefabEditorMode.Play) setSelectedId(null);
+        if (nextMode === PrefabEditorMode.Play) { setSelectedId(null); editorTools.end(); }
         setMode(nextMode);
-    }, []);
+    }, [editorTools]);
 
     const resetScene = useCallback(async () => {
+        editorTools.end();
         await onResetScene?.();
         detachTransformControls();
         setSelectedId(null);
         setRuntimeVersion(version => version + 1);
         await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-    }, [detachTransformControls, onResetScene]);
+    }, [detachTransformControls, onResetScene, editorTools]);
 
     const toggleMode = () => {
         startTransition(() => updateMode(isEditMode ? PrefabEditorMode.Play : PrefabEditorMode.Edit));
     };
 
     const loadPrefab = useCallback((nextPrefab: Prefab) => {
+        editorTools.end();
         detachTransformControls();
         prefabStore.getState().replacePrefab(nextPrefab);
         setSelectedId(null);
         history.clear();
-    }, [detachTransformControls, history, prefabStore]);
+    }, [detachTransformControls, history, prefabStore, editorTools]);
 
     useLayoutEffect(() => {
         if (providedPrefabRef.current === prefab) return;
@@ -336,13 +348,15 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
     }, [prefabStore, selectedId]);
 
     const undo = useCallback(() => {
+        editorTools.cancelInteraction();
         detachTransformControls();
         history.undo();
-    }, [detachTransformControls, history]);
+    }, [detachTransformControls, history, editorTools]);
     const redo = useCallback(() => {
+        editorTools.cancelInteraction();
         detachTransformControls();
         history.redo();
-    }, [detachTransformControls, history]);
+    }, [detachTransformControls, history, editorTools]);
 
     useEffect(() => {
         if (!isEditMode) return;
@@ -395,6 +409,7 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
     }, [clearSelection, getRoot]);
 
     const handleFocusNode = useCallback((nodeId: string) => {
+        editorTools.cancelInteraction();
         const object = getObject(nodeId);
         const controls = controlsRef.current;
         const camera = controls?.object;
@@ -402,7 +417,7 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
         if (!object || !controls || !camera) return;
 
         focusCameraOnObject(object, camera, controls.target, () => controls.update?.());
-    }, [getObject]);
+    }, [getObject, editorTools]);
 
     const handleTransformChange = () => {
         if (!selectedId) return;
@@ -654,7 +669,7 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
         },
         selectedId: () => selectedId,
         transaction: history.transaction,
-        beforeCommit: detachTransformControls,
+        beforeCommit: () => { editorTools.cancelInteraction(); detachTransformControls(); },
         undo, redo,
         history: history.getSnapshot,
         canSave: () => Boolean(onSaveScene),
@@ -790,6 +805,7 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
 
     return {
         basePath, prefabStore, prefabValue, sceneValue, editorRefValue, runtimeRef, runtimeVersion, resetScene,
+        editorTools, activeTool,
         isEditMode, selectedId, setSelection, onPointerEvent, getRoot,
         canvasRef, canvasStateRef, dropPreviewRef, controlsRef, transformControlsRef,
         transformMode, setTransformMode, scaleSnap, setScaleSnap,
@@ -814,14 +830,16 @@ export const PrefabEditorProvider = forwardRef<PrefabEditorRef, PrefabEditorProv
             <AssetRuntimeProvider runtimeRef={state.runtimeRef}>
                 <EditorStateContext.Provider value={state}>
                     <EditorRefContext.Provider value={state.editorRefValue}>
-                        <EditorContext.Provider value={{
-                            createPrefab: props.createPrefab,
-                            transformMode: state.transformMode, setTransformMode: state.setTransformMode,
-                            scaleSnap: state.scaleSnap, setScaleSnap: state.setScaleSnap,
-                            positionSnap: state.positionSnap, setPositionSnap: state.setPositionSnap,
-                            rotationSnap: state.rotationSnap, setRotationSnap: state.setRotationSnap,
-                            onFocusNode: state.isEditMode ? state.handleFocusNode : undefined,
-                        }}>{props.children}</EditorContext.Provider>
+                        <EditorToolsContext.Provider value={state.editorTools}>
+                            <EditorContext.Provider value={{
+                                createPrefab: props.createPrefab,
+                                transformMode: state.transformMode, setTransformMode: state.setTransformMode,
+                                scaleSnap: state.scaleSnap, setScaleSnap: state.setScaleSnap,
+                                positionSnap: state.positionSnap, setPositionSnap: state.setPositionSnap,
+                                rotationSnap: state.rotationSnap, setRotationSnap: state.setRotationSnap,
+                                onFocusNode: state.isEditMode ? state.handleFocusNode : undefined,
+                            }}>{props.children}</EditorContext.Provider>
+                        </EditorToolsContext.Provider>
                     </EditorRefContext.Provider>
                 </EditorStateContext.Provider>
             </AssetRuntimeProvider>
@@ -835,9 +853,10 @@ export function PrefabEditorScene({ children }: { children?: React.ReactNode; })
         basePath, prefabStore, prefabValue, sceneValue, isEditMode, selectedId, runtimeVersion,
         setSelection, onPointerEvent, getRoot, canvasRef, canvasStateRef,
         dropPreviewRef, controlsRef, transformControlsRef, transformMode,
-        positionSnap, rotationSnap, scaleSnap, handleTransformChange,
+        positionSnap, rotationSnap, scaleSnap, handleTransformChange, activeTool,
     } = useEditorStateContext();
     const get = useThree(state => state.get);
+    const ToolViewport = activeTool?.definition.Viewport;
     // Keep editor controls on the canvas camera even while a scene camera is
     // still active during the Play -> Edit render, before its layout cleanup.
     const [editorCamera] = useState(() => get().camera);
@@ -879,7 +898,8 @@ export function PrefabEditorScene({ children }: { children?: React.ReactNode; })
             <>
                 <OrbitControls ref={controlsRef} camera={editorCamera} enableDamping={false} makeDefault />
                 <EditorCameraKeyboardControls controlsRef={controlsRef} />
-                {selectedId && (
+                {ToolViewport && <ToolViewport key={activeTool!.key} camera={editorCamera} controlsRef={controlsRef} />}
+                {selectedId && !activeTool && (
                     <RegisteredObject id={selectedId} prefab={prefabValue}>
                         {object => isObjectAttachedToRoot(getRoot(), object) ? (
                             <>
@@ -905,7 +925,8 @@ export function PrefabEditorScene({ children }: { children?: React.ReactNode; })
 
 /** HTML controls: mount beside the canvas under the same provider. */
 export function PrefabEditorPanel() {
-    const { isEditMode, toggleMode, resetScene, selectedId, setSelection, canUndo, canRedo } = useEditorStateContext();
+    const { isEditMode, toggleMode, resetScene, selectedId, setSelection, canUndo, canRedo, activeTool } = useEditorStateContext();
+    const ToolPanel = activeTool?.definition.Panel;
     return (
         <>
             <div
@@ -917,12 +938,12 @@ export function PrefabEditorPanel() {
                     justifyContent: "center",
                 }}
             >
-                <button type="button" style={base.btn} onClick={toggleMode} aria-label={isEditMode ? "Play" : "Edit"}>
+                <button type="button" style={base.btn} disabled={!!activeTool} onClick={toggleMode} aria-label={isEditMode ? "Play" : "Edit"}>
                     {isEditMode ? "▶" : "⏸"}
                 </button>
-                <button type="button" style={base.btn} aria-label="Reset scene" onClick={() => { void resetScene().catch(console.error); }}>↺</button>
+                <button type="button" style={base.btn} aria-label="Reset scene" disabled={!!activeTool} onClick={() => { void resetScene().catch(console.error); }}>↺</button>
             </div>
-            {isEditMode && (
+            {isEditMode && (ToolPanel ? <ToolPanel key={activeTool!.key} canUndo={canUndo} canRedo={canRedo} /> :
                 <EditorUI
                     selectedId={selectedId}
                     setSelectedId={setSelection}

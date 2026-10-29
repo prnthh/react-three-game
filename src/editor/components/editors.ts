@@ -47,3 +47,11 @@ registerComponentEditor(TextComponent, TextComponentEditor);
 import RuntimeComponent from "../../runtime/components/RuntimeComponent.js";
 import RuntimeComponentEditor from "./RuntimeComponent.editor.js";
 registerComponentEditor(RuntimeComponent, RuntimeComponentEditor);
+
+import TerrainComponent from "../../runtime/components/TerrainComponent.js";
+import TerrainComponentEditor from "./TerrainComponent.editor.js";
+registerComponentEditor(TerrainComponent, TerrainComponentEditor);
+
+import { registerEditorTool } from '../tools/EditorTools.js';
+import { terrainPaintTool } from '../terrain/TerrainPaintTool.js';
+registerEditorTool(terrainPaintTool);

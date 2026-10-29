@@ -12,6 +12,8 @@ import { withBasePath } from "../assets/assetPaths.js";
 
 import type { TextProperties } from "./TextComponent.js";
 
+let harfBuzzPath: string | undefined;
+
 export default function TextComponentView({ properties, children }: ComponentViewProps<TextProperties>) {
     const { basePath } = usePrefab();
     const { text = '', font = '/fonts/NotoSans-Regular.ttf', size, depth, width, align, color } = properties;
@@ -21,7 +23,13 @@ export default function TextComponentView({ properties, children }: ComponentVie
     const meshRef = useRef<Mesh>(null);
     const [offset, setOffset] = useState<[number, number, number]>([0, 0, 0]);
 
-    Text.setHarfBuzzPath(withBasePath(basePath, '/fonts/hb.wasm'));
+    const wasmPath = withBasePath(basePath, '/fonts/hb.wasm');
+    // Setting this resets three-text's shared initialization promise. Doing it
+    // for every text node races concurrent font loads and drops some labels.
+    if (harfBuzzPath !== wasmPath) {
+        Text.setHarfBuzzPath(wasmPath);
+        harfBuzzPath = wasmPath;
+    }
 
     const handleLoad = useCallback((_geometry: BufferGeometry, info: any) => {
         if (info?.planeBounds) {

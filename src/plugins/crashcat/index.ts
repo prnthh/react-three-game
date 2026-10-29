@@ -21,3 +21,9 @@ export {
 } from "./CrashcatRagdoll.js";
 
 export { importCollisionModel } from "./importCollisionModel.js";
+
+export { TerrainPhysicsComponent, TERRAIN_PHYSICS_COMPONENT, terrainPhysicsProblem } from './TerrainPhysicsComponent.js';
+export { getTerrainPhysicsStatus } from './TerrainPhysicsRuntime.js';
+export { CharacterControllerComponent } from './CharacterControllerComponent.js';
+
+export { createColliderResidencyScheduler, type ColliderResidencyTarget } from './colliderResidency.js';

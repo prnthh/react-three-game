@@ -104,3 +104,9 @@ export { registerBuiltInComponents } from '../runtime/components/index.js';
 
 export { useSceneRuntimeContext } from '../runtime/scene/ComponentLifecycle.js';
 export type { ComponentContext, SceneRuntimeContext } from '../runtime/scene/ComponentLifecycle.js';
+
+export { default as TerrainComponent } from "../runtime/components/TerrainComponent.js";
+export type { TerrainProperties, TerrainLayer } from "../runtime/components/TerrainComponent.js";
+
+export { TERRAIN_SURFACE_COMPONENT } from '../runtime/terrain/terrainSurface.js';
+export type { TerrainSurface } from '../runtime/terrain/terrainSurface.js';

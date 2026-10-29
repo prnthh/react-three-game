@@ -37,6 +37,18 @@ try {
     writeFileSync(join(directory, 'consumer.mts'), `
         import { evaluateSceneCommands, type Prefab, type SceneCommandBatch } from 'react-three-game/core';
         import { convert } from 'react-three-game/node';
+        import { registerEditorTool, registerEditorNodePreset, useEditorToolSession, attachPointerTool } from 'react-three-game/editor';
+        registerEditorNodePreset({ id: 'custom', label: 'Custom', category: 'Game', create: () => ({ id: 'custom-node' }) });
+        registerEditorTool({ id: 'custom.edit', label: 'Custom edit', supports: () => true,
+            createSettings: () => ({ radius: 1 }), Viewport: () => null, Panel: () => null });
+        function CustomPanel() {
+            const session = useEditorToolSession<{ radius: number }>('custom.edit');
+            session.setSettings({ radius: 2 });
+            // @ts-expect-error Tool settings must retain their declared types.
+            session.setSettings({ radius: 'invalid' });
+            return null;
+        }
+        const bindPointer: typeof attachPointerTool = attachPointerTool;
         const input: Prefab = { root: { id: 'root' } };
         const batch: SceneCommandBatch = { commands: [{ op: 'update', id: 'root', patch: { name: 'Edited' } }] };
         const result: Prefab = evaluateSceneCommands(input, batch).prefab;

@@ -1,4 +1,6 @@
+import { EditorToolActions } from './tools/EditorToolActions.js';
 import { MissingComponentEditor } from './MissingComponentEditor.js';
+import { AddNodePicker } from './AddNodePicker.js';
 import { AddComponentPicker } from './AddComponentPicker.js';
 import { getComponentEditor } from "./ComponentEditors.js";
 import "./components/editors.js";
@@ -89,8 +91,25 @@ function EditorUI({
         setSelectedId(null);
     };
 
-    return <>
-        <div style={inspector.panel}>
+    return <div aria-label="Scene editor panels" style={{
+        position: 'absolute', top: 56, left: 12, right: 12, bottom: 12,
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8,
+        pointerEvents: 'none', zIndex: 20,
+    }}>
+        <div aria-label="Prefab column" style={{ flex: '3 1 0', maxWidth: 240, minWidth: 0, maxHeight: '100%', overflowY: 'auto', pointerEvents: 'auto' }}>
+            <EditorTree
+                selectedId={selectedId}
+                setSelectedId={setSelectedId}
+                canUndo={canUndo}
+                canRedo={canRedo}
+            />
+            <AddNodePicker onAdd={preset => {
+                const node = preset.create();
+                editor.add(node, rootId);
+                setSelectedId(node.id);
+            }} />
+        </div>
+        <div aria-label="Inspector column" style={inspector.panel}>
             <button type="button" style={base.header} onClick={() => setCollapsed(!collapsed)}>
                 <span>Inspector</span>
                 <span>{collapsed ? '◀' : '▼'}</span>
@@ -104,16 +123,7 @@ function EditorUI({
                 />
             )}
         </div>
-
-        <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 20 }}>
-            <EditorTree
-                selectedId={selectedId}
-                setSelectedId={setSelectedId}
-                canUndo={canUndo}
-                canRedo={canRedo}
-            />
-        </div>
-    </>;
+    </div>;
 }
 
 
@@ -131,6 +141,7 @@ function NodeInspector({
     const available = allKeys.filter(k => canAddComponentToNode(node, ALL_COMPONENTS[k], ALL_COMPONENTS));
 
     return <div style={inspector.content}>
+        <EditorToolActions node={node} />
         {/* Node Name */}
         <div style={base.section}>
             <div style={{ display: "flex", marginBottom: 6, alignItems: 'center', gap: 6 }}>

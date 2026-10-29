@@ -8,7 +8,7 @@
     },
     {
       "time": 0,
-      "nodeId": "oni",
+      "nodeId": "remilio",
       "component": "model",
       "properties": {
         "animationState": "idle"
@@ -24,6 +24,102 @@
       }
     },
     {
+      "time": 0,
+      "nodeId": "lyric-let",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 0,
+      "nodeId": "lyric-me",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 0,
+      "nodeId": "lyric-go",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 0,
+      "nodeId": "lyric-to",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 0,
+      "nodeId": "lyric-work",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 0,
+      "nodeId": "lyric-you",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 0,
+      "nodeId": "lyric-help",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 0,
+      "nodeId": "lyric-they",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
       "time": 4,
       "nodeId": "key",
       "component": "light",
@@ -33,8 +129,32 @@
       }
     },
     {
+      "time": 5.04,
+      "nodeId": "lyric-work",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 5.627,
+      "nodeId": "lyric-work",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
       "time": 8,
-      "nodeId": "oni",
+      "nodeId": "remilio",
       "component": "model",
       "properties": {
         "animationState": "walk"
@@ -50,6 +170,42 @@
       }
     },
     {
+      "time": 10.52,
+      "nodeId": "lyric-work",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 11.106,
+      "nodeId": "lyric-work",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 11.44,
+      "nodeId": "lyric-let",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
       "time": 12,
       "nodeId": "fill",
       "component": "light",
@@ -58,8 +214,128 @@
       }
     },
     {
+      "time": 12.026,
+      "nodeId": "lyric-let",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 12.13,
+      "nodeId": "lyric-me",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 12.716,
+      "nodeId": "lyric-me",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 12.82,
+      "nodeId": "lyric-go",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 13.406,
+      "nodeId": "lyric-go",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 14.2,
+      "nodeId": "lyric-let",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 14.786,
+      "nodeId": "lyric-let",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 14.89,
+      "nodeId": "lyric-me",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 15.476,
+      "nodeId": "lyric-me",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 15.58,
+      "nodeId": "lyric-work",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
       "time": 16,
-      "nodeId": "oni",
+      "nodeId": "remilio",
       "component": "model",
       "properties": {
         "animationState": "idle"
@@ -81,6 +357,1367 @@
       "properties": {
         "intensity": 0.65
       }
+    },
+    {
+      "time": 16.167,
+      "nodeId": "lyric-work",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 16.98,
+      "nodeId": "lyric-help",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 17.567,
+      "nodeId": "lyric-help",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 17.67,
+      "nodeId": "lyric-me",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 18.257,
+      "nodeId": "lyric-me",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 18.36,
+      "nodeId": "lyric-help",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 18.947,
+      "nodeId": "lyric-help",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 19.05,
+      "nodeId": "lyric-you",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 19.637,
+      "nodeId": "lyric-you",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 20.07,
+      "nodeId": "lyric-they",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 20.569,
+      "nodeId": "lyric-they",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 20.658,
+      "nodeId": "lyric-go",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 21.157,
+      "nodeId": "lyric-go",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 21.245,
+      "nodeId": "lyric-to",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 21.744,
+      "nodeId": "lyric-to",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 21.832,
+      "nodeId": "lyric-you",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 22.332,
+      "nodeId": "lyric-you",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 22.42,
+      "nodeId": "lyric-let",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 23.007,
+      "nodeId": "lyric-let",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 23.11,
+      "nodeId": "lyric-me",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 23.697,
+      "nodeId": "lyric-me",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 23.8,
+      "nodeId": "lyric-go",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 24.387,
+      "nodeId": "lyric-go",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 25.14,
+      "nodeId": "lyric-let",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 25.727,
+      "nodeId": "lyric-let",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 25.83,
+      "nodeId": "lyric-me",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 26.417,
+      "nodeId": "lyric-me",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 26.52,
+      "nodeId": "lyric-work",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 27.107,
+      "nodeId": "lyric-work",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 27.63,
+      "nodeId": "lyric-they",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 27.894,
+      "nodeId": "lyric-they",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 27.94,
+      "nodeId": "lyric-they",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 28.204,
+      "nodeId": "lyric-they",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 28.25,
+      "nodeId": "lyric-go",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 28.777,
+      "nodeId": "lyric-go",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 28.87,
+      "nodeId": "lyric-to",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 29.397,
+      "nodeId": "lyric-to",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 29.49,
+      "nodeId": "lyric-you",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 30.017,
+      "nodeId": "lyric-you",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 30.11,
+      "nodeId": "lyric-they",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 30.403,
+      "nodeId": "lyric-they",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 30.455,
+      "nodeId": "lyric-they",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 30.748,
+      "nodeId": "lyric-they",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 30.8,
+      "nodeId": "lyric-go",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 31.093,
+      "nodeId": "lyric-go",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 31.145,
+      "nodeId": "lyric-go",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 31.438,
+      "nodeId": "lyric-go",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 31.49,
+      "nodeId": "lyric-go",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 31.783,
+      "nodeId": "lyric-go",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 31.835,
+      "nodeId": "lyric-go",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 32.128,
+      "nodeId": "lyric-go",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 32.18,
+      "nodeId": "lyric-go",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 32.473,
+      "nodeId": "lyric-go",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 32.79,
+      "nodeId": "lyric-let",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 33.377,
+      "nodeId": "lyric-let",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 33.48,
+      "nodeId": "lyric-me",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 34.067,
+      "nodeId": "lyric-me",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 34.17,
+      "nodeId": "lyric-go",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 34.756,
+      "nodeId": "lyric-go",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 34.86,
+      "nodeId": "lyric-to",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 35.446,
+      "nodeId": "lyric-to",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 35.55,
+      "nodeId": "lyric-you",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 36.136,
+      "nodeId": "lyric-you",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 36.24,
+      "nodeId": "lyric-you",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 36.826,
+      "nodeId": "lyric-you",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 36.93,
+      "nodeId": "lyric-you",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 37.516,
+      "nodeId": "lyric-you",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 38.41,
+      "nodeId": "lyric-let",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 38.997,
+      "nodeId": "lyric-let",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 39.1,
+      "nodeId": "lyric-me",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 39.686,
+      "nodeId": "lyric-me",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 39.79,
+      "nodeId": "lyric-go",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 40.376,
+      "nodeId": "lyric-go",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 40.48,
+      "nodeId": "lyric-to",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 41.066,
+      "nodeId": "lyric-to",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 41.17,
+      "nodeId": "lyric-work",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 41.756,
+      "nodeId": "lyric-work",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 41.86,
+      "nodeId": "lyric-work",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 42.446,
+      "nodeId": "lyric-work",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 42.55,
+      "nodeId": "lyric-work",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 43.136,
+      "nodeId": "lyric-work",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 43.63,
+      "nodeId": "lyric-let",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 44.217,
+      "nodeId": "lyric-let",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 44.32,
+      "nodeId": "lyric-me",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 44.907,
+      "nodeId": "lyric-me",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 45.01,
+      "nodeId": "lyric-go",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 45.597,
+      "nodeId": "lyric-go",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 45.7,
+      "nodeId": "lyric-to",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 46.287,
+      "nodeId": "lyric-to",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 46.39,
+      "nodeId": "lyric-you",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 46.976,
+      "nodeId": "lyric-you",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 47.08,
+      "nodeId": "lyric-you",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 47.666,
+      "nodeId": "lyric-you",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 47.77,
+      "nodeId": "lyric-you",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 48.356,
+      "nodeId": "lyric-you",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 49.38,
+      "nodeId": "lyric-let",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 49.967,
+      "nodeId": "lyric-let",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 50.07,
+      "nodeId": "lyric-me",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 50.657,
+      "nodeId": "lyric-me",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 50.76,
+      "nodeId": "lyric-go",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 51.347,
+      "nodeId": "lyric-go",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 51.45,
+      "nodeId": "lyric-to",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 52.037,
+      "nodeId": "lyric-to",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 52.14,
+      "nodeId": "lyric-work",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 52.726,
+      "nodeId": "lyric-work",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 52.83,
+      "nodeId": "lyric-work",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 53.416,
+      "nodeId": "lyric-work",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 53.52,
+      "nodeId": "lyric-work",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 54.106,
+      "nodeId": "lyric-work",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 59.55,
+      "nodeId": "lyric-work",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 60.137,
+      "nodeId": "lyric-work",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "time": 65.02,
+      "nodeId": "lyric-work",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "time": 65.607,
+      "nodeId": "lyric-work",
+      "component": "transform",
+      "properties": {
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
     }
-  ]
+  ],
+  "lyricTiming": {
+    "source": "https://lrclib.net/api/get/39113256",
+    "status": "draft: line anchors from LRC; word offsets estimated at 0.69s per beat, stutters at half-beats",
+    "regenerate": "node scripts/generate-music-video-lyrics.mjs"
+  }
 }

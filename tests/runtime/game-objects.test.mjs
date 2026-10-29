@@ -86,6 +86,9 @@ describe('Ownership and picking resolution', () => {
         rootA.add(a); rootB.add(b);
         const first = owner('same', 'a', rootA), second = owner('same', 'b', rootB);
         const oldMapping = registerRenderSources(batch, [a, b]);
+        const hits = [{object:batch,instanceId:1},{object:batch,instanceId:0},{object:a}];
+        assert.deepEqual(editPickIds(hits, {same:{id:'same'}}, 'a'), ['same'], 'picking resolves scoped owners and deduplicates mixed source/batch hits');
+        assert.deepEqual(editPickIds(hits, {same:{id:'same',locked:true}}, 'a'), [], 'locked owners are excluded');
         assert.equal(resolveGameObject(batch, 1), second.handle);
         assert.equal(resolveGameObject(batch, 0), first.handle);
         assert.equal(resolveGameObject(batch), null);

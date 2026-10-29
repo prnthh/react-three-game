@@ -236,8 +236,8 @@ export default function EditorTree({
 
     return (
         <>
-            <div style={{ ...tree.panel, width: collapsed ? 'auto' : 240 }}>
-                <div style={base.header}>
+            <div style={{ ...tree.panel, width: '100%', minWidth: 0, boxSizing: 'border-box' }}>
+                <div style={{ ...base.header, flexWrap: 'wrap', gap: 6, flexShrink: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }} onClick={() => setCollapsed(!collapsed)}>
                         <span>{collapsed ? '▶' : '▼'}</span>
                         <span>Prefab</span>

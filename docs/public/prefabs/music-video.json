@@ -6,8 +6,8 @@
     "name": "Music Video",
     "children": [
       {
-        "id": "oni",
-        "name": "Oni",
+        "id": "remilio",
+        "name": "Remilio",
         "components": {
           "transform": {
             "type": "Transform",
@@ -22,7 +22,7 @@
           "model": {
             "type": "SkinnedMesh",
             "properties": {
-              "filename": "/models/human/onimilio.glb",
+              "filename": "/models/human/remilio.glb",
               "animationState": "idle",
               "castShadow": true,
               "receiveShadow": true
@@ -157,6 +157,270 @@
               "shadowCameraTop": 4,
               "shadowCameraBottom": -4,
               "shadowAutoUpdate": true
+            }
+          }
+        }
+      },
+      {
+        "id": "lyric-let",
+        "name": "Lyric \u00b7 let",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -0.85,
+                2.3,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "text": {
+            "type": "Text",
+            "properties": {
+              "text": "LET",
+              "color": "#172a48",
+              "size": 0.19,
+              "depth": 0,
+              "width": 1,
+              "align": "center",
+              "font": "/fonts/NotoSans-Bold.ttf"
+            }
+          }
+        }
+      },
+      {
+        "id": "lyric-me",
+        "name": "Lyric \u00b7 me",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0.85,
+                2.3,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "text": {
+            "type": "Text",
+            "properties": {
+              "text": "ME",
+              "color": "#172a48",
+              "size": 0.19,
+              "depth": 0,
+              "width": 1,
+              "align": "center",
+              "font": "/fonts/NotoSans-Bold.ttf"
+            }
+          }
+        }
+      },
+      {
+        "id": "lyric-go",
+        "name": "Lyric \u00b7 go",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -0.9,
+                1.75,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "text": {
+            "type": "Text",
+            "properties": {
+              "text": "GO",
+              "color": "#172a48",
+              "size": 0.19,
+              "depth": 0,
+              "width": 1,
+              "align": "center",
+              "font": "/fonts/NotoSans-Bold.ttf"
+            }
+          }
+        }
+      },
+      {
+        "id": "lyric-to",
+        "name": "Lyric \u00b7 to",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0.9,
+                1.75,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "text": {
+            "type": "Text",
+            "properties": {
+              "text": "TO",
+              "color": "#172a48",
+              "size": 0.19,
+              "depth": 0,
+              "width": 1,
+              "align": "center",
+              "font": "/fonts/NotoSans-Bold.ttf"
+            }
+          }
+        }
+      },
+      {
+        "id": "lyric-work",
+        "name": "Lyric \u00b7 work",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -0.95,
+                1.2,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "text": {
+            "type": "Text",
+            "properties": {
+              "text": "WORK",
+              "color": "#172a48",
+              "size": 0.19,
+              "depth": 0,
+              "width": 1,
+              "align": "center",
+              "font": "/fonts/NotoSans-Bold.ttf"
+            }
+          }
+        }
+      },
+      {
+        "id": "lyric-you",
+        "name": "Lyric \u00b7 you",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0.9,
+                1.2,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "text": {
+            "type": "Text",
+            "properties": {
+              "text": "YOU",
+              "color": "#172a48",
+              "size": 0.19,
+              "depth": 0,
+              "width": 1,
+              "align": "center",
+              "font": "/fonts/NotoSans-Bold.ttf"
+            }
+          }
+        }
+      },
+      {
+        "id": "lyric-help",
+        "name": "Lyric \u00b7 help",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                -0.9,
+                0.65,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "text": {
+            "type": "Text",
+            "properties": {
+              "text": "HELP",
+              "color": "#172a48",
+              "size": 0.19,
+              "depth": 0,
+              "width": 1,
+              "align": "center",
+              "font": "/fonts/NotoSans-Bold.ttf"
+            }
+          }
+        }
+      },
+      {
+        "id": "lyric-they",
+        "name": "Lyric \u00b7 they",
+        "components": {
+          "transform": {
+            "type": "Transform",
+            "properties": {
+              "position": [
+                0.9,
+                0.65,
+                0
+              ],
+              "scale": [
+                1,
+                1,
+                1
+              ]
+            }
+          },
+          "text": {
+            "type": "Text",
+            "properties": {
+              "text": "THEY",
+              "color": "#172a48",
+              "size": 0.19,
+              "depth": 0,
+              "width": 1,
+              "align": "center",
+              "font": "/fonts/NotoSans-Bold.ttf"
             }
           }
         }

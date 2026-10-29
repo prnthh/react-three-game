@@ -14,6 +14,8 @@ const nextConfig: NextConfig = {
       const name = entry === 'index' ? 'react-three-game$' : `react-three-game/${entry}$`;
       config.resolve.alias[name] = fileURLToPath(new URL(`../src/${entry}.ts`, import.meta.url));
     }
+    config.resolve.alias['react-three-game/plugins/crashcat$'] = fileURLToPath(new URL('../src/plugins/crashcat/index.ts', import.meta.url));
+    config.resolve.alias['react-three-game/plugins/crashcat/editor$'] = fileURLToPath(new URL('../src/plugins/crashcat/editor/index.tsx', import.meta.url));
     return config;
   },
   // fix because this is on prnth.com/react-three-game

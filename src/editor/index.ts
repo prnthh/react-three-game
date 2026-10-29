@@ -68,3 +68,11 @@ export { usePrefabDocument } from "../runtime/prefabs/prefabApi.js";
 export type { PrefabDocumentApi } from "../core/prefabDocumentApi.js";
 
 export { loadAssetManifest, type AssetManifest } from '../runtime/assets/assetManifest.js';
+
+export { registerEditorTool, getEditorTool, getEditorTools, subscribeEditorTools, useEditorTools, useEditorToolSession } from './tools/EditorTools.js';
+export type { EditorToolDefinition, EditorToolController, EditorToolSession, EditorToolViewportProps, EditorToolPanelProps } from './tools/EditorTools.js';
+export { registerEditorNodePreset, getEditorNodePresets, subscribeEditorNodePresets } from './NodePresets.js';
+export type { EditorNodePreset } from './NodePresets.js';
+
+export { attachPointerTool } from './tools/pointerTool.js';
+export type { PointerToolHandlers, PointerToolOptions, PointerToolControls } from './tools/pointerTool.js';

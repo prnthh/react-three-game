@@ -140,3 +140,6 @@ dist
 
 # Generated headless sample artifacts
 /docs/output/headless/
+
+# Rebuilt from the seeded terrain demo generator
+/docs/public/textures/terrain-demo/

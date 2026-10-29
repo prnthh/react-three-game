@@ -195,16 +195,17 @@ export const base: BaseStyles = {
 export const inspector: InspectorStyles = {
     panel: {
         ...base.panel,
-        position: 'absolute',
-        top: 12,
-        right: 12,
-        zIndex: 20,
-        width: 320,
+        flex: '4 1 0',
+        maxWidth: 320,
+        minWidth: 0,
+        maxHeight: '100%',
+        overflowY: 'auto',
+        pointerEvents: 'auto',
     },
     content: {
         ...verticalScroll,
         padding: 10,
-        maxHeight: 'calc(100vh - 70px)',
+        maxHeight: 'calc(100dvh - 110px)',
         overflowX: 'hidden',
         boxSizing: 'border-box',
         display: 'flex',
@@ -216,7 +217,8 @@ export const inspector: InspectorStyles = {
 export const tree: TreeStyles = {
     panel: {
         ...base.panel,
-        maxHeight: 'calc(100vh - 24px)',
+        // Leave room for the Add object control below the tree.
+        maxHeight: 'calc(100dvh - 120px)',
         display: 'flex',
         flexDirection: 'column',
         userSelect: 'none',

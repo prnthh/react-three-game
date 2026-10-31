@@ -2,7 +2,7 @@
 
 Open `/demo/fps`. A playable, original 4v4 team-deathmatch blockout: you and three Remilio bots against four Milady bots. First to 40 kills or the highest score after five minutes wins. Death respawns you after three seconds; firing cancels spawn protection.
 
-WASD moves, mouse looks, left button fires, right button aims, Shift sprints, Space jumps, hold C crouches, G throws a grenade, R reloads, and Escape pauses. Requires WebGPU and a keyboard. When an embedded browser rejects pointer lock, the menu offers drag look: hold a mouse button while dragging to turn. A normal desktop browser provides the intended FPS controls.
+WASD moves, mouse looks, left button fires, right button aims, Shift sprints, Space jumps, hold C crouches, G throws a grenade, R reloads, and Escape pauses. Requires WebGPU. Touch controls use the left 40% of the screen for a floating movement joystick and the right side for drag look, with bottom-right action buttons. Pushing the joystick near its edge engages sprint, with a small release threshold to prevent flicker. The pause icon sits at the top center. Fire, aim and crouch are held; jump, reload and grenade are single presses. Release/cancel or pause clears held controls. Desktop uses mouse capture when available and automatically falls back to drag look when capture is unavailable.
 
 The workshop and communications building each have two rooms, end entrances and courtyard exits. Containers break the center lane's sightlines; perimeter alleys connect the spawns. Bots use grid paths with wall checks on the connections, choose building flanks, check line of sight, reload, and respawn. Teammates block shots but take no friendly damage.
 

@@ -289,12 +289,6 @@
   opacity: 0.5;
   cursor: wait;
 }
-.fps button.fps-secondary {
-  background: transparent;
-  border: 1px solid #d5c29a;
-  color: #d5c29a;
-  font-size: 10px;
-}
 .fps-hurt {
   position: absolute;
   inset: 0;
@@ -310,3 +304,105 @@
 }
 .fps-killcam strong { font-size: 14px; letter-spacing: 3px; color: #ffd6b7; }
 .fps-killcam span { font-size: 11px; color: #ddd8cd; }
+
+.fps-touch-controls {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.fps-touch-stick {
+  position: absolute;
+  width: 96px;
+  height: 96px;
+  transform: translate(-50%, -50%);
+  border: 1px solid #f3eedc66;
+  border-radius: 50%;
+  background: #17272866;
+  pointer-events: none;
+}
+.fps-touch-stick > div {
+  position: absolute;
+  inset: 27px;
+  background: #f3eedc88;
+  border-radius: 50%;
+}
+.fps-touch-actions {
+  position: absolute;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  width: min(55%, 250px);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.fps .fps-touch-actions button {
+  min-width: 0;
+  min-height: 48px;
+  padding: 8px 2px;
+  border: 1px solid #f3eedc55;
+  border-radius: 12px;
+  background: #172728b8;
+  color: #f3eedc;
+  font-size: 10px;
+  letter-spacing: 0;
+  touch-action: none;
+}
+.fps .fps-touch-actions button:first-child { background: #d5c29ad9; color: #172426; }
+.fps .fps-touch-actions button:active { background: #f3eedc; color: #172426; }
+.fps-touch-mode .fps-bottom { bottom: calc(132px + env(safe-area-inset-bottom)); }
+.fps-touch-mode .fps-health, .fps-touch-mode .fps-ammo { min-width: 0; padding: 8px; }
+.fps-touch-mode .fps-bottom strong { font-size: 22px; }
+.fps-touch-mode .fps-bottom small { font-size: 8px; letter-spacing: 1px; }
+.fps-touch-mode .fps-bottom meter { width: 70px; }
+.fps-touch-mode .fps-brand span, .fps-touch-mode .fps-map { display: none; }
+
+.fps-touch-mode .fps-feed { display: none; }
+
+.fps-touch-stick[data-sprinting="true"] { border-color: #d5c29a; background: #d5c29a33; }
+.fps .fps-touch-pause {
+  position: absolute;
+  top: max(8px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  background: #172728b8;
+  color: #f3eedc;
+  touch-action: none;
+}
+.fps-touch-mode .fps-top { top: max(60px, calc(env(safe-area-inset-top) + 52px)); }
+.fps-menu { box-sizing: border-box; padding: max(20px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left)); }
+@media (min-width: 651px) and (min-height: 601px) {
+  .fps-menu { padding: clamp(24px, 6vw, 80px); }
+}
+@media (max-width: 420px) {
+  .fps-menu h1 { font-size: clamp(48px, 18vw, 72px); margin-block: 16px; }
+  .fps-eyebrow { font-size: 9px; letter-spacing: 2px; }
+  .fps-menu p { font-size: 13px; }
+  .fps-tags { margin-block: 16px 20px; gap: 10px 14px; }
+  .fps-actions { gap: 8px 20px; }
+  .fps-actions button { width: 100%; min-width: 0; }
+  .fps footer { margin-top: 16px; }
+  .fps-touch-mode .fps-brand { font-size: 16px; letter-spacing: 2px; }
+  .fps-touch-mode .fps-brand small { font-size: 8px; letter-spacing: 1px; }
+}
+@media (max-height: 600px) and (min-width: 651px) {
+  .fps-menu section { width: min(100%, 900px); display: grid; grid-template-columns: 1fr 1fr; column-gap: 32px; align-items: center; }
+  .fps-eyebrow, .fps-menu h1, .fps-menu section > p:not(.fps-touch-hint), .fps-tags { grid-column: 1; }
+  .fps-menu h1 { font-size: clamp(48px, 12vh, 72px); margin-block: 12px; }
+  .fps-menu p { font-size: 13px; margin-block: 8px; }
+  .fps-tags { margin-block: 8px; }
+  .fps-actions { grid-column: 2; grid-row: 1 / 4; gap: 8px 20px; }
+  .fps-actions button { min-width: 0; width: 100%; }
+  .fps-menu .fps-touch-hint, .fps-keys { grid-column: 2; grid-row: 4; margin: 0; }
+  .fps-keys { padding-top: 12px; gap: 8px; }
+  .fps footer { grid-column: 2; grid-row: 5; margin-top: 12px; }
+}

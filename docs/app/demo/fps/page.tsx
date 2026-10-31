@@ -1,9 +1,9 @@
 "use client";
 import { blocks } from "./shared/map";
-import { Suspense, useEffect, useRef, useState, useCallback } from "react";
+import { Suspense, useEffect, useRef, useState, useCallback, type RefObject, type PointerEvent } from "react";
 import { ACESFilmicToneMapping } from "three";
 import { GameCanvas } from "react-three-game/viewer";
-import { idleCommand, LIMIT, HEALTH_RULES } from "./shared/protocol";
+import { idleCommand, LIMIT, HEALTH_RULES, type Command } from "./shared/protocol";
 import { KillcamSession } from "./session";
 import { SpatialAudio } from "./audio";
 import { FPSScene } from "./scene";
@@ -14,7 +14,7 @@ export default function FPSPage() {
     [playing, setPlaying] = useState(false),
     [started, setStarted] = useState(false),
     [frame, setFrame] = useState(0),
-    [error, setError] = useState(""),
+    [touchControls, setTouchControls] = useState(false),
     [ready, setReady] = useState(false);
   const match = runtime.state;
   const liveMatch = runtime.liveState;
@@ -26,6 +26,9 @@ export default function FPSPage() {
   const active = useRef(false),
     dragLook = useRef(false);
   active.current = playing;
+  const touchMode = useRef(false);
+  touchMode.current = touchControls;
+  useEffect(() => { setTouchControls(window.matchMedia("(pointer: coarse)").matches); }, []);
   const host = useRef<HTMLDivElement>(null),
     input = useRef(idleCommand()),
     keys = useRef(new Set<string>());
@@ -78,7 +81,7 @@ export default function FPSPage() {
     };
     const mouse = (e: MouseEvent) => {
       if (
-        !active.current ||
+        !active.current || touchMode.current ||
         (!document.pointerLockElement && (!dragLook.current || !e.buttons))
       )
         return;
@@ -89,7 +92,7 @@ export default function FPSPage() {
       );
     };
     const button = (e: MouseEvent) => {
-      if (!active.current) return;
+      if (!active.current || touchMode.current) return;
       if (e.type === "mousedown") audio.enable();
       if (e.button === 0) input.current.fire = e.type === "mousedown";
       if (e.button === 2) input.current.aim = e.type === "mousedown";
@@ -124,7 +127,8 @@ export default function FPSPage() {
   }, []);
   const start = async () => {
     enableAudio();
-    if (dragLook.current) {
+    if (touchMode.current || dragLook.current) {
+      dragLook.current = true;
       setPlaying(true);
       setStarted(true);
       return;
@@ -132,11 +136,10 @@ export default function FPSPage() {
     try {
       await host.current?.querySelector("canvas")?.requestPointerLock();
       setStarted(true);
-      setError("");
     } catch {
-      setError(
-        "Mouse capture is unavailable here. Use drag look, or open this page in a desktop browser for standard FPS controls.",
-      );
+      dragLook.current = true;
+      setStarted(true);
+      setPlaying(true);
     }
   };
   useEffect(() => {
@@ -147,7 +150,7 @@ export default function FPSPage() {
     minutes = Math.floor(match.time / 60),
     seconds = Math.floor(match.time % 60);
   return (
-    <main className="fps" ref={host} onContextMenu={(e) => e.preventDefault()}>
+    <main className={`fps${touchControls ? " fps-touch-mode" : ""}`} ref={host} onContextMenu={(e) => e.preventDefault()}>
       <GameCanvas
         camera={{ position: [0, 1.5, -21], fov: 76, near: 0.04, far: 150 }}
         rendererConfig={{
@@ -235,7 +238,7 @@ export default function FPSPage() {
               <span> / 30</span>
             </strong>
             <small>
-              {a.ammo === 0 ? "PRESS R TO RELOAD" : "R RELOAD · RMB AIM"}
+              {touchControls ? (a.ammo === 0 ? "TAP RELOAD" : "HOLD AIM TO SCOPE") : (a.ammo === 0 ? "PRESS R TO RELOAD" : "R RELOAD · RMB AIM")}
             </small>
           </div>
         </div>
@@ -249,6 +252,7 @@ export default function FPSPage() {
           <p>Regroup. Find another route.</p>
         </div>
       )}
+      {playing && touchControls && <TouchControls input={input} onPause={() => setPlaying(false)} />}
       {!playing && (
         <div className="fps-menu">
           <section>
@@ -291,7 +295,7 @@ export default function FPSPage() {
                   </button>
                 </>
               ) : (
-                <button disabled={!ready} onClick={start}>
+                <button disabled={!ready} onPointerDown={e => { if (e.pointerType === "touch") setTouchControls(true); }} onClick={start}>
                   {!ready
                     ? "LOADING SQUADS"
                     : started
@@ -302,7 +306,7 @@ export default function FPSPage() {
               )}
               <a href={withBasePath("/demo/fps/editor")}>EDIT MAP ↗</a>
             </div>
-            <div className="fps-keys">
+            {touchControls ? <p className="fps-touch-hint">Drag left to move · Drag right to look<br />Push the stick farther to sprint.</p> : <div className="fps-keys">
               <span><kbd>WASD</kbd> Move</span>
               <span><kbd>Mouse</kbd> Look</span>
               <span><kbd>LMB / RMB</kbd> Fire / aim</span>
@@ -312,28 +316,93 @@ export default function FPSPage() {
               <span><kbd>G</kbd> Grenade</span>
               <span><kbd>R</kbd> Reload</span>
               <span><kbd>Esc</kbd> Pause</span>
-            </div>
-            {error && (
-              <>
-                <p role="alert">{error}</p>
-                <button
-                  className="fps-secondary"
-                  onClick={() => {
-                    enableAudio();
-                    dragLook.current = true;
-                    setPlaying(true);
-                    setStarted(true);
-                    setError("");
-                  }}
-                >
-                  PLAY WITH DRAG LOOK →
-                </button>
-              </>
-            )}
+            </div>}
             <footer>You + 3 Remilios vs. 4 Miladys · Single-player</footer>
           </section>
         </div>
       )}
     </main>
   );
+}
+
+
+type TouchAction = "fire" | "aim" | "crouch" | "jump" | "reload" | "grenade";
+const touchActions: { key: TouchAction; label: string; held?: boolean }[] = [
+  { key: "fire", label: "Fire", held: true }, { key: "aim", label: "Aim", held: true },
+  { key: "crouch", label: "Crouch", held: true }, { key: "jump", label: "Jump" },
+  { key: "reload", label: "Reload" },
+  { key: "grenade", label: "Grenade" },
+];
+function TouchControls({ input, onPause }: { input: RefObject<Command>; onPause: () => void }) {
+  const stick = useRef<HTMLDivElement>(null), knob = useRef<HTMLDivElement>(null);
+  const gestures = useRef(new Map<number, { kind: "move" | "look"; x: number; y: number }>());
+  const held = useRef(new Map<number, TouchAction>());
+  useEffect(() => () => {
+    input.current.forward = input.current.right = 0;
+    input.current.sprint = false;
+    for (const action of touchActions) input.current[action.key] = false;
+    gestures.current.clear(); held.current.clear();
+  }, [input]);
+  const move = (event: PointerEvent<HTMLDivElement>) => {
+    const gesture = gestures.current.get(event.pointerId);
+    if (!gesture) return;
+    const dx = event.clientX - gesture.x, dy = event.clientY - gesture.y;
+    if (gesture.kind === "move") {
+      const distance = Math.hypot(dx, dy), radius = 48;
+      const scale = radius / Math.max(radius, distance);
+      input.current.right = distance < 6 ? 0 : dx * scale / radius;
+      input.current.forward = distance < 6 ? 0 : -dy * scale / radius;
+      // Hysteresis avoids toggling sprint at the edge of the thumb travel.
+      input.current.sprint = distance > (input.current.sprint ? 38 : 44);
+      if (stick.current) stick.current.dataset.sprinting = String(input.current.sprint);
+      if (knob.current) knob.current.style.transform = `translate(${dx * scale}px, ${dy * scale}px)`;
+    } else {
+      input.current.yaw -= dx * 0.004;
+      input.current.pitch = Math.max(-1.4, Math.min(1.4, input.current.pitch - dy * 0.004));
+      gesture.x = event.clientX; gesture.y = event.clientY;
+    }
+  };
+  const release = (event: PointerEvent<HTMLDivElement>) => {
+    if (gestures.current.get(event.pointerId)?.kind === "move") {
+      input.current.forward = input.current.right = 0;
+      input.current.sprint = false;
+      if (stick.current) stick.current.hidden = true;
+    }
+    gestures.current.delete(event.pointerId);
+  };
+  const releaseAction = (event: PointerEvent<HTMLButtonElement>) => {
+    const key = held.current.get(event.pointerId);
+    held.current.delete(event.pointerId);
+    if (key && ![...held.current.values()].includes(key)) input.current[key] = false;
+  };
+  return <div className="fps-touch-controls" onPointerDown={event => {
+    event.preventDefault();
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const kind = event.clientX - bounds.left < bounds.width * 0.4 ? "move" : "look";
+    if ([...gestures.current.values()].some(gesture => gesture.kind === kind)) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    gestures.current.set(event.pointerId, { kind, x: event.clientX, y: event.clientY });
+    if (kind === "move" && stick.current && knob.current) {
+      stick.current.hidden = false;
+      stick.current.style.left = `${event.clientX - bounds.left}px`;
+      stick.current.style.top = `${event.clientY - bounds.top}px`;
+      knob.current.style.transform = "translate(0, 0)";
+    }
+  }} onPointerMove={move} onPointerUp={release} onPointerCancel={release} onLostPointerCapture={release}>
+    <div ref={stick} className="fps-touch-stick" hidden aria-hidden="true"><div ref={knob} /></div>
+    <div className="fps-touch-actions">
+      {touchActions.map(action => <button key={action.key} type="button" aria-label={action.label}
+        onPointerDown={event => {
+          event.stopPropagation(); event.preventDefault();
+          event.currentTarget.setPointerCapture(event.pointerId);
+          input.current[action.key] = true;
+          if (action.held) held.current.set(event.pointerId, action.key);
+        }} onPointerUp={releaseAction} onPointerCancel={releaseAction} onLostPointerCapture={releaseAction}>
+        {action.label}
+      </button>)}
+      </div>
+    <button className="fps-touch-pause" type="button" aria-label="Pause" onPointerDown={event => { event.stopPropagation(); event.preventDefault(); onPause(); }} onClick={onPause}>
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3v10M11 3v10" stroke="currentColor" strokeWidth="3" /></svg>
+    </button>
+  </div>;
 }

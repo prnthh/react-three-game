@@ -122,15 +122,15 @@ A custom component pairs a React view with editable properties. Save this as
 
 ```tsx
 import { useFrame } from '@react-three/fiber';
-import { registerComponent, useNode, useGameObject,
+import { registerComponent, useComponentActive, useGameObject,
   type Component, type ComponentViewProps } from 'react-three-game/viewer';
 
 type Props = { speed: number };
 function RotatorView({ properties, enabled, children }: ComponentViewProps<Props>) {
   const object = useGameObject();
-  const { editMode } = useNode();
+  const active = useComponentActive(enabled);
   useFrame((_, delta) => {
-    if (enabled && !editMode && object.transform) {
+    if (active && object.transform) {
       object.transform.rotation.y += properties.speed * delta;
     }
   });
@@ -139,6 +139,7 @@ function RotatorView({ properties, enabled, children }: ComponentViewProps<Props
 
 const Rotator: Component<Props> = {
   name: 'Rotator',
+  category: 'misc',
   description: 'Rotate around Y. Speed is radians per second.',
   properties: { speed: { default: 1, step: 0.1 } },
   View: RotatorView,

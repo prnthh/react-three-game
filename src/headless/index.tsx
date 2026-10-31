@@ -3,13 +3,13 @@ import { createRoot, extend, unmountComponentAtNode } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { GLTFExporterOptions } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import type { Prefab, GameObject } from '../core/types.js';
-import { getMaterialDefinition, normalizePrefab, type PrefabState } from '../core/prefab.js';
+import { embedPrefabDefinitions, getMaterialDefinition, normalizePrefab, type PrefabState } from '../core/prefab.js';
 import { getComponent } from '../core/ComponentRegistry.js';
 import { builtInComponents, registerBuiltInComponents } from '../runtime/components/index.js';
 import { ComponentLookupContext } from '../runtime/prefabs/nodePlan.js';
 import PrefabRoot from '../runtime/prefabs/PrefabRoot.js';
 import { preparePrefab } from '../runtime/prefabs/preparePrefab.js';
-import { encodePrefabSource, loadPrefabSource } from '../runtime/prefabs/prefabSource.js';
+import { loadPrefabSource } from '../runtime/prefabs/prefabSource.js';
 import { createAssetCache, AssetCacheContext, type AssetLoaders } from '../runtime/assets/assetCache.js';
 import { AssetBoundary } from '../runtime/assets/AssetBoundary.js';
 import { SceneRuntime } from '../runtime/SceneRuntime.js';
@@ -62,7 +62,6 @@ async function mountHeadlessScene(prefab: Prefab, options: HeadlessSceneOptions,
     registerBuiltInComponents();
     extend(THREE as unknown as Parameters<typeof extend>[0]);
 
-    const rootURL = encodePrefabSource(prefab);
     const input = normalizePrefab(prefab);
     const abort = new AbortController();
     const onAbort = () => abort.abort(options.signal?.reason);
@@ -74,9 +73,7 @@ async function mountHeadlessScene(prefab: Prefab, options: HeadlessSceneOptions,
     const cache = createAssetCache({
         model: unsupported('model'), texture: unsupported('texture'), sound: unsupported('sound'),
         ...options.loaders,
-        prefab: async path => path === rootURL ? input
-            : options.loaders?.prefab ? options.loaders.prefab(path)
-                : loadPrefabSource(path),
+        prefab: options.loaders?.prefab ?? loadPrefabSource,
     });
     // R3F needs a unique root identity, not a real canvas, when a renderer is supplied.
     const target = { width, height } as HTMLCanvasElement;
@@ -94,6 +91,7 @@ async function mountHeadlessScene(prefab: Prefab, options: HeadlessSceneOptions,
             getComponent(name) {
                 const definition = lookup(name);
                 if (!definition) return undefined;
+                if (name === 'Terrain') throw new Error('Headless scene does not support Terrain yet; it requires a canvas image adapter');
                 if (name === 'Environment' || name === 'Text') {
                     throw new Error(`Headless scene does not support ${name} yet; it requires a GPU or font host adapter`);
                 }
@@ -102,7 +100,7 @@ async function mountHeadlessScene(prefab: Prefab, options: HeadlessSceneOptions,
             },
             loadDocument: path => cache.load('prefab', path),
             loadAsset: dependency => cache.load(dependency.kind, dependency.path),
-        }, rootURL, { basePath, signal: abort.signal });
+        }, input, { basePath, signal: abort.signal });
         abort.signal.throwIfAborted();
         const scene = new THREE.Scene();
         const root = createRoot(target);
@@ -177,15 +175,13 @@ function staticPrefab(document: Prefab): Prefab {
             children: node.children?.map(visit),
         };
     };
-    return { ...document, root: visit(document.root), ...(document.prefabs ? {
-        prefabs: Object.fromEntries(Object.entries(document.prefabs).map(([id, prefab]) => [id, staticPrefab(prefab)])),
-    } : {}) };
+    return { ...document, root: visit(document.root) };
 }
 
 function prefabFromState(state: PrefabState): Prefab {
     // Preserve explicit properties; denormalization compacts using the application registry.
     const node = (id: string): GameObject => ({ ...state.nodesById[id], children: state.childIdsById[id].map(node) });
-    return { id: state.prefabId, name: state.prefabName, prefabs: state.prefabs, root: node(state.rootId) };
+    return { id: state.prefabId, name: state.prefabName, root: embedPrefabDefinitions(node(state.rootId), state.prefabs) };
 }
 
 /** Lossy built-ins-only export. Custom views, dependencies and modifiers never run. */

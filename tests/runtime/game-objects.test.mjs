@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { Group, Mesh } from 'three';
-import { createGameObjectHandle, registerGameObjectOwner, resolveGameObject, registerRenderSources, resolveRenderSource } from '../../src/runtime/scene/gameObject.ts';
+import { createGameObjectHandle, registerGameObjectOwner, getObjectNodeIdentity, resolveGameObject, registerRenderSources, resolveRenderSource } from '../../src/runtime/scene/gameObject.ts';
 import { createPrefabRegistry, createNodeComponentRegistry, createNodeComponentType, PrefabContext, NodeComponentContext, NodeScope, RuntimeNodeIdScope, useGameObject } from '../../src/runtime/scene/SceneContext.tsx';
-import { editPickIds } from '../../src/runtime/scene/editPicking.ts';
+import { editPickIds } from '../../src/editor/selection.tsx';
 import { notifyObjectChanged } from '../../src/runtime/scene/objectChanges.ts';
 
 describe('Handles and scoped lookup', () => {
@@ -20,13 +20,15 @@ describe('Handles and scoped lookup', () => {
         const transform = new Group();
         const animator = { play: () => 'walk' };
         objects.registerObject('player', transform);
-        components.register(player.id, ANIMATOR, animator);
+        const releaseAnimator = components.register(player.id, ANIMATOR, animator);
         assert.equal(player.transform, transform);
         assert.equal(player.getComponent(ANIMATOR).play(), 'walk');
         const replacement = { play: () => 'run' };
-        components.register(player.id, ANIMATOR, replacement);
+        const releaseReplacement = components.register(player.id, ANIMATOR, replacement);
+        assert.equal(player.getComponent(ANIMATOR), animator);
+        releaseAnimator();
         assert.equal(player.getComponent(ANIMATOR), replacement);
-        components.register(player.id, ANIMATOR, null);
+        releaseReplacement();
         objects.registerObject('player', null);
         assert.equal(player.transform, null);
         assert.equal(player.getComponent(ANIMATOR), null);
@@ -79,6 +81,17 @@ describe('Ownership and picking resolution', () => {
         root.remove(model); assert.equal(resolveGameObject(mesh), null);
         outer.remove(); inner.remove(); assert.equal(resolveGameObject(nested), null);
         assert.equal(resolveGameObject(new Group()), null);
+    });
+
+    test('metadata cannot create or preserve live node ownership', () => {
+        const object = new Group();
+        object.userData = { prefabNodeId: 'stale', prefabInstanceId: 'old' };
+        assert.equal(getObjectNodeIdentity(object), null);
+        const registration = owner('live', 'scene', object);
+        assert.deepEqual(getObjectNodeIdentity(object), { id: 'scene/live', nodeId: 'live', scope: 'scene' });
+        registration.remove();
+        assert.equal(getObjectNodeIdentity(object), null);
+        assert.equal(resolveGameObject(object), null);
     });
 
     test('render instance resolution and owner cleanup survive replacement', () => {

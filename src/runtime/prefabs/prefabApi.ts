@@ -13,10 +13,9 @@ export function usePrefabDocument(): PrefabDocumentApi {
     return useMemo(() => createPrefabDocumentApi(store), [store]);
 }
 
-/** Existing refs combine the document facade with live objects and resources. */
+/** Runtime access stays separate from the serializable document API. */
 export function createPrefabApi(store: PrefabStoreApi, registry: PrefabRegistry, getRuntime: () => AssetRuntime | null, basePath: string): PrefabApi {
     return {
-        ...createPrefabDocumentApi(store),
         ...registry,
         get root() { return registry.getObject(store.getState().rootId); },
         basePath,

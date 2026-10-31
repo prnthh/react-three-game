@@ -5,18 +5,42 @@ import { createNodeComponentRegistry, createNodeComponentType } from '../../src/
 describe('Registration lifecycle', () => {
     const TYPE = createNodeComponentType('test'), OTHER = createNodeComponentType('other');
 
-    test('registration cleanup cannot remove replacements, including the same value', () => {
+    test('registration cleanup removes only its own instance, including the same value', () => {
         const registry = createNodeComponentRegistry(), value = {};
         const old = registry.register('node', TYPE, value);
         const current = registry.register('node', TYPE, value);
         old(); assert.equal(registry.get('node', TYPE), value);
         const next = registry.register('node', TYPE, 42);
+        assert.equal(registry.get('node', TYPE), value, 'later registrations do not replace the first');
         current(); assert.equal(registry.get('node', TYPE), 42);
         next(); next(); assert.equal(registry.get('node', TYPE), null);
         const removed = registry.register('node', TYPE, value);
         registry.register('node', TYPE, null);
+        assert.equal(registry.get('node', TYPE), value, 'null does not clear another registration');
         registry.register('node', TYPE, 12);
         removed(); assert.equal(registry.get('node', TYPE), 12);
+    });
+
+    test('first-match lookup and scene queries advance together when the first registration leaves', () => {
+        const registry = createNodeComponentRegistry(), snapshots = [];
+        registry.subscribe(TYPE, () => snapshots.push(registry.getAll(TYPE)));
+        const first = registry.register('a', TYPE, 1);
+        const snapshot = registry.getAll(TYPE);
+        const middle = registry.register('a', TYPE, 2);
+        const last = registry.register('a', TYPE, 3);
+        assert.equal(registry.getAll(TYPE), snapshot, 'hidden matches do not invalidate the visible snapshot');
+        middle(); middle();
+        assert.equal(registry.get('a', TYPE), 1, 'out-of-order cleanup preserves the first');
+        assert.equal(snapshots.length, 1);
+        registry.register('b', TYPE, 4);
+        first();
+        assert.equal(registry.get('a', TYPE), 3);
+        assert.deepEqual(registry.getAll(TYPE), [{ key: 'a', value: 3 }, { key: 'b', value: 4 }]);
+        assert.deepEqual(snapshot, [{ key: 'a', value: 1 }], 'old snapshots remain immutable');
+        last();
+        assert.equal(registry.get('a', TYPE), null);
+        assert.deepEqual(registry.getAll(TYPE), [{ key: 'b', value: 4 }]);
+        assert.equal(snapshots.length, 4);
     });
 
     test('nested batches publish one notification per type with coherent final state', () => {

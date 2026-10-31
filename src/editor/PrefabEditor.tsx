@@ -1,3 +1,7 @@
+import { SharedCanvas } from "./assets/AssetBrowser.js";
+import { resolveGameObject } from '../runtime/scene/gameObject.js';
+import { createPrefabDocumentApi } from '../core/prefabDocumentApi.js';
+import { importCollisionModel } from '../core/modelPrefab.js';
 import { createEditorToolController, EditorToolsContext } from "./tools/EditorTools.js";
 import { loadAssetManifest } from '../runtime/assets/assetManifest.js';
 import { downloadBlob, downloadURL } from '../browser/index.js';
@@ -11,6 +15,7 @@ import { findComponentEntry } from "../core/types.js";
 import type { GameObject, Prefab } from "../core/types.js";
 import GameCanvas from "../runtime/GameCanvas.js";
 import PrefabRoot from "../runtime/prefabs/PrefabRoot.js";
+import { EditorSelection } from "./selection.js";
 import { AssetRuntimeProvider } from "../runtime/assets/AssetRuntime.js";
 import type { AssetRuntime } from "../runtime/assets/AssetRuntime.js";
 import { createPrefabRegistry, PrefabEditorMode } from "../runtime/scene/SceneContext.js";
@@ -56,22 +61,13 @@ function raycastDropPosition(event: DragEvent, state: RootState, target: Vector3
 
     for (let index = 0; index < DROP_INTERSECTIONS.length; index += 1) {
         const intersection = DROP_INTERSECTIONS[index];
-        if (hasPrefabNodeAncestor(intersection.object)) {
+        if (resolveGameObject(intersection.object, intersection.instanceId)) {
             target.copy(intersection.point);
             return true;
         }
     }
 
     return state.raycaster.ray.intersectPlane(DROP_GROUND, target) !== null;
-}
-
-function hasPrefabNodeAncestor(object: Object3D) {
-    let current: Object3D | null = object;
-    while (current) {
-        if (typeof current.userData.prefabNodeId === 'string') return true;
-        current = current.parent;
-    }
-    return false;
 }
 
 function offsetNodePosition(node: GameObject, offset: Vec3): GameObject {
@@ -110,12 +106,6 @@ function isObjectAttachedToRoot(root: Object3D | null | undefined, object: Objec
     }
 
     return false;
-}
-
-export { isExternalPath as isAbsoluteAssetPath } from "../runtime/assets/assetPaths.js";
-
-export function resolvePrefabAssetPath(basePath: string, file: string) {
-    return withBasePath(basePath, file);
 }
 
 export function getPrefabAssetRef(assetRef: string, folder: "models" | "textures" | "sound") {
@@ -283,7 +273,9 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
 
     const getPrefab = useCallback(() => denormalizePrefab(prefabStore.getState()), [prefabStore]);
     const prefabValue = useMemo(() => createPrefabApi(prefabStore, prefabRegistry, () => runtimeRef.current, basePath), [basePath, prefabRegistry, prefabStore]);
-    const { getObject, update } = prefabValue;
+    const document = useMemo(() => createPrefabDocumentApi(prefabStore), [prefabStore]);
+    const { getObject } = prefabValue;
+    const { update } = document;
     const getRoot = useCallback(() => prefabValue.root, [prefabValue]);
     useLayoutEffect(() => history.connect(), [history]);
     useLayoutEffect(() => history.setEnabled(isEditMode), [history, isEditMode]);
@@ -468,7 +460,7 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
         const modelName = file.name.replace(/\.[^.]+$/, '');
         const modelIdPrefix = modelName.replace(/[^\w-]+/g, '-') || 'model';
         const textureRefs = new Map<string, Texture>();
-        const decomposed = importModel?.(model, {
+        const decomposed = (importModel ?? importCollisionModel)(model, {
             idPrefix: modelIdPrefix,
             getTexturePath: (texture, usage) => {
                 const key = `embedded/${modelIdPrefix}/${usage}/${texture.uuid}`;
@@ -479,7 +471,7 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
         if (!decomposed) {
             if (!replaceId) {
                 const node = offsetNodePosition(createModelNode(path, file.name.replace(/\.[^.]+$/, '')), position);
-                prefabValue.add(node);
+                document.add(node);
                 setSelectedId(node.id);
             }
             return;
@@ -498,7 +490,7 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
             else s.addChild(s.rootId, node);
         }
         setSelectedId(node.id);
-    }, [basePath, importModel, prefabStore, prefabValue]);
+    }, [basePath, importModel, prefabStore, document]);
 
     const addImageNode = useCallback((filename: string, file: File, position: Vec3) => {
         const path = getPrefabAssetRef(filename, 'textures');
@@ -578,7 +570,7 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
                     const node = offsetNodePosition(createModelNode(path, file.name.replace(/\.[^.]+$/, '')), position);
                     pendingModels.set(file, node.id);
                     pendingModelPaths.set(file, path);
-                    prefabValue.add(node);
+                    document.add(node);
                     setSelectedId(node.id);
                     void runtime.loadModel(withBasePath(basePath, path), () => source);
                     clearDropPreview();
@@ -621,7 +613,7 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
             window.removeEventListener('drop', handleDrop);
             clearDropPreview();
         };
-    }, [addImageNode, addParsedModel, basePath, enableWindowDrop, isEditMode, prefabValue, toRootLocalPosition]);
+    }, [addImageNode, addParsedModel, basePath, enableWindowDrop, isEditMode, document, toRootLocalPosition]);
 
     const sceneValue = useMemo<Scene>(() => ({
         get root() { return prefabValue.root; },
@@ -789,6 +781,7 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
 
     const editorRefValue = useMemo<PrefabEditorRef>(() => ({
         ...prefabValue,
+        ...document,
         ...sceneValue,
         scene: sceneAgent.scene,
         setMode: updateMode,
@@ -801,7 +794,7 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
         exportGLB: handleExportGLB,
         exportGLBData: handleExportGLBData,
         clearSelection,
-    }), [sceneAgent, updateMode, resetScene, clearSelection, getPrefab, handleExportGLB, handleExportGLBData, handleScreenshot, loadPrefab, prefabValue, redo, sceneValue, undo]);
+    }), [sceneAgent, updateMode, resetScene, clearSelection, getPrefab, handleExportGLB, handleExportGLBData, handleScreenshot, loadPrefab, prefabValue, document, redo, sceneValue, undo]);
 
     return {
         basePath, prefabStore, prefabValue, sceneValue, editorRefValue, runtimeRef, runtimeVersion, resetScene,
@@ -838,7 +831,7 @@ export const PrefabEditorProvider = forwardRef<PrefabEditorRef, PrefabEditorProv
                                 positionSnap: state.positionSnap, setPositionSnap: state.setPositionSnap,
                                 rotationSnap: state.rotationSnap, setRotationSnap: state.setRotationSnap,
                                 onFocusNode: state.isEditMode ? state.handleFocusNode : undefined,
-                            }}>{props.children}</EditorContext.Provider>
+                            }}>{props.children}<SharedCanvas /></EditorContext.Provider>
                         </EditorToolsContext.Provider>
                     </EditorRefContext.Provider>
                 </EditorStateContext.Provider>
@@ -880,18 +873,17 @@ export function PrefabEditorScene({ children }: { children?: React.ReactNode; })
     }, [get, isEditMode, setSelection]);
     return <>
         {isEditMode ? <gridHelper args={[10, 10]} position={[0, -0.001, 0]} /> : null}
-        <PrefabRoot
-            key={runtimeVersion}
-            store={prefabStore}
-            editMode={isEditMode}
-            selectedId={selectedId}
-            onSelect={setSelection}
-            onPointerEvent={onPointerEvent}
-            basePath={basePath}
-            prefab={prefabValue}
-        >
-            {children}
-        </PrefabRoot>
+        <EditorSelection key={runtimeVersion} store={prefabStore} selectedId={selectedId} enabled={isEditMode} onSelect={setSelection}>
+            <PrefabRoot
+                store={prefabStore}
+                editMode={isEditMode}
+                onPointerEvent={onPointerEvent}
+                basePath={basePath}
+                prefab={prefabValue}
+            >
+                {children}
+            </PrefabRoot>
+        </EditorSelection>
         <DropPreview previewRef={dropPreviewRef} />
 
         {isEditMode && (

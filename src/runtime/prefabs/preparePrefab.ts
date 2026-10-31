@@ -4,7 +4,6 @@ import type { PrefabState } from '../../core/prefab.js';
 import type { Prefab } from '../../core/types.js';
 import { resolveInlinePrefab } from '../../core/inlinePrefabs.js';
 import { withBasePath } from '../assets/assetPaths.js';
-import { describePrefabSource } from './prefabSource.js';
 import type { AssetDependency } from '../../core/dependencies.js';
 
 export interface PreparedPrefab {
@@ -23,16 +22,16 @@ export interface PrefabPreparationRuntime {
 /** Resolve inline and URL definitions through one dependency graph before activation. */
 export async function preparePrefab(
     runtime: PrefabPreparationRuntime,
-    path: string,
+    path: string | PrefabState,
     { basePath = '', signal }: PrefabPreparationOptions = {},
 ): Promise<PreparedPrefab> {
     const started = performance.now();
-    type Source = string | Prefab;
+    type Source = string | Prefab | PrefabState;
     const documents = new Map<Source, Promise<PrefabState>>();
     const assets = new Map<string, Promise<unknown>>();
     const edges = new Map<Source, Source[]>();
     const queue: Source[] = [];
-    const describe = (source: Source) => typeof source === 'string' ? describePrefabSource(source) : source.name ?? source.id ?? 'inline prefab';
+    const describe = (source: Source) => typeof source === 'string' ? source : 'rootId' in source ? source.prefabName ?? source.rootId : source.name ?? source.id ?? 'inline prefab';
     const check = () => {
         if (signal?.aborted) throw signal.reason ?? new Error('Prefab preparation cancelled');
     };
@@ -53,9 +52,9 @@ export async function preparePrefab(
         assets.set(key, ready);
         void ready.catch(() => {});
     };
-    const rootUrl = withBasePath(basePath, path);
+    const rootSource = typeof path === 'string' ? withBasePath(basePath, path) : path;
     const run = async () => {
-        enqueue(rootUrl);
+        enqueue(rootSource, typeof path === 'string' ? undefined : path);
         while (queue.length) {
             await Promise.all(queue.splice(0).map(async source => {
                 const document = await documents.get(source)!;
@@ -96,11 +95,11 @@ export async function preparePrefab(
             visiting.delete(source);
             visited.add(source);
         };
-        validate(rootUrl);
+        validate(rootSource);
         await Promise.all(assets.values());
         check();
         return {
-            document: await documents.get(rootUrl)!, documentCount: documents.size,
+            document: await documents.get(rootSource)!, documentCount: documents.size,
             assetCount: assets.size, durationMs: performance.now() - started,
         };
     };

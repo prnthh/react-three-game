@@ -86,16 +86,19 @@ test('box UV mapping preserves source geometry and uses surface dimensions and a
  source.dispose(); mapped.dispose();
 });
 
-test('projected decals clip curved parent meshes, preserve sources and follow transformed parents', async () => {
+test('projected decals clip curved parent meshes, preserve sources and follow transformed parents', async t => {
+ const { registerGameObjectOwner } = await import('../../src/runtime/scene/gameObject.ts');
  const { SphereGeometry, Vector3 } = await import('three');
  const { getDecalTargets, projectDecalGeometry } = await import('../../src/runtime/components/DecalComponent.tsx');
  const parent = new Group(), target = new Mesh(new SphereGeometry(2, 32, 24));
  parent.add(target);
- const projector = new Group(); projector.userData.prefabNodeId = 'decal';
+ const projector = new Group();
+ t.after(registerGameObjectOwner(projector, { id: 'decal', nodeId: 'decal', scope: '' }));
  projector.position.z = 1.95; parent.add(projector);
  // Another authored child and the decal itself must not become projection targets.
  projector.add(new Mesh(new BoxGeometry()));
- const child = new Group(); child.userData.prefabNodeId = 'separate-object';
+ const child = new Group();
+ t.after(registerGameObjectOwner(child, { id: 'separate-object', nodeId: 'separate-object', scope: '' }));
  child.add(new Mesh(new BoxGeometry())); parent.add(child);
  assert.deepEqual(getDecalTargets(parent), [target]);
  const original = target.geometry.attributes.position.array.slice();

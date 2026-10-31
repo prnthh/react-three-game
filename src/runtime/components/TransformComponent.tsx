@@ -8,8 +8,9 @@ export type TransformProperties = {
 
 const TransformComponent: Component<TransformProperties> = {
     name: 'Transform',
+    category: 'transform',
     description: "Place, rotate or scale this node and its descendants relative to its parent. Y is up; rotations use XYZ Euler radians.",
-    slot: 'transform',
+    exclusive: 'transform',
     properties: {
         position: { description: "Local xyz position relative to the parent.", type: 'vector3', default: [0, 0, 0] },
         rotation: { description: "Local XYZ Euler angles in radians.", type: 'vector3', default: [0, 0, 0] },

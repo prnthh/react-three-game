@@ -2,8 +2,6 @@ export interface Prefab {
     id?: string;
     name?: string;
     root: GameObject;
-    /** Legacy input format; new documents keep packed definitions on scene nodes. */
-    prefabs?: Record<string, Prefab>;
 }
 
 export type PrefabMaterialType = 'standard' | 'basic' | 'sprite';
@@ -21,6 +19,9 @@ export interface PrefabMaterial {
     depthWrite?: boolean;
     metalness?: number;
     roughness?: number;
+    diffuseRoughness?: number;
+    emissive?: string;
+    emissiveIntensity?: number;
     transmission?: number;
     thickness?: number;
     ior?: number;
@@ -63,9 +64,10 @@ export interface ComponentData<P extends object = Record<string, any>> {
 
 type ComponentHost = { components?: Record<string, { type?: string; properties?: Record<string, any> } | undefined> };
 
-const RESERVED_USER_DATA_KEYS = new Set([
+export const RESERVED_USER_DATA_KEYS: ReadonlySet<string> = new Set([
     'prefabNodeId',
     'prefabNodeName',
+    'prefabNodeScope',
 ]);
 
 /** Find a component on a node by type name or key (e.g. "Model", "transform"). */

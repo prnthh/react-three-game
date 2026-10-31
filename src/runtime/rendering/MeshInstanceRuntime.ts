@@ -13,7 +13,7 @@ const INVERSE_MATRIX = new Matrix4();
 export type InstancedMeshSource = {
     id: string;
     mesh: Mesh;
-    onEditClick?: (event: ThreeEvent<MouseEvent>) => void;
+    onClick?: (event: ThreeEvent<MouseEvent>) => void;
 };
 
 /** Own source layer masks while a batch is mounted; mirrored transforms can opt out per frame. */
@@ -256,6 +256,6 @@ export class MeshInstanceRegistry {
     }
     handleClick = (event: ThreeEvent<MouseEvent>) => {
         if (event.delta > 4 || event.instanceId == null) return;
-        this.hits.get(event.object)?.sources[event.instanceId]?.onEditClick?.(event);
+        this.hits.get(event.object)?.sources[event.instanceId]?.onClick?.(event);
     };
 }

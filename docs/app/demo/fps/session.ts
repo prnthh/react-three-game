@@ -75,8 +75,8 @@ export class ReplaySession implements ClientSession {
     if (recording.version !== 1 || recording.world !== "relay-yard-v1" || recording.step !== STEP || !recording.frames.length)
       throw new Error("Unsupported or empty match recording");
     recording.frames.forEach((frame, i) => {
-      if (frame.version !== 3 || !Number.isSafeInteger(frame.tick) || (i > 0 && frame.tick !== recording.frames[i - 1].tick + 1))
-        throw new Error("Recording must contain contiguous version 3 authority frames");
+      if (frame.version !== 4 || !Number.isSafeInteger(frame.tick) || (i > 0 && frame.tick !== recording.frames[i - 1].tick + 1))
+        throw new Error("Recording must contain contiguous version 4 authority frames");
     });
     this.frames = recording.frames.map(frame => copySnapshot(frame, emptySnapshot(), frame.acknowledged));
     copySnapshot(this.frames[0], this.state, this.frames[0].acknowledged); copySnapshot(this.state, this.previous, this.state.acknowledged);

@@ -117,12 +117,8 @@ test('packed validation is atomic and preparation reports missing definitions', 
     assert.throws(() => resolveInlinePrefab(store.getState(), 'missing'), /Unknown inline prefab/);
 });
 
-test('legacy table input saves as inline owners', () => {
-    const state = normalizePrefab({ prefabs: { prop: { root: { id: 'data' } } }, root: { id: 'world', children: [ref('a', 'prop'), ref('b', 'prop')] } });
-    const saved = denormalizePrefab(state);
-    assert.equal(saved.prefabs, undefined);
-    assert.equal(saved.root.children[0].children[0].id, 'prop');
-    assert.ok(resolveInlinePrefab(normalizePrefab(saved), 'prop'));
+test('documents reject the removed top-level definition table', () => {
+    assert.throws(() => normalizePrefab({ prefabs: { prop: { root: { id: 'data' } } }, root: { id: 'world' } }), /Unexpected prefab field/);
 });
 
 test('portable copies remap nested packed owners and their references together', () => {
@@ -145,4 +141,64 @@ test('editing or moving the owner placement does not change its reusable shape',
     assert.equal(store.getState().prefabs.building, definition);
     scene.batch({ expectedRevision: scene.info().revision, commands: [{ op: 'move', id: 'part', parentId: 'world' }] });
     assert.equal(resolveInlinePrefab(store.getState(), 'building').nodesById.part, undefined);
+});
+
+
+test('compiled collider preserves nested affine transforms, independent of render geometry', async () => {
+  const { walkPrefabWorldTransforms, compileBoxCollider } = await import('../../src/core/index.ts');
+  const { Matrix4, Vector3 } = await import('three');
+  const document = { root: { id: 'parent', components: { transform: { type: 'Transform', properties: {
+    position: [4, 2, -3], rotation: [0.2, 0.7, 0], scale: [2, 1, -0.5],
+  } } }, children: [{ id: 'shape', components: {
+    transform: { type: 'Transform', properties: { position: [1, 0, 2], rotation: [0.3, -0.4, 0.2] } },
+    collider: { type: 'BoxCollider', properties: { size: [4, 2, 1], center: [0.5, 0, 0] } },
+    geometry: { type: 'Geometry', properties: { geometryType: 'sphere', args: [100] } },
+  } }] } };
+  let box, matrix;
+  walkPrefabWorldTransforms(document, (node, world) => {
+    if (node.id === 'shape') { matrix = world; box = compileBoxCollider(world, node.components.collider.properties); }
+  });
+  const localCenter = new Vector3(0.5, 0, 0), center = localCenter.clone().applyMatrix4(matrix);
+  assert.deepEqual(box.p, center.toArray());
+  assert.equal(box.vertices.length, 8);
+  // Every compiled hull corner must map back to a local box corner, including shear/reflection.
+  const inverse = matrix.clone().invert();
+  for (const vertex of box.vertices) {
+    const local = new Vector3(...vertex).add(center).applyMatrix4(inverse).sub(localCenter);
+    for (const [i, half] of [2, 1, 0.5].entries()) assert.ok(Math.abs(Math.abs(local.getComponent(i)) - half) < 1e-9);
+  }
+  assert.throws(() => compileBoxCollider(new Matrix4().makeScale(1, 0, 1)), /invertible/);
+  assert.throws(() => compileBoxCollider(new Matrix4(), { size: [1, -1, 1] }), /positive size/);
+});
+
+test('model collision suffixes serialize independent shapes and preserve nested transforms', async () => {
+  const { Group, Mesh, BoxGeometry, MeshBasicMaterial, Matrix4 } = await import('three');
+  const { decomposeModelToPrefabNodes, parseCollisionName, compileMeshCollider, walkPrefabWorldTransforms } = await import('../../src/core/index.ts');
+  const root = new Group(); root.position.set(3, 1, 2); root.rotation.y = .4;
+  const mesh = new Mesh(new BoxGeometry(2, 3, 4), new MeshBasicMaterial());
+  mesh.name = 'proxy_CONVCOLONLY.001'; mesh.scale.set(-2, 1, 1); mesh.position.x = 2; root.add(mesh);
+  const prefab = decomposeModelToPrefabNodes(root);
+  const node = prefab.root.children[0];
+  assert.equal(node.components.geometry, undefined);
+  assert.equal(node.components.collider.properties.shape, 'convex');
+  root.updateMatrixWorld(true);
+  let compiled;
+  walkPrefabWorldTransforms(prefab, (n, world) => { if(n.id === node.id) compiled = compileMeshCollider(world, n.components.collider.properties); });
+  const direct = compileMeshCollider(mesh.matrixWorld, node.components.collider.properties);
+  compiled.p.forEach((v,i)=>assert.ok(Math.abs(v-direct.p[i])<1e-8));
+  assert.deepEqual(compiled.indices.slice(0,3), [0,1,2].map(i=>node.components.collider.properties.indices[[0,2,1][i]]));
+  for (const suffix of ['_col', '-col', '_convcol']) {
+    mesh.name = `wall${suffix}`;
+    const visible = decomposeModelToPrefabNodes(mesh).root.components;
+    assert.ok(visible.geometry && visible.collider);
+  }
+  root.name = 'multi-material_colonly'; mesh.name = 'primitive_0';
+  assert.equal(decomposeModelToPrefabNodes(root).root.children[0].components.geometry, undefined, 'GLTF marker groups hide their primitive meshes');
+  root.name = '';
+  assert.equal(parseCollisionName('color'), null);
+  assert.equal(parseCollisionName('wall_colinv'), null);
+  mesh.name = 'wall_colonly';
+  assert.ok(decomposeModelToPrefabNodes(mesh,{collisionNames:false}).root.components.geometry);
+  assert.throws(()=>compileMeshCollider(new Matrix4(), {positions:[0,0,0,1,0,0,0,1,0],indices:[0,1,4]}),/indices/);
+  mesh.geometry.dispose();mesh.material.dispose();
 });

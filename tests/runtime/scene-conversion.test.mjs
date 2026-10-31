@@ -62,3 +62,10 @@ test('the headless host builds and exports built-in geometry, material and trans
         checkScene((await parse(await host.exportGLB())).scene);
     } finally { await host.dispose(); }
 });
+
+
+test('headless preparation rejects browser-only terrain instead of succeeding with missing geometry', async () => {
+    const terrain = { id: 'terrain', components: { terrain: { type: 'Terrain', properties: {} } } };
+    await assert.rejects(createHeadlessScene({ root: terrain }), /Terrain.*canvas image adapter/);
+    await assert.rejects(createHeadlessScene({ root: { id: 'world', children: [terrain] } }), /Terrain.*canvas image adapter/);
+});

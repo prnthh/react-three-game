@@ -1,10 +1,12 @@
 import { DEFAULT_SPATIAL_CELL_SIZE } from '../spatial/SpatialGrid.js';
 import { createContext, useContext, useLayoutEffect, useMemo, useRef, useSyncExternalStore, type ReactNode, type RefObject } from 'react';
 import { Group, type Mesh } from 'three';
-import { useFrame } from '@react-three/fiber';
-import { EditPickContext } from '../scene/SelectionRuntime.js';
+import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { MeshInstanceRegistry } from './MeshInstanceRuntime.js';
 export { hideInstancedSources, manageInstancedSourceVisibility, supportsInstanceMatrix } from './MeshInstanceRuntime.js';
+
+/** Forward batched clicks to the host that owns each source mesh. */
+export const InstanceClickContext = createContext<((event: ThreeEvent<MouseEvent>) => void) | undefined>(undefined);
 
 const MeshInstanceContext = createContext<MeshInstanceRegistry | null>(null);
 const MeshInstancingEnabled = createContext(true);
@@ -38,16 +40,16 @@ export function MeshInstanceProvider({ children, isolated = false, static: isSta
 export function useMeshInstanceRegistration(id: string, meshRef: RefObject<Mesh | null>, enabled: boolean) {
     const instancingEnabled = useContext(MeshInstancingEnabled);
     const registry = useContext(MeshInstanceContext);
-    const onEditClick = useContext(EditPickContext);
-    const editClick = useRef(onEditClick);
-    useLayoutEffect(() => { editClick.current = onEditClick; }, [onEditClick]);
+    const onClick = useContext(InstanceClickContext);
+    const clickHandler = useRef(onClick);
+    useLayoutEffect(() => { clickHandler.current = onClick; }, [onClick]);
     useLayoutEffect(() => {
         const mesh = meshRef.current;
         if (!instancingEnabled || !registry || !mesh || !enabled || !mesh.geometry || !mesh.material || mesh.children.length > 0) return;
         return registry.register({
             id,
             mesh,
-            onEditClick: event => editClick.current?.(event),
+            onClick: event => clickHandler.current?.(event),
         });
     }, [enabled, instancingEnabled, id, meshRef, registry]);
 }

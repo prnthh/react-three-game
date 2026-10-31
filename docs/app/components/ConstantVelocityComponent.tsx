@@ -1,9 +1,8 @@
 import { useFrame } from "@react-three/fiber";
 import { Vector3 } from "three";
 import {
-    PrefabEditorMode,
+    useComponentActive,
     useGameObject,
-    useScene,
     type Component,
     type ComponentViewProps,
 } from "react-three-game/viewer";
@@ -19,12 +18,12 @@ const worldDestination = new Vector3();
 const localPosition = new Vector3();
 const localDestination = new Vector3();
 
-function ConstantVelocityView({ properties, children }: ComponentViewProps<ConstantVelocityProperties>) {
+function ConstantVelocityView({ properties, enabled, children }: ComponentViewProps<ConstantVelocityProperties>) {
     const objectRef = useGameObject();
-    const { mode } = useScene();
+    const active = useComponentActive(enabled);
 
     useFrame((_, delta) => {
-        if (mode !== PrefabEditorMode.Play) return;
+        if (!active) return;
         const object = objectRef.transform;
         const velocity = properties.velocity;
         if (!object || delta <= 0 || (velocity[0] === 0 && velocity[1] === 0 && velocity[2] === 0)) return;

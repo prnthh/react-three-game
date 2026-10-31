@@ -1,13 +1,14 @@
 "use client";
 import { createContext, useContext, useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
+import { useGLTF } from "@react-three/drei";
+import { withBasePath } from "../../../basePath";
 import { AdditiveBlending, NormalBlending, CanvasTexture, Color, DoubleSide, DynamicDrawUsage, Group, InstancedBufferAttribute, InstancedMesh, Object3D, PlaneGeometry, PointLight, Quaternion, Vector3 } from "three";
 import { MeshBasicNodeMaterial } from "three/webgpu";
-import { attribute } from "three/tsl";
-import { blocks } from "./shared/map";
-import type { Shot } from "./shared/protocol";
-import type { MatchSnapshot } from "./shared/protocol";
-import type { ClientSession } from "./session";
+import { attribute, uv, vec3, float, mix, smoothstep, mx_noise_float } from "three/tsl";
+import { STEP, type Shot } from "../shared/protocol";
+import type { MatchSnapshot } from "../shared/protocol";
+import type { ClientSession } from "../session";
 
 export const MuzzleContext = createContext<Map<number, Group> | null>(null);
 /** A cosmetic socket; authoritative hits still originate at the player's aim ray. */
@@ -56,16 +57,38 @@ class EffectPool {
   private cursor = 0;
   private transform = new Object3D();
   private alpha: InstancedBufferAttribute;
+  private phase: InstancedBufferAttribute;
   private side = new Vector3();
   private along = new Vector3();
   private normal = new Vector3();
-  constructor(count: number, additive: boolean, flame = false) {
+  constructor(count: number, additive: boolean, flame = false, procedural?: "fire" | "smoke") {
     const geometry = new PlaneGeometry(1, 1);
     this.alpha = new InstancedBufferAttribute(new Float32Array(count), 1).setUsage(DynamicDrawUsage);
     geometry.setAttribute("fxAlpha", this.alpha);
-    const material = new MeshBasicNodeMaterial({ map: effectTexture(flame), transparent: true, depthWrite: false,
+    this.phase = new InstancedBufferAttribute(new Float32Array(count), 1).setUsage(DynamicDrawUsage);
+    geometry.setAttribute("fxPhase", this.phase);
+    geometry.setAttribute("fxSeed", new InstancedBufferAttribute(Float32Array.from({ length: count }, (_, i) => i * 1.618), 1));
+    const material = new MeshBasicNodeMaterial({ map: procedural ? null : effectTexture(flame), transparent: true, depthWrite: false,
       side: DoubleSide, blending: additive ? AdditiveBlending : NormalBlending, toneMapped: false });
     material.opacityNode = attribute("fxAlpha", "float");
+    if (procedural) {
+      const phase = float(attribute<"float">("fxPhase", "float")), seed = float(attribute<"float">("fxSeed", "float"));
+      const p = uv().sub(0.5).mul(2);
+      const noise = mx_noise_float(vec3(p.mul(3.2), phase.mul(-2).add(seed))).mul(0.65)
+        .add(mx_noise_float(vec3(p.mul(7), phase.mul(-3).add(seed))).mul(0.25));
+      const density = float(1).sub(p.length()).add(noise.mul(0.32));
+      const edge = smoothstep(0.02, 0.32, density);
+      material.opacityNode = edge.mul(attribute("fxAlpha", "float"));
+      if (procedural === "fire") {
+        const heat = density.mul(1.25).sub(phase.mul(0.6)).clamp(0, 1);
+        material.colorNode = mix(mix(vec3(0.7, 0.055, 0.005), vec3(3.8, 0.85, 0.08), smoothstep(0, 0.6, heat)),
+          vec3(6, 4.3, 1.8), smoothstep(0.65, 1, heat));
+      } else {
+        // Soft lit-looking density without textures or per-particle lights.
+        const shade = noise.mul(0.25).add(p.y.mul(0.08)).add(0.3).clamp(0.12, 0.55);
+        material.colorNode = vec3(shade.mul(0.9), shade.mul(0.85), shade.mul(0.78));
+      }
+    }
     this.mesh = new InstancedMesh(geometry, material, count);
     this.mesh.instanceMatrix.setUsage(DynamicDrawUsage);
     this.mesh.frustumCulled = false; // One bounded world-space batch spans the arena.
@@ -119,28 +142,18 @@ class EffectPool {
         }
         this.alpha.setX(i, Math.max(0, 1 - p.age / p.life) * p.alpha);
       } else { this.transform.scale.setScalar(0); this.alpha.setX(i, 0); }
+      this.phase.setX(i, p.life > 0 ? p.age / p.life : 1);
       this.transform.updateMatrix(); this.mesh.setMatrixAt(i, this.transform.matrix); this.mesh.setColorAt(i, p.color);
     });
-    this.mesh.instanceMatrix.needsUpdate = true; this.mesh.instanceColor!.needsUpdate = true; this.alpha.needsUpdate = true;
+    this.mesh.instanceMatrix.needsUpdate = true; this.mesh.instanceColor!.needsUpdate = true; this.alpha.needsUpdate = true; this.phase.needsUpdate = true;
   }
   dispose() { this.mesh.geometry.dispose(); const m = this.mesh.material as MeshBasicNodeMaterial; m.map?.dispose(); m.dispose(); this.mesh.dispose(); }
 }
 
-/** Static collision surfaces supply a normal for flat impact marks and outward debris. */
+/** Replay the authority's impact orientation instead of querying current geometry. */
 export function impactNormal(shot: Shot, out: Vector3) {
-  if (shot.impact === "ground") return out.set(0, 1, 0);
-  if (shot.impact !== "body") {
-    for (const b of blocks) {
-      if (!shot.to.every((v, i) => Math.abs(v - b.p[i]) <= b.size[i] / 2 + 0.002)) continue;
-      let axis = 0, error = Infinity;
-      for (let i = 0; i < 3; i++) {
-        const e = Math.abs(Math.abs(shot.to[i] - b.p[i]) - b.size[i] / 2);
-        if (e < error) { error = e; axis = i; }
-      }
-      return out.set(0, 0, 0).setComponent(axis, shot.to[axis] >= b.p[axis] ? 1 : -1);
-    }
-  }
-  return out.set(...shot.from).sub(new Vector3(...shot.to)).normalize();
+  if (shot.normal) return out.set(...shot.normal);
+  return out.set(shot.from[0] - shot.to[0], shot.from[1] - shot.to[1], shot.from[2] - shot.to[2]).normalize();
 }
 
 export function CombatEffects({ match, playing, runtime }: { match: MatchSnapshot; playing: boolean; runtime: ClientSession }) {
@@ -219,5 +232,77 @@ export function CombatEffects({ match, playing, runtime }: { match: MatchSnapsho
     <primitive object={flash.mesh} /><primitive object={glow.mesh} /><primitive object={dust.mesh} /><primitive object={marks.mesh} />
     <pointLight ref={v => { lights.current[0] = v; }} color="#ffc88a" intensity={0} distance={4} decay={2} />
     <pointLight ref={v => { lights.current[1] = v; }} color="#ffc88a" intensity={0} distance={4} decay={2} />
+  </group>;
+}
+
+
+/** Blender-authored asset shared by the held grenade and authority-driven projectile. */
+export function GrenadeModel() {
+  const { scene } = useGLTF(withBasePath("/models/fps/relay-grenade.glb"));
+  const object = useMemo(() => scene.clone(true), [scene]);
+  return <primitive object={object} dispose={null} />;
+}
+
+/** Bounded cosmetic pools driven by saved explosion events, independent of damage and physics. */
+export function GrenadeEffects({ match, playing, runtime }: { match: MatchSnapshot; playing: boolean; runtime: ClientSession }) {
+  const grenades = useRef<Group>(null), lights = useRef<(PointLight | null)[]>([]);
+  const fire = useMemo(() => new EffectPool(64, true, false, "fire"), []);
+  const smoke = useMemo(() => new EffectPool(96, false, false, "smoke"), []);
+  const sparks = useMemo(() => new EffectPool(128, true), []);
+  const debris = useMemo(() => new EffectPool(96, false), []);
+  const state = useMemo(() => ({ ids: new Set<number>(), tick: -1, epoch: runtime.viewEpoch ?? 0,
+    origin: new Vector3(), lightAge: [1, 1], lightIndex: 0 }), [runtime]);
+  useEffect(() => () => { fire.dispose(); smoke.dispose(); sparks.dispose(); debris.dispose(); }, [fire, smoke, sparks, debris]);
+  useFrame(({ camera }, dt) => {
+    const elapsed = playing ? Math.min(dt, 0.1) : 0;
+    if (state.epoch !== (runtime.viewEpoch ?? 0) || match.tick < state.tick) {
+      state.epoch = runtime.viewEpoch ?? 0; state.ids.clear(); state.lightAge.fill(1);
+      [fire, smoke, sparks, debris].forEach(pool => pool.reset());
+    }
+    state.tick = match.tick;
+    grenades.current?.children.forEach((object, i) => {
+      const g = match.grenades[i]; object.visible = !!g;
+      if (!g) return;
+      object.position.set(g.x, g.y, g.z);
+      const spin = match.tick * STEP;
+      if (Math.hypot(g.vx, g.vy, g.vz) > 0.5) object.rotation.set(spin * 5 + g.id, spin * 3, spin * 2);
+    });
+    for (const event of match.explosions) {
+      if (state.ids.has(event.id)) continue;
+      state.ids.add(event.id);
+      if (!playing) continue;
+      state.origin.set(event.x, event.y, event.z);
+      let seed = event.id * 8191 + 17;
+      const random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
+      const core = fire.emit(state.origin, 0.13, 0.8, "#ffffff"); core.grow = 12;
+      for (let i = 0; i < 7; i++) {
+        const angle = random() * Math.PI * 2, speed = 1.5 + random() * 2;
+        const flame = fire.emit(state.origin, 0.25 + random() * 0.2, 0.55, "#ffffff");
+        flame.velocity.set(Math.cos(angle) * speed, 1 + random() * 2, Math.sin(angle) * speed);
+        flame.grow = 3; flame.roll = random() * Math.PI * 2;
+        const puff = smoke.emit(state.origin, 1.4 + random() * 0.8, 0.5 + random() * 0.4, "#ffffff");
+        puff.position.y += 0.2; puff.velocity.copy(flame.velocity).multiplyScalar(0.35); puff.velocity.y += 0.4;
+        puff.grow = 1.3; puff.alpha = 0.5; puff.roll = random() * Math.PI * 2;
+      }
+      for (let i = 0; i < 22; i++) {
+        const ember = i < 12;
+        const p = (ember ? sparks : debris).emit(state.origin, 0.35 + random() * 0.65,
+          ember ? 0.018 : 0.035 + random() * 0.045, ember ? "#ffbc58" : "#544b3c");
+        const angle = random() * Math.PI * 2, speed = 2 + random() * 6;
+        p.velocity.set(Math.cos(angle) * speed, 1 + random() * 7, Math.sin(angle) * speed);
+        p.gravity = 10; p.mode = "streak"; p.stretch = ember ? 7 : 2; p.alpha = ember ? 1 : 0.9;
+      }
+      const index = state.lightIndex++ % 2, light = lights.current[index];
+      if (light && camera.position.distanceToSquared(state.origin) < 900) { light.position.copy(state.origin); state.lightAge[index] = 0; }
+    }
+    for (const id of state.ids) if (!match.explosions.some(e => e.id === id)) state.ids.delete(id);
+    [fire, smoke, sparks, debris].forEach(pool => pool.update(elapsed, camera));
+    lights.current.forEach((light, i) => { state.lightAge[i] += elapsed;
+      if (light) light.intensity = Math.max(0, 1 - state.lightAge[i] / 0.16) ** 2 * 45; });
+  }, -0.2);
+  return <group>
+    <group ref={grenades}>{Array.from({ length: 16 }, (_, i) => <group key={i} visible={false}><GrenadeModel /></group>)}</group>
+    {[fire, smoke, sparks, debris].map((pool, i) => <primitive key={i} object={pool.mesh} dispose={null} />)}
+    {[0, 1].map(i => <pointLight key={i} ref={light => { lights.current[i] = light; }} color="#ffb05b" intensity={0} distance={10} decay={2} />)}
   </group>;
 }

@@ -1,4 +1,3 @@
-import { MeshNode } from "../rendering/MeshNode.js";
 import { createContext } from 'react';
 import type { ComponentData, GameObject as GameObjectType } from "../../core/types.js";
 import { getComponent, resolveComponentProperties, type Component } from "../../core/ComponentRegistry.js";
@@ -8,8 +7,8 @@ export const ComponentLookupContext = createContext(getComponent);
 
 type CompositionComponent = {
     key: string;
-    View?: Component["View"];
-    component?: Component;
+    View: NonNullable<Component["View"]>;
+    component: Component;
     properties: ComponentData["properties"];
     order: number;
 };
@@ -57,15 +56,16 @@ export function analyzeNodeComponents(node: GameObjectType, lookup = getComponen
                 scale: properties.scale ?? [1, 1, 1],
             };
         }
-        if (!registeredComponent || !(registeredComponent.View || registeredComponent.setup || registeredComponent.update)) continue;
+        if (!registeredComponent || !registeredComponent.View) continue;
 
         composition.push({
             key,
             View: registeredComponent.View,
             component: registeredComponent,
             properties,
-            order: registeredComponent.slot === 'geometry' || registeredComponent.slot === 'material'
-                ? 2 : registeredComponent.slot === 'object' ? 1 : 0,
+            order: registeredComponent.slot === 'material' ? 3
+                : registeredComponent.slot === 'geometry' ? 2
+                : registeredComponent.slot === 'object' ? 1 : 0,
         });
 
         if (!clickEvent.enabled && 'emitClickEvent' in registeredComponent.properties && properties.emitClickEvent) {
@@ -75,13 +75,6 @@ export function analyzeNodeComponents(node: GameObjectType, lookup = getComponen
                 eventName: typeof eventName === 'string' && eventName.trim() ? eventName.trim() : null,
             };
         }
-    }
-
-    // Geometry supplies an implicit mesh unless an object component owns the attachments.
-    const geometry = composition.find(component => component.component?.slot === 'geometry');
-    if (geometry && !composition.some(component => component.order === 1)) {
-        composition.push({ key: '$mesh', View: MeshNode, properties: geometry.properties,
-            order: 1 });
     }
 
     composition.sort((left, right) => left.order - right.order);

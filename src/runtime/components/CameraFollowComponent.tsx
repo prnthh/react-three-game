@@ -1,7 +1,8 @@
+import { useComponentActive } from '../scene/useComponentActive.js';
 import { useFrame } from '@react-three/fiber';
 import { useRef } from 'react';
 import { Vector3 } from 'three';
-import { useGameObject, useNode } from '../scene/SceneContext.js';
+import { useGameObject } from '../scene/SceneContext.js';
 import type { Component, ComponentViewProps } from '../../core/ComponentRegistry.js';
 
 export type CameraFollowProperties = {
@@ -12,9 +13,9 @@ export type CameraFollowProperties = {
 };
 
 function CameraFollowView({ properties, enabled, children }: ComponentViewProps<CameraFollowProperties>) {
+    const active = useComponentActive(enabled);
     const camera = useGameObject();
     const targetObject = useGameObject(properties.targetId.trim());
-    const editMode = useNode(node => node.editMode);
     const targetPosition = useRef(new Vector3());
     const cameraWorldPosition = useRef(new Vector3());
     const desiredWorldPosition = useRef(new Vector3());
@@ -22,7 +23,7 @@ function CameraFollowView({ properties, enabled, children }: ComponentViewProps<
     const lookAtPosition = useRef(new Vector3());
 
     useFrame((_, delta) => {
-        if (!enabled || editMode) return;
+        if (!active) return;
         const cameraObject = camera.transform;
         const target = targetObject.transform;
         if (!cameraObject || !target) return;

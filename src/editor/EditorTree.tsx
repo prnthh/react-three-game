@@ -8,7 +8,6 @@ import { createEmptyNode } from '../core/prefab.js';
 import { PrefabStoreState } from "../core/prefabStore.js";
 import { usePrefabChildIds, usePrefabNode, usePrefabRootId, usePrefabStore, usePrefabStoreApi } from "../runtime/prefabs/PrefabStoreContext.js";
 import { findComponent, hasComponent } from '../core/types.js';
-import { isEmbeddedPrefabSource } from '../runtime/prefabs/prefabSource.js';
 import { saveJson } from './documentIO.js';
 
 type DropPosition = 'before' | 'inside';
@@ -162,8 +161,7 @@ export default function EditorTree({
     };
 
     const renderTreeNodeMenu = (nodeId: string, isRoot: boolean, onClose: () => void) => {
-        const source = findComponent(store.getState().nodesById[nodeId], 'PrefabRef')?.properties?.url;
-        const canExport = typeof source === 'string' && isEmbeddedPrefabSource(source);
+        const canExport = !!store.getState().nodesById[nodeId]?.packed;
         return (
         <TreeNodeMenu
             isRoot={isRoot}

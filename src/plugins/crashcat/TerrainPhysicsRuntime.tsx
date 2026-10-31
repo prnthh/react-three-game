@@ -11,8 +11,9 @@ import { createColliderResidencyScheduler } from './colliderResidency.js';
 const states = new WeakMap<Scene, { ready: boolean; active: number; prepared: number; maxActivationMs: number; lastBuildMs: number; maxUpdateMs: number; maxSubmitMs: number; activations: number }>();
 export function getTerrainPhysicsStatus(scene: Scene) { return states.get(scene) ?? null; }
 
-/** Owns a single worker and a two-body residency budget for the whole scene. */
-export function TerrainPhysicsRuntime() {
+/** Optional terrain adapter. The host chooses the camera-nearest active collider budget. */
+export function TerrainPhysicsRuntime({ activeLimit }: { activeLimit: number }) {
+    if (!Number.isInteger(activeLimit) || activeLimit < 1) throw new Error('Terrain activeLimit must be a positive integer');
     const scene = useThree(s => s.scene);
     const api = useCrashcat();
     const components = useSceneComponents(TERRAIN_PHYSICS_COMPONENT);
@@ -46,7 +47,7 @@ export function TerrainPhysicsRuntime() {
             pending?.reject(workerFailure); pending = null;
         };
         const scheduler = createColliderResidencyScheduler<Shape>({
-            activeLimit: 2,
+            activeLimit,
             build: target => {
                 if (workerFailure) return Promise.reject(workerFailure);
                 const start = performance.now();
@@ -117,7 +118,7 @@ export function TerrainPhysicsRuntime() {
             status.maxUpdateMs = Math.max(status.maxUpdateMs, performance.now() - start);
         };
         return () => { tick.current = null; scheduler.dispose(); worker.terminate(); pending?.reject(new Error('Terrain preparation stopped')); states.delete(scene); };
-    }, [api, scene, hasTargets]);
+    }, [api, scene, hasTargets, activeLimit]);
     useFrame(state => { state.camera.getWorldPosition(position.current); tick.current?.(position.current); }, -4);
     return null;
 }

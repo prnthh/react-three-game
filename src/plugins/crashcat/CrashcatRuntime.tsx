@@ -1,6 +1,5 @@
 "use client";
 
-import { TerrainPhysicsRuntime } from "./TerrainPhysicsRuntime.js";
 import { useFrame, useThree } from "@react-three/fiber";
 import {
     addBroadphaseLayer,
@@ -252,7 +251,6 @@ export function CrashcatRuntime({ debug = false, children }: { debug?: boolean; 
 
     return (
         <>
-            <TerrainPhysicsRuntime />
             {children}
             {debugObject
                 ? <primitive object={debugObject} dispose={null} />

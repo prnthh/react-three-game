@@ -7,6 +7,8 @@ export {
 } from "./ComponentRegistry.js";
 export type {
 	Component,
+    ComponentRendering,
+    ComponentGeometryModifier,
 	ComponentCategory,
 	ComponentPropertySchema,
 	ComponentPropertyDefinition,
@@ -31,7 +33,7 @@ export { findComponent, findComponentEntry, hasComponent } from "./types.js";
 
 export type { AssetDependency, ComponentDependency } from "./dependencies.js";
 
-export { decomposeModelToPrefabNodes, exportGLBData, importGLBData, loadGLBScene } from './modelPrefab.js';
+export { decomposeModelToPrefabNodes, importCollisionModel, exportGLBData, importGLBData, loadGLBScene } from './modelPrefab.js';
 export type { DecomposeModelOptions, DecomposedPrefabNodes } from './modelPrefab.js';
 
 export { createPrefabStore } from './prefabStore.js';
@@ -42,6 +44,9 @@ export { evaluateSceneCommands, evaluateSceneCommandState } from './sceneCommand
 export type { SceneCommand, SceneCommandBatch, SceneCommandResult } from './sceneCommands.js';
 export { describeSceneComponents } from './componentSchemas.js';
 export { sceneCommandsSchema, sceneCommandBatchSchema } from './sceneCommandSchema.js';
-export { computeParentWorldMatrix } from './transforms.js';
+export { computeParentWorldMatrix, composeTransform, walkPrefabWorldTransforms } from './transforms.js';
 
-export type { ComponentContext, SceneRuntimeContext } from '../runtime/scene/ComponentLifecycle.js';
+export type { ComponentContext, SceneRuntimeContext } from './componentContext.js';
+
+export { compileBoxCollider, compileMeshCollider, parseCollisionName } from "./collision.js";
+export type { BoxColliderProperties, MeshColliderProperties, WorldMeshCollider, WorldBox, CollisionVector } from "./collision.js";

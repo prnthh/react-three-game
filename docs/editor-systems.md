@@ -64,43 +64,21 @@ The referenced runtime component must also be registered. Tools and presets shar
 
 ## Runtime ownership
 
-Terrain surfaces now use the existing node-component registry. A game-object handle can read `TERRAIN_SURFACE_COMPONENT`; its lifecycle follows the owning node. This replaces a separate WeakMap and descendant scan, which could return a child terrain when querying a parent. The editor uses the same ownership resolution as the rest of the runtime.
+Terrain surfaces register `TERRAIN_SURFACE_COMPONENT` on their owning node. Game-object handles and editor tools use the same live ownership registry. Lookup returns the first live registration of that type on the node; it does not scan descendants or infer ownership from `userData`.
 
-## Audit boundaries
+## Current boundaries
 
-Fixed in this pass:
+- Terrain uses four material layers with RGB weights and a remainder. More layers require a storage and material design change.
+- Terrain image decoding and painted-image export use browser canvas APIs. Headless scene creation rejects Terrain until an image adapter is available.
+- Numeric inspector scrubbing publishes individual drag updates. Pointer-tool transactions do not yet cover numeric fields or transform controls.
+- The Add object palette creates at the scene root. Surface placement and repeated stamping can use registered tools and the document API.
+- File-drop import and asynchronous model replacement live in `PrefabEditor.tsx`.
+- Runtime component and inspector registrations do not have the reactive replacement/unload lifecycle of editor tools.
 
-- Removed the obsolete selection test block referencing `registerEditPickSources`; retained tree coverage and extended current ownership/picking coverage.
-- Removed terrain state and terrain view imports from the editor shell.
-- Replaced the dedicated Add terrain button with registered object presets.
-- Extracted capture/cancellation/navigation policy from the terrain brush.
-- Unified terrain surface lookup with runtime node-component ownership.
+## Terrain and physics
 
-Remaining deliberate or deferred boundaries:
+Terrain painting lives in one `TerrainPaintTool.tsx` module: viewport behavior, panel, typed settings, and its exported definition. Built-in editor setup registers the definition explicitly. Importing the painting implementation alone does not register a global tool. Views read settings with `useEditorToolSession`.
 
-- Terrain uses a four-layer RGB-plus-remainder weight format. More layers require a versioned storage/material design, not a wider tool-session interface.
-- Terrain image decoding and painted-image export still use browser canvas APIs. Headless terrain export needs an injected image codec and material baking strategy; the tool registry does not solve that.
-- Numeric inspector scrubbing still has its own drag lifecycle and per-update history behavior. Adapting it needs an input-focused transaction design so text entry, blur and cancellation remain coherent.
-- The new palette creates at the scene root; surface placement and repeated stamping should be registered tools that share the same document API and pointer lifecycle.
-
-Validation includes non-terrain test tools and custom subtree presets, in addition to terrain's interaction and rendering-data tests. Browser visual and physical Pencil testing remain separate from these automated checks.
-
-## Follow-up architecture review
-
-The Add object control now sits below the prefab tree. This follow-up also made tool registration reactive, added editor-lifetime subscriptions, and bound remembered settings to definition identity rather than a string ID. Tests exercise runtime registration, replacement, unloading, cancellation, and repeated cleanup.
-
-Concrete next boundaries, in priority order:
-
-1. **Edit transactions across pointer events.** `src/core/prefabHistory.ts` groups synchronous actions, while `NumberInput` and `Vector3Input` in `src/editor/ui/Input.tsx` publish individual drag updates. A shared begin/commit/cancel transaction should own the initial document state and produce one undo step. It needs explicit policies for Escape, blur, text editing, pointer cancellation, concurrent document commands, and unmount before wiring it to fields and transform controls.
-2. **Asset import sessions.** `src/editor/PrefabEditor.tsx` handles file drops, manifest path resolution, placeholder creation, asynchronous model replacement, and selection. Move these responsibilities into an import service accepting asset sources and placement, with a session identity to reject late results after scene changes and a defined rollback/history policy. The browser drop adapter and future palette placement tools can then call the same service.
-3. **Component plugin lifecycle.** `src/editor/ComponentEditors.ts` still has a nonreactive map without unregistering, and `src/core/ComponentRegistry.ts` exposes a version counter rather than a subscription. Migrating these requires a policy for documents containing components whose implementation is unloaded. Keep authored data intact and define the missing-component behavior before giving runtime components the same unload lifecycle as editor tools.
-
-These are identified follow-ups, not completed refactors. The extension registry remains editor-internal; it does not claim to solve document transactions, asset persistence, or runtime component lifetime.
-
-## Terrain and physics consolidation
-
-Terrain painting now lives in one `TerrainPaintTool.tsx` module: viewport behavior, panel, typed settings, and its exported definition. Built-in editor setup registers the definition explicitly. Importing the painting implementation alone does not register a global tool. The former settings hook only renamed generic session fields, so callers now use `useEditorToolSession` directly.
-
-`createColliderResidencyScheduler` is exported by the Crashcat plugin for collider sets beyond terrain. Callers provide `activeLimit`, candidates `{ id, revision, distance }`, an asynchronous `build`, and synchronous `activate`/`deactivate` callbacks. It serializes preparation, caches shapes, rejects stale results, and selects by distance with stable ID ties. Terrain supplies its world-space bounds and sets the budget to two; the policy knows nothing about heightmaps, React, workers, or cameras. This is an active-body budget, not a memory-limited streaming cache. Prepared shapes must be plain data; callers own any external resources.
+`createColliderResidencyScheduler` is exported by the Crashcat plugin for collider sets beyond terrain. Callers provide `activeLimit`, candidates `{ id, revision, distance }`, an asynchronous `build`, and synchronous `activate`/`deactivate` callbacks. It serializes preparation, caches shapes, rejects stale results, and selects by distance with stable ID ties. `TerrainPhysicsRuntime` supplies world-space terrain bounds and requires the host to choose `activeLimit`; the workshop mounts it with `activeLimit={2}`. The policy knows nothing about heightmaps, React, workers, or cameras. This is an active-body budget, not a memory-limited streaming cache. Prepared shapes must be plain data; callers own any external resources.
 
 Keep the worker entry point separate: it is a distinct execution boundary required by the bundler. Keep the optional Crashcat inspector entry point separate to avoid pulling editor dependencies into runtime consumers. Terrain's world-to-map projection, four-material weight encoding, and atomic cross-tile persistence stay in the terrain tool. Extracting those into a universal brush framework would add contracts with no second consumer yet.

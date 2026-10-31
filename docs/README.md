@@ -26,6 +26,8 @@ Components stay in the demo that owns them and may be imported by other demos.
 | [Cool stuff](app/demo/coolstuff/page.tsx) | One scene with interior mapping, ragdolls, and a small sleeping-box warehouse, each under its own parent node. |
 | [Parkour](app/demo/parkour/page.tsx) | Three packed inline building instances, player movement, and procedural concrete. |
 | [Point n Click](app/demo/stage/page.tsx) | Inline interaction/dialogue/transition flow; shared component registration with its editor. |
+| [Relay Yard FPS](app/demo/fps/page.tsx) | Authored map and gameplay prefabs, authoritative simulation, snapshot-driven views and replay; includes a map editor. |
+| [Terrain workshop](app/demo/terrain/page.tsx) | Registered painting tools, demo-owned player controls and an explicit terrain collider budget. |
 | [Killbox FPS](app/demo/killbox/page.tsx) | Player, NPC and weapon-system integration. The page composes its gameplay systems. |
 | [Streamed World](app/demo/grassworld/page.tsx) | A bounded chunk window owns terrain colliders and deterministic grass/flowers with dense billboard blades, layered wind and recovering trails; [Water](app/demo/grassworld/components/Water.tsx) is a reusable, registered scene component. |
 
@@ -44,6 +46,15 @@ a separate prefab file when sharing across scenes. Saved demo documents live in
 Keep specialized demo components under their demo. Interior mapping and the parkour controller register their own components.
 
 See [architecture](ARCHITECTURE.md), [lighting](LIGHTING.md), and [interior mapping](app/demo/coolstuff/INTERIOR-MAPPING.md).
+
+## Asset previews
+
+Mount one `SharedCanvas` alongside the asset lists and single-asset viewers on a
+page. They register views into that canvas; adding a canvas per tile or list
+renders those views repeatedly. `PrefabEditorProvider` supplies the preview canvas
+for its inspectors. The asset viewer demo shows the standalone composition.
+Thumbnails and enlarged previews share loaded assets; model placements clone the
+object hierarchy and retain the shared geometry and materials.
 
 ## Headless export
 

@@ -1,11 +1,10 @@
 import { loadAssetManifest, type AssetManifest } from '../../runtime/assets/assetManifest.js';
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, View, PerspectiveCamera } from "@react-three/drei";
+import { Bounds, Clone, OrbitControls, View, PerspectiveCamera } from "@react-three/drei";
 import { useEffect, useLayoutEffect, useState, useRef } from "react";
 import { createPortal } from 'react-dom';
-import { Material, Mesh, Texture, TextureLoader } from "three";
-import type { Object3D } from "three";
-import { loadModel } from "../../runtime/assets/assetLoaders.js";
+import { useAsset } from "../../runtime/assets/assetCache.js";
+import { AssetBoundary } from "../../runtime/assets/AssetBoundary.js";
 import { withBasePath } from "../../runtime/assets/assetPaths.js";
 import { base, colors, fonts } from "../ui/styles.js";
 
@@ -14,7 +13,6 @@ const styles: Record<string, any> = {
     flexFillRelative: { flex: 1, position: 'relative' },
     bottomLabel: { backgroundColor: colors.bgLight, color: colors.text, fontSize: fonts.sizeSm, padding: '1px 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center', borderTop: `1px solid ${colors.borderFaint}` },
     textLight: { color: colors.text, fontFamily: fonts.family, fontSize: fonts.size },
-    iconLarge: { fontSize: 20 }
 };
 
 const assetViewerColors = {
@@ -51,23 +49,6 @@ const assetPickerWideButtonStyle = {
     width: '100%',
     padding: '6px 8px',
 } as const;
-
-function disposeMaterial(material: Material | Material[]) {
-    if (Array.isArray(material)) {
-        material.forEach(entry => entry.dispose());
-        return;
-    }
-
-    material.dispose();
-}
-
-function disposeObject3D(object: Object3D) {
-    object.traverse(child => {
-        if (!(child instanceof Mesh)) return;
-        child.geometry?.dispose();
-        disposeMaterial(child.material);
-    });
-}
 
 const assetPickerSmallButtonStyle = {
     ...assetPickerButtonBaseStyle,
@@ -123,7 +104,8 @@ function FolderTile({ name, onClick }: { name: string; onClick: () => void }) {
         <div
             onClick={onClick}
             style={{
-                maxWidth: 60,
+                width: '100%',
+                minWidth: 0,
                 aspectRatio: '1 / 1',
                 ...assetTileStyle,
                 display: 'flex',
@@ -188,7 +170,7 @@ function AssetListViewer({ files, onSelect, renderCard }: AssetListViewerProps) 
                     ← Back
                 </button>
             )}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 4 }}>
                 {folders.map((folder) => (
                     <FolderTile
                         key={folder}
@@ -197,7 +179,7 @@ function AssetListViewer({ files, onSelect, renderCard }: AssetListViewerProps) 
                     />
                 ))}
                 {filesInCurrentPath.map((file) => (
-                    <div key={file}>
+                    <div key={file} style={{ minWidth: 0 }}>
                         {renderCard(file, onSelect)}
                     </div>
                 ))}
@@ -224,7 +206,6 @@ export function TextureListViewer({ files, onSelect, basePath = "" }: TextureLis
                     )}
                 />
             </div>
-            <SharedCanvas />
         </div>
     );
 }
@@ -233,12 +214,12 @@ function TextureCard({
     file,
     onSelect,
     basePath = "",
-    size = 60,
+    size = '100%',
 }: {
     file: string;
     onSelect: (file: string) => void;
     basePath?: string;
-    size?: number;
+    size?: number | string;
 }) {
     const [isHovered, setIsHovered] = useState(false);
     const [error, setError] = useState(false);
@@ -278,7 +259,7 @@ function TextureCard({
                         <PerspectiveCamera makeDefault position={[0, 0, 2.5]} fov={50} />
                         <ambientLight intensity={0.8} />
                         <pointLight position={[5, 5, 5]} intensity={0.5} />
-                        <TextureSphere url={fullPath} onError={() => setError(true)} />
+                        <AssetBoundary key={fullPath} onError={() => setError(true)}><TextureSphere url={fullPath} /></AssetBoundary>
                         <OrbitControls
                             enableZoom={false}
                             enablePan={false}
@@ -295,42 +276,8 @@ function TextureCard({
     );
 }
 
-function TextureSphere({ url, onError }: { url: string; onError?: () => void }) {
-    const [texture, setTexture] = useState<Texture | null>(null);
-    const textureRef = useRef<Texture | null>(null);
-    const onErrorRef = useRef(onError);
-    onErrorRef.current = onError;
-
-    useEffect(() => {
-        let cancelled = false;
-        textureRef.current = null;
-        setTexture(null);
-
-        const loader = new TextureLoader();
-        loader.load(
-            url,
-            loadedTexture => {
-                if (cancelled) {
-                    return;
-                }
-
-                textureRef.current = loadedTexture;
-                setTexture(loadedTexture);
-            },
-            undefined,
-            () => {
-                if (!cancelled) {
-                    onErrorRef.current?.();
-                }
-            },
-        );
-
-        return () => {
-            cancelled = true;
-            textureRef.current = null;
-        };
-    }, [url]);
-
+function TextureSphere({ url }: { url: string }) {
+    const texture = useAsset('texture', url);
     if (!texture) return null;
 
     return (
@@ -359,7 +306,6 @@ export function ModelListViewer({ files, onSelect, basePath = "" }: ModelListVie
                     )}
                 />
             </div>
-            <SharedCanvas />
         </div>
     );
 }
@@ -368,12 +314,14 @@ function ModelCard({
     file,
     onSelect,
     basePath = "",
-    size = 60,
+    size = '100%',
+    interactive = false,
 }: {
     file: string;
     onSelect: (file: string) => void;
     basePath?: string;
-    size?: number;
+    size?: number | string;
+    interactive?: boolean;
 }) {
     const [error, setError] = useState(false);
     const { ref, isInView } = useInView();
@@ -403,8 +351,8 @@ function ModelCard({
                         <PerspectiveCamera makeDefault position={[0, 1, 3]} fov={50} />
                         <ambientLight intensity={1} />
                         <pointLight position={[5, 5, 5]} intensity={0.5} />
-                        <ModelPreview url={fullPath} onError={() => setError(true)} />
-                        <OrbitControls enableZoom={false} />
+                        <AssetBoundary key={fullPath} onError={() => setError(true)}><ModelPreview url={fullPath} /></AssetBoundary>
+                        <OrbitControls enableZoom={interactive} enablePan={interactive} />
                     </View>
                 ) : null}
             </div>
@@ -415,40 +363,11 @@ function ModelCard({
     );
 }
 
-function ModelPreview({ url, onError }: { url: string; onError?: () => void }) {
-    const [model, setModel] = useState<Object3D | null>(null);
-    const modelRef = useRef<Object3D | null>(null);
-    const onErrorRef = useRef(onError);
-    onErrorRef.current = onError;
-
-    useEffect(() => {
-        let cancelled = false;
-        modelRef.current && disposeObject3D(modelRef.current);
-        modelRef.current = null;
-        setModel(null);
-
-        loadModel(url).then((result) => {
-            if (cancelled) {
-                result.model && disposeObject3D(result.model);
-                return;
-            }
-            if (result.success && result.model) {
-                modelRef.current = result.model;
-                setModel(result.model);
-            } else {
-                onErrorRef.current?.();
-            }
-        });
-
-        return () => {
-            cancelled = true;
-            modelRef.current && disposeObject3D(modelRef.current);
-            modelRef.current = null;
-        };
-    }, [url]);
-
-    if (!model) return null;
-    return <primitive object={model} />;
+function ModelPreview({ url }: { url: string }) {
+    const model = useAsset('model', url);
+    return model ? <Bounds fit clip observe margin={1.2} maxDuration={0}>
+        <Clone object={model} dispose={null} />
+    </Bounds> : null;
 }
 
 interface SoundListViewerProps {
@@ -470,15 +389,16 @@ export function SoundListViewer({ files, onSelect }: SoundListViewerProps) {
 
 function SoundCard({ file, onSelect }: { file: string; onSelect: (file: string) => void }) {
     const fileName = file.split('/').pop() || '';
-    return (
-        <div
-            onClick={() => onSelect(file)}
-            style={{ aspectRatio: '1 / 1', ...assetTileStyle, alignItems: 'center', justifyContent: 'center' }}
-        >
-            <div style={styles.iconLarge}>🔊</div>
-            <div style={{ color: colors.text, fontSize: fonts.size, padding: '0 4px', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center', width: '100%' }}>{fileName}</div>
-        </div>
-    );
+    return <button type="button" title={file} aria-label={`Select ${fileName}`}
+        onClick={() => onSelect(file)}
+        style={{ ...assetTileStyle, width: '100%', minWidth: 0, aspectRatio: '1 / 1', padding: 8,
+            backgroundColor: assetViewerColors.controlBg, alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+        <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M9 18V5l11-2v13M9 8l11-2" />
+            <ellipse cx="6" cy="18" rx="3" ry="2" /><ellipse cx="17" cy="16" rx="3" ry="2" />
+        </svg>
+        <span style={{ fontSize: fonts.size, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%' }}>{fileName}</span>
+    </button>;
 }
 
 const PICKER_POPUP_WIDTH = 260;
@@ -679,7 +599,7 @@ export function SoundPicker({ value, onChange, basePath = "" }: { value: string 
             controlsStyle={{ display: 'flex', flexDirection: 'column', gap: 6, flex: '0 0 84px', minWidth: 84, justifyContent: 'flex-end' }}
             changeButtonStyle={assetPickerWideButtonStyle}
             clearButtonStyle={assetPickerWideButtonStyle}
-            preview={<div style={{ flex: '0 0 auto', minWidth: 84 }}>{value ? <SingleSoundViewer file={value} /> : <div style={{ width: 84, height: 60, ...assetPickerEmptyPreviewStyle }} />}</div>}
+            preview={<div style={{ flex: '0 0 76px', width: 76 }}>{value ? <SingleSoundViewer file={value} /> : <div style={{ width: '100%', height: 76, ...assetPickerEmptyPreviewStyle }} />}</div>}
             renderList={({ files, onSelect }) => (
                 <SoundListViewer
                     files={files}
@@ -696,7 +616,7 @@ function SingleVisualAssetViewer({
     children,
 }: {
     file?: string;
-    size: number;
+    size: number | string;
     children: React.ReactNode;
 }) {
     return (
@@ -706,13 +626,12 @@ function SingleVisualAssetViewer({
                     ? children
                     : <div style={{ width: '100%', height: '100%', ...assetPickerEmptyPreviewStyle }} />}
             </div>
-            {file ? <SharedCanvas /> : null}
         </>
     );
 }
 
 // Single Asset Viewer Components - display only one selected asset
-export function SingleTextureViewer({ file, basePath = "", size = 60 }: { file?: string; basePath?: string; size?: number }) {
+export function SingleTextureViewer({ file, basePath = "", size = 60 }: { file?: string; basePath?: string; size?: number | string }) {
     return (
         <SingleVisualAssetViewer file={file} size={size}>
             {file ? <TextureCard file={file} basePath={basePath} onSelect={() => { }} size={size} /> : null}
@@ -720,10 +639,10 @@ export function SingleTextureViewer({ file, basePath = "", size = 60 }: { file?:
     );
 }
 
-export function SingleModelViewer({ file, basePath = "", size = 112 }: { file?: string; basePath?: string; size?: number }) {
+export function SingleModelViewer({ file, basePath = "", size = 112 }: { file?: string; basePath?: string; size?: number | string }) {
     return (
         <SingleVisualAssetViewer file={file} size={size}>
-            {file ? <ModelCard file={file} basePath={basePath} onSelect={() => { }} size={size} /> : null}
+            {file ? <ModelCard file={file} basePath={basePath} onSelect={() => { }} size={size} interactive /> : null}
         </SingleVisualAssetViewer>
     );
 }
@@ -733,7 +652,7 @@ export function SingleSoundViewer({ file }: { file?: string }) {
     return <SoundCard file={file} onSelect={() => { }} />;
 }
 
-// Shared Canvas Component - can be used independently in any viewer
+// Mount once per page alongside all asset lists and single previews.
 export function SharedCanvas() {
     return (
         <Canvas

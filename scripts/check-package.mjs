@@ -37,7 +37,29 @@ try {
     writeFileSync(join(directory, 'consumer.mts'), `
         import { evaluateSceneCommands, type Prefab, type SceneCommandBatch } from 'react-three-game/core';
         import { convert } from 'react-three-game/node';
-        import { registerEditorTool, registerEditorNodePreset, useEditorToolSession, attachPointerTool } from 'react-three-game/editor';
+        import { EditorSelection, registerEditorTool, registerEditorNodePreset, useEditorToolSession, attachPointerTool } from 'react-three-game/editor';
+        import { useComponentActive, useGameEvent, type Component, type ComponentContext, usePrefab } from 'react-three-game/viewer';
+        const definition: Component<{ speed?: number }> = {
+            name: 'ConsumerBehavior', category: 'misc', exclusive: 'consumer-behavior',
+            properties: { speed: { default: 1 } },
+            View({ properties, enabled, children }) {
+                const active: boolean = useComponentActive(enabled);
+                const speed: number = properties.speed;
+                useGameEvent('click', payload => { const id: string | undefined = payload.nodeId; });
+                return children ?? null;
+            },
+        };
+        // @ts-expect-error Data is not a rendering role; coexistence uses exclusive.
+        const invalidSlot: Component['slot'] = 'data';
+        // @ts-expect-error Behavior belongs in the View, not renderer lifecycle callbacks.
+        const invalidSetup: Component['setup'] = () => {};
+        // @ts-expect-error Reusable subtrees belong in packed nodes.
+        const legacyDefinitions: Prefab['prefabs'] = {};
+        // @ts-expect-error Authored edits belong to usePrefabDocument.
+        const runtimeUpdate: ReturnType<typeof usePrefab>['update'] = () => {};
+        const renderingRole: Component['slot'] = 'geometry';
+        const selectNode: Parameters<typeof EditorSelection>[0]['onSelect'] = id => {};
+
         registerEditorNodePreset({ id: 'custom', label: 'Custom', category: 'Game', create: () => ({ id: 'custom-node' }) });
         registerEditorTool({ id: 'custom.edit', label: 'Custom edit', supports: () => true,
             createSettings: () => ({ radius: 1 }), Viewport: () => null, Panel: () => null });

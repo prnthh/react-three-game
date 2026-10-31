@@ -1,6 +1,8 @@
+import { usePrefabDocument } from '../prefabs/prefabApi.js';
+import { MeshNode } from '../rendering/MeshNode.js';
 import { meshProperties, type MeshProperties } from "../rendering/meshProperties.js";
 import { ComponentLookupContext } from '../prefabs/nodePlan.js';
-import { useGameObject, useNode, usePrefab } from "../scene/SceneContext.js";
+import { useGameObject, useNode } from "../scene/SceneContext.js";
 import { notifyObjectChanged } from '../scene/objectChanges.js';
 import type { GameObject } from "../../core/types.js";
 import { useInvalidateMeshInstances } from "../rendering/MeshInstanceProvider.js";
@@ -137,12 +139,12 @@ export function applyGeometryModifiers(source: BufferGeometry, modifiers: Return
     }
 }
 
-function GeometryComponentView({ properties, children }: ComponentViewProps<GeometryProperties>) {
+function GeometryComponentView({ properties, enabled, children }: ComponentViewProps<GeometryProperties>) {
     const { geometryType, args = [] } = properties;
     const type = geometryType && geometryType in GEOMETRY_ELEMENTS ? geometryType as keyof typeof GEOMETRY_ELEMENTS : 'box';
     const resolvedArgs = args.length ? args : getDefaultArgs(type);
     const nodeId = useNode(node => node.nodeId);
-    const prefab = usePrefab();
+    const prefab = usePrefabDocument();
     const lookup = useContext(ComponentLookupContext);
     const modifiers = getGeometryModifiers(prefab.get(nodeId), lookup);
     const signature = JSON.stringify([type, resolvedArgs, modifiers.map(({ type, properties, context }) => [type, properties, context]), getComponentRegistryVersion()]);
@@ -158,14 +160,18 @@ function GeometryComponentView({ properties, children }: ComponentViewProps<Geom
         invalidateInstances();
         if (object.transform) notifyObjectChanged(object.transform, 'geometry');
     }, [geometry, invalidateInstances, object]);
-    return <><primitive object={geometry} attach="geometry" dispose={null} />{children}</>;
+    return <MeshNode properties={properties} enabled={enabled}>
+        <primitive object={geometry} attach="geometry" dispose={null} />
+        {children}
+    </MeshNode>;
 }
 
 const GeometryComponent: Component<GeometryProperties> = {
     name: 'Geometry',
+    category: 'mesh',
     renderWhenDisabled: true,
     description: "Add a primitive mesh; pair with Material on the same node. Box args are [width,height,depth].",
-    slot: 'geometry',
+    slot: 'geometry', exclusive: 'geometry',
     View: GeometryComponentView,
     properties: {
         ...meshProperties,

@@ -1,3 +1,4 @@
+import { MeshNode } from '../rendering/MeshNode.js';
 import { meshProperties, type MeshProperties } from "../rendering/meshProperties.js";
 import type { Component, ComponentViewProps } from "../../core/ComponentRegistry.js";
 
@@ -54,7 +55,7 @@ function getIndexArray(indices: NumericArray) {
     return maxIndex > 65535 ? new Uint32Array(indices) : new Uint16Array(indices);
 }
 
-function BufferGeometryComponentView({ properties, children }: ComponentViewProps<BufferGeometryProperties>) {
+function BufferGeometryComponentView({ properties, enabled, children }: ComponentViewProps<BufferGeometryProperties>) {
     const positions = normalizeNumberArray(properties.positions, DEFAULT_TRIANGLE_POSITIONS);
     const indices = normalizeNumberArray(properties.indices, DEFAULT_TRIANGLE_INDICES);
     const normals = normalizeNumberArray(properties.normals, []);
@@ -64,7 +65,7 @@ function BufferGeometryComponentView({ properties, children }: ComponentViewProp
     const hasUvs = uvs.length >= 2 && uvs.length % 2 === 0;
     const groups = isGeometryGroupArray(properties.groups) ? properties.groups : [];
 
-    return <>
+    return <MeshNode properties={properties} enabled={enabled}>
         <bufferGeometry onUpdate={(geometry) => {
             geometry.clearGroups();
             groups.forEach(group => {
@@ -88,14 +89,15 @@ function BufferGeometryComponentView({ properties, children }: ComponentViewProp
             ) : null}
         </bufferGeometry>
         {children}
-    </>;
+    </MeshNode>;
 }
 
 const BufferGeometryComponent: Component<BufferGeometryProperties> = {
     name: 'BufferGeometry',
+    category: 'mesh',
     renderWhenDisabled: true,
     description: "Build a mesh from vertex arrays; pair with Material on the same node. Supply positions as xyz triples and indices as triangle vertex indices.",
-    slot: 'geometry',
+    slot: 'geometry', exclusive: 'geometry',
     View: BufferGeometryComponentView,
     properties: {
         ...meshProperties,

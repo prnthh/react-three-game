@@ -1,4 +1,4 @@
-import { encodePrefabSource, isEmbeddedPrefabSource, loadPrefabSource } from '../../src/runtime/prefabs/prefabSource.ts';
+import { loadPrefabSource } from '../../src/runtime/prefabs/prefabSource.ts';
 import { withBasePath } from '../../src/runtime/assets/assetPaths.ts';
 import test, { describe } from 'node:test';
 import assert from 'node:assert/strict';
@@ -62,16 +62,19 @@ describe('Caching and ownership', () => {
         assert.equal(document.nodesById.child.name, 'original');
     });
 
-    test('embedded definitions are ready on the first cache read and can be cleared', () => {
-        const cache = createAssetCache();
-        const path = encodePrefabSource({ root: { id: 'inline' } });
-        const document = cache.read('prefab', path);
-        assert.equal(document.rootId, 'inline');
+    test('URL definitions share one asynchronous cache and can be cleared', async () => {
+        let loads = 0;
+        const cache = createAssetCache({ prefab: async () => { loads++; return normalizePrefab({ root: { id: 'asset' } }); } });
+        const path = '/asset.json';
+        assert.throws(() => cache.read('prefab', path), error => error instanceof Promise);
+        const document = await cache.load('prefab', path);
         assert.equal(cache.get('prefab', path), document);
         assert.equal(cache.read('prefab', path), document);
+        assert.equal(loads, 1);
         assert.equal(cache.clear('prefab', path), document);
         assert.equal(cache.get('prefab', path), null);
-        assert.notEqual(cache.read('prefab', path), document);
+        assert.notEqual(await cache.load('prefab', path), document);
+        assert.equal(loads, 2);
         cache.dispose();
     });
 
@@ -180,23 +183,18 @@ describe('Prefab preparation', () => {
     });
 });
 
-test('URL, percent-encoded and base64 prefabs normalize identically and reject bad documents', async () => {
-    const prefab={name:'Étagère',root:{id:'asset',name:'木'}};
-    const remote=await loadPrefabSource('/asset.json',async()=>new Response(JSON.stringify(prefab)));
-    const embedded=await loadPrefabSource(encodePrefabSource(prefab), () => { throw Error('Embedded sources must decode locally'); });
-    const base64=`data:application/json;base64,${Buffer.from(JSON.stringify(prefab)).toString('base64')}`;
-    assert.deepEqual(remote,embedded);
-    assert.deepEqual(await loadPrefabSource(base64),embedded);
-    assert.equal(isEmbeddedPrefabSource(base64),true);
-    assert.equal(isEmbeddedPrefabSource('data:text/json;charset=utf-8,{}'),true);
-    assert.equal(isEmbeddedPrefabSource('/asset.json'),false);
-    const uppercase=encodePrefabSource(prefab).replace('data:', 'DATA:');
-    assert.equal(withBasePath('/game',uppercase),uppercase,'recognized inline sources must bypass the base path');
-    assert.deepEqual(await loadPrefabSource(withBasePath('/game',uppercase)),embedded);
-    assert.equal(withBasePath('/game','HTTPS://example.com/asset.json'),'HTTPS://example.com/asset.json');
-    await assert.rejects(loadPrefabSource('/missing.json',async()=>new Response('',{status:404})),/404/);
-    await assert.rejects(loadPrefabSource('data:application/json,not-json'),/Invalid prefab document from embedded prefab/);
-    await assert.rejects(loadPrefabSource('/bad.json',async()=>new Response('{}')),/Invalid prefab/);
+test('all prefab URLs use the supplied loader and reject bad documents', async () => {
+    const prefab = { name: 'Étagère', root: { id: 'asset', name: '木' } };
+    const calls = [];
+    const request = async url => { calls.push(url); return new Response(JSON.stringify(prefab)); };
+    const url = `data:application/json,${encodeURIComponent(JSON.stringify(prefab))}`;
+    const remote = await loadPrefabSource('/asset.json', request);
+    assert.deepEqual(await loadPrefabSource(url, request), remote);
+    assert.deepEqual(calls, ['/asset.json', url], 'data URLs do not bypass the host loader');
+    assert.deepEqual(await loadPrefabSource(url), remote, 'native fetch handles supported URL schemes');
+    assert.equal(withBasePath('/game', 'HTTPS://example.com/asset.json'), 'HTTPS://example.com/asset.json');
+    await assert.rejects(loadPrefabSource('/missing.json', async () => new Response('', { status: 404 })), /404/);
+    await assert.rejects(loadPrefabSource('/bad.json', async () => new Response('{}')), /Invalid prefab/);
 });
 
 test('nested prefab references load JSON and render independent placements', async t => {
@@ -218,7 +216,7 @@ test('nested prefab references load JSON and render independent placements', asy
     assert.equal(loads, 1);
 });
 
-test('embedded prefab instances keep their shared definition across mode switches and sibling removal', async t => {
+test('URL prefab instances keep their shared definition across mode switches and sibling removal', async t => {
     const { act, createElement: h, StrictMode } = await import('react');
     const { createRoot, extend } = await import('@react-three/fiber');
     const { Group } = await import('three');
@@ -227,8 +225,8 @@ test('embedded prefab instances keep their shared definition across mode switche
     registerBuiltInComponents();
     extend({ Group });
     globalThis.IS_REACT_ACT_ENVIRONMENT = true;
-    const source = { root: { id: 'asset', name: 'Embedded asset' } };
-    const url = encodePrefabSource(source);
+    const source = { root: { id: 'asset', name: 'Loaded asset' } };
+    const url = '/asset.json';
     let loads = 0;
     const cache = createAssetCache({ prefab: async () => { loads++; return normalizePrefab(source); } });
     const definition = await cache.load('prefab', url);
@@ -245,14 +243,14 @@ test('embedded prefab instances keep their shared definition across mode switche
     });
     await render(true);
     assert.equal(cache.get('prefab', url), definition, 'Strict Mode cleanup must not evict a mounted definition');
-    const object = state.getState().scene.getObjectByName('b').getObjectByName('Embedded asset');
+    const object = state.getState().scene.getObjectByName('b').getObjectByName('Loaded asset');
     await render(false);
     await render(true);
     assert.equal(loads, 1, 'mode changes must not reload visible prefabs');
     await act(async () => doc.getState().deleteNode('a'));
     assert.equal(cache.get('prefab', url), definition, 'removing one instance must preserve the other instance’s definition');
     await render(false);
-    assert.equal(state.getState().scene.getObjectByName('b').getObjectByName('Embedded asset'), object);
+    assert.equal(state.getState().scene.getObjectByName('b').getObjectByName('Loaded asset'), object);
     assert.equal(loads, 1);
 });
 
@@ -261,8 +259,7 @@ test('inline and external definitions prepare together, sharing dependencies and
     const ref = (id, properties) => ({ id, components: { ref: { type: 'PrefabRef', properties } } });
     const leaf = { root: { id: 'leaf', components: { image: { type: 'Image', properties: { path: '/stone.png' } } } } };
     const document = normalizePrefab({
-        prefabs: { building: { root: ref('building', { prefabId: 'leaf' }) }, leaf },
-        root: { id: 'root', children: [ref('a', { prefabId: 'building' }), ref('b', { prefabId: 'building' }), ref('c', { url: '/external.json' })] },
+        root: { id: 'root', children: [{ ...ref('building', { prefabId: 'leaf' }), packed: true }, { ...leaf.root, packed: true }, ref('a', { prefabId: 'building' }), ref('b', { prefabId: 'building' }), ref('c', { url: '/external.json' })] },
     });
     const requests = [];
     const runtime = {
@@ -274,7 +271,7 @@ test('inline and external definitions prepare together, sharing dependencies and
     assert.equal(prepared.documentCount, 4);
     assert.equal(prepared.assetCount, 1);
     assert.deepEqual(requests.sort(), ['/app/external.json', '/app/root.json', '/app/stone.png']);
-    const cycle = normalizePrefab({ root: ref('root', { prefabId: 'loop' }), prefabs: { loop: { root: ref('loop', { prefabId: 'loop' }) } } });
+    const cycle = normalizePrefab({ root: { ...ref('loop', { prefabId: 'loop' }), packed: true } });
     await assert.rejects(preparePrefab({ ...runtime, loadDocument: async () => cycle }, '/cycle'), /Cyclic prefab/);
     const missing = normalizePrefab({ root: ref('root', { prefabId: 'missing' }) });
     await assert.rejects(preparePrefab({ ...runtime, loadDocument: async () => missing }, '/missing'), /Unknown inline prefab/);

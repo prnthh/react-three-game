@@ -17,6 +17,22 @@ const run = (prefab, ...commands) => {
     return { prefab: denormalizePrefab(state), result };
 };
 
+test('built-in constraints protect node ownership without treating visual roles as exclusive', async () => {
+    const { registerBuiltInComponents } = await import('../../src/viewer/index.ts');
+    registerBuiltInComponents();
+    const types = ['Environment', 'Environment', 'Fog', 'Fog', 'Model', 'Model',
+        'Camera', 'Text', 'Sprite', 'SkinnedMesh', 'SkinnedMesh', 'Terrain', 'Terrain'];
+    const edited = run({ root: { id: 'root' } }, ...types.map((type, index) => ({
+        op: 'component', id: 'root', key: `component-${index}`, component: { type, properties: {} },
+    })));
+    assert.equal(Object.keys(edited.prefab.root.components).length, types.length);
+    for (const type of ['Transform', 'Geometry', 'Material', 'BoneAttachment']) {
+        assert.throws(() => run({ root: { id: 'root' } }, ...['a', 'b'].map(key => ({
+            op: 'component', id: 'root', key, component: { type, properties: {} },
+        }))), /exclusive group/, `${type} owns a single node-local resource`);
+    }
+});
+
 test('validation stages sequential commands without mutating scene or input', () => {
     const original = scene();
     const snapshot = structuredClone(original);
@@ -100,4 +116,27 @@ test('equivalent component properties in a different key order preserve the stag
         },
     }] });
     assert.equal(state.nodesById.parent, initial.nodesById.parent);
+});
+
+
+test('explicit component constraints are enforced by document edits while data components coexist', async () => {
+    const { default: Data } = await import('../../src/runtime/components/DataComponent.tsx');
+    registerComponent(Data);
+    registerComponent({ name: 'ConstraintOwner', exclusive: 'test-constraint', properties: {} });
+    registerComponent({ name: 'ConstraintCompetitor', slot: 'object', exclusive: 'test-constraint', properties: {} });
+    const original = { root: { id: 'root', components: {
+        owner: { type: 'ConstraintOwner', properties: {} },
+        data: { type: 'Data', properties: { data: { health: 10 } } },
+    } } };
+    const data = { type: 'Data', properties: { data: { team: 'blue' } } };
+    const edited = run(original, { op: 'component', id: 'root', key: 'team', component: data });
+    assert.deepEqual(edited.prefab.root.components.team, data);
+    assert.equal(Object.keys(edited.prefab.root.components).length, 3);
+    assert.throws(() => run(original,
+        { op: 'component', id: 'root', key: 'team', component: data },
+        { op: 'component', id: 'root', key: 'competitor', component: { type: 'ConstraintCompetitor', properties: {} } }), /exclusive group/);
+    assert.equal(original.root.components.team, undefined, 'failed batches do not partially publish');
+    assert.throws(() => run({ root: { id: 'root' } }, { op: 'add', parentId: 'root', node: {
+        id: 'conflict', components: { a: { type: 'ConstraintOwner', properties: {} }, b: { type: 'ConstraintCompetitor', properties: {} } },
+    } }), /exclusive group/);
 });

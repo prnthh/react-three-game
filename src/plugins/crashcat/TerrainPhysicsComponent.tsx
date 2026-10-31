@@ -32,7 +32,7 @@ function TerrainPhysicsView({ properties, enabled, children }: ComponentViewProp
 }
 export const TerrainPhysicsComponent: Component<TerrainPhysicsProperties> = {
     name: 'TerrainPhysics', category: 'physics', renderWhenDisabled: true,
-    description: 'Uses this node’s Terrain height map. CrashcatRuntime prepares colliders in a worker and keeps only the nearest two to the camera active.',
+    description: 'Uses this node’s Terrain height map. Requires CrashcatRuntime and TerrainPhysicsRuntime; the host chooses how many nearby colliders remain active.',
     View: TerrainPhysicsView,
     properties: { friction: { default: .8, min: 0, max: 2, step: .05 } },
 };

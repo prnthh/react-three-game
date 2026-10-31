@@ -13,7 +13,7 @@ export function resolveInlinePrefab(state: Pick<PrefabState, 'prefabs'>, id: str
     if (!cache) documents.set(definitions, cache = new Map());
     let document = cache.get(id);
     if (!document) {
-        document = normalizePrefab({ ...definitions[id], prefabs: { ...definitions, ...definitions[id].prefabs } });
+        document = normalizePrefab(definitions[id], definitions);
         cache.set(id, document);
     }
     return document;

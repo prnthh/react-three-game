@@ -1,12 +1,8 @@
+import { RESERVED_USER_DATA_KEYS } from '../../core/types.js';
 import { CSSProperties, useEffect, useState } from "react";
 import type { ComponentEditorProps } from "../../core/ComponentRegistry.js";
 import { colors, ui } from "../ui/styles.js";
 import { DataComponentProperties } from "../../runtime/components/DataComponent.js";
-
-const RESERVED_USER_DATA_KEYS = new Set([
-    'prefabNodeId',
-    'prefabNodeName',
-]);
 
 const inputStyle: CSSProperties = {
     ...ui.monoTextInput,

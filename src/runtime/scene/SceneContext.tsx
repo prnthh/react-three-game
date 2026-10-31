@@ -1,7 +1,8 @@
+import type { PrefabRegistry, PrefabApi, NodeComponentType } from '../../core/componentContext.js';
+export type { PrefabRegistry, PrefabApi, NodeComponentType } from '../../core/componentContext.js';
 import { useThree } from '@react-three/fiber';
-import type { PrefabDocumentApi } from '../../core/prefabDocumentApi.js';
 import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useRef, useSyncExternalStore, type ReactNode } from "react";
-import type { Object3D, Texture } from "three";
+import type { Object3D } from "three";
 import type { GameObject } from "../../core/types.js";
 import { createGameObjectHandle } from "./gameObject.js";
 import type { NodeInteractionHandlers } from "./usePointerEvents.js";
@@ -13,15 +14,6 @@ export enum PrefabEditorMode {
 
 export type PrefabNode = Omit<GameObject, "children">;
 
-export interface PrefabRegistry {
-    registerObject(id: string, object: Object3D | null): () => void;
-    subscribeObject(id: string, listener: () => void): () => void;
-    getObject(id: string): Object3D | null;
-}
-
-declare const NODE_COMPONENT_VALUE: unique symbol;
-export type NodeComponentType<T> = symbol & { readonly [NODE_COMPONENT_VALUE]?: T };
-
 export type SceneComponent<T> = Readonly<{
     /** Registry identity; graph entries use Three UUIDs, gameplay entries use scoped node IDs. */
     key: string;
@@ -31,10 +23,12 @@ export type SceneComponent<T> = Readonly<{
 const EMPTY_SCENE_COMPONENTS: readonly SceneComponent<never>[] = [];
 
 export interface NodeComponentRegistry {
+    /** First live registration for this node and type, in registration order. */
     get<T>(nodeId: string, type: NodeComponentType<T>): T | null;
     register<T>(nodeId: string, type: NodeComponentType<T>, value: T | null): () => void;
     /** Coalesce notifications; writes are immediate and are not rolled back on exceptions. */
     batch<T>(action: () => T): T;
+    /** First live match per node, preserving node-keyed scene queries. */
     getAll<T>(type: NodeComponentType<T>): readonly SceneComponent<T>[];
     subscribe<T>(type: NodeComponentType<T>, listener: () => void): () => void;
 }
@@ -44,7 +38,7 @@ export function createNodeComponentType<T>(name: string): NodeComponentType<T> {
 }
 
 export function createNodeComponentRegistry(): NodeComponentRegistry {
-    const components = new Map<symbol, Map<string, { value: unknown; owner: object }>>();
+    const components = new Map<symbol, Map<string, { value: unknown }[]>>();
     const snapshots = new Map<symbol, readonly SceneComponent<unknown>[]>();
     const listeners = new Map<symbol, Set<() => void>>();
     const pending = new Set<symbol>();
@@ -67,28 +61,26 @@ export function createNodeComponentRegistry(): NodeComponentRegistry {
         flush();
     };
     return {
-        get: <T,>(nodeId: string, type: NodeComponentType<T>) => (components.get(type)?.get(nodeId)?.value as T | undefined) ?? null,
+        get: <T,>(nodeId: string, type: NodeComponentType<T>) => (components.get(type)?.get(nodeId)?.[0]?.value as T | undefined) ?? null,
         register(nodeId, type, value) {
+            // A missing value does not unregister another component's handle.
+            if (value == null) return () => {};
             let values = components.get(type);
-            const previous = values?.get(nodeId);
-            if (value == null) {
-                if (previous) {
-                    values!.delete(nodeId);
-                    if (!values!.size) components.delete(type);
-                    changed(type);
-                }
-                return () => {};
-            }
             if (!values) components.set(type, values = new Map());
-            const owner = {};
-            values.set(nodeId, { value, owner });
-            if (previous?.value !== value) changed(type);
+            let entries = values.get(nodeId);
+            if (!entries) values.set(nodeId, entries = []);
+            const entry = { value };
+            entries.push(entry);
+            if (entries.length === 1) changed(type);
             return () => {
                 const current = components.get(type);
-                if (current?.get(nodeId)?.owner !== owner) return;
-                current.delete(nodeId);
-                if (!current.size) components.delete(type);
-                changed(type);
+                const live = current?.get(nodeId);
+                const index = live?.indexOf(entry) ?? -1;
+                if (!live || index < 0) return;
+                live.splice(index, 1);
+                if (!live.length) current!.delete(nodeId);
+                if (!current!.size) components.delete(type);
+                if (index === 0) changed(type);
             };
         },
         batch(action) {
@@ -100,7 +92,7 @@ export function createNodeComponentRegistry(): NodeComponentRegistry {
             let snapshot = snapshots.get(type);
             if (!snapshot) {
                 const current = components.get(type);
-                snapshot = current ? Array.from(current, ([key, { value }]) => ({ key, value })) : EMPTY_SCENE_COMPONENTS;
+                snapshot = current ? Array.from(current, ([key, entries]) => ({ key, value: entries[0]!.value })) : EMPTY_SCENE_COMPONENTS;
                 snapshots.set(type, snapshot);
             }
             return snapshot as readonly SceneComponent<T>[];
@@ -127,20 +119,18 @@ export function getSceneComponentRegistry(scene: Object3D): NodeComponentRegistr
 }
 
 export function createPrefabRegistry(): PrefabRegistry {
-    const objects = new Map<string, Object3D>();
-    const owners = new Map<string, object>();
+    const objects = new Map<string, { object: Object3D }>();
     const listeners = new Map<string, Set<() => void>>();
 
     return {
         registerObject(id, object) {
-            const previous = objects.get(id) ?? null;
-            const owner = {};
-            if (object) { objects.set(id, object); owners.set(id, owner); }
-            else { objects.delete(id); owners.delete(id); }
+            const previous = objects.get(id)?.object ?? null;
+            const entry = object ? { object } : null;
+            if (entry) objects.set(id, entry);
+            else objects.delete(id);
             if (previous !== object) listeners.get(id)?.forEach(listener => listener());
             return () => {
-                if (owners.get(id) !== owner) return;
-                owners.delete(id);
+                if (!entry || objects.get(id) !== entry) return;
                 objects.delete(id);
                 listeners.get(id)?.forEach(listener => listener());
             };
@@ -154,25 +144,13 @@ export function createPrefabRegistry(): PrefabRegistry {
                 if (nodeListeners.size === 0) listeners.delete(id);
             };
         },
-        getObject: id => objects.get(id) ?? null,
+        getObject: id => objects.get(id)?.object ?? null,
     };
 }
 
 export interface Scene {
     root: Object3D | null;
     mode: PrefabEditorMode;
-}
-
-
-
-/** Combined facade retained for editor/viewer refs and resource integrations. */
-export interface PrefabApi extends PrefabDocumentApi, PrefabRegistry {
-    root: Object3D | null;
-    basePath: string;
-    getModel(path: string): Object3D | null;
-    addModel(path: string, model: Object3D): void;
-    addTexture(path: string, texture: Texture): void;
-    addSound(path: string, sound: AudioBuffer): void;
 }
 
 export const SceneContext = createContext<Scene | null>(null);
@@ -186,8 +164,22 @@ interface NodeStore {
 }
 const NodeContext = createContext<NodeStore | null>(null);
 export const RuntimeNodeIdPrefixContext = createContext("");
-/** Mode is read at each node boundary without threading it through the authored tree. */
-export const PrefabModeContext = createContext(false);
+/** Optional presentation state supplied by a host such as the editor. IDs are scene-scoped. */
+export interface NodeSelection {
+    subscribe(listener: () => void): () => void;
+    getSelectedId(): string | null;
+}
+export const NodeSelectionContext = createContext<NodeSelection | null>(null);
+const noSelectionSubscribe = () => () => {};
+const notSelected = () => false;
+export function useNodeSelected(id: string, enabled: boolean) {
+    const selection = useContext(NodeSelectionContext);
+    return useSyncExternalStore(
+        enabled && selection ? selection.subscribe : noSelectionSubscribe,
+        enabled && selection ? () => selection.getSelectedId() === id : notSelected,
+        notSelected,
+    );
+}
 
 /** Owns one runtime-component index for the complete scene. */
 export function SceneComponentsProvider({ children }: { children: ReactNode }) {

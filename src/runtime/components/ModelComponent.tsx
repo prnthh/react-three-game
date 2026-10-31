@@ -1,3 +1,4 @@
+import { parseCollisionName } from '../../core/collision.js';
 import { meshProperties, type MeshProperties } from "../rendering/meshProperties.js";
 import { useModelMeshSettings } from "../rendering/useModelMeshSettings.js";
 import { AssetBoundary } from '../assets/AssetBoundary.js';
@@ -82,7 +83,13 @@ export type ModelProperties = MeshProperties & {
 };
 
 function ClonedModel({ source, properties }: { source: Object3D; properties: ModelProperties }) {
-    const model = useMemo(() => source.clone(), [source]);
+    const model = useMemo(() => {
+        const clone = source.clone();
+        clone.traverse(object => {
+            if (parseCollisionName(object.name)?.visible === false) object.visible = false;
+        });
+        return clone;
+    }, [source]);
     useModelMeshSettings(model, properties);
     return <primitive object={model} />;
 }
@@ -134,6 +141,10 @@ function RepeatedModel({ source, positions, interactive, properties }: {
         const rootInverse = new Matrix4().copy(source.matrixWorld).invert();
         source.traverse(object => {
             if (!(object instanceof Mesh)) return;
+            for (let ancestor: Object3D | null = object; ancestor; ancestor = ancestor.parent) {
+                if (parseCollisionName(ancestor.name)?.visible === false) return;
+                if (ancestor === source) break;
+            }
             const geometry = object.geometry.clone();
             geometry.applyMatrix4(object.matrixWorld.clone().premultiply(rootInverse));
             geometry.userData.prefabGeometrySignature = `repeated-model:${source.uuid}:${object.uuid}`;
@@ -185,6 +196,7 @@ function ModelComponentView(props: ComponentViewProps<ModelProperties>) {
 const ModelComponent: Component<ModelProperties> = {
     dependencies: properties => properties.filename ? [{ kind: 'model', path: properties.filename }] : [],
     name: 'Model',
+    category: 'mesh',
     renderWhenDisabled: true,
     description: "Load a model asset with its embedded materials. Set filename; use SkinnedMesh for skeletal animation. A sibling Material does not override the loaded materials.",
     slot: 'object',

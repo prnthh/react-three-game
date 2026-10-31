@@ -6,8 +6,8 @@ export type DataComponentProperties = {
 
 const DataComponent: Component<DataComponentProperties> = {
     name: 'Data',
+    category: 'misc',
     description: "Store application-defined JSON on this node. Does not run code; use Runtime.data for inputs to a Runtime script.",
-    slot: 'data',
     properties: {
         data: { type: 'object', default: {} },
     },

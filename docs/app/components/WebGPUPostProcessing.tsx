@@ -3,6 +3,7 @@ import { useEffect, useMemo } from "react";
 import { RenderPipeline, type Node, type WebGPURenderer } from "three/webgpu";
 import { emissive, mrt, normalView, output, pass, vec3, vec4 } from "three/tsl";
 import { ao } from "three/addons/tsl/display/GTAONode.js";
+import { fxaa } from "three/addons/tsl/display/FXAANode.js";
 import { bloom } from "three/addons/tsl/display/BloomNode.js";
 
 type WebGPUPostProcessingProps = {
@@ -55,7 +56,8 @@ export default function WebGPUPostProcessing({
                 Math.max(0, bloomThreshold),
             ));
         }
-        value.outputNode = outputNode;
+        // GTAO requires single-sample depth, so restore edge smoothing after composition.
+        value.outputNode = ambientOcclusion ? fxaa(outputNode) : outputNode;
         return value;
     }, [ambientOcclusion, ambientOcclusionIntensity, ambientOcclusionRadius, ambientOcclusionResolutionScale, ambientOcclusionSamples, bloomEnabled, bloomRadius, bloomStrength, bloomThreshold, camera, renderer, scene]);
     useEffect(() => () => pipeline.dispose(), [pipeline]);

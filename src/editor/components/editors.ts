@@ -1,7 +1,9 @@
 import { registerComponentEditor } from "../ComponentEditors.js";
 import SkinnedMeshComponent from "../../runtime/components/SkinnedMeshComponent.js";
-import SkinnedMeshComponentEditor from "./SkinnedMeshComponent.editor.js";
+import BoneAttachmentComponent from "../../runtime/components/BoneAttachmentComponent.js";
+import SkinnedMeshComponentEditor, { BoneAttachmentEditor } from "./SkinnedMeshComponent.editor.js";
 registerComponentEditor(SkinnedMeshComponent, SkinnedMeshComponentEditor);
+registerComponentEditor(BoneAttachmentComponent, BoneAttachmentEditor);
 import BufferGeometryComponent from "../../runtime/components/BufferGeometryComponent.js";
 import BufferGeometryComponentEditor from "./BufferGeometryComponent.editor.js";
 registerComponentEditor(BufferGeometryComponent, BufferGeometryComponentEditor);

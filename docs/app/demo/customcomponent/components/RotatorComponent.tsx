@@ -1,6 +1,6 @@
 import { useFrame } from "@react-three/fiber";
 
-import { useNode, useGameObject, type Component, type ComponentViewProps } from "react-three-game/viewer";
+import { useNode, useGameObject, useComponentActive, type Component, type ComponentViewProps } from "react-three-game/viewer";
 
 export type RotationAxis = 'x' | 'y' | 'z';
 
@@ -9,8 +9,9 @@ export type RotatorProperties = {
     axis?: RotationAxis;
 };
 
-function RotatorView({ properties, children }: ComponentViewProps<RotatorProperties>) {
+function RotatorView({ properties, enabled, children }: ComponentViewProps<RotatorProperties>) {
     const { editMode } = useNode();
+    const active = useComponentActive(enabled);
     const objectRef = useGameObject();
     const { axis, speed } = properties;
     const color = { x: '#ef4444', y: '#22c55e', z: '#3b82f6' }[axis];
@@ -21,7 +22,7 @@ function RotatorView({ properties, children }: ComponentViewProps<RotatorPropert
 
     useFrame((_, delta) => {
         const object = objectRef.transform;
-        if (editMode || !object) return;
+        if (!active || !object) return;
 
         const speed = properties.speed;
         const axis = properties.axis;

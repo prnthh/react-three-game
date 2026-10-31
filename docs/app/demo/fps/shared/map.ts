@@ -1,17 +1,12 @@
-import type { Prefab, GameObject } from "react-three-game/core";
-import mapDocument from "../map.json" with { type: "json" };
-import gameplayDocument from "../gameplay.json" with { type: "json" };
+import { Vector3 } from "three";
+import { walkPrefabWorldTransforms, compileBoxCollider, compileMeshCollider, type WorldMeshCollider, type MeshColliderProperties, type WorldBox, type Prefab, type GameObject } from "react-three-game/core";
 
 export type Vec = [number, number, number];
-export type Block = {
+export type Block = (WorldBox | WorldMeshCollider) & {
   id: string;
-  p: Vec;
-  size: Vec;
   color: string;
-  kind?: "wall" | "crate" | "roof";
+  kind?: "wall" | "crate" | "roof" | "ground";
 };
-export const mapPrefab: Prefab = mapDocument;
-export const gameplayPrefab: Prefab = gameplayDocument;
 
 function vector(value: unknown, fallback: Vec): Vec {
   if (value === undefined) return fallback;
@@ -32,41 +27,45 @@ export function composeScene(...documents: Prefab[]): Prefab {
     ids.add(node.id);
     node.children?.forEach(visit);
   };
-  for (const document of documents) {
-    if (document.prefabs) throw new Error("Compose inline scene documents; external prefab definitions must be resolved first.");
-  }
   visit(scene.root);
   return scene;
 }
 
-/** Compile the demo's axis-aligned collision from authored nodes, without React or Three. */
+
+/** Physics shape dimensions are authored separately from render geometry. */
 export function compileMap(document: Prefab): Block[] {
   const result: Block[] = [];
-  const visit = (node: GameObject, position: Vec, scale: Vec, rotated: boolean) => {
-    if (node.disabled) return;
+  walkPrefabWorldTransforms(document, (node, world) => {
     const components = Object.values(node.components ?? {});
-    const props = (type: string) => components.find(c => c?.type === type)?.properties;
-    const transform = props("Transform");
-    const localPosition = vector(transform?.position, [0, 0, 0]);
-    const localScale = vector(transform?.scale, [1, 1, 1]);
-    const rotation = vector(transform?.rotation, [0, 0, 0]);
-    const p = position.map((v, i) => v + localPosition[i] * scale[i]) as Vec;
-    const s = scale.map((v, i) => v * localScale[i]) as Vec;
-    const hasRotation = rotated || rotation.some(v => v !== 0);
-    const collision = props("Data")?.data?.collision;
-    if (collision) {
-      const geometry = props("Geometry");
-      if (hasRotation || geometry?.geometryType !== "box")
-        throw new Error(`FPS collision requires an unrotated box: ${node.id}`);
-      const size = vector(geometry.args, [1, 1, 1]).map((v, i) => Math.abs(v * s[i])) as Vec;
-      if (size.some(v => v <= 0) || !["wall", "crate", "roof"].includes(collision.kind))
-        throw new Error(`Invalid collision box: ${node.id}`);
-      result.push({ id: node.id, p, size, color: props("Material")?.color ?? "#ffffff", kind: collision.kind });
+    const data = components.find(c => c?.type === "Data")?.properties.data;
+    for (const [key, component] of Object.entries(node.components ?? {})) {
+      if (component?.type !== "BoxCollider" && component?.type !== "MeshCollider") continue;
+      const kind = data?.collision?.kind;
+      if (kind !== undefined && !["wall", "crate", "roof", "ground"].includes(kind)) throw new Error(`Invalid collision kind: ${node.id}`);
+      const shape = component.type === "MeshCollider" ? compileMeshCollider(world, component.properties as unknown as MeshColliderProperties) : compileBoxCollider(world, component.properties);
+      const multiple = components.filter(c => (c?.type === "BoxCollider" || c?.type === "MeshCollider")).length > 1;
+      result.push({ ...shape, id: multiple ? `${node.id}/${key}` : node.id,
+        color: components.find(c => c?.type === "Material")?.properties.color ?? "#ffffff", kind });
     }
-    node.children?.forEach(child => visit(child, p, s, hasRotation));
-  };
-  visit(document.root, [0, 0, 0], [1, 1, 1], false);
+  });
   return result;
+}
+
+export type MapRoom = WorldBox & { id: string; position: Vec; decay: number; hardFloor: boolean };
+/** Room volumes and route markers use the same world transforms as collision. */
+export function compileMapFeatures(document: Prefab) {
+  const rooms: MapRoom[] = [], flanks: Vec[] = [];
+  walkPrefabWorldTransforms(document, (node, world) => {
+    const data = Object.values(node.components ?? {}).find(c => c?.type === "Data")?.properties.data;
+    if (data?.audioRoom) {
+      const room = data.audioRoom, decay = room.decay ?? 0.6;
+      if (!Number.isFinite(decay) || decay <= 0 || decay > 5) throw new Error(`Invalid audio room: ${node.id}`);
+      const shape = compileBoxCollider(world, { size: vector(room.size, [1, 1, 1]) });
+      rooms.push({ ...shape, id: node.id, position: shape.p, decay, hardFloor: room.hardFloor === true });
+    }
+    if (data?.botFlank) flanks.push(new Vector3().setFromMatrixPosition(world).toArray() as Vec);
+  });
+  return { rooms, flanks };
 }
 
 export type SpawnPoint = { id: string; team: 0 | 1; position: Vec; yaw: number };
@@ -74,64 +73,18 @@ export type SpawnPoint = { id: string; team: 0 | 1; position: Vec; yaw: number }
 /** Spawn components use ordinary editor transforms, and need no rendering runtime. */
 export function compileSpawnPoints(document: Prefab): SpawnPoint[] {
   const result: SpawnPoint[] = [];
-  // Affine XZ basis supports nested yaw rotations and nonuniform scale.
-  const visit = (node: GameObject, origin: Vec, basis: number[], heightScale: number, tilted: boolean) => {
-    if (node.disabled) return;
-    const props = (type: string) => Object.values(node.components ?? {}).find(c => c?.type === type)?.properties;
-    const transform = props("Transform");
-    const p = vector(transform?.position, [0, 0, 0]);
-    const r = vector(transform?.rotation, [0, 0, 0]);
-    const s = vector(transform?.scale, [1, 1, 1]);
-    const [a, b, c, d] = basis, cos = Math.cos(r[1]), sin = Math.sin(r[1]);
-    const position: Vec = [origin[0] + a * p[0] + b * p[2], origin[1] + p[1] * heightScale, origin[2] + c * p[0] + d * p[2]];
-    const next = [(a * cos - b * sin) * s[0], (a * sin + b * cos) * s[2],
-      (c * cos - d * sin) * s[0], (c * sin + d * cos) * s[2]];
-    const hasTilt = tilted || r[0] !== 0 || r[2] !== 0;
-    const spawn = props("FPSSpawnPoint");
-    if (spawn) {
-      const team = spawn.team ?? "alpha";
-      if ((team !== "alpha" && team !== "bravo") || hasTilt || Math.hypot(next[1], next[3]) < 1e-8)
-        throw new Error(`Spawn ${node.id} needs team alpha or bravo and an upright, nonzero transform`);
-      result.push({ id: node.id, team: team === "bravo" ? 1 : 0, position, yaw: Math.atan2(next[1], next[3]) });
-    }
-    node.children?.forEach(child => visit(child, position, next, heightScale * s[1], hasTilt));
-  };
-  visit(document.root, [0, 0, 0], [1, 0, 0, 1], 1, false);
+  walkPrefabWorldTransforms(document, (node, world) => {
+    const spawn = Object.values(node.components ?? {}).find(c => c?.type === "FPSSpawnPoint")?.properties;
+    if (!spawn) return;
+    const team = spawn.team ?? "alpha", e = world.elements;
+    if ((team !== "alpha" && team !== "bravo") || [e[1], e[4], e[6], e[9]].some(v => Math.abs(v) > 1e-8)
+        || Math.hypot(e[8], e[10]) < 1e-8 || e[5] <= 0)
+      throw new Error(`Spawn ${node.id} needs team alpha or bravo and an upright, nonzero transform`);
+    result.push({ id: node.id, team: team === "bravo" ? 1 : 0,
+      position: new Vector3().setFromMatrixPosition(world).toArray() as Vec, yaw: Math.atan2(e[8], e[10]) });
+  });
   for (const team of [0, 1]) {
     if (!result.some(point => point.team === team)) throw new Error(`Map needs an enabled spawn point for team ${team}`);
   }
   return result;
-}
-
-// One shared compiled world for the local demo's rendering, audio and authority.
-export const spawnPoints = compileSpawnPoints(mapPrefab);
-export const blocks = compileMap(mapPrefab);
-export const relayYardScene = composeScene(mapPrefab, gameplayPrefab);
-
-/** Ray/AABB slab intersection shared by shooting and bot sight. */
-export function wallDistance(origin: Vec, dir: Vec, max = 100, hit?: { block?: Block }) {
-  if (hit) hit.block = undefined;
-  let closest = max;
-  for (const b of blocks) {
-    let lo = 0,
-      hi = closest;
-    for (let axis = 0; axis < 3; axis++) {
-      const min = b.p[axis] - b.size[axis] / 2,
-        max = b.p[axis] + b.size[axis] / 2;
-      if (Math.abs(dir[axis]) < 1e-9) {
-        if (origin[axis] < min || origin[axis] > max) {
-          hi = -1;
-          break;
-        }
-      } else {
-        let a = (min - origin[axis]) / dir[axis],
-          c = (max - origin[axis]) / dir[axis];
-        if (a > c) [a, c] = [c, a];
-        lo = Math.max(lo, a);
-        hi = Math.min(hi, c);
-      }
-    }
-    if (hi >= lo && lo < closest) { closest = lo; if (hit) hit.block = b; }
-  }
-  return closest;
 }

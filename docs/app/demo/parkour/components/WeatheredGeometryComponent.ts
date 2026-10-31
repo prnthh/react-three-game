@@ -34,6 +34,7 @@ type Properties = { amount: number; seed: number; preserveTop: boolean; preserve
 
 const WeatheredGeometryComponent: Component<Properties> = {
     name: 'WeatheredGeometry',
+    category: 'mesh',
     description: 'Roughen this node’s Geometry primitive without changing its material or collision. Add segments on Geometry for finer irregularity. Does not affect child nodes or loaded models.',
     modifyGeometry: (source, p, context) => roughenGeometry(source, p.amount, p.seed, p.preserveTop, p.preserveBottom, p.displacementScale, context?.scale),
     properties: {

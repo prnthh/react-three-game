@@ -1,6 +1,6 @@
 /** Pure fixed-step match rules. No browser, React or Three dependency: future server authority lives here. */
-import { wallDistance, blocks, spawnPoints, type SpawnPoint, type Vec, type Block } from "../shared/map";
-export { wallDistance, blocks, type Vec, type Block } from "../shared/map";
+import { wallDistance, physics, blocks, spawnPoints, type SpawnPoint, type Vec, type Block } from "../shared/world";
+export { wallDistance, blocks, type Vec, type Block } from "../shared/world";
 import { LIMIT, DURATION, STEP, HEALTH_RULES, THROW_DURATION, THROW_RELEASE, STANCE_TIMING,
   crouchOffset, eyeHeight, aimPitch, advanceGait,
   type ClientActor, type Command, type Shot, type Grenade, type Explosion, type ImpactMaterial } from "../shared/protocol";
@@ -34,7 +34,7 @@ function spawn(a: Actor, m: Match) {
   const slot = m.actors.filter(actor => actor.team === a.team && actor.id < a.id).length;
   const point = points[slot % points.length];
   [a.x, a.y, a.z] = point.position;
-  a.vy = 0;
+  a.vy = 0; a.grounded = physics.move([a.x, a.y, a.z], 1.8, [0, 0, 0], 0).grounded;
   a.yaw = point.yaw;
   a.pitch = 0;
   a.gait.state = "idle"; a.gait.phase = 0; a.gait.steps = 0;
@@ -90,6 +90,7 @@ export function createMatch(seed = 317, points: readonly SpawnPoint[] = spawnPoi
       kills: 0,
       deaths: 0,
       moving: false,
+      grounded: true,
     };
     spawn(a, m);
     m.actors.push(a);
@@ -97,13 +98,7 @@ export function createMatch(seed = 317, points: readonly SpawnPoint[] = spawnPoi
   return m;
 }
 export function blocked(x: number, z: number, r = 0.36, y = 0) {
-  return blocks.some(
-    (b) =>
-      b.p[1] - b.size[1] / 2 < y + 1.8 &&
-      b.p[1] + b.size[1] / 2 > y + 0.1 &&
-      Math.abs(x - b.p[0]) < b.size[0] / 2 + r &&
-      Math.abs(z - b.p[2]) < b.size[2] / 2 + r,
-  );
+  return physics.blocked([x, y, z], 1.8, r);
 }
 export function fire(
   m: Match,
@@ -136,29 +131,19 @@ export function fire(
       -Math.cos(yaw) * Math.cos(pitch),
     ],
     from: Vec = [a.x, a.y + eyeHeight(a), a.z];
-  const surface: { block?: Block } = {};
+  const surface: { block?: Block; normal?: Vec } = {};
   let distance = wallDistance(from, dir, 100, surface),
     victim: Actor | undefined,
     head = false;
-  let impact: ImpactMaterial = surface.block ? (surface.block.kind === "crate" || surface.block.kind === "roof" ? "metal" : "concrete") : "none";
-  const ground = dir[1] < -1e-9 ? -from[1] / dir[1] : Infinity;
-  if (ground >= 0 && ground < distance) { distance = ground; impact = "ground"; }
+  let impact: ImpactMaterial = surface.block ? (surface.block.kind === "crate" || surface.block.kind === "roof" ? "metal" : surface.block.kind === "ground" ? "ground" : "concrete") : "none";
   for (const b of m.actors) {
     if (b === a || b.hp <= 0) continue;
     for (const [height, radius, isHead] of [
       [1.1, 0.42, false],
       [1.65, 0.25, true],
     ] as const) {
-      const d: Vec = [b.x - from[0], b.y + height - crouchOffset(b) - from[1], b.z - from[2]],
-        t = d[0] * dir[0] + d[1] * dir[1] + d[2] * dir[2],
-        q = d[0] ** 2 + d[1] ** 2 + d[2] ** 2 - t * t;
-      if (q > radius * radius) continue;
-      const near = t - Math.sqrt(radius * radius - q);
-      if (near > 0 && near < distance) {
-        distance = near;
-        victim = b;
-        head = isHead;
-      }
+      const near = physics.hitSphere(from, dir, [b.x, b.y + height - crouchOffset(b), b.z], radius, distance, surface);
+      if (near > 0 && near < distance) { distance = near; victim = b; head = isHead; }
     }
   }
   const hit = !!victim && applyDamage(m, a, victim, head ? 70 : 34) > 0;
@@ -166,6 +151,7 @@ export function fire(
   m.shots.push({
     impact: victim ? "body" : impact,
     victim: victim?.id ?? -1,
+    normal: surface.normal,
     from,
     to: from.map((v, i) => v + dir[i] * distance) as Vec,
     team: a.team,
@@ -201,23 +187,9 @@ function advanceGrenades(m: Match, dt: number) {
   for (const g of m.grenades) {
     g.fuse -= dt;
     g.vy -= 12 * dt;
-    // Swept axis bounds against the same map boxes as bullets, with a 9 cm radius.
-    for (const [axis, velocity, index] of [["x", "vx", 0], ["y", "vy", 1], ["z", "vz", 2]] as const) {
-      const start = g[axis], end = start + g[velocity] * dt;
-      let next = end;
-      for (const block of blocks) {
-        const p = [g.x, g.y, g.z];
-        if (p.some((v, i) => i !== index && Math.abs(v - block.p[i]) > block.size[i] / 2 + 0.09)) continue;
-        const lo = block.p[index] - block.size[index] / 2 - 0.09;
-        const hi = block.p[index] + block.size[index] / 2 + 0.09;
-        if (end > start && start <= lo && next >= lo) next = lo;
-        if (end < start && start >= hi && next <= hi) next = hi;
-      }
-      if (axis === "y") next = Math.max(0.09, next);
-      if (next !== end) g[velocity] *= -0.45;
-      g[axis] = next;
-    }
-    if (g.y <= 0.091) { g.vx *= Math.exp(-dt * 5); g.vz *= Math.exp(-dt * 5); }
+    const motion = physics.projectile([g.x, g.y, g.z], [g.vx, g.vy, g.vz], dt);
+    [g.x, g.y, g.z] = motion.position;
+    [g.vx, g.vy, g.vz] = motion.velocity;
     if (g.fuse > 0) { m.grenades[count++] = g; continue; }
     m.explosions.push({ id: g.id, x: g.x, y: g.y, z: g.z, age: 0 });
     const owner = m.actors.find(a => a.id === g.owner)!;
@@ -277,18 +249,15 @@ function updateActorWeapons(m: Match, a: Actor, command: Command, dt: number) {
   if (command.reload && a.throwing === 0 && a.ammo < 30 && a.reload === 0) a.reload = 1.7;
 }
 
-function stanceTarget(current: boolean, amount: number, requested: boolean) {
-  return amount === (current ? 1 : 0) ? requested : current;
-}
-
 function updateCrouch(a: Actor, command: Command, dt: number) {
-  a.crouching = stanceTarget(a.crouching, a.crouchAmount, command.crouch === true);
+  const blockedStanding = a.crouchAmount > 0 && physics.blocked([a.x, a.y, a.z], 1.8);
+  a.crouching = command.crouch || blockedStanding;
   a.crouchAmount = approachStance(a.crouchAmount, a.crouching, dt, STANCE_TIMING.crouch, STANCE_TIMING.stand);
 }
 
 function updateAim(a: Actor, command: Command, dt: number) {
   const weaponBusy = a.throwing > 0 || a.reload > 0;
-  a.aiming = !weaponBusy && stanceTarget(a.aiming, a.aimAmount, command.aim === true);
+  a.aiming = command.aim && !weaponBusy;
   a.aimAmount = approachStance(a.aimAmount, a.aiming, dt, STANCE_TIMING.aimIn, STANCE_TIMING.aimOut);
 }
 
@@ -298,27 +267,29 @@ function fullyStanding(a: Actor) {
 
 /** One set of movement restrictions for human inputs, bot commands and future prediction. */
 function movementSpeed(a: Actor, command: Command) {
-  if (!fullyStanding(a)) return 1.8;
-  if (a.throwing > 0 || a.aiming || a.aimAmount > 0) return 2.7;
-  const canSprint = !command.fire && !command.aim && a.reload === 0;
-  return command.sprint && canSprint ? 7 : 4.6;
+  const canSprint = command.forward > 0.5 && command.forward >= Math.abs(command.right)
+    && fullyStanding(a) && a.aimAmount === 0 && !command.aim && !command.fire
+    && a.reload === 0 && a.throwing === 0;
+  if (command.sprint && canSprint) return 7;
+  // Speed follows stance progress instead of snapping on the first input tick.
+  return Math.min(4.6 + (1.8 - 4.6) * a.crouchAmount,
+    4.6 + (2.7 - 4.6) * a.aimAmount, a.throwing > 0 ? 2.7 : 4.6);
 }
 
 function moveActor(a: Actor, command: Command, dt: number) {
   const speed = movementSpeed(a, command);
   const norm = Math.max(1, Math.hypot(command.forward, command.right));
   const sin = Math.sin(command.yaw), cos = Math.cos(command.yaw);
-  const dx = ((-sin * command.forward + cos * command.right) * speed * dt) / norm;
-  const dz = ((-cos * command.forward - sin * command.right) * speed * dt) / norm;
+  const vx = ((-sin * command.forward + cos * command.right) * speed) / norm;
+  const vz = ((-cos * command.forward - sin * command.right) * speed) / norm;
   const beforeX = a.x, beforeZ = a.z;
-  if (!blocked(a.x + dx, a.z, 0.36, a.y)) a.x += dx;
-  if (!blocked(a.x, a.z + dz, 0.36, a.y)) a.z += dz;
+  if (command.jump && fullyStanding(a) && a.grounded) a.vy = 4;
+  a.vy -= 12 * dt;
+  const motion = physics.move([a.x, a.y, a.z], 1.8 - crouchOffset(a), [vx, a.vy, vz], dt);
+  [a.x, a.y, a.z] = motion.position;
+  a.vy = motion.velocity[1]; a.grounded = motion.grounded;
   a.speed = Math.hypot(a.x - beforeX, a.z - beforeZ) / dt;
   a.moving = a.speed > 0.12;
-  if (command.jump && fullyStanding(a) && a.y === 0) a.vy = 4;
-  a.vy -= 12 * dt;
-  a.y = Math.max(0, a.y + a.vy * dt);
-  if (a.y === 0) a.vy = 0;
 }
 
 function stepActor(m: Match, a: Actor, inputs: ReadonlyMap<number, Command>, dt: number) {
@@ -361,7 +332,7 @@ export function stepMatch(m: Match, inputs: ReadonlyMap<number, Command>, dt = S
   ageEvents(m.shots, dt, 0.12);
   for (const actor of m.actors) stepActor(m, actor, inputs, dt);
   for (const a of m.actors) {
-    if (a.hp > 0 && a.y < 0.02) advanceGait(a.gait, a.speed, dt);
+    if (a.hp > 0 && a.grounded) advanceGait(a.gait, a.speed, dt);
     else { a.gait.state = "idle"; a.gait.phase = 0; }
   }
   advanceGrenades(m, dt);

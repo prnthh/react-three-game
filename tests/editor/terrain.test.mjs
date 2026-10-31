@@ -106,6 +106,7 @@ test('terrain surface ownership uses the scene registry without leaking through 
     assert.equal(findTerrainSurface(parent),null,'parent must not pick a descendant terrain');
     assert.equal(findTerrainSurface(child),surface);
     const replacement={width:64,depth:64},releaseReplacement=registry.register('child',TERRAIN_SURFACE_COMPONENT,replacement);
+    assert.equal(findTerrainSurface(child),surface,'multiple terrains resolve the first live surface');
     release();assert.equal(findTerrainSurface(child),replacement,'old cleanup cannot delete replacement');
     releaseReplacement();assert.equal(findTerrainSurface(child),null);
     releaseParent();releaseChild();

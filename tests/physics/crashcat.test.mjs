@@ -75,11 +75,12 @@ describe('Collision shapes', () => {
 });
 
 describe('Model import', () => {
-    test('generic model conversion is physics agnostic; collision import is explicitly supplied by the plugin', () => {
+    test('generic collision descriptors remain engine-neutral; Crashcat adapts the same markers', () => {
         const model = new Mesh(new BoxGeometry(), new MeshStandardMaterial());
         model.name = 'wall_colonly';
         const generic = decomposeModelToPrefabNodes(model);
-        assert.equal(generic.root.components.geometry.properties.visible, true);
+        assert.equal(generic.root.components.geometry, undefined);
+        assert.equal(generic.root.components.collider.type, 'MeshCollider');
         assert.ok(!Object.values(generic.root.components).some(c => c.type === 'CrashcatPhysics'));
         const physics = importCollisionModel(model);
         assert.equal(physics.root.name, 'wall');

@@ -75,13 +75,13 @@ function validateNode(node: GameObject, ids: Set<string>, existing?: PrefabState
     nodePatch(patch);
     if (components !== undefined) {
         record(components, 'components');
-        const slots = new Set<string>();
+        const groups = new Set<string>();
         for (const [key, value] of Object.entries(components)) {
             id(key);
             component(value);
-            const slot = getComponent(value!.type)!.slot;
-            if (slot && slots.has(slot)) throw new Error(`Node "${node.id}" has multiple components in slot "${slot}".`);
-            if (slot) slots.add(slot);
+            const group = getComponent(value!.type)!.exclusive;
+            if (group && groups.has(group)) throw new Error(`Node "${node.id}" has multiple components in exclusive group "${group}".`);
+            if (group) groups.add(group);
         }
     }
     if (children !== undefined) {
@@ -91,16 +91,10 @@ function validateNode(node: GameObject, ids: Set<string>, existing?: PrefabState
 }
 function validatePrefab(value: unknown) {
     const prefab = record(value, 'prefab');
-    keys(prefab, ['id', 'name', 'root', 'prefabs']);
+    keys(prefab, ['id', 'name', 'root']);
     if (prefab.id !== undefined) id(prefab.id);
     if (prefab.name !== undefined && typeof prefab.name !== 'string') throw new Error('Invalid prefab name.');
     validateNode(prefab.root, new Set());
-    if (prefab.prefabs !== undefined) {
-        for (const [key, definition] of Object.entries(record(prefab.prefabs, 'prefabs'))) {
-            id(key);
-            validatePrefab(definition);
-        }
-    }
 }
 
 /** Stages immutable store edits, sharing untouched nodes. */

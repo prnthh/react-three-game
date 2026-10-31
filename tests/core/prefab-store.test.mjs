@@ -3,15 +3,14 @@ import test, { describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { createPrefabStore } from "../../src/core/prefabStore.ts";
 import { createPrefabHistory } from '../../src/core/prefabHistory.ts';
-import { createPrefabApi } from '../../src/runtime/prefabs/prefabApi.ts';
-import { createPrefabRegistry } from '../../src/runtime/scene/SceneContext.tsx';
+import { createPrefabDocumentApi } from '../../src/core/prefabDocumentApi.ts';
 
 const tick = () => new Promise(resolve => queueMicrotask(resolve));
 const fixture = () => {
     const store = createPrefabStore({ root: { id: 'root' } });
     const history = createPrefabHistory(store);
     const disconnect = history.connect();
-    const api = createPrefabApi(store, createPrefabRegistry(), () => null, '');
+    const api = createPrefabDocumentApi(store);
     return { store, history, disconnect, api };
 };
 

@@ -4,8 +4,6 @@ import { useEditorRef } from '../EditorContext.js';
 import { loadAssetManifest } from '../../runtime/assets/assetManifest.js';
 import { base, colors } from '../ui/styles.js';
 import { FieldGroup, Label } from '../ui/Input.js';
-import { isEmbeddedPrefabSource } from '../../runtime/prefabs/prefabSource.js';
-import { useAssetRuntime } from '../../runtime/assets/AssetRuntime.js';
 import { usePrefabStore } from '../../runtime/prefabs/PrefabStoreContext.js';
 import { PrefabRefProperties } from "../../runtime/components/PrefabRefComponent.js";
 
@@ -17,27 +15,9 @@ function PrefabRefEditor({ node, properties, update }: ComponentEditorProps<Pref
     const hasSource = inline || !!url;
     const [manifest, setManifest] = useState<string[]>([]);
     const [error, setError] = useState<string | null>(null);
-    const embedded = isEmbeddedPrefabSource(url);
-    const runtime = useAssetRuntime();
-    const [sourceName, setSourceName] = useState<{ url: string; name: string } | null>(null);
-    const embeddedLabel = sourceName?.url === url ? sourceName.name : 'Loading prefab…';
     const [unpacking, setUnpacking] = useState(false);
     const editor = useEditorRef();
     const { basePath } = editor;
-
-    useEffect(() => {
-        if (!embedded) return;
-        let active = true;
-        void runtime.loadDocument(url).then(document => {
-            if (!active) return;
-            const name = document.prefabName?.trim() || document.nodesById[document.rootId].name?.trim()
-                || document.prefabId || document.rootId;
-            setSourceName({ url, name });
-        }).catch(() => {
-            if (active) setSourceName({ url, name: 'Unavailable prefab' });
-        });
-        return () => { active = false; };
-    }, [embedded, runtime, url]);
 
     useEffect(() => {
         let cancelled = false;
@@ -72,7 +52,7 @@ function PrefabRefEditor({ node, properties, update }: ComponentEditorProps<Pref
     return (
         <FieldGroup>
             <div>
-                <Label>{inline || embedded ? 'Prefab (saved with scene)' : 'Prefab URL'}</Label>
+                <Label>{inline ? 'Prefab (saved with scene)' : 'Prefab URL'}</Label>
                 {inline && <div>{definitions?.[prefabId]?.name ?? prefabId}</div>}
                 {!!Object.keys(definitions ?? {}).length && <select
                     style={{ ...base.input, width: '100%', marginBottom: 4 }}
@@ -84,13 +64,12 @@ function PrefabRefEditor({ node, properties, update }: ComponentEditorProps<Pref
                         {prefab.name ?? id} ({id})
                     </option>)}
                 </select>}
-                {embedded && <div title={embeddedLabel} style={{ overflowWrap: 'anywhere', marginBottom: 4 }}>{embeddedLabel}</div>}
                 <input
                     type="text"
                     style={{ ...base.input, width: '100%', boxSizing: 'border-box', fontFamily: 'monospace' }}
-                    value={inline || embedded ? '' : url}
+                    value={inline ? '' : url}
                     onChange={e => update({ url: e.target.value, prefabId: '' })}
-                    placeholder={embedded ? "Replace with a prefab URL…" : "/prefabs/my-prefab.json"}
+                    placeholder="/prefabs/my-prefab.json"
                 />
                 {manifest.length > 0 && (
                     <select
@@ -98,7 +77,6 @@ function PrefabRefEditor({ node, properties, update }: ComponentEditorProps<Pref
                         value={url}
                         onChange={e => update({ url: e.target.value, prefabId: '' })}
                     >
-                        {embedded && <option value={url}>{embeddedLabel} (saved with scene)</option>}
                         <option value="">— pick from manifest —</option>
                         {manifest.map(entry => (
                             <option key={entry} value={entry}>

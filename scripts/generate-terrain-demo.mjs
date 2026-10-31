@@ -6,7 +6,17 @@ import { deflateSync } from 'node:zlib';
 import { parseArgs } from 'node:util';
 
 export const DEFAULTS = { seed: 71029, offsetX: 0, offsetZ: 0 };
-const VERSION = 1, GRID = 10, INTERVALS = 256, TILE_SIZE = 32, HEIGHT_SCALE = 48;
+const VERSION = 2, GRID = 10, HEIGHT_SCALE = 48;
+export const TERRAIN_CONFIG = JSON.parse(readFileSync(new URL('../docs/app/demo/terrain/terrain-config.json', import.meta.url), 'utf8'));
+export function validateTerrainConfig(config) {
+    if (![16, 32, 64, 128].includes(config.tileSize)) throw new Error('tileSize must be 16, 32, 64 or 128 world units.');
+    for (const key of ['segments', 'heightIntervals', 'weightIntervals']) {
+        if (![32, 64, 128, 256, 512].includes(config[key])) throw new Error(`${key} must be 32, 64, 128, 256 or 512.`);
+    }
+    if (config.heightIntervals < config.segments) throw new Error('heightIntervals must be at least segments so each mesh vertex has a height sample.');
+    return config;
+}
+validateTerrainConfig(TERRAIN_CONFIG);
 const smooth = (a, b, v) => { const t = Math.max(0, Math.min(1, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
 function hash(x, z, seed) {
     let n = Math.imul(x, 374761393) ^ Math.imul(z, 668265263) ^ seed;
@@ -28,16 +38,18 @@ export function sampleHeight(x, z, seed = DEFAULTS.seed) {
     const valley = smooth(.015, .105, river);
     return Math.max(0, Math.min(48, (1.2 + 1.5 * detail) * (1 - valley) + (3 + 30 * ridge * band + 8 * detail) * valley));
 }
-export function generateTile({ seed = DEFAULTS.seed, offsetX = 0, offsetZ = 0, intervals = INTERVALS, tileSize = TILE_SIZE } = {}) {
-    const size = intervals + 1, padded = size + 2, step = tileSize / intervals;
-    const heights = new Float64Array(padded * padded);
-    // A halo gives identical centered slope samples on both sides of every seam.
-    for (let z = -1; z <= size; z++) for (let x = -1; x <= size; x++)
-        heights[(z + 1) * padded + x + 1] = sampleHeight(offsetX + x * step, offsetZ + z * step, seed);
+export function generateTile({ seed = DEFAULTS.seed, offsetX = 0, offsetZ = 0, intervals = TERRAIN_CONFIG.heightIntervals, tileSize = TERRAIN_CONFIG.tileSize } = {}) {
+    if (!Number.isInteger(intervals) || intervals < 1 || intervals > 1023 || !Number.isFinite(tileSize) || tileSize <= 0)
+        throw new Error('Tile intervals must be an integer from 1 to 1023 and tileSize must be positive and finite.');
+    const size = intervals + 1, step = tileSize / intervals;
     const height = new Uint8Array(size * size), weights = new Uint8Array(size * size * 3);
     for (let z = 0; z < size; z++) for (let x = 0; x < size; x++) {
-        const p = (z + 1) * padded + x + 1, i = z * size + x, h = heights[p];
-        const slope = Math.hypot(heights[p + 1] - heights[p - 1], heights[p + padded] - heights[p - padded]) / (2 * step);
+        const i = z * size + x, h = sampleHeight(offsetX + x * step, offsetZ + z * step, seed);
+        // Keep the original 0.125-unit slope probe independent of output resolution:
+        // lowering map density must not change the material classification at retained samples.
+        const wx = offsetX + x * step, wz = offsetZ + z * step, probe = 0.125;
+        const slope = Math.hypot(sampleHeight(wx + probe, wz, seed) - sampleHeight(wx - probe, wz, seed),
+            sampleHeight(wx, wz + probe, seed) - sampleHeight(wx, wz - probe, seed)) / (2 * probe);
         const rock = Math.max(smooth(.35, .95, slope), .8 * smooth(24, 36, h));
         const sand = (1 - smooth(3, 7, h)) * (1 - rock);
         const dirt = (.18 + .45 * smooth(.2, .65, slope)) * (1 - rock) * (1 - sand);
@@ -65,7 +77,9 @@ export function encodePNG(size, channels, pixels) {
     }
     return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', header), chunk('IDAT', deflateSync(scanlines)), chunk('IEND', Buffer.alloc(0))]);
 }
-export function generateDemo(destination, options = DEFAULTS, ensure = false) {
+export function generateDemo(destination, options = DEFAULTS, ensure = false, config = TERRAIN_CONFIG) {
+    validateTerrainConfig(config);
+    options = { ...DEFAULTS, ...options };
     const stamp = join(destination, 'generation.json');
     const paths = ['height.png', 'weights.png'];
     for (let row = 0; row < GRID; row++) for (let col = 0; col < GRID; col++) for (const kind of ['height', 'weights']) paths.push(`tiles/${kind}-${row}-${col}.png`);
@@ -74,19 +88,22 @@ export function generateDemo(destination, options = DEFAULTS, ensure = false) {
         try { saved = JSON.parse(readFileSync(stamp, 'utf8')); } catch { /* Rebuild interrupted output. */ }
         if (saved && Number.isInteger(saved.seed) && Number.isFinite(saved.offsetX) && Number.isFinite(saved.offsetZ)) {
             options = { seed: saved.seed, offsetX: saved.offsetX, offsetZ: saved.offsetZ };
-            if (saved.version === VERSION && paths.every(p => existsSync(join(destination, p)))) return false;
+            if (saved.version === VERSION && ['tileSize', 'segments', 'heightIntervals', 'weightIntervals'].every(key => saved.config?.[key] === config[key]) && paths.every(p => existsSync(join(destination, p)))) return false;
         }
     }
     mkdirSync(join(destination, 'tiles'), { recursive: true });
     for (let row = 0; row < GRID; row++) for (let col = 0; col < GRID; col++) {
-        const tile = generateTile({ ...options, offsetX: options.offsetX + col * TILE_SIZE, offsetZ: options.offsetZ + row * TILE_SIZE });
-        for (const [kind, channels, pixels] of [['height', 1, tile.height], ['weights', 3, tile.weights]]) {
-            const png = encodePNG(tile.size, channels, pixels);
+        const tileOptions = { ...options, tileSize: config.tileSize, offsetX: options.offsetX + col * config.tileSize, offsetZ: options.offsetZ + row * config.tileSize };
+        const heightTile = generateTile({ ...tileOptions, intervals: config.heightIntervals });
+        const weightTile = config.weightIntervals === config.heightIntervals ? heightTile
+            : generateTile({ ...tileOptions, intervals: config.weightIntervals });
+        for (const [kind, channels, tile] of [['height', 1, heightTile], ['weights', 3, weightTile]]) {
+            const png = encodePNG(tile.size, channels, tile[kind === 'height' ? 'height' : 'weights']);
             writeFileSync(join(destination, `tiles/${kind}-${row}-${col}.png`), png);
             if (row === 0 && col === 0) writeFileSync(join(destination, `${kind}.png`), png);
         }
     }
-    writeFileSync(stamp, JSON.stringify({ version: VERSION, ...options }, null, 2) + '\n');
+    writeFileSync(stamp, JSON.stringify({ version: VERSION, ...options, config }, null, 2) + '\n');
     return true;
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
@@ -96,5 +113,5 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     const destination = resolve(fileURLToPath(new URL('../docs/public/textures/terrain-demo/', import.meta.url)));
     const changed = generateDemo(destination, options, values.ensure && values.seed === undefined && values['offset-x'] === undefined && values['offset-z'] === undefined);
     const generated = JSON.parse(readFileSync(join(destination, 'generation.json'), 'utf8'));
-    console.log(changed ? `Generated 100 terrain pairs: seed ${generated.seed}, offset (${generated.offsetX}, ${generated.offsetZ}).` : 'Terrain maps already generated; retaining local seed and offset.');
+    console.log(changed ? `Generated 100 terrain pairs: seed ${generated.seed}, offset (${generated.offsetX}, ${generated.offsetZ}), ${generated.config.tileSize}-unit tiles, height ${generated.config.heightIntervals + 1}² / weights ${generated.config.weightIntervals + 1}².` : 'Terrain maps already generated; retaining local seed and offset.');
 }

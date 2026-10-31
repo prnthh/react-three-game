@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { act, createElement as h, StrictMode, useEffect } from 'react';
-import { createRoot, extend } from '@react-three/fiber';
+import { createRoot, extend, useFrame } from '@react-three/fiber';
 import { Group } from 'three';
+import { useComponentActive, useGameObject, usePrefab } from '../../src/viewer/index.ts';
 import { PrefabRoot } from '../../src/runtime/prefabs/PrefabRoot.tsx';
 import { PrefabInstance } from '../../src/runtime/prefabs/PrefabInstance.tsx';
 import { AssetRuntimeContext } from '../../src/runtime/assets/AssetRuntime.tsx';
@@ -31,13 +32,11 @@ test('prefab activation preserves descendants and active siblings', async t => {
         Model: { name: 'Model', slot: 'object', renderWhenDisabled: true, properties: {}, View: ({ children }) => children },
         Nested: { name: 'Nested', renderWhenDisabled: true, properties: {},
             View: ({ enabled, children }) => h(GroupView, null, h(PrefabRoot, { id: 'nested', data: nestedDocument, enabled }), children) },
-        Gameplay: { name: 'Gameplay', properties: {},
-            setup(ctx) {
-                readyRefs.push(!!ctx.prefab.getObject('leaf'));
-                starts.push(ctx.node.id);
-                return () => stops.push(ctx.node.id);
-            },
-            update(ctx) { updates.push(ctx.node.id); } },
+        Gameplay: { name: 'Gameplay', renderWhenDisabled: true, properties: {},
+            View({ enabled, children }) {
+                const active = useComponentActive(enabled);
+                return h(GroupView, null, active ? h(GameplayEffect) : null, children);
+            } },
         Streamer: { name: 'Streamer', properties: {}, View() {
             useEffect(() => { streamerMounts++; }, []);
             return h(AssetRuntimeContext.Provider, { value: runtime }, h(PrefabInstance, {
@@ -45,6 +44,16 @@ test('prefab activation preserves descendants and active siblings', async t => {
             }));
         } },
     };
+    function GameplayEffect() {
+        const node = useGameObject(), prefab = usePrefab();
+        useEffect(() => {
+            readyRefs.push(!!prefab.getObject('leaf'));
+            starts.push(node.id);
+            return () => stops.push(node.id);
+        }, [node, prefab]);
+        useFrame(() => updates.push(node.id));
+        return null;
+    }
     function GroupView({ children }) { return h('group', null, children); }
     const document = { root: { id: 'root', components: { gameplay: { type: 'Gameplay', properties: {} } },
         children: [{ ...model('branch'), components: { model: { type: 'Model', properties: {} }, nested: { type: 'Nested', properties: {} } }, children: [model('leaf')] }] } };

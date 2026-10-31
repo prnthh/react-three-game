@@ -190,3 +190,32 @@ test('core discovers unique inline materials and sharing persists a live ID refe
     doc.getState().replacePrefab(before);
     assert.equal(doc.getState().nodesById.red.components.material.properties.name, undefined, 'restoring snapshot reverses promotion');
 });
+
+
+test('lit materials implement physical settings and preserve them through document and model round trips', async t => {
+    const root = await host(t);
+    const settings = { name: 'glass', transmission: 0.7, thickness: 0.2, ior: 1.4, diffuseRoughness: 0.6 };
+    const store = document('root', [box('glass', settings)]);
+    let state;
+    await act(async () => { state = root.render(h(PrefabRoot, { store })); });
+    const object = mesh(state.getState().scene, 'glass');
+    assert.equal(object.material.isMeshPhysicalNodeMaterial, true, 'fields must be backed by the physical shader');
+    for (const key of ['transmission', 'thickness', 'ior', 'diffuseRoughness']) assert.equal(object.material[key], settings[key]);
+    const saved = prefabStoreToPrefab(store.getState());
+    const properties = saved.root.children[0].components.material.properties;
+    for (const [key, value] of Object.entries(settings)) assert.equal(properties[key], value);
+    const { decomposeModelToPrefabNodes } = await import('../../src/core/modelPrefab.ts');
+    const imported = decomposeModelToPrefabNodes(object);
+    const materials = [];
+    const visit = node => {
+        for (const component of Object.values(node.components ?? {})) if (component.type === 'Material') materials.push(component.properties);
+        node.children?.forEach(visit);
+    };
+    visit(imported.root);
+    for (const key of ['transmission', 'thickness', 'ior', 'diffuseRoughness']) assert.equal(materials[0][key], settings[key]);
+    await act(async () => store.getState().updateNode('glass', node => ({ ...node, components: {
+        ...node.components, material: { type: 'Material', properties: { name: 'glass', color: '#ffffff' } },
+    } })));
+    assert.equal(object.material.transmission, 0);
+    assert.equal(object.material.diffuseRoughness, 0);
+});

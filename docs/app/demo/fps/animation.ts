@@ -14,7 +14,7 @@ import { clone } from "three/examples/jsm/utils/SkeletonUtils.js";
 
 const boneKey = (name: string) =>
   name.replace(/^mixamorig:?/i, "").toLowerCase();
-function bones(root: Object3D) {
+export function humanoidBones(root: Object3D) {
   const result = new Map<string, Bone>();
   root.traverse((object) => {
     if ((object as Bone).isBone)
@@ -38,8 +38,8 @@ export function retargetLocomotion(
     to = clone(target);
   from.updateMatrixWorld(true);
   to.updateMatrixWorld(true);
-  const sourceBones = bones(from),
-    targetBones = bones(to);
+  const sourceBones = humanoidBones(from),
+    targetBones = humanoidBones(to);
   const restSource = new Map(
     [...sourceBones].map(([key, bone]) => [
       key,
@@ -146,7 +146,7 @@ export class LocomotionClock {
 }
 
 /** Frame-driven, per-instance mixer. Action transitions never depend on React HUD renders. */
-export type CharacterPose = { hp: number; respawn: number; crouching: boolean; aiming: boolean; throwing: number };
+export type CharacterPose = { hp: number; respawn: number; crouching: boolean; crouchAmount?: number; aiming: boolean; throwing: number };
 export const EXTRA_ANIMATIONS = ["crouch", "crouch-aim", "throw", "death"] as const;
 
 export class LocomotionPlayer {
@@ -157,13 +157,14 @@ export class LocomotionPlayer {
   constructor(
     private root: Object3D,
     private clips: AnimationClip[],
+    private sharedMixer?: AnimationMixer,
   ) {
-    this.mixer = new AnimationMixer(root);
+    this.mixer = sharedMixer ?? new AnimationMixer(root);
     this.actions = new Map(
       clips.map((clip) => [clip.name, this.mixer.clipAction(clip)]),
     );
   }
-  update(speed: number, dt: number, sharedClock?: LocomotionClock, pose?: CharacterPose, presentationTime?: number) {
+  update(speed: number, dt: number, sharedClock?: Readonly<Pick<LocomotionClock, "state" | "phase" | "steps">>, pose?: CharacterPose, presentationTime?: number) {
     if (this.actions.size === 0)
       this.actions = new Map(
         this.clips.map((clip) => [clip.name, this.mixer.clipAction(clip)]),
@@ -197,8 +198,8 @@ export class LocomotionPlayer {
   }
 
   dispose() {
-    this.mixer.stopAllAction();
-    this.mixer.uncacheRoot(this.root);
+    for (const action of this.actions.values()) action.stop();
+    if (!this.sharedMixer) this.mixer.uncacheRoot(this.root);
     this.actions.clear();
     this.clock.reset();
     this.state = "";

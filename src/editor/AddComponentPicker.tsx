@@ -12,14 +12,6 @@ const categories: Record<ComponentCategory, string> = {
     physics: 'Physics',
     misc: 'Misc',
 };
-const slotCategories: Record<NonNullable<Component['slot']>, ComponentCategory> = {
-    object: 'mesh', geometry: 'mesh', material: 'materials', transform: 'transform',
-    environment: 'lighting', fog: 'lighting', data: 'misc',
-};
-function categoryOf(component: Component): ComponentCategory {
-    return component.category ?? (component.modifyGeometry ? 'mesh'
-        : component.slot ? slotCategories[component.slot] : 'misc');
-}
 
 export function AddComponentPicker({ components, onAdd }: {
     components: Component[];
@@ -48,7 +40,7 @@ export function AddComponentPicker({ components, onAdd }: {
                 onClick={() => setOpen(false)}>✕</button>
         </div>
         {Object.entries(categories).map(([category, label]) => {
-            const entries = components.filter(component => categoryOf(component) === category);
+            const entries = components.filter(component => (component.category ?? 'misc') === category);
             if (!entries.length) return null;
             return <div key={category} role="group" aria-label={label} style={{ marginBottom: 12 }}>
                 <div style={{ ...base.label, marginBottom: 5 }}>{label}</div>

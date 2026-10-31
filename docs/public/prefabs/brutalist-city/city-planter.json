@@ -40,7 +40,7 @@
             "properties": {
               "materialType": "standard",
               "name": "prefabs/brutalist-city/city-planter:stone",
-              "color": "#91aacb",
+              "color": "#b0a58f",
               "texture": "/textures/floor/terrain/sand-512.jpg",
               "repeat": true,
               "repeatCount": [
@@ -48,7 +48,8 @@
                 2
               ],
               "roughness": 0.98,
-              "metalness": 0
+              "metalness": 0,
+              "diffuseRoughness": 0.7
             }
           }
         },

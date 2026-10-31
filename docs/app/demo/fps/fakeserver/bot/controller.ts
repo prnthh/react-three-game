@@ -1,27 +1,11 @@
+import { mapFeatures, physics } from "../../shared/world";
 /** Server-side tactical intent and navigation. Gameplay outcomes stay in shared match rules. */
-import { blocks, blocked, wallDistance, eyeHeight, STEP, idleCommand,
+import { blocked, wallDistance, eyeHeight, STEP, idleCommand,
   type Actor, type ActorController, type ControllerMatch, type ControllerActor } from "../match";
 
 /** Sweep the bot footprint, not just its center ray, across the ground plane. */
 export function walkableSegment(x: number, z: number, tx: number, tz: number) {
-  for (const b of blocks) {
-    if (b.p[1] - b.size[1] / 2 >= 1.8 || b.p[1] + b.size[1] / 2 <= 0.1) continue;
-    let enter = 0, leave = 1;
-    for (const axis of [0, 2] as const) {
-      const start = axis === 0 ? x : z, delta = (axis === 0 ? tx : tz) - start;
-      const min = b.p[axis] - b.size[axis] / 2 - 0.4;
-      const max = b.p[axis] + b.size[axis] / 2 + 0.4;
-      if (Math.abs(delta) < 1e-9) {
-        if (start < min || start > max) { leave = -1; break; }
-      } else {
-        const a = (min - start) / delta, c = (max - start) / delta;
-        enter = Math.max(enter, Math.min(a, c));
-        leave = Math.min(leave, Math.max(a, c));
-      }
-    }
-    if (leave >= enter) return false;
-  }
-  return true;
+  return physics.walkable([x, 0, z], [tx, 0, tz]);
 }
 
 /** Skip grid corners only when the entire footprint can reach the next waypoint. */
@@ -171,14 +155,14 @@ export class BotController implements ActorController {
   private updateRoute(a: ControllerActor, enemy: ControllerActor, dt: number) {
     this.repath -= dt;
     if (this.repath <= 0) {
-      const flankX = a.id % 2 ? -13 : 13;
-      if (Math.hypot(a.x - flankX, a.z) < 3) this.flanked = true;
-      const flank = !this.flanked && a.id % 3 !== 0;
+      const point = mapFeatures.flanks[(a.id + 1) % mapFeatures.flanks.length];
+      if (point && Math.hypot(a.x - point[0], a.z - point[2]) < 3) this.flanked = true;
+      const flank = point && !this.flanked && a.id % 3 !== 0;
       routeTo(
         a.x,
         a.z,
-        flank ? flankX : enemy.x,
-        flank ? 0 : enemy.z,
+        flank ? point[0] : enemy.x,
+        flank ? point[2] : enemy.z,
         this.route,
       );
       this.repath = 0.65 + this.random() * 0.4;

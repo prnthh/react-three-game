@@ -38,15 +38,16 @@
             "properties": {
               "materialType": "standard",
               "name": "prefabs/brutalist-city/brutalist-enterable-cube:concrete-dark",
-              "color": "#4d607c",
-              "texture": "/textures/floor/terrain/sand-512.jpg",
+              "color": "#46535f",
+              "texture": "/textures/fps/concrete.svg",
               "repeat": true,
               "repeatCount": [
                 8,
                 8
               ],
               "roughness": 0.98,
-              "metalness": 0
+              "metalness": 0,
+              "diffuseRoughness": 0.7
             }
           }
         },
@@ -81,15 +82,16 @@
             "properties": {
               "materialType": "standard",
               "name": "prefabs/brutalist-city/brutalist-enterable-cube:concrete-light",
-              "color": "#abc4e7",
-              "texture": "/textures/floor/terrain/sand-512.jpg",
+              "color": "#c5cfd8",
+              "texture": "/textures/fps/concrete.svg",
               "repeat": true,
               "repeatCount": [
                 10,
                 3
               ],
               "roughness": 0.98,
-              "metalness": 0
+              "metalness": 0,
+              "diffuseRoughness": 0.7
             }
           }
         },
@@ -124,15 +126,16 @@
             "properties": {
               "materialType": "standard",
               "name": "prefabs/brutalist-city/brutalist-enterable-cube:concrete",
-              "color": "#829abd",
-              "texture": "/textures/floor/terrain/sand-512.jpg",
+              "color": "#91a5b5",
+              "texture": "/textures/fps/concrete.svg",
               "repeat": true,
               "repeatCount": [
                 10,
                 10
               ],
               "roughness": 0.98,
-              "metalness": 0
+              "metalness": 0,
+              "diffuseRoughness": 0.7
             }
           }
         },
@@ -529,9 +532,9 @@
             "type": "Material",
             "properties": {
               "materialType": "standard",
-              "color": "#244b59",
-              "roughness": 0.22,
-              "metalness": 0.3,
+              "color": "#344b5a",
+              "roughness": 0.12,
+              "metalness": 0.75,
               "name": "prefabs/brutalist-city/brutalist-enterable-cube:glazing"
             }
           }
@@ -606,9 +609,9 @@
             "type": "Material",
             "properties": {
               "materialType": "standard",
-              "color": "#856046",
-              "roughness": 0.45,
-              "metalness": 0.3,
+              "color": "#45535e",
+              "roughness": 0.28,
+              "metalness": 0.8,
               "name": "prefabs/brutalist-city/brutalist-enterable-cube:metal"
             }
           }

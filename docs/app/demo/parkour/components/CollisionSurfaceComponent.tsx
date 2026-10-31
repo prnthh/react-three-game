@@ -1,3 +1,4 @@
+import { usePrefabDocument } from 'react-three-game/viewer';
 import { useLayoutEffect, useMemo, useState } from 'react';
 import { Box3, BoxGeometry, MeshBasicMaterial, Quaternion, Vector3, type Object3D } from 'three';
 import { createNodeComponentType, findComponent, useSceneComponents, useNode, useGameObject, usePrefab, useRegisterNodeComponent, useSharedGeometryResource, useSharedMaterialResource, type Component, type ComponentViewProps, type GameObject } from 'react-three-game/viewer';
@@ -30,7 +31,7 @@ function ColliderWireframe({ size }: { size: BoxSize }) {
 
 function CollisionSurfaceView({ children, enabled }: ComponentViewProps) {
     const object = useGameObject();
-    const prefab = usePrefab();
+    const prefab = usePrefabDocument();
     const { editMode, nodeId } = useNode();
     const size = resolveCollisionSurfaceSize(prefab.get(nodeId));
     const capability = useMemo(() => ({ belongsTo(root: Object3D | null) {

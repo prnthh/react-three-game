@@ -1,59 +1,11 @@
-import type { Object3D } from 'three';
 
-import { createContext, createElement, useContext, useCallback, useEffect, useState, type ReactNode } from 'react';
+import { createContext, createElement, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 
-export type GameEventHandler<TPayload = unknown> = (payload: TPayload) => void;
-
-export type ContactEventPayload = {
-    sourceEntityId?: string;
-    sourceNodeId?: string;
-    sourceObject?: Object3D;
-    targetEntityId?: string | null;
-    targetNodeId?: string | null;
-    targetObject?: Object3D;
-    collisionNormal?: [number, number, number];
-    event?: unknown;
-};
-
-export type NodePointerEventPayload = {
-    sourceEntityId?: string;
-    sourceNodeId?: string;
-    instanceEntityId?: string;
-    nodeId?: string;
-    node?: unknown;
-    object?: unknown;
-    point?: [number, number, number];
-    button?: number;
-    altKey?: boolean;
-    ctrlKey?: boolean;
-    metaKey?: boolean;
-    shiftKey?: boolean;
-    r3fEvent?: unknown;
-};
-
-export interface GameEventMap {
-    'sensor:enter': ContactEventPayload;
-    'sensor:exit': ContactEventPayload;
-    'collision:enter': ContactEventPayload;
-    'collision:exit': ContactEventPayload;
-    click: NodePointerEventPayload;
-    contextmenu: NodePointerEventPayload;
-    doubleclick: NodePointerEventPayload;
-    wheel: NodePointerEventPayload;
-    pointerdown: NodePointerEventPayload;
-    pointerup: NodePointerEventPayload;
-    pointerover: NodePointerEventPayload;
-    pointerout: NodePointerEventPayload;
-    pointerenter: NodePointerEventPayload;
-    pointerleave: NodePointerEventPayload;
-    pointermove: NodePointerEventPayload;
-    pointercancel: NodePointerEventPayload;
-    lostpointercapture: NodePointerEventPayload;
-    [eventType: string]: unknown;
-}
+import type { GameEventHandler, GameEventMap, GameEvents } from '../../core/componentContext.js';
+export type { GameEventHandler, GameEventMap, GameEvents, ContactEventPayload, NodePointerEventPayload } from '../../core/componentContext.js';
 
 /** Synchronous scene notifications; no simulation clock or event scheduling. */
-export function createGameEvents() {
+export function createGameEvents(): GameEvents {
     const subscribers = new Map<string, Set<GameEventHandler>>();
     return {
         emit<TType extends string>(type: TType, payload: TType extends keyof GameEventMap ? GameEventMap[TType] : unknown) {
@@ -108,7 +60,6 @@ export function createGameEvents() {
 
 }
 
-export type GameEvents = ReturnType<typeof createGameEvents>;
 const GameEventsContext = createContext<GameEvents | null>(null);
 
 /** Place above the canvas when HTML UI also needs access to game events. */
@@ -129,16 +80,13 @@ export function useGameEvents() {
     return events;
 }
 
+/** Subscribe once per event type; callbacks read the latest committed props. */
 export function useGameEvent<TType extends string>(
     type: TType,
     handler: GameEventHandler<TType extends keyof GameEventMap ? GameEventMap[TType] : unknown>,
-    deps: React.DependencyList = [],
 ) {
     const gameEvents = useGameEvents();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    const stableHandler = useCallback(handler, deps);
-
-    useEffect(() => {
-        return gameEvents.on(type, stableHandler);
-    }, [gameEvents, type, stableHandler]);
+    const latest = useRef(handler);
+    useLayoutEffect(() => { latest.current = handler; }, [handler]);
+    useEffect(() => gameEvents.on(type, payload => latest.current(payload)), [gameEvents, type]);
 }

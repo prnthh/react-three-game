@@ -1,22 +1,16 @@
-import { EditPickContext } from '../scene/SelectionRuntime.js';
-import { editPickIds } from '../scene/editPicking.js';
-import { forwardRef, memo, useCallback, useContext, useImperativeHandle, useLayoutEffect, useRef, useState } from "react";
-import type { Object3D } from "three";
-import type { ThreeEvent } from "@react-three/fiber";
-
-import type { GameObject as GameObjectType, Prefab } from "../../core/types.js";
-import { createPrefabStore } from "../../core/prefabStore.js";
-import { usePrefabRootId, usePrefabStore, usePrefabStoreApi } from "./PrefabStoreContext.js";
-import type { PrefabStoreApi } from "../../core/prefabStore.js";
-import { useGameEvents, type GameEvents } from "../scene/GameEvents.js";
-import { PrefabEditorMode, PrefabModeContext, RuntimeNodeIdPrefixContext, RuntimeNodeIdScope, usePrefab, useScene, type PrefabApi, type Scene } from "../scene/SceneContext.js";
-import { SceneProvider } from "../scene/SceneProvider.js";
-import { scopedNodeId } from "../scene/gameObject.js";
-import { PrefabNode, type RendererProps } from "./PrefabNode.js";
-import {
-    type NodeInteractionEvent,
-    type NodeInteractionEventType,
-} from "../scene/usePointerEvents.js";
+import { forwardRef, memo, useCallback, useContext, useImperativeHandle, useMemo, useState } from 'react';
+import type { Object3D } from 'three';
+import type { GameObject, Prefab } from '../../core/types.js';
+import { createPrefabStore, type PrefabStoreApi } from '../../core/prefabStore.js';
+import { PrefabStoreProvider, usePrefabRootId, usePrefabStoreApi } from './PrefabStoreContext.js';
+import { useGameEvents, type GameEvents } from '../scene/GameEvents.js';
+import { createPrefabRegistry, PrefabContext, PrefabEditorMode, SceneContext, RuntimeNodeIdPrefixContext, RuntimeNodeIdScope, type PrefabApi, type Scene } from '../scene/SceneContext.js';
+import { SceneRuntime } from '../SceneRuntime.js';
+import { useAssetRuntime } from '../assets/AssetRuntime.js';
+import { createPrefabApi } from './prefabApi.js';
+import { scopedNodeId } from '../scene/gameObject.js';
+import { PrefabNode } from './PrefabNode.js';
+import type { NodeInteractionEvent, NodeInteractionEventType } from '../scene/usePointerEvents.js';
 
 export type { Scene };
 
@@ -26,118 +20,61 @@ export interface PrefabRootProps {
     editMode?: boolean;
     data?: Prefab;
     store?: PrefabStoreApi;
-    selectedId?: string | null;
     enabled?: boolean;
-    onSelect?: (id: string | null) => void;
-    onPointerEvent?: (eventType: NodeInteractionEventType, event: NodeInteractionEvent, node: GameObjectType) => void;
-    onEditNodeClick?: (event: ThreeEvent<MouseEvent>, node: GameObjectType) => void;
+    onPointerEvent?: (eventType: NodeInteractionEventType, event: NodeInteractionEvent, node: GameObject) => void;
     basePath?: string;
-    /** Use the editor's document API for its shared object registry and asset access. */
+    /** Share an existing document API and live object registry. */
     prefab?: PrefabApi;
     children?: React.ReactNode;
 }
 
-export const PrefabRoot = forwardRef<Scene, PrefabRootProps>((props, ref) => {
-    const { data, store, selectedId, editMode, ...bodyProps } = props;
-    const [ownedStore] = useState(() => data ? createPrefabStore(data) : null);
+/** Establish a document instance, then render its root node. Shared services are inherited. */
+export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ data, store, id = '', ...props }, ref) => {
+    const [ownedStore] = useState(() => !store && data ? createPrefabStore(data) : null);
     const resolvedStore = store ?? ownedStore;
-    if (!resolvedStore) throw new Error("PrefabRoot requires either a `data` or `store` prop");
-
-    return (
-        <RuntimeNodeIdScope prefix={props.id ?? ""}><SceneProvider
-            store={resolvedStore}
-            prefab={props.prefab}
-            editMode={editMode}
-            basePath={props.basePath}
-            selectedId={selectedId}
-            onSelect={bodyProps.onSelect}
-        >
-            <PrefabRootBody ref={ref} {...bodyProps} />
-        </SceneProvider></RuntimeNodeIdScope>
-    );
-
+    if (!resolvedStore) throw new Error('PrefabRoot requires either a `data` or `store` prop');
+    return <SceneRuntime>
+        <RuntimeNodeIdScope prefix={id}>
+            <PrefabStoreProvider store={resolvedStore}>
+                <PrefabRootBody ref={ref} {...props} />
+            </PrefabStoreProvider>
+        </RuntimeNodeIdScope>
+    </SceneRuntime>;
 });
 
-const PrefabRootBody = memo(forwardRef<Scene, PrefabRootProps>(({ onSelect, onPointerEvent, onEditNodeClick, enabled = true, children }, ref) => {
-    const inheritedEditPick = useContext(EditPickContext);
-    const scene = useScene();
-    const gameEvents = useGameEvents();
-    const prefix = useContext(RuntimeNodeIdPrefixContext);
-    const editMode = scene.mode === PrefabEditorMode.Edit;
-    const prefab = usePrefab();
-    const storeApi = usePrefabStoreApi();
-    useImperativeHandle(ref, () => scene, [scene]);
-
-    const lastPick = useRef<{ x: number; y: number; ids: string[]; index: number } | null>(null);
-    const editModeRef = useRef(editMode);
-    useLayoutEffect(() => { editModeRef.current = editMode; }, [editMode]);
-
-    const handleNodePointerEvent = useCallback((
-        eventType: NodeInteractionEventType,
-        event: NodeInteractionEvent,
-        nodeId: string,
-        fallbackObject: Object3D | null,
-        eventName: string | null,
-    ) => {
-        const node = storeApi.getState().nodesById[nodeId];
-        if (!node) return;
-        emitNodePointerEvent(gameEvents, eventType, eventName, event, scopedNodeId(prefix, nodeId), node, fallbackObject);
-        onPointerEvent?.(eventType, event, node);
-    }, [gameEvents, onPointerEvent, prefix, storeApi]);
-
-    const handleEditClick = useCallback((event: ThreeEvent<MouseEvent>) => {
-        if (!editModeRef.current) return;
-        // Nested PrefabRef roots need an edit handler so their descendant meshes
-        // participate in raycasting, but selection belongs to the outer document.
-        // Leave the event unconsumed when this root has no selection callbacks.
-        if (!onSelect && !onEditNodeClick) return;
-        if (event.delta > 4) return;
-        event.stopPropagation();
-
-        const state = storeApi.getState();
-        const ids = editPickIds(event.intersections, state.nodesById, prefix);
-
-        if (ids.length === 0) {
-            lastPick.current = null;
-            return;
-        }
-
-        const nativeEvent = event.nativeEvent;
-        const previous = lastPick.current;
-        const sameSpot = previous
-            && Math.abs(previous.x - nativeEvent.clientX) <= 4
-            && Math.abs(previous.y - nativeEvent.clientY) <= 4;
-        const sameIds = sameSpot
-            && previous.ids.length === ids.length
-            && ids.every((id, index) => previous.ids[index] === id);
-        const index = sameIds ? (previous.index + 1) % ids.length : 0;
-        lastPick.current = { x: nativeEvent.clientX, y: nativeEvent.clientY, ids, index };
-
-        const node = state.nodesById[ids[index]];
-        onSelect?.(node.id);
-        onEditNodeClick?.(event, node);
-    }, [onEditNodeClick, onSelect, prefix, storeApi]);
-
-    return (
-        <PrefabModeContext.Provider value={editMode}>
-            <EditPickContext.Provider value={onSelect || onEditNodeClick ? handleEditClick : inheritedEditPick}>
-                <group onClick={editMode ? handleEditClick : undefined}>
-                    <StoreRootNode
-                        onPointerEvent={handleNodePointerEvent}
-                        registerRef={prefab.registerObject}
-                        isEnabled={enabled}
-                    />
-                    {children}
-                </group>
-            </EditPickContext.Provider>
-        </PrefabModeContext.Provider>
-    );
-}));
-
-function StoreRootNode(props: Omit<RendererProps, "nodeId">) {
+const PrefabRootBody = memo(forwardRef<Scene, Omit<PrefabRootProps, 'data' | 'store' | 'id'>>(({
+    prefab, editMode = false, basePath = '', onPointerEvent, enabled = true, children,
+}, ref) => {
+    const store = usePrefabStoreApi();
     const rootId = usePrefabRootId();
-    return <PrefabNode key={rootId} {...props} nodeId={rootId} />;
-}
+    const runtime = useAssetRuntime();
+    const events = useGameEvents();
+    const prefix = useContext(RuntimeNodeIdPrefixContext);
+    const parentScene = useContext(SceneContext);
+    const [registry] = useState(createPrefabRegistry);
+    const document = useMemo(() => prefab ?? createPrefabApi(store, registry, () => runtime, basePath),
+        [prefab, store, registry, runtime, basePath]);
+    const scene = useMemo<Scene>(() => parentScene ?? ({
+        get root() { return document.root; },
+        mode: editMode ? PrefabEditorMode.Edit : PrefabEditorMode.Play,
+    }), [parentScene, document, editMode]);
+    useImperativeHandle(ref, () => scene, [scene]);
+    const handlePointerEvent = useCallback((eventType: NodeInteractionEventType, event: NodeInteractionEvent,
+        nodeId: string, object: Object3D | null, eventName: string | null) => {
+        const node = store.getState().nodesById[nodeId];
+        if (!node) return;
+        emitNodePointerEvent(events, eventType, eventName, event, scopedNodeId(prefix, nodeId), node, object);
+        onPointerEvent?.(eventType, event, node);
+    }, [events, onPointerEvent, prefix, store]);
+
+    return <SceneContext.Provider value={scene}>
+        <PrefabContext.Provider value={document}>
+            <PrefabNode key={rootId} nodeId={rootId} onPointerEvent={handlePointerEvent}
+                isEnabled={enabled} />
+            {children}
+        </PrefabContext.Provider>
+    </SceneContext.Provider>;
+}));
 
 function emitNodePointerEvent(
     gameEvents: GameEvents,
@@ -145,7 +82,7 @@ function emitNodePointerEvent(
     eventName: string | null,
     event: NodeInteractionEvent,
     nodeId: string,
-    node: GameObjectType,
+    node: GameObject,
     fallbackObject: Object3D | null,
 ) {
     const nativeEvent = event.nativeEvent as MouseEvent | PointerEvent | WheelEvent;

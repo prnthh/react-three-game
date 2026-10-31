@@ -12,6 +12,7 @@ function SpriteComponentView({ properties, children }: ComponentViewProps<Sprite
 
 const SpriteComponent: Component<SpriteProps> = {
     name: 'Sprite',
+    category: 'mesh',
     renderWhenDisabled: true,
     description: "Add a camera-facing billboard. Pair with Material {materialType:\"sprite\",texture:\"/textures/image.png\",transparent:true}; Transform.scale sets its size.",
     slot: 'object',

@@ -46,7 +46,7 @@
             "properties": {
               "materialType": "standard",
               "name": "prefabs/brutalist-city/brutalist-cylinder-tower:concrete",
-              "color": "#829abd",
+              "color": "#a39c8b",
               "texture": "/textures/floor/terrain/sand-512.jpg",
               "repeat": true,
               "repeatCount": [
@@ -54,7 +54,8 @@
                 10
               ],
               "roughness": 0.98,
-              "metalness": 0
+              "metalness": 0,
+              "diffuseRoughness": 0.7
             }
           }
         },
@@ -96,7 +97,7 @@
             "properties": {
               "materialType": "standard",
               "name": "prefabs/brutalist-city/brutalist-cylinder-tower:concrete-dark",
-              "color": "#4d607c",
+              "color": "#575e60",
               "texture": "/textures/floor/terrain/sand-512.jpg",
               "repeat": true,
               "repeatCount": [
@@ -104,7 +105,8 @@
                 8
               ],
               "roughness": 0.98,
-              "metalness": 0
+              "metalness": 0,
+              "diffuseRoughness": 0.7
             }
           }
         },
@@ -145,9 +147,9 @@
             "type": "Material",
             "properties": {
               "materialType": "standard",
-              "color": "#244b59",
-              "roughness": 0.22,
-              "metalness": 0.3,
+              "color": "#527b89",
+              "roughness": 0.12,
+              "metalness": 0.75,
               "name": "prefabs/brutalist-city/brutalist-cylinder-tower:glazing"
             }
           }
@@ -190,7 +192,7 @@
             "properties": {
               "materialType": "standard",
               "name": "prefabs/brutalist-city/brutalist-cylinder-tower:concrete-light",
-              "color": "#abc4e7",
+              "color": "#ddd4bf",
               "texture": "/textures/floor/terrain/sand-512.jpg",
               "repeat": true,
               "repeatCount": [
@@ -198,7 +200,8 @@
                 3
               ],
               "roughness": 0.98,
-              "metalness": 0
+              "metalness": 0,
+              "diffuseRoughness": 0.7
             }
           }
         },
@@ -803,9 +806,9 @@
             "type": "Material",
             "properties": {
               "materialType": "standard",
-              "color": "#856046",
-              "roughness": 0.45,
-              "metalness": 0.3,
+              "color": "#a87549",
+              "roughness": 0.28,
+              "metalness": 0.8,
               "name": "prefabs/brutalist-city/brutalist-cylinder-tower:metal"
             }
           }

@@ -2,17 +2,21 @@
 
 import { PrefabEditor } from 'react-three-game/editor';
 import { registerComponent, type Prefab } from 'react-three-game/viewer';
-import { CrashcatRuntime, TerrainPhysicsComponent, CharacterControllerComponent } from 'react-three-game/plugins/crashcat';
+import { CrashcatRuntime, TerrainPhysicsRuntime, TerrainPhysicsComponent } from 'react-three-game/plugins/crashcat';
 import 'react-three-game/plugins/crashcat/editor';
+import { PlayerStatus, PlayerStatusContext } from './components/PlayerStatus';
+import { CharacterControllerComponent } from './components/CharacterControllerComponent';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { TerrainProfile } from './TerrainProfile';
+import { TerrainProfile } from './components/TerrainProfile';
+import terrainConfig from './terrain-config.json';
 import { BASE_PATH } from '../../basePath';
 
 registerComponent(TerrainPhysicsComponent);
 registerComponent(CharacterControllerComponent);
 
 const GRID_SIZE = 10;
-const TILE_SIZE = 32;
+const TILE_SIZE = terrainConfig.tileSize;
+const WORLD_SCALE = TILE_SIZE / 32;
 const TILE_SPACING = TILE_SIZE;
 
 const prefab: Prefab = {
@@ -27,9 +31,9 @@ const prefab: Prefab = {
             ] } },
             physics: { type: 'TerrainPhysics', properties: {} },
             terrain: { type: 'Terrain', properties: {
-                width: TILE_SIZE, depth: TILE_SIZE, heightScale: 48, segments: 64,
+                width: TILE_SIZE, depth: TILE_SIZE, heightScale: 48, segments: terrainConfig.segments,
                 heightMap: `/textures/terrain-demo/tiles/height-${row}-${column}.png`, weightMap: `/textures/terrain-demo/tiles/weights-${row}-${column}.png`,
-                weightResolution: 257,
+                weightResolution: terrainConfig.weightIntervals + 1,
                 layers: [
                     { name: 'Grass', color: '#ffffff', albedoMap: '/textures/floor/terrain/grass-512.jpg', normalMap: '/textures/floor/terrain/grass-normal-gl.png', roughness: 0.95, tileSize: 4 },
                     { name: 'Dirt', color: '#ffffff', albedoMap: '/textures/floor/terrain/dirt-512.jpg', normalMap: '/textures/floor/terrain/dirt-normal-gl.png', roughness: 0.9, tileSize: 4 },
@@ -40,12 +44,12 @@ const prefab: Prefab = {
         } };
         }),
         { id: 'terrain-player', name: 'Player', components: {
-            transform: { type: 'Transform', properties: { position: [-48, 50, -16] } },
+            transform: { type: 'Transform', properties: { position: [-48 * WORLD_SCALE, 50, -16 * WORLD_SCALE] } },
             controller: { type: 'CharacterController', properties: {} },
         } },
         { id: 'terrain-sun', name: 'Sun', components: {
-            transform: { type: 'Transform', properties: { position: [120, 180, 80] } },
-            light: { type: 'DirectionalLight', properties: { color: '#fff0d6', intensity: 3, castShadow: true, targetOffset: [-120, -180, -80], shadowMapSize: 2048, shadowCameraLeft: -240, shadowCameraRight: 240, shadowCameraTop: 240, shadowCameraBottom: -240, shadowNormalBias: 0.04 } },
+            transform: { type: 'Transform', properties: { position: [120 * WORLD_SCALE, 180 * WORLD_SCALE, 80 * WORLD_SCALE] } },
+            light: { type: 'DirectionalLight', properties: { color: '#fff0d6', intensity: 3, castShadow: true, targetOffset: [-120 * WORLD_SCALE, -180 * WORLD_SCALE, -80 * WORLD_SCALE], shadowMapSize: 2048, shadowCameraFar: 500 * WORLD_SCALE, shadowCameraLeft: -240 * WORLD_SCALE, shadowCameraRight: 240 * WORLD_SCALE, shadowCameraTop: 240 * WORLD_SCALE, shadowCameraBottom: -240 * WORLD_SCALE, shadowNormalBias: 0.04 } },
         } },
         { id: 'terrain-sky', name: 'Sky fill', components: {
             light: { type: 'HemisphereLight', properties: { color: '#c5ddff', groundColor: '#77705d', intensity: 1.8 } },
@@ -54,10 +58,11 @@ const prefab: Prefab = {
 };
 export default function TerrainPage() {
     const output = useRef<HTMLOutputElement>(null);
-    const [options, setOptions] = useState({ profile: false, segments: 64, shadows: true, repeated: false });
+    const [playerStatus, setPlayerStatus] = useState<string | null>(null);
+    const [options, setOptions] = useState({ profile: false, segments: terrainConfig.segments, shadows: true, repeated: false });
     useEffect(() => {
         const query = new URLSearchParams(location.search);
-        setOptions({ profile: query.has('profile'), segments: query.get('segments') === '32' ? 32 : 64, shadows: query.get('shadows') !== '0', repeated: query.get('maps') === 'repeated' });
+        setOptions({ profile: query.has('profile'), segments: query.get('segments') === '32' ? 32 : terrainConfig.segments, shadows: query.get('shadows') !== '0', repeated: query.get('maps') === 'repeated' });
     }, []);
     const profile = options.profile;
     const scene = useMemo(() => {
@@ -66,7 +71,7 @@ export default function TerrainPage() {
             if (node.components?.terrain) {
                 node.components.terrain.properties.segments = options.segments;
                 if (options.repeated) Object.assign(node.components.terrain.properties, {
-                    heightMap: '/textures/terrain-demo/height.png', weightMap: '/textures/terrain-demo/weights.png', heightScale: 6, weightResolution: 257,
+                    heightMap: '/textures/terrain-demo/height.png', weightMap: '/textures/terrain-demo/weights.png', heightScale: 6, weightResolution: terrainConfig.weightIntervals + 1,
                 });
             }
             if (node.components?.light?.type === 'DirectionalLight') node.components.light.properties.castShadow = options.shadows;
@@ -74,11 +79,14 @@ export default function TerrainPage() {
         return scene;
     }, [options.segments, options.shadows, options.repeated]);
     return <main style={{ position: 'relative', width: '100%', height: '100dvh', background: '#1b2430' }}>
-        <PrefabEditor prefab={scene} basePath={BASE_PATH} canvasProps={{ camera: { position: [340, 320, 390], fov: 50, far: 2000 } }}>
-            <CrashcatRuntime />
-            {profile && <TerrainProfile output={output} />}
-            <color attach="background" args={['#91adbd']} />
-        </PrefabEditor>
+        <PlayerStatusContext.Provider value={setPlayerStatus}>
+            <PrefabEditor prefab={scene} basePath={BASE_PATH} canvasProps={{ camera: { position: [340 * WORLD_SCALE, 320 * WORLD_SCALE, 390 * WORLD_SCALE], fov: 50, far: 2000 * WORLD_SCALE } }}>
+                <CrashcatRuntime><TerrainPhysicsRuntime activeLimit={2} /></CrashcatRuntime>
+                {profile && <TerrainProfile output={output} />}
+                <color attach="background" args={['#91adbd']} />
+            </PrefabEditor>
+        </PlayerStatusContext.Provider>
+        <PlayerStatus message={playerStatus} />
         {profile && <output ref={output} aria-label="Terrain performance" style={{ position: 'absolute', bottom: 8, right: 8, maxWidth: '70%', overflowWrap: 'anywhere', background: '#111d', color: 'white', fontSize: 11, padding: 8, pointerEvents: 'none' }}>Warming up…</output>}
     </main>;
 }

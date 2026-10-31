@@ -45,6 +45,9 @@ const MATERIAL_DEFAULTS: Record<string, unknown> = {
 	alphaTest: 0,
 	metalness: 0,
 	roughness: 1,
+	diffuseRoughness: 0,
+	emissive: "#000000",
+	emissiveIntensity: 1,
 	transmission: 0,
 	thickness: 0,
 	ior: 1.5,
@@ -315,11 +318,7 @@ export function scopePrefabMaterials(prefab: Prefab, scope: string): Prefab {
         }
         node.children?.forEach(collect);
     };
-    const collectDocument = (document: Prefab) => {
-        collect(document.root);
-        Object.values(document.prefabs ?? {}).forEach(collectDocument);
-    };
-    collectDocument(prefab);
+    collect(prefab.root);
     const remap = (node: GameObject): GameObject => ({ ...node,
         components: Object.fromEntries(Object.entries(node.components ?? {}).map(([key, component]) => {
             const id = component?.properties.name;
@@ -328,14 +327,11 @@ export function scopePrefabMaterials(prefab: Prefab, scope: string): Prefab {
             } } : component];
         })), children: node.children?.map(remap),
     });
-    const remapDocument = (document: Prefab): Prefab => ({ ...document, root: remap(document.root),
-        ...(document.prefabs ? { prefabs: Object.fromEntries(Object.entries(document.prefabs)
-            .map(([id, child]) => [id, remapDocument(child)])) } : {}),
-    });
-    return remapDocument(prefab);
+    return { ...prefab, root: remap(prefab.root) };
 }
 
-export function normalizePrefab(prefab: Prefab): PrefabState {
+export function normalizePrefab(prefab: Prefab, inheritedDefinitions: Record<string, Prefab> = {}): PrefabState {
+    if (Object.hasOwn(prefab, 'prefabs')) throw new Error('Unexpected prefab field "prefabs"; define reusable subtrees with packed nodes.');
 	const nodesById: Record<string, PrefabNodeRecord> = {};
 	const childIdsById: Record<string, string[]> = {};
 	const parentIdById: Record<string, string | null> = {};
@@ -346,7 +342,7 @@ export function normalizePrefab(prefab: Prefab): PrefabState {
 	return {
 		prefabId: prefab.id,
 		prefabName: prefab.name,
-        prefabs: collectPackedPrefabs({ nodesById, childIdsById }, prefab.prefabs),
+        prefabs: collectPackedPrefabs({ nodesById, childIdsById }, inheritedDefinitions),
 		materials,
 		rootId: prefab.root.id,
 		nodesById,

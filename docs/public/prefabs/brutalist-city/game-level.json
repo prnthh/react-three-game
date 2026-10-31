@@ -27,34 +27,26 @@
           "environment": {
             "type": "Environment",
             "properties": {
-              "intensity": 0.55,
-              "backgroundIntensity": 0.75,
-              "backgroundBlurriness": 0.4
+              "intensity": 0.22,
+              "backgroundIntensity": 0.2,
+              "backgroundBlurriness": 0,
+              "resolution": 256
             }
           }
         },
         "children": [
           {
-            "id": "e8560f1d-bda8-40b8-98ae-3738bef325d1",
-            "name": "spheremap",
+            "id": "home-sky",
+            "name": "Atmospheric sky",
             "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {}
-              },
-              "geometry": {
-                "type": "Geometry",
+              "sky": {
+                "type": "HomeSky",
                 "properties": {
-                  "geometryType": "sphere"
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "materialType": "basic",
-                  "side": "BackSide",
-                  "texture": "/textures/skybox/skybox3.jpg",
-                  "name": "prefabs/brutalist-city/game-level:material"
+                  "sunPosition": [
+                    -60,
+                    30,
+                    45
+                  ]
                 }
               }
             }
@@ -68,9 +60,9 @@
           "ambientLight": {
             "type": "HemisphereLight",
             "properties": {
-              "skyColor": "#d5e6ed",
-              "groundColor": "#737f8b",
-              "intensity": 0.6
+              "skyColor": "#b7d2ee",
+              "groundColor": "#735442",
+              "intensity": 0.18
             }
           }
         }
@@ -82,45 +74,29 @@
             "type": "Transform",
             "properties": {
               "position": [
-                35,
-                77,
-                28
+                -60,
+                30,
+                45
               ]
             }
           },
           "directionalLight": {
             "type": "DirectionalLight",
             "properties": {
-              "color": "#edf3ff",
-              "intensity": 2.6,
+              "color": "#ffd4a0",
+              "intensity": 3.2,
               "targetOffset": [
-                -35,
-                -50,
-                -28
+                60,
+                -30,
+                -45
               ],
               "castShadow": true,
+              "shadowCascades": 3,
+              "shadowDistance": 180,
               "shadowMapSize": 2048,
-              "shadowCameraNear": 0.5,
-              "shadowCameraFar": 180,
-              "shadowCameraTop": 65,
-              "shadowCameraBottom": -65,
-              "shadowCameraLeft": -65,
-              "shadowCameraRight": 65,
-              "shadowBias": -0.0002,
-              "shadowNormalBias": 0.04,
-              "shadowIntensity": 0.85,
-              "shadowRadius": 1.75
-            }
-          },
-          "cameraShadowFollower": {
-            "type": "CameraShadowFollower",
-            "properties": {
-              "interval": 0.25,
-              "offset": [
-                35,
-                52.5,
-                -25
-              ]
+              "shadowCameraFar": 350,
+              "shadowNormalBias": 0.06,
+              "shadowRadius": 2
             }
           }
         }
@@ -134,11 +110,11 @@
             "properties": {
               "position": [
                 0,
-                19,
+                24,
                 53
               ],
               "rotation": [
-                -0.15,
+                -0.2,
                 0,
                 0
               ]
@@ -147,7 +123,7 @@
           "camera": {
             "type": "Camera",
             "properties": {
-              "fov": 58,
+              "fov": 55,
               "near": 0.25,
               "far": 350,
               "focus": 45
@@ -201,9 +177,9 @@
           "fog": {
             "type": "Fog",
             "properties": {
-              "color": "#8fa39b",
-              "near": 130,
-              "far": 310
+              "color": "#9ba5aa",
+              "near": 90,
+              "far": 280
             }
           }
         }

@@ -49,6 +49,18 @@ only the visible sky; material roughness controls reflection blur. Set
 environment settings or visual assets refresh the capture. Use it for stable sky
 and reflection lighting; the main scene continues rendering every frame.
 
+## Surface response
+
+The lit `Material` type (`standard`) uses `MeshPhysicalNodeMaterial`. `roughness`
+controls reflections; `diffuseRoughness` controls r187's rough diffuse scattering
+for concrete or clay. Start around `0.7` for matte masonry and leave it at `0`
+for smooth surfaces. Transmission, thickness and IOR use the same physical material.
+These values remain editable and serialize with the prefab.
+
+The home city combines warm directional light, cool environment fill, cascaded
+shadows and the demo's shared ambient-occlusion pass. Its scene and materials stay
+in `public/prefabs/brutalist-city`; it needs no separate shadow-following behavior.
+
 ## Shadows
 
 Enable `castShadow` on a light and the relevant meshes. Use one primary shadow caster first; add more only when the scene needs them.

@@ -259,7 +259,9 @@ test("both actual character rigs animate independently, retain proportions and r
 });
 
 test("FPS prefab has stable node identities, manager references and matching collision geometry", async () => {
-  const { relayYardScene, blocks, mapPrefab, gameplayPrefab, composeScene, compileMap } = await import("../app/demo/fps/shared/map.ts");
+  const { relayYardScene, mapPrefab, gameplayPrefab } = await import("../app/demo/fps/scene.ts");
+  const { blocks } = await import("../app/demo/fps/shared/world.ts");
+  const { composeScene, compileMap } = await import("../app/demo/fps/shared/map.ts");
   assert.throws(() => composeScene(mapPrefab, mapPrefab), /Duplicate scene node ID/);
   const composed = composeScene(mapPrefab, gameplayPrefab);
   composed.root.children[0].name = "Edited copy";
@@ -270,7 +272,7 @@ test("FPS prefab has stable node identities, manager references and matching col
   assert.equal(shifted[0].p[0], blocks[0].p[0] * 2 + 10);
   assert.equal(shifted[0].size[0], blocks[0].size[0] * 2);
   moved.root.components.transform.properties.rotation = [0, 0.5, 0];
-  assert.throws(() => compileMap(moved), /unrotated box/);
+  assert.equal(compileMap(moved).length, blocks.length, "rotated parents compile collision shapes");
   const scene = JSON.parse(JSON.stringify(relayYardScene));
   const nodes = [];
   const visit = (node) => {
@@ -290,15 +292,11 @@ test("FPS prefab has stable node identities, manager references and matching col
   assert.ok(characters.some(n => n.components.character.properties.actorId === 0), "victim body exists for killer-view replays");
   for (const node of characters)
     assert.equal(node.components.character.properties.manager, manager.id);
-  const map = nodes.find((n) => n.id === "map");
-  assert.equal(map.children.length, blocks.length);
-  map.children.forEach((node, i) => {
-    assert.deepEqual(
-      node.components.transform.properties.position,
-      blocks[i].p,
-    );
-    assert.deepEqual(node.components.geometry.properties.args, blocks[i].size);
-  });
+  const collisionNodes = nodes.filter(n => Object.values(n.components ?? {}).some(c => c.type === "BoxCollider" || c.type === "MeshCollider"));
+  assert.equal(collisionNodes.length, blocks.length);
+  assert.deepEqual(new Set(collisionNodes.map(n => n.id)), new Set(blocks.map(b => b.id)));
+  assert.ok(!nodes.some(n => Object.values(n.components ?? {}).some(c => c.type === "FPSArena")));
+
 });
 
  test("client heading interpolation crosses the wrap without a full rotation", async () => {
@@ -327,7 +325,7 @@ test("authority validates sequenced commands and expires disconnected input", as
   assert.ok(server.state.actors[1].z > -21, "second human slot uses movement commands");
   assert.ok(server.state.actors[0].y > 0);
   for (let i = 0; i < 60; i++) server.step();
-  assert.equal(server.state.actors[0].y, 0, "jump edge is consumed once");
+  assert.ok(server.state.actors[0].grounded && Math.abs(server.state.actors[0].y) < 1e-5, "jump edge is consumed once");
   assert.equal(server.state.actors[0].speed, 0, "missing commands stop movement");
 });
 
@@ -455,7 +453,7 @@ test("sound cues deduplicate all shooters and footsteps share animation contacts
     shared.update(synced, frame < 600, cue => contacts.push(cue));
     assert.ok(contacts.length === 0 || contacts.length === synced.actors.length, "everyone strikes on the same render frame at the same speed");
     for (const actor of synced.actors)
-      assert.equal(shared.locomotion(actor.id).phase, shared.locomotion(0).phase);
+      assert.equal(actor.gait.phase, synced.actors[0].gait.phase);
     if (frame >= 600) assert.equal(contacts.length, 0);
   }
 
@@ -529,7 +527,7 @@ test("crouch and grenade commands survive authority, release once and explode be
   const command = { ...idleCommand(), crouch: true, aim: true, grenade: true, forward: 1 };
   authority.submit(0, {sequence: 0, command}); authority.step();
   assert.ok(a.crouching); assert.equal(a.aiming, false, "throwing overrides aim intent"); assert.equal(a.grenades, 1);
-  assert.ok(Math.abs(a.speed - 1.8) < 1e-6);
+  assert.ok(Math.abs(a.speed - 2.7) < 1e-6, "throw speed caps the initial crouch transition");
   assert.equal(authority.snapshot().actors[0].crouching, true);
   for (let i = 0; i < 45; i++) authority.step();
   assert.equal(authority.state.grenades.length, 0, 'windup does not release early');
@@ -593,7 +591,12 @@ test("authoritative impacts identify surfaces and actors, replicate, and sound o
   Object.assign(a,{hp:100,cooldown:0,x:crate.p[0],y:crate.p[1]-1.5,z:crate.p[2]+crate.size[2]/2+1});
   m.tick++; fire(m,a,0,0);
   assert.equal(m.shots.at(-1).impact,'metal');
-  copySnapshot(m,state); const silent=[];
+  assert.ok(m.shots.at(-1).normal);
+  copySnapshot(m,state);
+  assert.deepEqual(state.shots.at(-1).normal, m.shots.at(-1).normal);
+  assert.notEqual(state.shots.at(-1).normal, m.shots.at(-1).normal, 'snapshot owns its impact normal');
+  assert.equal(state.actors[0].grounded, a.grounded);
+   const silent=[];
   cues.update(state,false,c=>silent.push(c)); cues.update(state,true,c=>silent.push(c));
   assert.equal(silent.length,0,'paused impacts are consumed without replay on resume');
 });
@@ -684,16 +687,20 @@ test("authority resolves sprint, aim, crouch and fire consistently", async () =>
   server.submit(0,{sequence:0,command:{...idleCommand(),forward:1,sprint:true,fire:true,aim:true}});
   server.step();
   assert.equal(a.ammo,29,'firing cancels sprint rather than silently blocking the shot');
-  assert.ok(a.aiming); assert.ok(Math.abs(a.speed-2.7)<1e-8);
+  assert.ok(a.aiming); assert.ok(a.speed > 2.7 && a.speed < 4.6);
   server.submit(0,{sequence:1,command:{...idleCommand(),forward:1,sprint:true,crouch:true}});
-  server.step(); assert.ok(a.crouching); assert.ok(Math.abs(a.speed-1.8)<1e-8);
+  server.step(); assert.ok(a.crouching); assert.ok(a.speed > 1.8 && a.speed < 4.6);
 });
 
 test("killcam replays the authoritative killer while live simulation continues and respawns safely", async () => {
   const { KillcamSession } = await import("../app/demo/fps/session.ts");
-  const session=new KillcamSession(317), input=idleCommand(); input.yaw=Math.PI;
+  const session=new KillcamSession(317), input=idleCommand(); input.yaw=Math.PI; input.forward=1;
   let ticks=0;
-  while(!session.killcam && ticks++<18000) session.advance(1/60,input,true);
+  // Enter the yard so this exercises an ordinary death, not the final kill of a match.
+  while(!session.killcam && ticks++<18000) {
+    if (ticks > 240) input.forward=0;
+    session.advance(1/60,input,true);
+  }
   assert.ok(session.killcam,'normal bot combat triggers a killcam');
   const deathTick=session.liveState.tick, killer=session.liveState.actors[0].lastKiller;
   assert.equal(session.viewActorId,killer); assert.notEqual(killer,0);
@@ -736,7 +743,8 @@ test("viewpoint switches consume old audio events and prioritize the killer's so
 });
 
 test("authored team spawns drive initial placement and respawn, including group transforms", async () => {
-  const { mapPrefab, compileSpawnPoints } = await import("../app/demo/fps/shared/map.ts");
+  const { mapPrefab } = await import("../app/demo/fps/scene.ts");
+  const { compileSpawnPoints } = await import("../app/demo/fps/shared/map.ts");
   const map = structuredClone(mapPrefab);
   const group = map.root.children.find(node => node.id === "spawn-points");
   group.components = { transform: { type: "Transform", properties: {
@@ -831,52 +839,62 @@ test("bot scoping cannot oscillate when crouching blocks its own view behind low
   assert.equal(actor.crouching, false, 'sustained occlusion releases the stance');
 });
 
-test("authority commits stance transitions, replicates progress and gates jump/sprint", async () => {
-  const { STEP, eyeHeight, STANCE_TIMING } = await import("../app/demo/fps/fakeserver/match.ts");
+test("stance follows current input, blends speed and preserves replay progress", async () => {
+  const { eyeHeight } = await import("../app/demo/fps/fakeserver/match.ts");
   const { ReplaySession, createRecording } = await import("../app/demo/fps/session.ts");
   const m = createMatch(), actor = m.actors[0];
+  Object.assign(actor, { x: -13, z: -20 });
   const commands = new Map(m.actors.map(a => [a.id, idleCommand()]));
   const input = commands.get(0);
-  input.crouch = true;
-  stepRules(m, commands);
-  assert.ok(actor.crouching && actor.crouchAmount > 0 && actor.crouchAmount < 1);
-  assert.ok(eyeHeight(actor) < 1.5 && eyeHeight(actor) > .95);
+  Object.assign(input, { crouch: true, forward: 1, yaw: Math.PI });
+  for (let i = 0; i < 4; i++) stepRules(m, commands);
+  const crouched = actor.crouchAmount, slow = actor.speed;
+  assert.ok(crouched > 0 && crouched < 1);
+  assert.ok(slow > 1.8 && slow < 4.6);
   const saved = copySnapshot(m, emptySnapshot());
   const replay = new ReplaySession({ ...createRecording(), frames: [saved] });
-  assert.equal(replay.state.actors[0].crouchAmount, actor.crouchAmount);
+  assert.equal(replay.state.actors[0].crouchAmount, crouched);
   assert.equal(eyeHeight(replay.state.actors[0]), eyeHeight(actor));
-  input.crouch = false;
-  for (let i = 1; i < Math.ceil(STANCE_TIMING.crouch / STEP); i++) {
-    stepRules(m, commands);
-    assert.equal(actor.crouching, true, 'release cannot reverse a half-finished crouch');
-  }
-  assert.equal(actor.crouchAmount, 1);
-  input.jump = input.sprint = true; input.forward = 1;
+
+  input.crouch = false; input.jump = input.sprint = true;
   stepRules(m, commands);
-  assert.equal(actor.crouching, false);
-  assert.ok(actor.crouchAmount > 0 && actor.crouchAmount < 1);
-  assert.equal(actor.y, 0, 'cannot jump while still standing up');
-  assert.ok(actor.speed <= 1.8 + 1e-8, 'cannot sprint while still standing up');
-  input.jump = input.sprint = false; input.forward = 0;
-  while (actor.crouchAmount > 0) stepRules(m, commands);
+  assert.equal(actor.crouching, false, 'release reverses crouch immediately');
+  assert.ok(actor.crouchAmount > 0 && actor.crouchAmount < crouched);
+  assert.ok(actor.speed > slow && actor.speed < 4.6, 'standing smoothly restores speed');
+  assert.ok(actor.grounded, 'cannot jump before the capsule is upright');
+  input.jump = false;
+  for (let i = 0; i < 20; i++) stepRules(m, commands);
+  assert.equal(actor.crouchAmount, 0);
+  assert.ok(Math.abs(actor.speed - 7) < 1e-4, 'forward sprint resumes when upright');
+
   input.aim = true;
-  stepRules(m, commands);
-  assert.ok(actor.aiming && actor.aimAmount > 0 && actor.aimAmount < 1);
+  for (let i = 0; i < 4; i++) stepRules(m, commands);
+  const aimed = actor.aimAmount;
+  assert.ok(actor.aiming && aimed > 0 && aimed < 1);
+  assert.ok(actor.speed > 2.7 && actor.speed < 4.6, 'aim cancels sprint and blends movement');
   input.aim = false;
   stepRules(m, commands);
-  assert.equal(actor.aiming, true, 'scope cannot reverse mid-transition');
+  assert.equal(actor.aiming, false, 'aim release also reverses immediately');
+  assert.ok(actor.aimAmount < aimed);
   assert.equal(copySnapshot(m, emptySnapshot()).actors[0].aimAmount, actor.aimAmount);
-  input.reload = true; actor.ammo = 20;
+
+  input.aim = true; input.reload = true; actor.ammo = 20;
   stepRules(m, commands);
-  assert.equal(actor.aiming, false, 'reload can interrupt aim immediately');
-  input.reload = false; input.forward = 1; input.sprint = true;
-  assert.ok(actor.aimAmount > 0);
-  stepRules(m, commands);
-  if (actor.aimAmount > 0) assert.ok(Math.abs(actor.speed - 2.7) < 1e-8, 'aim-out still limits movement');
-  while (actor.aimAmount > 0) stepRules(m, commands);
-  stepRules(m, commands);
+  assert.equal(actor.aiming, false, 'reload overrides held aim');
+  input.aim = input.reload = false;
+  for (let i = 0; i < 20; i++) stepRules(m, commands);
   assert.ok(actor.reload > 0);
-  assert.ok(Math.abs(actor.speed - 4.6) < 1e-8, 'reload allows walking but blocks sprint');
+  assert.ok(Math.abs(actor.speed - 4.6) < 1e-4, 'reload permits walking, not sprinting');
+});
+
+test("sprint requires forward intent and diagonals never increase top speed", () => {
+  for (const [forward, right, speed] of [[1, 0, 7], [1, 1, 7], [-1, 0, 4.6], [0, 1, 4.6], [.25, 1, 4.6]]) {
+    const m = createMatch(), actor = m.actors[0];
+    const commands = new Map(m.actors.map(a => [a.id, idleCommand()]));
+    Object.assign(commands.get(0), { forward, right, sprint: true });
+    stepRules(m, commands);
+    assert.ok(Math.abs(actor.speed - speed) < 1e-4, `movement ${forward},${right}: ${actor.speed}`);
+  }
 });
 
 test("health regenerates only after damage-free delay, resets on hits and never heals dead actors", async () => {
@@ -977,7 +995,7 @@ test("self-kill respawn resets predicted look and queued actions without a killc
     session.advance(0.1, input, true);
   const actor = session.liveState.actors[0];
   assert.ok(actor.hp > 0);
-  const { spawnPoints } = await import("../app/demo/fps/shared/map.ts");
+  const { spawnPoints } = await import("../app/demo/fps/shared/world.ts");
   assert.equal(actor.yaw, spawnPoints.find(point => point.team === actor.team).yaw,
     "catch-up ticks preserve the authored spawn facing");
   assert.deepEqual(input, { ...idleCommand(), yaw: actor.yaw, pitch: actor.pitch });
@@ -1047,4 +1065,215 @@ test("snapshot contract excludes private fields on all event types and nested ga
     server.snapshot(view);
     for (const entry of entries(view)) assert.equal("serverOnly" in entry, false);
   }
+});
+
+test("weapon IK fits both actual rigs and releases arms for full-body actions", async () => {
+  const { Group, Box3, Vector3 } = await import('three');
+  const { LocomotionPlayer, retargetLocomotion } = await import('../app/demo/fps/animation.ts');
+  const { WeaponArms } = await import('../app/demo/fps/weaponPose.ts');
+  const source = await loadRig('pockit-remilio');
+  for (const name of ['pockit-remilio', 'pockit-milady']) {
+    const gltf = await loadRig(name), object = gltf.scene;
+    object.updateMatrixWorld(true);
+    const bounds = new Box3().setFromObject(object), center = bounds.getCenter(new Vector3());
+    const scale = 1.8 / bounds.getSize(new Vector3()).y;
+    object.scale.multiplyScalar(scale);
+    object.position.set(-center.x * scale, -bounds.min.y * scale, -center.z * scale);
+    const actor = new Group(), facing = new Group(), gun = new Group();
+    facing.rotation.y = Math.PI; facing.add(object); actor.add(facing, gun);
+    const clips = name === 'pockit-remilio' ? gltf.animations : source.animations.map(c => retargetLocomotion(source.scene, gltf.scene, c, c.name));
+    const player = new LocomotionPlayer(object, clips), arms = new WeaponArms(object);
+    const pose = {hp:100,respawn:0,crouching:false,aiming:false,throwing:0};
+    for (const pitch of [-.5, 0, .5]) {
+      player.update(2, .1, undefined, pose); gun.rotation.x = pitch;
+      actor.updateMatrixWorld(true); arms.update(gun, actor, pose);
+      const shoulder = object.getObjectByName('mixamorigRightArm').getWorldPosition(new Vector3());
+      const stock = gun.localToWorld(new Vector3(0, .015, .36));
+      assert.ok(stock.distanceTo(shoulder.clone().add(new Vector3(-.025, -.04, .015))) < .005,
+        'stock stays seated at the right shoulder as aim pitch changes');
+      for (const [side, grip] of [['Right',[.04,-.10,.12]],['Left',[-.04,-.04,-.10]]]) {
+        const hand = object.getObjectByName(`mixamorig${side}Hand`);
+        const error = hand.getWorldPosition(new Vector3()).distanceTo(gun.localToWorld(new Vector3(...grip)));
+        assert.ok(error < .025, `${name} ${side} grip pitch ${pitch}: ${error}`);
+      }
+    }
+    const hand = object.getObjectByName('mixamorigRightHand'), before = hand.quaternion.clone();
+    gun.rotation.x = 1;
+    arms.update(gun, actor, {...pose, throwing:1});
+    assert.ok(hand.quaternion.equals(before));
+    arms.update(gun, actor, {...pose, hp:0});
+    assert.ok(hand.quaternion.equals(before));
+    player.dispose();
+  }
+});
+
+test('map compilation expands packed placements for collision and spawns', async () => {
+  const { compileMap, compileSpawnPoints } = await import("../app/demo/fps/shared/map.ts");
+  const transform = (position, scale = [1, 1, 1]) => ({type:'Transform', properties:{position,scale}});
+  const document = {root:{id:'root', children:[
+    {id:'assembly',packed:true,components:{transform:transform([2,0,0])},children:[
+      {id:'wall',components:{transform:transform([1,1,0]),collider:{type:'BoxCollider',properties:{size:[1,2,1]}},data:{type:'Data',properties:{data:{collision:{kind:'wall'}}}}}},
+      {id:'alpha',components:{spawn:{type:'FPSSpawnPoint',properties:{team:'alpha'}}}},
+    ]},
+    {id:'copy',components:{transform:transform([10,0,0],[2,1,2]),ref:{type:'PrefabRef',properties:{prefabId:'assembly'}}}},
+    {id:'bravo',components:{spawn:{type:'FPSSpawnPoint',properties:{team:'bravo'}}}},
+  ]}};
+  const before = structuredClone(document);
+  const boxes = compileMap(document), spawns = compileSpawnPoints(document);
+  assert.deepEqual(boxes.map(b => [b.id,b.p,b.size]), [['wall',[3,1,0],[1,2,1]],['copy/wall',[12,1,0],[2,2,2]]]);
+  assert.deepEqual(spawns.filter(s => s.team === 0).map(s => [s.id,s.position]), [['alpha',[2,0,0]],['copy/alpha',[10,0,0]]]);
+  assert.deepEqual(document,before,'compilation does not edit the document');
+  document.root.children[1].disabled = true;
+  assert.equal(compileMap(document).length,1);
+  delete document.root.children[1].disabled;
+  for (const properties of [{prefabId:'missing'}, {url:'/unresolved.json'}]) {
+    document.root.children[1].components.ref.properties = properties;
+    for (const compile of [compileMap,compileSpawnPoints]) assert.throws(() => compile(document), /Unknown prefab|Resolve external prefab/);
+  }
+  document.root.children[0].children.push({id:'cycle',components:{ref:{type:'PrefabRef',properties:{prefabId:'assembly'}}}});
+  for (const compile of [compileMap,compileSpawnPoints]) assert.throws(() => compile(document), /Cyclic prefab/);
+});
+
+test('host driver ticks once with duplicate prefab bindings and audio needs no player camera', async t => {
+  const { act, createElement:h } = await import('react');
+  const { createRoot, extend } = await import('@react-three/fiber');
+  const { Group } = await import('three');
+  const { PrefabRoot, registerComponent, getSceneComponentRegistry } = await import('react-three-game/viewer');
+  const { SessionDriver, SessionContext, WorldAudio, MatchManagerComponent, FPS_MATCH_MANAGER } = await import('../app/demo/fps/components/SessionSystems.tsx');
+  registerComponent(MatchManagerComponent); extend({Group}); globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+  const canvas = {width:100,height:100,style:{},addEventListener(){},removeEventListener(){}};
+  const root = createRoot(canvas);
+  await root.configure({gl:{render(){},setSize(){},setPixelRatio(){},domElement:canvas},size:{width:100,height:100,top:0,left:0},frameloop:'never'});
+  t.after(async () => {await act(async () => root.unmount());});
+  let ticks=0, listeners=0, ready=0;
+  const match = new MatchAuthority().snapshot();
+  const runtime = {state:match,previous:match,advance(){ticks++;match.tick++;},viewEpoch:0};
+  const session = {runtime,match,input:{current:idleCommand()},playing:true,onHud(){},onReady(){ready++;},
+    audio:{listener(){listeners++;},play(){},stop(){},enable(){}}};
+  const data = {root:{id:'root',children:['first','second'].map(id => ({id,components:{binding:{type:'FPSMatchManager',properties:{}}}}))}};
+  let store;
+  await act(async () => {store = root.render(h(SessionContext.Provider,{value:session},h(SessionDriver,session),h(WorldAudio,session),h(PrefabRoot,{data})));});
+  const state = store.getState();
+  assert.equal(getSceneComponentRegistry(state.scene).getAll(FPS_MATCH_MANAGER).length,2);
+  await act(async () => state.advance(.02,false));
+  assert.equal(ticks,1);
+  assert.equal(listeners,1);
+  assert.equal(ready,1);
+});
+
+
+test("moving a building carries collision, acoustics, floors, dressing and bot waypoints together", async () => {
+  const { mapPrefab } = await import("../app/demo/fps/scene.ts");
+  const { compileMap, compileMapFeatures } = await import("../app/demo/fps/shared/map.ts");
+  const document = structuredClone(mapPrefab);
+  const building = document.root.children.find(n => n.id === "map").children.find(n => n.id === "workshop-building");
+  const descendants = [];
+  const collect = n => { descendants.push(n); n.children?.forEach(collect); };
+  collect(building);
+  for (const id of ["interior-floor--1", "workshop-light--12", "workshop-front-sign", "workshop-room", "workshop-flank"])
+    assert.ok(descendants.some(n => n.id === id), `${id} belongs to building`);
+  const before = compileMap(document), features = compileMapFeatures(document);
+  building.components.transform.properties.position = [-10, 0, 5];
+  const after = compileMap(document), moved = compileMapFeatures(document);
+  for (const block of before) {
+    const next = after.find(b => b.id === block.id);
+    const owned = descendants.some(n => n.id === block.id);
+    assert.deepEqual(next.p, block.p.map((v, i) => v + (owned ? [3, 0, 5][i] : 0)));
+  }
+  assert.deepEqual(moved.rooms[0].position, [-10, 2, 5]);
+  assert.deepEqual(moved.flanks[0], [-10, 0, 5]);
+  assert.deepEqual(moved.rooms[1], features.rooms[1]);
+  building.disabled = true;
+  assert.equal(compileMapFeatures(document).rooms.length, 1);
+  assert.equal(compileMapFeatures(document).flanks.length, 1);
+  building.disabled = false;
+  building.components.transform.properties.rotation = [0, 0.5, 0];
+  const rotated = compileMapFeatures(document);
+  assert.deepEqual(rotated.rooms[0].position, [-10, 2, 5]);
+  assert.ok(rotated.rooms[0].size[0] > moved.rooms[0].size[0], "rotated room retains its transformed extent");
+});
+
+
+test("Box3D rotates authored shapes consistently for rays, movers, projectiles and rooms", async () => {
+  const { compileMap, compileMapFeatures } = await import("../app/demo/fps/shared/map.ts");
+  const { PhysicsWorld } = await import("../app/demo/fps/shared/physics.ts");
+  const doc = { root: { id: 'wall', components: {
+    transform: { type: 'Transform', properties: { position: [0, 1, 0], rotation: [0, Math.PI / 4, 0] } },
+    collider: { type: 'BoxCollider', properties: { size: [8, 2, 0.4] } },
+    data: { type: 'Data', properties: { data: { audioRoom: { size: [8, 2, 0.4] } } } },
+  } } };
+  const world = new PhysicsWorld(compileMap(doc), compileMapFeatures(doc).rooms);
+  try {
+    assert.ok(world.ray([0, 1, -5], [0, 0, 1], 10) < 5);
+    assert.equal(world.ray([2, 1, 1], [0, 0, 1], 1), 1, 'empty bounding-box corner is not solid');
+    assert.equal(world.blocked([0, 0, 0]), true);
+    assert.equal(world.blocked([2, 0, 2]), false);
+    assert.equal(world.walkable([0, 0, -5], [0, 0, 5]), false);
+    assert.equal(world.walkable([2, 0, 1], [2, 0, 2]), true);
+    const moved = world.move([0, 0, -5], 1.8, [0, 0, 4.6], 2);
+    assert.ok(moved.position[0] < -1, 'native mover slides along the rotated wall');
+    assert.equal(world.blocked(moved.position), false);
+    const grenade = world.projectile([0, 1, -1], [0, 0, 120], 1 / 60);
+    assert.ok(grenade.velocity[0] < -1, 'sphere cast supplies the rotated impact normal');
+    assert.equal(world.roomAt([0, 1, 0]), 0);
+    assert.equal(world.roomAt([2, 1, 2]), -1);
+  } finally { world.dispose(); world.dispose(); }
+});
+
+test("Box3D supports elevated grounding and native hits on sheared prefab boxes", async () => {
+  const { compileMap } = await import("../app/demo/fps/shared/map.ts");
+  const { PhysicsWorld } = await import("../app/demo/fps/shared/physics.ts");
+  const doc = { root: { id: 'platform', components: {
+    transform: { type: 'Transform', properties: { position: [0, 2, 0] } },
+    collider: { type: 'BoxCollider', properties: { size: [10, 1, 10] } },
+  } } };
+  const world = new PhysicsWorld(compileMap(doc));
+  try {
+    let pose = { position: [0, 5, 0], velocity: [0, 0, 0], grounded: false };
+    for (let i = 0; i < 120; i++) pose = world.move(pose.position, 1.8, [0, pose.velocity[1] - 0.2, 0], 1 / 60);
+    assert.ok(pose.grounded);
+    assert.ok(Math.abs(pose.position[1] - 2.5) < 0.01);
+    assert.ok(Math.abs(pose.velocity[1]) < 1e-5);
+  } finally { world.dispose(); }
+  doc.root.components.transform.properties.scale = [2, 1, 0.5];
+  doc.root.children = [{ id: 'sheared', components: {
+    transform: { type: 'Transform', properties: { rotation: [0.2, 0.6, 0.1] } },
+    collider: { type: 'BoxCollider', properties: { size: [2, 2, 2] } },
+  } }];
+  delete doc.root.components.collider;
+  const sheared = new PhysicsWorld(compileMap(doc));
+  try { assert.ok(sheared.ray([0, 2, -10], [0, 0, 1], 20) < 10); }
+  finally { sheared.dispose(); }
+});
+
+test('Box3D triangle collider preserves openings instead of filling them with a hull', async () => {
+  const { Matrix4 } = await import('three');
+  const { compileMeshCollider } = await import('react-three-game/core');
+  const { PhysicsWorld } = await import('../app/demo/fps/shared/physics.ts');
+  const properties = { positions: [-3,0,-2,-1,0,-2,-3,0,2,-1,0,2, 1,0,-2,3,0,-2,1,0,2,3,0,2], indices: [0,2,1,1,2,3,4,6,5,5,6,7], shape:'trimesh' };
+  const world = new PhysicsWorld([compileMeshCollider(new Matrix4().makeScale(-1,1,1), properties)]);
+  try {
+    assert.equal(world.ray([0,2,0],[0,-1,0],10),10,'gap remains empty');
+    assert.ok(Math.abs(world.ray([2,2,0],[0,-1,0],10)-2)<1e-5,'mirrored winding retains solid surface');
+    const move=world.move([2,.01,0],1.8,[0,-1,0],1/60);
+    assert.ok(move.position[1]>-.01,'mover is supported by triangle surface');
+  } finally { world.dispose(); }
+});
+
+test('Blender-authored open container has an enterable doorway and collidable angled doors', async () => {
+  const { blocks } = await import("../app/demo/fps/shared/world.ts");
+  const { PhysicsWorld } = await import('../app/demo/fps/shared/physics.ts');
+  const parts = blocks.filter(block => block.id.startsWith('map-38-container-imported-collision'));
+  assert.equal(parts.length, 7, 'five enclosure panels and two independent doors');
+  const world = new PhysicsWorld(parts);
+  try {
+    assert.equal(world.blocked([-2,.02,0]), false, 'interior is empty');
+    assert.ok(world.ray([-2,1,4],[0,0,-1],20)>10, 'entrance ray reaches the rear wall, not an invisible front box');
+    assert.ok(world.walkable([-2,.02,4],[-2,.02,0]), 'standing capsule can enter');
+    const doors = parts.filter(part => part.size[2] > .5 && part.size[2] < 2);
+    assert.equal(doors.length, 2);
+    for (const door of doors) {
+      assert.ok(world.ray([door.p[0],5,door.p[2]],[0,-1,0],10)<5, 'angled door has collision');
+    }
+  } finally { world.dispose(); }
 });

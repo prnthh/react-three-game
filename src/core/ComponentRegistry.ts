@@ -1,4 +1,3 @@
-import type { ComponentContext } from '../runtime/scene/ComponentLifecycle.js';
 import type { ComponentDependency } from "./dependencies.js";
 import type { BufferGeometry } from "three";
 import type { FC } from "react";
@@ -87,30 +86,31 @@ export type ComponentPropertyDefinitions<P extends object> = {
 
 export type ComponentCategory = 'mesh' | 'materials' | 'lighting' | 'camera' | 'audio' | 'transform' | 'physics' | 'misc';
 
-export interface Component<P extends object = Record<string, any>> {
-	name: string;
-    /** Optional editor grouping; otherwise inferred from the render slot. */
+export interface ComponentRendering<P extends object> {
+    /** Render composition only. Coexistence is declared separately with exclusive. */
+    slot?: 'object' | 'geometry' | 'material';
+    /** Keep visual resources mounted while disabled. Use useComponentActive(enabled) to gate behavior. */
+    renderWhenDisabled?: boolean;
+    /** Wrap node contents; return children to preserve subsequent components and child nodes. */
+    View?: FC<ComponentViewProps<P>>;
+}
+
+export interface ComponentGeometryModifier<P extends object> {
+    /** Pure node-local Geometry modifier. Return a new owned geometry; never mutate source. */
+    modifyGeometry?: (source: BufferGeometry, properties: P, context?: { scale: readonly [number, number, number] }) => BufferGeometry;
+}
+
+export interface Component<P extends object = Record<string, any>> extends ComponentRendering<P>, ComponentGeometryModifier<P> {
+    name: string;
+    /** Editor grouping only; defaults to Misc. */
     category?: ComponentCategory;
     description?: string;
-	/** Declare resources without mounting a view; paths are relative to the prefab basePath. */
-	dependencies?: (properties: P) => readonly ComponentDependency[];
-	/** Keep the View mounted while disabled, for resource preparation or persistent scene graphs. */
-	renderWhenDisabled?: boolean;
-	/** Optional node slot. Geometry gets an implicit mesh when no attachment host is present.
-	 * Object views supply the render object that receives geometry and material.
-	 * Reuse helpers in code, never require a separate base Mesh component on the node. */
-	slot?: 'object' | 'geometry' | 'material' | 'transform' | 'environment' | 'fog' | 'data';
-	/** Serializable property contract and the source of runtime/editor defaults. */
-	properties: ComponentPropertyDefinitions<P>;
-	/** Pure node-local modifier consumed by Geometry; return a new owned geometry without mutating source. Applied in component order. */
-	modifyGeometry?: (source: BufferGeometry, properties: P, context?: { scale: readonly [number, number, number] }) => BufferGeometry;
-	/** Optional useEffect mapping for authored behavior (e.g. Runtime), active in Play. Return cleanup. */
-    setup?(context: ComponentContext<P>): void | (() => void);
-    /** Optional useFrame mapping. Views may use React/R3F hooks directly instead. */
-    update?(context: ComponentContext<P>): void;
-    /** Property keys whose changes restart activation. Other properties remain live. */
-    restartOn?: readonly Extract<keyof P, string>[];
-	View?: FC<ComponentViewProps<P>>;
+    /** At most one component with this group on a node. Opt in only for a shared node-local resource or ownership conflict; not for scene-wide state. */
+    exclusive?: string;
+    /** Declare resources without mounting a view; paths are relative to the prefab basePath. */
+    dependencies?: (properties: P) => readonly ComponentDependency[];
+    /** Serializable property contract and source of runtime/editor defaults. */
+    properties: ComponentPropertyDefinitions<P>;
 }
 
 const REGISTRY: Record<string, Component<any>> = {};
@@ -164,12 +164,12 @@ export function resolveComponentProperties<P extends object>(
 
 export function canAddComponentToNode(node: GameObject, component: Component<any> | undefined, allComponents = REGISTRY) {
 	if (!component) return false;
-	const slot = component.slot;
-	if (!slot) return true;
+	const group = component.exclusive;
+	if (!group) return true;
 
 	return !Object.values(node.components ?? {}).some(entry => {
 		if (!entry?.type) return false;
-		return allComponents[entry.type]?.slot === slot;
+		return allComponents[entry.type]?.exclusive === group;
 	});
 }
 

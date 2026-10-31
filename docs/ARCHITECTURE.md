@@ -112,7 +112,7 @@ remount to change either.
 
 Prefab nodes mount through React reconciliation. Disabled Views unmount by
 default. `renderWhenDisabled` opts into keeping a View mounted for preparation or a persistent scene graph; those Views
-use `enabled` to gate behavior. `setup` and `update` are gated automatically.
+use `enabled` to gate behavior. Runtime scripts apply that gate inside their View.
 `PrefabInstance` waits for assets and shader compilation before activation.
 Each streamed placement has its own activation lifetime.
 Shader compilation runs in slices between frames. Individual geometry creation,
@@ -128,8 +128,9 @@ Authored nesting uses [PrefabRef](../src/runtime/components/PrefabRefComponent.t
 
 Use `usePrefabDocument()` inside a prefab to read and edit authored nodes and
 materials. Use `useGameObject(id)` for mounted transforms and registered behavior
-handles. Document edits are serializable; live mutations are transient. Existing
-editor/viewer refs retain their combined API for compatibility.
+handles. Document edits are serializable; live mutations are transient.
+`usePrefab()` exposes runtime objects and resources, without document mutation methods.
+Editor refs compose the document and runtime APIs because authoring needs both.
 
 ```tsx
 const document = usePrefabDocument();
@@ -148,9 +149,8 @@ The window API reads/edits the document; captures and GLB export use live object
 ## Runtime scripts
 
 `RuntimeComponent` (`type: "Runtime"`) compiles its `setup` and `update` strings
-through the optional callbacks on `Component`. The renderer maps setup/cleanup to
-React `useEffect` and update to R3F `useFrame`; built-in Views can use React/R3F
-hooks directly. Runtime runs while enabled in Play, after preparation.
+inside its own View. It uses React `useEffect` for setup/cleanup and R3F `useFrame`
+for updates, just like other behavior Views. Runtime runs while enabled in Play, after preparation.
 Code edits restart setup with fresh state; data edits keep it running.
 
 Scripts read the current R3F store through `context.three` and resolve local
@@ -198,18 +198,24 @@ timing and state resets in the host; save authored changes through document edit
 Follow [gameObject](../src/runtime/scene/gameObject.ts) for stable node handles,
 [SceneContext](../src/runtime/scene/SceneContext.tsx) for typed capabilities,
 and [GameEvents](../src/runtime/scene/GameEvents.ts) for synchronous notifications.
+`useGameEvent(name, handler)` keeps its subscription while the event name is
+unchanged and calls the latest committed handler; no dependency array is needed.
 The optional [Crashcat adapter](../src/plugins/crashcat/CrashcatRuntime.tsx)
 steps its own physics world from R3F frames.
 
 ## Change a component
 
 Copy [Rotator](app/demo/customcomponent/components/RotatorComponent.tsx) for a behavior, or
-[Model](../src/runtime/components/ModelComponent.tsx) for an object view. Geometry and BufferGeometry supply an implicit mesh, with rendering flags on the geometry component.
+[Model](../src/runtime/components/ModelComponent.tsx) for an object view. Geometry and BufferGeometry render their own mesh, with rendering flags on the geometry component.
 Register it as in the [custom component demo](app/demo/customcomponent/page.tsx).
 
 - Put editable fields/defaults in the definition; views receive resolved values.
-- Return `children` so composition continues through the view.
-- Object, geometry and material views declare their `slot` and implement R3F attachments. Geometry views receive an implicit mesh; object views create their own render object. Each visual component supplies its render-graph part directly.
+- Return `children` so composition continues through the view. Views wrap subsequent components and child nodes; returning `null` suppresses that content.
+- Use React effects and R3F frames for ordinary component behavior. `useComponentActive(enabled)` subscribes to Play mode and combines it with enabled/preparation state; gate effects and frame work with its result. Visual previews may remain mounted in Edit. Effects must return cleanup and tolerate React effect replay.
+- Component definitions have no separate lifecycle callbacks. Runtime's authored `setup` and `update` script fields are implemented inside its own View with effects and `useFrame`; the prefab renderer treats it like any other View.
+- `category` groups the editor picker, `slot` chooses object/geometry/material composition, and `exclusive` names a node-level coexistence constraint. Declare `exclusive: 'material'`, for example, when a custom material competes with built-in materials. Data and ordinary behaviors may coexist. Composition stays inside each node’s transform group. Portal components such as BoneAttachment use an ordinary `View` on a parent node; child nodes own their bone-local transforms. The portal does not own the target resource.
+- Object, geometry and material views declare their `slot` and implement R3F attachments. Geometry views compose their mesh and geometry directly; material views attach inside them. The renderer orders wrappers, objects, geometry, then materials without creating render objects itself. Each visual component supplies its render-graph part directly.
+- Use exclusivity only for competing node-local ownership, such as Transform, geometry/material attachments, or bone parenting. Runtime handle lookup returns the first live registration for a node and type. Multiple SkinnedMesh/Terrain instances may coexist; node-keyed scene queries also expose the first match per node. Cleanup removes only its own registration and exposes the next match. Component-instance targeting is not yet supported. An object rendering role alone is not exclusive. Scene-wide effects such as Environment and Fog are not node-level constraints; allowing multiple instances does not imply their effects blend.
 - Share mesh property definitions and editor fields as code helpers. Geometry, BufferGeometry, Model and SkinnedMesh use the collapsed `Mesh options` inspector section; expose the options the renderer supports.
 - Keep custom inspector imports in `.editor.tsx` modules.
 
@@ -272,6 +278,19 @@ registered component's serializable authored properties.
 Follow [ComponentRegistry](../src/core/ComponentRegistry.ts) →
 [nodePlan](../src/runtime/prefabs/nodePlan.ts) →
 [PrefabNode](../src/runtime/prefabs/PrefabNode.tsx).
+
+`PrefabRoot` establishes a document instance and renders its root node. Shared
+services live in `SceneRuntime`; loading and compilation live in `PrefabInstance`.
+Within each node, read the document, compose its Views and children, then render
+the transform group. The group has a separate subscription boundary so mode and
+selection changes do not rerender static content.
+
+Picking and selection policy belong to the editor's `EditorSelection` wrapper,
+not `PrefabRoot`. This wrapper owns click cycling, drag rejection, locked-node
+fallback and nested-prefab picking. Runtime rendering only reads host-supplied
+selection state and forwards batched instance clicks. For a custom editor, wrap
+`PrefabRoot` with `EditorSelection` from `/editor`; supply its document `store`,
+`selectedId`, `enabled` and `onSelect` callback.
 
 ## Control model animation
 

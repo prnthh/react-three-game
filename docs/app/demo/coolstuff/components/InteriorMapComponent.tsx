@@ -107,9 +107,10 @@ function InteriorMapView({ properties, children }: ComponentViewProps<InteriorMa
 
 const InteriorMapComponent: Component<InteriorMapProperties> = {
     name: "InteriorMap",
+    category: 'materials',
     renderWhenDisabled: true,
     dependencies: properties => [{ kind: "texture", path: properties.texture ?? DEFAULT_TEXTURE }],
-    slot: "material",
+    slot: 'material', exclusive: 'material',
     View: InteriorMapView,
     properties: {
         attach: { type: "string", default: "material" },

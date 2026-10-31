@@ -1,14 +1,12 @@
-import { LocomotionClock } from "./animation";
-import { wallDistance } from './shared/map';
+import { wallDistance, mapFeatures, physics } from './shared/world';
 import type { ImpactMaterial } from './shared/protocol';
 import type { MatchSnapshot } from './shared/protocol';
 export type SoundCue = { kind: 'shot' | 'step' | 'explosion' | 'impact'; x: number; y: number; z: number; local: boolean; hard?: boolean; material?: ImpactMaterial };
 
 type SoundPosition = { x: number; y: number; z: number };
-/** The two authored building volumes; outside and above the roof are dry. */
+/** Authored room volumes are compiled with their building's parent transform. */
 export function audioRoom(p: SoundPosition): number {
-  return p.y >= 0 && p.y < 4 && Math.abs(p.z) < 16 && Math.abs(p.x) > 7 && Math.abs(p.x) < 19
-    ? (p.x < 0 ? 0 : 1) : -1;
+  return physics.roomAt([p.x, p.y, p.z]);
 }
 
 /** Three short visibility tests soften doorway edges. Only evaluated when a cue starts. */
@@ -38,8 +36,7 @@ export class SoundCues {
   private viewEpoch = 0;
   private explosions = new Set<number>();
   private shots = new Map<number, number>();
-  private walkers = new Map<number, { x: number; z: number; clock: LocomotionClock; deaths: number; grounded: boolean; steps: number }>();
-  locomotion(id: number) { return this.walkers.get(id)?.clock; }
+  private walkers = new Map<number, { x: number; z: number; deaths: number; grounded: boolean; steps: number }>();
   update(state: MatchSnapshot, playing: boolean, emit: (cue: SoundCue) => void, viewActorId = 0, viewEpoch = 0) {
     if (viewEpoch !== this.viewEpoch) {
       this.viewEpoch = viewEpoch; this.tick = -1; this.shots.clear(); this.walkers.clear(); this.explosions.clear();
@@ -69,10 +66,10 @@ export class SoundCues {
     }
     for (const id of this.explosions) if (!state.explosions.some(e => e.id === id)) this.explosions.delete(id);
     for (const a of state.actors) {
-      const grounded = a.hp > 0 && a.y < 0.02;
+      const grounded = a.hp > 0 && a.grounded;
       let walker = this.walkers.get(a.id);
       if (!walker) {
-        walker = { x: a.x, z: a.z, clock: new LocomotionClock(), deaths: a.deaths, grounded, steps: a.gait.steps };
+        walker = { x: a.x, z: a.z, deaths: a.deaths, grounded, steps: a.gait.steps };
         this.walkers.set(a.id, walker);
       }
       const distance = Math.hypot(a.x - walker.x, a.z - walker.z);
@@ -81,10 +78,9 @@ export class SoundCues {
         const contacts = Math.max(0, Math.min(4, a.gait.steps - walker.steps));
         for (let i = 0; i < contacts; i++) {
           emit({ kind: 'step', x: a.x, y: a.y + 0.1, z: a.z, local: a.id === viewActorId,
-            hard: Math.abs(Math.abs(a.x) - 13) < 6 && Math.abs(a.z) < 16 });
+            hard: mapFeatures.rooms[audioRoom({ x: a.x, y: a.y + 0.1, z: a.z })]?.hardFloor ?? false });
         }
       }
-      Object.assign(walker.clock, a.gait);
       walker.steps = a.gait.steps;
       walker.x = a.x; walker.z = a.z; walker.deaths = a.deaths; walker.grounded = grounded;
     }
@@ -112,9 +108,9 @@ export class SpatialAudio {
     }
     if (!this.rooms.length) {
       const ctx = this.context;
-      for (let room = 0; room < 2; room++) {
+      for (let room = 0; room < mapFeatures.rooms.length; room++) {
         const convolver = ctx.createConvolver(), output = ctx.createGain();
-        const impulse = ctx.createBuffer(2, Math.ceil(ctx.sampleRate * (room ? 0.7 : 0.55)), ctx.sampleRate);
+        const impulse = ctx.createBuffer(2, Math.ceil(ctx.sampleRate * mapFeatures.rooms[room].decay), ctx.sampleRate);
         let seed = 71 + room;
         for (let channel = 0; channel < 2; channel++) {
           const data = impulse.getChannelData(channel);

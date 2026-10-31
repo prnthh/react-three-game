@@ -21,10 +21,12 @@ export {
 	useRegisterNodeComponent,
 	createNodeComponentType,
 } from "../runtime/scene/SceneContext.js";
-export { SKINNED_MESH_COMPONENT } from "../runtime/components/SkinnedMeshComponent.js";
-export type { SkinnedMeshHandle, SkinnedMeshProperties } from "../runtime/components/SkinnedMeshComponent.js";
+export { SKINNED_MESH_COMPONENT, useSkinnedModel } from "../runtime/components/SkinnedMeshComponent.js";
+export type { SkinnedMeshHandle, SkinnedMeshProperties, SkinnedModelOptions } from "../runtime/components/SkinnedMeshComponent.js";
+export { TwoBoneIK } from '../runtime/animation/TwoBoneIK.js';
+export { default as BoneAttachmentComponent } from "../runtime/components/BoneAttachmentComponent.js";
+export type { BoneAttachmentProperties } from "../runtime/components/BoneAttachmentComponent.js";
 export type { NodeApi, NodeComponentType, PrefabApi, PrefabNode, Scene, SceneComponent } from "../runtime/scene/SceneContext.js";
-export { SceneProvider } from "../runtime/scene/SceneProvider.js";
 
 export type { AssetRuntime } from "../runtime/assets/AssetRuntime.js";
 export {
@@ -102,11 +104,16 @@ export { BrowserRuntime } from '../browser/index.js';
 
 export { registerBuiltInComponents } from '../runtime/components/index.js';
 
-export { useSceneRuntimeContext } from '../runtime/scene/ComponentLifecycle.js';
-export type { ComponentContext, SceneRuntimeContext } from '../runtime/scene/ComponentLifecycle.js';
+export { useSceneRuntimeContext } from '../runtime/scene/useSceneRuntimeContext.js';
+export type { ComponentContext, SceneRuntimeContext } from '../core/componentContext.js';
 
 export { default as TerrainComponent } from "../runtime/components/TerrainComponent.js";
 export type { TerrainProperties, TerrainLayer } from "../runtime/components/TerrainComponent.js";
 
 export { TERRAIN_SURFACE_COMPONENT } from '../runtime/terrain/terrainSurface.js';
 export type { TerrainSurface } from '../runtime/terrain/terrainSurface.js';
+
+export { default as BoxColliderComponent } from "../runtime/components/BoxColliderComponent.js";
+export type { BoxColliderProperties } from "../core/collision.js";
+
+export { useComponentActive } from '../runtime/scene/useComponentActive.js';

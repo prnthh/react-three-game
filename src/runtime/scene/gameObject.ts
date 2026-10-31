@@ -1,15 +1,8 @@
 import type { Object3D } from 'three';
 import type { NodeComponentRegistry, NodeComponentType, PrefabRegistry } from './SceneContext.js';
 
-/** Live state only: changes are neither serialized nor undoable. Reads follow mounting, replacement and unloading. */
-export interface GameObjectHandle {
-    /** Scene-wide game-object identity, independent of the Three object UUID. */
-    readonly id: string;
-    readonly nodeId: string;
-    readonly scope: string;
-    readonly transform: Object3D | null;
-    getComponent<T>(type: NodeComponentType<T>): T | null;
-}
+import type { GameObjectHandle } from '../../core/componentContext.js';
+export type { GameObjectHandle } from '../../core/componentContext.js';
 
 export function scopedNodeId(prefix: string, nodeId: string) {
     return prefix ? `${prefix}/${nodeId}` : nodeId;
@@ -65,10 +58,5 @@ export function resolveGameObject(object: Object3D, instanceId?: number): GameOb
 /** Direct node identity for document-aware consumers such as editor selection. */
 export function getObjectNodeIdentity(object: Object3D): { id: string; nodeId: string; scope: string } | null {
     const handle = owners.get(object)?.handle;
-    if (handle) return { id: handle.id, nodeId: handle.nodeId, scope: handle.scope };
-    // Retain support for externally supplied prefab objects carrying authored metadata.
-    const nodeId = object.userData.prefabNodeId;
-    const scope = object.userData.prefabNodeScope ?? '';
-    return typeof nodeId === 'string' && typeof scope === 'string'
-        ? { id: scopedNodeId(scope, nodeId), nodeId, scope } : null;
+    return handle ? { id: handle.id, nodeId: handle.nodeId, scope: handle.scope } : null;
 }

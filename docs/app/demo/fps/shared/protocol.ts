@@ -8,7 +8,7 @@ export const HEALTH_RULES = {
   max: 100, respawnDelay: 3, spawnShield: 1.5, regenDelay: 5, regenPerSecond: 25,
 };
 export const THROW_DURATION = 2.2, THROW_RELEASE = 0.8;
-export const STANCE_TIMING = { crouch: 0.22, stand: 0.18, aimIn: 0.16, aimOut: 0.12 };
+export const STANCE_TIMING = { crouch: 0.16, stand: 0.14, aimIn: 0.16, aimOut: 0.12 };
 export const crouchOffset = (a: { crouching: boolean; crouchAmount?: number }) =>
   0.55 * (a.crouchAmount ?? (a.crouching ? 1 : 0));
 export const eyeHeight = (a: { crouching: boolean; crouchAmount?: number }) => 1.5 - crouchOffset(a);
@@ -48,6 +48,7 @@ export type ClientActor = {
   z: number;
   y: number;
   vy: number;
+  grounded: boolean;
   yaw: number;
   hp: number;
   ammo: number;
@@ -87,6 +88,8 @@ export const idleCommand = (): Command => ({
 });
 export type ImpactMaterial = "none" | "metal" | "concrete" | "ground" | "body";
 export type Shot = {
+  /** Authority collision normal, retained for replay impact effects. */
+  normal?: Vec;
   impact: ImpactMaterial;
   victim: number;
   from: Vec;
@@ -102,7 +105,7 @@ export type Explosion = { id: number; x: number; y: number; z: number; age: numb
 
 const actorNumbers = ["crouchAmount", "aimAmount", "id", "x", "y", "z", "vy", "yaw", "pitch", "hp", "ammo", "reload", "cooldown", "respawn", "kills", "deaths", "shield", "speed", "grenades", "throwing", "recoilPitch", "lastKiller"] as const;
 export type MatchSnapshot = {
-  version: 3;
+  version: 4;
   tick: number;
   acknowledged: number;
   time: number;
@@ -115,13 +118,13 @@ export type MatchSnapshot = {
   feed: string[];
 };
 export const emptySnapshot = (): MatchSnapshot => ({
-  version: 3, tick: -1, acknowledged: -1, time: 0, winner: null,
+  version: 4, tick: -1, acknowledged: -1, time: 0, winner: null,
   actors: [], scores: [0, 0], shots: [], grenades: [], explosions: [], feed: [],
 });
 
 /** Copies into owned buffers: neither client nor serialized packets can mutate authority. */
 export function copySnapshot(source: Omit<MatchSnapshot, "version" | "acknowledged">, target: MatchSnapshot, acknowledged = -1) {
-  target.version = 3;
+  target.version = 4;
   target.tick = source.tick;
   target.acknowledged = acknowledged;
   target.time = source.time;
@@ -132,7 +135,7 @@ export function copySnapshot(source: Omit<MatchSnapshot, "version" | "acknowledg
     for (const key of actorNumbers) out[key] = actor[key];
     out.gait ??= { state: "idle", phase: 0, steps: 0 };
     out.gait.state = actor.gait.state; out.gait.phase = actor.gait.phase; out.gait.steps = actor.gait.steps;
-    out.name = actor.name; out.team = actor.team; out.moving = actor.moving; out.crouching = actor.crouching; out.aiming = actor.aiming;
+    out.name = actor.name; out.team = actor.team; out.moving = actor.moving; out.grounded = actor.grounded; out.crouching = actor.crouching; out.aiming = actor.aiming;
   });
   target.actors.length = source.actors.length;
   source.shots.forEach((shot, i) => {
@@ -140,6 +143,10 @@ export function copySnapshot(source: Omit<MatchSnapshot, "version" | "acknowledg
     for (let axis = 0; axis < 3; axis++) {
       out.from[axis] = shot.from[axis]; out.to[axis] = shot.to[axis];
     }
+    if (shot.normal) {
+      out.normal ??= [0, 0, 0];
+      for (let axis = 0; axis < 3; axis++) out.normal[axis] = shot.normal[axis];
+    } else out.normal = undefined;
     out.team = shot.team; out.age = shot.age; out.hit = shot.hit;
     out.shooter = shot.shooter; out.tick = shot.tick;
     out.impact = shot.impact; out.victim = shot.victim;

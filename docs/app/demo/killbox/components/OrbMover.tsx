@@ -51,7 +51,7 @@ function OrbMoverView({ properties, children }: ComponentViewProps<OrbMoverPrope
             velocityRef.current.x - 2 * dot * normalizedX,
             velocityRef.current.z - 2 * dot * normalizedZ,
         );
-    }, [editMode, runtimeNodeId]);
+    });
 
     useFrame((_, delta) => {
         if (editMode) return;

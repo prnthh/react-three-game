@@ -1,12 +1,11 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { PlayerStatusContext } from './PlayerStatus';
 import { useFrame, useThree } from '@react-three/fiber';
 import { PerspectiveCamera } from '@react-three/drei';
 import { capsule, kcc, type KCC } from 'crashcat';
 import { Vector3, type PerspectiveCamera as Camera } from 'three';
-import type { Component, ComponentViewProps } from '../../core/ComponentRegistry.js';
-import { useGameObject, useNode } from '../../runtime/scene/SceneContext.js';
-import { useCrashcat } from './CrashcatRuntime.js';
-import { getTerrainPhysicsStatus } from './TerrainPhysicsRuntime.js';
+import { useGameObject, useNode, useComponentActive, type Component, type ComponentViewProps } from 'react-three-game/viewer';
+import { useCrashcat, getTerrainPhysicsStatus } from 'react-three-game/plugins/crashcat';
 
 export type CharacterControllerProperties = { speed?: number; jumpSpeed?: number; radius?: number; height?: number };
 function CharacterControllerView({ properties, enabled, children }: ComponentViewProps<CharacterControllerProperties>) {
@@ -17,12 +16,17 @@ function CharacterControllerView({ properties, enabled, children }: ComponentVie
     const camera = useRef<Camera>(null);
     const character = useRef<KCC | null>(null);
     const keys = useRef(new Set<string>());
-    const hint = useRef<HTMLElement | null>(null);
+    const [preparingTerrain, setPreparingTerrain] = useState(false);
+    const reportStatus = useContext(PlayerStatusContext);
     const view = useRef({ yaw: 0, pitch: 0, jump: false });
     const position = useMemo(() => new Vector3(), []);
     const settings = useMemo(() => kcc.createDefaultUpdateSettings(), []);
     const radius = Math.max(.1, properties.radius), height = Math.max(radius * 2, properties.height);
-    const playing = enabled && !editMode;
+    const playing = useComponentActive(enabled);
+    useEffect(() => {
+        reportStatus(playing ? preparingTerrain ? 'Preparing nearby terrain…' : 'WASD / ↑↓ move · ←→ turn · Space jump · Drag to look' : null);
+        return () => reportStatus(null);
+    }, [playing, preparingTerrain, reportStatus]);
     useEffect(() => {
         if (!playing || !api || !object.transform) return;
         object.transform.getWorldPosition(position);
@@ -31,16 +35,6 @@ function CharacterControllerView({ properties, enabled, children }: ComponentVie
         view.current = { yaw: 0, pitch: 0, jump: false };
         return () => { character.current = null; keys.current.clear(); };
     }, [playing, api, object, radius, height, position]);
-    useEffect(() => {
-        if (!playing) return;
-        const element = document.createElement('div');
-        element.setAttribute('role', 'status');
-        element.setAttribute('aria-label', 'Character controls');
-        Object.assign(element.style, { position: 'absolute', left: '12px', bottom: '12px', maxWidth: '180px', padding: '8px',
-            background: '#111c', color: 'white', fontSize: '12px', pointerEvents: 'none', borderRadius: '6px' });
-        canvas.parentElement?.appendChild(element); hint.current = element;
-        return () => { element.remove(); hint.current = null; };
-    }, [playing, canvas]);
     useEffect(() => {
         if (!playing) return;
         let pointer: number | null = null, x = 0, y = 0;
@@ -78,8 +72,8 @@ function CharacterControllerView({ properties, enabled, children }: ComponentVie
         if (keys.current.has('ArrowRight')) view.current.yaw -= dt * 1.8;
         camera.current?.rotation.set(view.current.pitch, view.current.yaw, 0, 'YXZ');
         const terrain = getTerrainPhysicsStatus(scene);
-        const text = terrain && !terrain.ready ? 'Preparing nearby terrain…' : 'WASD / ↑↓ move · ←→ turn · Space jump · Drag to look';
-        if (hint.current && hint.current.textContent !== text) hint.current.textContent = text;
+        const preparing = !!terrain && !terrain.ready;
+        if (preparing !== preparingTerrain) setPreparingTerrain(preparing);
         if (terrain && !terrain.ready) { actor.linearVelocity[1] = 0; return; }
         const forward = Number(keys.current.has('KeyW') || keys.current.has('ArrowUp')) - Number(keys.current.has('KeyS') || keys.current.has('ArrowDown'));
         const right = Number(keys.current.has('KeyD')) - Number(keys.current.has('KeyA'));

@@ -1,9 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { act, createElement as h } from 'react';
+import { act, createElement as h, StrictMode } from 'react';
 import { createRoot } from '@react-three/fiber';
 import { Object3D, PerspectiveCamera } from 'three';
-import { ComponentLifecycle } from '../../src/runtime/scene/ComponentLifecycle.tsx';
 import CameraFollowComponent from '../../src/runtime/components/CameraFollowComponent.tsx';
 import RuntimeComponent from '../../src/runtime/components/RuntimeComponent.tsx';
 import { resolveComponentProperties } from '../../src/core/ComponentRegistry.ts';
@@ -12,7 +11,26 @@ import { GameEventsProvider, useGameEvents } from '../../src/runtime/scene/GameE
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
-async function mount(t, authored, component = RuntimeComponent, View = ComponentLifecycle) {
+test('Runtime composes children without remounting them across activation changes', async t => {
+    const { useEffect } = await import('react');
+    let mounts = 0, unmounts = 0;
+    function Child() {
+        useEffect(() => { mounts++; return () => { unmounts++; }; }, []);
+        return null;
+    }
+    function View(props) { return h(RuntimeComponent.View, props, h(Child)); }
+    const fixture = await mount(t, {}, RuntimeComponent, View);
+    await fixture.render({ editMode: true });
+    await fixture.render();
+    await fixture.render({ enabled: false });
+    await fixture.render();
+    assert.equal(mounts, 1);
+    assert.equal(unmounts, 0);
+    await fixture.remove();
+    assert.equal(unmounts, 1);
+});
+
+async function mount(t, authored, component = RuntimeComponent, View = component.View, strict = false) {
     const object = new Object3D();
     const calls = [];
     const prefab = { getObject: () => object, record: value => calls.push(value) };
@@ -31,7 +49,7 @@ async function mount(t, authored, component = RuntimeComponent, View = Component
             h(NodeComponentContext.Provider, { value: registry },
                 h(GameEventsProvider, null, h(Probe), h(NodeScope, { nodeId: 'test', ...options },
                     h(View, { component, properties: props, enabled: options.enabled ?? true })))));
-        store = root.render(view);
+        store = root.render(strict ? h(StrictMode, null, view) : view);
     });
     const remove = () => act(async () => { root.render(null); });
     t.after(async () => {
@@ -108,13 +126,13 @@ test('script data and state are isolated between instances and authored JSON sta
 test('component lifecycle maps live R3F state, retains properties and runs before default frame consumers', async t => {
     let context;
     const observed = [];
-    const component = {
-        name: 'LifecycleProbe', properties: { speed: { default: 1 } },
-        setup(ctx) { context = ctx; ctx.state.count = 0; },
-        update(ctx) { ctx.state.count++; ctx.object.position.x += ctx.properties.speed * ctx.delta; },
-    };
-    const fixture = await mount(t, {}, component);
+    const fixture = await mount(t, {
+        data: { speed: 1 },
+        setup: 'prefab.record(context); state.count = 0;',
+        update: 'state.count++; object.position.x += data.speed * delta;',
+    });
     await fixture.render();
+    context = fixture.calls[0];
     const camera = new PerspectiveCamera();
     fixture.store.getState().set({ camera });
     assert.equal(context.three, fixture.store.getState());
@@ -122,7 +140,7 @@ test('component lifecycle maps live R3F state, retains properties and runs befor
     const unsubscribe = fixture.store.getState().internal.subscribe({ current: () => observed.push(fixture.object.position.x) }, 0, fixture.store);
     t.after(unsubscribe);
     fixture.frame(0.5);
-    await fixture.render({}, { speed: 3 });
+    await fixture.render({}, { ...fixture.properties, data: { speed: 3 } });
     fixture.frame(0.5);
     assert.deepEqual(observed, [0.5, 2]);
     assert.equal(context.state.count, 2);
@@ -131,30 +149,25 @@ test('component lifecycle maps live R3F state, retains properties and runs befor
     fixture.frame();
     assert.equal(context.state.count, 2);
     await fixture.render();
-    assert.equal(context.state.count, 0);
+    assert.equal(fixture.calls.at(-1).state.count, 0);
 });
 
 test('lifecycle failures release all resources once and stop updates', async t => {
     const errors = [];
     t.mock.method(console, 'error', (...args) => errors.push(args));
     for (const phase of ['setup', 'update']) {
-        const cleanups = [];
-        let updates = 0;
-        const fixture = await mount(t, {}, {
-            name: 'Failing', properties: {},
-            setup(ctx) {
-                ctx.onCleanup(() => cleanups.push('first'));
-                ctx.onCleanup(() => { cleanups.push('second'); throw Error('cleanup'); });
-                if (phase === 'setup') throw Error('setup');
-                return () => cleanups.push('returned');
-            },
-            update() { updates++; throw Error('update'); },
+        const fixture = await mount(t, {
+            setup: `context.onCleanup(() => prefab.record('first'));
+                context.onCleanup(() => { prefab.record('second'); throw Error('cleanup'); });
+                ${phase === 'setup' ? "throw Error('setup');" : ''}
+                return () => prefab.record('returned');`,
+            update: "prefab.record('update'); throw Error('update');",
         });
         await fixture.render();
         fixture.frame(); fixture.frame();
         await fixture.remove();
-        assert.equal(updates, phase === 'setup' ? 0 : 1);
-        assert.deepEqual(cleanups, phase === 'setup' ? ['second', 'first'] : ['returned', 'second', 'first']);
+        assert.equal(fixture.calls.filter(value => value === 'update').length, phase === 'setup' ? 0 : 1);
+        assert.deepEqual(fixture.calls.filter(value => value !== 'update'), phase === 'setup' ? ['second', 'first'] : ['returned', 'second', 'first']);
     }
     assert.equal(errors.length, 4);
 });
@@ -180,4 +193,49 @@ test('CameraFollow uses R3F directly with enabled gating and live targets', asyn
     target.position.x = 30;
     fixture.frame();
     assert.equal(fixture.object.position.x, 20);
+});
+
+
+test('activation tolerates StrictMode replay without duplicate subscriptions or frame work', async t => {
+    const fixture = await mount(t, {
+        setup: 'prefab.record("setup"); const off = events.on("pulse", () => prefab.record("pulse")); return () => { off(); prefab.record("cleanup"); };',
+        update: 'prefab.record("frame");',
+    }, RuntimeComponent, RuntimeComponent.View, true);
+    await fixture.render();
+    fixture.events.emit('pulse');
+    fixture.frame();
+    assert.equal(fixture.calls.filter(value => value === 'pulse').length, 1);
+    assert.equal(fixture.calls.filter(value => value === 'frame').length, 1);
+    await fixture.remove();
+    assert.equal(fixture.events.hasListeners('pulse'), false);
+    assert.equal(fixture.calls.filter(value => value === 'setup').length,
+        fixture.calls.filter(value => value === 'cleanup').length);
+});
+
+test('React behavior hook gates effects and frames across edit, disabled and active states', async t => {
+    const { useEffect } = await import('react');
+    const { useFrame } = await import('@react-three/fiber');
+    const { useComponentActive } = await import('../../src/runtime/scene/useComponentActive.ts');
+    let starts = 0, stops = 0, frames = 0;
+    function View({ enabled }) {
+        const active = useComponentActive(enabled);
+        useEffect(() => {
+            if (!active) return;
+            starts++;
+            return () => { stops++; };
+        }, [active]);
+        useFrame(() => { if (active) frames++; });
+        return null;
+    }
+    const fixture = await mount(t, {}, { name: 'ReactBehavior', properties: {}, View }, View, true);
+    await fixture.render({ editMode: true }); fixture.frame();
+    await fixture.render({ enabled: false }); fixture.frame();
+    assert.equal(starts, 0); assert.equal(frames, 0);
+    await fixture.render(); fixture.frame();
+    assert.equal(frames, 1);
+    await fixture.render({ editMode: true }); fixture.frame();
+    assert.equal(frames, 1); assert.equal(starts, stops);
+    await fixture.render(); fixture.frame();
+    assert.equal(frames, 2);
+    await fixture.remove(); assert.equal(starts, stops);
 });

@@ -1,3 +1,6 @@
+import MeshColliderComponent from './MeshColliderComponent.js';
+import BoxColliderComponent from "./BoxColliderComponent.js";
+import BoneAttachmentComponent from "./BoneAttachmentComponent.js";
 import DecalComponent from "./DecalComponent.js";
 import UVMappingComponent from "./UVMappingComponent.js";
 import AmbientLightComponent from "./AmbientLightComponent.js";
@@ -27,6 +30,8 @@ import { registerBuiltInComponents as registerDefaults, type Component } from ".
 // Built-in definitions; this order controls their editor display.
 export const builtInComponents: readonly Component<any>[] = [
 	TransformComponent,
+	BoxColliderComponent,
+	MeshColliderComponent,
 
 	// Geometry components
 	GeometryComponent,
@@ -36,6 +41,7 @@ export const builtInComponents: readonly Component<any>[] = [
 	BufferGeometryComponent,
 	ModelComponent,
 	SkinnedMeshComponent,
+	BoneAttachmentComponent,
 	SpriteComponent,
 	TextComponent,
 

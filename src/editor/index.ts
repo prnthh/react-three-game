@@ -1,3 +1,4 @@
+export { EditorSelection } from './selection.js';
 export type { ComponentEditorProps } from "../core/ComponentRegistry.js";
 
 export { default as PrefabEditor, PrefabEditorProvider, PrefabEditorScene, PrefabEditorPanel } from "./PrefabEditor.js";

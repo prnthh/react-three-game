@@ -7,7 +7,7 @@ Open `/demo/terrain`, select any **Landscape row · column** tile, then choose *
 - Painting crosses unlocked terrain tiles whose four resolved material layers match the selected tile. The world-space brush footprint reaches both sides of seams; incompatible palettes and hidden tiles are excluded. Each completed stroke is one scene-history action across every touched tile. Escape, lost pointer capture, pointer cancellation and window blur cancel the active stroke. Done exits painting; previous object lock flags are preserved.
 - Save the scene from the File menu after leaving paint mode. Painted maps are embedded lossless PNGs, so scene JSON round-trips without a separate upload endpoint. Undo revisions retain compressed PNG strings; only the current painted image is decoded locally, outside the shared asset cache.
 
-The demo contains a centered 10×10 grid of independently editable 32×32 terrain tiles, placed edge to edge. Each tile uses 64 subdivisions per axis (819,200 terrain triangles total), its own height/weight crop, and shared PBR layer textures. The camera opens on the full grid; focus a tile to paint it. The crops sample a continuous seeded field covering 2,561×2,561 samples, with one shared border sample. This is not a streamed landscape.
+The demo contains a centered 10×10 grid of independently editable 32×32 terrain tiles, placed edge to edge. Each tile uses 64 subdivisions per axis (819,200 terrain triangles total), its own height/weight crop, and shared PBR layer textures. The camera opens on the full grid; focus a tile to paint it. The default maps sample a continuous seeded field covering 641×641 samples, with one shared border sample. Each tile has a 65×65 height map aligned to its 65×65 mesh vertices and a separate 65×65 editable weight map. This is not a streamed landscape.
 
 ## Component
 
@@ -47,19 +47,51 @@ To regenerate a different landscape from the repository root:
 npm run generate-terrain --workspace docs -- --seed 12345 --offset-x 320 --offset-z=-160
 ```
 
-Defaults are seed `71029` and offset `(0, 0)`. Offsets are world-space sampling coordinates, not node positions. Moving X by 32 samples the next tile of the same landscape. Reload the demo after regeneration to clear its image cache. Explicit generation overwrites the demo maps; normal dev/build startup only fills missing or outdated output.
+Defaults are seed `71029` and offset `(0, 0)`. Offsets are world-space sampling coordinates, not node positions. Moving X by the configured tile size (32 by default) samples the next tile of the same landscape. Reload the demo after regeneration to clear its image cache. Explicit generation overwrites the demo maps; normal dev/build startup only fills missing or outdated output.
 
-The script samples continuous seeded noise into 100 overlapping 257×257 height/weight pairs under `docs/public/textures/terrain-demo/tiles/`. A one-sample halo supplies slope-based material weights that agree across borders, even when tiles are generated independently. Heights use 48 world units of range; RGB encodes grass/dirt/rock with sand as the remainder. There are no master images to commit and no generation work during rendering. `generation.json` in the ignored output directory records the seed, offset and generator version. The checked-in asset manifest contains only the stable generated URLs, not pixel data.
+The script samples continuous seeded noise into 100 overlapping height/weight pairs (65×65 by default) under `docs/public/textures/terrain-demo/tiles/`. A fixed 0.125-unit centered slope probe supplies material weights that agree across borders and retain the original classification at shared sample locations regardless of output resolution. Heights use 48 world units of range; RGB encodes grass/dirt/rock with sand as the remainder. There are no master images to commit and no generation work during rendering. `generation.json` in the ignored output directory records the seed, offset, generator version and terrain configuration. The checked-in asset manifest contains only the stable generated URLs, not pixel data.
+
+## Tile size and map budget
+
+Edit `terrain-config.json` beside this page, then restart the docs dev server (or run `npm run generate-terrain --workspace docs -- --ensure`) and reload the page. The generator and page consume the same file. Startup detects changed settings and rebuilds maps while preserving the saved seed and offsets. Generation is not triggered by hot-reloading the page alone. These settings affect the demo template, not previously saved scene documents or the library-wide Terrain defaults.
+
+```json
+{
+  "tileSize": 32,
+  "segments": 64,
+  "heightIntervals": 64,
+  "weightIntervals": 64
+}
+```
+
+`tileSize` supports 16, 32, 64 or 128 world units. The three density settings support 32, 64, 128, 256 or 512 intervals/subdivisions. Map dimensions are **intervals + 1**, preserving endpoint samples. `heightIntervals` must be at least `segments`; these power-of-two choices keep vertices aligned with height samples. Height and weight resolutions are independent. Use `weightIntervals: 128` for finer painting without increasing geometry or height-map memory; 256 restores the former weight density.
+
+| Configuration | Tile width | Height / weight maps | Mesh spacing | Weight sample spacing | RGBA weight GPU storage, 100 tiles |
+| --- | --- | --- | --- | --- | --- |
+| Previous | 32 | 257² / 257² | 0.5 | 0.125 | 25.20 MiB |
+| Default | 32 | 65² / 65² | 0.5 | 0.5 | 1.61 MiB |
+| Finer paint | 32 | 65² / 129² | 0.5 | 0.25 | 6.35 MiB |
+| Bigger tiles | 64 | 65² / 65² | 1 | 1 | 1.61 MiB |
+
+The default reduces map pixel counts by 93.6%. Height bytes at every existing vertex are unchanged for the same seed and offsets, so the base mesh, raycasts and physics colliders retain their shape. Material transitions and paint strokes become coarser; shallow material-driven GPU displacement may change because it samples the interpolated weight texture. The shared layer albedo/normal/displacement/roughness maps keep their detail and 4-unit repeat size.
+
+For the default seed, the 200 tile PNGs total 4,310,607 bytes before and 652,936 after (84.9% less, excluding repeated-map copies). The GPU column is calculated RGBA8 storage without mipmaps, not total renderer memory. Height images feed CPU geometry and are not sampled by the terrain shader. Browser image decoding, canvases and paint snapshots add CPU memory; each full RGBA copy scales with the same pixel count. Compressed PNG size is not GPU storage.
+
+Larger tiles generate more of the continuous world field, rather than stretching existing images. Tile placement, player X/Z spawn, overview camera and sun/shadow coverage follow the configured size; height range stays 48. Doubling tile width quadruples covered area at the same tile count and map budget, but halves linear mesh/paint/shadow density and makes culling less granular. Keep small tiles for close-up editing. Very small brushes can fall between coarse weight samples; choose more weight intervals for fine markings. The default remains 32 units to preserve existing geometry.
+
+There are still 100 terrain meshes and 819,200 base triangles at 64 subdivisions. This optimization reduces download, decode, paint/upload and map memory costs; it does not reduce draw calls, four-layer shader sampling, shadow passes or collider BVH size. Use `?profile=1&segments=32` to quarter triangle counts (with coarser geometry/collision), and `&shadows=0` to compare shadow cost. Streaming/LOD or fewer tiles would address larger scene budgets separately.
+
+Checks cover retained vertex samples, material classification, both seam directions, larger tiles, independent map sizes, invalid configuration, and automatic regeneration. The existing terrain suite covers raycasts, painting, cross-tile undo/cancellation and sampler ownership. Compare `/demo/terrain?profile=1` at a fixed viewport/camera and reload after each generation; frame intervals are display-paced, so memory savings do not imply higher FPS.
 
 ## Profiling
 
-Open `/demo/terrain?profile=1` for a rolling 180-frame median/p95 and renderer resource counts after 120 warm-up frames. `&maps=repeated` restores the repeated-map resource benchmark; `&segments=32` compares mesh density; `&shadows=0` compares the shadow pass. The default keeps 64 subdivisions and shadows. Frame intervals are display-paced, not GPU timings, and tracked resource bytes are Three's estimate. See [performance notes](./PERFORMANCE.md) for measurements and design decisions.
+Open `/demo/terrain?profile=1` for a rolling 180-frame median/p95 and renderer resource counts after 120 warm-up frames. `&maps=repeated` restores the repeated-map resource benchmark; `&segments=32` compares mesh density; `&shadows=0` compares the shadow pass. The default keeps the configured subdivisions (64 initially) and shadows. Frame intervals are display-paced, not GPU timings, and tracked resource bytes are Three's estimate. See [performance notes](./PERFORMANCE.md) for measurements and design decisions.
 
 ## Terrain physics and Play
 
 Every tile now has `TerrainPhysics` alongside `Terrain`. The physics component requires a nonempty height map on that same node; its inspector reports missing data explicitly. It reuses the displaced visual geometry, including its world transform, to build an exact triangle collider. Weight painting does not rebuild collision geometry.
 
-`CrashcatRuntime` owns a single worker that prepares BVHs one at a time, prioritizing the nearest tiles. Prepared shapes stay cached for the scene lifetime; only the **nearest two** have bodies in the physics world. Distances use transformed terrain bounds, ties are stable, and old worker results are ignored after geometry/transform changes or removal. Body switches do not rebuild BVHs. Worker failure is reported rather than falling back to expensive synchronous construction. A browser/bundler supporting module workers is required.
+`TerrainPhysicsRuntime`, explicitly mounted by the page with `activeLimit={2}`, owns a single worker that prepares BVHs one at a time, prioritizing the nearest tiles. Prepared shapes stay cached for the scene lifetime; only the **nearest two** have bodies in the physics world. Distances use transformed terrain bounds, ties are stable, and old worker results are ignored after geometry/transform changes or removal. Body switches do not rebuild BVHs. Worker failure is reported rather than falling back to expensive synchronous construction. A browser/bundler supporting module workers is required.
 
 Click **Play** to use the first-person capsule controller: **WASD** or **↑/↓** move, **←/→** turn, **Space** jumps, and dragging the canvas looks around. Editing does not run the controller. The capsule waits while its nearby colliders prepare. The profile overlay includes active/prepared counts and measured activation/submission/update costs.
 
@@ -69,14 +101,20 @@ Library setup:
 
 ```tsx
 import { registerComponent } from 'react-three-game/viewer';
-import { CrashcatRuntime, TerrainPhysicsComponent, CharacterControllerComponent } from 'react-three-game/plugins/crashcat';
+import { CrashcatRuntime, TerrainPhysicsRuntime, TerrainPhysicsComponent } from 'react-three-game/plugins/crashcat';
+import { CharacterControllerComponent } from './components/CharacterControllerComponent';
 import 'react-three-game/plugins/crashcat/editor'; // optional custom missing-data inspector
 registerComponent(TerrainPhysicsComponent);
 registerComponent(CharacterControllerComponent);
-// Mount <CrashcatRuntime /> inside the scene. Add TerrainPhysics to a Terrain
+// Mount <CrashcatRuntime><TerrainPhysicsRuntime activeLimit={2} /></CrashcatRuntime>.
+// Choose the budget for your game. Add TerrainPhysics to a Terrain
 // node and CharacterController to a Transform node at a valid spawn position.
 ```
 
 ## Visual material displacement
 
 Layers accept `displacementMap` (linear grayscale, mid-gray is neutral) and `displacementScale` (full black-to-white range in local terrain units, default zero). The demo's rock layer uses its existing displacement texture at 0.35 units. TSL offsets vertices along local Y, blended by material weights. This uses the existing mesh subdivisions; normal maps provide detail between vertices. Render bounds include the maximum visual offset, while CPU heightmap geometry, physics colliders, and editor picking remain unchanged. Keep relief shallow so the visible surface stays close to the collision surface.
+
+The player controller is demo-owned: input bindings, movement rules and camera live in `components/CharacterControllerComponent.tsx`; the page renders `components/PlayerStatus.tsx` as ordinary React HTML. The Crashcat plugin owns physics integration and terrain collider preparation. `createHeadlessScene` currently rejects Terrain explicitly because its image processing requires a browser canvas; it does not return a scene with missing terrain.
+
+Browser resource check (2026-10-31): the same overview with 257² versus 65² maps reported 132.2 versus 108.6 MiB of total tracked GPU resources, with 205 draws and 1,638,737 triangles including shadows in both. The optimized view prepared all 100 colliders with two active. These are resource checks, not a controlled frame-time benchmark; the historical performance notes used a different working tree.

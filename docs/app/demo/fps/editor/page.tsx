@@ -2,8 +2,11 @@
 import { PrefabEditor } from "react-three-game/editor";
 import { ACESFilmicToneMapping } from "three";
 import { BASE_PATH } from "../../../basePath";
-import { mapPrefab } from "../shared/map";
-import "../scene";
+import mapPrefab from "../map.json" with { type: "json" };
+import { registerComponent } from "react-three-game/viewer";
+import { SpawnPointComponent } from "../components/SpawnPointComponent";
+
+registerComponent(SpawnPointComponent);
 
 /** Edit just the map document, keeping gameplay managers out of map exports. */
 export default function FPSMapEditor() {

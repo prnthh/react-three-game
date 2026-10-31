@@ -4,6 +4,7 @@ import type { Component } from '../../core/ComponentRegistry.js';
 /** Hard-surface box projection in local units, including this node's authored scale. */
 const UVMappingComponent: Component<{ unitsPerTile: number }> = {
     name: 'UVMapping',
+    category: 'mesh',
     description: 'Box-project UVs on Geometry primitives. Keeps texture density consistent across box faces. Enable repeat on Material. Uses local dimensions and this node scale; ancestor scale is not included.',
     properties: { unitsPerTile: { default: 2, min: 0.01, step: 0.1, description: 'Local scene units covered by one texture tile.' } },
     modifyGeometry(source, { unitsPerTile = 2 }, context) {

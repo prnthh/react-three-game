@@ -1,3 +1,4 @@
+import { parseCollisionName } from './collision.js';
 import type { GLTFExporterOptions } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import {
     BackSide,
@@ -11,6 +12,8 @@ import type { BufferGeometry, Texture } from 'three';
 import type { ComponentData, GameObject, MaterialComponentProperties, PrefabMaterial, Prefab } from './types.js';
 
 export interface DecomposeModelOptions {
+    /** Interpret Godot-style collision suffixes. Enabled by default. */
+    collisionNames?: boolean;
     /** Prefix used for generated prefab node ids. Defaults to "model". */
     idPrefix?: string;
     /** Include invisible Three objects in the generated prefab tree. */
@@ -98,6 +101,12 @@ function serializeMaterial(material: Material, options: Required<DecomposeModelO
         normalMap?: Texture | null;
         normalScale?: { toArray?: () => number[] };
         roughness?: number;
+        diffuseRoughness?: number;
+        transmission?: number;
+        thickness?: number;
+        ior?: number;
+        emissive?: { getStyle?: () => string };
+        emissiveIntensity?: number;
         wireframe?: boolean;
         toneMapped?: boolean;
     };
@@ -122,6 +131,12 @@ function serializeMaterial(material: Material, options: Required<DecomposeModelO
         ...(materialType === 'standard' ? {
             metalness: source.metalness ?? 0,
             roughness: source.roughness ?? 1,
+            diffuseRoughness: source.diffuseRoughness ?? 0,
+            transmission: source.transmission ?? 0,
+            thickness: source.thickness ?? 0,
+            ior: source.ior ?? 1.5,
+            emissive: source.emissive?.getStyle?.() ?? "#000000",
+            emissiveIntensity: source.emissiveIntensity ?? 1,
         } : null),
     };
 }
@@ -160,17 +175,28 @@ function decomposeObject(
     object: Object3D,
     options: Required<DecomposeModelOptions>,
     materials: Map<Material, string>,
+    inheritedCollision: ReturnType<typeof parseCollisionName> = null,
 ): GameObject | null {
-    if (!options.includeInvisible && !object.visible) return null;
+    const collision = options.collisionNames ? parseCollisionName(object.name) ?? inheritedCollision : null;
+    if (!options.includeInvisible && !object.visible && !collision) return null;
 
     const childNodes = object.children
-        .map(child => decomposeObject(child, options, materials))
+        .map(child => decomposeObject(child, options, materials, collision))
         .filter((child): child is GameObject => child != null);
 
     if (!(object instanceof Mesh)) {
         return options.mapNode(createNode(object, options.idPrefix, childNodes), object);
     }
 
+    if (collision && !collision.visible) {
+        const geometry = serializeGeometry(object.geometry);
+        const node = createNode(object, options.idPrefix, childNodes, {
+            collider: { type: 'MeshCollider', properties: { positions: geometry.positions, indices: geometry.indices, shape: collision.shape } },
+        });
+        node.name = collision.name;
+        node.hidden = false;
+        return options.mapNode(node, object);
+    }
     const meshMaterials = Array.isArray(object.material) ? object.material : [object.material];
     const materialComponents: Record<string, ComponentData> = {};
     meshMaterials.forEach((material, index) => {
@@ -199,6 +225,10 @@ function decomposeObject(
             },
         },
         ...materialComponents,
+        ...(collision ? { collider: { type: 'MeshCollider', properties: {
+            positions: serializeGeometry(object.geometry).positions,
+            indices: serializeGeometry(object.geometry).indices, shape: collision.shape,
+        } } } : {}),
     }), object);
 }
 
@@ -215,6 +245,7 @@ export function decomposeModelToPrefabNodes(
     options: DecomposeModelOptions = {},
 ): DecomposedPrefabNodes {
     const resolvedOptions = {
+        collisionNames: options.collisionNames ?? true,
         idPrefix: options.idPrefix ?? 'model',
         includeInvisible: options.includeInvisible ?? false,
         mapNode: options.mapNode ?? (node => node),
@@ -308,4 +339,11 @@ function ensureBlobReader() {
         }
     }
     Object.defineProperty(globalThis, 'FileReader', { value: BlobReader, configurable: true, writable: true });
+}
+
+/** Default editor import hook: ordinary unmarked models can remain external assets. */
+export function importCollisionModel(model: Object3D, options: DecomposeModelOptions = {}) {
+    let marked = false;
+    model.traverse(object => { if (parseCollisionName(object.name)) marked = true; });
+    return marked ? decomposeModelToPrefabNodes(model, { ...options, collisionNames: true }) : null;
 }

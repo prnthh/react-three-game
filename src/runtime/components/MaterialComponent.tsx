@@ -19,7 +19,7 @@ import { compactPrefabMaterial, getMaterialDefinition } from '../../core/prefab.
 
 import type { MaterialComponentProperties, PrefabMaterial, PrefabMaterialType } from '../../core/types.js';
 
-import { MeshBasicNodeMaterial, MeshStandardNodeMaterial, SpriteNodeMaterial } from 'three/webgpu';
+import { MeshBasicNodeMaterial, MeshStandardNodeMaterial, MeshPhysicalNodeMaterial, SpriteNodeMaterial } from 'three/webgpu';
 
 import { withBasePath } from "../assets/assetPaths.js";
 
@@ -219,7 +219,7 @@ const SceneMaterialPoolContext = createContext<SceneMaterialPool | null>(null);
 function createMaterial(type: PrefabMaterialType = 'standard'): RuntimeMaterial {
     if (type === 'basic') return new MeshBasicNodeMaterial();
     if (type === 'sprite') return new SpriteNodeMaterial();
-    return new MeshStandardNodeMaterial();
+    return new MeshPhysicalNodeMaterial();
 }
 
 const unresolvedMaterial = new MeshBasicNodeMaterial();
@@ -309,6 +309,9 @@ function applyMaterialProperties(
         ...(materialType === 'standard' ? {
             metalness: properties.metalness ?? 0,
             roughness: properties.roughness ?? 1,
+            diffuseRoughness: properties.diffuseRoughness ?? 0,
+            emissive: new Color(properties.emissive ?? "#000000"),
+            emissiveIntensity: properties.emissiveIntensity ?? 1,
             transmission: properties.transmission ?? 0,
             thickness: properties.thickness ?? 0,
             ior: properties.ior ?? 1.5,
@@ -398,9 +401,10 @@ function SharedOverrideMaterial({ source, overrides, cacheKey, attach }: {
 
 const MaterialComponent = {
     name: 'Material',
+    category: 'materials',
     renderWhenDisabled: true,
     description: 'Define a shared material with a name and settings, or reference a loaded scene material using only its name. Unresolved references remain invisible.',
-    slot: 'material',
+    slot: 'material', exclusive: 'material',
     View: MaterialComponentView,
     dependencies: properties => [properties.texture, properties.normalMapTexture]
         .filter((path): path is string => !!path).map(path => ({ kind: 'texture' as const, path })),
@@ -420,6 +424,9 @@ const MaterialComponent = {
         depthWrite: { type: 'boolean', default: undefined },
         metalness: { description: "Metallic response from 0 (nonmetal) to 1 (metal), for lit materials.", default: undefined, min: 0, max: 1 },
         roughness: { description: "Surface roughness from 0 (smooth) to 1 (rough), for lit materials.", default: undefined, min: 0, max: 1 },
+        diffuseRoughness: { description: "Diffuse scattering roughness for concrete, clay and other matte surfaces; 0 uses Lambertian reflection.", default: undefined, min: 0, max: 1 },
+        emissive: { type: "color", default: undefined },
+        emissiveIntensity: { default: undefined, min: 0, step: 0.1 },
         transmission: { default: undefined, min: 0, max: 1 },
         thickness: { default: undefined, min: 0 },
         ior: { default: undefined, min: 1 },

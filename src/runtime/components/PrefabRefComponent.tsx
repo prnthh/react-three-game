@@ -7,7 +7,6 @@ import { resolveInlinePrefab } from '../../core/inlinePrefabs.js';
 import type { Prefab } from '../../core/types.js';
 import { createPrefabStore } from "../../core/prefabStore.js";
 import { withBasePath } from "../assets/assetPaths.js";
-import { describePrefabSource } from '../prefabs/prefabSource.js';
 import { PrefabRoot } from '../prefabs/PrefabRoot.js';
 import { useAsset } from '../assets/assetCache.js';
 
@@ -42,7 +41,7 @@ function LoadedPrefabRef({ properties, enabled }: ComponentViewProps<PrefabRefPr
         }
     }, [document, store]);
     useEffect(() => {
-        if (cyclic) console.warn('[PrefabRef] Cyclic prefab reference:', properties.prefabId ?? describePrefabSource(url));
+        if (cyclic) console.warn('[PrefabRef] Cyclic prefab reference:', properties.prefabId ?? url);
     }, [cyclic, url, properties.prefabId]);
 
     return <>
@@ -64,12 +63,13 @@ function PrefabRefView(props: ComponentViewProps<PrefabRefProperties>) {
 const PrefabRefComponent: Component<PrefabRefProperties> = {
     dependencies: properties => !properties.prefabId && properties.url ? [{ kind: 'prefab', path: properties.url }] : [],
     name: 'PrefabRef',
+    category: 'misc',
     renderWhenDisabled: true,
     description: "Place an inline definition by prefabId or load a prefab by URL; use Transform here to place the instance. Each instance has its own objects and local node IDs.",
     View: PrefabRefView,
     properties: {
         prefabId: { description: "ID of a packed node in this scene. Takes precedence over URL.", type: 'string', default: '' },
-        url: { description: "Prefab JSON URL relative to basePath, absolute URL, or legacy embedded data URL.", type: 'string', default: '' },
+        url: { description: "Prefab JSON URL relative to basePath or an absolute URL.", type: 'string', default: '' },
     },
 };
 

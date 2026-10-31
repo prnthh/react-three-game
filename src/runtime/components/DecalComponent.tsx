@@ -66,7 +66,7 @@ function attributeVersion(attribute: BufferGeometry['attributes'][string] | unde
 }
 
 const MaterialView = MaterialComponent.View;
-function DecalView({ properties: p, children }: ComponentViewProps<DecalProperties>) {
+function DecalView({ properties: p, enabled, children }: ComponentViewProps<DecalProperties>) {
     const owner = useGameObject();
     const output = useRef<Mesh>(null);
     const cache = useMemo(() => ({ targets: [] as Mesh[], surfaces: [] as SurfaceState[], size: [] as number[] }), []);
@@ -126,7 +126,7 @@ function DecalView({ properties: p, children }: ComponentViewProps<DecalProperti
     return <>
         <mesh ref={output} renderOrder={p.renderOrder} receiveShadow dispose={null}>
             <MaterialOverridesProvider overrides={overrides} cacheKey={`decal:${p.depthBias}`}>
-                <MaterialView properties={material} enabled />
+                <MaterialView properties={material} enabled={enabled} />
             </MaterialOverridesProvider>
         </mesh>
         {children}
@@ -134,6 +134,7 @@ function DecalView({ properties: p, children }: ComponentViewProps<DecalProperti
 }
 const DecalComponent: Component<DecalProperties> = {
     name: 'Decal',
+    category: 'misc',
     renderWhenDisabled: true,
     description: 'Projects an alpha image onto the parent node’s static meshes using Three.js DecalGeometry. Add as a child of a Geometry or Model node. Transform positions/orients the projector; size sets width, height and projection depth. No collision; not for skinned or instanced meshes.',
     dependencies: p => p.texture ? [{ kind: 'texture', path: p.texture }] : [],

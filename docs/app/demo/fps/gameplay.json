@@ -11,9 +11,7 @@
         "components": {
           "match": {
             "type": "FPSMatchManager",
-            "properties": {
-              "maxFrameDelta": 0.1
-            }
+            "properties": {}
           }
         }
       },

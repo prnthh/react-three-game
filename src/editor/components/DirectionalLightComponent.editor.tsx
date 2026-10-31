@@ -87,6 +87,7 @@ function DirectionalLightComponentEditor({ properties, update }: ComponentEditor
                         <ShadowBiasField name="shadowNormalBias" label="Normal Bias" values={values} onChange={update} fallback={0} />
                         <NumberField name="shadowIntensity" label="Opacity" values={values} onChange={update} min={0} max={1} step={0.05} fallback={1} />
                         <NumberField name="shadowRadius" label="Softness" values={values} onChange={update} min={0} step={0.25} fallback={1} />
+                        <NumberField name="shadowCameraLayers" label="Layer mask" values={values} onChange={update} min={0} step={1} fallback={1} />
                         <NumberField name="shadowCameraNear" label="Near" values={values} onChange={update} min={0.001} step={0.1} fallback={0.5} />
                         <NumberField name="shadowCameraFar" label="Far" values={values} onChange={update} min={0.1} step={1} fallback={500} />
                         {values.shadowCascades <= 1 && <ShadowFrustumField values={values} onChange={update} />}

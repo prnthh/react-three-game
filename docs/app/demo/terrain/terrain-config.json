@@ -1,0 +1,6 @@
+{
+  "tileSize": 32,
+  "segments": 64,
+  "heightIntervals": 64,
+  "weightIntervals": 64
+}

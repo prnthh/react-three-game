@@ -1,4 +1,3 @@
-import { ComponentLifecycle } from '../scene/ComponentLifecycle.js';
 import { AssetBoundary } from '../assets/AssetBoundary.js';
 import { memo, useCallback, useContext, useLayoutEffect, useMemo, useRef } from "react";
 import { registerGameObjectOwner } from '../scene/gameObject.js';
@@ -6,8 +5,7 @@ import { notifyObjectChanged } from '../scene/objectChanges.js';
 import type { Object3D } from "three";
 import { getNodeUserData, type GameObject as GameObjectType } from "../../core/types.js";
 import { usePrefabRenderNode, usePrefabStoreApi } from "./PrefabStoreContext.js";
-import { NodeScope, PrefabModeContext, RuntimeNodeIdPrefixContext, useGameObject } from "../scene/SceneContext.js";
-import { useNodeSelected } from "../scene/SelectionRuntime.js";
+import { NodeScope, PrefabEditorMode, RuntimeNodeIdPrefixContext, useGameObject, useScene, useNodeSelected, usePrefab } from "../scene/SceneContext.js";
 import { createNodeInteractionHandlers, type NodeInteractionEvent, type NodeInteractionEventType } from "../scene/usePointerEvents.js";
 import { analyzeNodeComponents, ComponentLookupContext, EMPTY_NODE_COMPONENTS } from "./nodePlan.js";
 
@@ -26,18 +24,16 @@ function getNodeMetadataProps(node: GameObjectType, scope: string) {
 
 export const PrefabNode = memo(function PrefabNode(props: RendererProps) {
     const store = usePrefabStoreApi();
-    return <AssetBoundary subscribeToRetry={store.subscribe}><ResolvedPrefabNode {...props} /></AssetBoundary>;
+    return <AssetBoundary subscribeToRetry={store.subscribe}><NodeTree {...props} /></AssetBoundary>;
 });
 
-function ResolvedPrefabNode({
+function NodeTree({
     nodeId,
     onPointerEvent,
-    registerRef,
     isVisible = true,
     isEnabled = true,
 }: RendererProps) {
     const [gameObject, childIds] = usePrefabRenderNode(nodeId);
-    const scope = useContext(RuntimeNodeIdPrefixContext);
     const lookup = useContext(ComponentLookupContext);
     const analyzedComponents = useMemo(
         () => gameObject ? analyzeNodeComponents(gameObject, lookup) : EMPTY_NODE_COMPONENTS,
@@ -47,41 +43,39 @@ function ResolvedPrefabNode({
 
     const nodeEnabled = isEnabled && !gameObject.disabled;
     const nodeVisible = isVisible && !gameObject.hidden && !gameObject.disabled;
-    const metadataProps = getNodeMetadataProps(gameObject, scope);
 
     const childNodes = childIds.map(childId => <PrefabNode key={childId} nodeId={childId}
         onPointerEvent={onPointerEvent}
-        registerRef={registerRef}
         isVisible={nodeVisible}
         isEnabled={nodeEnabled}
     />);
     const inner = renderNodeContent(analyzedComponents, childNodes, nodeEnabled);
 
-    return <NodePresentation
-        nodeId={nodeId}
+    return <NodeGroup
+        node={gameObject}
         childIds={childIds}
         analyzedComponents={analyzedComponents}
-        metadataProps={metadataProps}
         onPointerEvent={onPointerEvent}
-        registerRef={registerRef}
         nodeVisible={nodeVisible}
-    >{inner}</NodePresentation>;
+    >{inner}</NodeGroup>;
 }
 
 /** Mode changes update interaction and interested Views while preserving composed children. */
-function NodePresentation({ nodeId, childIds, analyzedComponents, metadataProps, onPointerEvent, registerRef, nodeVisible, children }: {
-    nodeId: string;
+function NodeGroup({ node, childIds, analyzedComponents, onPointerEvent, nodeVisible, children }: {
+    node: GameObjectType;
     childIds: string[];
     analyzedComponents: ReturnType<typeof analyzeNodeComponents>;
-    metadataProps: ReturnType<typeof getNodeMetadataProps>;
     onPointerEvent?: RendererProps['onPointerEvent'];
-    registerRef: RendererProps['registerRef'];
     nodeVisible: boolean;
     children: React.ReactNode;
 }) {
-    const editMode = useContext(PrefabModeContext);
-    const isSelected = useNodeSelected(nodeId, editMode);
+    const nodeId = node.id;
+    const scope = useContext(RuntimeNodeIdPrefixContext);
+    const metadataProps = getNodeMetadataProps(node, scope);
+    const registerRef = usePrefab().registerObject;
+    const editMode = useScene().mode === PrefabEditorMode.Edit;
     const owner = useGameObject(nodeId);
+    const isSelected = useNodeSelected(owner.id, editMode);
     const unregisterOwner = useRef<(() => void) | null>(null);
     const unregisterObject = useRef<(() => void) | null>(null);
     const groupRef = useRef<Object3D | null>(null);
@@ -139,7 +133,6 @@ export interface RendererProps {
         object: Object3D | null,
         eventName: string | null,
     ) => void;
-    registerRef: (id: string, obj: Object3D | null) => (() => void) | void;
     isVisible?: boolean;
     isEnabled?: boolean;
 }
@@ -150,18 +143,12 @@ function renderNodeContent(
     enabled = true,
 ) {
     const components = analyzedComponents.composition;
-    // Keep behavior boundaries across toggles, but avoid empty Fragment fibers on View-only nodes.
-    let lifecycles: React.ReactNode[] | null = null;
     let content = childNodes;
     for (let index = components.length - 1; index >= 0; index -= 1) {
         const component = components[index];
-        if (component.component?.setup || component.component?.update) {
-            lifecycles ??= [];
-            if (enabled) lifecycles.push(<ComponentLifecycle key={component.key} component={component.component} properties={component.properties} enabled={enabled} />);
-        }
-        if (component.component && !enabled && !component.component.renderWhenDisabled) continue;
+        if (!enabled && !component.component.renderWhenDisabled) continue;
         const View = component.View;
-        if (View) content = <View key={component.key} properties={component.properties} enabled={enabled}>{content}</View>;
+        content = <View key={component.key} properties={component.properties} enabled={enabled}>{content}</View>;
     }
-    return <>{lifecycles}{content}</>;
+    return content;
 }

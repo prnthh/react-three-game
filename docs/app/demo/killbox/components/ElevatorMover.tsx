@@ -54,7 +54,7 @@ function ElevatorMoverView({ properties, children }: ComponentViewProps<Elevator
             phaseRef.current = startDelay > 0 ? "starting" : "ascending";
             waitTimerRef.current = startDelay;
         }
-    }, [editMode, startDelay, triggerEntityId]);
+    });
 
     useFrame((_, delta) => {
         if (editMode || phaseRef.current === "idle") {

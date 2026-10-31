@@ -69,7 +69,7 @@ test('imperative batches retain GPU identity, edit picking, and ownership across
     const disconnect = registry.connect(container);
     const clicks = [];
     const meshes = [0,1,2,3,100,101].map(x=>{const mesh=new Mesh(geometry,material);mesh.position.x=x;scene.add(mesh);return mesh;});
-    const register = mesh => registry.register({id:mesh.uuid,mesh,onEditClick:()=>clicks.push(mesh)});
+    const register = mesh => registry.register({id:mesh.uuid,mesh,onClick:()=>clicks.push(mesh)});
     const cleanup = [0,1,2,4,5].map(i=>register(meshes[i]));
     registry.update();
     const [near,far] = container.children;

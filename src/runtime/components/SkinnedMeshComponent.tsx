@@ -6,7 +6,7 @@ import { useFrame } from '@react-three/fiber';
 
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 
-import { AnimationMixer, LoopRepeat, type AnimationAction, type AnimationClip, type Object3D } from 'three';
+import { AnimationMixer, LoopRepeat, type Bone, type SkinnedMesh, type AnimationAction, type AnimationClip, type Object3D } from 'three';
 
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 
@@ -20,6 +20,8 @@ import type { Component, ComponentViewProps } from '../../core/ComponentRegistry
 
 export interface SkinnedMeshHandle {
     readonly object: Object3D;
+    readonly bones: readonly Bone[];
+    getBone(name: string): Bone | null;
     /** This model instance's mixer. Disable autoUpdate when advancing it yourself. */
     readonly mixer: AnimationMixer;
     readonly animations: readonly AnimationClip[];
@@ -55,13 +57,29 @@ function AutoAnimationUpdate({ mixer }: { mixer: AnimationMixer }) {
     return null;
 }
 
-function LoadedSkinnedMesh({ properties, enabled, path }: { properties: SkinnedMeshProperties; enabled: boolean; path: string }) {
-    const source = useModelAsset(path);
+export interface SkinnedModelOptions {
+    animations?: readonly AnimationClip[];
+    fadeDuration?: number;
+    /** Configure only the owned clone, before its mixer and bone lookup are created. */
+    prepare?: (object: Object3D) => void;
+}
+
+/** Shared instance ownership for SkinnedMesh and custom game presenters. */
+export function useSkinnedModel(source: Object3D | null, options: SkinnedModelOptions = {}): SkinnedMeshHandle | null {
     const currentActionRef = useRef<AnimationAction | null>(null);
-    const stateRef = useRef(properties.animationState ?? '');
-    const object = useMemo(() => source ? cloneSkeleton(source) : null, [source]);
-    useModelMeshSettings(object, properties, false);
-    const clips = source?.animations ?? [];
+    const stateRef = useRef('');
+    const object = useMemo(() => {
+        if (!source) return null;
+        const clone = cloneSkeleton(source);
+        options.prepare?.(clone);
+        return clone;
+    }, [source, options.prepare]);
+    const bones = useMemo(() => {
+        const result = new Map<string, Bone>();
+        object?.traverse(part => { if ((part as Bone).isBone) result.set(part.name, part as Bone); });
+        return result;
+    }, [object]);
+    const clips = options.animations ?? source?.animations ?? EMPTY_CLIPS;
     const mixer = useMemo(() => object ? new AnimationMixer(object) : null, [object]);
     const actions = useMemo(() => {
         if (!mixer || !object) return [];
@@ -87,16 +105,18 @@ function LoadedSkinnedMesh({ properties, enabled, path }: { properties: SkinnedM
         }
         stateRef.current = next.getClip().name;
         if (next === previous && next.isRunning() && !immediate) return;
-        const fadeDuration = Math.max(0, properties.fadeDuration ?? 0.18);
+        const fadeDuration = Math.max(0, options.fadeDuration ?? 0.18);
         if (immediate) previous?.stop();
         else if (previous && previous !== next) previous.fadeOut(fadeDuration);
         next.reset().setEffectiveWeight(1);
         if (!immediate && fadeDuration > 0) next.fadeIn(fadeDuration);
         next.play();
         currentActionRef.current = next;
-    }, [actions, clips, properties.fadeDuration]);
+    }, [actions, clips, options.fadeDuration]);
     const handle = useMemo<SkinnedMeshHandle | null>(() => object && mixer ? ({
         object,
+        bones: [...bones.values()],
+        getBone: name => bones.get(name) ?? null,
         mixer,
         animations: clips,
         animationStates: clips.map(clip => clip.name),
@@ -105,19 +125,35 @@ function LoadedSkinnedMesh({ properties, enabled, path }: { properties: SkinnedM
         setAnimationState,
         stop,
         update: delta => mixer.update(delta),
-    }) : null, [actions, clips, mixer, object, setAnimationState, stop]);
+    }) : null, [actions, bones, clips, mixer, object, setAnimationState, stop]);
 
+    useEffect(() => () => {
+        if (!object || !mixer) return;
+        mixer.stopAllAction();
+        // Keep bindings reusable during React effect replay; the owned mixer
+        // and its action cache are collected with the instance on final unmount.
+        const skeletons = new Set<SkinnedMesh['skeleton']>();
+        object.traverse(part => { if ((part as SkinnedMesh).isSkinnedMesh) skeletons.add((part as SkinnedMesh).skeleton); });
+        skeletons.forEach(skeleton => skeleton.dispose());
+    }, [object, mixer]);
+    return handle;
+}
+const EMPTY_CLIPS: readonly AnimationClip[] = [];
+
+function LoadedSkinnedMesh({ properties, enabled, path }: { properties: SkinnedMeshProperties; enabled: boolean; path: string }) {
+    const source = useModelAsset(path);
+    const handle = useSkinnedModel(source, { fadeDuration: properties.fadeDuration });
+    useModelMeshSettings(handle?.object ?? null, properties, false);
     useRegisterNodeComponent(SKINNED_MESH_COMPONENT, handle);
     useEffect(() => {
         if (!handle) return;
-        handle.setAnimationState(properties.animationState ?? clips[0]?.name ?? '', true);
+        handle.setAnimationState(properties.animationState ?? handle.animations[0]?.name ?? '', true);
         handle.update(0);
-    }, [clips, handle, properties.animationState]);
-    useEffect(() => () => { mixer?.stopAllAction(); }, [mixer]);
-    if (!object || !mixer) return null;
+    }, [handle, properties.animationState]);
+    if (!handle) return null;
     return <>
-        <group visible={properties.visible !== false}><primitive object={object} /></group>
-        {enabled && properties.autoUpdate !== false ? <AutoAnimationUpdate mixer={mixer} /> : null}
+        <group visible={properties.visible !== false}><primitive object={handle.object} dispose={null} /></group>
+        {enabled && properties.autoUpdate !== false ? <AutoAnimationUpdate mixer={handle.mixer} /> : null}
     </>;
 }
 
@@ -134,6 +170,7 @@ function SkinnedMeshView({ properties, enabled, children }: ComponentViewProps<S
 const SkinnedMeshComponent: Component<SkinnedMeshProperties> = {
     dependencies: properties => properties.filename ? [{ kind: 'model', path: properties.filename }] : [],
     name: 'SkinnedMesh',
+    category: 'mesh',
     renderWhenDisabled: true,
     description: "Load a model with skeletal animation. Set filename and animationState to a clip name from the asset; each instance has its own skeleton and animation mixer.",
     slot: 'object',

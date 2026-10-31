@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { ComponentEditorProps } from '../../core/ComponentRegistry.js';
 import { FieldRenderer, Label, NumberInput } from '../ui/Input.js';
 import type { FieldDefinition } from '../ui/Input.js';
 import { useEditorRef } from '../EditorContext.js';
 import { usePrefabStore } from "../../runtime/prefabs/PrefabStoreContext.js";
-import { getMaterialDefinition, MATERIAL_FIELDS } from '../../core/prefab.js';
+import { collectSceneMaterials, getMaterialDefinition, samePrefabValue, MATERIAL_FIELDS } from '../../core/prefab.js';
+import { ensureMaterialReference } from '../../core/prefabDocumentApi.js';
 import { base, colors } from '../ui/styles.js';
 import type { MaterialComponentProperties, PrefabMaterial } from '../../core/types.js';
 import { TexturePicker } from '../assets/AssetBrowser.js';
@@ -102,6 +103,7 @@ function MaterialPreview({ material, basePath }: { material: PrefabMaterial; bas
 }
 
 function MaterialComponentEditor({
+    node,
     properties,
     update,
 }: ComponentEditorProps<MaterialComponentProperties>) {
@@ -110,6 +112,8 @@ function MaterialComponentEditor({
     const editor = useEditorRef();
     const { basePath } = editor;
     const materials = usePrefabStore(state => state.materials);
+    const nodes = usePrefabStore(state => state.nodesById);
+    const catalog = useMemo(() => collectSceneMaterials(nodes), [nodes]);
     const materialName = properties.name ?? '';
     const definition = getMaterialDefinition(properties);
     const material = materials[materialName] ?? definition ?? {};
@@ -301,16 +305,28 @@ function MaterialComponentEditor({
             scrollbarWidth: 'thin',
             scrollbarColor: colors.borderFaint + ' transparent',
         }}>
-            {Object.entries(materials).map(([id, entry]) => {
-                const selected = id === materialName;
-                const label = entry.name || id;
+            {catalog.map(item => {
+                const { id, material: entry, label } = item;
+                const selected = item.named ? id === materialName
+                    : item.nodeId === node.id && samePrefabValue(item.material, definition ?? {});
                 return (
                     <button
                         key={id}
                         type="button"
                         title={label}
                         aria-pressed={selected}
-                        onClick={() => { if (!selected) replaceMaterial({ name: id }); }}
+                        onClick={() => {
+                            if (selected) return;
+                            try {
+                                editor.batch(() => {
+                                    const reference = ensureMaterialReference(editor, item.nodeId, item.componentKey);
+                                    replaceMaterial({ name: reference });
+                                });
+                                setMaterialError('');
+                            } catch (error) {
+                                setMaterialError(error instanceof Error ? error.message : 'Could not share material.');
+                            }
+                        }}
                         style={{
                             ...base.btn,
                             minWidth: 0,

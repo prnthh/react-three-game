@@ -17,8 +17,8 @@ export type {
 	NodeInteractionHandlers,
 } from "./ComponentRegistry.js";
 
-export { createImageNode, createModelNode, normalizePrefab, denormalizePrefab } from "./prefab.js";
-export type { PrefabState, PrefabNodeRecord } from "./prefab.js";
+export { createImageNode, createModelNode, collectSceneMaterials, normalizePrefab, denormalizePrefab } from "./prefab.js";
+export type { PrefabState, PrefabNodeRecord, SceneMaterialEntry } from "./prefab.js";
 export type {
 	ComponentData,
 	GameObject,
@@ -36,7 +36,7 @@ export type { DecomposeModelOptions, DecomposedPrefabNodes } from './modelPrefab
 
 export { createPrefabStore } from './prefabStore.js';
 export type { PrefabStoreApi, PrefabStoreState } from './prefabStore.js';
-export { createPrefabDocumentApi } from './prefabDocumentApi.js';
+export { createPrefabDocumentApi, ensureMaterialReference } from './prefabDocumentApi.js';
 export type { PrefabDocumentApi } from './prefabDocumentApi.js';
 export { evaluateSceneCommands, evaluateSceneCommandState } from './sceneCommands.js';
 export type { SceneCommand, SceneCommandBatch, SceneCommandResult } from './sceneCommands.js';

@@ -6,6 +6,8 @@ export type TerrainLayer = {
     albedoMap: string;
     normalMap: string;
     roughnessMap: string;
+    displacementMap?: string;
+    displacementScale?: number;
     roughness: number;
     tileSize: number;
 };
@@ -24,7 +26,7 @@ export const DEFAULT_TERRAIN_LAYERS: TerrainLayer[] = [
     { name: 'Dirt', color: '#806348', roughness: 0.9, tileSize: 3 },
     { name: 'Rock', color: '#81858a', roughness: 0.8, tileSize: 4 },
     { name: 'Sand', color: '#c6b38a', roughness: 0.95, tileSize: 3 },
-].map(layer => ({ ...layer, albedoMap: '', normalMap: '', roughnessMap: '' }));
+].map(layer => ({ ...layer, albedoMap: '', normalMap: '', roughnessMap: '', displacementMap: '', displacementScale: 0 }));
 export const bounded = (value: number | undefined, fallback: number, min: number, max: number) =>
     Number.isFinite(value) ? Math.max(min, Math.min(max, value!)) : fallback;
 export function terrainSettings(properties: TerrainProperties) {
@@ -39,7 +41,7 @@ export function terrainSettings(properties: TerrainProperties) {
 export function terrainLayers(layers?: TerrainLayer[]): TerrainLayer[] {
     return DEFAULT_TERRAIN_LAYERS.map((fallback, i) => {
         const layer = { ...fallback, ...layers?.[i] };
-        return { ...layer, roughness: bounded(layer.roughness, fallback.roughness, 0, 1),
+        return { ...layer, displacementScale: bounded(layer.displacementScale, 0, 0, 10), roughness: bounded(layer.roughness, fallback.roughness, 0, 1),
             tileSize: bounded(layer.tileSize, fallback.tileSize, 0.01, 10000) };
     });
 }

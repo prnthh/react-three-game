@@ -1,0 +1,144 @@
+{
+  "id": "relay-yard-gameplay",
+  "name": "Relay Yard Gameplay",
+  "root": {
+    "id": "gameplay-root",
+    "name": "Gameplay",
+    "children": [
+      {
+        "id": "match-manager",
+        "name": "Match Manager",
+        "components": {
+          "match": {
+            "type": "FPSMatchManager",
+            "properties": {
+              "maxFrameDelta": 0.1
+            }
+          }
+        }
+      },
+      {
+        "id": "player-controller",
+        "name": "First Person Player",
+        "components": {
+          "player": {
+            "type": "FPSPlayerController",
+            "properties": {
+              "manager": "match-manager"
+            }
+          }
+        }
+      },
+      {
+        "id": "squads",
+        "name": "Squads",
+        "children": [
+          {
+            "id": "actor-0",
+            "name": "Alpha / Remilio 0",
+            "components": {
+              "character": {
+                "type": "FPSCharacter",
+                "properties": {
+                  "manager": "match-manager",
+                  "actorId": 0
+                }
+              }
+            }
+          },
+          {
+            "id": "actor-1",
+            "name": "Alpha / Remilio 1",
+            "components": {
+              "character": {
+                "type": "FPSCharacter",
+                "properties": {
+                  "manager": "match-manager",
+                  "actorId": 1
+                }
+              }
+            }
+          },
+          {
+            "id": "actor-2",
+            "name": "Alpha / Remilio 2",
+            "components": {
+              "character": {
+                "type": "FPSCharacter",
+                "properties": {
+                  "manager": "match-manager",
+                  "actorId": 2
+                }
+              }
+            }
+          },
+          {
+            "id": "actor-3",
+            "name": "Alpha / Remilio 3",
+            "components": {
+              "character": {
+                "type": "FPSCharacter",
+                "properties": {
+                  "manager": "match-manager",
+                  "actorId": 3
+                }
+              }
+            }
+          },
+          {
+            "id": "actor-4",
+            "name": "Bravo / Milady 4",
+            "components": {
+              "character": {
+                "type": "FPSCharacter",
+                "properties": {
+                  "manager": "match-manager",
+                  "actorId": 4
+                }
+              }
+            }
+          },
+          {
+            "id": "actor-5",
+            "name": "Bravo / Milady 5",
+            "components": {
+              "character": {
+                "type": "FPSCharacter",
+                "properties": {
+                  "manager": "match-manager",
+                  "actorId": 5
+                }
+              }
+            }
+          },
+          {
+            "id": "actor-6",
+            "name": "Bravo / Milady 6",
+            "components": {
+              "character": {
+                "type": "FPSCharacter",
+                "properties": {
+                  "manager": "match-manager",
+                  "actorId": 6
+                }
+              }
+            }
+          },
+          {
+            "id": "actor-7",
+            "name": "Bravo / Milady 7",
+            "components": {
+              "character": {
+                "type": "FPSCharacter",
+                "properties": {
+                  "manager": "match-manager",
+                  "actorId": 7
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

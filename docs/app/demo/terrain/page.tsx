@@ -31,10 +31,10 @@ const prefab: Prefab = {
                 heightMap: `/textures/terrain-demo/tiles/height-${row}-${column}.png`, weightMap: `/textures/terrain-demo/tiles/weights-${row}-${column}.png`,
                 weightResolution: 257,
                 layers: [
-                    { name: 'Grass', color: '#ffffff', albedoMap: '/textures/floor/terrain/grass-512.jpg', roughness: 0.95, tileSize: 4 },
-                    { name: 'Dirt', color: '#ffffff', albedoMap: '/textures/floor/terrain/dirt-512.jpg', roughness: 0.9, tileSize: 4 },
-                    { name: 'Rock', color: '#ffffff', albedoMap: '/textures/floor/rocks/gray_rocks_diff_1k.jpg', normalMap: '/textures/floor/rocks/gray_rocks_nor_gl_1k.jpg', roughnessMap: '/textures/floor/rocks/gray_rocks_rough_1k.jpg', roughness: 1, tileSize: 4 },
-                    { name: 'Sand', color: '#ffffff', albedoMap: '/textures/floor/terrain/sand-512.jpg', roughness: 0.95, tileSize: 4 },
+                    { name: 'Grass', color: '#ffffff', albedoMap: '/textures/floor/terrain/grass-512.jpg', normalMap: '/textures/floor/terrain/grass-normal-gl.png', roughness: 0.95, tileSize: 4 },
+                    { name: 'Dirt', color: '#ffffff', albedoMap: '/textures/floor/terrain/dirt-512.jpg', normalMap: '/textures/floor/terrain/dirt-normal-gl.png', roughness: 0.9, tileSize: 4 },
+                    { name: 'Rock', color: '#ffffff', albedoMap: '/textures/floor/rocks/gray_rocks_diff_1k.jpg', normalMap: '/textures/floor/rocks/gray_rocks_nor_gl_1k.jpg', displacementMap: '/textures/floor/rocks/gray_rocks_disp_1k.png', displacementScale: 0.35, roughnessMap: '/textures/floor/rocks/gray_rocks_rough_1k.jpg', roughness: 1, tileSize: 4 },
+                    { name: 'Sand', color: '#ffffff', albedoMap: '/textures/floor/terrain/sand-512.jpg', normalMap: '/textures/floor/terrain/sand-normal-gl.png', roughness: 0.95, tileSize: 4 },
                 ],
             } },
         } };

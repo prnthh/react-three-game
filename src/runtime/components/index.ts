@@ -1,3 +1,5 @@
+import DecalComponent from "./DecalComponent.js";
+import UVMappingComponent from "./UVMappingComponent.js";
 import AmbientLightComponent from "./AmbientLightComponent.js";
 import BufferGeometryComponent from "./BufferGeometryComponent.js";
 import CameraFollowComponent from "./CameraFollowComponent.js";
@@ -28,6 +30,8 @@ export const builtInComponents: readonly Component<any>[] = [
 
 	// Geometry components
 	GeometryComponent,
+	UVMappingComponent,
+	DecalComponent,
 	TerrainComponent,
 	BufferGeometryComponent,
 	ModelComponent,

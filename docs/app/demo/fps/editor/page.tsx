@@ -1,0 +1,16 @@
+"use client";
+import { PrefabEditor } from "react-three-game/editor";
+import { ACESFilmicToneMapping } from "three";
+import { BASE_PATH } from "../../../basePath";
+import { mapPrefab } from "../shared/map";
+import "../scene";
+
+/** Edit just the map document, keeping gameplay managers out of map exports. */
+export default function FPSMapEditor() {
+  return <div style={{ position: "fixed", inset: 0 }}>
+    <PrefabEditor prefab={mapPrefab} basePath={BASE_PATH} canvasProps={{
+      camera: { position: [12, 16, -34], fov: 55, near: 0.1, far: 150 },
+      rendererConfig: { toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1.05 },
+    }} />
+  </div>;
+}

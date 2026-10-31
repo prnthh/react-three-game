@@ -36,3 +36,15 @@ export function createPrefabDocumentApi(store: PrefabStoreApi): PrefabDocumentAp
         replace: prefab => store.getState().replacePrefab(prefab),
     };
 }
+
+/** Give an inline material a persisted reference ID without copying its settings to consumers. */
+export function ensureMaterialReference(document: Pick<PrefabDocumentApi, 'get' | 'update'>, nodeId: string, componentKey: string): string {
+    const component = document.get(nodeId)?.components?.[componentKey];
+    if (component?.type !== 'Material') throw new Error('The source material no longer exists.');
+    if (component.properties.name) return component.properties.name;
+    const id = crypto.randomUUID();
+    document.update(nodeId, node => ({ ...node, components: { ...node.components,
+        [componentKey]: { ...component, properties: { ...component.properties, materialType: component.properties.materialType ?? 'standard', name: id } },
+    } }));
+    return id;
+}

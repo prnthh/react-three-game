@@ -16,6 +16,7 @@ function useLayerMaps(layer: TerrainLayer, basePath: string) {
     return {
         albedo: useTextureAsset(layer.albedoMap ? withBasePath(basePath, layer.albedoMap) : null),
         normal: useTextureAsset(layer.normalMap ? withBasePath(basePath, layer.normalMap) : null),
+        displacement: useTextureAsset(layer.displacementMap ? withBasePath(basePath, layer.displacementMap) : null),
         roughness: useTextureAsset(layer.roughnessMap ? withBasePath(basePath, layer.roughnessMap) : null),
     };
 }
@@ -71,6 +72,15 @@ function TerrainView({ properties, children }: ComponentViewProps<TerrainPropert
         width: settings.width, depth: settings.depth, ready: paintedWeights.ready,
     }), [surface, settings.width, settings.depth, paintedWeights.ready]);
     useRegisterNodeComponent(TERRAIN_SURFACE_COMPONENT, liveSurface);
+    // Object-level render bounds include GPU relief; CPU geometry remains the
+    // heightmap-only source for physics and editor raycasts.
+    const relief = Math.max(...layers.map(layer => layer.displacementMap ? (layer.displacementScale ?? 0) / 2 : 0));
+    useLayoutEffect(() => {
+        if (!mesh.current || !geometry.boundingSphere) return;
+        const boundingSphere = geometry.boundingSphere.clone();
+        boundingSphere.radius += relief;
+        Object.assign(mesh.current, { boundingSphere });
+    }, [geometry, relief]);
     useLayoutEffect(() => {
         if (owner.transform) notifyObjectChanged(owner.transform, 'geometry');
     }, [geometry, owner]);
@@ -101,7 +111,7 @@ const TerrainComponent: Component<TerrainProperties> = {
     description: 'Height-map terrain with four PBR layers blended by paintable material weights. Owns its geometry and material; no separate Geometry or Material is needed.',
     View: TerrainComponentView,
     dependencies: properties => [properties.heightMap, properties.weightMap?.startsWith('data:') ? null : properties.weightMap,
-        ...terrainLayers(properties.layers).flatMap(layer => [layer.albedoMap, layer.normalMap, layer.roughnessMap])]
+        ...terrainLayers(properties.layers).flatMap(layer => [layer.albedoMap, layer.normalMap, layer.roughnessMap, layer.displacementMap])]
         .filter((path): path is string => !!path).map(path => ({ kind: 'texture', path })),
     properties: {
         width: { default: 32, min: 0.1, max: 10000, step: 1 },
@@ -113,7 +123,8 @@ const TerrainComponent: Component<TerrainProperties> = {
         weightResolution: { default: 256, min: 16, max: 1024, step: 1, description: 'Editable weight map resolution per axis. Source weights are resampled to this size.' },
         layers: { type: 'array', default: DEFAULT_TERRAIN_LAYERS, description: 'Four layers in fixed channel order, each with name, color tint, albedoMap, normalMap, roughnessMap, roughness and tileSize in local scene units.',
             schema: { type: 'array', minItems: 4, maxItems: 4, items: { type: 'object', properties: {
-                name: { type: 'string' }, color: { type: 'string' }, albedoMap: { type: 'string' }, normalMap: { type: 'string' }, roughnessMap: { type: 'string' },
+                name: { type: 'string' }, color: { type: 'string' }, albedoMap: { type: 'string' }, normalMap: { type: 'string' }, roughnessMap: { type: 'string' }, displacementMap: { type: 'string' },
+                displacementScale: { type: 'number', minimum: 0, maximum: 10 },
                 roughness: { type: 'number', minimum: 0, maximum: 1 }, tileSize: { type: 'number', exclusiveMinimum: 0 },
             }, additionalProperties: false } } },
     },

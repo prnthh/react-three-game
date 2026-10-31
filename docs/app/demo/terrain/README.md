@@ -76,3 +76,7 @@ registerComponent(CharacterControllerComponent);
 // Mount <CrashcatRuntime /> inside the scene. Add TerrainPhysics to a Terrain
 // node and CharacterController to a Transform node at a valid spawn position.
 ```
+
+## Visual material displacement
+
+Layers accept `displacementMap` (linear grayscale, mid-gray is neutral) and `displacementScale` (full black-to-white range in local terrain units, default zero). The demo's rock layer uses its existing displacement texture at 0.35 units. TSL offsets vertices along local Y, blended by material weights. This uses the existing mesh subdivisions; normal maps provide detail between vertices. Render bounds include the maximum visual offset, while CPU heightmap geometry, physics colliders, and editor picking remain unchanged. Keep relief shallow so the visible surface stays close to the collision surface.

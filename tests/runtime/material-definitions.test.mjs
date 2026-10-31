@@ -147,3 +147,46 @@ test('renaming a material component only changes that node', () => {
     assert.equal(store.getState().materials.steel.metalness, 0.9);
     assert.equal(updates, 1);
 });
+
+test('core discovers unique inline materials and sharing persists a live ID reference', async t => {
+    const { collectSceneMaterials } = await import('../../src/core/prefab.ts');
+    const { createPrefabDocumentApi, ensureMaterialReference } = await import('../../src/core/prefabDocumentApi.ts');
+    const doc = document('catalog', [
+        box('red', { color: '#ff0000', roughness: 1 }),
+        box('same-red', { color: '#ff0000' }),
+        box('blue', { color: '#0000ff' }),
+        box('default', {}),
+        box('reference', { name: 'missing' }),
+    ]);
+    const catalog = collectSceneMaterials(doc.getState().nodesById);
+    assert.equal(catalog.length, 3, 'deduplicates defaults and ignores unresolved reference-only nodes');
+    assert.equal(catalog.filter(entry => entry.material.color === '#ff0000').length, 1);
+    const api = createPrefabDocumentApi(doc);
+    const before = prefabStoreToPrefab(doc.getState());
+    let id, publications = 0;
+    const unsubscribe = doc.subscribe(() => publications++);
+    api.batch(() => {
+        id = ensureMaterialReference(api, 'red', 'material');
+        api.update('blue', node => ({ ...node, components: { ...node.components,
+            material: { type: 'Material', properties: { name: id } },
+        } }));
+    });
+    unsubscribe();
+    assert.equal(publications, 1, 'source promotion and assignment are one atomic edit');
+    assert.equal(ensureMaterialReference(api, 'red', 'material'), id, 'ID remains stable');
+    const saved = prefabStoreToPrefab(doc.getState());
+    const loaded = createPrefabStore(JSON.parse(JSON.stringify(saved)));
+    assert.equal(loaded.getState().materials[id].color, '#ff0000');
+    assert.deepEqual(loaded.getState().nodesById.blue.components.material.properties, { name: id });
+    assert.equal(collectSceneMaterials(loaded.getState().nodesById).length, 2, 'named definition absorbs identical inline picker entry');
+    const root = await host(t);
+    let state;
+    await act(async () => { state = root.render(h(PrefabRoot, { store: loaded })); });
+    assert.equal(mesh(state.getState().scene, 'blue').material, mesh(state.getState().scene, 'red').material);
+    await act(async () => loaded.getState().updateNode('red', node => ({ ...node, components: { ...node.components,
+        material: { type: 'Material', properties: { name: id, color: '#00ff00' } },
+    } })));
+    assert.equal(mesh(state.getState().scene, 'blue').material.color.getHexString(), '00ff00');
+    doc.getState().replacePrefab(before);
+    assert.equal(doc.getState().nodesById.red.components.material.properties.name, undefined, 'restoring snapshot reverses promotion');
+});

@@ -47,6 +47,9 @@ export default function TerrainComponentEditor({ node, properties, update }: Com
             <NumberField name="roughness" label="Roughness" values={layer} onChange={patch => patchLayer(index, patch)} min={0} max={1} step={0.05} />
             <MapInput label={`${layer.name} albedo`} value={layer.albedoMap} onChange={albedoMap => patchLayer(index, { albedoMap })} />
             <MapInput label={`${layer.name} normal`} value={layer.normalMap} onChange={normalMap => patchLayer(index, { normalMap })} />
+            <MapInput label={`${layer.name} displacement`} value={layer.displacementMap ?? ''} onChange={displacementMap => patchLayer(index, { displacementMap })} />
+            <NumberField name="displacementScale" label="Visual displacement (local units)" values={layer} onChange={patch => patchLayer(index, patch)} min={0} max={10} step={0.01} />
+            <small style={{ color: colors.textMuted }}>Visual only, centered around mid-gray. Physics and picking use the terrain heightmap.</small>
             <MapInput label={`${layer.name} roughness`} value={layer.roughnessMap} onChange={roughnessMap => patchLayer(index, { roughnessMap })} />
         </details>)}
     </FieldGroup>;

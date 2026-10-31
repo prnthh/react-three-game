@@ -30,6 +30,12 @@ test('terrain height orientation, interpolation, real mesh raycasts and bounds a
     assert.ok(Math.abs(hit.point.y - 3) < 1e-6);
     assert.ok(Math.abs(hit.uv.y - 0.5) < 1e-6);
     assert.equal(geometry.boundingBox.max.y, 6);
+    const visualRelief = createTerrainGeometry({ width: 10, depth: 10, segments: 4, heightScale: 6,
+        layers: [{ displacementMap: 'rock.png', displacementScale: 10 }] }, heights);
+    assert.deepEqual(visualRelief.attributes.position.array, geometry.attributes.position.array,
+        'material displacement never changes CPU vertices used by terrain colliders');
+    assert.deepEqual(visualRelief.boundingSphere, geometry.boundingSphere);
+    visualRelief.dispose();
     geometry.dispose();mesh.material.dispose();
 });
 
@@ -76,9 +82,10 @@ test('terrain TSL material owns cloned layer textures, leaving shared source tex
     const originalWrap=source.wrapS;
     let sourceDisposed=false;source.addEventListener('dispose',()=>sourceDisposed=true);
     const surface={texture:source,brushCenter:uniform(new Vector2()),brushRadius:uniform(new Vector2(1,1)),brushVisible:uniform(0)};
-    const maps=Array.from({length:4},()=>({albedo:source,normal:source,roughness:source}));
-    const material=createTerrainMaterial(terrainLayers(),maps,surface,32,32);
+    const maps=Array.from({length:4},()=>({albedo:source,normal:source,roughness:source,displacement:source}));
+    const material=createTerrainMaterial(terrainLayers([{ displacementMap: 'rock.png', displacementScale: .35 }]),maps,surface,32,32);
     assert.ok(material.isMeshStandardNodeMaterial);
+    assert.ok(material.positionNode, 'material relief is implemented in the vertex shader');
     assert.ok(material.colorNode && material.normalNode && material.roughnessNode && material.emissiveNode);
     assert.equal(source.wrapS,originalWrap);assert.equal(source.wrapS,ClampToEdgeWrapping);
     material.dispose();assert.equal(sourceDisposed,false);

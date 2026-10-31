@@ -15,6 +15,7 @@ const options: DemoOption[] = [
     { label: "Custom Component", href: "/demo/customcomponent" },
     { label: "Music Video", href: "/demo/musicvideo" },
     { label: "Cool stuff", href: "/demo/coolstuff" },
+    { label: "Relay Yard FPS", href: "/demo/fps" },
     { label: "Terrain Workshop", href: "/demo/terrain" },
     { label: "Parkour", href: "/demo/parkour" },
     { label: "Point n Click", href: "/demo/stage" },

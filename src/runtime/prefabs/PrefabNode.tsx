@@ -1,4 +1,5 @@
 import { AssetBoundary } from '../assets/AssetBoundary.js';
+import { useHasNodeMountBudget, useNodeMountAdmission } from './NodeMountBudget.js';
 import { memo, useCallback, useContext, useLayoutEffect, useMemo, useRef } from "react";
 import { registerGameObjectOwner } from '../scene/gameObject.js';
 import { notifyObjectChanged } from '../scene/objectChanges.js';
@@ -24,8 +25,15 @@ function getNodeMetadataProps(node: GameObjectType, scope: string) {
 
 export const PrefabNode = memo(function PrefabNode(props: RendererProps) {
     const store = usePrefabStoreApi();
-    return <AssetBoundary subscribeToRetry={store.subscribe}><NodeTree {...props} /></AssetBoundary>;
+    const budgeted = useHasNodeMountBudget();
+    const content = <AssetBoundary subscribeToRetry={store.subscribe}><NodeTree {...props} /></AssetBoundary>;
+    return budgeted ? <BudgetedNode>{content}</BudgetedNode> : content;
 });
+
+function BudgetedNode({ children }: { children: React.ReactNode }) {
+    const admitted = useNodeMountAdmission(useScene().mode === PrefabEditorMode.Edit);
+    return admitted ? children : null;
+}
 
 function NodeTree({
     nodeId,

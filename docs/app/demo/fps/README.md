@@ -22,16 +22,38 @@ components/          # Prefab views, effects, controls and host systems
 session.ts           # Client sessions, local loopback and replay
 ```
 
-The authority chooses controllers; match rules do not import bot code. Client presentation reads snapshots and shared rule helpers. Only the local loopback imports `connectLocalMatch` to host single-player simulation. The connection closes over the authority and exposes only input-to-snapshot exchange and snapshot reads; it exposes no live state or authority handle. Client presentation never imports server rules.
+The authority assigns controllers and owns gameplay outcomes. Humans and bots
+produce the same command shape; match rules do not import bot code or choose
+outcomes in the view. Actor order and random-number consumption affect
+determinism. Static map collision uses Box3D through `shared/physics.ts`.
 
-- `fakeserver/match.ts` owns serializable state, seeded randomness, fixed 60 Hz rules, static map collision, hitscan damage and scoring. It has no browser or React dependency. Map compilation uses Three’s matrix math headlessly; Box3D owns collision queries and capsule-mover constraint solving through `shared/physics.ts`. BoxCollider components author collision independently of rendering. Its tick function coordinates explicit actor-timer, weapon, movement, gait and grenade phases. Bot tracking, pathfinding, path refresh and steering live in `fakeserver/bot/controller.ts`; shared event expiry keeps transient arrays in place. Actor processing order and random-number consumption are intentional gameplay behavior.
-- `map.json` authors the environment, geometry, tiled materials and decals; `gameplay.json` authors the match manager, player controller and actor slots. Both are ordinary scene prefabs. `scene.ts` composes their roots into `relayYardScene`, preserving IDs and manager references, rejecting duplicate IDs, and leaving the source documents untouched. Collision and spawn compilation expand packed/inline references with the runtime’s placement semantics; unresolved URL references and cycles fail explicitly. Lighting, fog, signs and set dressing use ordinary authored components. Each building groups its geometry, floor, lights, audio-room Data volume and bot-flank Data waypoint; the shared compiler applies parent transforms to collision and map features. The shared world-transform walker preserves nested XYZ rotation, scale, reflection and shear for colliders, acoustic volumes and route markers. BoxCollider sizes and center offsets are local to their node; editor wireframes show the effective shape. Rays, actor sweep/slide, bot clearance and grenade bounces use those compiled shapes. The Box3D capsule mover resolves full 3D motion, including ground and ceiling contacts. Grounded state is replicated in version-4 snapshots for jump rules, gait and replay audio. Gameplay rules and spawn logic remain in `fakeserver/match.ts`; the JSON configures scene components rather than containing executable rules.
-- `BoxCollider` defines local size and center independently of Geometry. The compiler transforms all eight corners into a Box3D convex hull, preserving rotated/nonuniformly scaled ancestry. `Data.collision.kind` only selects impact material. Authored room volumes use a separate query filter in the same immutable world. Native rays, capsule clearance/movement, sphere casts and overlaps replace the custom SAT solver. Grenade gravity, restitution and fuse timing remain gameplay rules; grenades are swept spheres, not dynamic rigid bodies. Static map data and its query world are shared locally; no actor poses are stored there. The local game imports `shared/world.ts` to compile one immutable query world, disposed during hot reload. The editor imports only authored documents and the spawn-marker definition, so it can open incomplete maps without starting physics. Pure compilation in `shared/map.ts` validates maps when the game loads them. A future server can load it headlessly; live editor edits still require exporting the map and restarting the match.
-- `shared/protocol.ts` defines commands/snapshots, shared constants and pure presentation helpers with no server imports. `fakeserver/authority.ts` provides the standalone `MatchAuthority`; it never imports client sessions, React or Three. The authority accepts sequenced commands for explicitly assigned human slots, advances fixed ticks, and copies versioned snapshots into reusable buffers. Actor IDs come from the connection adapter, not the command packet. Commands are clamped, duplicate/out-of-order sequences are rejected, one-shot input edges are consumed once, and held inputs expire after 15 ticks without a new command. Snapshots omit AI paths, targets and random state. `session.ts` owns client presentation, replay and the explicit single-player loopback host. The local adapter uses this boundary with independent current/previous snapshots and bounded frame catch-up. Its player slot is configurable; neither the authority nor replay wrapper requires slot 0. The local host still calls authority ticks from render time and pauses with the menu; a remote host must schedule its own ticks independently.
-- `page.tsx` registers FPSMatchManager, FPSPlayerController, FPSCharacter and FPSSpawnPoint from `components/`. The manager exposes only snapshots, interpolation/playback metadata and playing status; input, audio, UI callbacks and advancement remain with the host. It binds its node to the host-owned session; adding bindings does not advance additional ticks. `page.tsx` mounts one host driver and independent audio/renderer systems defined in `components/SessionSystems.tsx`. Character nodes interpolate client snapshots, including shortest-arc rotation, and snap on death/respawn. The local camera reads the current snapshot immediately. Player/character nodes resolve their manager through the library's component registry by scoped node ID. Disabling a binding removes its consumers without stopping the host. The camera component owns only its camera and held equipment; world audio and effects remain independent.
-- `page.tsx` owns the local session and input/menu/audio/HUD bridge. It mounts the scene through PrefabRoot; it no longer constructs map meshes or schedules match steps. The custom FPS components currently require this session bridge. The map has a separate editor route; the gameplay prefab still requires this session bridge.
-- This remains a local prototype. A future server can construct `MatchAuthority(seed, humanActorIds)`, call `submit(authenticatedActorId, packet)`, run `step()` at 60 Hz, and publish `snapshot(buffer, recipientActorId)`. The server must own its timer: the local client frame clamp is not a server clock. Transport authentication, packet rate/size limits, join/leave ownership, network snapshot buffering, prediction, reconciliation and lag compensation are not implemented. Snapshot acknowledgements identify processed input sequences, but are not yet a reconciliation implementation. The demo uses Box3D 0.1.1 through its inline WASM build. Dynamic props, character-to-character pushing and navigation over multiple elevations are not implemented.
-- Three is pinned to r187 in both workspaces. The scene uses its clustered lighting addon for indoor point lights plus a shadowed sun. Light baking, path tracing and other release examples are not enabled.
+`map.json` owns scenery, collision and spawn markers; `gameplay.json` owns
+manager/player bindings and actor slots. `scene.ts` composes them while preserving
+IDs and rejecting duplicates. The compiler expands packed references and applies
+parent transforms, including nonuniform scale, reflection and shear. URL prefab
+references and cycles are rejected during map compilation. The editor loads the
+authored documents without starting physics. Export map edits and start a new
+match to apply them.
+
+`shared/protocol.ts` owns command/snapshot types and rule constants.
+`MatchAuthority` validates sequenced input for assigned actor IDs, consumes action
+edges once, expires stale held input, and publishes owned snapshots. Snapshots
+omit AI navigation and random state. The loopback connection exposes command
+exchange and copied snapshots rather than authority state. This is an in-process
+API boundary, not isolation from other code in the browser.
+
+`page.tsx` owns the session and mounts one advancement driver, the input/menu/audio
+bridge and `PrefabRoot`. Registered FPS component views resolve the manager by
+scoped node ID and project snapshots onto their nodes. Disabling a binding removes
+its consumers without stopping the host. The player controller moves its node;
+its authored Camera and held equipment follow as children.
+
+The local host advances from render time and pauses with the menu. A remote host
+would construct `MatchAuthority(seed, humanActorIds)`, submit authenticated actor
+commands, tick independently at 60 Hz and publish recipient snapshots. Transport,
+prediction/reconciliation and lag compensation remain unimplemented. Dynamic
+props, character pushing and navigation over multiple elevations are also outside
+this demo.
 
 ## Assets
 
@@ -48,23 +70,12 @@ The map is a gameplay blockout with simple PBR surfaces, not a finished environm
 
 ## Model collision authoring
 
-Core model decomposition recognizes `_col` / `-col` (visible triangle mesh),
-`_colonly` / `-colonly` (collision only), and their `convcol` / `convcolonly`
-variants (one convex hull per marked mesh). Blender duplicate suffixes such as
-`.001` are accepted. Concave convex-proxy assemblies should use multiple marked
-meshes; automatic convex decomposition is not performed. `_colinv` is not a supported suffix.
+The map uses imported collision-only model proxies. See the library's
+[collision import conventions](../../../COMPONENTS.md#model-collision-authoring)
+for suffixes, emitted components and runtime ownership. Bake colliders into the
+map so the authority can load it without render assets.
 
-The importer emits engine-neutral `MeshCollider` data with local vertices and
-indices, preserving the node hierarchy and transforms. `collisionNames: false`
-opts out. The editor recognizes these markers on file import and decomposition.
-`Model` hides collision-only proxy meshes, but loading a render asset alone does
-not register physics: import/bake the collider components into the scene document
-for both the client and headless server. Host adapters compile effective transforms
-and choose native triangle meshes or convex hulls; they own physics lifetime.
-
-## Verification
-
-`docs/tests/fps.test.mjs` covers wall and friendly shot occlusion, spawn shields, ammunition, score termination, navigation through doors, collision, reload, respawn and a deterministic full bot match. Run with the existing `npm test` command.
+## Animation and grenade presentation
 
 Locomotion phase and foot-contact counters advance at authority ticks and are copied into each actor snapshot, including the unseen first-person body. Both footstep events and visible poses read that saved timing. Contact markers are sampled from the shipped walk/run foot plants; retargeted Milady preserves their phase. Normal movement uses walk (4.6 m/s reference), sprint uses run (7 m/s), with threshold hysteresis and preserved phase between gaits. Playback scales with actual movement speed each authority tick, with independent mixers and crossfades between idle, walk and run. `animation.ts` adapts world-space bone rotations between the different bind poses without copying source limb lengths. Clips are cached per model; horizontal root motion is removed so the simulation retains control of movement. Pausing freezes animation playback.
 
@@ -80,9 +91,10 @@ A local Node measurement on October 31, 2026 ran ten seeds × 6,000 ticks per pa
 
 ## Surfaces and decals
 
-The map uses shared tiled materials for concrete panels, ribbed metal, asphalt and workshop checker flooring. `UVMapping` is a built-in Geometry modifier: `unitsPerTile` sets a consistent local texture density across box faces, including the node's own authored scale. Material `repeat: true` enables wrapping; `repeatCount` and `offset` remain available for extra tiling and alignment. Ancestor scaling is not included by this UV modifier.
-
-`Decal` uses Three.js `DecalGeometry`: add a decal node as a child of its target Geometry or static Model node. Transform places/rotates the projector relative to that parent; `size` is [width, height, depth]. Geometry is clipped to the parent's own mesh surfaces, including compound models, and ignores separate child nodes. Keep projection depth shallow to avoid the reverse face of thin objects. Existing floor marks and crate labels now live under their target nodes. Projected geometry rebuilds when relative transforms or source geometry change, and follows parent motion without rebuilding. Skinned/instanced targets and shader-only displacement are not supported. `depthBias`, alpha textures and `renderOrder` remain available; decals do not add colliders.
+The map uses shared tiled materials for concrete, metal, asphalt and checker
+flooring. Labels and floor marks are children of their target meshes. See
+[surface mapping and decals](../../../COMPONENTS.md#surface-mapping-and-decals)
+for the reusable component contracts.
 
 The original SVG texture/decal assets in `/textures/fps/` regenerate with `node scripts/generate-fps-surfaces.mjs`. Existing checker textures and ground normals are reused. Add new assets to the picker with `node docs/public/generate-manifest.mjs`.
 
@@ -108,9 +120,9 @@ Weapon recoil is gameplay state: authority accumulates vertical kick on accepted
 
 Character floor rings have been removed; the small overhead team indicators remain. Combat particle materials use Three's `MeshBasicNodeMaterial` and TSL for per-instance opacity. Texture masks are canvas-generated and particle motion is currently CPU-updated in fixed-capacity presentation pools, not a GPU compute simulation.
 
-## Authority/replay audit
+## Authority and replay
 
-Snapshot schema 3 includes raw vertical aim (`pitch`), an owned gait state (walk/run/idle, cycle phase, cumulative contacts), and continuous `crouchAmount` / `aimAmount` transition progress. Older snapshot recordings are rejected rather than replayed with missing stance timing. Positions, heading, aim stance, recoil, ammunition, health, deaths/respawn, throw timing, projectiles, shots and explosion results come from authority. Bots aim vertically at the target's current stance and share player movement/fire rules. Conflicting sprint/fire/aim/crouch intent is resolved in those rules. Remote gun pitch uses saved aim plus recoil. Live mouse sensitivity and key mapping remain client input collection; only immediate local look is predicted. Replay view ignores device input entirely. Crouch animation sampling uses saved simulation time.
+Snapshot schema 4 includes raw vertical aim (`pitch`), an owned gait state (walk/run/idle, cycle phase, cumulative contacts), and continuous `crouchAmount` / `aimAmount` transition progress. Older snapshot recordings are rejected rather than replayed with missing stance timing. Positions, heading, aim stance, recoil, ammunition, health, deaths/respawn, throw timing, projectiles, shots and explosion results come from authority. Bots aim vertically at the target's current stance and share player movement/fire rules. Conflicting sprint/fire/aim/crouch intent is resolved in those rules. Remote gun pitch uses saved aim plus recoil. Live mouse sensitivity and key mapping remain client input collection; only immediate local look is predicted. Replay view ignores device input entirely. Crouch animation sampling uses saved simulation time.
 
 `MatchAuthority(seed, humanActorIds, saveFrame?)` emits an owned snapshot initially and after every authority tick when a sink is supplied. `LocalSession(seed, saveFrame?)` exposes that same optional hook. Core sessions allocate no recording frames unless a sink is supplied; the demo killcam supplies a bounded history sink. Save these frames rather than polling the HUD: transient shots and explosions could otherwise be missed. The schema retains results, so playback does not rerun AI, random spread, collisions or damage.
 
@@ -140,18 +152,25 @@ Open `/demo/fps/editor` (or **Edit Map** from the game menu), then expand **Map 
 
 The match authority compiles these markers when loading the map and uses the team’s authored point order for both initial placement and respawns (wrapping when there are fewer points than actors). Saved map changes take effect in a newly loaded match, not mid-match; export/save editor changes back to the map document. This is deterministic placement, not enemy-aware safe-spawn selection. Spawn configuration stays on the authority; clients and killcams receive the resulting actor transforms through existing snapshots.
 
-Bots react after 0.35–0.6 seconds, fire 0.35-second bursts with 0.55-second pauses, and track with smooth angular error and limited turning speed. A brief 0.25-second last-seen aim hold prevents cover-edge visibility changes from alternating aim and navigation headings every tick; firing still requires current line of sight. Bot commands and recoil execute in the authority, and snapshots retain their resulting poses. Killcam camera position/aim now interpolate between the same authority ticks as world characters; it never runs bot controllers again.
+## Gameplay rules
 
-Bots request aim while tracking a target and request crouch beyond 11 m (retaining that preference down to 9 m) only when the proposed crouched eye height has clear sight. Aim and crouch are independent intents, so low cover permits standing aim. There is no bot-only scope timer, cooldown or periodic scoping schedule. Controllers do not write resolved stance; the shared actor rules own transitions and movement restrictions. Firing still requires current visibility.
+[shared/protocol.ts](shared/protocol.ts) owns movement, stance, weapon and health
+constants; [match.ts](fakeserver/match.ts) applies them for every actor. Crouch and
+aim reverse from current progress, overhead clearance gates standing, and
+conflicting sprint/fire/reload/throw intents resolve in authority rules. Health
+recovery runs after accepted damage; replay consumes saved HP rather than
+recalculating it. Keep tuning in those sources rather than in presentation code.
 
-Movement uses the same compact authority rules for humans and bots. Hold crouch to lower in 160 ms; release to stand in 140 ms when overhead clearance allows. Crouch and aim reverse immediately from their current progress. Walking speed blends toward 1.8 m/s while crouching and 2.7 m/s while aiming; eye height, hit volumes and weapon offsets follow the same crouch progress. Forward sprint reaches 7 m/s when upright, with aim, fire, reload and throwing taking priority. Sideways/backward movement stays at walking speed, and diagonal input is normalized. Jump requires a grounded, upright capsule. Aim-in/out takes 160/120 ms; reload and throw interrupt aim. Snapshots retain stance progress for replay, and character fades use the same timing constants.
+[BotController](fakeserver/bot/controller.ts) owns navigation, retained targets and
+reaction policy and supplies intent only. It shares actor rules with human input;
+it does not write resolved stance or combat outcomes. Controller-parity tests
+feed equivalent intent through both paths and compare resulting ticks.
 
-Health recovery is authoritative for all actors: after five seconds without accepted damage, living actors regain 25 HP/second up to 100. Any new damage restarts the delay; respawn resets it. Snapshots already carry the resulting health, so replay never recalculates healing. The live first-person HUD shows rounded-up HP and a red edge vignette proportional to missing health; it fades during recovery and follows the recorded viewpoint actor during killcam.
+Snapshots and recording callbacks receive owned copies, including nested gait
+state and shot endpoints. Serialization copies public fields explicitly, so new
+server-only fields do not silently enter the protocol. Compiled world data and
+rule constants are shared locally but are not gameplay snapshots.
 
-Health rules live in `HEALTH_RULES`. Bullets and explosions both call `applyDamage`, which validates damage, applies protection/team rules, resets the recovery delay only on accepted damage, and returns actual HP removed. Lethal bookkeeping runs once; recovery runs after all damage sources. Neither path checks human/bot ownership. Replays copy saved HP, deaths and shields without invoking damage or regeneration.
+## Verification
 
-Bot route buffers, repath timers, flank progress and retained targets belong to each `BotController`, not the shared actor state. Controllers only read the world and produce intent; dead controllers clear their navigation memory for respawn. The authority copies every controller’s command into reusable validated buffers with the same axis, look and boolean limits. Only human packet handling buffers action edges and checks sequences/timeouts. A parity test feeds identical bot intent through human packet slots and compares every resulting world tick against direct bot control.
-
-Client snapshots and recording callbacks receive owned copies, including nested gait state and shot endpoints. A regression test corrupts those copies and confirms subsequent server snapshots and simulation remain identical. `KillcamSession.liveState` exposes the copied live snapshot; its underlying session and connection use JavaScript private fields. The loopback connection is an in-process API boundary, not a security boundary against code executing in the same browser.
-
-The local demo uses one shared, unfrozen copy of compiled world data and rule/timing constants in `shared/` for development; this data is not included in gameplay snapshots. Match state and client snapshots retain their ownership boundary. Snapshot serialization explicitly copies public fields for actors, gait, shots, grenades and explosions, so adding server-only fields does not silently expand the client protocol.
+`docs/tests/fps.test.mjs` covers wall and friendly shot occlusion, spawn shields, ammunition, score termination, navigation through doors, collision, reload, respawn and a deterministic full bot match. Run with the existing `npm test` command.

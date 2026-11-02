@@ -1,13 +1,14 @@
-Generated with the built-in imagegen tool from the corresponding *-512.jpg albedo references. These are inferred relief maps, not measured/scanned normals. Rock retains its authored normal texture. The terrain renderer samples these as linear data and shares each texture across tiles. Unlike procedural tile maps, these three reusable material assets belong in source control.
+# Terrain normal-map provenance
 
-### grass
+Grass, dirt and sand normals were generated with ImageGen from their matching
+`*-512.jpg` albedo references. They are inferred relief maps rather than scans.
+Rock retains its authored normal texture.
 
-Use case: precise-object-edit. Asset type: production game texture, tangent-space OpenGL normal map (+Y), square 1024x1024 opaque PNG. Input image is the exact grass albedo texture to match. Produce ONLY its corresponding NORMAL MAP: preserve spatial arrangement and UV alignment of every feature, no rotation/crop/perspective changes. Infer plausible shallow surface relief, do not turn baked shadows or color changes into deep holes. Flat normal RGB (128,128,255), encode normalized signed X into R, signed upward texture Y into G, positive Z into B. Blue-violet technical data with balanced red/green directional slopes, no albedo colors, no lighting/shadows/highlights, text, legend, borders or presentation. Seamless repeating edges, no low-frequency tilt. Fine overlapping grass blades with modest curved relief, detailed but low amplitude, not large mounds. Output a usable normal texture, not a rendered material preview.
+The generated maps are opaque 1024×1024 PNGs using tangent-space OpenGL (+Y)
+normals. They preserve the albedo's UV alignment and repeating edges, with shallow
+relief: grass blades, compacted dirt and pebbles, and especially subtle sand grain.
+Flat normal is RGB (128, 128, 255); the images contain no albedo or baked lighting.
 
-### dirt
-
-Use case: precise-object-edit. Asset type: production game texture, tangent-space OpenGL normal map (+Y), square 1024x1024 opaque PNG. Input image is the exact dirt albedo texture to match. Produce ONLY its corresponding NORMAL MAP: preserve spatial arrangement and UV alignment of every feature, no rotation/crop/perspective changes. Infer plausible shallow surface relief, do not turn baked shadows or color changes into deep holes. Flat normal RGB (128,128,255), encode normalized signed X into R, signed upward texture Y into G, positive Z into B. Blue-violet technical data with balanced red/green directional slopes, no albedo colors, no lighting/shadows/highlights, text, legend, borders or presentation. Seamless repeating edges, no low-frequency tilt. Shallow compacted earth grain, tiny pebbles and pits aligned to reference, moderate restrained relief. Output a usable normal texture, not a rendered material preview.
-
-### sand
-
-Use case: precise-object-edit. Asset type: production game texture, tangent-space OpenGL normal map (+Y), square 1024x1024 opaque PNG. Input image is the exact sand albedo texture to match. Produce ONLY its corresponding NORMAL MAP: preserve spatial arrangement and UV alignment of every feature, no rotation/crop/perspective changes. Infer plausible shallow surface relief, do not turn baked shadows or color changes into deep holes. Flat normal RGB (128,128,255), encode normalized signed X into R, signed upward texture Y into G, positive Z into B. Blue-violet technical data with balanced red/green directional slopes, no albedo colors, no lighting/shadows/highlights, text, legend, borders or presentation. Seamless repeating edges, no low-frequency tilt. Very subtle fine sand grain and soft shallow ripple relief aligned to reference; mostly near-flat blue, weakest amplitude of the three. Output a usable normal texture, not a rendered material preview.
+The terrain renderer samples them as linear data and shares each texture across
+tiles. Keep these reusable material assets in source control. Procedural demo
+height/weight maps follow the separate [generation workflow](../../../../app/demo/terrain/README.md#rebuild-the-sample-maps).

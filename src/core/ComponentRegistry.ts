@@ -5,7 +5,7 @@ import type { GameObject } from "./types.js";
 
 /** Props every component View receives from the renderer. */
 export interface ComponentViewProps<P = Record<string, unknown>> {
-	/** This component's own data from the prefab JSON. */
+	/** This component's properties with schema defaults resolved. */
 	properties: IsAny<P> extends true ? P : Required<P>;
 	/** False while disabled or preparing; Views that opt into staying mounted must gate behavior with this value. */
 	enabled: boolean;
@@ -17,7 +17,8 @@ export type { NodeInteractionHandlers } from "./nodeInteractions.js";
 
 export interface ComponentEditorProps<P extends object = Record<string, any>> {
 	node: GameObject;
-	properties: P;
+	/** Properties with schema defaults resolved, as in the runtime View. */
+	properties: IsAny<P> extends true ? P : Required<P>;
 	update: (patch: Partial<P>) => void;
 }
 
@@ -102,6 +103,8 @@ export interface ComponentGeometryModifier<P extends object> {
 
 export interface Component<P extends object = Record<string, any>> extends ComponentRendering<P>, ComponentGeometryModifier<P> {
     name: string;
+    /** Scene components configure only the outer document root, outside the node tree. */
+    scope?: 'scene';
     /** Editor grouping only; defaults to Misc. */
     category?: ComponentCategory;
     description?: string;
@@ -159,11 +162,13 @@ export function resolveComponentProperties<P extends object>(
 	component: Component<P> | undefined,
 	properties: P,
 ): P {
-	return { ...getComponentDefaultProperties(component, properties), ...properties } as P;
+	// Undefined is an unset field, including patches made before JSON serialization.
+	const authored = Object.fromEntries(Object.entries(properties).filter(([, value]) => value !== undefined));
+	return { ...getComponentDefaultProperties(component, authored), ...authored } as P;
 }
 
-export function canAddComponentToNode(node: GameObject, component: Component<any> | undefined, allComponents = REGISTRY) {
-	if (!component) return false;
+export function canAddComponentToNode(node: GameObject, component: Component<any> | undefined, allComponents = REGISTRY, rootId?: string) {
+	if (!component || component.scope === 'scene' && node.id !== rootId) return false;
 	const group = component.exclusive;
 	if (!group) return true;
 

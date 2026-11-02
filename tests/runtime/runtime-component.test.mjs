@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { act, createElement as h, StrictMode } from 'react';
-import { createRoot } from '@react-three/fiber';
+import { createRoot, useFrame } from '@react-three/fiber';
 import { Object3D, PerspectiveCamera } from 'three';
 import CameraFollowComponent from '../../src/runtime/components/CameraFollowComponent.tsx';
 import RuntimeComponent from '../../src/runtime/components/RuntimeComponent.tsx';
@@ -126,19 +126,21 @@ test('script data and state are isolated between instances and authored JSON sta
 test('component lifecycle maps live R3F state, retains properties and runs before default frame consumers', async t => {
     let context;
     const observed = [];
+    function View(props) {
+        useFrame(() => observed.push(fixture.object.position.x));
+        return h(RuntimeComponent.View, props);
+    }
     const fixture = await mount(t, {
         data: { speed: 1 },
         setup: 'prefab.record(context); state.count = 0;',
         update: 'state.count++; object.position.x += data.speed * delta;',
-    });
+    }, RuntimeComponent, View);
     await fixture.render();
     context = fixture.calls[0];
     const camera = new PerspectiveCamera();
     fixture.store.getState().set({ camera });
     assert.equal(context.three, fixture.store.getState());
     assert.equal(context.three.camera, camera);
-    const unsubscribe = fixture.store.getState().internal.subscribe({ current: () => observed.push(fixture.object.position.x) }, 0, fixture.store);
-    t.after(unsubscribe);
     fixture.frame(0.5);
     await fixture.render({}, { ...fixture.properties, data: { speed: 3 } });
     fixture.frame(0.5);

@@ -5,8 +5,7 @@ import { BoxGeometry, AudioContext, Group, Mesh } from 'three';
 import { roughenGeometry } from '../app/demo/parkour/components/WeatheredGeometryComponent.ts';
 import { MeshStandardNodeMaterial } from 'three/webgpu';
 import { applyProps, createRoot, extend } from '@react-three/fiber';
-import { MaterialComponent } from '../../src/viewer/index.ts';
-import { ConcreteMaterialComponent, createConcreteMaterialOverrides } from '../app/demo/parkour/components/ConcreteMaterialComponent.tsx';
+import { ConcreteSurfaceComponent, createConcreteSurfaceOverrides } from '../app/demo/parkour/components/ConcreteSurfaceComponent.tsx';
 import { act, createElement as h } from 'react';
 import { PrefabRoot, createPrefabStore, registerComponent, useSceneComponents } from 'react-three-game/viewer';
 import { CollisionSurfaceComponent, COLLISION_SURFACE, resolveCollisionSurfaceSize, useCollisionWorld } from '../app/demo/parkour/components/CollisionSurfaceComponent.tsx';
@@ -56,7 +55,7 @@ describe('Geometry', () => {
 
 describe('Materials', () => {
     test('concrete variations share a shader while uniforms follow the current material', () => {
-        const create = properties => applyProps(new MeshStandardNodeMaterial(), createConcreteMaterialOverrides(properties));
+        const create = ({ weathering, scale, ...base }) => applyProps(new MeshStandardNodeMaterial(base), createConcreteSurfaceOverrides({ weathering, scale }));
         const first = create({ color: '#89816a', weathering: 1, scale: 1, roughness: 0.96 });
         const second = create({ color: '#334455', weathering: 0.2, scale: 3, roughness: 0.5 });
         assert.equal(first.customProgramCacheKey(), second.customProgramCacheKey());
@@ -77,11 +76,12 @@ describe('Materials', () => {
         second.dispose();
     });
 
-    test('ConcreteMaterial extends the regular Material contract',()=>{
-        assert.equal(ConcreteMaterialComponent.name,'ConcreteMaterial');
-        assert.equal(ConcreteMaterialComponent.slot,MaterialComponent.slot);
-        assert.equal(ConcreteMaterialComponent.properties.name,MaterialComponent.properties.name);
-        assert.equal(ConcreteMaterialComponent.properties.attach,MaterialComponent.properties.attach);
+    test('concrete surface effects leave base material settings untouched',()=>{
+        const material = new MeshStandardNodeMaterial({ color: '#334455', roughness: 0.4 });
+        applyProps(material, createConcreteSurfaceOverrides({ weathering: 0.2, scale: 3 }));
+        assert.equal(material.color.getHexString(), '334455');
+        assert.equal(material.roughness, 0.4);
+        material.dispose();
     });
 });
 
@@ -245,4 +245,38 @@ test('running gait opposes arms and legs, bends elbows, and resets independently
     assert.equal(replay.joints.get('left-forearm').rotation.x, 0.15);
     assert.equal(Math.abs(replay.joints.get('left-arm').rotation.y), 0);
     assert.equal(Math.abs(replay.joints.get('left-forearm').rotation.z), 0);
+});
+
+test('named concrete surfaces share resources and follow edits to the Material definition', async t => {
+    extend({ Group, Mesh }); globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+    registerComponent(ConcreteSurfaceComponent);
+    const canvas = { width: 100, height: 100, style: {}, addEventListener() {}, removeEventListener() {} };
+    const root = createRoot(canvas);
+    await root.configure({ gl: { render() {}, setSize() {}, setPixelRatio() {}, domElement: canvas },
+        size: { width: 100, height: 100, top: 0, left: 0 }, frameloop: 'never' });
+    t.after(async () => { await act(async () => root.unmount()); });
+    const document = createPrefabStore({ root: { id: 'world', children: [
+        { id: 'definition', components: { material: { type: 'Material', properties: { name: 'concrete', color: '#334455', roughness: 0.4 } } } },
+        ...['first', 'second'].map(id => ({ id, components: {
+            surface: { type: 'ConcreteSurface', properties: { weathering: 0.5 } },
+            geometry: { type: 'Geometry', properties: {} },
+            material: { type: 'Material', properties: { name: 'concrete' } },
+        } })),
+    ] } });
+    let store;
+    await act(async () => { store = root.render(h(PrefabRoot, { store: document })); });
+    const meshes = [];
+    store.getState().scene.traverse(object => { if (object.isMesh) meshes.push(object); });
+    assert.equal(meshes.length, 2);
+    assert.equal(meshes[0].material, meshes[1].material);
+    assert.equal(meshes[0].material.color.getHexString(), '334455');
+    assert.equal(meshes[0].material.roughness, 0.4);
+    assert.equal(meshes[0].material.userData.weathering, 0.5);
+    await act(async () => document.getState().updateNode('definition', node => ({ ...node, components: {
+        material: { type: 'Material', properties: { name: 'concrete', color: '#aa8866', roughness: 0.8 } },
+    } })));
+    assert.equal(meshes[0].material, meshes[1].material);
+    assert.equal(meshes[0].material.color.getHexString(), 'aa8866');
+    assert.equal(meshes[0].material.roughness, 0.8);
+    assert.equal(meshes[0].material.userData.weathering, 0.5);
 });

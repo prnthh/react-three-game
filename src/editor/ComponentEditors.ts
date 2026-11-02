@@ -1,13 +1,13 @@
 import type { FC } from "react";
 import type { Component, ComponentEditorProps } from "../core/ComponentRegistry.js";
 
-const editors = new Map<string, FC<ComponentEditorProps<any>>>();
+const editors = new Map<string, FC<any>>();
 
 /** Register inspector UI separately so exported games never import it. */
 export function registerComponentEditor<P extends object>(component: Component<P>, Editor: FC<ComponentEditorProps<P>>) {
     editors.set(component.name, Editor);
 }
 
-export function getComponentEditor(name: string) {
+export function getComponentEditor(name: string): FC<ComponentEditorProps<any>> | undefined {
     return editors.get(name);
 }

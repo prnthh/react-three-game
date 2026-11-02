@@ -45,8 +45,8 @@ environment lighting. `backgroundIntensity` and `backgroundBlurriness` affect
 only the visible sky; material roughness controls reflection blur. Set
 `background: false` to retain lighting/reflections without showing the sky.
 
-`Environment` uses `frames={1}` to capture a static map once per mount. Changes to
-environment settings or visual assets refresh the capture. Use it for stable sky
+`Environment` defaults to `frames: 1`: one capture after its child content changes.
+Use `frames: 0` for continuous capture. Use a finite count for stable sky
 and reflection lighting; the main scene continues rendering every frame.
 
 ## Surface response
@@ -57,13 +57,38 @@ for concrete or clay. Start around `0.7` for matte masonry and leave it at `0`
 for smooth surfaces. Transmission, thickness and IOR use the same physical material.
 These values remain editable and serialize with the prefab.
 
-The home city combines warm directional light, cool environment fill, cascaded
-shadows and the demo's shared ambient-occlusion pass. Its scene and materials stay
-in `public/prefabs/brutalist-city`; it needs no separate shadow-following behavior.
+## Authored sky, probes and render settings
+
+The built-in `DiffuseLightProbe` projects authored sky/ground colors into nine
+spherical-harmonic coefficients. Its `directionality` and world-space `axis`
+approximate canyon openings. This is scene-wide diffuse lighting, not a geometry
+bake or local probe volume. `Environment` supplies the separate reflection capture
+from an authored `Sky` child. Both remain static until their authored inputs change.
+
+`Sky` exposes sun position, size, turbidity, Rayleigh and Mie scattering, and sun
+disc visibility. Its sun does not create a light; use `DirectionalLight` for shadows.
+`RenderSettings` on the scene root supplies optional tone mapping, exposure,
+output color space and shadow overrides in Edit and Play. Unspecified fields keep
+the renderer defaults; removing an override restores the previous value.
+
+A separate root `PostProcessing` component enables ambient occlusion and bloom.
+Without enabled effects, rendering uses the normal Three.js path. Enabled effects
+share their final composition with scene captures and shader preparation. These
+components use ordinary inspector fields, agent commands and JSON serialization.
+
+`ClusteredLighting` on the scene root opts into Three's clustered-lighting addon
+for scenes with many point and spot lights. Its schema exposes light capacity
+and cluster sizes. Without it, Three's ordinary lighting remains in use.
+
+These settings are part of the scene document, so a viewer and editor can use
+the same authored appearance. For mesh batch cells and static-prefab residency, see [ChunkSettings](PREFABS.md#automatically-stream-static-scenery).
 
 ## Shadows
 
-Enable `castShadow` on a light and the relevant meshes. Use one primary shadow caster first; add more only when the scene needs them.
+Enable renderer shadows with `RenderSettings.shadows: true` on the document
+root, or through the host canvas. Also enable `castShadow` on the light and
+casters, and `receiveShadow` on receiving meshes. Use one primary shadow caster
+first; add more only when the scene needs them.
 
 Keep `shadowAutoUpdate: true` for moving lights or casters. For static scenes,
 set it to `false` and refresh the Three light after changing geometry or lighting:

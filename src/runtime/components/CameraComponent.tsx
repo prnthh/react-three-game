@@ -62,7 +62,7 @@ function CameraComponentView({ properties, enabled, children }: ComponentViewPro
     useHelper(editMode && isSelected ? cameraRef : null, CameraHelper);
 
     const editorGizmo = editMode ? (
-        <>
+        <group userData={{ editorHelper: true }}>
             <mesh>
                 <boxGeometry args={[0.3, 0.3, 0.5]} />
                 <meshBasicMaterial color={'#22d3ee'} wireframe />
@@ -71,7 +71,7 @@ function CameraComponentView({ properties, enabled, children }: ComponentViewPro
                 <coneGeometry args={[0.08, 0.16, 16]} />
                 <meshBasicMaterial color={'#22d3ee'} wireframe />
             </mesh>
-        </>
+        </group>
     ) : null;
 
     if (projection === 'orthographic') {

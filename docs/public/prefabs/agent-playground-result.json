@@ -1,0 +1,65 @@
+{
+  "name": "Agent playground",
+  "root": {
+    "id": "root",
+    "name": "Scene",
+    "children": [
+      {
+        "id": "concrete-block",
+        "name": "Concrete Block",
+        "components": {
+          "geometry": {
+            "type": "Geometry",
+            "properties": {
+              "args": [
+                4,
+                0.5,
+                3
+              ]
+            }
+          },
+          "material": {
+            "type": "Material",
+            "properties": {
+              "name": "Concrete",
+              "materialType": "standard",
+              "color": "#808080",
+              "roughness": 1,
+              "metalness": 0
+            }
+          }
+        }
+      },
+      {
+        "id": "sun",
+        "name": "Sun",
+        "components": {
+          "light": {
+            "properties": {
+              "castShadow": true,
+              "intensity": 2,
+              "targetOffset": [
+                0,
+                -8,
+                -5
+              ]
+            },
+            "type": "DirectionalLight"
+          }
+        }
+      },
+      {
+        "id": "ambient",
+        "name": "Ambient",
+        "components": {
+          "light": {
+            "properties": {
+              "intensity": 0.4
+            },
+            "type": "AmbientLight"
+          }
+        }
+      }
+    ]
+  }
+}

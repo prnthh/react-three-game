@@ -3,7 +3,8 @@ import type { ComponentEditorProps } from '../../core/ComponentRegistry.js';
 import { BooleanField, FieldGroup, StringField } from '../ui/Input.js';
 import type { MeshProperties } from "../../runtime/rendering/meshProperties.js";
 
-type MeshFieldsProps = Pick<ComponentEditorProps<MeshProperties>, 'properties' | 'update'> & {
+type MeshFieldsProps = Pick<ComponentEditorProps<MeshProperties>, 'update'> & {
+    properties: MeshProperties;
     instancing?: boolean;
     frustumCulledDefault?: boolean;
 };

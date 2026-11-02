@@ -38,7 +38,7 @@ export const EMPTY_NODE_COMPONENTS: AnalyzedNodeComponents = {
     },
 };
 
-export function analyzeNodeComponents(node: GameObjectType, lookup = getComponent): AnalyzedNodeComponents {
+export function analyzeNodeComponents(node: GameObjectType, lookup = getComponent, scope: 'node' | 'scene' = 'node'): AnalyzedNodeComponents {
     const componentMap = node.components ?? {};
     const composition: CompositionComponent[] = [];
     let clickEvent: ClickEventConfig = EMPTY_NODE_COMPONENTS.clickEvent;
@@ -56,7 +56,7 @@ export function analyzeNodeComponents(node: GameObjectType, lookup = getComponen
                 scale: properties.scale ?? [1, 1, 1],
             };
         }
-        if (!registeredComponent || !registeredComponent.View) continue;
+        if (!registeredComponent || !registeredComponent.View || (registeredComponent.scope === 'scene') !== (scope === 'scene')) continue;
 
         composition.push({
             key,

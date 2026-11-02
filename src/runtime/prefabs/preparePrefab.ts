@@ -10,7 +10,6 @@ export interface PreparedPrefab {
     readonly document: PrefabState;
     readonly documentCount: number;
     readonly assetCount: number;
-    readonly durationMs: number;
 }
 export interface PrefabPreparationOptions { basePath?: string; signal?: AbortSignal; }
 export interface PrefabPreparationRuntime {
@@ -25,7 +24,6 @@ export async function preparePrefab(
     path: string | PrefabState,
     { basePath = '', signal }: PrefabPreparationOptions = {},
 ): Promise<PreparedPrefab> {
-    const started = performance.now();
     type Source = string | Prefab | PrefabState;
     const documents = new Map<Source, Promise<PrefabState>>();
     const assets = new Map<string, Promise<unknown>>();
@@ -100,7 +98,7 @@ export async function preparePrefab(
         check();
         return {
             document: await documents.get(rootSource)!, documentCount: documents.size,
-            assetCount: assets.size, durationMs: performance.now() - started,
+            assetCount: assets.size,
         };
     };
     let onAbort = () => {};

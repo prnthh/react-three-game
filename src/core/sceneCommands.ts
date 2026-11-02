@@ -65,7 +65,7 @@ function component(value: unknown) {
         } else if (typeof value !== (type === 'color' ? 'string' : type)) throw new Error(`Invalid ${key}: expected ${type}.`);
     }
 }
-function validateNode(node: GameObject, ids: Set<string>, existing?: PrefabState["nodesById"]) {
+function validateNode(node: GameObject, ids: Set<string>, existing?: PrefabState["nodesById"], rootId = node.id) {
     record(node, 'node');
     keys(node as unknown as Record<string, unknown>, ['id', 'name', 'hidden', 'disabled', 'locked', 'packed', 'components', 'children']);
     id(node.id);
@@ -79,14 +79,16 @@ function validateNode(node: GameObject, ids: Set<string>, existing?: PrefabState
         for (const [key, value] of Object.entries(components)) {
             id(key);
             component(value);
-            const group = getComponent(value!.type)!.exclusive;
+            const definition = getComponent(value!.type)!;
+            if (definition.scope === 'scene' && node.id !== rootId) throw new Error(`${definition.name} belongs on the scene root.`);
+            const group = definition.exclusive;
             if (group && groups.has(group)) throw new Error(`Node "${node.id}" has multiple components in exclusive group "${group}".`);
             if (group) groups.add(group);
         }
     }
     if (children !== undefined) {
         if (!Array.isArray(children)) throw new Error('children must be an array.');
-        children.forEach(child => validateNode(child, ids, existing));
+        children.forEach(child => validateNode(child, ids, existing, rootId));
     }
 }
 function validatePrefab(value: unknown) {
@@ -137,7 +139,7 @@ export function evaluateSceneCommandState(initial: PrefabState, input: unknown):
             }
             if (command.op === 'add') {
                 lookup(command.parentId);
-                validateNode(command.node, new Set(), state.nodesById);
+                validateNode(command.node, new Set(), state.nodesById, state.rootId);
                 document.add(command.node, command.parentId);
                 created.push(...collectSubtreeIds(command.node.id, staging.getState().childIdsById));
                 changed.add(command.node.id);
@@ -149,7 +151,7 @@ export function evaluateSceneCommandState(initial: PrefabState, input: unknown):
                 case 'replaceNode': {
                     const replaced = new Set(collectSubtreeIds(node.id, state.childIdsById));
                     const replacementIds = new Set<string>();
-                    validateNode(command.node, replacementIds);
+                    validateNode(command.node, replacementIds, undefined, node.id === state.rootId ? command.node.id : state.rootId);
                     for (const replacementId of replacementIds) {
                         if (!replaced.has(replacementId) && Object.hasOwn(state.nodesById, replacementId)) {
                             throw new Error(`Duplicate node ID "${replacementId}".`);
@@ -177,7 +179,7 @@ export function evaluateSceneCommandState(initial: PrefabState, input: unknown):
                         children: state.nodesById[sourceId].packed ? undefined : state.childIdsById[sourceId].map(copy),
                     });
                     const duplicated = copy(node.id);
-                    validateNode(duplicated, new Set(), state.nodesById);
+                    validateNode(duplicated, new Set(), state.nodesById, state.rootId);
                     document.add(duplicated, destination);
                     created.push(...collectSubtreeIds(duplicated.id, staging.getState().childIdsById));
                     changed.add(duplicated.id);
@@ -215,7 +217,7 @@ export function evaluateSceneCommandState(initial: PrefabState, input: unknown):
                         component(command.component);
                         components[command.key] = command.component;
                     }
-                    validateNode({ ...node, components }, new Set());
+                    validateNode({ ...node, components }, new Set(), undefined, state.rootId);
                     update({ ...node, components });
                     break;
                 }

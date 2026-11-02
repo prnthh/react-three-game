@@ -75,10 +75,94 @@ Terrain surfaces register `TERRAIN_SURFACE_COMPONENT` on their owning node. Game
 - File-drop import and asynchronous model replacement live in `PrefabEditor.tsx`.
 - Runtime component and inspector registrations do not have the reactive replacement/unload lifecycle of editor tools.
 
-## Terrain and physics
+## Terrain tool example
 
-Terrain painting lives in one `TerrainPaintTool.tsx` module: viewport behavior, panel, typed settings, and its exported definition. Built-in editor setup registers the definition explicitly. Importing the painting implementation alone does not register a global tool. Views read settings with `useEditorToolSession`.
+[TerrainPaintTool](../src/editor/terrain/TerrainPaintTool.tsx) is a complete
+registered tool with viewport behavior, panel and typed settings. Built-in
+editor setup registers it explicitly. Terrain painting and collision setup are
+documented in the [workshop guide](app/demo/terrain/README.md); physics scheduling
+belongs to the runtime adapter.
 
-`createColliderResidencyScheduler` is exported by the Crashcat plugin for collider sets beyond terrain. Callers provide `activeLimit`, candidates `{ id, revision, distance }`, an asynchronous `build`, and synchronous `activate`/`deactivate` callbacks. It serializes preparation, caches shapes, rejects stale results, and selects by distance with stable ID ties. `TerrainPhysicsRuntime` supplies world-space terrain bounds and requires the host to choose `activeLimit`; the workshop mounts it with `activeLimit={2}`. The policy knows nothing about heightmaps, React, workers, or cameras. This is an active-body budget, not a memory-limited streaming cache. Prepared shapes must be plain data; callers own any external resources.
+## Optional input values
 
-Keep the worker entry point separate: it is a distinct execution boundary required by the bundler. Keep the optional Crashcat inspector entry point separate to avoid pulling editor dependencies into runtime consumers. Terrain's world-to-map projection, four-material weight encoding, and atomic cross-tile persistence stay in the terrain tool. Extracting those into a universal brush framework would add contracts with no second consumer yet.
+`FieldRenderer` field definitions accept `allowUnset:true`. `initialValue` controls what Set writes;
+standard input types otherwise use a value appropriate to their type. Supply an
+`initialValue` for custom controls. The default component inspector enables this
+for properties whose schema default is undefined.
+
+Runtime Views and custom component inspectors receive properties with schema
+defaults already resolved. An `undefined` patch unsets a property and restores
+its schema default immediately; `0`, `false` and empty strings remain authored values.
+
+```tsx
+import { FieldRenderer, type FieldDefinition } from 'react-three-game/editor';
+
+type Settings = { exposure?: number };
+const fields = [{
+  name: 'exposure', label: 'Exposure', type: 'number',
+  allowUnset: true, initialValue: 1, min: 0,
+}] satisfies FieldDefinition<Settings>[];
+
+// <FieldRenderer fields={fields} values={settings} onChange={update} />
+```
+
+`NumberField`, `StringField`, `ColorField`, `BooleanField`, `SelectField`,
+`Vector3Field` and `NodeField` also accept `allowUnset`. Their fallback supplies the
+initial value. Use `UnsettableField` around custom input UI with `value`,
+`initialValue`, `label` and `onChange` for the same presentation and behavior.
+Only undefined means unset: zero, false and empty strings are authored values.
+Unsetting sends undefined through the normal change callback; JSON export omits
+that property. Required fields retain their ordinary controls.
+
+## Host-owned scene actions
+
+`PrefabEditorPanel` renders the library's Scene tools panel by default. A host
+can pass `sceneToolsPanel={<MySceneActions />}` to replace that area, or null to
+hide it. The replacement remains under the editor provider and can use
+`useEditorRef()` and `createSceneTools(scene)`.
+
+`SceneToolsPanel` accepts action `children` beside its button, plus controlled
+`open` / `onOpenChange` props when a host needs to coordinate multiple popovers.
+The docs editor uses these to add its chat client. Model endpoints, provider
+protocols, chat history and transcript UI belong to that application integration;
+the library supplies the scene API, discovery and structured tools.
+
+## Large authoring scenes
+
+Dense authoring hosts can wrap `PrefabEditorScene` in `NodeMountBudget` (from
+`react-three-game/viewer`) to bound initial Edit mounts per frame. It preserves
+the editor store and IDs and bypasses admission in Play, where prefab preparation
+owns activation. `PrefabInstance` accepts a normalized `document` as an alternative
+to `url`; both use dependency preparation, shader preparation and spatial streaming.
+Hosts with postprocessing can use `registerSceneCaptureRenderer(renderer, render)`
+so agent captures include the final composition; dispose the registration on cleanup.
+
+## Browser scene tools
+
+`PrefabEditor` exposes its scene agent through `window.scene` and, where supported,
+native `document.modelContext` following the
+[current WebMCP draft](https://webmachinelearning.github.io/webmcp/).
+`createSceneTools(scene)` supplies the shared structured catalog used by native
+registration and `SceneToolsPanel`. Each tool calls existing scene-agent methods;
+document validation, revision conflicts and undo remain in the editor store.
+Registration follows the editor lifetime and leaves unrelated page tools
+untouched. Unsupported browsers retain the local panel. `agentTools={false}` disables these editing interfaces.
+
+For catalog ownership and schema sources, see [architecture](ARCHITECTURE.md#browser-tool-ownership).
+
+Custom hosts can import `createSceneTools` or `registerSceneWebMCP` from
+`react-three-game/editor`. `registerSceneWebMCP(scene, document)` returns
+`{ ready, dispose }`; await `ready` for registration and call `dispose` during host
+cleanup. The default editor manages this lifetime automatically. Mount one
+agent-enabled editor per page. The panel can also be mounted under the editor
+context when composing a custom UI.
+
+
+## Asset previews
+
+Mount one `SharedCanvas` alongside the asset lists and single-asset viewers on a
+page. They register views into that canvas; adding a canvas per tile or list
+renders those views repeatedly. `PrefabEditorProvider` supplies the preview canvas
+for its inspectors. The asset viewer demo shows the standalone composition.
+Thumbnails and enlarged previews share loaded assets; model placements clone the
+object hierarchy and retain the shared geometry and materials.

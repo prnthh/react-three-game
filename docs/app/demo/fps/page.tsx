@@ -1,7 +1,7 @@
 "use client";
 import { blocks } from "./shared/world";
 import { Suspense, useEffect, useRef, useState, useCallback, useMemo } from "react";
-import { ACESFilmicToneMapping, Group } from "three";
+import { Group } from "three";
 import { idleCommand, LIMIT, HEALTH_RULES } from "./shared/protocol";
 import { KillcamSession } from "./session";
 import { SpatialAudio } from "./audio";
@@ -16,12 +16,13 @@ import { TouchControls } from "./components/TouchControls";
 import { CharacterComponent } from "./components/CharacterComponent";
 import { PlayerControllerComponent } from "./components/PlayerControllerComponent";
 import { SpawnPointComponent } from "./components/SpawnPointComponent";
-import { SessionContext, SessionDriver, RendererLighting, WorldAudio, MatchManagerComponent, type FPSSession } from "./components/SessionSystems";
+import { SessionContext, SessionDriver, WorldAudioComponent, MatchManagerComponent, type FPSSession } from "./components/SessionSystems";
 import { CombatEffects, GrenadeEffects, MuzzleContext } from "./components/CombatEffects";
 
 import "./style.css";
 
 registerComponent(MatchManagerComponent);
+registerComponent(WorldAudioComponent);
 registerComponent(PlayerControllerComponent);
 registerComponent(CharacterComponent);
 registerComponent(SpawnPointComponent);
@@ -168,13 +169,7 @@ export default function FPSPage() {
     seconds = Math.floor(match.time % 60);
   return (
     <main className={`fps${touchControls ? " fps-touch-mode" : ""}`} ref={host} onContextMenu={(e) => e.preventDefault()}>
-      <GameCanvas
-        camera={{ position: [0, 1.5, -21], fov: 76, near: 0.04, far: 150 }}
-        rendererConfig={{
-          toneMapping: ACESFilmicToneMapping,
-          toneMappingExposure: 1.05,
-        }}
-      >
+      <GameCanvas>
         <Suspense fallback={null}>
           <FPSScene
             runtime={runtime}
@@ -357,8 +352,6 @@ function FPSScene(props: FPSSession) {
     <SessionContext.Provider value={props}>
       <MuzzleContext.Provider value={muzzles}>
         <SessionDriver {...props} />
-        <RendererLighting />
-        <WorldAudio {...props} />
         <GrenadeEffects match={props.match} playing={props.playing} runtime={props.runtime} />
         <CombatEffects match={props.match} playing={props.playing} runtime={props.runtime} />
         <PrefabRoot id="fps" data={relayYardScene} basePath={BASE_PATH} />

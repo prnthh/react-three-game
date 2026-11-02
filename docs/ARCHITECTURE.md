@@ -1,7 +1,9 @@
 # Architecture and implementation patterns
 
-React Three Game handles rendering and scene authoring. The host application
-owns gameplay state, ticks, input, networking and persistence.
+React Three Game handles scene documents, component composition, rendering resources
+and authoring. Node behavior can live in registered component Views or trusted
+Runtime scripts. The host owns authoritative game state, simulation scheduling,
+input, networking and persistence.
 
 ```text
 Prefab data → document store → component views → R3F / Three objects
@@ -12,311 +14,74 @@ Prefab data → document store → component views → R3F / Three objects
 Start with the [README examples](../README.md) for rendering, components and editing.
 Use the patterns below when adding integrations or changing internals.
 
+## Documentation map
+
+| Reader task | Primary guide |
+| --- | --- |
+| First scene, editor and behavior | [README](../README.md) |
+| Prefab composition, loading and streaming | [Prefabs](PREFABS.md) |
+| Component views, live handles and host integration | [Components](COMPONENTS.md) |
+| Inspector controls and editor tools | [Editor extensions](editor-systems.md) |
+| Browser scene edits and tool calls | [Scene API](public/editor-scene-for-agents.md) |
+| Authored lighting and renderer settings | [Lighting](LIGHTING.md) |
+| Demo setup and application-specific behavior | [Examples](README.md) and each demo's README |
+
+## Library and application boundaries
+
+Keep reusable scene mechanisms in the library: document operations, resource
+loading, preparation, batching, distance residency and authored rendering features.
+Components expose editable configuration and own their effects and cleanup.
+When a setting is absent, preserve Three.js and host defaults instead of supplying
+a demo preset. Use existing React, R3F and Three.js behavior before introducing
+another manager or lifecycle.
+
+Keep world layout, travel policy, art presets, game rules and session wiring in
+the application. A demo component can be useful without becoming a built-in.
+Promote it when its contract is useful independently of the originating demo;
+remove fixed assumptions and give its resources a clear owner first. Authored
+scene settings belong in JSON when they need to travel between editor and viewer.
+Host JSX remains available for application integration and editor controls.
+
+## Scene composition
+
+JSON documents contain nodes with registered components. The document store owns
+authored state; mounted Three objects and component handles own live state.
+
+`PrefabRoot` establishes a document instance. `PrefabNode` resolves registered
+views and composes them inside the node's transform group. Views own their R3F
+objects, React effects and frame callbacks; the renderer does not schedule game
+rules. Component schemas supply defaults, generated inspector fields and agent
+discovery. See [component composition](COMPONENTS.md#change-a-component).
+
+`PrefabInstance` adds asset preparation, shader compilation and activation.
+Static placements may opt into spatial residency through authored
+`ChunkSettings`. See [loading and streaming](PREFABS.md#load-a-prefab).
+
+Root-scoped components configure the outer scene before ordinary nodes mount.
+Nested prefab copies inherit that scene configuration. Their own root settings
+do not override the enclosing scene. The inspector and command evaluator enforce
+root placement; see [authored rendering](LIGHTING.md#authored-sky-probes-and-render-settings).
+
 ## Demo organization
 
-Each demo's `page.tsx` owns setup, component registration, providers, and main
-scene composition. Keep demo-specific systems (movement, transitions, speech,
-scene definitions, and shared constants) in files alongside the page. Put custom
-prefab components and UI components in that demo's `components/` folder.
-Context-dependent orchestration can use a local function inside `page.tsx` so it
-runs beneath the providers it needs. For demos hosting multiple games, keep reusable
-behaviors in `components/` and game wiring in `games/<game>/`. Start scene definitions inline and pack reusable assemblies inside the document.
-Saved demos live in `docs/public/prefabs`: single-file demos at the top level,
-projects sharing prefab files in a project-named folder. See [stage](app/demo/stage/README.md).
+Each demo's `page.tsx` owns registration, providers and composition. Put custom
+components in that demo's `components/` folder and game-specific wiring alongside
+the page or under `games/<game>/`. Shared examples may import another demo's
+component without promoting it into the library.
 
-## Compose an inline prefab
+Start scenes inline; pack reusable assemblies within the document. Saved demo
+files follow the [prefab directory conventions](public/prefabs/README.md).
 
-Start with a small definition in the canvas module. This app places the same
-inline prefab twice; each `PrefabRoot` has its own document and local node IDs.
+## Browser tool ownership
 
-```tsx
-import { GameCanvas, PrefabRoot, type Prefab } from 'react-three-game/viewer';
+`sceneAgentKnowledge.ts` owns concepts and operation descriptions;
+`sceneTools.ts` binds them to structured tools and JSON examples. Browser
+registration, the local panel and the demo chat use that shared catalog.
+Component and command schemas remain the source of supported fields and defaults.
+The demo owns chat transport, connection preferences and conversation policy.
 
-const block: Prefab = {
-  root: { id: 'block', components: {
-    geometry: { type: 'Geometry', properties: { geometryType: 'box', args: [2, 3, 2] } },
-    material: { type: 'Material', properties: { color: '#aaa995' } },
-  } },
-};
-
-export function Blocks() {
-  return <div style={{ height: '100vh' }}>
-    <GameCanvas camera={{ position: [8, 5, 10] }}>
-      <ambientLight intensity={2} />
-      {[0, 4].map(x => <group key={x} position={[x, 1.5, 0]}>
-        <PrefabRoot id={`block-${x}`} data={block} />
-      </group>)}
-    </GameCanvas>
-  </div>;
-}
-```
-
-### Keep placements in the scene document
-
-To edit and save the placements together, embed `block` in `PrefabRef` components.
-Add this below `block`, then replace the mapped groups above with
-`<PrefabRoot data={scene} />`, or pass `scene` to `PrefabEditor`:
-
-```tsx
-const scene: Prefab = {
-  root: { id: 'world', children: [
-    { ...block.root, id: 'block', packed: true },
-    { id: 'block-copy', components: {
-      transform: { type: 'Transform', properties: { position: [4, 1.5, 0] } },
-      prefabref: { type: 'PrefabRef', properties: { prefabId: 'block' } },
-    } },
-  ] },
-};
-```
-
-**Pack as Prefab** marks the original node `packed: true`, keeping its components
-and children in the scene graph. **Duplicate** creates a `PrefabRef` pointing to
-that node's ID. Editing the packed subtree updates its copies; **Unpack Prefab**
-expands a copy for independent editing. The runtime derives its lookup from
-packed nodes. Relative asset URLs resolve against `basePath`.
-
-## Load a prefab
-
-When the block is useful across scenes, save its JSON as
-`public/prefabs/block.json`. Replace each reference’s properties with
-`{ url: '/prefabs/block.json' }`. The original can also become a node with a
-`PrefabRef` URL once its subtree is saved in that file.
-The placements and their transforms stay the same. Each reference gets local
-node IDs and shares rendering resources with compatible instances.
-
-### Prepare a streamed instance
-
-For host-controlled loading and activation, mount `PrefabInstance` inside your
-canvas. Using the saved block from the previous step:
-
-```tsx
-import { GameCanvas, PrefabInstance } from 'react-three-game/viewer';
-
-export function StreamedBlock() {
-  return <div style={{ height: '100vh' }}>
-    <GameCanvas camera={{ position: [8, 5, 10] }}>
-      <ambientLight intensity={2} />
-      <group position={[4, 1.5, 0]}>
-        <PrefabInstance id="block-1" url="/prefabs/block.json"
-          onStatus={status => console.log(status.phase)} />
-      </group>
-    </GameCanvas>
-  </div>;
-}
-```
-
-Loading prepares assets and pipelines before activation. The host mounts the
-instances it needs and unmounts them to release their objects; URL assets stay in
-the shared cache. `static` freezes placement and content for immutable chunks;
-remount to change either.
-
-Prefab nodes mount through React reconciliation. Disabled Views unmount by
-default. `renderWhenDisabled` opts into keeping a View mounted for preparation or a persistent scene graph; those Views
-use `enabled` to gate behavior. Runtime scripts apply that gate inside their View.
-`PrefabInstance` waits for assets and shader compilation before activation.
-Each streamed placement has its own activation lifetime.
-Shader compilation runs in slices between frames. Individual geometry creation,
-decoding, and shader work contribute to startup time; measure preparation as well as
-steady frame time.
-
-Follow [PrefabInstance](../src/runtime/prefabs/PrefabInstance.tsx) →
-[preparePrefab](../src/runtime/prefabs/preparePrefab.ts) →
-[AssetRuntime](../src/runtime/assets/AssetRuntime.tsx).
-Authored nesting uses [PrefabRef](../src/runtime/components/PrefabRefComponent.tsx).
-
-## Document and live state
-
-Use `usePrefabDocument()` inside a prefab to read and edit authored nodes and
-materials. Use `useGameObject(id)` for mounted transforms and registered behavior
-handles. Document edits are serializable; live mutations are transient.
-`usePrefab()` exposes runtime objects and resources, without document mutation methods.
-Editor refs compose the document and runtime APIs because authoring needs both.
-
-```tsx
-const document = usePrefabDocument();
-const object = useGameObject('player');
-// Authored edit: updates the inspector, undo history (in the editor) and JSON export.
-const rename = () => document.update('player', node => ({ ...node, name: 'Hero' }));
-// Runtime movement updates the mounted object.
-const move = () => object.transform?.position.set(1, 0, 0);
-```
-
-Run edits in event handlers or effects. Components and
-physics adapters can mutate Three.js objects directly. Instance matrix scanning
-detects changes to their transforms.
-The window API reads/edits the document; captures and GLB export use live objects.
-
-## Runtime scripts
-
-`RuntimeComponent` (`type: "Runtime"`) compiles its `setup` and `update` strings
-inside its own View. It uses React `useEffect` for setup/cleanup and R3F `useFrame`
-for updates, just like other behavior Views. Runtime runs while enabled in Play, after preparation.
-Code edits restart setup with fresh state; data edits keep it running.
-
-Scripts read the current R3F store through `context.three` and resolve local
-objects with `prefab.getObject(id)`. Return cleanup from setup or register it with
-`context.onCleanup(fn)`. See the
-[Runtime usage example](public/editor-scene-for-agents.md#add-behavior-that-is-not-registered).
-
-## Batch document edits
-
-With an editor/viewer ref, group synchronous edits into one store publication:
-
-```ts
-editor.batch(() => {
-  for (const node of generatedNodes) editor.add(node, parentId);
-});
-```
-
-Reads inside the callback see earlier edits. An uncaught error rolls back the
-batch; nested batches join the outer batch. Keep asynchronous work outside it.
-The store copies affected tables once and preserves committed undo snapshots.
-The window scene's `batch` method uses this same mechanism automatically.
-
-## Connect a host system
-
-```tsx
-import { useFrame } from '@react-three/fiber';
-import { useGameObject, useScene } from 'react-three-game/viewer';
-
-// Mount <PlayerView player={hostPlayer} /> as a child of PrefabRoot.
-function PlayerView({ player }: { player: { position: [number, number, number] } }) {
-  const object = useGameObject('player'); // Local authored node ID.
-  const scene = useScene();
-  useFrame(() => {
-    if (scene.mode === 'edit') return;
-    object.transform?.position.set(...player.position);
-  });
-  return null;
-}
-```
-
-The host advances `player`; this view projects its position onto Three.js.
-`useFrame` projects the latest host state on each rendered frame. Keep simulation
-timing and state resets in the host; save authored changes through document edits.
-
-Follow [gameObject](../src/runtime/scene/gameObject.ts) for stable node handles,
-[SceneContext](../src/runtime/scene/SceneContext.tsx) for typed capabilities,
-and [GameEvents](../src/runtime/scene/GameEvents.ts) for synchronous notifications.
-`useGameEvent(name, handler)` keeps its subscription while the event name is
-unchanged and calls the latest committed handler; no dependency array is needed.
-The optional [Crashcat adapter](../src/plugins/crashcat/CrashcatRuntime.tsx)
-steps its own physics world from R3F frames.
-
-## Change a component
-
-Copy [Rotator](app/demo/customcomponent/components/RotatorComponent.tsx) for a behavior, or
-[Model](../src/runtime/components/ModelComponent.tsx) for an object view. Geometry and BufferGeometry render their own mesh, with rendering flags on the geometry component.
-Register it as in the [custom component demo](app/demo/customcomponent/page.tsx).
-
-- Put editable fields/defaults in the definition; views receive resolved values.
-- Return `children` so composition continues through the view. Views wrap subsequent components and child nodes; returning `null` suppresses that content.
-- Use React effects and R3F frames for ordinary component behavior. `useComponentActive(enabled)` subscribes to Play mode and combines it with enabled/preparation state; gate effects and frame work with its result. Visual previews may remain mounted in Edit. Effects must return cleanup and tolerate React effect replay.
-- Component definitions have no separate lifecycle callbacks. Runtime's authored `setup` and `update` script fields are implemented inside its own View with effects and `useFrame`; the prefab renderer treats it like any other View.
-- `category` groups the editor picker, `slot` chooses object/geometry/material composition, and `exclusive` names a node-level coexistence constraint. Declare `exclusive: 'material'`, for example, when a custom material competes with built-in materials. Data and ordinary behaviors may coexist. Composition stays inside each node’s transform group. Portal components such as BoneAttachment use an ordinary `View` on a parent node; child nodes own their bone-local transforms. The portal does not own the target resource.
-- Object, geometry and material views declare their `slot` and implement R3F attachments. Geometry views compose their mesh and geometry directly; material views attach inside them. The renderer orders wrappers, objects, geometry, then materials without creating render objects itself. Each visual component supplies its render-graph part directly.
-- Use exclusivity only for competing node-local ownership, such as Transform, geometry/material attachments, or bone parenting. Runtime handle lookup returns the first live registration for a node and type. Multiple SkinnedMesh/Terrain instances may coexist; node-keyed scene queries also expose the first match per node. Cleanup removes only its own registration and exposes the next match. Component-instance targeting is not yet supported. An object rendering role alone is not exclusive. Scene-wide effects such as Environment and Fog are not node-level constraints; allowing multiple instances does not imply their effects blend.
-- Share mesh property definitions and editor fields as code helpers. Geometry, BufferGeometry, Model and SkinnedMesh use the collapsed `Mesh options` inspector section; expose the options the renderer supports.
-- Keep custom inspector imports in `.editor.tsx` modules.
-
-A data component supplies a definition and properties. A visual component also
-supplies a `View`. For a custom visual helper, use an ordinary view:
-
-```tsx
-import { registerComponent, useNode,
-  type ComponentViewProps } from 'react-three-game/viewer';
-
-function GuideView({ properties, children }: ComponentViewProps<{ radius: number }>) {
-  const editMode = useNode(node => node.editMode);
-  const isSelected = useNode(node => node.isSelected);
-  return <>
-    {editMode && <mesh>
-      <sphereGeometry args={[properties.radius, 12, 8]} />
-      <meshBasicMaterial wireframe color={isSelected ? 'cyan' : 'gray'} />
-    </mesh>}
-    {children}
-  </>;
-}
-registerComponent({
-  name: 'Guide',
-  properties: { radius: { default: 1, min: 0.01, description: 'Local radius in scene units.' } },
-  View: GuideView,
-});
-```
-
-The view inherits the node's transform; changing its settings supplies new
-`properties` automatically. Ordinary descendant meshes participate in editor
-picking. Return `children` to render other components and child nodes.
-Import the registration module before loading its prefab in both editor and viewer.
-The same property definitions generate inspector fields and window API
-`describeComponents` output. Use `registerComponentEditor` from `/editor`
-when the generated inspector needs custom UI. Agents discover the property schemas.
-
-For a separate tool watching another node, subscribe to just the data it needs:
-
-```tsx
-import { usePrefabStore } from 'react-three-game/viewer';
-
-function NodeLabel({ id }: { id: string }) {
-  const name = usePrefabStore(state => state.nodesById[id]?.name);
-  return <span>{name ?? id}</span>;
-}
-```
-
-Mount this under the document's `PrefabStoreProvider` (provided by the editor).
-`usePrefabDocument().get(id)` provides an immediate read. For reactive integration,
-`usePrefabStoreApi()` exposes selector-based `subscribe`; return its unsubscribe
-function from your effect. These subscriptions observe authored edits.
-
-For runtime integration, define a token with `createNodeComponentType<T>()` and
-publish your own value with `useRegisterNodeComponent(token, value)`. Other code
-can use `useGameObject(id).getComponent(token)` for one node or
-`useSceneComponents(token)` for a reactive list. Keep the value stable with
-`useMemo` unless its data changes. Handles expose the live methods your game needs. The window API edits the
-registered component's serializable authored properties.
-
-Follow [ComponentRegistry](../src/core/ComponentRegistry.ts) →
-[nodePlan](../src/runtime/prefabs/nodePlan.ts) →
-[PrefabNode](../src/runtime/prefabs/PrefabNode.tsx).
-
-`PrefabRoot` establishes a document instance and renders its root node. Shared
-services live in `SceneRuntime`; loading and compilation live in `PrefabInstance`.
-Within each node, read the document, compose its Views and children, then render
-the transform group. The group has a separate subscription boundary so mode and
-selection changes do not rerender static content.
-
-Picking and selection policy belong to the editor's `EditorSelection` wrapper,
-not `PrefabRoot`. This wrapper owns click cycling, drag rejection, locked-node
-fallback and nested-prefab picking. Runtime rendering only reads host-supplied
-selection state and forwards batched instance clicks. For a custom editor, wrap
-`PrefabRoot` with `EditorSelection` from `/editor`; supply its document `store`,
-`selectedId`, `enabled` and `onSelect` callback.
-
-## Control model animation
-
-`SkinnedMesh` clones the loaded model’s skeletons and creates one Three.js
-animation mixer per model instance. Its runtime handle exposes that mixer and its actions. In a component, get the node with `useGameObject()`; in an event handler,
-after the model has loaded:
-
-```ts
-import { LoopOnce } from 'three';
-import { SKINNED_MESH_COMPONENT } from 'react-three-game/viewer';
-
-const model = object.getComponent(SKINNED_MESH_COMPONENT);
-const action = model?.getAction('Jump'); // Case-insensitive; null if missing.
-if (model && action) {
-  model.stop();
-  action.reset().setLoop(LoopOnce, 1);
-  action.clampWhenFinished = true;
-  action.play();
-}
-```
-
-For custom playback, author `animationState: ""` and let your controller choose
-actions. Leave `autoUpdate` on for normal playback; set it to `false` if your game
-calls `model.update(delta)` once per tick. Use the mixer's events for completion,
-removing listeners on cleanup. `animationState` tracks the built-in state selector.
-The model manages mixer lifetime; controllers choose and play live actions.
+For custom host registration, see [editor integration](editor-systems.md#browser-scene-tools);
+for calls against a running editor, see the [Scene API](public/editor-scene-for-agents.md).
 
 ## Change authoring behavior
 
@@ -358,7 +123,7 @@ Runtime modules are grouped by responsibility:
 - `runtime/rendering`: mesh batching and material instancing.
 - `runtime/assets`: loaders and shared resource ownership/cache.
 - `runtime/audio`: the scene listener and sound playback manager.
-- `runtime/lighting`: optional rendering helpers, including the point light grid.
+- `runtime/lighting`: the cascaded directional-light adapter used by the light component.
 - `runtime/GameCanvas.tsx` and `runtime/SceneRuntime.tsx`: canvas setup and provider composition.
 
 `core/` owns prefab data, the component registry, document store, document mutations,

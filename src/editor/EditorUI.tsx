@@ -7,7 +7,7 @@ import "./components/editors.js";
 import { useState } from 'react';
 import { GameObject as GameObjectType } from "../core/types.js";
 import EditorTree from './EditorTree.js';
-import { canAddComponentToNode, getComponents, getNextComponentKey, resolveComponentProperties } from '../core/ComponentRegistry.js';
+import { canAddComponentToNode, getComponentDefaultProperties, getComponents, getNextComponentKey, resolveComponentProperties } from '../core/ComponentRegistry.js';
 import type { Component } from '../core/ComponentRegistry.js';
 import { FieldRenderer, type FieldDefinition } from './ui/Input.js';
 import { createComponentData } from '../core/prefab.js';
@@ -31,6 +31,7 @@ function DefaultComponentEditor({
     update: (patch: Record<string, unknown>) => void;
 }) {
     const fields: FieldDefinition<Record<string, unknown>>[] = [];
+    const defaults = getComponentDefaultProperties(component, properties);
     for (const [name, definition] of Object.entries(component.properties)) {
         const type = definition.type ?? 'number';
         if (type !== 'number' && type !== 'string' && type !== 'boolean' && type !== 'color' && type !== 'select' && type !== 'vector3') continue;
@@ -38,6 +39,7 @@ function DefaultComponentEditor({
             name,
             type,
             label: definition.label ?? humanizePropertyName(name),
+            allowUnset: defaults[name] === undefined,
             ...('min' in definition ? { min: definition.min } : null),
             ...('max' in definition ? { max: definition.max } : null),
             ...('step' in definition ? { step: definition.step } : null),
@@ -46,6 +48,7 @@ function DefaultComponentEditor({
     }
     return <>
         <FieldRenderer fields={fields} values={properties} onChange={update} />
+
         {Object.entries(component.properties).filter(([, schema]) => schema.type === 'string[]').map(([name, schema]) => {
             const values = (properties[name] ?? []) as string[];
             const label = schema.label ?? humanizePropertyName(name);
@@ -136,9 +139,10 @@ function NodeInspector({
     updateNode: (update: (n: GameObjectType) => GameObjectType) => void;
     deleteNode: () => void;
 }) {
+    const rootId = usePrefabStore(state => state.rootId);
     const ALL_COMPONENTS = getComponents();
     const allKeys = Object.keys(ALL_COMPONENTS);
-    const available = allKeys.filter(k => canAddComponentToNode(node, ALL_COMPONENTS[k], ALL_COMPONENTS));
+    const available = allKeys.filter(k => canAddComponentToNode(node, ALL_COMPONENTS[k], ALL_COMPONENTS, rootId));
 
     return <div style={inspector.content}>
         <EditorToolActions node={node} />

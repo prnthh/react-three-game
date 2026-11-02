@@ -8,23 +8,21 @@ import course from '../../../public/prefabs/parkour-course.json';
 import { CharacterComponent } from './components/CharacterComponent';
 import { CharacterPartComponent, CharacterVisualsComponent } from './components/CharacterVisuals';
 import { CollisionSurfaceComponent } from './components/CollisionSurfaceComponent';
-import { ConcreteMaterialComponent } from './components/ConcreteMaterialComponent';
+import { ConcreteSurfaceComponent } from './components/ConcreteSurfaceComponent';
 import WeatheredGeometryComponent from './components/WeatheredGeometryComponent';
 
 registerComponent(CharacterComponent);
 registerComponent(CharacterVisualsComponent);
 registerComponent(CharacterPartComponent);
 registerComponent(CollisionSurfaceComponent);
-registerComponent(ConcreteMaterialComponent);
+registerComponent(ConcreteSurfaceComponent);
 registerComponent(WeatheredGeometryComponent);
 
 export default function ParkourPage() {
     return <main style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#18180f', color: '#ddd7bd' }}>
         <div id="parkour-canvas" style={{ flex: 1, minHeight: 0, position: 'relative' }}>
             <ParkourHUD>
-                <PrefabEditor prefab={course as Prefab} mode={PrefabEditorMode.Play} basePath={BASE_PATH} canvasProps={{ rendererConfig: { toneMappingExposure: 1.15 } }}>
-                    <color attach="background" args={['#171910']} />
-                </PrefabEditor>
+                <PrefabEditor prefab={course as Prefab} mode={PrefabEditorMode.Play} basePath={BASE_PATH} />
             </ParkourHUD>
         </div>
     </main>;

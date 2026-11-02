@@ -1,4 +1,4 @@
-import { SpatialGrid, DEFAULT_SPATIAL_CELL_SIZE } from '../spatial/SpatialGrid.js';
+import { spatialCellKey, DEFAULT_SPATIAL_CELL_SIZE } from '../spatial/spatialCell.js';
 import { DynamicDrawUsage, Group, InstancedInterleavedBuffer, InstancedMesh, Matrix4, Mesh, Vector3, type Material, type Object3D } from 'three';
 import { instancedDynamicBufferAttribute, mat4 } from 'three/tsl';
 import type { ThreeEvent } from '@react-three/fiber';
@@ -16,8 +16,10 @@ export type InstancedMeshSource = {
     onClick?: (event: ThreeEvent<MouseEvent>) => void;
 };
 
+type RegisteredSource = InstancedMeshSource & { cell: string };
+
 /** Own source layer masks while a batch is mounted; mirrored transforms can opt out per frame. */
-export function manageInstancedSourceVisibility(sources: InstancedMeshSource[]) {
+function manageInstancedSourceVisibility(sources: InstancedMeshSource[]) {
     const masks = sources.map(source => source.mesh.layers.mask);
     return {
         setBatched(index: number, batched: boolean) {
@@ -29,15 +31,8 @@ export function manageInstancedSourceVisibility(sources: InstancedMeshSource[]) 
     };
 }
 
-/** Keep source geometry available to physics while the batch draws it. */
-export function hideInstancedSources(sources: InstancedMeshSource[]) {
-    const visibility = manageInstancedSourceVisibility(sources);
-    sources.forEach((_, index) => visibility.setBatched(index, true));
-    return visibility.restore;
-}
-
 /** GPU instance matrices cannot change the draw's front-face winding independently. */
-export function supportsInstanceMatrix(matrix: Matrix4) {
+function supportsInstanceMatrix(matrix: Matrix4) {
     return matrix.determinant() > 0;
 }
 
@@ -163,19 +158,19 @@ class MeshInstanceBatch {
 
 /** Owns GPU batches directly. React only registers sources and mounts the container. */
 export class MeshInstanceRegistry {
-    readonly spatial: SpatialGrid<InstancedMeshSource>;
-    private sources = new Map<string, InstancedMeshSource>();
+    private sources = new Map<string, RegisteredSource>();
     private batches = new Map<string, MeshInstanceBatch>();
     private hits = new Map<Object3D, MeshInstanceBatch>();
     private root: Group | null = null;
     private position = new Vector3();
     private listeners = new Set<() => void>();
     private revision = 0;
-    private scheduled = false;
     private dirty = true;
-    // Tiny WebGPU batches multiply per-instance shader builds for little draw-call benefit.
-    constructor(readonly isStatic = false, cellSize = DEFAULT_SPATIAL_CELL_SIZE, readonly minInstances = 8) {
-        this.spatial = new SpatialGrid(cellSize);
+    constructor(readonly isStatic = false, private readonly cellSize: number | null = DEFAULT_SPATIAL_CELL_SIZE) {
+        if (cellSize !== null && (!Number.isFinite(cellSize) || cellSize <= 0)) throw new Error('Spatial cell size must be positive and finite');
+    }
+    private cellOf(mesh: Mesh) {
+        return this.cellSize === null ? '' : spatialCellKey(mesh.getWorldPosition(this.position), this.cellSize);
     }
     subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
     getSnapshot = () => this.revision;
@@ -190,37 +185,25 @@ export class MeshInstanceRegistry {
         };
     }
     register(source: InstancedMeshSource) {
-        const previous = this.sources.get(source.id);
-        if (previous) this.spatial.remove(previous);
-        this.sources.set(source.id, source);
-        source.mesh.getWorldPosition(this.position);
-        this.spatial.update(source, this.position);
+        const registered = { ...source, cell: this.cellOf(source.mesh) };
+        this.sources.set(source.id, registered);
         this.invalidate();
         return () => {
-            if (this.sources.get(source.id) !== source) return;
+            if (this.sources.get(source.id) !== registered) return;
             this.sources.delete(source.id);
-            this.spatial.remove(source);
             this.invalidate();
         };
     }
-    invalidate = () => {
-        this.dirty = true;
-        if (this.scheduled) return;
-        this.scheduled = true;
-        queueMicrotask(() => {
-            this.scheduled = false;
-            this.reconcile();
-            this.revision++;
-            this.listeners.forEach(listener => listener());
-        });
-    };
+    invalidate = () => { this.dirty = true; };
     update() {
-        if (!this.isStatic) for (const source of this.sources.values()) {
-            source.mesh.getWorldPosition(this.position);
-            if (this.spatial.update(source, this.position)) this.invalidate();
+        if (this.cellSize !== null && !this.isStatic) for (const source of this.sources.values()) {
+            const cell = this.cellOf(source.mesh);
+            if (source.cell !== cell) { source.cell = cell; this.invalidate(); }
         }
+        const changed = this.root !== null && this.dirty;
         this.reconcile();
         this.batches.forEach(batch => batch.update());
+        if (changed) { this.revision++; this.listeners.forEach(listener => listener()); }
     }
     private reconcile() {
         if (!this.root || !this.dirty) return;
@@ -229,14 +212,14 @@ export class MeshInstanceRegistry {
         for (const source of this.sources.values()) {
             const compatible = getBatchKey(source);
             if (!compatible) continue;
-            const key = `${this.spatial.cellOf(source)}|${compatible}`;
+            const key = `${source.cell}|${compatible}`;
             const group = groups.get(key);
             if (group) group.push(source); else groups.set(key, [source]);
         }
         // Release old ownership before assigning moved sources to their new batches.
         for (const [key, batch] of this.batches) {
             const sources = groups.get(key);
-            if (!sources || sources.length < this.minInstances || sources.length > batch.mesh.instanceMatrix.count
+            if (!sources || sources.length < 2 || sources.length > batch.mesh.instanceMatrix.count
                 || batch.factory !== getInstancedMaterialFactory(sources[0].mesh.material)) {
                 batch.dispose(); this.hits.delete(batch.mesh); this.batches.delete(key);
             } else if (sources.length !== batch.sources.length || sources.some((source, i) => source !== batch.sources[i])) {
@@ -244,7 +227,7 @@ export class MeshInstanceRegistry {
             }
         }
         for (const [key, sources] of groups) {
-            if (sources.length < this.minInstances) continue;
+            if (sources.length < 2) continue;
             let batch = this.batches.get(key);
             if (!batch) {
                 batch = new MeshInstanceBatch(sources, this.isStatic);

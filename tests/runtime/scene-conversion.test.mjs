@@ -69,3 +69,20 @@ test('headless preparation rejects browser-only terrain instead of succeeding wi
     await assert.rejects(createHeadlessScene({ root: terrain }), /Terrain.*canvas image adapter/);
     await assert.rejects(createHeadlessScene({ root: { id: 'world', children: [terrain] } }), /Terrain.*canvas image adapter/);
 });
+
+test('headless scenes retain repeated source meshes without an instancing opt-out', async () => {
+    const host = await createHeadlessScene({ root: { id: 'root', children: Array.from({ length: 10 }, (_, index) => ({
+        id: `box-${index}`, name: `Box ${index}`, components: {
+            geometry: { type: 'Geometry', properties: {} },
+            material: { type: 'Material', properties: { name: 'shared', color: '#806040' } },
+        },
+    })) } });
+    try {
+        const meshes = [];
+        host.scene.traverse(object => { if (object.isMesh) meshes.push(object); });
+        assert.equal(meshes.length, 10);
+        assert.ok(meshes.every(mesh => !mesh.isInstancedMesh && mesh.layers.mask === 1));
+        assert.equal(new Set(meshes.map(mesh => mesh.geometry)).size, 1, 'source meshes still share geometry');
+        assert.equal(new Set(meshes.map(mesh => mesh.material)).size, 1, 'source meshes still share materials');
+    } finally { await host.dispose(); }
+});

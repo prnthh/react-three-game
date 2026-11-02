@@ -123,7 +123,7 @@ async function mountHeadlessScene(prefab: Prefab, options: HeadlessSceneOptions,
                 <HostErrorBoundary onError={fail}>
                     <AssetCacheContext.Provider value={cache}>
                         <AssetBoundary atomic onError={fail}>
-                            <ComponentLookupContext.Provider value={lookup}><SceneRuntime instancing={false}>
+                            <ComponentLookupContext.Provider value={name => { const definition = lookup(name); return definition?.scope === 'scene' ? { ...definition, View: undefined } : definition; }}><SceneRuntime>
                                 <PrefabRoot data={prefab} basePath={basePath} enabled={false} />
                                 <Committed ready={ready} />
                             </SceneRuntime></ComponentLookupContext.Provider>

@@ -37,7 +37,7 @@ try {
     writeFileSync(join(directory, 'consumer.mts'), `
         import { evaluateSceneCommands, type Prefab, type SceneCommandBatch } from 'react-three-game/core';
         import { convert } from 'react-three-game/node';
-        import { EditorSelection, registerEditorTool, registerEditorNodePreset, useEditorToolSession, attachPointerTool } from 'react-three-game/editor';
+        import { EditorSelection, registerEditorTool, registerEditorNodePreset, useEditorToolSession, attachPointerTool, NumberField, UnsettableField, type FieldDefinition, type ComponentEditorProps } from 'react-three-game/editor';
         import { useComponentActive, useGameEvent, type Component, type ComponentContext, usePrefab } from 'react-three-game/viewer';
         const definition: Component<{ speed?: number }> = {
             name: 'ConsumerBehavior', category: 'misc', exclusive: 'consumer-behavior',
@@ -49,6 +49,11 @@ try {
                 return children ?? null;
             },
         };
+        function ConsumerEditor({ properties, update }: ComponentEditorProps<{ speed?: number }>) {
+            const speed: number = properties.speed;
+            update({ speed: undefined });
+            return null;
+        }
         // @ts-expect-error Data is not a rendering role; coexistence uses exclusive.
         const invalidSlot: Component['slot'] = 'data';
         // @ts-expect-error Behavior belongs in the View, not renderer lifecycle callbacks.
@@ -58,6 +63,17 @@ try {
         // @ts-expect-error Authored edits belong to usePrefabDocument.
         const runtimeUpdate: ReturnType<typeof usePrefab>['update'] = () => {};
         const renderingRole: Component['slot'] = 'geometry';
+        const optionalFields = [{ name: 'exposure', label: 'Exposure', type: 'number', allowUnset: true, initialValue: 1 }] satisfies FieldDefinition<{ exposure?: number }>[];
+        // @ts-expect-error Initial values must match the input type.
+        const invalidInitial: FieldDefinition<{ exposure?: number }> = { name: 'exposure', label: 'Exposure', type: 'number', initialValue: false };
+        const optionalNumber: Parameters<typeof NumberField<{ exposure?: number }>>[0] = {
+            name: 'exposure', label: 'Exposure', allowUnset: true, values: {},
+            onChange(patch) { const exposure: number | undefined = patch.exposure; },
+        };
+        const customOptional: Parameters<typeof UnsettableField<number>>[0] = {
+            label: 'Exposure', value: undefined, initialValue: 1, allowUnset: true, children: null,
+            onChange(value) { const exposure: number | undefined = value; },
+        };
         const selectNode: Parameters<typeof EditorSelection>[0]['onSelect'] = id => {};
 
         registerEditorNodePreset({ id: 'custom', label: 'Custom', category: 'Game', create: () => ({ id: 'custom-node' }) });

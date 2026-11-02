@@ -22,6 +22,61 @@ The API becomes available when `PrefabEditor` mounts with `agentTools` enabled.
 Use one agent-enabled editor per page and reacquire `window.scene` after reload.
 `showUI={false}` keeps the API available while hiding panels.
 
+### WebMCP and the Scene tools panel
+
+Agent-enabled editors automatically register tools with native
+`document.modelContext` using the [current WebMCP draft](https://webmachinelearning.github.io/webmcp/).
+Discover tools through your browser agent's WebMCP interface. Start with
+`scene_info`, then `scene_search` and `scene_components` before editing.
+Tool names may receive browser-assigned suffixes during discovery.
+
+`scene.help()` presents JS methods and examples. `scene_info` with
+`includeGuide:true` presents callable tools and JSON arguments. Component fields/defaults and batch commands remain
+available through their registered schemas; these guides do not replace them.
+
+These tools delegate to the same scene API and retain its validation, edit-mode
+guards, revision checks and undo history. `scene_batch` requires
+`expectedRevision` from `scene_info`; `validateOnly: true` previews validation
+without applying commands. Capture results include an image content block.
+Cancellation stops work before dispatch; it does not undo an edit already committed.
+
+Load or reload a scene from a source URL:
+
+```js
+const revision = scene.info().revision;
+await scene.load({ url: '/prefabs/scene.json', expectedRevision: revision });
+```
+
+WebMCP exposes the same action as `scene_load` with `{url, expectedRevision}`.
+It bypasses the host's prefab cache, validates before replacing the document, and
+rejects an intervening edit or exit from Edit mode. A failed request leaves the
+current document untouched. JS callers can pass `{signal}` as a second argument;
+WebMCP forwards its execution signal, and editor disposal cancels pending loads.
+The replacement shares undo history. Rendering and asset streaming continue after
+the document commit, so wait for mounted objects before capturing them.
+
+Loading reads scene data; the host still controls the persistence destination.
+`scene.save()` writes through a configured host callback when one exists. The
+docs editor uses JSON export and does not write back to the source URL.
+To checkpoint repository JSON while working through an agent,
+use `scene.export()`/`exportJSON()` or `scene_save` with `action:'export'`, then write
+that returned document to its source file. Export/save a checkpoint before switching
+documents.
+
+Selection is also programmatic: `scene.select({id})`, `scene.select({id:null})`, or
+`scene_view` with `action:'select'`/`'clearSelection'`. Selecting a node updates the
+normal inspector.
+
+The **Scene tools** button opens a local panel using this same tool catalog,
+including forms, object search results, camera focus and capture previews.
+It remains usable when native WebMCP is unavailable and reports registration
+status. Tools unregister when the editor unmounts. `agentTools={false}` disables
+programmatic access, tools and chat; `showUI={false}` hides the panels while
+retaining programmatic access.
+
+The repository editor also offers an application-owned **Agent chat**. See its
+[connection and transcript guide](https://github.com/prnthh/react-three-game/blob/main/docs/app/components/agent/README.md#connect-the-demo-chat).
+
 ## 2. Create and edit an assembly
 
 This adds a pedestal to the current scene. Use fresh IDs when running it again:
@@ -468,17 +523,18 @@ The manifest format is:
 }
 ```
 
-## Standalone editor storage
+## Persistence and authored presentation
 
-`/editor` restores a scene from this browser's storage, or opens a starter cube,
-light, and sky environment. Changes autosave to one slot; `await scene.save()`
-flushes it immediately and reports storage errors. Multiple tabs share the slot,
-with the latest write winning. Download JSON for a portable backup.
+`scene.save()` uses the host's configured callback or export behavior; check
+`scene.info().saveMethod`. The repository's standalone editor reloads source
+documents and requires explicit JSON export to retain edits. See its
+[loading and saving guide](https://github.com/prnthh/react-three-game/blob/main/docs/app/editor/README.md#loading-and-saving).
 
-`?map=/prefabs/parkour-course.json` loads a source file, then saves edits to the
-same browser slot. Return to `/editor` to resume. **New Prefab** starts from the
-template. Demo pages use their own persistence settings. `scene.reset()` restores
-live objects from the current authored document.
+Root-scoped render settings and ordinary light/sky components travel with the
+scene JSON; see [lighting](https://github.com/prnthh/react-three-game/blob/main/docs/LIGHTING.md).
+A `Runtime` component carries trusted setup/update scripts and data; see
+[scripted behavior](#add-scripted-behavior). Referenced assets remain separate
+URLs, and custom component implementations must be registered by the host.
 
 ## Edit files with the CLI
 

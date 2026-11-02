@@ -4,12 +4,15 @@ import type { GameObject, Prefab } from '../../core/types.js';
 import { createPrefabStore, type PrefabStoreApi } from '../../core/prefabStore.js';
 import { PrefabStoreProvider, usePrefabRootId, usePrefabStoreApi } from './PrefabStoreContext.js';
 import { useGameEvents, type GameEvents } from '../scene/GameEvents.js';
-import { createPrefabRegistry, PrefabContext, PrefabEditorMode, SceneContext, RuntimeNodeIdPrefixContext, RuntimeNodeIdScope, type PrefabApi, type Scene } from '../scene/SceneContext.js';
+import { createPrefabRegistry, PrefabContext, PrefabEditorMode, SceneContext, RuntimeNodeIdPrefixContext, RuntimeNodeIdScope, NodeScope, type PrefabApi, type Scene } from '../scene/SceneContext.js';
 import { SceneRuntime } from '../SceneRuntime.js';
 import { useAssetRuntime } from '../assets/AssetRuntime.js';
 import { createPrefabApi } from './prefabApi.js';
 import { scopedNodeId } from '../scene/gameObject.js';
 import { PrefabNode } from './PrefabNode.js';
+import { ComponentLookupContext, analyzeNodeComponents } from './nodePlan.js';
+import { MeshInstanceProvider } from '../rendering/MeshInstanceProvider.js';
+import { usePrefabStore } from './PrefabStoreContext.js';
 import type { NodeInteractionEvent, NodeInteractionEventType } from '../scene/usePointerEvents.js';
 
 export type { Scene };
@@ -47,6 +50,8 @@ const PrefabRootBody = memo(forwardRef<Scene, Omit<PrefabRootProps, 'data' | 'st
 }, ref) => {
     const store = usePrefabStoreApi();
     const rootId = usePrefabRootId();
+    const rootNode = usePrefabStore(state => state.nodesById[state.rootId]);
+    const lookup = useContext(ComponentLookupContext);
     const runtime = useAssetRuntime();
     const events = useGameEvents();
     const prefix = useContext(RuntimeNodeIdPrefixContext);
@@ -67,12 +72,19 @@ const PrefabRootBody = memo(forwardRef<Scene, Omit<PrefabRootProps, 'data' | 'st
         onPointerEvent?.(eventType, event, node);
     }, [events, onPointerEvent, prefix, store]);
 
+    let content: React.ReactNode = <MeshInstanceProvider>
+        <PrefabNode key={rootId} nodeId={rootId} onPointerEvent={handlePointerEvent} isEnabled={enabled} />
+        {children}
+    </MeshInstanceProvider>;
+    if (!parentScene && !rootNode.disabled && !rootNode.hidden) {
+        const components = analyzeNodeComponents(rootNode, lookup, 'scene').composition;
+        for (let index = components.length - 1; index >= 0; index--) {
+            const { View, key, properties } = components[index];
+            content = <View key={key} properties={properties} enabled={enabled}>{content}</View>;
+        }
+    }
     return <SceneContext.Provider value={scene}>
-        <PrefabContext.Provider value={document}>
-            <PrefabNode key={rootId} nodeId={rootId} onPointerEvent={handlePointerEvent}
-                isEnabled={enabled} />
-            {children}
-        </PrefabContext.Provider>
+        <PrefabContext.Provider value={document}><NodeScope nodeId={rootId} editMode={editMode}>{content}</NodeScope></PrefabContext.Provider>
     </SceneContext.Provider>;
 }));
 

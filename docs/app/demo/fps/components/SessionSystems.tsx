@@ -1,41 +1,42 @@
 import { createContext, useContext, useEffect, useMemo, useRef, type RefObject } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { ClusteredLighting } from "three/examples/jsm/lighting/ClusteredLighting.js";
-import type { WebGPURenderer } from "three/webgpu";
-import { createNodeComponentType, useGameObject, useRegisterNodeComponent, useSceneComponents, type Component, type ComponentViewProps } from "react-three-game/viewer";
+import { Euler, Quaternion, Vector3 } from 'three';
+import { createNodeComponentType, useComponentActive, useGameObject, useRegisterNodeComponent, useSceneComponents, type Component, type ComponentViewProps } from "react-three-game/viewer";
 import type { ClientSession } from "../session";
 import type { Command, MatchSnapshot as Match } from "../shared/protocol";
 import { SoundCues, type SpatialAudio } from "../audio";
 
-export function RendererLighting() {
-  const gl = useThree(state => state.gl);
-  useEffect(() => {
-    const renderer = gl as unknown as WebGPURenderer;
-    const previous = renderer.lighting;
-    const lighting = new ClusteredLighting(32);
-    renderer.lighting = lighting;
-    return () => {
-      if (renderer.lighting === lighting) renderer.lighting = previous;
-      lighting.dispose();
-    };
-  }, [gl]);
-  return null;
-}
-
-export function WorldAudio({ runtime, match, playing, audio }: FPSSession) {
+function WorldAudioView({ enabled, children }: ComponentViewProps<{}>) {
+  const session = useContext(SessionContext);
+  const active = useComponentActive(enabled);
   const camera = useThree(state => state.camera);
-  const cues = useMemo(() => new SoundCues(), [runtime]);
-  const viewEpoch = useRef(runtime.viewEpoch ?? 0);
+  const listener = useMemo(() => ({ position: new Vector3(), rotation: new Euler(0, 0, 0, 'YXZ'), quaternion: new Quaternion() }), []);
+  const cues = useMemo(() => new SoundCues(), [session?.runtime]);
+  const viewEpoch = useRef(session?.runtime.viewEpoch ?? 0);
+  const audio = session?.audio;
+  useEffect(() => {
+    if (active && audio) return () => audio.stop();
+  }, [active, audio]);
   useFrame(() => {
+    if (!session || !active) return;
+    const { runtime, match, playing, audio } = session;
     if (viewEpoch.current !== (runtime.viewEpoch ?? 0)) {
       viewEpoch.current = runtime.viewEpoch ?? 0;
       audio.stop(); if (playing) audio.enable();
     }
-    audio.listener(camera.position.x, camera.position.y, camera.position.z, camera.rotation.y, camera.rotation.x);
+    camera.getWorldPosition(listener.position);
+    camera.getWorldQuaternion(listener.quaternion);
+    listener.rotation.setFromQuaternion(listener.quaternion, 'YXZ');
+    audio.listener(listener.position.x, listener.position.y, listener.position.z, listener.rotation.y, listener.rotation.x);
     cues.update(match, playing, audio.play, runtime.viewActorId ?? 0, runtime.viewEpoch ?? 0);
   }, -0.9);
-  return null;
+  return children;
 }
+export const WorldAudioComponent: Component<{}> = {
+  name: 'FPSWorldAudio', category: 'audio', exclusive: 'fps-world-audio', properties: {},
+  description: 'Play positional match sounds from the host session using the active scene camera. Audio permission and device lifetime belong to the host.',
+  View: WorldAudioView,
+};
 
 /** One driver per host session; prefab bindings never advance simulation. */
 export function SessionDriver({ runtime, input, playing, onHud, onReady }: FPSSession) {

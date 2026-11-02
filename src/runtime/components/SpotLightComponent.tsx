@@ -1,4 +1,3 @@
-import { Color } from 'three';
 import type { Component, ComponentViewProps } from "../../core/ComponentRegistry.js";
 
 import { useHelper } from "@react-three/drei";
@@ -15,7 +14,7 @@ import { useNode } from "../scene/SceneContext.js";
 
 import { usePrefab } from "../scene/SceneContext.js";
 
-import { EditorLightGizmo, MAX_SHADOW_MAP_SIZE, MIN_SHADOW_MAP_SIZE, mergeWithDefaults, normalizeShadowMapSize, useShadowMapResolution } from "./lightUtils.js";
+import { EditorLightGizmo, MAX_SHADOW_MAP_SIZE, MIN_SHADOW_MAP_SIZE, normalizeShadowMapSize, useShadowMapResolution } from "./lightUtils.js";
 
 import { withBasePath } from "../assets/assetPaths.js";
 
@@ -46,44 +45,41 @@ function SpotLightView({ properties, children }: ComponentViewProps<SpotLightPro
     const isSelected = useNode(node => node.isSelected);
     const { basePath } = usePrefab();
 
-    const merged = mergeWithDefaults(spotLightDefaults, properties);
-    const shadowMapSize = normalizeShadowMapSize(merged.shadowMapSize);
+    const shadowMapSize = normalizeShadowMapSize(properties.shadowMapSize);
 
-    const resolvedMap = merged.map ? withBasePath(basePath, merged.map) : merged.map;
+    const resolvedMap = properties.map ? withBasePath(basePath, properties.map) : properties.map;
     const textureMap = useTextureAsset(resolvedMap) ?? undefined;
 
     const lightProps = {
-        color: new Color(merged.color),
-        intensity: merged.intensity,
-        angle: merged.angle,
-        penumbra: merged.penumbra,
-        distance: merged.distance,
-        decay: merged.decay,
-        castShadow: merged.castShadow,
+        color: properties.color,
+        intensity: properties.intensity,
+        angle: properties.angle,
+        penumbra: properties.penumbra,
+        distance: properties.distance,
+        decay: properties.decay,
+        castShadow: properties.castShadow,
         map: textureMap,
 
         // mapped props
-        "shadow-bias": merged.shadowBias,
-        "shadow-normalBias": merged.shadowNormalBias,
-        "shadow-intensity": merged.shadowIntensity,
-        "shadow-radius": merged.shadowRadius,
-        "shadow-autoUpdate": merged.shadowAutoUpdate,
-        "shadow-camera-near": merged.shadowCameraNear,
-        "shadow-camera-far": merged.shadowCameraFar,
+        "shadow-bias": properties.shadowBias,
+        "shadow-normalBias": properties.shadowNormalBias,
+        "shadow-intensity": properties.shadowIntensity,
+        "shadow-radius": properties.shadowRadius,
+        "shadow-autoUpdate": properties.shadowAutoUpdate,
+        "shadow-camera-near": properties.shadowCameraNear,
+        "shadow-camera-far": properties.shadowCameraFar,
     };
 
-    const spotLightRef = useRef<SpotLight>(null);
-    const helperTargetRef = useRef<Object3D>(null!);
+    const spotLightRef = useRef<SpotLight>(null!);
     const shadowCameraHelperRef = useRef<Object3D>(null!);
     const target = useMemo(() => new Object3D(), []);
     useShadowMapResolution(spotLightRef, shadowMapSize);
 
     const showHelper = editMode && isSelected;
-    const showShadowHelper = showHelper && Boolean(merged.castShadow);
+    const showShadowHelper = showHelper && Boolean(properties.castShadow);
     const shadowCamera = spotLightRef.current?.shadow.camera ?? null;
-    if (spotLightRef.current) helperTargetRef.current = spotLightRef.current;
     if (shadowCamera) shadowCameraHelperRef.current = shadowCamera;
-    useHelper(showHelper && spotLightRef.current ? helperTargetRef : null, SpotLightHelper);
+    useHelper(showHelper ? spotLightRef : null, SpotLightHelper);
     useHelper(showShadowHelper && shadowCamera ? shadowCameraHelperRef : null, CameraHelper);
 
     return (
@@ -95,17 +91,17 @@ function SpotLightView({ properties, children }: ComponentViewProps<SpotLightPro
             >
                 {editMode ? (
                     <EditorLightGizmo
-                        color={merged.color}
+                        color={properties.color}
                         selected={isSelected}
-                        targetOffset={merged.targetOffset}
+                        targetOffset={properties.targetOffset}
                     />
                 ) : null}
                 {showHelper && (
                     <>
-                        <mesh position={merged.targetOffset}>
+                        <mesh position={properties.targetOffset} userData={{ editorHelper: true }}>
                             <sphereGeometry args={[0.15, 8, 6]} />
                             <meshBasicMaterial
-                                color={merged.color}
+                                color={properties.color}
                                 wireframe
                                 opacity={0.5}
                                 transparent
@@ -117,7 +113,7 @@ function SpotLightView({ properties, children }: ComponentViewProps<SpotLightPro
                 {children}
             </spotLight>
 
-            <primitive object={target} position={merged.targetOffset} />
+            <primitive object={target} position={properties.targetOffset} />
         </group>
     );
 }

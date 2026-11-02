@@ -7687,6 +7687,23 @@
           }
         ]
       }
-    ]
+    ],
+    "components": {
+      "renderSettings": {
+        "type": "RenderSettings",
+        "properties": {
+          "toneMapping": "aces",
+          "exposure": 1.05,
+          "shadows": true,
+          "shadowMapType": "pcf"
+        }
+      },
+      "clusteredLighting": {
+        "type": "ClusteredLighting",
+        "properties": {
+          "maxLights": 32
+        }
+      }
+    }
   }
 }

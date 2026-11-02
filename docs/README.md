@@ -5,7 +5,8 @@ render a cube, edit it, pack copies, add behavior, then save. For browser-driven
 scene edits, follow the [Scene API guide](public/editor-scene-for-agents.md).
 
 These routes are host applications built with React Three Game. Their game loops,
-controllers, world residency and narrative systems live in each demo's source.
+controllers, world layout and narrative policies live in each demo's source.
+The library supplies shared loading and residency mechanisms.
 
 Run `npm run dev` from the repository root. The docs webpack configuration resolves library imports to source; `npm run build` builds the published library. Verify production with `npm --prefix docs run build`.
 
@@ -24,20 +25,22 @@ Components stay in the demo that owns them and may be imported by other demos.
 | [Asset Viewer](app/demo/assetviewer/page.tsx) | Browse the shared asset manifest, with loading and error states. |
 | [Custom Component](app/demo/customcomponent/page.tsx) | Minimal scene shared with Viewer; Rotator and Squish are registered for editing. |
 | [Cool stuff](app/demo/coolstuff/page.tsx) | One scene with interior mapping, ragdolls, and a small sleeping-box warehouse, each under its own parent node. |
-| [Parkour](app/demo/parkour/page.tsx) | Three packed inline building instances, player movement, and procedural concrete. |
+| [Parkour](app/demo/parkour/page.tsx) | Concrete passage course with local lighting, player movement and procedural concrete. |
 | [Point n Click](app/demo/stage/page.tsx) | Inline interaction/dialogue/transition flow; shared component registration with its editor. |
 | [Relay Yard FPS](app/demo/fps/page.tsx) | Authored map and gameplay prefabs, authoritative simulation, snapshot-driven views and replay; includes a map editor. |
 | [Terrain workshop](app/demo/terrain/page.tsx) | Registered painting tools, demo-owned player controls and an explicit terrain collider budget. |
 | [Killbox FPS](app/demo/killbox/page.tsx) | Player, NPC and weapon-system integration. The page composes its gameplay systems. |
-| [Streamed World](app/demo/grassworld/page.tsx) | A bounded chunk window owns terrain colliders and deterministic grass/flowers with dense billboard blades, layered wind and recovering trails; [Water](app/demo/grassworld/components/Water.tsx) is a reusable, registered scene component. |
+| [Streamed World](app/demo/grassworld/README.md) | Terrain windows, colliders, vegetation and a reusable water component. |
 
-Water remains in `demo/grassworld/components/Water.tsx`. Import `WaterComponent`,
-call `registerComponent(WaterComponent)`, then add `{type:'Water', properties:{level:0,size:100,speed:0.1}}`
-to a node. It needs an `Environment`, its normal-map asset (or a `normalMap` URL),
-and `GameCanvas glConfig={{antialias:false}}`. Keep the surface horizontal and add colliders separately where needed. `followCamera:true` keeps water under a travelling camera; its world-space waves stay anchored.
 
 Also available: [general editor](app/editor/page.tsx),
 [home city composition](app/components/DemoApp.tsx), and the [Scene API guide](public/editor-scene-for-agents.md).
+
+The home viewer loads its saved scene document. Its demo-owned
+[`PrefabGridStreamer`](app/components/PrefabGridStreamerComponent.tsx) defines the
+repeating tile window; the library supplies authored lighting and
+[distance streaming](PREFABS.md#automatically-stream-static-scenery). Its
+[generator](../scripts/generate-home-city.mjs) maintains the authored scene.
 
 Author small scenes inline. Pack assemblies for repetition within a scene; export
 a separate prefab file when sharing across scenes. Saved demo documents live in
@@ -45,16 +48,16 @@ a separate prefab file when sharing across scenes. Saved demo documents live in
 
 Keep specialized demo components under their demo. Interior mapping and the parkour controller register their own components.
 
-See [architecture](ARCHITECTURE.md), [lighting](LIGHTING.md), and [interior mapping](app/demo/coolstuff/INTERIOR-MAPPING.md).
+See the [documentation map](ARCHITECTURE.md#documentation-map) for library guides.
+Demo-specific setup and implementation notes belong beside each demo.
 
-## Asset previews
+## Asset catalog
 
-Mount one `SharedCanvas` alongside the asset lists and single-asset viewers on a
-page. They register views into that canvas; adding a canvas per tile or list
-renders those views repeatedly. `PrefabEditorProvider` supplies the preview canvas
-for its inspectors. The asset viewer demo shows the standalone composition.
-Thumbnails and enlarged previews share loaded assets; model placements clone the
-object hierarchy and retain the shared geometry and materials.
+Asset pickers and `scene.assets()` read `public/manifest.json` relative to the
+host's `basePath`. After adding assets, run
+`npm run generate-manifests --workspace docs` from the repository root. See
+[prefab directory conventions](public/prefabs/README.md) for saved scenes and
+[asset preview integration](editor-systems.md#asset-previews) for custom hosts.
 
 ## Headless export
 

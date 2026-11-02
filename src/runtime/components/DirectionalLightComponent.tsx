@@ -1,4 +1,4 @@
-import { Color, Group, Vector3 } from 'three';
+import { Group, Vector3 } from 'three';
 import { useFrame } from '@react-three/fiber';
 import { CascadedDirectionalLight } from '../lighting/CascadedDirectionalLight.js';
 import type { Component, ComponentViewProps } from "../../core/ComponentRegistry.js";
@@ -13,7 +13,7 @@ import type { DirectionalLight } from "three";
 
 import { useNode } from "../scene/SceneContext.js";
 
-import { createFollowState, stepCameraFollow, EditorLightGizmo, mergeWithDefaults, normalizeShadowMapSize, useShadowMapResolution } from "./lightUtils.js";
+import { createFollowState, stepCameraFollow, EditorLightGizmo, normalizeShadowMapSize, useShadowMapResolution } from "./lightUtils.js";
 
 export const directionalLightDefaults = {
     color: '#ffffff',
@@ -47,31 +47,30 @@ export type DirectionalLightProperties = Partial<DirectionalLightValues>;
 function DirectionalLightView({ properties, children }: ComponentViewProps<DirectionalLightProperties>) {
     const editMode = useNode(node => node.editMode);
     const isSelected = useNode(node => node.isSelected);
-    const merged = mergeWithDefaults(directionalLightDefaults, properties);
-    const shadowMapSize = normalizeShadowMapSize(merged.shadowMapSize);
+    const shadowMapSize = normalizeShadowMapSize(properties.shadowMapSize);
     const lightProps = {
-        color: new Color(merged.color),
-        intensity: merged.intensity,
-        castShadow: merged.castShadow,
-        "shadow-bias": merged.shadowBias,
-        "shadow-normalBias": merged.shadowNormalBias,
-        "shadow-intensity": merged.shadowIntensity,
-        "shadow-radius": merged.shadowRadius,
-        "shadow-autoUpdate": merged.shadowAutoUpdate,
-        "shadow-camera-layers-mask": merged.shadowCameraLayers,
-        "shadow-camera-near": merged.shadowCameraNear,
-        "shadow-camera-far": merged.shadowCameraFar,
-        "shadow-camera-top": merged.shadowCameraTop,
-        "shadow-camera-bottom": merged.shadowCameraBottom,
-        "shadow-camera-left": merged.shadowCameraLeft,
-        "shadow-camera-right": merged.shadowCameraRight,
+        color: properties.color,
+        intensity: properties.intensity,
+        castShadow: properties.castShadow,
+        "shadow-bias": properties.shadowBias,
+        "shadow-normalBias": properties.shadowNormalBias,
+        "shadow-intensity": properties.shadowIntensity,
+        "shadow-radius": properties.shadowRadius,
+        "shadow-autoUpdate": properties.shadowAutoUpdate,
+        "shadow-camera-layers-mask": properties.shadowCameraLayers,
+        "shadow-camera-near": properties.shadowCameraNear,
+        "shadow-camera-far": properties.shadowCameraFar,
+        "shadow-camera-top": properties.shadowCameraTop,
+        "shadow-camera-bottom": properties.shadowCameraBottom,
+        "shadow-camera-left": properties.shadowCameraLeft,
+        "shadow-camera-right": properties.shadowCameraRight,
     };
     const directionalLightRef = useRef<DirectionalLight>(null);
     const helperTargetRef = useRef<Object3D>(null!);
     const target = useMemo(() => new Object3D(), []);
     useShadowMapResolution(directionalLightRef, shadowMapSize);
     const rig = useRef<Group>(null);
-    const follow = useMemo(createFollowState, [merged.followCamera, merged.followCameraStep, merged.followCameraInterval]);
+    const follow = useMemo(createFollowState, [properties.followCamera, properties.followCameraStep, properties.followCameraInterval]);
     const cameraPosition = useMemo(() => new Vector3(), []);
     const offset = useMemo(() => new Vector3(), []);
     useLayoutEffect(() => {
@@ -80,10 +79,10 @@ function DirectionalLightView({ properties, children }: ComponentViewProps<Direc
     }, [follow]);
     useFrame(({ camera }, delta) => {
         const root = rig.current;
-        if (!merged.followCamera || !root) return;
+        if (!properties.followCamera || !root) return;
         camera.getWorldPosition(cameraPosition);
         if (!stepCameraFollow(follow, delta, cameraPosition.x, cameraPosition.z,
-            Math.max(0.01, merged.followCameraInterval), Math.max(0.01, merged.followCameraStep))) return;
+            Math.max(0.01, properties.followCameraInterval), Math.max(0.01, properties.followCameraStep))) return;
         // Move light and target together in world X/Z; keep authored height and direction.
         if (root.parent) {
             root.parent.getWorldPosition(offset);
@@ -96,14 +95,14 @@ function DirectionalLightView({ properties, children }: ComponentViewProps<Direc
     });
 
     // Show CameraHelper only in edit mode, selected, and castShadow
-    const showHelper = editMode && isSelected && merged.castShadow;
+    const showHelper = editMode && isSelected && properties.castShadow;
     const shadowCamera = directionalLightRef.current?.shadow.camera ?? null;
     if (shadowCamera) helperTargetRef.current = shadowCamera;
     useHelper(showHelper && shadowCamera ? helperTargetRef : null, CameraHelper);
 
-    const Light = merged.castShadow && merged.shadowCascades > 1 ? CascadedDirectionalLight : 'directionalLight';
+    const Light = properties.castShadow && properties.shadowCascades > 1 ? CascadedDirectionalLight : 'directionalLight';
     const cascadeProps = Light === CascadedDirectionalLight
-        ? { cascades: merged.shadowCascades, maxFar: merged.shadowDistance } : {};
+        ? { cascades: properties.shadowCascades, maxFar: properties.shadowDistance } : {};
     return (
         <group ref={rig}>
             <Light
@@ -115,33 +114,33 @@ function DirectionalLightView({ properties, children }: ComponentViewProps<Direc
                 {children}
                 {editMode ? (
                     <EditorLightGizmo
-                        color={merged.color}
+                        color={properties.color}
                         selected={isSelected}
-                        targetOffset={merged.targetOffset}
+                        targetOffset={properties.targetOffset}
                     />
                 ) : null}
                 {editMode && isSelected && (
                     <>
                         {/* Target indicator */}
-                        <mesh position={merged.targetOffset}>
+                        <mesh position={properties.targetOffset}>
                             <sphereGeometry args={[0.2, 8, 6]} />
-                            <meshBasicMaterial color={merged.color} wireframe opacity={0.5} transparent />
+                            <meshBasicMaterial color={properties.color} wireframe opacity={0.5} transparent />
                         </mesh>
                         {/* Direction line */}
                         <line>
                             <bufferGeometry>
                                 <bufferAttribute
                                     attach="attributes-position"
-                                    args={[new Float32Array([0, 0, 0, merged.targetOffset[0], merged.targetOffset[1], merged.targetOffset[2]]), 3]}
+                                    args={[new Float32Array([0, 0, 0, properties.targetOffset[0], properties.targetOffset[1], properties.targetOffset[2]]), 3]}
                                 />
                             </bufferGeometry>
-                            <lineBasicMaterial color={merged.color} opacity={0.6} transparent />
+                            <lineBasicMaterial color={properties.color} opacity={0.6} transparent />
                         </line>
                     </>
                 )}
             </Light>
 
-            <primitive object={target} position={merged.targetOffset} />
+            <primitive object={target} position={properties.targetOffset} />
 
         </group>
     );

@@ -1,15 +1,14 @@
-import { DEFAULT_SPATIAL_CELL_SIZE } from '../spatial/SpatialGrid.js';
+import { DEFAULT_SPATIAL_CELL_SIZE } from '../spatial/spatialCell.js';
+import { ChunkSettingsContext } from '../components/ChunkSettingsComponent.js';
 import { createContext, useContext, useLayoutEffect, useMemo, useRef, useSyncExternalStore, type ReactNode, type RefObject } from 'react';
 import { Group, type Mesh } from 'three';
 import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { MeshInstanceRegistry } from './MeshInstanceRuntime.js';
-export { hideInstancedSources, manageInstancedSourceVisibility, supportsInstanceMatrix } from './MeshInstanceRuntime.js';
 
 /** Forward batched clicks to the host that owns each source mesh. */
 export const InstanceClickContext = createContext<((event: ThreeEvent<MouseEvent>) => void) | undefined>(undefined);
 
 const MeshInstanceContext = createContext<MeshInstanceRegistry | null>(null);
-const MeshInstancingEnabled = createContext(true);
 
 function MeshInstanceBatches({ registry }: { registry: MeshInstanceRegistry }) {
     const root = useMemo(() => new Group(), []);
@@ -18,40 +17,37 @@ function MeshInstanceBatches({ registry }: { registry: MeshInstanceRegistry }) {
     return <primitive object={root} onClick={registry.handleClick} dispose={null} />;
 }
 
-/** Owns one mesh bucket registry for the complete nested prefab tree. */
-export const SpatialCellSizeContext = createContext(DEFAULT_SPATIAL_CELL_SIZE);
-
-export function MeshInstanceProvider({ children, isolated = false, static: isStatic = false, enabled = true, minInstances = 8 }: { children: ReactNode; isolated?: boolean; static?: boolean; enabled?: boolean; minInstances?: number }) {
-    const parentEnabled = useContext(MeshInstancingEnabled);
-    const active = parentEnabled && enabled;
-    const cellSize = useContext(SpatialCellSizeContext);
+/** null disables secondary partitioning for an isolated, already bounded stream chunk. */
+export function MeshInstanceProvider({ children, isolated = false, static: isStatic = false, spatialCellSize }: { children: ReactNode; isolated?: boolean; static?: boolean; spatialCellSize?: number | null }) {
+    const settings = useContext(ChunkSettingsContext);
+    const inheritedCellSize = settings?.batchCellSize ?? DEFAULT_SPATIAL_CELL_SIZE;
+    const cellSize = spatialCellSize === undefined ? inheritedCellSize : spatialCellSize;
     const parent = useContext(MeshInstanceContext);
     const inherited = isolated ? null : parent;
-    const registry = useMemo(() => inherited ?? new MeshInstanceRegistry(isStatic, cellSize, Math.max(2, minInstances)), [inherited, isStatic, cellSize, minInstances]);
+    const registry = useMemo(() => inherited ?? new MeshInstanceRegistry(isStatic, cellSize), [inherited, isStatic, cellSize]);
     if (inherited) return children;
     return (
-        <MeshInstancingEnabled.Provider value={active}><MeshInstanceContext.Provider value={registry}>
+        <MeshInstanceContext.Provider value={registry}>
             {children}
-            {active && <MeshInstanceBatches registry={registry} />}
-        </MeshInstanceContext.Provider></MeshInstancingEnabled.Provider>
+            <MeshInstanceBatches registry={registry} />
+        </MeshInstanceContext.Provider>
     );
 }
 
-export function useMeshInstanceRegistration(id: string, meshRef: RefObject<Mesh | null>, enabled: boolean) {
-    const instancingEnabled = useContext(MeshInstancingEnabled);
+export function useMeshInstanceRegistration(id: string, meshRef: RefObject<Mesh | null>, eligible: boolean) {
     const registry = useContext(MeshInstanceContext);
     const onClick = useContext(InstanceClickContext);
     const clickHandler = useRef(onClick);
     useLayoutEffect(() => { clickHandler.current = onClick; }, [onClick]);
     useLayoutEffect(() => {
         const mesh = meshRef.current;
-        if (!instancingEnabled || !registry || !mesh || !enabled || !mesh.geometry || !mesh.material || mesh.children.length > 0) return;
+        if (!registry || !mesh || !eligible || !mesh.geometry || !mesh.material || mesh.children.length > 0) return;
         return registry.register({
             id,
             mesh,
             onClick: event => clickHandler.current?.(event),
         });
-    }, [enabled, instancingEnabled, id, meshRef, registry]);
+    }, [eligible, id, meshRef, registry]);
 }
 
 const NOOP = () => {};

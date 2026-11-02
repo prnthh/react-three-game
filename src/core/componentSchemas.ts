@@ -10,7 +10,7 @@ export function describeSceneComponents({ names, properties = {} }: { names?: st
     const components = (names ?? Object.keys(registry)).map(name => {
         if (!Object.hasOwn(registry, name)) throw new Error(`Unknown component type "${name}".`);
         const component = registry[name];
-        const summary = { name, description: component.description, slot: component.slot, exclusive: component.exclusive, ...(component.modifyGeometry ? { modifies: 'Geometry' } : {}) };
+        const summary = { name, scope: component.scope, description: component.description, slot: component.slot, exclusive: component.exclusive, ...(component.modifyGeometry ? { modifies: 'Geometry' } : {}) };
         if (!names) return summary;
         const supplied = properties[name] ?? {};
         if (!supplied || typeof supplied !== 'object' || Array.isArray(supplied)) throw new Error(`Invalid properties for ${name}.`);
@@ -38,6 +38,6 @@ export function describeSceneComponents({ names, properties = {} }: { names?: st
     });
     return JSON.parse(JSON.stringify({ registryRevision: getComponentRegistryVersion(), components })) as {
         registryRevision: number;
-        components: { name: string; description?: string; slot?: string; modifies?: string; schema?: JsonSchema; defaults?: Record<string, unknown> }[];
+        components: { name: string; scope?: 'scene'; description?: string; slot?: string; modifies?: string; schema?: JsonSchema; defaults?: Record<string, unknown> }[];
     };
 }

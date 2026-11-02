@@ -19,7 +19,7 @@ export interface AssetRuntime {
     /** Return an isolated copy of the shared definition. */
     readPrefab: (path: string) => Promise<Prefab>;
     loadAsset: (dependency: AssetDependency) => Promise<Object3D | Texture | AudioBuffer>;
-    preparePrefab: (path: string, options?: PrefabPreparationOptions) => Promise<PreparedPrefab>;
+    preparePrefab: (path: string | PrefabState, options?: PrefabPreparationOptions) => Promise<PreparedPrefab>;
     getPrefab: (path: string) => PrefabState | null;
     loadModel: (path: string, source?: () => Promise<Object3D>) => Promise<void>;
     loadTexture: (path: string, source?: () => Promise<Texture>) => Promise<void>;
@@ -163,7 +163,7 @@ function AssetRuntimeOwner({ children, runtimeRef }: AssetRuntimeProviderProps) 
     const readPrefab = useCallback(async (path: string) =>
         structuredClone(denormalizePrefab(await loadDocument(path))), [loadDocument]);
     const getPrefab = useCallback((path: string) => getAsset('prefab', path), [getAsset]);
-    const prepare = useCallback((path: string, options?: PrefabPreparationOptions) => preparePrefab({
+    const prepare = useCallback((path: string | PrefabState, options?: PrefabPreparationOptions) => preparePrefab({
         getComponent, loadDocument, loadAsset,
     }, path, options), [loadDocument, loadAsset]);
     const runtime = useMemo<AssetRuntime>(() => ({

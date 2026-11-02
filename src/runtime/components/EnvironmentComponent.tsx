@@ -26,7 +26,7 @@ function environmentSnapshot(scene: Scene): unknown[] {
     scene.updateMatrixWorld();
     const snapshot: unknown[] = [];
     scene.traverseVisible(object => {
-        snapshot.push(object, object.layers.mask, ...object.matrixWorld.elements);
+        snapshot.push(object, object.layers.mask, object.userData.environmentVersion, ...object.matrixWorld.elements);
         const mesh = object as Mesh;
         if (mesh.geometry) snapshot.push(mesh.geometry, mesh.geometry.attributes.position);
         if (mesh.material) for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
@@ -67,7 +67,7 @@ function EnvironmentView({ properties, children }: ComponentViewProps<Environmen
     return <>
         {createPortal(<AssetBoundary atomic subscribeToRetry={store.subscribe}>
             <Environment {...props} scene={mainScene} map={capture.target.texture} environmentIntensity={intensity} />
-            <MeshInstanceProvider isolated enabled={false}>{children}</MeshInstanceProvider>
+            <MeshInstanceProvider isolated>{children}</MeshInstanceProvider>
         </AssetBoundary>, scene)}
     </>;
 }

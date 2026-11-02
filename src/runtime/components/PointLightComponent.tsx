@@ -1,17 +1,16 @@
-import { Color } from 'three';
 import { useRef } from 'react';
 
 import { useHelper } from '@react-three/drei';
 
 import { PointLightHelper } from 'three';
 
-import type { Object3D, PointLight } from 'three';
+import type { PointLight } from 'three';
 
 import { useNode } from '../scene/SceneContext.js';
 
 import type { Component, ComponentViewProps } from '../../core/ComponentRegistry.js';
 
-import { EditorLightGizmo, MAX_SHADOW_MAP_SIZE, MIN_SHADOW_MAP_SIZE, mergeWithDefaults, normalizeShadowMapSize, useShadowMapResolution } from './lightUtils.js';
+import { EditorLightGizmo, MAX_SHADOW_MAP_SIZE, MIN_SHADOW_MAP_SIZE, normalizeShadowMapSize, useShadowMapResolution } from './lightUtils.js';
 
 export const pointLightDefaults = {
     color: '#ffffff',
@@ -34,30 +33,25 @@ export type PointLightProperties = Partial<typeof pointLightDefaults>;
 function PointLightView({ properties, children }: ComponentViewProps<PointLightProperties>) {
     const editMode = useNode(node => node.editMode);
     const isSelected = useNode(node => node.isSelected);
-    const merged = mergeWithDefaults(pointLightDefaults, properties);
-    const shadowMapSize = normalizeShadowMapSize(merged.shadowMapSize);
-    const shadowCameraNear = Math.max(0.001, Number(merged.shadowCameraNear) || 0.5);
-    const shadowCameraFar = Math.max(shadowCameraNear, Number(merged.shadowCameraFar) || 500);
+    const shadowMapSize = normalizeShadowMapSize(properties.shadowMapSize);
     const lightProps = {
-        color: new Color(merged.color),
-        intensity: merged.intensity,
-        distance: merged.distance,
-        decay: merged.decay,
-        castShadow: merged.castShadow,
-        "shadow-bias": merged.shadowBias,
-        "shadow-normalBias": merged.shadowNormalBias,
-        "shadow-intensity": merged.shadowIntensity,
-        "shadow-radius": merged.shadowRadius,
-        "shadow-autoUpdate": merged.shadowAutoUpdate,
-        "shadow-camera-near": merged.shadowCameraNear,
-        "shadow-camera-far": merged.shadowCameraFar,
+        color: properties.color,
+        intensity: properties.intensity,
+        distance: properties.distance,
+        decay: properties.decay,
+        castShadow: properties.castShadow,
+        "shadow-bias": properties.shadowBias,
+        "shadow-normalBias": properties.shadowNormalBias,
+        "shadow-intensity": properties.shadowIntensity,
+        "shadow-radius": properties.shadowRadius,
+        "shadow-autoUpdate": properties.shadowAutoUpdate,
+        "shadow-camera-near": properties.shadowCameraNear,
+        "shadow-camera-far": properties.shadowCameraFar,
     };
-    const lightRef = useRef<PointLight>(null);
-    const helperTargetRef = useRef<Object3D>(null!);
+    const lightRef = useRef<PointLight>(null!);
     useShadowMapResolution(lightRef, shadowMapSize);
-    const showHelper = editMode && isSelected && lightRef.current;
-    if (lightRef.current) helperTargetRef.current = lightRef.current;
-    useHelper(showHelper ? helperTargetRef : null, PointLightHelper, 0.5);
+    const showHelper = editMode && isSelected;
+    useHelper(showHelper ? lightRef : null, PointLightHelper, 0.5);
 
     return (
         <group>
@@ -65,15 +59,15 @@ function PointLightView({ properties, children }: ComponentViewProps<PointLightP
                 {children}
                 {editMode ? (
                     <EditorLightGizmo
-                        color={merged.color}
+                        color={properties.color}
                         selected={isSelected}
                     />
                 ) : null}
-                {editMode && isSelected && merged.castShadow ? (
-                    <mesh scale={shadowCameraFar}>
+                {editMode && isSelected && properties.castShadow ? (
+                    <mesh scale={properties.shadowCameraFar} userData={{ editorHelper: true }}>
                         <sphereGeometry args={[1, 24, 12]} />
                         <meshBasicMaterial
-                            color={merged.color}
+                            color={properties.color}
                             wireframe
                             transparent
                             opacity={0.22}

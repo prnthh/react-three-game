@@ -1,7 +1,9 @@
 import { useFrame, useThree } from '@react-three/fiber';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Vector3 } from 'three';
-import { PrefabEditorMode, PrefabInstance, useNode, useGameObject, usePrefab, useScene, type Component, type ComponentViewProps } from 'react-three-game/viewer';
+import { PrefabEditorMode, PrefabInstance, useNode, useGameObject, usePrefab, useScene, usePrefabStore, type Component, type ComponentViewProps } from 'react-three-game/viewer';
+import { normalizePrefab } from 'react-three-game/core';
+
 
 type Coordinate = [number, number, number];
 type Tile = { key: string; coordinate: Coordinate };
@@ -63,7 +65,8 @@ function createPrefabGrid(size: Coordinate, maxTiles: number) {
     };
 }
 
-type Properties = { url?: string; tileSize?: Coordinate; tileCenter?: Coordinate; maxTiles?: number; static?: boolean };
+type Properties = { url?: string; prefabId?: string; tileSize?: Coordinate; tileCenter?: Coordinate; maxTiles?: number; static?: boolean;
+ };
 function PrefabGridStreamerView({ properties, children }: ComponentViewProps<Properties>) {
     const { basePath } = usePrefab();
     const { mode } = useScene();
@@ -74,37 +77,45 @@ function PrefabGridStreamerView({ properties, children }: ComponentViewProps<Pro
     const [tiles, setTiles] = useState(grid.tiles);
     const position = useRef(new Vector3());
     const { url, tileSize, tileCenter } = properties;
-
+    const definitions = usePrefabStore(state => state.prefabs);
+    const document = useMemo(() => properties.prefabId && definitions?.[properties.prefabId]
+        ? normalizePrefab(definitions[properties.prefabId], definitions) : undefined, [definitions, properties.prefabId]);
     useFrame(() => {
-        if (mode !== PrefabEditorMode.Play || !host.transform || !url) return;
+        if (mode !== PrefabEditorMode.Play || !host.transform || (!document && !url)) return;
         camera.getWorldPosition(position.current);
         host.transform.worldToLocal(position.current);
         const next = grid.update(gridCell(position.current.toArray(), tileSize, tileCenter));
         if (next !== tiles) setTiles(next);
     });
 
+    // The packed child is the editable prototype. In Play only staged placements render.
+    if (mode !== PrefabEditorMode.Play && document) return children;
     return <>
-        {url && tiles.map(tile => <group key={`${url}:${tile.key}`} position={tile.coordinate.map((value, axis) => value * tileSize[axis]) as Coordinate}>
-            <PrefabInstance id={`${nodeId}/${tile.key}`} url={url} basePath={basePath} static={properties.static === true && mode === PrefabEditorMode.Play} onActivate={() => grid.activate(tile.key)} />
+        {(document || url) && tiles.map(tile => <group key={`${properties.prefabId || url}:${tile.key}`} position={tile.coordinate.map((value, axis) => value * tileSize[axis]) as Coordinate}>
+            <PrefabInstance id={`${nodeId}/${tile.key}`} url={url} document={document} basePath={basePath} static={properties.static === true && mode === PrefabEditorMode.Play}
+                onStatus={status => { if (status.phase === 'error') console.error('Prefab streaming failed:', status.error); }}
+                onActivate={() => grid.activate(tile.key)} />
         </group>)}
-        {children}
+        {!document && children}
     </>;
 }
 
 function PrefabGridStreamer(props: ComponentViewProps<Properties>) {
     const { mode } = useScene();
     const { basePath } = usePrefab();
-    const { url, tileSize, tileCenter, maxTiles, static: isStatic } = props.properties;
-    const key = JSON.stringify([mode, basePath, url, tileSize, tileCenter, maxTiles, isStatic]);
+    const key = JSON.stringify([mode, basePath, props.properties]);
     return <PrefabGridStreamerView key={key} {...props} />;
 }
 
 const PrefabGridStreamerComponent: Component<Properties> = {
     name: 'PrefabGridStreamer',
     View: PrefabGridStreamer,
-    dependencies: properties => properties.url ? [{ kind: 'prefab', path: properties.url }] : [],
+    category: 'misc',
+    description: 'Repeat a prefab around the active camera in Play. Uses a packed child definition or URL; ChunkSettings on the scene root controls distance streaming. Packed prototypes remain editable in Edit.',
+    dependencies: properties => !properties.prefabId && properties.url ? [{ kind: 'prefab', path: properties.url }] : [],
     properties: {
         url: { type: 'string', default: '' },
+        prefabId: { type: 'string', default: '', description: 'Packed child definition in this document. Editable in Edit; streamed placements in Play.' },
         static: { type: 'boolean', default: false },
         tileSize: { type: 'vector3', default: [160, 0, 320] },
         tileCenter: { type: 'vector3', default: [0, 0, 0] },

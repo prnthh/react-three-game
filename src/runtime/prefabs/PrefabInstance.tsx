@@ -1,36 +1,39 @@
-import { AssetBoundary } from '../assets/AssetBoundary.js';
-import { startTransition, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { useThree } from '@react-three/fiber';
-import { Group } from 'three';
-import type { WebGPURenderer } from 'three/webgpu';
-import { PrefabRoot } from './PrefabRoot.js';
-import { createPrefabStore } from "../../core/prefabStore.js";
+import { startTransition, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useAssetRuntime } from '../assets/AssetRuntime.js';
-import { MeshInstanceProvider, useMeshInstanceRevision } from '../rendering/MeshInstanceProvider.js';
 import { SceneRuntime } from '../SceneRuntime.js';
 import type { PreparedPrefab } from './preparePrefab.js';
-import { compileInSlices } from '../rendering/compileInSlices.js';
+import { PreparedPrefabInstance } from './PreparedPrefabInstance.js';
+import { SpatialPrefabInstance } from './SpatialPrefabInstance.js';
+import { ChunkSettingsContext, readChunkSettings } from '../components/ChunkSettingsComponent.js';
+import { SceneContext } from '../scene/SceneContext.js';
+import type { PrefabState } from '../../core/prefab.js';
 
 export type PrefabInstanceStatus =
     | { phase: 'loading' }
-    | { phase: 'compiling'; loadMs: number }
-    | { phase: 'active'; loadMs: number; compileMs: number }
+    | { phase: 'compiling' }
+    | { phase: 'active' }
     | { phase: 'error'; error: unknown };
 
 export interface PrefabInstanceProps {
     /** Unique placement identity within the enclosing scene. */
     id: string;
-    url: string;
+    url?: string;
+    /** Prepared from an embedded definition with the same staged loading as a URL. Takes precedence over url. */
+    document?: PrefabState;
     basePath?: string;
     /** Immutable terrain: freeze world transforms after preparation. Remount to move or edit it. */
     static?: boolean;
+    onChunkStatus?: (status: PrefabChunkStatus) => void;
     onStatus?: (status: PrefabInstanceStatus) => void;
     onActivate?: () => void;
     children?: ReactNode;
 }
 
+export type PrefabChunkStatus = { id: string; phase: 'preparing' | 'ready' | 'unloaded' | 'error'; error?: unknown };
+
 /** Load a shared definition, build an isolated instance, compile it, then activate gameplay. */
 export function PrefabInstance(props: PrefabInstanceProps) {
+    if (!props.document && !props.url) throw new Error('PrefabInstance requires a document or url.');
     return <SceneRuntime>
         <InstanceResource key={`${props.id}:${props.basePath ?? ''}:${props.url}:${!!props.static}`} {...props} />
     </SceneRuntime>;
@@ -38,85 +41,26 @@ export function PrefabInstance(props: PrefabInstanceProps) {
 
 function InstanceResource(props: PrefabInstanceProps) {
     const runtime = useAssetRuntime();
-    const [prepared, setPrepared] = useState<PreparedPrefab | null>(null);
+    const source = props.document ?? props.url!;
+    const inheritedSettings = useContext(ChunkSettingsContext);
+    const parentScene = useContext(SceneContext);
+    const [resource, setResource] = useState<{ source: typeof source; prepared: PreparedPrefab } | null>(null);
     const callbacks = useRef(props);
     callbacks.current = props;
     useEffect(() => {
         const controller = new AbortController();
         callbacks.current.onStatus?.({ phase: 'loading' });
-        void runtime.preparePrefab(props.url, { basePath: props.basePath, signal: controller.signal }).then(value => {
+        void runtime.preparePrefab(source, { basePath: props.basePath, signal: controller.signal }).then(value => {
             if (controller.signal.aborted) return;
-            startTransition(() => setPrepared(value));
+            startTransition(() => setResource({ source, prepared: value }));
         }, error => {
             if (!controller.signal.aborted) callbacks.current.onStatus?.({ phase: 'error', error });
         });
         return () => controller.abort();
-    }, [props.basePath, props.url, runtime]);
+    }, [props.basePath, source, runtime]);
+    const prepared = resource?.source === source ? resource.prepared : null;
+    const settings = useMemo(() => inheritedSettings ?? (!parentScene && prepared ? readChunkSettings(prepared.document.nodesById[prepared.document.rootId]) : null), [inheritedSettings, parentScene, prepared]);
     if (!prepared) return null;
-    return <InstanceMount {...props} prepared={prepared} />;
-}
-
-function InstanceMount(props: PrefabInstanceProps & { prepared: PreparedPrefab }) {
-    const container = useMemo(() => new Group(), []);
-    return <primitive object={container} visible={false} dispose={null}>
-        <MeshInstanceProvider isolated static={props.static}>
-            <AssetBoundary atomic onError={error => props.onStatus?.({ phase: 'error', error })}>
-                <InstanceView {...props} container={container} />
-            </AssetBoundary>
-        </MeshInstanceProvider>
-    </primitive>;
-}
-
-type InstanceViewProps = PrefabInstanceProps & { prepared: PreparedPrefab; container: Group };
-
-function InstanceView(props: InstanceViewProps) {
-    const store = useMemo(() => createPrefabStore(props.prepared.document), [props.prepared]);
-    const [compileMs, setCompileMs] = useState<number | null>(null);
-    return <PrefabRoot id={props.id} store={store} basePath={props.basePath} enabled={compileMs !== null}>
-        <InstancePreparation {...props} compileMs={compileMs} setCompileMs={setCompileMs} />
-        {props.children}
-    </PrefabRoot>;
-}
-
-function InstancePreparation({ prepared, static: isStatic = false, onStatus, onActivate, container, compileMs, setCompileMs }: InstanceViewProps & {
-    compileMs: number | null;
-    setCompileMs: (duration: number) => void;
-}) {
-    const { gl, camera, scene, invalidate } = useThree();
-    const compiled = compileMs !== null;
-    const revision = useMeshInstanceRevision(!compiled);
-    const callbacks = useRef({ onStatus, onActivate });
-    callbacks.current = { onStatus, onActivate };
-
-    useEffect(() => {
-        if (compiled) return;
-        const controller = new AbortController();
-        callbacks.current.onStatus?.({ phase: 'compiling', loadMs: prepared.durationMs });
-        const started = performance.now();
-        void compileInSlices(gl as unknown as WebGPURenderer, container, camera, scene, { signal: controller.signal }).then(() => {
-            if (controller.signal.aborted) return;
-            if (isStatic) {
-                container.updateWorldMatrix(true, true);
-                container.traverse(object => {
-                    object.matrixAutoUpdate = false;
-                    object.matrixWorldAutoUpdate = false;
-                });
-            }
-            setCompileMs(performance.now() - started);
-            invalidate();
-        }).catch(error => {
-            if (!controller.signal.aborted) callbacks.current.onStatus?.({ phase: 'error', error });
-        });
-        return () => controller.abort();
-    }, [camera, compiled, container, isStatic, gl, invalidate, prepared, revision, scene]);
-
-    useEffect(() => {
-        if (compileMs === null) return;
-        callbacks.current.onStatus?.({ phase: 'active', loadMs: prepared.durationMs, compileMs });
-        callbacks.current.onActivate?.();
-    }, [compiled, compileMs, prepared]);
-
-    useEffect(() => { container.visible = compiled; invalidate(); }, [compiled, container, invalidate]);
-
-    return null;
+    if (props.static && settings) return <SpatialPrefabInstance {...props} prepared={prepared} options={settings} />;
+    return <PreparedPrefabInstance {...props} prepared={prepared} />;
 }

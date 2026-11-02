@@ -21,6 +21,25 @@ describe('Component contracts', () => {
         assert.deepEqual(authored, { size: 3, color: '#000000' });
     });
 
+    test('unset properties resolve before dependent defaults while falsy values remain authored', () => {
+        const component = { name: 'Example', properties: {
+            size: { default: 2 },
+            width: { default: values => values.size * 2 },
+            enabled: { type: 'boolean', default: true },
+            label: { type: 'string', default: 'Example' },
+            optional: { type: 'number', default: undefined },
+        } };
+        const authored = { size: undefined, width: undefined, enabled: false, label: '', optional: undefined };
+        assert.deepEqual(resolveComponentProperties(component, authored), {
+            size: 2, width: 4, enabled: false, label: '', optional: undefined,
+        });
+        assert.deepEqual(resolveComponentProperties(component, { size: 0 }), {
+            size: 0, width: 0, enabled: true, label: 'Example', optional: undefined,
+        });
+        assert.ok(Object.hasOwn(authored, 'size'), 'resolution does not mutate the authored document');
+        assert.equal(authored.size, undefined);
+    });
+
     test('exclusive groups reject competing components independently of render slots', () => {
         const material = { name: 'Material', slot: 'material', exclusive: 'material', properties: {} };
         const custom = { name: 'CustomMaterial', slot: 'material', exclusive: 'material', properties: {} };

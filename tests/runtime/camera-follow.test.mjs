@@ -23,11 +23,13 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { createRoot, extend } from '@react-three/fiber';
 import { AudioContext, DirectionalLight, Group, Vector3 } from 'three';
 import { PrefabRoot, createPrefabStore } from 'react-three-game/viewer';
+import DirectionalLightComponent from '../../src/runtime/components/DirectionalLightComponent.tsx';
+import { resolveComponentProperties } from '../../src/core/ComponentRegistry.ts';
 import DirectionalLightEditor from '../../src/editor/components/DirectionalLightComponent.editor.tsx';
 
 test('follow options appear only when Follow camera is enabled', () => {
     const render = followCamera => renderToStaticMarkup(h(DirectionalLightEditor, {
-        node: { id: 'sun' }, properties: { followCamera }, update() {},
+        node: { id: 'sun' }, properties: resolveComponentProperties(DirectionalLightComponent, { followCamera }), update() {},
     }));
     assert.ok(!render(false).includes('Step size (X/Z)'));
     assert.ok(render(true).includes('Step size (X/Z)'));

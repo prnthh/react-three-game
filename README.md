@@ -35,6 +35,9 @@ const prefab: Prefab = {
   root: {
     id: 'world',
     children: [{
+      id: 'fill',
+      components: { light: { type: 'AmbientLight', properties: { intensity: 2 } } },
+    }, {
       id: 'cube', name: 'Cube',
       components: {
         geometry: { type: 'Geometry', properties: { geometryType: 'box' } },
@@ -47,7 +50,6 @@ const prefab: Prefab = {
 export default function App() {
   return <div style={{ height: '100vh' }}>
     <GameCanvas camera={{ position: [4, 3, 6] }}>
-      <ambientLight intensity={2} />
       <PrefabRoot data={prefab} />
     </GameCanvas>
   </div>;
@@ -71,9 +73,7 @@ import { PrefabEditor } from 'react-three-game/editor';
 export default function App() {
   return <div style={{ height: '100vh' }}>
     <PrefabEditor prefab={prefab}
-      canvasProps={{ camera: { position: [4, 3, 6] } }}>
-      <ambientLight intensity={2} />
-    </PrefabEditor>
+      canvasProps={{ camera: { position: [4, 3, 6] } }} />
   </div>;
 }
 ```
@@ -90,6 +90,11 @@ scene.look({ id: 'cube' });
 
 The GUI and API share the document and undo history. Explore `scene.help()` and
 `scene.components()` as you add more objects.
+
+Use **Scene tools** for structured actions. The repository’s editor also includes
+a demo **Agent chat** client connected to the same API. See the
+[Scene API guide](docs/public/editor-scene-for-agents.md) for discovery and WebMCP,
+and the [demo chat setup](docs/app/components/agent/README.md#connect-the-demo-chat).
 
 ## 3. Pack and reuse inline
 
@@ -111,7 +116,7 @@ for independent editing. To retain editor changes across an
 app reload, replace the inline `prefab` value with the JSON returned by
 `scene.exportJSON()`.
 
-See [inline composition in code](docs/ARCHITECTURE.md#compose-an-inline-prefab)
+See [inline composition in code](docs/PREFABS.md#compose-an-inline-prefab)
 and the [Scene API guide](docs/public/editor-scene-for-agents.md#reusable-subtrees)
 for nested assemblies and export.
 
@@ -176,8 +181,16 @@ import prefab from './scene.json';
 
 For an assembly shared across scenes, choose **Export Prefab…** on that node and
 save it under your app's `public/prefabs/` folder. Place it with a `PrefabRef` URL;
-see [file-based reuse and loading](docs/ARCHITECTURE.md#load-a-prefab).
+see [file-based reuse and loading](docs/PREFABS.md#load-a-prefab).
 Ship the JSON, its referenced assets, and custom component code with your app.
+
+### Stream static scenery at runtime
+
+`PrefabInstance` loads URL prefabs while the scene runs. Author `ChunkSettings`
+on the scene root and mark scenery placements `static` to prepare nearby cells
+gradually and hide/unmount distant cells. Repeated placements share source
+assets and the partition plan. See [distance streaming](docs/PREFABS.md#automatically-stream-static-scenery)
+for distances, mount limits, and lifecycle details.
 
 ## Tools and examples
 
@@ -188,9 +201,9 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000/editor`. Asset pickers and `scene.assets()` use
-`public/manifest.json`, relative to the editor's `basePath`. Rebuild this demo
-catalog with `npm --prefix docs run generate-manifests`.
+Open `http://localhost:3000/editor`. See the [demo development guide](docs/README.md)
+for asset catalogs and the [standalone editor guide](docs/app/editor/README.md)
+for URL loading and saving.
 
 ### Node CLI
 
@@ -221,10 +234,10 @@ produces static geometry and material settings for use in other 3D tools.
 | Next step | Example |
 | --- | --- |
 | Edit through scripts | [Scene API](docs/public/editor-scene-for-agents.md) |
-| Compose prefabs, then load chunks | [Architecture patterns](docs/ARCHITECTURE.md#compose-an-inline-prefab) |
-| Connect gameplay to live objects | [Host systems](docs/ARCHITECTURE.md#connect-a-host-system) |
+| Compose prefabs, then load chunks | [Prefab guide](docs/PREFABS.md#compose-an-inline-prefab) |
+| Connect gameplay to live objects | [Host integration](docs/COMPONENTS.md#connect-a-host-system) |
 | Physics | [Cool stuff demo](docs/app/demo/coolstuff/page.tsx) |
-| Inline buildings and movement | [Parkour demo](docs/app/demo/parkour/page.tsx) |
+| Parkour movement and procedural concrete | [Parkour demo](docs/app/demo/parkour/page.tsx) |
 | Custom inspector controls | [Interior mapping](docs/app/demo/coolstuff/INTERIOR-MAPPING.md) |
 | More working scenes | [Demo index](docs/README.md) |
 

@@ -1,0 +1,260 @@
+{
+  "id": "transit-arrival",
+  "name": "Transit arrival / market level",
+  "components": {
+    "transform": {
+      "properties": {},
+      "type": "Transform"
+    }
+  },
+  "children": [
+    {
+      "id": "transit-pylon",
+      "name": "Transit concrete blade",
+      "components": {
+        "geometry": {
+          "properties": {},
+          "type": "Geometry"
+        },
+        "material": {
+          "properties": {
+            "name": "home-city:concrete"
+          },
+          "type": "Material"
+        },
+        "transform": {
+          "properties": {
+            "position": [
+              -12.3,
+              11,
+              -22
+            ],
+            "scale": [
+              1,
+              22,
+              1.5
+            ]
+          },
+          "type": "Transform"
+        }
+      }
+    },
+    {
+      "id": "transit-wayfinding",
+      "name": "Transit arrival sign",
+      "components": {
+        "geometry": {
+          "properties": {
+            "castShadow": false,
+            "geometryType": "plane"
+          },
+          "type": "Geometry"
+        },
+        "material": {
+          "properties": {
+            "color": "#ffffff",
+            "materialType": "basic",
+            "name": "home-city:arrival-cyan",
+            "texture": "/textures/home-city/sector.svg",
+            "toneMapped": false
+          },
+          "type": "Material"
+        },
+        "transform": {
+          "properties": {
+            "position": [
+              -11.6,
+              17,
+              -20.9
+            ],
+            "scale": [
+              3.4,
+              13.6,
+              1
+            ]
+          },
+          "type": "Transform"
+        }
+      }
+    },
+    {
+      "id": "market-blade",
+      "name": "Market concrete blade",
+      "components": {
+        "geometry": {
+          "properties": {},
+          "type": "Geometry"
+        },
+        "material": {
+          "properties": {
+            "name": "home-city:concrete"
+          },
+          "type": "Material"
+        },
+        "transform": {
+          "properties": {
+            "position": [
+              12.3,
+              7,
+              -8
+            ],
+            "scale": [
+              1,
+              14,
+              1.5
+            ]
+          },
+          "type": "Transform"
+        }
+      }
+    },
+    {
+      "id": "market-wayfinding",
+      "name": "Market level sign",
+      "components": {
+        "geometry": {
+          "properties": {
+            "castShadow": false,
+            "geometryType": "plane"
+          },
+          "type": "Geometry"
+        },
+        "material": {
+          "properties": {
+            "color": "#ffffff",
+            "materialType": "basic",
+            "name": "home-city:arrival-amber",
+            "texture": "/textures/home-city/habitat.svg",
+            "toneMapped": false
+          },
+          "type": "Material"
+        },
+        "transform": {
+          "properties": {
+            "position": [
+              11.5,
+              10,
+              -6.9
+            ],
+            "scale": [
+              3.2,
+              9.6,
+              1
+            ]
+          },
+          "type": "Transform"
+        }
+      }
+    },
+    {
+      "id": "market-canopy",
+      "name": "Warm market canopy",
+      "components": {
+        "geometry": {
+          "properties": {},
+          "type": "Geometry"
+        },
+        "material": {
+          "properties": {
+            "name": "home-city:dark"
+          },
+          "type": "Material"
+        },
+        "transform": {
+          "properties": {
+            "position": [
+              16,
+              5,
+              -5
+            ],
+            "scale": [
+              8,
+              0.6,
+              17
+            ]
+          },
+          "type": "Transform"
+        }
+      }
+    },
+    {
+      "id": "market-canopy-light",
+      "name": "Market canopy luminaire",
+      "components": {
+        "geometry": {
+          "properties": {},
+          "type": "Geometry"
+        },
+        "material": {
+          "properties": {
+            "name": "home-city:amber"
+          },
+          "type": "Material"
+        },
+        "transform": {
+          "properties": {
+            "position": [
+              13.2,
+              4.65,
+              -5
+            ],
+            "scale": [
+              0.2,
+              0.15,
+              15
+            ]
+          },
+          "type": "Transform"
+        }
+      }
+    },
+    {
+      "id": "market-warm-spill",
+      "name": "Market warm spill",
+      "components": {
+        "light": {
+          "properties": {
+            "color": "#ffb66e",
+            "distance": 28,
+            "intensity": 420
+          },
+          "type": "PointLight"
+        },
+        "transform": {
+          "properties": {
+            "position": [
+              10,
+              6,
+              0
+            ]
+          },
+          "type": "Transform"
+        }
+      }
+    },
+    {
+      "id": "transit-cool-spill",
+      "name": "Transit cool spill",
+      "components": {
+        "light": {
+          "properties": {
+            "color": "#6bd8d2",
+            "distance": 27,
+            "intensity": 380
+          },
+          "type": "PointLight"
+        },
+        "transform": {
+          "properties": {
+            "position": [
+              -10,
+              13,
+              -22
+            ]
+          },
+          "type": "Transform"
+        }
+      }
+    }
+  ]
+}

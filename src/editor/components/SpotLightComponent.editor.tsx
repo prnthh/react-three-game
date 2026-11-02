@@ -2,13 +2,12 @@ import type { ComponentEditorProps } from "../../core/ComponentRegistry.js";
 import { BooleanField, ColorField, Label, NumberField, Vector3Input } from "../ui/Input.js";
 import { useEditorRef } from "../EditorContext.js";
 import { TexturePicker } from "../assets/AssetBrowser.js";
-import { MAX_SHADOW_MAP_SIZE, MIN_SHADOW_MAP_SIZE, mergeWithDefaults } from "../../runtime/components/lightUtils.js";
+import { MAX_SHADOW_MAP_SIZE, MIN_SHADOW_MAP_SIZE } from "../../runtime/components/lightUtils.js";
 import { LightSection, ShadowBiasField } from "./lightUtils.editor.js";
-import { spotLightDefaults, SpotLightProperties } from "../../runtime/components/SpotLightComponent.js";
+import { SpotLightProperties } from "../../runtime/components/SpotLightComponent.js";
 
-function SpotLightComponentEditor({ properties, update }: ComponentEditorProps<SpotLightProperties>) {
+function SpotLightComponentEditor({ properties: values, update }: ComponentEditorProps<SpotLightProperties>) {
     const { basePath } = useEditorRef();
-    const values = mergeWithDefaults(spotLightDefaults, properties);
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

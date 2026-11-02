@@ -25,6 +25,12 @@ import SpotLightComponent from "./SpotLightComponent.js";
 import SpriteComponent from "./SpriteComponent.js";
 import TextComponent from "./TextComponent.js";
 import TransformComponent from "./TransformComponent.js";
+import SkyComponent from './SkyComponent.js';
+import DiffuseLightProbeComponent from './DiffuseLightProbeComponent.js';
+import RenderSettingsComponent from './RenderSettingsComponent.js';
+import PostProcessingComponent from './PostProcessingComponent.js';
+import ChunkSettingsComponent from './ChunkSettingsComponent.js';
+import ClusteredLightingComponent from './ClusteredLightingComponent.js';
 import { registerBuiltInComponents as registerDefaults, type Component } from "../../core/ComponentRegistry.js";
 
 // Built-in definitions; this order controls their editor display.
@@ -57,6 +63,12 @@ export const builtInComponents: readonly Component<any>[] = [
 
 	// Other components
 	EnvironmentComponent,
+	SkyComponent,
+	DiffuseLightProbeComponent,
+	RenderSettingsComponent,
+	PostProcessingComponent,
+	ChunkSettingsComponent,
+	ClusteredLightingComponent,
 	FogComponent,
 	CameraComponent,
 	CameraFollowComponent,

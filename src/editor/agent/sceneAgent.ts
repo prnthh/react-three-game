@@ -25,7 +25,7 @@ export interface SceneCaptureOptions {
 
 export interface SceneAgentHost {
     loadAssetManifest?(): Promise<AssetManifest>;
-    loadPrefab?(url: string): Promise<Prefab>;
+    loadPrefab?(url: string, options?: { fresh?: boolean; signal?: AbortSignal }): Promise<Prefab>;
     getBounds?(id: string): { min: number[]; max: number[]; size: number[]; center: number[] } | null;
     setMode?(mode: 'edit' | 'play'): void | Promise<void>;
     resetScene?(): void | Promise<void>;
@@ -99,6 +99,7 @@ export function createSceneAgent(store: PrefabStoreApi, getHost: () => SceneAgen
     let sequence = 0;
     let previous = store.getState();
     let active = true;
+    let lifetime = new AbortController();
     const snapshot = () => {
         if (!active) throw new Error('This editor is no longer mounted. Discover the current editor again.');
         const state = store.getState();
@@ -378,6 +379,24 @@ export function createSceneAgent(store: PrefabStoreApi, getHost: () => SceneAgen
         remove(input: SceneAgentCommandInput<'remove'>) { return applyOne('remove', input); },
         replace(input: SceneAgentCommandInput<'replaceNode'>) { return applyOne('replaceNode', input); },
         replaceAll(input: SceneAgentCommandInput<'replace'>) { return applyOne('replace', input); },
+        async load(input: { url: string; expectedRevision?: string }, execution: { signal?: AbortSignal } = {}) {
+            options(input, ['url', 'expectedRevision']); requireEdit();
+            if (typeof input.url !== 'string' || !input.url.trim()) throw new Error('Provide a nonempty scene URL.');
+            const { revision } = input.expectedRevision === undefined ? snapshot() : checkRevision(input.expectedRevision);
+            const signal = execution.signal ? AbortSignal.any([lifetime.signal, execution.signal]) : lifetime.signal;
+            signal.throwIfAborted();
+            const load = getHost().loadPrefab;
+            if (!load) throw new Error('Scene loading is not configured for this editor.');
+            const prefab = await load(input.url, { fresh: true, signal });
+            signal.throwIfAborted();
+            // Validation, edit-mode and revision checks happen again at commit.
+            // A failed/canceled request or an intervening edit cannot replace the document.
+            const result = scene.replaceAll({ prefab, expectedRevision: revision });
+            const { state } = snapshot();
+            // Source loads can contain millions of IDs; discovery stays paginated.
+            return { source: input.url, revision: result.revision, changed: result.changed,
+                rootId: state.rootId, nodeCount: Object.keys(state.nodesById).length };
+        },
         move(input: SceneAgentCommandInput<'move'>) { return applyOne('move', input); },
         transform(input: SceneAgentCommandInput<'transform'>) { return applyOne('transform', input); },
         setComponent(input: SceneAgentCommandInput<'component'>) { return applyOne('component', input); },
@@ -474,6 +493,7 @@ export function createSceneAgent(store: PrefabStoreApi, getHost: () => SceneAgen
             return { savedRevision: revision, currentRevision: snapshot().revision };
         },
     };
-    return { scene, activate() { active = true; }, dispose() { active = false; } };
+    return { scene, activate() { active = true; if (lifetime.signal.aborted) lifetime = new AbortController(); },
+        dispose() { active = false; lifetime.abort(); } };
 }
 export type SceneAgent = ReturnType<typeof createSceneAgent>['scene'];

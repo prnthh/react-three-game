@@ -1,12 +1,28 @@
 import { loadAssetManifest, type AssetManifest } from '../../runtime/assets/assetManifest.js';
 import { Canvas } from "@react-three/fiber";
 import { Bounds, Clone, OrbitControls, View, PerspectiveCamera } from "@react-three/drei";
-import { useEffect, useLayoutEffect, useState, useRef } from "react";
+import { useEffect, useLayoutEffect, useState, useRef, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from 'react-dom';
 import { useAsset } from "../../runtime/assets/assetCache.js";
 import { AssetBoundary } from "../../runtime/assets/AssetBoundary.js";
 import { withBasePath } from "../../runtime/assets/assetPaths.js";
 import { base, colors, fonts } from "../ui/styles.js";
+
+const activePreviews = new Set<object>();
+const previewListeners = new Set<() => void>();
+const subscribePreviews = (listener: () => void) => { previewListeners.add(listener); return () => { previewListeners.delete(listener); }; };
+const previewCount = () => activePreviews.size;
+const serverPreviewCount = () => 0;
+
+/** The preview renderer exists only while at least one visible card needs it. */
+function ActivePreview({ children }: { children: ReactNode }) {
+    useEffect(() => {
+        const token = {};
+        activePreviews.add(token); previewListeners.forEach(listener => listener());
+        return () => { activePreviews.delete(token); previewListeners.forEach(listener => listener()); };
+    }, []);
+    return children;
+}
 
 const styles: Record<string, any> = {
     errorIcon: { color: colors.danger, fontSize: 12 },
@@ -255,7 +271,7 @@ function TextureCard({
         >
             <div style={{ flex: 1, position: 'relative' }}>
                 {isInView ? (
-                    <View style={{ width: '100%', height: '100%' }}>
+                    <ActivePreview><View style={{ width: '100%', height: '100%' }}>
                         <PerspectiveCamera makeDefault position={[0, 0, 2.5]} fov={50} />
                         <ambientLight intensity={0.8} />
                         <pointLight position={[5, 5, 5]} intensity={0.5} />
@@ -266,7 +282,7 @@ function TextureCard({
                             autoRotate={isHovered}
                             autoRotateSpeed={2}
                         />
-                    </View>
+                    </View></ActivePreview>
                 ) : null}
             </div>
             <div style={styles.bottomLabel}>
@@ -347,13 +363,13 @@ function ModelCard({
         >
             <div style={styles.flexFillRelative}>
                 {isInView ? (
-                    <View style={{ width: '100%', height: '100%' }}>
+                    <ActivePreview><View style={{ width: '100%', height: '100%' }}>
                         <PerspectiveCamera makeDefault position={[0, 1, 3]} fov={50} />
                         <ambientLight intensity={1} />
                         <pointLight position={[5, 5, 5]} intensity={0.5} />
                         <AssetBoundary key={fullPath} onError={() => setError(true)}><ModelPreview url={fullPath} /></AssetBoundary>
                         <OrbitControls enableZoom={interactive} enablePan={interactive} />
-                    </View>
+                    </View></ActivePreview>
                 ) : null}
             </div>
             <div style={styles.bottomLabel}>
@@ -654,6 +670,8 @@ export function SingleSoundViewer({ file }: { file?: string }) {
 
 // Mount once per page alongside all asset lists and single previews.
 export function SharedCanvas() {
+    const count = useSyncExternalStore(subscribePreviews, previewCount, serverPreviewCount);
+    if (!count) return null;
     return (
         <Canvas
             shadows

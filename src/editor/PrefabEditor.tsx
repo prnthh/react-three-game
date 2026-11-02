@@ -2,6 +2,7 @@ import { SharedCanvas } from "./assets/AssetBrowser.js";
 import { resolveGameObject } from '../runtime/scene/gameObject.js';
 import { createPrefabDocumentApi } from '../core/prefabDocumentApi.js';
 import { importCollisionModel } from '../core/modelPrefab.js';
+import { renderSceneCapture, withSceneCapture } from '../runtime/rendering/sceneCapture.js';
 import { createEditorToolController, EditorToolsContext } from "./tools/EditorTools.js";
 import { loadAssetManifest } from '../runtime/assets/assetManifest.js';
 import { downloadBlob, downloadURL } from '../browser/index.js';
@@ -24,6 +25,7 @@ import { createDefaultMaterial, createImageNode, createModelNode, denormalizePre
 import EditorUI from "./EditorUI.js";
 import { createSceneAgent, type SceneAgentHost, type SceneCaptureOptions } from "./agent/sceneAgent.js";
 import { exposeSceneAgent } from "./agent/sceneAgentBridge.js";
+import { SceneToolsPanel } from './agent/SceneToolsPanel.js';
 import { base, toolbar } from "./ui/styles.js";
 import { exportGLB as exportGLBFile, exportGLBData, focusCameraOnObject } from "./documentIO.js";
 import type { ExportGLBOptions } from "./documentIO.js";
@@ -622,7 +624,12 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
 
     const agentHost: SceneAgentHost = {
         loadAssetManifest: () => loadAssetManifest(basePath),
-        loadPrefab: async url => {
+        loadPrefab: async (url, options) => {
+            if (options?.fresh) {
+                const response = await fetch(withBasePath(basePath, url), { cache: 'no-store', signal: options.signal });
+                if (!response.ok) throw new Error(`Failed to load scene (${response.status}): ${url}`);
+                return await response.json() as Prefab;
+            }
             const runtime = runtimeRef.current;
             if (!runtime) throw new Error('Editor asset runtime is not ready.');
             return runtime.readPrefab(withBasePath(basePath, url));
@@ -673,89 +680,93 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
         captureView: async (options: SceneCaptureOptions = {}) => {
             // Let React/R3F commit the latest batch, then render immediately before capture.
             await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-            const state = canvasStateRef.current?.get();
-            const canvas = canvasRef.current;
-            if (!state || !canvas || !canvas.width || !canvas.height) throw new Error('Editor canvas is not ready.');
-            const camera = state.camera;
-            const cameraPosition = camera.position.clone();
-            const cameraQuaternion = camera.quaternion.clone();
-            const perspective = camera instanceof PerspectiveCamera ? camera : null;
-            const fov = perspective?.fov;
-            const replacements = new Map<Mesh, Material | Material[]>();
-            const temporaryMaterials: Material[] = [];
-            const hiddenHelpers = new Map<Object3D, boolean>();
+            const renderer = canvasStateRef.current?.get().gl;
+            if (!renderer) throw new Error('Editor canvas is not ready.');
+            return withSceneCapture(renderer, async () => {
+                const state = canvasStateRef.current?.get();
+                const canvas = canvasRef.current;
+                if (!state || state.gl !== renderer || !canvas || !canvas.width || !canvas.height) throw new Error('Editor canvas is not ready.');
+                const camera = state.camera;
+                const cameraPosition = camera.position.clone();
+                const cameraQuaternion = camera.quaternion.clone();
+                const perspective = camera instanceof PerspectiveCamera ? camera : null;
+                const fov = perspective?.fov;
+                const replacements = new Map<Mesh, Material | Material[]>();
+                const temporaryMaterials: Material[] = [];
+                const hiddenHelpers = new Map<Object3D, boolean>();
 
-            try {
-                if (options.helpers === false) state.scene.traverse(object => {
-                    if (object.userData.editorHelper === true || /Helper$/.test(object.type)
-                        || (object as Object3D & { isTransformControlsRoot?: boolean }).isTransformControlsRoot) {
-                        hiddenHelpers.set(object, object.visible);
-                        object.visible = false;
-                    }
-                });
-                if (options.position) {
-                    camera.position.fromArray(options.position);
-                    if (camera.parent) camera.parent.worldToLocal(camera.position);
-                }
-                if (options.position || options.target) {
-                    const target = options.target
-                        ? new Vector3().fromArray(options.target)
-                        : controlsRef.current?.target.clone() ?? camera.getWorldPosition(new Vector3()).add(camera.getWorldDirection(new Vector3()));
-                    camera.lookAt(target);
-                }
-                if (options.fov !== undefined) {
-                    if (!perspective) throw new Error('fov is only supported by a perspective camera.');
-                    perspective.fov = options.fov;
-                    perspective.updateProjectionMatrix();
-                }
-                if (options.mode !== undefined && options.mode !== 'default') {
-                    state.scene.traverse(object => {
-                        if (!(object instanceof Mesh)) return;
-                        replacements.set(object, object.material);
-                        const convert = (source: Material) => {
-                            const surface = source as Material & {
-                                color?: Color;
-                                map?: Texture | null;
-                                alphaMap?: Texture | null;
-                                vertexColors?: boolean;
-                            };
-                            const material = new MeshBasicMaterial({
-                                color: surface.color?.clone(),
-                                map: surface.map ?? null,
-                                alphaMap: surface.alphaMap ?? null,
-                                transparent: source.transparent,
-                                opacity: source.opacity,
-                                alphaTest: source.alphaTest,
-                                side: source.side,
-                                depthTest: source.depthTest,
-                                depthWrite: source.depthWrite,
-                                vertexColors: surface.vertexColors ?? false,
-                                wireframe: options.mode === 'wireframe',
-                            });
-                            material.toneMapped = false;
-                            temporaryMaterials.push(material);
-                            return material;
-                        };
-                        object.material = Array.isArray(object.material) ? object.material.map(convert) : convert(object.material);
+                try {
+                    if (options.helpers === false) state.scene.traverse(object => {
+                        if (object.userData.editorHelper === true || /Helper$/.test(object.type)
+                            || (object as Object3D & { isTransformControlsRoot?: boolean }).isTransformControlsRoot) {
+                            hiddenHelpers.set(object, object.visible);
+                            object.visible = false;
+                        }
                     });
+                    if (options.position) {
+                        camera.position.fromArray(options.position);
+                        if (camera.parent) camera.parent.worldToLocal(camera.position);
+                    }
+                    if (options.position || options.target) {
+                        const target = options.target
+                            ? new Vector3().fromArray(options.target)
+                            : controlsRef.current?.target.clone() ?? camera.getWorldPosition(new Vector3()).add(camera.getWorldDirection(new Vector3()));
+                        camera.lookAt(target);
+                    }
+                    if (options.fov !== undefined) {
+                        if (!perspective) throw new Error('fov is only supported by a perspective camera.');
+                        perspective.fov = options.fov;
+                        perspective.updateProjectionMatrix();
+                    }
+                    if (options.mode !== undefined && options.mode !== 'default') {
+                        state.scene.traverse(object => {
+                            if (!(object instanceof Mesh)) return;
+                            replacements.set(object, object.material);
+                            const convert = (source: Material) => {
+                                const surface = source as Material & {
+                                    color?: Color;
+                                    map?: Texture | null;
+                                    alphaMap?: Texture | null;
+                                    vertexColors?: boolean;
+                                };
+                                const material = new MeshBasicMaterial({
+                                    color: surface.color?.clone(),
+                                    map: surface.map ?? null,
+                                    alphaMap: surface.alphaMap ?? null,
+                                    transparent: source.transparent,
+                                    opacity: source.opacity,
+                                    alphaTest: source.alphaTest,
+                                    side: source.side,
+                                    depthTest: source.depthTest,
+                                    depthWrite: source.depthWrite,
+                                    vertexColors: surface.vertexColors ?? false,
+                                    wireframe: options.mode === 'wireframe',
+                                });
+                                material.toneMapped = false;
+                                temporaryMaterials.push(material);
+                                return material;
+                            };
+                            object.material = Array.isArray(object.material) ? object.material.map(convert) : convert(object.material);
+                        });
+                    }
+                    camera.updateMatrixWorld();
+                    await renderSceneCapture(state.gl, state.scene, camera);
+                    const dataUrl = canvas.toDataURL('image/png');
+                    if (!dataUrl.startsWith('data:image/png;base64,')) throw new Error('Canvas capture failed.');
+                    return { mimeType: 'image/png', dataUrl, width: canvas.width, height: canvas.height };
+                } finally {
+                    hiddenHelpers.forEach((visible, object) => { object.visible = visible; });
+                    replacements.forEach((material, object) => { object.material = material; });
+                    temporaryMaterials.forEach(material => material.dispose());
+                    camera.position.copy(cameraPosition);
+                    camera.quaternion.copy(cameraQuaternion);
+                    if (perspective && fov !== undefined) {
+                        perspective.fov = fov;
+                        perspective.updateProjectionMatrix();
+                    }
+                    camera.updateMatrixWorld();
                 }
-                camera.updateMatrixWorld();
-                state.gl.render(state.scene, camera);
-                const dataUrl = canvas.toDataURL('image/png');
-                if (!dataUrl.startsWith('data:image/png;base64,')) throw new Error('Canvas capture failed.');
-                return { mimeType: 'image/png', dataUrl, width: canvas.width, height: canvas.height };
-            } finally {
-                hiddenHelpers.forEach((visible, object) => { object.visible = visible; });
-                replacements.forEach((material, object) => { object.material = material; });
-                temporaryMaterials.forEach(material => material.dispose());
-                camera.position.copy(cameraPosition);
-                camera.quaternion.copy(cameraQuaternion);
-                if (perspective && fov !== undefined) {
-                    perspective.fov = fov;
-                    perspective.updateProjectionMatrix();
-                }
-                camera.updateMatrixWorld();
-            }
+            });
         },
         exportGLB: async filename => {
             const data = await handleExportGLB({ filename });
@@ -798,7 +809,7 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
 
     return {
         basePath, prefabStore, prefabValue, sceneValue, editorRefValue, runtimeRef, runtimeVersion, resetScene,
-        editorTools, activeTool,
+        editorTools, activeTool, agentTools,
         isEditMode, selectedId, setSelection, onPointerEvent, getRoot,
         canvasRef, canvasStateRef, dropPreviewRef, controlsRef, transformControlsRef,
         transformMode, setTransformMode, scaleSnap, setScaleSnap,
@@ -916,8 +927,8 @@ export function PrefabEditorScene({ children }: { children?: React.ReactNode; })
 }
 
 /** HTML controls: mount beside the canvas under the same provider. */
-export function PrefabEditorPanel() {
-    const { isEditMode, toggleMode, resetScene, selectedId, setSelection, canUndo, canRedo, activeTool } = useEditorStateContext();
+export function PrefabEditorPanel({ sceneApiGuideUrl, sceneToolsPanel }: { sceneApiGuideUrl?: string; sceneToolsPanel?: React.ReactNode } = {}) {
+    const { isEditMode, toggleMode, resetScene, selectedId, setSelection, canUndo, canRedo, activeTool, agentTools } = useEditorStateContext();
     const ToolPanel = activeTool?.definition.Panel;
     return (
         <>
@@ -943,6 +954,7 @@ export function PrefabEditorPanel() {
                     canRedo={canRedo}
                 />
             )}
+            {agentTools && (sceneToolsPanel === undefined ? <SceneToolsPanel guideUrl={sceneApiGuideUrl} /> : sceneToolsPanel)}
         </>
     );
 }

@@ -12,6 +12,10 @@
           "match": {
             "type": "FPSMatchManager",
             "properties": {}
+          },
+          "audio": {
+            "type": "FPSWorldAudio",
+            "properties": {}
           }
         }
       },
@@ -23,6 +27,14 @@
             "type": "FPSPlayerController",
             "properties": {
               "manager": "match-manager"
+            }
+          },
+          "camera": {
+            "type": "Camera",
+            "properties": {
+              "fov": 76,
+              "near": 0.04,
+              "far": 150
             }
           }
         }

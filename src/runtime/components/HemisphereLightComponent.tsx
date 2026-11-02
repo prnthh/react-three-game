@@ -1,6 +1,5 @@
 import type { Component, ComponentViewProps } from "../../core/ComponentRegistry.js";
 
-import { mergeWithDefaults } from "./lightUtils.js";
 
 export const hemisphereLightDefaults = {
     skyColor: "#ffffff",
@@ -11,7 +10,7 @@ export const hemisphereLightDefaults = {
 export type HemisphereLightProperties = Partial<typeof hemisphereLightDefaults>;
 
 function HemisphereLightView({ properties, children }: ComponentViewProps<HemisphereLightProperties>) {
-    const { skyColor, groundColor, intensity } = mergeWithDefaults(hemisphereLightDefaults, properties);
+    const { skyColor, groundColor, intensity } = properties;
     return <>
         <hemisphereLight args={[skyColor, groundColor, intensity]} />
         {children}

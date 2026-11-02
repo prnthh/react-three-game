@@ -1,9 +1,8 @@
 import { SceneRuntime } from "./SceneRuntime.js";
 import { BrowserRuntime } from '../browser/index.js';
 import { Canvas, extend, CanvasProps } from "@react-three/fiber";
-import { WebGPURenderer, MeshBasicNodeMaterial, MeshStandardNodeMaterial, SpriteNodeMaterial, PCFShadowMap } from "three/webgpu";
+import { WebGPURenderer, MeshBasicNodeMaterial, MeshStandardNodeMaterial, SpriteNodeMaterial } from "three/webgpu";
 import { WebGPURendererParameters } from "three/src/renderers/webgpu/WebGPURenderer.Nodes.js";
-import type { ColorSpace, ShadowMapType, ToneMapping } from "three";
 import { Loader } from "@react-three/drei";
 import { registerBuiltInComponents } from "./components/index.js";
 
@@ -17,19 +16,11 @@ registerBuiltInComponents();
 
 export interface GameCanvasProps extends Omit<CanvasProps, 'children'> {
     loader?: boolean;
-    /** World-space cell size for automatic spatial mesh batches. Default: 24. */
-    spatialCellSize?: number;
     children: React.ReactNode;
     glConfig?: Omit<WebGPURendererParameters, 'forceWebGL' | 'getFallback'>;
-    rendererConfig?: {
-        outputColorSpace?: ColorSpace;
-        toneMapping?: ToneMapping;
-        toneMappingExposure?: number;
-        shadowMapType?: ShadowMapType;
-    };
 }
 
-export default function GameCanvas({ loader = false, children, spatialCellSize, glConfig, rendererConfig, onCreated, raycaster, style, ...props }: GameCanvasProps) {
+export default function GameCanvas({ loader = false, children, glConfig, onCreated, raycaster, style, ...props }: GameCanvasProps) {
 
     return <Canvas
         style={{
@@ -40,20 +31,13 @@ export default function GameCanvas({ loader = false, children, spatialCellSize, 
             WebkitTapHighlightColor: 'transparent',
             ...style,
         }}
-        shadows={{ type: PCFShadowMap }}
-        dpr={[1, 1.5]}
         raycaster={raycaster}
         gl={async ({ canvas }) => {
             if (!('gpu' in navigator)) throw new Error('react-three-game requires WebGPU.');
             const renderer = new WebGPURenderer({
                 canvas: canvas as HTMLCanvasElement,
-                antialias: true,
                 ...glConfig,
             });
-            if (rendererConfig?.outputColorSpace !== undefined) renderer.outputColorSpace = rendererConfig.outputColorSpace;
-            if (rendererConfig?.toneMapping !== undefined) renderer.toneMapping = rendererConfig.toneMapping;
-            if (rendererConfig?.toneMappingExposure !== undefined) renderer.toneMappingExposure = Math.max(0, rendererConfig.toneMappingExposure);
-            if (rendererConfig?.shadowMapType !== undefined) renderer.shadowMap.type = rendererConfig.shadowMapType;
             await renderer.init();
             if (!('isWebGPUBackend' in renderer.backend) || !renderer.backend.isWebGPUBackend) {
                 renderer.dispose();
@@ -64,7 +48,7 @@ export default function GameCanvas({ loader = false, children, spatialCellSize, 
         onCreated={onCreated}
         {...props}
     >
-        <BrowserRuntime><SceneRuntime spatialCellSize={spatialCellSize}>{children}</SceneRuntime></BrowserRuntime>
+        <BrowserRuntime><SceneRuntime>{children}</SceneRuntime></BrowserRuntime>
 
         {loader ? <Loader /> : null}
     </Canvas>;

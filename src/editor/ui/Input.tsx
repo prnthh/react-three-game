@@ -6,42 +6,45 @@ import { usePrefabStore } from "../../runtime/prefabs/PrefabStoreContext.js";
 // Field Definition Types
 // ============================================================================
 
-interface BaseFieldDefinition<Name extends string = string> {
+interface BaseFieldDefinition<Name extends string = string, Value = unknown> {
+    /** Allow removing the authored value (undefined). */
+    allowUnset?: boolean;
+    initialValue?: Value;
     name: Name;
     label: string;
 }
 
-interface Vector3FieldDefinition<Name extends string = string> extends BaseFieldDefinition<Name> {
+interface Vector3FieldDefinition<Name extends string = string> extends BaseFieldDefinition<Name, [number, number, number]> {
     type: 'vector3';
     snap?: number;
 }
 
-interface NumberFieldDefinition<Name extends string = string> extends BaseFieldDefinition<Name> {
+interface NumberFieldDefinition<Name extends string = string> extends BaseFieldDefinition<Name, number> {
     type: 'number';
     min?: number;
     max?: number;
     step?: number;
 }
 
-interface StringFieldDefinition<Name extends string = string> extends BaseFieldDefinition<Name> {
+interface StringFieldDefinition<Name extends string = string> extends BaseFieldDefinition<Name, string> {
     type: 'string';
     placeholder?: string;
 }
 
-interface ColorFieldDefinition<Name extends string = string> extends BaseFieldDefinition<Name> {
+interface ColorFieldDefinition<Name extends string = string> extends BaseFieldDefinition<Name, string> {
     type: 'color';
 }
 
-interface BooleanFieldDefinition<Name extends string = string> extends BaseFieldDefinition<Name> {
+interface BooleanFieldDefinition<Name extends string = string> extends BaseFieldDefinition<Name, boolean> {
     type: 'boolean';
 }
 
-interface SelectFieldDefinition<Name extends string = string, Value extends string = string> extends BaseFieldDefinition<Name> {
+interface SelectFieldDefinition<Name extends string = string, Value extends string = string> extends BaseFieldDefinition<Name, Value> {
     type: 'select';
     options: { value: Value; label: string }[];
 }
 
-interface NodeFieldDefinition<Name extends string = string> extends BaseFieldDefinition<Name> {
+interface NodeFieldDefinition<Name extends string = string> extends BaseFieldDefinition<Name, string> {
     type: 'node';
     placeholder?: string;
     includeRoot?: boolean;
@@ -51,7 +54,7 @@ interface CustomFieldDefinition<
     Name extends string = string,
     Value = any,
     Values extends object = Record<string, any>,
-> extends BaseFieldDefinition<Name> {
+> extends BaseFieldDefinition<Name, Value> {
     type: 'custom';
     render: (props: {
         value: Value;
@@ -784,6 +787,7 @@ type SelectFieldName<Values extends object> = string extends keyof Values
     }[Extract<keyof Values, string>];
 
 interface BoundFieldProps<Values extends object, Value> {
+    allowUnset?: boolean;
     name: FieldNameFor<Values, Value>;
     values: Values;
     onChange: (values: Partial<Values>) => void;
@@ -831,6 +835,29 @@ interface BoundVector3FieldProps<Values extends object> extends BoundFieldProps<
 
 function bindFieldChange<Values extends object>(name: string, onChange: (values: Partial<Values>) => void) {
     return (value: unknown) => onChange({ [name]: value } as Partial<Values>);
+}
+
+/** Shared optional-value control for schema fields and custom inspector inputs. */
+export function UnsettableField<Value>({ allowUnset = false, label, value, initialValue, onChange, children }: {
+    allowUnset?: boolean;
+    label: string;
+    value: Value | undefined;
+    initialValue: Value;
+    onChange: (value: Value | undefined) => void;
+    children: React.ReactNode;
+}) {
+    if (!allowUnset) return children;
+    if (value === undefined) return <FieldRow label={label}>
+        <span style={{ color: colors.textMuted, fontSize: 11 }}>Unset</span>
+        <button type="button" style={base.btn} aria-label={`Set ${label.toLowerCase()}`}
+            onClick={() => onChange(initialValue)}>Set</button>
+    </FieldRow>;
+    return <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>{children}</div>
+        <button type="button" style={{ ...base.btn, padding: '2px 5px' }}
+            aria-label={`Unset ${label.toLowerCase()}`} title="Unset this field to inherit its default"
+            onClick={() => onChange(undefined)}>↺</button>
+    </div>;
 }
 
 function getFieldValue(values: object, name: string) {
@@ -937,6 +964,7 @@ export function NumberField<Values extends object>({
     label,
     values,
     onChange,
+    allowUnset,
     fallback = 0,
     step,
     min,
@@ -944,7 +972,8 @@ export function NumberField<Values extends object>({
     style,
     commitOnBlur,
 }: BoundNumberFieldProps<Values>) {
-    return (
+    return <UnsettableField allowUnset={allowUnset} label={label} value={getFieldValue(values, name)}
+        initialValue={Math.min(max ?? Infinity, Math.max(min ?? -Infinity, fallback))} onChange={bindFieldChange(name, onChange)}>
         <FieldRow label={label}>
             <NumberInput
                 value={getFieldValue(values, name) ?? fallback}
@@ -956,7 +985,7 @@ export function NumberField<Values extends object>({
                 commitOnBlur={commitOnBlur}
             />
         </FieldRow>
-    );
+    </UnsettableField>;
 }
 
 export function StringField<Values extends object>({
@@ -964,17 +993,19 @@ export function StringField<Values extends object>({
     label,
     values,
     onChange,
+    allowUnset,
     fallback = '',
     placeholder,
 }: BoundStringFieldProps<Values>) {
-    return (
+    return <UnsettableField allowUnset={allowUnset} label={label} value={getFieldValue(values, name)}
+        initialValue={fallback} onChange={bindFieldChange(name, onChange)}>
         <StringInput
             label={label}
             value={getFieldValue(values, name) ?? fallback}
             onChange={bindFieldChange(name, onChange)}
             placeholder={placeholder}
         />
-    );
+    </UnsettableField>;
 }
 
 export function ColorField<Values extends object>({
@@ -982,15 +1013,17 @@ export function ColorField<Values extends object>({
     label,
     values,
     onChange,
+    allowUnset,
     fallback = '#ffffff',
 }: BoundColorFieldProps<Values>) {
-    return (
+    return <UnsettableField allowUnset={allowUnset} label={label} value={getFieldValue(values, name)}
+        initialValue={fallback} onChange={bindFieldChange(name, onChange)}>
         <ColorInput
             label={label}
             value={getFieldValue(values, name) ?? fallback}
             onChange={bindFieldChange(name, onChange)}
         />
-    );
+    </UnsettableField>;
 }
 
 export function BooleanField<Values extends object>({
@@ -998,15 +1031,17 @@ export function BooleanField<Values extends object>({
     label,
     values,
     onChange,
+    allowUnset,
     fallback = false,
 }: BoundBooleanFieldProps<Values>) {
-    return (
+    return <UnsettableField allowUnset={allowUnset} label={label} value={getFieldValue(values, name)}
+        initialValue={fallback} onChange={bindFieldChange(name, onChange)}>
         <BooleanInput
             label={label}
             value={getFieldValue(values, name) ?? fallback}
             onChange={bindFieldChange(name, onChange)}
         />
-    );
+    </UnsettableField>;
 }
 
 export function SelectField<Values extends object>({
@@ -1014,17 +1049,19 @@ export function SelectField<Values extends object>({
     label,
     values,
     onChange,
+    allowUnset,
     fallback,
     options,
 }: BoundSelectFieldProps<Values>) {
-    return (
+    return <UnsettableField allowUnset={allowUnset} label={label} value={getFieldValue(values, name)}
+        initialValue={fallback ?? options[0]?.value ?? ''} onChange={bindFieldChange(name, onChange)}>
         <SelectInput
             label={label}
             value={getFieldValue(values, name) ?? fallback ?? options[0]?.value ?? ''}
             onChange={bindFieldChange(name, onChange)}
             options={options}
         />
-    );
+    </UnsettableField>;
 }
 
 export function NodeField<Values extends object>({
@@ -1032,15 +1069,21 @@ export function NodeField<Values extends object>({
     label,
     values,
     onChange,
+    allowUnset,
     fallback = '',
-}: BoundStringFieldProps<Values> & { fallback?: string }) {
-    return (
+    placeholder,
+    includeRoot,
+}: BoundStringFieldProps<Values> & { includeRoot?: boolean }) {
+    return <UnsettableField allowUnset={allowUnset} label={label} value={getFieldValue(values, name)}
+        initialValue={fallback} onChange={bindFieldChange(name, onChange)}>
         <NodeInput
             label={label}
+            placeholder={placeholder}
+            includeRoot={includeRoot}
             value={getFieldValue(values, name) ?? fallback}
             onChange={bindFieldChange(name, onChange)}
         />
-    );
+    </UnsettableField>;
 }
 
 export function Vector3Field<Values extends object>({
@@ -1048,11 +1091,13 @@ export function Vector3Field<Values extends object>({
     label,
     values,
     onChange,
+    allowUnset,
     fallback = [0, 0, 0],
     snap,
     labelExtra,
 }: BoundVector3FieldProps<Values>) {
-    return (
+    return <UnsettableField allowUnset={allowUnset} label={label} value={getFieldValue(values, name)}
+        initialValue={fallback} onChange={bindFieldChange(name, onChange)}>
         <Vector3Input
             label={label}
             value={getFieldValue(values, name) ?? fallback}
@@ -1060,7 +1105,7 @@ export function Vector3Field<Values extends object>({
             snap={snap}
             labelExtra={labelExtra}
         />
-    );
+    </UnsettableField>;
 }
 
 // ============================================================================
@@ -1074,115 +1119,38 @@ interface FieldRendererProps<Values extends object> {
 }
 
 export function FieldRenderer<Values extends object>({ fields, values, onChange }: FieldRendererProps<Values>) {
-    const untypedValues = values as Record<string, any>;
-    const updateField = (name: string, value: any) => {
-        onChange({ [name]: value } as Partial<Values>);
-    };
-
-    return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {fields.map(typedField => {
-                const field = typedField as UntypedFieldDefinition;
-                const value = untypedValues[field.name];
-
-                switch (field.type) {
-                    case 'vector3':
-                        return (
-                            <Vector3Input
-                                key={field.name}
-                                label={field.label}
-                                value={value ?? [0, 0, 0]}
-                                onChange={v => updateField(field.name, v)}
-                                snap={field.snap}
-                            />
-                        );
-
-                    case 'number':
-                        return (
-                            <FieldRow key={field.name} label={field.label}>
-                                <NumberInput
-                                    value={value ?? 0}
-                                    onChange={v => updateField(field.name, v)}
-                                    min={field.min}
-                                    max={field.max}
-                                    step={field.step}
-                                />
-                            </FieldRow>
-                        );
-
-                    case 'string':
-                        return (
-                            <StringInput
-                                key={field.name}
-                                label={field.label}
-                                value={value ?? ''}
-                                onChange={v => updateField(field.name, v)}
-                                placeholder={field.placeholder}
-                            />
-                        );
-
-                    case 'color':
-                        return (
-                            <ColorInput
-                                key={field.name}
-                                label={field.label}
-                                value={value ?? '#ffffff'}
-                                onChange={v => updateField(field.name, v)}
-                            />
-                        );
-
-                    case 'boolean':
-                        return (
-                            <BooleanInput
-                                key={field.name}
-                                label={field.label}
-                                value={value ?? false}
-                                onChange={v => updateField(field.name, v)}
-                            />
-                        );
-
-                    case 'select':
-                        return (
-                            <SelectInput
-                                key={field.name}
-                                label={field.label}
-                                value={value ?? field.options[0]?.value ?? ''}
-                                onChange={v => updateField(field.name, v)}
-                                options={field.options}
-                            />
-                        );
-
-                    case 'node':
-                        return (
-                            <NodeInput
-                                key={field.name}
-                                label={field.label}
-                                value={value ?? ''}
-                                onChange={v => updateField(field.name, v)}
-                                placeholder={field.placeholder}
-                                includeRoot={field.includeRoot}
-                            />
-                        );
-
-                    case 'custom':
-                        return (
-                            <div key={field.name}>
-                                {field.label && <Label>{field.label}</Label>}
-                                {field.render({
-                                    value,
-                                    onChange: v => updateField(field.name, v),
-                                    values: untypedValues,
-                                    onChangeMultiple: values => onChange(values as Partial<Values>),
-                                })}
-                            </div>
-                        );
-
-                    default:
-                        return null;
-                }
-            })}
-        </div>
-    );
+    const update = (patch: Record<string, unknown>) => onChange(patch as Partial<Values>);
+    return <FieldGroup>{fields.map(typedField => {
+        const field = typedField as UntypedFieldDefinition;
+        const props = { name: field.name, label: field.label, allowUnset: field.allowUnset, values: values as Record<string, any>, onChange: update };
+        switch (field.type) {
+            case 'number':
+                return <NumberField key={field.name} {...props} min={field.min} max={field.max} step={field.step}
+                    fallback={field.initialValue ?? (field.allowUnset ? 1 : 0)} />;
+            case 'string':
+                return <StringField key={field.name} {...props} placeholder={field.placeholder} fallback={field.initialValue} />;
+            case 'color':
+                return <ColorField key={field.name} {...props} fallback={field.initialValue} />;
+            case 'boolean':
+                return <BooleanField key={field.name} {...props} fallback={field.initialValue ?? !!field.allowUnset} />;
+            case 'select':
+                return <SelectField key={field.name} {...props} options={field.options} fallback={field.initialValue} />;
+            case 'vector3':
+                return <Vector3Field key={field.name} {...props} snap={field.snap} fallback={field.initialValue} />;
+            case 'node':
+                return <NodeField key={field.name} {...props} placeholder={field.placeholder} includeRoot={field.includeRoot} fallback={field.initialValue} />;
+            case 'custom': {
+                const value = getFieldValue(values, field.name);
+                return <UnsettableField key={field.name} label={field.label} allowUnset={field.allowUnset}
+                    value={value} initialValue={field.initialValue} onChange={value => update({ [field.name]: value })}>
+                    {(!field.allowUnset || value !== undefined) && <div>
+                        {field.label && <Label>{field.label}</Label>}
+                        {field.render({ value, values, onChange: value => update({ [field.name]: value }), onChangeMultiple: update })}
+                    </div>}
+                </UnsettableField>;
+            }
+        }
+    })}</FieldGroup>;
 }
 
 // Export styles for use in custom field renderers

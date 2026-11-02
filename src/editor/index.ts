@@ -1,4 +1,5 @@
 export { EditorSelection } from './selection.js';
+export { getPrefabEditorView } from './sceneView.js';
 export type { ComponentEditorProps } from "../core/ComponentRegistry.js";
 
 export { default as PrefabEditor, PrefabEditorProvider, PrefabEditorScene, PrefabEditorPanel } from "./PrefabEditor.js";
@@ -12,6 +13,7 @@ export type { PrefabStoreApi, PrefabStoreState } from "../core/prefabStore.js";
 
 export {
   FieldRenderer,
+  UnsettableField,
   FieldGroup,
   ListEditor,
   Label,
@@ -64,6 +66,11 @@ export { registerComponentEditor } from "./ComponentEditors.js";
 export type { SceneCommand, SceneCommandBatch, SceneCommandResult } from "../core/sceneCommands.js";
 
 export type { SceneAgent, SceneBatch, SceneSearchOptions, SceneGetManyOptions } from "./agent/sceneAgent.js";
+export { createSceneTools, createSceneToolGuide } from './agent/sceneTools.js';
+export type { SceneTool, SceneToolResult } from './agent/sceneTools.js';
+export { SceneToolsPanel } from './agent/SceneToolsPanel.js';
+export { registerSceneWebMCP } from './agent/sceneWebMCP.js';
+export type { SceneModelContext, SceneWebMCPStatus } from './agent/sceneWebMCP.js';
 
 export { usePrefabDocument } from "../runtime/prefabs/prefabApi.js";
 export type { PrefabDocumentApi } from "../core/prefabDocumentApi.js";

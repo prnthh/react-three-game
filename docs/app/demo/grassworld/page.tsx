@@ -31,6 +31,7 @@ const grassWorldPrefab: Prefab = {
         id: "grassworld-root",
         name: "Grass World",
         components: {
+            rendering: { type: 'RenderSettings', properties: { exposure: 1.5, shadows: true, shadowMapType: 'pcf' } },
             transform: {
                 type: "Transform",
                 properties: {
@@ -220,7 +221,6 @@ export default function GrassWorldDemo() {
                         stencil: false,
                         depth: true,
                     },
-                    rendererConfig: { toneMappingExposure: 1.5 },
                 }}
             >
                 <CrashcatRuntime>

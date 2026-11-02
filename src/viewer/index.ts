@@ -8,6 +8,8 @@ export type { SoundOptions, SoundPlayback } from "../runtime/audio/SoundManager.
 
 export { default as PrefabRoot } from "../runtime/prefabs/PrefabRoot.js";
 export type { PrefabRootProps } from "../runtime/prefabs/PrefabRoot.js";
+export { NodeMountBudget } from '../runtime/prefabs/NodeMountBudget.js';
+export { registerSceneCaptureRenderer } from '../runtime/rendering/sceneCapture.js';
 
 export {
 	PrefabEditorMode,
@@ -62,7 +64,9 @@ export { default as MaterialComponent, MaterialOverridesProvider, useMaterialOve
 export type { MaterialOverrides } from "../runtime/components/MaterialComponent.js";
 
 export { PrefabInstance } from "../runtime/prefabs/PrefabInstance.js";
-export type { PrefabInstanceProps, PrefabInstanceStatus } from "../runtime/prefabs/PrefabInstance.js";
+export type { PrefabInstanceProps, PrefabInstanceStatus, PrefabChunkStatus } from "../runtime/prefabs/PrefabInstance.js";
+export type { PrefabStreamingOptions } from '../runtime/prefabs/spatialPrefabPlan.js';
+export { registerPrefabCompilationContext } from '../runtime/rendering/compileInSlices.js';
 export type { PreparedPrefab, PrefabPreparationOptions } from "../runtime/prefabs/preparePrefab.js";
 export { createPrefabStore } from "../core/prefabStore.js";
 export { usePrefabStore, usePrefabStoreApi } from "../runtime/prefabs/PrefabStoreContext.js";
@@ -76,8 +80,6 @@ export { withBasePath as resolveAssetPath } from "../runtime/assets/assetPaths.j
 
 export { CascadedDirectionalLight } from '../runtime/lighting/CascadedDirectionalLight.js';
 export type { CascadedDirectionalLightProps } from '../runtime/lighting/CascadedDirectionalLight.js';
-export { LightCullingGrid, LightCullingGridController } from '../runtime/lighting/LightCullingGrid.js';
-export type { LightCullingGridOptions } from '../runtime/lighting/LightCullingGrid.js';
 
 export { SceneRuntime } from "../runtime/SceneRuntime.js";
 
@@ -93,7 +95,7 @@ export type { RuntimeComponentProperties, RuntimeScriptContext } from "../runtim
 
 export { useSharedGeometryResource } from "../runtime/components/GeometryComponent.js";
 
-export { SpatialGrid, DEFAULT_SPATIAL_CELL_SIZE } from '../runtime/spatial/SpatialGrid.js';
+export { DEFAULT_SPATIAL_CELL_SIZE } from '../runtime/spatial/spatialCell.js';
 export { getSceneComponentRegistry } from '../runtime/scene/SceneContext.js';
 
 export { resolveGameObject, resolveRenderSource, registerGameObjectOwner, registerRenderSources } from '../runtime/scene/gameObject.js';

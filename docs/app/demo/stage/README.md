@@ -98,8 +98,8 @@ public/prefabs/detective-oni/
 Use the standard editor to author scenes and component properties:
 `/editor?map=game:detective-oni/office` or
 `/editor?map=game:detective-oni/junkyard`. Test full gameplay with its game driver
-in `/demo/stage`. The editor saves to browser storage; export JSON and write it
-to the source file to update the checked-in scene.
+in `/demo/stage`. Export JSON and write it to the source file to retain edits; reloading the
+editor loads the source again. See [editor storage](../../editor/README.md#loading-and-saving).
 
 To start The Cave, add its character and scene prefabs, add a `SceneRedirect` component to `the-cave.json`, and
 add dialogue entries. The game driver discovers content through these URLs.

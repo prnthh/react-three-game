@@ -22,7 +22,7 @@ test('prefab activation preserves descendants and active siblings', async t => {
         await act(async () => root.unmount());
     });
     const starts = [], stops = [], updates = [], readyRefs = [];
-    const statuses = [];
+    const statuses = [], activeVisibility = [];
     let streamerMounts = 0;
     let finishLoading;
     const preparation = new Promise(resolve => { finishLoading = resolve; });
@@ -41,6 +41,12 @@ test('prefab activation preserves descendants and active siblings', async t => {
             useEffect(() => { streamerMounts++; }, []);
             return h(AssetRuntimeContext.Provider, { value: runtime }, h(PrefabInstance, {
                 id: 'chunk', url: '/chunk.json', onStatus: status => statuses.push(status.phase),
+                onActivate: () => {
+                    let object = state.getState().scene.getObjectByName('streamed-mesh');
+                    let visible = Boolean(object);
+                    for (; object; object = object.parent) visible = visible && object.visible;
+                    activeVisibility.push(visible);
+                },
             }));
         } },
     };
@@ -67,10 +73,10 @@ test('prefab activation preserves descendants and active siblings', async t => {
     assert.ok(starts.includes('a/root'));
     const leaf = state.getState().scene.getObjectByName('leaf');
     assert.ok(leaf);
-    const callbacksBefore = state.getState().internal.subscribers.length;
     await render(['a'], false);
     assert.equal(state.getState().scene.getObjectByName('leaf'), leaf, 'disabling viewless behavior preserves descendants');
-    assert.ok(state.getState().internal.subscribers.length < callbacksBefore, 'disabled behavior releases its frame subscription');
+    await act(async () => state.getState().advance(0.5, false));
+    assert.deepEqual(updates, [], 'disabled behavior performs no frame work');
     await render(['a']);
     assert.equal(state.getState().scene.getObjectByName('leaf'), leaf, 'reenabling uses React reconciliation without remounting descendants');
     const activeStarts = starts.length, activeStops = stops.length;
@@ -87,9 +93,11 @@ test('prefab activation preserves descendants and active siblings', async t => {
     const initialMounts = streamerMounts;
     assert.ok(statuses.includes('loading'));
     assert.ok(!statuses.includes('active'));
-    await act(async () => finishLoading({ document: { root: model('streamed-mesh') }, durationMs: 0 }));
+    await act(async () => finishLoading({ document: { root: model('streamed-mesh') } }));
     await render(['host']);
     assert.equal(streamerMounts, initialMounts, 'a streamed placement must not disable and remount its host streamer');
-    assert.ok(statuses.includes('active'), 'the streamed chunk finishes mounting and compilation');
+    await act(async () => state.getState().advance(2, false));
+    assert.ok(statuses.includes('active'), 'the streamed chunk finishes mounting and compilation after its first rendering frame');
     assert.ok(state.getState().scene.getObjectByName('streamed-mesh'));
+    assert.deepEqual(activeVisibility, [true], 'activation observes an already visible prefab');
 });

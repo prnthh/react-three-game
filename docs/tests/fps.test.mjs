@@ -264,6 +264,11 @@ test("FPS prefab has stable node identities, manager references and matching col
   const { composeScene, compileMap } = await import("../app/demo/fps/shared/map.ts");
   assert.throws(() => composeScene(mapPrefab, mapPrefab), /Duplicate scene node ID/);
   const composed = composeScene(mapPrefab, gameplayPrefab);
+  assert.equal(composed.root.components.clusteredLighting.type, 'ClusteredLighting');
+  assert.equal(composed.root.components.clusteredLighting.properties.maxLights, 32);
+  assert.ok(mapPrefab.root.components.clusteredLighting, 'composition preserves authored source settings');
+  const player = gameplayPrefab.root.children.find(node => node.id === 'player-controller');
+  assert.deepEqual(player.components.camera.properties, { fov: 76, near: 0.04, far: 150 });
   composed.root.children[0].name = "Edited copy";
   assert.notEqual(mapPrefab.root.name, "Edited copy");
   const moved = structuredClone(mapPrefab);
@@ -1139,26 +1144,39 @@ test('host driver ticks once with duplicate prefab bindings and audio needs no p
   const { createRoot, extend } = await import('@react-three/fiber');
   const { Group } = await import('three');
   const { PrefabRoot, registerComponent, getSceneComponentRegistry } = await import('react-three-game/viewer');
-  const { SessionDriver, SessionContext, WorldAudio, MatchManagerComponent, FPS_MATCH_MANAGER } = await import('../app/demo/fps/components/SessionSystems.tsx');
-  registerComponent(MatchManagerComponent); extend({Group}); globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+  const { SessionDriver, SessionContext, WorldAudioComponent, MatchManagerComponent, FPS_MATCH_MANAGER } = await import('../app/demo/fps/components/SessionSystems.tsx');
+  registerComponent(MatchManagerComponent); registerComponent(WorldAudioComponent); extend({Group}); globalThis.IS_REACT_ACT_ENVIRONMENT = true;
   const canvas = {width:100,height:100,style:{},addEventListener(){},removeEventListener(){}};
   const root = createRoot(canvas);
   await root.configure({gl:{render(){},setSize(){},setPixelRatio(){},domElement:canvas},size:{width:100,height:100,top:0,left:0},frameloop:'never'});
   t.after(async () => {await act(async () => root.unmount());});
-  let ticks=0, listeners=0, ready=0;
+  let ticks=0, listeners=0, ready=0, stops=0, listenerPose;
   const match = new MatchAuthority().snapshot();
   const runtime = {state:match,previous:match,advance(){ticks++;match.tick++;},viewEpoch:0};
   const session = {runtime,match,input:{current:idleCommand()},playing:true,onHud(){},onReady(){ready++;},
-    audio:{listener(){listeners++;},play(){},stop(){},enable(){}}};
-  const data = {root:{id:'root',children:['first','second'].map(id => ({id,components:{binding:{type:'FPSMatchManager',properties:{}}}}))}};
+    audio:{listener(...pose){listeners++;listenerPose=pose;},play(){},stop(){stops++;},enable(){}}};
+  const data = {root:{id:'root',children:[...['first','second'].map(id => ({id,components:{binding:{type:'FPSMatchManager',properties:{}}}})),
+    {id:'audio',components:{audio:{type:'FPSWorldAudio',properties:{}}}}]}};
   let store;
-  await act(async () => {store = root.render(h(SessionContext.Provider,{value:session},h(SessionDriver,session),h(WorldAudio,session),h(PrefabRoot,{data})));});
+  const { createPrefabStore } = await import('../../src/core/prefabStore.ts');
+  const document = createPrefabStore(data);
+  await act(async () => {store = root.render(h(SessionContext.Provider,{value:session},h(SessionDriver,session),h(PrefabRoot,{store:document})));});
   const state = store.getState();
+  const parent = new Group();
+  parent.position.set(4,3,2); parent.rotation.y = .4;
+  state.camera.position.set(1,0,0); parent.add(state.camera); state.scene.add(parent);
   assert.equal(getSceneComponentRegistry(state.scene).getAll(FPS_MATCH_MANAGER).length,2);
   await act(async () => state.advance(.02,false));
   assert.equal(ticks,1);
   assert.equal(listeners,1);
+  for (const [index,value] of [4+Math.cos(.4),3,2-Math.sin(.4),.4,0].entries())
+    assert.ok(Math.abs(listenerPose[index]-value)<1e-6, 'listener follows the parented camera in world space');
   assert.equal(ready,1);
+  await act(async () => document.getState().updateNode('audio', node => ({...node,disabled:true})));
+  await act(async () => state.advance(.04,false));
+  assert.equal(ticks,2, 'removing presentation never removes the host simulation');
+  assert.equal(listeners,1, 'disabled audio stops updating the listener');
+  assert.equal(stops,1, 'disabled audio stops retained sounds');
 });
 
 

@@ -1,5 +1,5 @@
 import { Vector3 } from "three";
-import { walkPrefabWorldTransforms, compileBoxCollider, compileMeshCollider, type WorldMeshCollider, type MeshColliderProperties, type WorldBox, type Prefab, type GameObject } from "react-three-game/core";
+import { getComponent, walkPrefabWorldTransforms, compileBoxCollider, compileMeshCollider, type WorldMeshCollider, type MeshColliderProperties, type WorldBox, type Prefab, type GameObject } from "react-three-game/core";
 
 export type Vec = [number, number, number];
 export type Block = (WorldBox | WorldMeshCollider) & {
@@ -17,17 +17,21 @@ function vector(value: unknown, fallback: Vec): Vec {
 
 /** Preserve each document's root, transforms and references; never silently overwrite IDs. */
 export function composeScene(...documents: Prefab[]): Prefab {
-  const scene: Prefab = {
-    id: "relay-yard", name: "Relay Yard",
-    root: { id: "relay-yard-root", name: "Relay Yard", children: documents.map(doc => structuredClone(doc.root)) },
-  };
+  const scene: Prefab = { id: 'relay-yard', name: 'Relay Yard', root: {
+    id: 'relay-yard-root', name: 'Relay Yard', components: {}, children: documents.map(doc => structuredClone(doc.root)),
+  } };
   const ids = new Set<string>();
   const visit = (node: GameObject) => {
-    if (ids.has(node.id)) throw new Error(`Duplicate scene node ID: ${node.id}`);
-    ids.add(node.id);
-    node.children?.forEach(visit);
+    if (ids.has(node.id)) throw new Error('Duplicate scene node ID: ' + node.id);
+    ids.add(node.id); node.children?.forEach(visit);
   };
   visit(scene.root);
+  for (const root of scene.root.children!) for (const [key, component] of Object.entries(root.components ?? {})) {
+    if (component && getComponent(component.type)?.scope === 'scene') {
+      if (scene.root.components![key]) throw new Error('Conflicting scene setting: ' + key);
+      scene.root.components![key] = component; delete root.components![key];
+    }
+  }
   return scene;
 }
 

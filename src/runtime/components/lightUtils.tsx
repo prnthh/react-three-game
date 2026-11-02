@@ -36,7 +36,7 @@ export function EditorLightGizmo({
         new Vector3(0, -1, 0), new Vector3(...targetOffset).normalize(),
     );
     return (
-        <group quaternion={orientation}>
+        <group quaternion={orientation} userData={{ editorHelper: true }}>
             <mesh
                 position={[0, -0.22, 0]}
                 renderOrder={10_000}
@@ -89,23 +89,4 @@ export function useShadowMapResolution<T extends ShadowMapOwner>(
 
         shadow.needsUpdate = true;
     });
-}
-
-export function mergeWithDefaults<T extends Record<string, any>>(
-    defaults: T,
-    properties?: Partial<NoInfer<T>> | null,
-): T {
-    const merged = { ...defaults };
-
-    if (!properties) {
-        return merged;
-    }
-
-    for (const [key, value] of Object.entries(properties)) {
-        if (value !== undefined) {
-            (merged as Record<string, any>)[key] = value;
-        }
-    }
-
-    return merged;
 }

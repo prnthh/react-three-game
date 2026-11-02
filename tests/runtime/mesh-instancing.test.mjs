@@ -1,30 +1,38 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Group, Mesh, BoxGeometry, MeshBasicMaterial, Layers } from 'three';
-import { hideInstancedSources } from '../../src/runtime/rendering/MeshInstanceProvider.tsx';
+import { Group, Mesh, BoxGeometry, MeshBasicMaterial } from 'three';
 
-test('instancing preserves source geometry for collider rebuilding and restores rendering on cleanup', () => {
-    const node = new Group();
-    const mesh = new Mesh(new BoxGeometry(2, 0.1, 2), new MeshBasicMaterial());
-    node.add(mesh);
-    const restore = hideInstancedSources([{id:'lift', mesh}]);
-    assert.equal(mesh.parent, node);
-    const geometry = [];
-    node.traverse(object => { if (object.geometry) geometry.push(object.geometry); });
-    assert.deepEqual(geometry, [mesh.geometry]);
-    assert.equal(mesh.layers.test(new Layers()), false, 'source does not draw alongside its batch');
-    restore();
-    assert.equal(mesh.layers.test(new Layers()), true);
-    assert.equal(mesh.parent, node);
-    mesh.geometry.dispose();
-    mesh.material.dispose();
+test('batch cells handle negative boundaries and stale registration cleanup', async t => {
+    const { MeshInstanceRegistry } = await import('../../src/runtime/rendering/MeshInstanceRuntime.ts');
+    const geometry = new BoxGeometry(), material = new MeshBasicMaterial(), root = new Group();
+    geometry.userData.prefabGeometrySignature = 'cell-boundary';
+    const registry = new MeshInstanceRegistry(false, 10), disconnect = registry.connect(root);
+    t.after(() => { disconnect(); geometry.dispose(); material.dispose(); });
+    const meshes = [-0.01, -1, 0, 1].map(x => {
+        const mesh = new Mesh(geometry, material); mesh.position.x = x; return mesh;
+    });
+    const source = { id: 'replaced', mesh: meshes[0] };
+    const old = registry.register(source), current = registry.register(source);
+    const cleanup = meshes.slice(1).map(mesh => registry.register({ id: mesh.uuid, mesh }));
+    old();
+    registry.update();
+    assert.deepEqual(root.children.map(batch => batch.count), [2, 2], 'negative and nonnegative positions occupy different cells');
+    meshes[0].position.x = 0;
+    registry.update();
+    assert.deepEqual(root.children.map(batch => batch.count), [3], 'crossing zero migrates into the neighboring batch');
+    assert.equal(meshes[1].layers.mask, 1, 'the negative singleton returns to ordinary rendering');
+    current(); cleanup.forEach(remove => remove()); registry.update();
+    assert.equal(root.children.length, 0);
+    assert.ok(meshes.every(mesh => mesh.layers.mask === 1));
+    for (const size of [0, -1, Infinity, NaN]) assert.throws(() => new MeshInstanceRegistry(false, size));
 });
 
 test('spatial batches split distant peers, retain oversized bounds and migrate moving nodes', async t => {
     const {act,createElement:h,useRef,Profiler}=await import('react');
     const {createRoot,extend}=await import('@react-three/fiber');
     const {InstancedMesh,Vector3}=await import('three');
-    const {MeshInstanceProvider,SpatialCellSizeContext,useMeshInstanceRegistration}=await import('../../src/runtime/rendering/MeshInstanceProvider.tsx');
+    const {MeshInstanceProvider,useMeshInstanceRegistration}=await import('../../src/runtime/rendering/MeshInstanceProvider.tsx');
+    const { ChunkSettingsContext } = await import('../../src/runtime/components/ChunkSettingsComponent.tsx');
     extend({Group,Mesh,InstancedMesh});globalThis.IS_REACT_ACT_ENVIRONMENT=true;
     const canvas={width:100,height:100,style:{},addEventListener(){},removeEventListener(){}};
     const root=createRoot(canvas);
@@ -34,11 +42,12 @@ test('spatial batches split distant peers, retain oversized bounds and migrate m
     meshes[0].scale.x=80;
     function Source({mesh}){useMeshInstanceRegistration(mesh.uuid,useRef(mesh),true);return h('primitive',{object:mesh});}
     let commits=0;
-    let store;await act(async()=>{store=root.render(h(Profiler,{id:'batches',onRender:()=>commits++},h(SpatialCellSizeContext.Provider,{value:10},h(MeshInstanceProvider,{minInstances:2},...meshes.map(mesh=>h(Source,{key:mesh.uuid,mesh}))))));});
+    let store;await act(async()=>{store=root.render(h(Profiler,{id:'batches',onRender:()=>commits++},h(ChunkSettingsContext.Provider,{value:{batchCellSize:10}},h(MeshInstanceProvider,null,...meshes.map(mesh=>h(Source,{key:mesh.uuid,mesh}))))));});
     t.after(async()=>{await act(async()=>root.unmount());geometry.dispose();material.dispose();});
     const batches=()=>{const result=[];store.getState().scene.traverse(o=>{if(o.isInstancedMesh) result.push(o);});return result;};
+    assert.equal(batches().length,0,'mounting registers sources; a rendering frame builds batches');
+    await act(async()=>store.getState().advance(0,false));
     assert.equal(batches().length,2);
-    assert.equal(store.getState().internal.subscribers.length,1,'all instance batches share one frame callback');
     assert.ok(batches().every(batch=>batch.frustumCulled && batch.count===2));
     assert.ok(batches().some(batch=>batch.boundingSphere.containsPoint(new Vector3(-40,0,0))), 'bounds include geometry outside its cell');
     meshes[1].position.x=102;
@@ -65,7 +74,7 @@ test('imperative batches retain GPU identity, edit picking, and ownership across
     let sourceDisposals = 0;
     geometry.addEventListener('dispose',()=>sourceDisposals++);
     material.addEventListener('dispose',()=>sourceDisposals++);
-    const registry = new MeshInstanceRegistry(false, 10, 2);
+    const registry = new MeshInstanceRegistry(false, 10);
     const disconnect = registry.connect(container);
     const clicks = [];
     const meshes = [0,1,2,3,100,101].map(x=>{const mesh=new Mesh(geometry,material);mesh.position.x=x;scene.add(mesh);return mesh;});
@@ -105,11 +114,49 @@ test('instance material variants are released when the provider disconnects', as
     registerInstancedMaterial(material,()=>{
         variants++;const variant=new MeshBasicMaterial();variant.addEventListener('dispose',()=>disposed++);return variant;
     });
-    const registry=new MeshInstanceRegistry(false,24,2), disconnect=registry.connect(root);
+    const registry=new MeshInstanceRegistry(false,24), disconnect=registry.connect(root);
     const meshes=[new Mesh(geometry,material),new Mesh(geometry,material)];
     meshes.forEach(mesh=>registry.register({id:mesh.uuid,mesh}));registry.update();
     assert.equal(variants,1);
     registry.invalidate();registry.update();assert.equal(variants,1,'unrelated invalidations reuse the shader variant');
     disconnect();assert.equal(disposed,1);assert.ok(meshes.every(mesh=>mesh.layers.mask===1));
     await Promise.resolve();geometry.dispose();material.dispose();
+});
+
+test('nested prefabs share automatic batches while capture scenes own separate batches', async t => {
+    const { act, createElement: h, useRef } = await import('react');
+    const { createRoot, createPortal } = await import('@react-three/fiber');
+    const { Scene } = await import('three');
+    const { MeshInstanceProvider, useMeshInstanceRegistration } = await import('../../src/runtime/rendering/MeshInstanceProvider.tsx');
+    globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+    const canvas = { width: 100, height: 100, style: {}, addEventListener() {}, removeEventListener() {} };
+    const root = createRoot(canvas), captureScene = new Scene();
+    await root.configure({ gl: { render() {}, setSize() {}, setPixelRatio() {}, domElement: canvas },
+        size: { width: 100, height: 100, top: 0, left: 0 }, frameloop: 'never' });
+    const geometry = new BoxGeometry(), material = new MeshBasicMaterial();
+    geometry.userData.prefabGeometrySignature = 'shared-across-scenes';
+    const main = [new Mesh(geometry, material), new Mesh(geometry, material)];
+    const capture = [new Mesh(geometry, material), new Mesh(geometry, material)];
+    t.after(async () => { await act(async () => root.unmount()); geometry.dispose(); material.dispose(); });
+    function Source({ mesh }) {
+        useMeshInstanceRegistration(mesh.uuid, useRef(mesh), true);
+        return h('primitive', { object: mesh });
+    }
+    let store;
+    await act(async () => { store = root.render(h(MeshInstanceProvider, null,
+        h(Source, { mesh: main[0] }), h(MeshInstanceProvider, null, h(Source, { mesh: main[1] })),
+        createPortal(h(MeshInstanceProvider, { isolated: true }, capture.map(mesh => h(Source, { key: mesh.uuid, mesh }))), captureScene),
+    )); });
+    const batches = scene => { const found = []; scene.traverse(object => { if (object.isInstancedMesh) found.push(object); }); return found; };
+    assert.equal(batches(store.getState().scene).length, 0);
+    assert.equal(batches(captureScene).length, 0);
+    await act(async () => store.getState().advance(1, false));
+    assert.equal(batches(store.getState().scene).length, 1);
+    assert.equal(batches(captureScene).length, 1);
+    assert.equal(batches(store.getState().scene)[0].count, 2);
+    assert.equal(batches(captureScene)[0].count, 2);
+    assert.ok([...main, ...capture].every(mesh => mesh.layers.mask === 0));
+    assert.ok(main.every(mesh => mesh.parent === store.getState().scene), 'batching keeps source geometry in place for picking and colliders');
+    await act(async () => root.render(null));
+    assert.ok([...main, ...capture].every(mesh => mesh.layers.mask === 1));
 });

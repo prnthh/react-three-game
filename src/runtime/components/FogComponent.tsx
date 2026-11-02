@@ -1,6 +1,4 @@
-import { useThree } from '@react-three/fiber';
-import { useCallback } from 'react';
-import type { Fog, Object3D } from 'three';
+import { createPortal, useThree } from '@react-three/fiber';
 import type { Component, ComponentViewProps } from '../../core/ComponentRegistry.js';
 
 export interface FogProperties {
@@ -11,13 +9,8 @@ export interface FogProperties {
 
 function FogView({ properties: { color, near, far }, children }: ComponentViewProps<FogProperties>) {
     const scene = useThree(state => state.scene);
-    const attachFog = useCallback((_parent: Object3D, fog: Fog) => {
-        const previous = scene.fog;
-        scene.fog = fog;
-        return () => { scene.fog = previous; };
-    }, [scene]);
     return <>
-        <fog attach={attachFog} args={[color, near, far]} />
+        {createPortal(<fog attach="fog" args={[color, near, far]} />, scene)}
         {children}
     </>;
 }

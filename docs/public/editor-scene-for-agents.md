@@ -32,13 +32,13 @@ Tool names may receive browser-assigned suffixes during discovery.
 
 `scene.help()` presents JS methods and examples. `scene_info` with
 `includeGuide:true` presents callable tools and JSON arguments. Component fields/defaults and batch commands remain
-available through their registered schemas; these guides do not replace them.
+available through their registered schemas.
 
 These tools delegate to the same scene API and retain its validation, edit-mode
 guards, revision checks and undo history. `scene_batch` requires
 `expectedRevision` from `scene_info`; `validateOnly: true` previews validation
-without applying commands. Capture results include an image content block.
-Cancellation stops work before dispatch; it does not undo an edit already committed.
+as a read-only preview. Capture results include an image content block.
+Cancellation stops pending work before dispatch. Committed edits remain in undo history.
 
 Load or reload a scene from a source URL:
 
@@ -57,7 +57,7 @@ the document commit, so wait for mounted objects before capturing them.
 
 Loading reads scene data; the host still controls the persistence destination.
 `scene.save()` writes through a configured host callback when one exists. The
-docs editor uses JSON export and does not write back to the source URL.
+docs editor supplies JSON export for saving to a chosen file.
 To checkpoint repository JSON while working through an agent,
 use `scene.export()`/`exportJSON()` or `scene_save` with `action:'export'`, then write
 that returned document to its source file. Export/save a checkpoint before switching
@@ -228,7 +228,7 @@ work from the latest saved document.
 | Align objects | [Placement](#measuring-placement) |
 | Commit dependent changes together | [Batches](#atomic-batches-and-revision-guards) |
 | Export PNG or GLB | [Downloads](#download-png-or-glb) |
-| Understand local editor storage | [Standalone editor](#standalone-editor-storage) |
+| Understand local editor storage | [Standalone editor](#persistence-and-authored-presentation) |
 
 ## Edit component settings
 
@@ -281,8 +281,6 @@ function configureComponent(scene, id, type, properties) {
 
 If multiple components share a type, choose the intended instance key explicitly with `patchComponent`. Supply complete values when patching nested objects or arrays.
 
-<a id="add-behavior-that-is-not-registered"></a>
-
 ### Add scripted behavior
 
 Use a registered component when it already provides the behavior. Otherwise, add
@@ -327,15 +325,15 @@ Reset remounts live objects from the current authored document and clears
 selection, preserving mode, revisions, and undo history. Wait for assets to appear
 before capturing or exporting. The host can pass `onResetScene`
 to reset external game state before remounting. `getCamera()` reads camera position
-and target; `setCamera()` works in Edit mode so gameplay cameras do not compete.
+and target; `setCamera()` works in Edit mode while the editor camera owns the view.
 
 ## Capture options
 
-Capture can temporarily override the view without moving the editor camera:
+Capture accepts a temporary view for the returned image:
 
 ```js
 const image = await scene.capture({
-  helpers: false,   // Hide editor guides without changing mode or resetting.
+  helpers: false,   // Hide editor guides in the capture.
   mode: 'wireframe', // 'default', 'unlit', or 'wireframe'
   fov: 55,           // Perspective cameras only; 1–179 degrees.
   position: [8, 6, 4],
@@ -429,8 +427,8 @@ await scene.downloadGLB({ filename: 'scene.glb' });
 ```
 
 Set the browser tool's download listener before calling. These work in Edit or Play,
-clear selection, and request a download without opening menus. Defaults are
-`screenshot.png` and `scene.glb`; filenames cannot include directory paths.
+clear selection, and request a browser download. Defaults are
+`screenshot.png` and `scene.glb`; use a filename with a base name and extension.
 Results contain `downloadRequested`, `filename`, `mimeType`, `revision`, and
 `currentRevision`. Verify the saved file through the browser tool's download result. Errors reject the call.
 
@@ -525,8 +523,8 @@ The manifest format is:
 
 ## Persistence and authored presentation
 
-`scene.save()` uses the host's configured callback or export behavior; check
-`scene.info().saveMethod`. The repository's standalone editor reloads source
+`scene.save()` persists through the host's configured callback. Check
+`scene.info().saveMethod`; use `scene.exportJSON()` when it reports `exportJSON`. The repository's standalone editor reloads source
 documents and requires explicit JSON export to retain edits. See its
 [loading and saving guide](https://github.com/prnthh/react-three-game/blob/main/docs/app/editor/README.md#loading-and-saving).
 

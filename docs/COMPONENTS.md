@@ -13,13 +13,12 @@ Register it as in the [custom component demo](app/demo/customcomponent/page.tsx)
 
 Put editable fields and defaults in the definition; views receive resolved
 properties. Return `children` to preserve subsequent components and child nodes.
-Returning `null` suppresses that content.
 
 Use React effects and R3F frames for behavior. `useComponentActive(enabled)`
 combines Play mode with enabled/preparation state; gate effects and frame work
 with its result. Visual previews may remain mounted in Edit. Effects must return
-cleanup and tolerate React effect replay. Definitions have no separate lifecycle
-callbacks; Runtime's script fields are implemented inside its own view too.
+cleanup and support React effect replay. Runtime script fields use the same
+effect and frame lifecycle inside their View.
 
 ### Rendering composition
 
@@ -30,7 +29,7 @@ objects and attachments. Geometry views compose their mesh and geometry;
 material views attach inside them.
 
 Portal components such as BoneAttachment use an ordinary view on a parent node;
-child nodes own bone-local transforms. The portal does not own the target resource.
+child nodes own bone-local transforms. The model owns the target bone resource.
 
 ### Ownership and coexistence
 
@@ -42,10 +41,9 @@ attachment or bone-parent ownership. Data and ordinary behaviors may coexist.
 Runtime handle lookup returns the first live registration for a node and type.
 Multiple SkinnedMesh or Terrain instances may coexist; node-keyed queries expose
 the first match. Cleanup removes only its own registration and exposes the next
-match. Component-instance targeting is not yet supported.
+match. Use separate nodes for individually addressable runtime handles.
 
-Scene-wide effects such as Environment and Fog have no node-level ownership
-constraint; allowing multiple instances does not imply their effects blend.
+Author one active Environment and Fog configuration for the scene.
 
 ### Inspector fields
 
@@ -83,7 +81,7 @@ The view inherits the node's transform; changing its settings supplies new
 picking. Return `children` to render other components and child nodes.
 Import the registration module before loading its prefab in both editor and viewer.
 The same property definitions generate inspector fields and window API
-`describeComponents` output. Use `registerComponentEditor` from `/editor`
+`scene.components()` output. Use `registerComponentEditor` from `/editor`
 when the generated inspector needs custom UI. Agents discover the property schemas.
 
 For a separate tool watching another node, subscribe to just the data it needs:
@@ -117,11 +115,10 @@ Follow [ComponentRegistry](../src/core/ComponentRegistry.ts) →
 services live in `SceneRuntime`; loading and compilation live in `PrefabInstance`.
 Within each node, read the document, compose its Views and children, then render
 the transform group. The group has a separate subscription boundary so mode and
-selection changes do not rerender static content.
+selection updates stay within that boundary.
 
-Picking and selection policy belong to the editor's `EditorSelection` wrapper,
-not `PrefabRoot`. This wrapper owns click cycling, drag rejection, locked-node
-fallback and nested-prefab picking. Runtime rendering only reads host-supplied
+The editor's `EditorSelection` wrapper owns picking and selection policy:
+click cycling, drag rejection, locked-node fallback and nested-prefab picking. Runtime rendering only reads host-supplied
 selection state and forwards batched instance clicks. For a custom editor, wrap
 `PrefabRoot` with `EditorSelection` from `/editor`; supply its document `store`,
 `selectedId`, `enabled` and `onSelect` callback.
@@ -152,7 +149,7 @@ Follow [gameObject](../src/runtime/scene/gameObject.ts) for stable node handles,
 [SceneContext](../src/runtime/scene/SceneContext.tsx) for typed capabilities,
 and [GameEvents](../src/runtime/scene/GameEvents.ts) for synchronous notifications.
 `useGameEvent(name, handler)` keeps its subscription while the event name is
-unchanged and calls the latest committed handler; no dependency array is needed.
+unchanged and calls the latest committed handler.
 The optional [Crashcat adapter](../src/plugins/crashcat/CrashcatRuntime.tsx)
 steps its own physics world from R3F frames.
 
@@ -195,7 +192,7 @@ Code edits restart setup with fresh state; data edits keep it running.
 Scripts read the current R3F store through `context.three` and resolve local
 objects with `prefab.getObject(id)`. Return cleanup from setup or register it with
 `context.onCleanup(fn)`. See the
-[Runtime usage example](public/editor-scene-for-agents.md#add-behavior-that-is-not-registered).
+[Runtime usage example](public/editor-scene-for-agents.md#add-scripted-behavior).
 
 
 ## Model collision authoring
@@ -204,18 +201,17 @@ Core model decomposition recognizes `_col` / `-col` (visible triangle mesh),
 `_colonly` / `-colonly` (collision only), and their `convcol` / `convcolonly`
 variants (one convex hull per marked mesh). Blender duplicate suffixes such as
 `.001` are accepted. Concave convex-proxy assemblies should use multiple marked
-meshes; automatic convex decomposition is not performed. `_colinv` is not a supported suffix.
+meshes, with one authored proxy per convex part.
 
 The importer emits engine-neutral `MeshCollider` data with local vertices and
 indices, preserving the node hierarchy and transforms. `collisionNames: false`
 opts out. The editor recognizes these markers on file import and decomposition.
-`Model` hides collision-only proxy meshes, but loading a render asset alone does
-not register physics: import/bake the collider components into the scene document
-for both the client and headless server. Host adapters compile effective transforms
+`Model` displays the render meshes. Import or bake collider components into the
+scene document for physics in both the client and headless server. Host adapters compile effective transforms
 and choose native triangle meshes or convex hulls; they own physics lifetime.
 
 ## Surface mapping and decals
 
-`UVMapping` is a built-in Geometry modifier: `unitsPerTile` sets a consistent local texture density across box faces, including the node's own authored scale. Material `repeat: true` enables wrapping; `repeatCount` and `offset` remain available for extra tiling and alignment. Ancestor scaling is not included by this UV modifier.
+`UVMapping` is a built-in Geometry modifier: `unitsPerTile` sets a consistent local texture density across box faces, including the node's own authored scale. Material `repeat: true` enables wrapping; `repeatCount` and `offset` remain available for extra tiling and alignment. Texture density is computed in node-local space.
 
-`Decal` uses Three.js `DecalGeometry`: add a decal node as a child of its target Geometry or static Model node. Transform places/rotates the projector relative to that parent; `size` is [width, height, depth]. Geometry is clipped to the parent's own mesh surfaces, including compound models, and ignores separate child nodes. Keep projection depth shallow to avoid the reverse face of thin objects. Projected geometry rebuilds when relative transforms or source geometry change, and follows parent motion without rebuilding. Skinned/instanced targets and shader-only displacement are not supported. `depthBias`, alpha textures and `renderOrder` remain available; decals do not add colliders.
+`Decal` uses Three.js `DecalGeometry`: add a decal node as a child of its target Geometry or static Model node. Transform places/rotates the projector relative to that parent; `size` is [width, height, depth]. Geometry is clipped to the parent's own mesh surfaces, including compound models, and ignores separate child nodes. Keep projection depth shallow to target the intended face of thin objects. Projected geometry rebuilds when relative transforms or source geometry change, and follows parent motion. Use static, individually rendered target meshes with CPU geometry. `depthBias`, alpha textures and `renderOrder` control decal appearance; author collision separately.

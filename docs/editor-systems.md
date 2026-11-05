@@ -1,6 +1,6 @@
 # Editor systems and extension points
 
-The scene document remains the source of authored state. Tool sessions, hover previews, pointer ownership and isolation are live editor state; they are not serialized and do not modify object lock flags.
+The scene document remains the source of authored state. Tool sessions, hover previews, pointer ownership and isolation are live editor state. Document edits carry the saved scene and object lock flags.
 
 ## Registered tools
 
@@ -29,17 +29,17 @@ registerEditorTool({
 // session.end();
 ```
 
-Activation rejects missing, locked, unsupported or non-editable targets. Deleting the target, removing its supporting component, locking it, loading another scene or entering Play ends its session. Switching tools cancels the previous interaction first. Settings are remembered per tool definition within that editor. Replacing a definition or unregistering an active tool cancels its interaction and ends its session; a replacement starts with its own default settings. Session-specific callbacks cannot alter a later session after an asynchronous operation completes.
+Activate tools on existing, unlocked targets that support the tool in Edit mode. Deleting the target, removing its supporting component, locking it, loading another scene or entering Play ends its session. Switching tools cancels the previous interaction first. Settings are remembered per tool definition within that editor. Replacing a definition or unregistering an active tool cancels its interaction and ends its session; a replacement starts with its own default settings. Callbacks are scoped to their originating session.
 
-Register transient-edit cleanup with `session.registerCancellation(cancel)`. The editor cancels active interactions before toolbar/keyboard undo and redo, camera focus, agent document commands and session changes. Cancel must restore the preview without writing history. Keep live preview out of the document and commit one update on completion, so one interaction produces one undo entry.
+Register transient-edit cleanup with `session.registerCancellation(cancel)`. The editor cancels active interactions before toolbar/keyboard undo and redo, camera focus, agent document commands and session changes. Cancellation restores the live preview. Commit one document update on completion so each interaction produces one undo entry.
 
 ## Pointer tools
 
-`attachPointerTool(canvas, handlers, options)` owns capture and input lifecycle without knowing about terrain, materials or scene storage. The default policy uses primary mouse/pen input, leaves touch and Alt+drag for navigation, ignores incidental pointers during an interaction, processes coalesced pen events, and cancels on lost capture, pointer cancellation, Escape or window blur. Controls are restored to their previous enabled state on completion, cancellation and handler errors.
+`attachPointerTool(canvas, handlers, options)` owns pointer capture and the input lifecycle. The default policy uses primary mouse/pen input, leaves touch and Alt+drag for navigation, ignores incidental pointers during an interaction, processes coalesced pen events, and cancels on lost capture, pointer cancellation, Escape or window blur. Controls are restored to their previous enabled state on completion, cancellation and handler errors.
 
 Handlers provide `begin`, `move`, `end(commit)`, optional `hover`/`leave`, and `onError`. `begin` returns false when the tool has no valid hit. Tools can provide another `acceptsPointer` policy. On unmount call `dispose`; when registered as a tool also register its `cancel` with the session. `end(false)` must roll back tool-local data; `end(true)` owns persistence and its error recovery.
 
-Terrain retains its own raycasting, world-to-map mapping, weight blending and PNG serialization. Those are terrain semantics, not pointer policy.
+Terrain retains its own raycasting, world-to-map mapping, weight blending and PNG serialization.
 
 ## Object presets
 
@@ -60,20 +60,11 @@ registerEditorNodePreset({
 });
 ```
 
-The referenced runtime component must also be registered. Tools and presets share a reactive extension registry with stable immutable snapshots. Cleanup belongs to each registration: removing an old registration does not remove its replacement, even if both registrations used the same object. Preset registration is reactive, so the palette updates when plugins add or remove entries.
+The referenced runtime component must also be registered. Tools and presets share a reactive extension registry with stable immutable snapshots. Cleanup releases the originating registration while preserving the current registration. Preset registration is reactive, so the palette updates when plugins add or remove entries.
 
 ## Runtime ownership
 
-Terrain surfaces register `TERRAIN_SURFACE_COMPONENT` on their owning node. Game-object handles and editor tools use the same live ownership registry. Lookup returns the first live registration of that type on the node; it does not scan descendants or infer ownership from `userData`.
-
-## Current boundaries
-
-- Terrain uses four material layers with RGB weights and a remainder. More layers require a storage and material design change.
-- Terrain image decoding and painted-image export use browser canvas APIs. Headless scene creation rejects Terrain until an image adapter is available.
-- Numeric inspector scrubbing publishes individual drag updates. Pointer-tool transactions do not yet cover numeric fields or transform controls.
-- The Add object palette creates at the scene root. Surface placement and repeated stamping can use registered tools and the document API.
-- File-drop import and asynchronous model replacement live in `PrefabEditor.tsx`.
-- Runtime component and inspector registrations do not have the reactive replacement/unload lifecycle of editor tools.
+Terrain surfaces register `TERRAIN_SURFACE_COMPONENT` on their owning node. Game-object handles and editor tools use the same live ownership registry. Lookup returns the first live registration of that type on the owning node.
 
 ## Terrain tool example
 
@@ -107,10 +98,10 @@ const fields = [{
 ```
 
 `NumberField`, `StringField`, `ColorField`, `BooleanField`, `SelectField`,
-`Vector3Field` and `NodeField` also accept `allowUnset`. Their fallback supplies the
+`Vector3Field` also accept `allowUnset`. Node-reference fields use
+`FieldRenderer` with `type: 'node'`. Their fallback supplies the
 initial value. Use `UnsettableField` around custom input UI with `value`,
 `initialValue`, `label` and `onChange` for the same presentation and behavior.
-Only undefined means unset: zero, false and empty strings are authored values.
 Unsetting sends undefined through the normal change callback; JSON export omits
 that property. Required fields retain their ordinary controls.
 
@@ -166,8 +157,7 @@ context when composing a custom UI.
 ## Asset previews
 
 Mount one `SharedCanvas` alongside the asset lists and single-asset viewers on a
-page. They register views into that canvas; adding a canvas per tile or list
-renders those views repeatedly. `PrefabEditorProvider` supplies the preview canvas
+page. The asset views share that canvas. `PrefabEditorProvider` supplies the preview canvas
 for its inspectors. The asset viewer demo shows the standalone composition.
 Thumbnails and enlarged previews share loaded assets; model placements clone the
 object hierarchy and retain the shared geometry and materials.

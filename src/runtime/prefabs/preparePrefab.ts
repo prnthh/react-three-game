@@ -15,7 +15,9 @@ export interface PrefabPreparationOptions { basePath?: string; signal?: AbortSig
 export interface PrefabPreparationRuntime {
     getComponent(name: string): Component | undefined;
     loadDocument(path: string): Promise<PrefabState>;
-    loadAsset(dependency: AssetDependency): Promise<unknown>;
+    loadModel(path: string): Promise<unknown>;
+    loadTexture(path: string): Promise<unknown>;
+    loadSound(path: string): Promise<unknown>;
 }
 
 /** Resolve inline and URL definitions through one dependency graph before activation. */
@@ -43,10 +45,12 @@ export async function preparePrefab(
     };
     const enqueueAsset = (dependency: AssetDependency) => {
         check();
-        const resolved = { ...dependency, path: withBasePath(basePath, dependency.path) };
-        const key = `${resolved.kind}:${resolved.path}`;
+        const path = withBasePath(basePath, dependency.path);
+        const key = `${dependency.kind}:${path}`;
         if (assets.has(key)) return;
-        const ready = runtime.loadAsset(resolved);
+        const ready = dependency.kind === 'model' ? runtime.loadModel(path)
+            : dependency.kind === 'texture' ? runtime.loadTexture(path)
+            : runtime.loadSound(path);
         assets.set(key, ready);
         void ready.catch(() => {});
     };

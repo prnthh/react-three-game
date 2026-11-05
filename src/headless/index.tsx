@@ -99,7 +99,9 @@ async function mountHeadlessScene(prefab: Prefab, options: HeadlessSceneOptions,
                     (definition.dependencies?.(properties) ?? []).filter(dependency => dependency.kind !== 'sound') };
             },
             loadDocument: path => cache.load('prefab', path),
-            loadAsset: dependency => cache.load(dependency.kind, dependency.path),
+            loadModel: path => cache.load('model', path),
+            loadTexture: path => cache.load('texture', path),
+            loadSound: path => cache.load('sound', path),
         }, input, { basePath, signal: abort.signal });
         abort.signal.throwIfAborted();
         const scene = new THREE.Scene();

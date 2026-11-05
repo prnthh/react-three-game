@@ -113,6 +113,24 @@ describe('Caching and ownership', () => {
 describe('Prefab preparation', () => {
     const flush = () => new Promise(resolve => queueMicrotask(resolve));
 
+    test('loads each asset kind once with its explicit loader and resolved path', async () => {
+        const requests = [];
+        const runtime = {
+            getComponent: () => ({ properties: {}, dependencies: () =>
+                ['model', 'texture', 'sound', 'model'].map(kind => ({ kind, path: '/shared' })) }),
+            loadDocument: async () => { throw Error('Unexpected document request'); },
+            loadModel: async path => { requests.push(['model', path]); },
+            loadTexture: async path => { requests.push(['texture', path]); },
+            loadSound: async path => { requests.push(['sound', path]); },
+        };
+        const document = normalizePrefab({ root: { id: 'root', components: {
+            assets: { type: 'Assets', properties: {} },
+        } } });
+        const prepared = await preparePrefab(runtime, document, { basePath: '/app' });
+        assert.equal(prepared.assetCount, 3);
+        assert.deepEqual(requests, [['model', '/app/shared'], ['texture', '/app/shared'], ['sound', '/app/shared']]);
+    });
+
     function fixture(spec, assetLoader = async () => ({})) {
         const requested = [];
         const defs = {
@@ -126,10 +144,10 @@ describe('Prefab preparation', () => {
                 const values = spec[path];
                 return Promise.resolve(normalizePrefab({ root: { id: 'root', components: Object.fromEntries(values.map((c, i) => [String(i), c])) } }));
             },
-            loadAsset(dep) {
-                requested.push(dep.path);
-                return assetLoader(dep);
-            },
+            ...Object.fromEntries(['model', 'texture', 'sound'].map(kind => [
+                'load' + kind[0].toUpperCase() + kind.slice(1),
+                path => { requested.push(path); return assetLoader({ kind, path }); },
+            ])),
         } };
     }
     const ref = path => ({ type: 'Ref', properties: { path } });
@@ -272,7 +290,9 @@ test('inline and external definitions prepare together, sharing dependencies and
     const runtime = {
         getComponent: name => name === 'PrefabRef' ? PrefabRef : { name, properties: { path: { type: 'string' } }, dependencies: p => [{ kind: 'texture', path: p.path }] },
         loadDocument: async path => { requests.push(path); return path.endsWith('/root.json') ? document : normalizePrefab(leaf); },
-        loadAsset: async dependency => { requests.push(dependency.path); },
+        loadModel: async () => { throw Error('Unexpected model'); },
+        loadTexture: async path => { requests.push(path); },
+        loadSound: async () => { throw Error('Unexpected sound'); },
     };
     const prepared = await preparePrefab(runtime, '/root.json', { basePath: '/app' });
     assert.equal(prepared.documentCount, 4);
@@ -345,7 +365,9 @@ test('preparation resolves packed owners and detects packed reference cycles', a
     const runtime = {
         getComponent: name => name === 'PrefabRef' ? { properties: { prefabId: { type: 'string', default: '' } } } : undefined,
         loadDocument: async () => document,
-        loadAsset: async () => { throw Error('No external dependencies'); },
+        loadModel: async () => { throw Error('No external dependencies'); },
+        loadTexture: async () => { throw Error('No external dependencies'); },
+        loadSound: async () => { throw Error('No external dependencies'); },
     };
     const prepared = await preparePrefab(runtime, '/scene.json');
     assert.equal(prepared.documentCount, 2);

@@ -111,8 +111,8 @@ or a Promise rejection handler.
 ### Automatically stream static scenery
 
 A `ChunkSettings` component on the scene root configures spatial mesh batching
-and distance streaming for `static` prefab placements. Without it, placements
-prepare their complete document. The host can continue mounting copies of the same URL as the
+and distance streaming for `static` prefab placements. Placements prepare their
+complete document by default. The host can continue mounting copies of the same URL as the
 camera travels; source documents, assets and partition plans are shared within
 the runtime. A camera can travel in either direction.
 
@@ -142,15 +142,14 @@ eligible when its center is far away but its geometry is close to the camera.
 `onChunkStatus` reports `preparing`, `ready`, `unloaded`, and `error` with a cell ID
 local to the placement. `onActivate` and the placement's `active` status fire once
 its first prepared cell enters the visible band (or its resident document is
-ready when there are no streamable cells). Unmounting cancels preparation; late
-completions cannot activate an evicted placement. Cell failures are reported and
-do not block other cells. An errored cell is retried after leaving its unload
+ready when there are no streamable cells). Unmounting cancels preparation. Cells prepare independently and report
+their own failures. An errored cell is retried after leaving its unload
 range and returning, or after remounting the placement.
 
 Streaming is inherited from the outer scene root and requires `static={true}`. Primitive geometry and ordinary static model
 placements are partitioned; external and packed prefab references are expanded
 while retaining their transform chains. Named materials are resolved into each
-cell, so unloading a distant defining mesh cannot remove a nearby surface.
+cell, so nearby surfaces retain their materials as distant cells unload.
 Lights, cameras, fog and environments remain resident. A prefab containing custom
 behavior, colliders, geometry modifiers, animated/skinned models, model repeat
 arrays, or unsupported render compositions keeps its complete document resident
@@ -160,11 +159,9 @@ separate prefab when using spatial scenery streaming.
 
 The source JSON and referenced assets are fetched before partitioning. Spatial
 unloading releases cell objects and instance batches, while shared source assets,
-geometry pools and the plan remain cached. This is scene residency management,
-not range requests into a JSON/GLB file. Mount units are bounded by node count,
-not a guaranteed millisecond deadline: a single imported model, unusually deep
-transform chain, texture upload, or driver shader compilation is indivisible and
-can still take longer than a frame. Keep such assets reasonably sized and measure
+geometry pools and the plan remain cached. Mount units are bounded by node count.
+Individual model mounts, deep transform chains, texture uploads, and driver shader
+compilation can take longer than a frame. Keep such assets reasonably sized and measure
 on target devices.
 
 When a custom postprocessing pass renders to textures/MRT, register its standing

@@ -6,7 +6,7 @@ Use built-in `DirectionalLight`, `PointLight`, `SpotLight`, `HemisphereLight`, a
 
 To use an image for lighting and reflections, put a textured sphere **inside** an
 `Environment` node. Use a `basic` material with `BackSide` so the capture camera
-sees the image from inside the sphere without lighting changing its colors.
+sees the image’s unlit colors from inside the sphere.
 Any supported image texture works; an equirectangular panorama wraps naturally,
 while an ordinary photo stretches around the sphere.
 
@@ -43,7 +43,7 @@ The captured map lights standard/physical materials, including compatible loaded
 model materials. Basic materials display their own unlit colors. `intensity` controls the
 environment lighting. `backgroundIntensity` and `backgroundBlurriness` affect
 only the visible sky; material roughness controls reflection blur. Set
-`background: false` to retain lighting/reflections without showing the sky.
+`background: false` to use the capture for lighting and reflections alone.
 
 `Environment` defaults to `frames: 1`: one capture after its child content changes.
 Use `frames: 0` for continuous capture. Use a finite count for stable sky
@@ -61,24 +61,22 @@ These values remain editable and serialize with the prefab.
 
 The built-in `DiffuseLightProbe` projects authored sky/ground colors into nine
 spherical-harmonic coefficients. Its `directionality` and world-space `axis`
-approximate canyon openings. This is scene-wide diffuse lighting, not a geometry
-bake or local probe volume. `Environment` supplies the separate reflection capture
+approximate canyon openings with scene-wide diffuse lighting. `Environment` supplies the separate reflection capture
 from an authored `Sky` child. Both remain static until their authored inputs change.
 
 `Sky` exposes sun position, size, turbidity, Rayleigh and Mie scattering, and sun
-disc visibility. Its sun does not create a light; use `DirectionalLight` for shadows.
+disc visibility. Pair it with `DirectionalLight` for direct lighting and shadows.
 `RenderSettings` on the scene root supplies optional tone mapping, exposure,
 output color space and shadow overrides in Edit and Play. Unspecified fields keep
 the renderer defaults; removing an override restores the previous value.
 
 A separate root `PostProcessing` component enables ambient occlusion and bloom.
-Without enabled effects, rendering uses the normal Three.js path. Enabled effects
-share their final composition with scene captures and shader preparation. These
+Enabled effects share their final composition with scene captures and shader preparation. These
 components use ordinary inspector fields, agent commands and JSON serialization.
 
 `ClusteredLighting` on the scene root opts into Three's clustered-lighting addon
 for scenes with many point and spot lights. Its schema exposes light capacity
-and cluster sizes. Without it, Three's ordinary lighting remains in use.
+and cluster sizes.
 
 These settings are part of the scene document, so a viewer and editor can use
 the same authored appearance. For mesh batch cells and static-prefab residency, see [ChunkSettings](PREFABS.md#automatically-stream-static-scenery).

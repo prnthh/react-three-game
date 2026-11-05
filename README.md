@@ -166,7 +166,7 @@ await scene.setMode({ mode: 'play' });
 
 Settings are saved with the scene; the implementation stays in your app. Register
 custom components in both editor and playback builds. For small scripts stored
-with trusted scene data, see the built-in [Runtime component](docs/public/editor-scene-for-agents.md#add-behavior-that-is-not-registered).
+with trusted scene data, see the built-in [Runtime component](docs/public/editor-scene-for-agents.md#add-scripted-behavior).
 
 ## 5. Save and share
 

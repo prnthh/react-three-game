@@ -31,13 +31,11 @@ Use the patterns below when adding integrations or changing internals.
 Keep reusable scene mechanisms in the library: document operations, resource
 loading, preparation, batching, distance residency and authored rendering features.
 Components expose editable configuration and own their effects and cleanup.
-When a setting is absent, preserve Three.js and host defaults instead of supplying
-a demo preset. Use existing React, R3F and Three.js behavior before introducing
+Omitted settings inherit Three.js and host defaults. Use existing React, R3F and Three.js behavior before introducing
 another manager or lifecycle.
 
 Keep world layout, travel policy, art presets, game rules and session wiring in
-the application. A demo component can be useful without becoming a built-in.
-Promote it when its contract is useful independently of the originating demo;
+the application. Promote a demo component when its contract is useful independently of the originating demo;
 remove fixed assumptions and give its resources a clear owner first. Authored
 scene settings belong in JSON when they need to travel between editor and viewer.
 Host JSX remains available for application integration and editor controls.
@@ -49,8 +47,7 @@ authored state; mounted Three objects and component handles own live state.
 
 `PrefabRoot` establishes a document instance. `PrefabNode` resolves registered
 views and composes them inside the node's transform group. Views own their R3F
-objects, React effects and frame callbacks; the renderer does not schedule game
-rules. Component schemas supply defaults, generated inspector fields and agent
+objects, React effects and frame callbacks. The host schedules game rules. Component schemas supply defaults, generated inspector fields and agent
 discovery. See [component composition](COMPONENTS.md#change-a-component).
 
 `PrefabInstance` adds asset preparation, shader compilation and activation.
@@ -58,8 +55,7 @@ Static placements may opt into spatial residency through authored
 `ChunkSettings`. See [loading and streaming](PREFABS.md#load-a-prefab).
 
 Root-scoped components configure the outer scene before ordinary nodes mount.
-Nested prefab copies inherit that scene configuration. Their own root settings
-do not override the enclosing scene. The inspector and command evaluator enforce
+Nested prefab copies inherit the enclosing scene configuration. The inspector and command evaluator enforce
 root placement; see [authored rendering](LIGHTING.md#authored-sky-probes-and-render-settings).
 
 ## Demo organization
@@ -67,7 +63,7 @@ root placement; see [authored rendering](LIGHTING.md#authored-sky-probes-and-ren
 Each demo's `page.tsx` owns registration, providers and composition. Put custom
 components in that demo's `components/` folder and game-specific wiring alongside
 the page or under `games/<game>/`. Shared examples may import another demo's
-component without promoting it into the library.
+component directly.
 
 Start scenes inline; pack reusable assemblies within the document. Saved demo
 files follow the [prefab directory conventions](public/prefabs/README.md).

@@ -6,7 +6,7 @@ programmatic scene edits, use the [Scene API](../../public/editor-scene-for-agen
 ## Loading and saving
 
 `/editor` opens the starter cube, light and sky environment. A `?map=` URL
-loads that source document directly; browser drafts never replace its contents.
+loads that source document directly.
 Reloading or reopening the editor loads the source again and discards unsaved
 session edits. Use **Save Prefab** to download JSON, or `scene.exportJSON()` to
 write the authored document back to its source file. Check `scene.info().saveMethod`
@@ -14,14 +14,13 @@ before using `scene.save()`; a custom host can supply its own persistence callba
 
 **New Prefab** starts from the template. Demo pages use their own persistence
 settings. `scene.reset()` restores live objects from the current authored document
-without discarding session edits.
+while preserving session edits.
 
 ## Initial view
 
 The page derives its initial view from the first enabled authored perspective
 camera, including parent transforms. An explicit `?camera=x,y,z` query overrides
-that view. The starter scene and scenes without a suitable camera use the page's
-fallback view. This URL behavior belongs to this host page, not every PrefabEditor.
+that view. The page uses its fallback view by default, including for the starter scene. These query parameters configure the standalone editor page.
 
 ## Scene tools and chat
 

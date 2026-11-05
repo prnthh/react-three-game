@@ -59,7 +59,7 @@ individual reveals; regeneration replaces those manual timing edits.
 
 `public/timelines/codetalker.lrc` contains the line-synced LRCLIB record
 [39113256](https://lrclib.net/api/get/39113256), for the 68-second soundtrack
-version. It has line timestamps, not word timestamps (`hasWordSync: false`).
+version. It supplies line-synchronized timestamps (`hasWordSync: false`).
 The first vocal cues are at 5.04 and 10.52 seconds; the first full phrase begins
 at 11.44 seconds. The generator preserves these anchors while estimating the word offsets.
 

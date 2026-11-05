@@ -23,7 +23,7 @@ test('home document carries reusable definitions and executable script source wi
   assert.equal(streamer.url, undefined);
   assert.equal(streamer.prefabId, 'city-chunk-root');
   const runtime = { getComponent, loadDocument: async path => { throw Error(`Unexpected scene fetch: ${path}`); },
-    loadAsset: async () => {}, getPrefab: () => null };
+    loadModel: async () => {}, loadTexture: async () => {}, loadSound: async () => {}, getPrefab: () => null };
   await preparePrefab(runtime, document);
   const camera = Object.values(document.nodesById).find(n => n.components?.flythrough);
   const source = camera.components.flythrough.properties.update;

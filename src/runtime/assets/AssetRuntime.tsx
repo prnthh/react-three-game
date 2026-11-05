@@ -154,12 +154,7 @@ function AssetRuntimeOwner({ children, runtimeRef }: AssetRuntimeProviderProps) 
         structuredClone(denormalizePrefab(await loadDocument(path))), [loadDocument]);
     const getPrefab = useCallback((path: string) => getAsset('prefab', path), [getAsset]);
     const prepare = useCallback((path: string | PrefabState, options?: PrefabPreparationOptions) => preparePrefab({
-        getComponent, loadDocument,
-        loadAsset: ({ kind, path }) => {
-            if (kind === 'model') return loadModel(path);
-            if (kind === 'texture') return loadTexture(path);
-            return loadSound(path);
-        },
+        getComponent, loadDocument, loadModel, loadTexture, loadSound,
     }, path, options), [loadDocument, loadModel, loadTexture, loadSound]);
     const runtime = useMemo<AssetRuntime>(() => ({
         clearAsset, loadDocument, readPrefab, loadModel, loadTexture, loadSound, preparePrefab: prepare, getPrefab,

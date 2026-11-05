@@ -16,6 +16,7 @@ const options: DemoOption[] = [
     { label: "Music Video", href: "/demo/musicvideo" },
     { label: "Cool stuff", href: "/demo/coolstuff" },
     { label: "Relay Yard FPS", href: "/demo/fps" },
+    { label: "Frozen Yard", href: "/demo/frozen-yard" },
     { label: "Terrain Workshop", href: "/demo/terrain" },
     { label: "Parkour", href: "/demo/parkour" },
     { label: "Point n Click", href: "/demo/stage" },

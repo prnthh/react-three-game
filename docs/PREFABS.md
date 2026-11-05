@@ -184,7 +184,10 @@ materials. Use `useGameObject(id)` for mounted transforms and registered behavio
 handles. Document edits are serializable; live mutations are transient.
 `usePrefab()` exposes runtime objects and the prefab’s `basePath`. Use
 `useAssetRuntime()` for model, texture and sound resources; resolve prefab-relative
-paths with `resolveAssetPath(basePath, path)`.
+paths with `resolveAssetPath(basePath, path)`. Load shared resources with
+`await assets.loadModel(path)`, `await assets.loadTexture(path)`, or
+`await assets.loadSound(path)`; each returns the loaded resource. Register parsed
+or generated resources with `registerModel`, `registerTexture`, or `registerSound`.
 Editor refs compose the document and runtime APIs because authoring needs both.
 
 ```tsx

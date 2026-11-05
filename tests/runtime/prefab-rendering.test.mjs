@@ -156,6 +156,12 @@ test('changing prefab metadata updates the mounted root without replacing its ob
     assert.ok(before);
     await act(async () => store.getState().replacePrefab({ id: 'second', root: { id: 'root', name: 'After' } }));
     assert.equal(state.getState().scene.getObjectByName('After'), before);
+    await act(async () => store.getState().replacePrefab({ root: { id: 'new-root', name: 'Replacement' } }));
+    assert.equal(state.getState().scene.getObjectByName('After'), undefined);
+    const replacement = state.getState().scene.getObjectByName('Replacement');
+    assert.ok(replacement);
+    assert.notEqual(replacement, before);
+    assert.equal(replacement.userData.prefabNodeId, 'new-root');
 });
 
 test('switching edit mode preserves composed views and skips unrelated renders', async t => {

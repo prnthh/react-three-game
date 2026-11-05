@@ -97,3 +97,36 @@ test('concurrent capture overrides restore the authored view and a failed captur
   assert.deepEqual(events, ['first', 'second']);
   assert.equal(view, 'original');
 });
+
+test('combined node/children subscriptions follow edits and deletion without unrelated renders', async t => {
+  const { createPrefabStore } = await import('../../src/core/prefabStore.ts');
+  const { PrefabStoreProvider, usePrefabRenderNode } = await import('../../src/runtime/prefabs/PrefabStoreContext.ts');
+  const store = createPrefabStore({ root: { id: 'root', children: [{ id: 'target' }, { id: 'other' }] } });
+  let subscriptions = 0;
+  const subscribe = store.subscribe;
+  store.subscribe = (...args) => { subscriptions++; return subscribe(...args); };
+  const canvas = { width: 100, height: 100, style: {}, addEventListener() {}, removeEventListener() {} };
+  const root = createRoot(canvas);
+  await root.configure({ gl: { render() {}, setSize() {}, setPixelRatio() {}, domElement: canvas },
+    size: { width: 100, height: 100, top: 0, left: 0 }, frameloop: 'never' });
+  t.after(async () => { await act(async () => root.unmount()); });
+  const snapshots = [];
+  function Row() { snapshots.push(usePrefabRenderNode('target')); return null; }
+  await act(async () => { root.render(h(PrefabStoreProvider, { store }, h(Row))); });
+  assert.equal(subscriptions, 1);
+  const initialRenders = snapshots.length;
+  await act(async () => store.getState().updateNode('other', node => ({ ...node, name: 'unrelated' })));
+  assert.equal(snapshots.length, initialRenders);
+  await act(async () => store.getState().updateNode('target', node => ({ ...node, name: 'renamed' })));
+  assert.equal(snapshots.at(-1)[0].name, 'renamed');
+  await act(async () => store.getState().addChild('target', { id: 'child' }));
+  assert.deepEqual(snapshots.at(-1)[1], ['child']);
+  await act(async () => store.getState().deleteNode('child'));
+  assert.deepEqual(snapshots.at(-1)[1], []);
+  await act(async () => store.getState().deleteNode('target'));
+  assert.deepEqual(snapshots.at(-1), [null, []]);
+  const deletedRenders = snapshots.length;
+  await act(async () => store.getState().updateNode('other', node => ({ ...node, name: 'still unrelated' })));
+  assert.equal(snapshots.length, deletedRenders, 'the empty-child fallback remains stable');
+  assert.equal(subscriptions, 1);
+});

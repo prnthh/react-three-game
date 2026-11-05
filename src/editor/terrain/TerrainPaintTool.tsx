@@ -201,8 +201,8 @@ export function TerrainPaintPanel({ canUndo, canRedo }: EditorToolPanelProps) {
         <label style={{ display: 'flex', gap: 8, minHeight: 44, alignItems: 'center' }}><input type="checkbox" checked={edit.settings.pressure}
             onChange={e => edit.setSettings({ ...edit.settings, pressure: e.target.checked })} />Pencil pressure controls strength</label>
         <div style={{ display: 'flex', gap: 8 }}>
-            <button type="button" style={{ ...base.btn, minHeight: 44 }} disabled={!canUndo} onClick={editor.undo}>Undo</button>
-            <button type="button" style={{ ...base.btn, minHeight: 44 }} disabled={!canRedo} onClick={editor.redo}>Redo</button>
+            <button type="button" style={{ ...base.btn, minHeight: 44 }} disabled={!canUndo} onClick={() => editor.scene.undo()}>Undo</button>
+            <button type="button" style={{ ...base.btn, minHeight: 44 }} disabled={!canRedo} onClick={() => editor.scene.redo()}>Redo</button>
             <button type="button" style={{ ...base.btn, minHeight: 44 }} onClick={() => edit.nodeId && onFocusNode?.(edit.nodeId)}>Focus</button>
         </div>
         <p style={{ color: colors.textMuted }}>One stroke updates every touched tile as one undo step. Escape cancels an active stroke. Save the scene to keep your work.</p>

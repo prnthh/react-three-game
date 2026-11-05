@@ -5,7 +5,7 @@ import { importCollisionModel } from '../core/modelPrefab.js';
 import { renderSceneCapture, withSceneCapture } from '../runtime/rendering/sceneCapture.js';
 import { createEditorToolController, EditorToolsContext } from "./tools/EditorTools.js";
 import { loadAssetManifest } from '../runtime/assets/assetManifest.js';
-import { downloadBlob, downloadURL } from '../browser/index.js';
+import { downloadURL } from '../browser/index.js';
 import { isExternalPath, withBasePath } from '../runtime/assets/assetPaths.js';
 import { OrbitControls, TransformControls, useHelper } from "@react-three/drei";
 import { createContext, startTransition, useContext, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, forwardRef, useImperativeHandle } from "react";
@@ -21,14 +21,13 @@ import { AssetRuntimeProvider } from "../runtime/assets/AssetRuntime.js";
 import type { AssetRuntime } from "../runtime/assets/AssetRuntime.js";
 import { createPrefabRegistry, PrefabEditorMode } from "../runtime/scene/SceneContext.js";
 import type { PrefabApi, Scene } from "../runtime/scene/SceneContext.js";
-import { createDefaultMaterial, createImageNode, createModelNode, denormalizePrefab } from "../core/prefab.js";
+import { createDefaultMaterial, createImageNode, createModelNode } from "../core/prefab.js";
 import EditorUI from "./EditorUI.js";
 import { createSceneAgent, type SceneAgentHost, type SceneCaptureOptions } from "./agent/sceneAgent.js";
 import { exposeSceneAgent } from "./agent/sceneAgentBridge.js";
 import { SceneToolsPanel } from './agent/SceneToolsPanel.js';
 import { base, toolbar } from "./ui/styles.js";
-import { exportGLB as exportGLBFile, exportGLBData, focusCameraOnObject } from "./documentIO.js";
-import type { ExportGLBOptions } from "./documentIO.js";
+import { exportGLB as exportGLBFile, focusCameraOnObject } from "./documentIO.js";
 import { loadDroppedAssets } from "./assets/index.js";
 import { resolveManifestAssetPath } from "../runtime/assets/assetLoaders.js";
 import { createPrefabStore } from "../core/prefabStore.js";
@@ -244,7 +243,6 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
     const { canUndo, canRedo } = useSyncExternalStore(history.subscribe, history.getSnapshot, history.getSnapshot);
     const providedPrefabRef = useRef(prefab);
     const runtimeRef = useRef<AssetRuntime | null>(null);
-    const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const canvasStateRef = useRef<RootState | null>(null);
     const dropPreviewRef = useRef<Sprite | null>(null);
     const modelManifestRef = useRef<string[]>([]);
@@ -273,7 +271,6 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
         transformControlsRef.current?.detach();
     }, []);
 
-    const getPrefab = useCallback(() => denormalizePrefab(prefabStore.getState()), [prefabStore]);
     const prefabValue = useMemo(() => createPrefabApi(prefabStore, prefabRegistry, basePath), [basePath, prefabRegistry, prefabStore]);
     const document = useMemo(() => createPrefabDocumentApi(prefabStore), [prefabStore]);
     const { getObject } = prefabValue;
@@ -364,43 +361,12 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isEditMode, redo, undo]);
 
-    const handleScreenshot = useCallback(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-
-        canvas.toBlob((blob) => {
-            if (!blob) return;
-            downloadBlob(blob, `${prefabStore.getState().prefabName || 'screenshot'}.png`);
-        });
-    }, [prefabStore]);
-
     const clearSelection = useCallback(async () => {
         setSelection(null);
         await new Promise<void>(resolve => {
             requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
         });
     }, [setSelection]);
-
-    const handleExportGLB = useCallback(async (options: ExportGLBOptions = {}) => {
-        await clearSelection();
-
-        const rootObject = getRoot();
-        if (!rootObject) return;
-
-        return exportGLBFile(rootObject, {
-            filename: `${prefabStore.getState().prefabName || 'prefab'}.glb`,
-            ...options,
-        });
-    }, [clearSelection, getRoot, prefabStore]);
-
-    const handleExportGLBData = useCallback(async () => {
-        await clearSelection();
-
-        const rootObject = getRoot();
-        if (!rootObject) return;
-
-        return exportGLBData(rootObject);
-    }, [clearSelection, getRoot]);
 
     const handleFocusNode = useCallback((nodeId: string) => {
         editorTools.cancelInteraction();
@@ -566,7 +532,7 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
             const pendingModelPaths = new Map<File, string>();
 
             const loading = loadDroppedAssets(e.dataTransfer, {
-                onModelLoadStart: (source, filename, file) => {
+                onModelLoadStart: (_source, filename, file) => {
                     const manifestPath = resolveManifestAssetPath(modelManifestRef.current, filename);
                     const path = manifestPath ?? getPrefabAssetRef(filename, 'models');
                     const node = offsetNodePosition(createModelNode(path, file.name.replace(/\.[^.]+$/, '')), position);
@@ -574,19 +540,19 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
                     pendingModelPaths.set(file, path);
                     document.add(node);
                     setSelectedId(node.id);
-                    void runtime.loadModel(withBasePath(basePath, path), () => source);
                     clearDropPreview();
                 },
                 onModelLoaded: (model, filename, file) => {
                     const path = pendingModelPaths.get(file) ?? filename;
-                    const resolved = runtime.getModel(withBasePath(basePath, path)) ?? model;
-                    addParsedModel(resolved, path, file, position, pendingModels.get(file));
+                    addParsedModel(model, path, file, position, pendingModels.get(file));
                 },
-                onTextureLoadStart: (source, filename, file) => {
-                    const path = getPrefabAssetRef(filename, 'textures');
+                onTextureLoadStart: (_source, filename, file) => {
                     addImageNode(filename, file, position);
-                    void runtime.loadTexture(withBasePath(basePath, path), () => source);
                     clearDropPreview();
+                },
+                onTextureLoaded: (texture, filename) => {
+                    const path = getPrefabAssetRef(filename, 'textures');
+                    runtime.registerTexture(withBasePath(basePath, path), texture);
                 },
                 onLoadError: error => {
                     console.error('Drop asset error:', error);
@@ -684,7 +650,7 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
             if (!renderer) throw new Error('Editor canvas is not ready.');
             return withSceneCapture(renderer, async () => {
                 const state = canvasStateRef.current?.get();
-                const canvas = canvasRef.current;
+                const canvas = state?.gl.domElement;
                 if (!state || state.gl !== renderer || !canvas || !canvas.width || !canvas.height) throw new Error('Editor canvas is not ready.');
                 const camera = state.camera;
                 const cameraPosition = camera.position.clone();
@@ -769,8 +735,10 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
             });
         },
         exportGLB: async filename => {
-            const data = await handleExportGLB({ filename });
-            if (!data) throw new Error('Editor scene is not ready for GLB export.');
+            await clearSelection();
+            const root = getRoot();
+            if (!root) throw new Error('Editor scene is not ready for GLB export.');
+            await exportGLBFile(root, { filename });
         },
         screenshot: async filename => {
             await clearSelection();
@@ -795,23 +763,14 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
         ...document,
         ...sceneValue,
         scene: sceneAgent.scene,
-        setMode: updateMode,
-        resetScene,
-        save: getPrefab,
         load: loadPrefab,
-        undo,
-        redo,
-        screenshot: handleScreenshot,
-        exportGLB: handleExportGLB,
-        exportGLBData: handleExportGLBData,
-        clearSelection,
-    }), [sceneAgent, updateMode, resetScene, clearSelection, getPrefab, handleExportGLB, handleExportGLBData, handleScreenshot, loadPrefab, prefabValue, document, redo, sceneValue, undo]);
+    }), [sceneAgent, loadPrefab, prefabValue, document, sceneValue]);
 
     return {
         basePath, prefabStore, prefabValue, sceneValue, editorRefValue, runtimeRef, runtimeVersion, resetScene,
         editorTools, activeTool, agentTools,
         isEditMode, selectedId, setSelection, onPointerEvent, getRoot,
-        canvasRef, canvasStateRef, dropPreviewRef, controlsRef, transformControlsRef,
+        canvasStateRef, dropPreviewRef, controlsRef, transformControlsRef,
         transformMode, setTransformMode, scaleSnap, setScaleSnap,
         positionSnap, setPositionSnap, rotationSnap, setRotationSnap,
         handleFocusNode, handleTransformChange, toggleMode, canUndo, canRedo,
@@ -855,7 +814,7 @@ export const PrefabEditorProvider = forwardRef<PrefabEditorRef, PrefabEditorProv
 export function PrefabEditorScene({ children }: { children?: React.ReactNode; }) {
     const {
         basePath, prefabStore, prefabValue, sceneValue, isEditMode, selectedId, runtimeVersion,
-        setSelection, onPointerEvent, getRoot, canvasRef, canvasStateRef,
+        setSelection, onPointerEvent, getRoot, canvasStateRef,
         dropPreviewRef, controlsRef, transformControlsRef, transformMode,
         positionSnap, rotationSnap, scaleSnap, handleTransformChange, activeTool,
     } = useEditorStateContext();
@@ -866,10 +825,9 @@ export function PrefabEditorScene({ children }: { children?: React.ReactNode; })
     const [editorCamera] = useState(() => get().camera);
     useLayoutEffect(() => {
         const state = get();
-        canvasRef.current = state.gl.domElement as HTMLCanvasElement;
         canvasStateRef.current = state;
-        return () => { canvasRef.current = null; canvasStateRef.current = null; };
-    }, [get, canvasRef, canvasStateRef]);
+        return () => { canvasStateRef.current = null; };
+    }, [get, canvasStateRef]);
     useLayoutEffect(() => {
         if (!isEditMode) return;
         const state = get();

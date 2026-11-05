@@ -31,7 +31,7 @@ export {
 } from "./ui/Input.js";
 
 export {
-  loadJson,
+  loadJsonFile,
   saveJson,
   exportGLB,
   exportGLBData,

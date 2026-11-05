@@ -17,12 +17,11 @@ export interface AssetRuntime {
     loadDocument: (path: string) => Promise<PrefabState>;
     /** Return an isolated copy of the shared definition. */
     readPrefab: (path: string) => Promise<Prefab>;
-    loadAsset: (dependency: AssetDependency) => Promise<Object3D | Texture | AudioBuffer>;
+    loadModel: (path: string) => Promise<Object3D>;
+    loadTexture: (path: string) => Promise<Texture>;
+    loadSound: (path: string) => Promise<AudioBuffer>;
     preparePrefab: (path: string | PrefabState, options?: PrefabPreparationOptions) => Promise<PreparedPrefab>;
     getPrefab: (path: string) => PrefabState | null;
-    loadModel: (path: string, source?: () => Promise<Object3D>) => Promise<void>;
-    loadTexture: (path: string, source?: () => Promise<Texture>) => Promise<void>;
-    loadSound: (path: string, source?: () => Promise<AudioBuffer>) => Promise<void>;
     registerModel: (path: string, model: Object3D) => void;
     registerTexture: (path: string, texture: Texture) => void;
     registerSound: (path: string, sound: AudioBuffer) => void;
@@ -138,37 +137,34 @@ function AssetRuntimeOwner({ children, runtimeRef }: AssetRuntimeProviderProps) 
         if (kind === 'sound' && value) audioAssets?.remove(path, value as AudioBuffer);
         return value;
     }, [assetStore, clearCachedAsset, audioAssets]);
-    const loadModel = useCallback(async (path: string, source?: () => Promise<Object3D>) => {
-        if (source) registerModel(path, await source());
-        else await loadCachedAsset('model', path);
-    }, [registerModel, loadCachedAsset]);
-    const loadTexture = useCallback(async (path: string, source?: () => Promise<Texture>) => {
-        if (source) registerTexture(path, await source());
-        else if (!getTexture(path)) await loadCachedAsset('texture', path);
-    }, [getTexture, registerTexture, loadCachedAsset]);
-    const loadSound = useCallback(async (path: string, source?: () => Promise<AudioBuffer>) => {
-        if (source) registerSound(path, await source());
-        else {
-            const sound = getSound(path) ?? await loadCachedAsset('sound', path);
-            registerSound(path, getSound(path) ?? sound);
-        }
+    const loadModel = useCallback(async (path: string) =>
+        getModel(path) ?? await loadCachedAsset('model', path), [getModel, loadCachedAsset]);
+    const loadTexture = useCallback(async (path: string) => {
+        const texture = getTexture(path) ?? await loadCachedAsset('texture', path);
+        return getTexture(path) ?? texture;
+    }, [getTexture, loadCachedAsset]);
+    const loadSound = useCallback(async (path: string) => {
+        const sound = getSound(path) ?? await loadCachedAsset('sound', path);
+        const current = getSound(path) ?? sound;
+        registerSound(path, current);
+        return current;
     }, [getSound, registerSound, loadCachedAsset]);
-    const loadAsset = useCallback(async ({ kind, path }: AssetDependency) => {
-        if (kind === 'model') return getModel(path) ?? await loadCachedAsset('model', path);
-        if (kind === 'texture') { await loadTexture(path); return getTexture(path)!; }
-        await loadSound(path); return getSound(path)!;
-    }, [getModel, getTexture, getSound, loadTexture, loadSound, loadCachedAsset]);
     const loadDocument = useCallback((path: string) => loadCachedAsset('prefab', path), [loadCachedAsset]);
     const readPrefab = useCallback(async (path: string) =>
         structuredClone(denormalizePrefab(await loadDocument(path))), [loadDocument]);
     const getPrefab = useCallback((path: string) => getAsset('prefab', path), [getAsset]);
     const prepare = useCallback((path: string | PrefabState, options?: PrefabPreparationOptions) => preparePrefab({
-        getComponent, loadDocument, loadAsset,
-    }, path, options), [loadDocument, loadAsset]);
+        getComponent, loadDocument,
+        loadAsset: ({ kind, path }) => {
+            if (kind === 'model') return loadModel(path);
+            if (kind === 'texture') return loadTexture(path);
+            return loadSound(path);
+        },
+    }, path, options), [loadDocument, loadModel, loadTexture, loadSound]);
     const runtime = useMemo<AssetRuntime>(() => ({
-        clearAsset, loadModel, loadTexture, loadSound, loadDocument, readPrefab, loadAsset, preparePrefab: prepare, getPrefab,
+        clearAsset, loadDocument, readPrefab, loadModel, loadTexture, loadSound, preparePrefab: prepare, getPrefab,
         registerModel, registerTexture, registerSound, getModel, getTexture, getSound,
-    }), [clearAsset, loadModel, loadTexture, loadSound, loadDocument, readPrefab, loadAsset, prepare, getPrefab,
+    }), [clearAsset, loadDocument, readPrefab, loadModel, loadTexture, loadSound, prepare, getPrefab,
         registerModel, registerTexture, registerSound, getModel, getTexture, getSound]);
 
     useImperativeHandle(runtimeRef, () => runtime, [runtime]);

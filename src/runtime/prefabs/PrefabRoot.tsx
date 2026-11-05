@@ -2,7 +2,7 @@ import { forwardRef, memo, useCallback, useContext, useImperativeHandle, useMemo
 import type { Object3D } from 'three';
 import type { GameObject, Prefab } from '../../core/types.js';
 import { createPrefabStore, type PrefabStoreApi } from '../../core/prefabStore.js';
-import { PrefabStoreProvider, usePrefabRootId, usePrefabStoreApi } from './PrefabStoreContext.js';
+import { PrefabStoreProvider, usePrefabStoreApi } from './PrefabStoreContext.js';
 import { useGameEvents, type GameEvents } from '../scene/GameEvents.js';
 import { createPrefabRegistry, PrefabContext, PrefabEditorMode, SceneContext, RuntimeNodeIdPrefixContext, RuntimeNodeIdScope, NodeScope, type PrefabApi, type Scene } from '../scene/SceneContext.js';
 import { SceneRuntime } from '../SceneRuntime.js';
@@ -48,8 +48,8 @@ const PrefabRootBody = memo(forwardRef<Scene, Omit<PrefabRootProps, 'data' | 'st
     prefab, editMode = false, basePath = '', onPointerEvent, enabled = true, children,
 }, ref) => {
     const store = usePrefabStoreApi();
-    const rootId = usePrefabRootId();
     const rootNode = usePrefabStore(state => state.nodesById[state.rootId]);
+    const rootId = rootNode.id;
     const lookup = useContext(ComponentLookupContext);
     const events = useGameEvents();
     const prefix = useContext(RuntimeNodeIdPrefixContext);

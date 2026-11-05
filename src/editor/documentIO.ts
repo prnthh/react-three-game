@@ -37,11 +37,6 @@ export async function saveJson(data: Prefab, filename: string) {
 	downloadBlob(new Blob([json], { type: 'application/json' }), `${filename || "scene"}.json`);
 }
 
-/** Load scene JSON from a file */
-export async function loadJson(): Promise<Prefab | undefined> {
-	return (await loadJsonFile())?.prefab;
-}
-
 /** Load scene JSON from a file, also returning the original filename */
 export function loadJsonFile(): Promise<
 	{ prefab: Prefab; filename: string } | undefined

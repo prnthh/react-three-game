@@ -28,18 +28,6 @@ export function usePrefabStore<T>(selector: (state: PrefabStoreState) => T) {
     return useStore(usePrefabStoreApi(), selector);
 }
 
-export function usePrefabRootId() {
-    return usePrefabStore(state => state.rootId);
-}
-
-export function usePrefabNode(nodeId: string | null | undefined) {
-    return usePrefabStore(state => nodeId ? state.nodesById[nodeId] ?? null : null);
-}
-
-export function usePrefabChildIds(nodeId: string | null | undefined) {
-    return usePrefabStore(state => nodeId ? state.childIdsById[nodeId] ?? EMPTY_CHILD_IDS : EMPTY_CHILD_IDS);
-}
-
 /** Read a render node and its children through one store subscription. */
 export function usePrefabRenderNode(nodeId: string) {
     return useStore(usePrefabStoreApi(), useShallow(state => [

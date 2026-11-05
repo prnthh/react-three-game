@@ -126,3 +126,67 @@ test('repeated documents keep local edits and object lookups but use distinct ev
     events.emit('hit', { sourceNodeId: objectB.id });
     assert.equal(hits, 1);
 });
+
+test('asset loading shares URL resources, isolates replacements, and preserves replacements during pending loads', async t => {
+    const { Group, Texture } = await import('three');
+    const { AssetRuntimeProvider } = await import('../../src/runtime/assets/AssetRuntime.tsx');
+    const { AssetCacheContext, createAssetCache } = await import('../../src/runtime/assets/assetCache.ts');
+    const { AudioAssetsContext } = await import('../../src/runtime/audio/AudioRuntime.tsx');
+    const { render, act } = await renderFixture(t);
+    const model = new Group(), texture = new Texture(), sound = {};
+    const loads = { model: 0, texture: 0, sound: 0 };
+    let finishTexture;
+    const pendingTexture = new Promise(resolve => { finishTexture = resolve; });
+    let finishSound;
+    const pendingSound = new Promise(resolve => { finishSound = resolve; });
+    const failure = new Error('asset unavailable');
+    const cache = createAssetCache({
+        model: async path => { loads.model++; if (path === '/missing.glb') throw failure; return model; },
+        texture: async path => { loads.texture++; return path === '/pending.png' ? pendingTexture : texture; },
+        sound: async () => { loads.sound++; return pendingSound; },
+    });
+    t.after(() => { cache.dispose(); texture.dispose(); });
+    const a = { current: null }, b = { current: null }, bridged = [];
+    const audio = { register: (path, buffer) => bridged.push([path, buffer]), remove() {} };
+    await render(createElement(AssetCacheContext.Provider, { value: cache },
+        createElement(AudioAssetsContext.Provider, { value: audio },
+            createElement(AssetRuntimeProvider, { runtimeRef: a }),
+            createElement(AssetRuntimeProvider, { runtimeRef: b }))));
+    for (const [kind, method, path, expected] of [
+        ['model', 'loadModel', '/model.glb', model],
+        ['texture', 'loadTexture', '/texture.png', texture],
+    ]) {
+        const values = await Promise.all([a.current[method](path), b.current[method](path)]);
+        assert.deepEqual(values, [expected, expected]);
+        assert.equal(loads[kind], 1, 'sibling runtimes share one URL load');
+    }
+    const replacement = new Group();
+    await act(async () => { a.current.registerModel('/model.glb', replacement); });
+    assert.equal(await a.current.loadModel('/model.glb'), replacement);
+    assert.equal(await b.current.loadModel('/model.glb'), model);
+    assert.equal(loads.model, 1);
+    const replacementTexture = new Texture();
+    t.after(() => replacementTexture.dispose());
+    await act(async () => { a.current.registerTexture('/texture.png', replacementTexture); });
+    assert.equal(await a.current.loadTexture('/texture.png'), replacementTexture);
+    assert.equal(await b.current.loadTexture('/texture.png'), texture);
+    assert.equal(loads.texture, 1);
+    await act(async () => {
+        const pending = a.current.loadTexture('/pending.png');
+        a.current.registerTexture('/pending.png', replacementTexture);
+        finishTexture(texture);
+        assert.equal(await pending, replacementTexture, 'a texture replacement wins over the pending URL load');
+    });
+    await assert.rejects(a.current.loadModel('/missing.glb'), error => error === failure);
+
+    let loaded;
+    await act(async () => {
+        loaded = a.current.loadSound('/sound.wav');
+        a.current.registerSound('/sound.wav', sound);
+        finishSound({ stale: true });
+        assert.equal(await loaded, sound, 'an editor replacement wins over the pending URL load');
+        assert.equal(await a.current.loadSound('/sound.wav'), sound);
+    });
+    assert.equal(loads.sound, 1);
+    assert.deepEqual(bridged, [['/sound.wav', sound]], 'the audio bridge receives the replacement once');
+});

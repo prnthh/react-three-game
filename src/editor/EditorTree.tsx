@@ -6,7 +6,7 @@ import { Dropdown } from './ui/Dropdown.js';
 import { FileMenu, TreeContextMenu, TreeContextMenuState, TreeNodeMenu } from './EditorTreeMenus.js';
 import { createEmptyNode } from '../core/prefab.js';
 import { PrefabStoreState } from "../core/prefabStore.js";
-import { usePrefabChildIds, usePrefabNode, usePrefabRootId, usePrefabStore, usePrefabStoreApi } from "../runtime/prefabs/PrefabStoreContext.js";
+import { usePrefabRenderNode, usePrefabStore, usePrefabStoreApi } from "../runtime/prefabs/PrefabStoreContext.js";
 import { findComponent, hasComponent } from '../core/types.js';
 import { saveJson } from './documentIO.js';
 
@@ -39,7 +39,7 @@ export default function EditorTree({
 }) {
     const { onFocusNode } = useEditorContext();
     const editor = useEditorRef();
-    const rootId = usePrefabRootId();
+    const rootId = usePrefabStore(state => state.rootId);
     const store = usePrefabStoreApi();
     const [draggedId, setDraggedId] = useState<string | null>(null);
     const [dropTarget, setDropTarget] = useState<{ id: string; position: DropPosition } | null>(null);
@@ -244,7 +244,7 @@ export default function EditorTree({
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                             <button
                                 style={{ ...base.btn, padding: '2px 6px', fontSize: 10, opacity: canUndo ? 1 : 0.4 }}
-                                onClick={(e) => { e.stopPropagation(); editor.undo(); }}
+                                onClick={(e) => { e.stopPropagation(); editor.scene.undo(); }}
                                 disabled={!canUndo}
                                 title="Undo"
                             >
@@ -252,7 +252,7 @@ export default function EditorTree({
                             </button>
                             <button
                                 style={{ ...base.btn, padding: '2px 6px', fontSize: 10, opacity: canRedo ? 1 : 0.4 }}
-                                onClick={(e) => { e.stopPropagation(); editor.redo(); }}
+                                onClick={(e) => { e.stopPropagation(); editor.scene.redo(); }}
                                 disabled={!canRedo}
                                 title="Redo"
                             >
@@ -406,8 +406,7 @@ const TreeNode = memo(function TreeNode({
     onToggleDisabled: (nodeId: string) => void;
     setSelectedId: (id: string | null) => void;
 }) {
-    const node = usePrefabNode(nodeId);
-    const childIds = usePrefabChildIds(nodeId);
+    const [node, childIds] = usePrefabRenderNode(nodeId);
     const isSelected = selectedNodeId === nodeId;
     const rowRef = useRef<HTMLDivElement>(null);
 

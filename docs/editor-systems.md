@@ -121,6 +121,11 @@ can pass `sceneToolsPanel={<MySceneActions />}` to replace that area, or null to
 hide it. The replacement remains under the editor provider and can use
 `useEditorRef()` and `createSceneTools(scene)`.
 
+Use `useEditorRef().scene` for mode, reset, undo/redo, capture, downloads, and
+serializable export (`scene.export().prefab`). `scene.save()` persists through the
+host's `onSaveScene` callback. The ref's `load(prefab)` opens a document with a
+fresh undo history; document edits remain available through `usePrefabDocument()`.
+
 `SceneToolsPanel` accepts action `children` beside its button, plus controlled
 `open` / `onOpenChange` props when a host needs to coordinate multiple popovers.
 The docs editor uses these to add its chat client. Model endpoints, provider

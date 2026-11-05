@@ -293,13 +293,24 @@ sun.components.transform.properties.position = [-60, 90, 35];
 Object.assign(sun.components.directionalLight.properties, { color: '#ffe4c2', intensity: 2.5, targetOffset: [60, -90, -35], shadowDistance: 210, shadowNormalBias: 0.08 });
 const camera = nodes.find(n => n.components?.camera);
 camera.components.transform.properties.position = [0, 17, 55];
-camera.components.transform.properties.rotation = [0.16, 0, 0];
+camera.components.transform.properties.rotation = [-0.12, 0, 0];
 Object.assign(camera.components.camera.properties, { fov: 60, far: 420 });
 delete camera.components.constantVelocity;
 camera.components.flythrough = component('Runtime', {
     data: { speed: 2.6 },
     update: readFileSync(new URL('./home-city/flythrough.js', import.meta.url), 'utf8').trim(),
 });
+// Keep the pedestrian alongside the flythrough on the open boulevard.
+const walker = {
+    id: 'home-remilio-walker', name: 'Remilio / boulevard walk',
+    components: {
+        transform: transform([-7, 0.02, 25], [1.5, 1.5, 1.5], [0, Math.PI, 0]),
+        model: component('SkinnedMesh', { filename: '/models/fps/pockit-remilio.glb', animationState: 'walk', castShadow: true, receiveShadow: true }),
+        walk: component('Runtime', { data: { ...camera.components.flythrough.properties.data }, update: camera.components.flythrough.properties.update }),
+    },
+};
+const previousWalker = nodes.findIndex(n => n.id === walker.id);
+if (previousWalker >= 0) nodes[previousWalker] = walker; else nodes.push(walker);
 nodes.find(n => n.id === 'city-fog').components.fog.properties = { color: '#71858a', near: 65, far: 330 };
 level.root.components.chunkSettings = component('ChunkSettings', {
     batchCellSize: 24, cellSize: 64, visibleDistance: 245, preloadDistance: 300, unloadDistance: 360, maxNodesPerChunk: 96,

@@ -1,23 +1,14 @@
 import type { PrefabDocumentApi } from '../core/prefabDocumentApi.js';
 import { createContext, useContext } from "react";
-import type { PrefabApi, Scene, PrefabEditorMode } from "../runtime/scene/SceneContext.js";
+import type { PrefabApi, Scene } from "../runtime/scene/SceneContext.js";
 import type { Prefab } from "../core/types.js";
-import type { ExportGLBOptions } from "./documentIO.js";
 
 import type { SceneAgent } from "./agent/sceneAgent.js";
 
 export interface PrefabEditorRef extends Scene, PrefabApi, PrefabDocumentApi {
     scene: SceneAgent;
-    setMode: (mode: PrefabEditorMode) => void;
-    resetScene: () => Promise<void>;
-    save: () => Prefab;
+    /** Open a document and start a fresh undo history. */
     load: (prefab: Prefab) => void;
-    undo: () => void;
-    redo: () => void;
-    screenshot: () => void;
-    exportGLB: (options?: ExportGLBOptions) => Promise<ArrayBuffer | undefined>;
-    exportGLBData: () => Promise<ArrayBuffer | undefined>;
-    clearSelection: () => Promise<void>;
 }
 
 export interface EditorContextType {

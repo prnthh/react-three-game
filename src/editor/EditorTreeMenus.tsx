@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import { createEmptyPrefab, createPackedPrefabNode, scopePrefabMaterials } from '../core/prefab.js';
 import { menu } from './ui/styles.js';
 import { useEditorContext, useEditorRef } from './EditorContext.js';
-import { loadJson, loadJsonFile, regenerateIds, saveJson } from './documentIO.js';
+import { loadJsonFile, regenerateIds, saveJson } from './documentIO.js';
 
 export type TreeContextMenuState = { nodeId: string; x: number; y: number } | null;
 
@@ -221,14 +221,14 @@ export function FileMenu({
     };
 
     const handleOpen = async () => {
-        const loaded = await loadJson();
+        const loaded = await loadJsonFile();
         if (!loaded) return;
-        editor.load(loaded);
+        editor.load(loaded.prefab);
         onClose();
     };
 
     const handleSave = () => {
-        void saveJson(editor.save(), 'prefab');
+        void saveJson(editor.scene.export().prefab, 'prefab');
         onClose();
     };
 
@@ -272,10 +272,10 @@ export function FileMenu({
                 </MenuItemButton>
             </MenuSubmenu>
             <MenuSubmenu label="Export">
-                <MenuItemButton onClick={() => { void editor.exportGLB(); onClose(); }}>
+                <MenuItemButton onClick={() => { void editor.scene.downloadGLB({ filename: `${editor.scene.info().name || 'prefab'}.glb` }); onClose(); }}>
                     GLB
                 </MenuItemButton>
-                <MenuItemButton onClick={() => { editor.screenshot(); onClose(); }}>
+                <MenuItemButton onClick={() => { void editor.scene.downloadScreenshot({ filename: `${editor.scene.info().name || 'screenshot'}.png` }); onClose(); }}>
                     PNG
                 </MenuItemButton>
             </MenuSubmenu>

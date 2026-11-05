@@ -46,7 +46,7 @@ export { describeSceneComponents } from './componentSchemas.js';
 export { sceneCommandsSchema, sceneCommandBatchSchema } from './sceneCommandSchema.js';
 export { computeParentWorldMatrix, composeTransform, walkPrefabWorldTransforms } from './transforms.js';
 
-export type { ComponentContext, SceneRuntimeContext } from './componentContext.js';
+export type { ComponentContext } from './componentContext.js';
 
 export { compileBoxCollider, compileMeshCollider, parseCollisionName } from "./collision.js";
 export type { BoxColliderProperties, MeshColliderProperties, WorldMeshCollider, WorldBox, CollisionVector } from "./collision.js";

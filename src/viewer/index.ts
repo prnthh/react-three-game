@@ -47,18 +47,7 @@ export type {
 } from "../runtime/scene/GameEvents.js";
 
 export { loadModel, loadSound, loadTexture } from "../runtime/assets/assetLoaders.js";
-export type {
-	LoadedModel,
-	LoadedModels,
-	ModelLoadResult,
-	LoadedSound,
-	LoadedSounds,
-	SoundLoadResult,
-	LoadedTexture,
-	LoadedTextures,
-	TextureLoadResult,
-	ProgressCallback,
-} from "../runtime/assets/assetLoaders.js";
+export type { ProgressCallback } from "../runtime/assets/assetLoaders.js";
 
 export { default as MaterialComponent, MaterialOverridesProvider, useMaterialOverrides } from "../runtime/components/MaterialComponent.js";
 export type { MaterialOverrides } from "../runtime/components/MaterialComponent.js";
@@ -68,9 +57,7 @@ export type { PrefabInstanceProps, PrefabInstanceStatus, PrefabChunkStatus } fro
 export type { PrefabStreamingOptions } from '../runtime/prefabs/spatialPrefabPlan.js';
 export { registerPrefabCompilationContext } from '../runtime/rendering/compileInSlices.js';
 export type { PreparedPrefab, PrefabPreparationOptions } from "../runtime/prefabs/preparePrefab.js";
-export { createPrefabStore } from "../core/prefabStore.js";
 export { usePrefabStore, usePrefabStoreApi } from "../runtime/prefabs/PrefabStoreContext.js";
-export type { PrefabStoreApi, PrefabStoreState } from "../core/prefabStore.js";
 
 export type { SharedMaterialOptions } from "../runtime/components/MaterialComponent.js";
 export { useSharedMaterialResource } from "../runtime/components/MaterialComponent.js";
@@ -87,8 +74,6 @@ export type { GameObjectHandle } from "../runtime/scene/gameObject.js";
 export { notifyObjectChanged } from "../runtime/scene/objectChanges.js";
 
 export { usePrefabDocument } from "../runtime/prefabs/prefabApi.js";
-export { createPrefabDocumentApi } from "../core/prefabDocumentApi.js";
-export type { PrefabDocumentApi } from "../core/prefabDocumentApi.js";
 
 export { default as RuntimeComponent } from "../runtime/components/RuntimeComponent.js";
 export type { RuntimeComponentProperties, RuntimeScriptContext } from "../runtime/components/RuntimeComponent.js";
@@ -101,13 +86,9 @@ export { getSceneComponentRegistry } from '../runtime/scene/SceneContext.js';
 export { resolveGameObject, resolveRenderSource, registerGameObjectOwner, registerRenderSources } from '../runtime/scene/gameObject.js';
 export type { NodeComponentRegistry } from '../runtime/scene/SceneContext.js';
 
-export { exportGLBData } from '../core/modelPrefab.js';
 export { BrowserRuntime } from '../browser/index.js';
 
 export { registerBuiltInComponents } from '../runtime/components/index.js';
-
-export { useSceneRuntimeContext } from '../runtime/scene/useSceneRuntimeContext.js';
-export type { ComponentContext, SceneRuntimeContext } from '../core/componentContext.js';
 
 export { default as TerrainComponent } from "../runtime/components/TerrainComponent.js";
 export type { TerrainProperties, TerrainLayer } from "../runtime/components/TerrainComponent.js";
@@ -116,6 +97,5 @@ export { TERRAIN_SURFACE_COMPONENT } from '../runtime/terrain/terrainSurface.js'
 export type { TerrainSurface } from '../runtime/terrain/terrainSurface.js';
 
 export { default as BoxColliderComponent } from "../runtime/components/BoxColliderComponent.js";
-export type { BoxColliderProperties } from "../core/collision.js";
 
 export { useComponentActive } from '../runtime/scene/useComponentActive.js';

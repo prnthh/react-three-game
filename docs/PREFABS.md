@@ -104,6 +104,10 @@ Follow [PrefabInstance](../src/runtime/prefabs/PrefabInstance.tsx) →
 [AssetRuntime](../src/runtime/assets/AssetRuntime.tsx).
 Authored nesting uses [PrefabRef](../src/runtime/components/PrefabRefComponent.tsx).
 
+For standalone asset loading, `loadModel`, `loadTexture` and `loadSound` resolve
+to an `Object3D`, `Texture` or `AudioBuffer`. Handle failures with `try`/`catch`
+or a Promise rejection handler.
+
 ### Automatically stream static scenery
 
 A `ChunkSettings` component on the scene root configures spatial mesh batching
@@ -178,7 +182,9 @@ scene pass and still require work on first display.
 Use `usePrefabDocument()` inside a prefab to read and edit authored nodes and
 materials. Use `useGameObject(id)` for mounted transforms and registered behavior
 handles. Document edits are serializable; live mutations are transient.
-`usePrefab()` exposes runtime objects and resources, without document mutation methods.
+`usePrefab()` exposes runtime objects and the prefab’s `basePath`. Use
+`useAssetRuntime()` for model, texture and sound resources; resolve prefab-relative
+paths with `resolveAssetPath(basePath, path)`.
 Editor refs compose the document and runtime APIs because authoring needs both.
 
 ```tsx

@@ -4,10 +4,11 @@ import test, { describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { normalizePrefab } from '../../src/core/prefab.ts';
 import { createPrefabStore } from '../../src/core/prefabStore.ts';
-import { assetLoaders, clearAsset, getAsset, loadAsset, defaultAssetCache, createAssetCache } from '../../src/runtime/assets/assetCache.ts';
+import { assetLoaders, defaultAssetCache, createAssetCache } from '../../src/runtime/assets/assetCache.ts';
 import { preparePrefab } from '../../src/runtime/prefabs/preparePrefab.ts';
-import { loadModel, parseSoundFromFile } from '../../src/runtime/assets/assetLoaders.ts';
-import { Group } from 'three';
+import { loadModel, loadTexture, loadSound, parseModelFromFile, parseTextureFromFile, parseSoundFromFile } from '../../src/runtime/assets/assetLoaders.ts';
+import { Group, Texture, TextureLoader, SRGBColorSpace } from 'three';
+import { loadFiles } from '../../src/editor/assets/DragDropLoader.tsx';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 
@@ -23,13 +24,19 @@ test('sound file imports preserve bytes and read/decode failures', async t => {
     } } };
     t.after(() => { if (previousWindow === undefined) delete globalThis.window; else globalThis.window = previousWindow; });
     const file = { arrayBuffer: async () => input };
-    assert.deepEqual(await parseSoundFromFile(file), { success: true, sound });
+    assert.equal(await parseSoundFromFile(file), sound);
+    const fetchSound = t.mock.method(globalThis, 'fetch', async () => ({ arrayBuffer: async () => input }));
+    assert.equal(await loadSound('/sound.wav'), sound);
     fail = true;
-    assert.deepEqual(await parseSoundFromFile(file), { success: false, error });
-    assert.deepEqual(await parseSoundFromFile({ arrayBuffer: async () => { throw error; } }), { success: false, error });
+    await assert.rejects(parseSoundFromFile(file), value => value === error);
+    await assert.rejects(loadSound('/sound.wav'), value => value === error);
+    fetchSound.mock.mockImplementation(async () => { throw error; });
+    await assert.rejects(loadSound('/sound.wav'), value => value === error);
+    await assert.rejects(loadSound('/sound.unsupported'), /Unsupported file format/);
+    await assert.rejects(parseSoundFromFile({ arrayBuffer: async () => { throw error; } }), value => value === error);
 });
 
-test('model loaders preserve progress, animation identity and error results', async t => {
+test('model loaders preserve progress, animation identity and original errors', async t => {
     for (const [extension, Loader] of [['glb', GLTFLoader], ['fbx', FBXLoader]]) {
         const model = new Group(), animations = [], error = new Error('decode failed'), progress = [];
         let fail = false;
@@ -41,16 +48,16 @@ test('model loaders preserve progress, animation identity and error results', as
             if (fail) onError(error);
             else onLoad(extension === 'glb' ? { scene: model, animations } : model);
         });
-        assert.deepEqual(await loadModel(path, (...args) => progress.push(args)), { success: true, model });
+        assert.equal(await loadModel(path, (...args) => progress.push(args)), model);
         assert.deepEqual(progress, [[path, 4, 4], [path, 8, 10]]);
         if (extension === 'glb') assert.equal(model.animations, animations);
         fail = true;
-        assert.deepEqual(await loadModel(path), { success: false, error });
+        await assert.rejects(loadModel(path), value => value === error);
         mocked.mock.mockImplementation(() => { throw error; });
         await assert.rejects(loadModel(path), value => value === error);
         mocked.mock.restore();
     }
-    assert.equal((await loadModel('/model.unsupported')).success, false);
+    await assert.rejects(loadModel('/model.unsupported'), /Unsupported file format/);
 });
 
 describe('Caching and ownership', () => {
@@ -87,7 +94,7 @@ describe('Caching and ownership', () => {
             let renderPending;
             const read = () => { try { defaultAssetCache.read('prefab', path); } catch (pending) { renderPending = pending; } };
             if (renderFirst) read();
-            const prepared = loadAsset('prefab', path);
+            const prepared = defaultAssetCache.load('prefab', path);
             if (!renderFirst) read();
             assert.ok(renderPending instanceof Promise);
             const document = normalizePrefab({ root: { id: 'root' } });
@@ -95,9 +102,9 @@ describe('Caching and ownership', () => {
             assert.equal(await prepared, document);
             await renderPending;
             assert.equal(defaultAssetCache.read('prefab', path), document);
-            assert.equal(getAsset('prefab', path), document);
+            assert.equal(defaultAssetCache.get('prefab', path), document);
             assert.equal(decode.mock.callCount(), 1);
-            clearAsset('prefab', path);
+            defaultAssetCache.clear('prefab', path);
             decode.mock.restore();
         }
     });
@@ -346,4 +353,68 @@ test('preparation resolves packed owners and detects packed reference cycles', a
         { id: 'loop', packed: true, children: [ref('self', 'loop')] },
     ] } });
     await assert.rejects(preparePrefab({ ...runtime, loadDocument: async () => cycle }, '/cycle.json'), /Cyclic prefab reference/);
+});
+
+test('model file imports return the scene and preserve read/parse errors', async t => {
+    const bytes = new ArrayBuffer(8), model = new Group(), animations = [], error = new Error('parse failed');
+    const file = { name: 'scene.glb', arrayBuffer: async () => bytes };
+    const parse = t.mock.method(GLTFLoader.prototype, 'parseAsync', async (input, path) => {
+        assert.equal(input, bytes);
+        assert.equal(path, '');
+        return { scene: model, animations };
+    });
+    assert.equal(await parseModelFromFile(file), model);
+    assert.equal(model.animations, animations);
+    parse.mock.mockImplementation(async () => { throw error; });
+    await assert.rejects(parseModelFromFile(file), value => value === error);
+    await assert.rejects(parseModelFromFile({ ...file, arrayBuffer: async () => { throw error; } }), value => value === error);
+    await assert.rejects(parseModelFromFile({ ...file, name: 'scene.unsupported' }), /Unsupported file format/);
+});
+
+test('texture loads preserve color space and release file URLs on success and failure', async t => {
+    const texture = new Texture(), error = new Error('texture failed'), revoked = [];
+    t.mock.method(URL, 'createObjectURL', () => 'blob:texture-test');
+    t.mock.method(URL, 'revokeObjectURL', url => revoked.push(url));
+    const load = t.mock.method(TextureLoader.prototype, 'load', (_url, onLoad) => onLoad(texture));
+    assert.equal(await loadTexture('/texture.png'), texture);
+    assert.equal(texture.colorSpace, SRGBColorSpace);
+    assert.equal(await parseTextureFromFile({}), texture);
+    assert.deepEqual(revoked, ['blob:texture-test']);
+    load.mock.mockImplementation((_url, _onLoad, _progress, onError) => onError(error));
+    await assert.rejects(loadTexture('/texture.png'), value => value === error);
+    await assert.rejects(parseTextureFromFile({}), value => value === error);
+    load.mock.mockImplementation(() => { throw error; });
+    await assert.rejects(parseTextureFromFile({}), value => value === error);
+    assert.deepEqual(revoked, Array(3).fill('blob:texture-test'));
+    await assert.rejects(loadTexture('/texture.unsupported'), /Unsupported file format/);
+});
+
+test('file drops report load failures once, including awaited start callbacks', async t => {
+    const error = new Error('file failed');
+    t.mock.method(URL, 'createObjectURL', () => 'blob:failed-texture');
+    t.mock.method(URL, 'revokeObjectURL', () => {});
+    t.mock.method(TextureLoader.prototype, 'load', (_url, _loaded, _progress, failed) => failed(error));
+    for (const extension of ['glb', 'png', 'wav']) {
+        for (const awaitStart of [false, true]) {
+            const file = { name: `broken.${extension}`, arrayBuffer: async () => { throw error; } }, failures = [];
+            await loadFiles([file], {
+                ...(awaitStart ? { onModelLoadStart: load => load, onTextureLoadStart: load => load } : {}),
+                onLoadError: (...args) => failures.push(args),
+            });
+            assert.deepEqual(failures, [[error, file.name, file]]);
+        }
+    }
+});
+
+test('file-drop completion awaits an asset even without a loaded callback', async t => {
+    let finish;
+    t.mock.method(GLTFLoader.prototype, 'parseAsync', () => new Promise(resolve => { finish = resolve; }));
+    let completed = false;
+    const file = { name: 'pending.glb', arrayBuffer: async () => new ArrayBuffer(0) };
+    const pending = loadFiles([file], { onFilesLoaded: () => { completed = true; } });
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(completed, false);
+    finish({ scene: new Group(), animations: [] });
+    await pending;
+    assert.equal(completed, true);
 });

@@ -6,7 +6,6 @@ import { PrefabStoreProvider, usePrefabRootId, usePrefabStoreApi } from './Prefa
 import { useGameEvents, type GameEvents } from '../scene/GameEvents.js';
 import { createPrefabRegistry, PrefabContext, PrefabEditorMode, SceneContext, RuntimeNodeIdPrefixContext, RuntimeNodeIdScope, NodeScope, type PrefabApi, type Scene } from '../scene/SceneContext.js';
 import { SceneRuntime } from '../SceneRuntime.js';
-import { useAssetRuntime } from '../assets/AssetRuntime.js';
 import { createPrefabApi } from './prefabApi.js';
 import { scopedNodeId } from '../scene/gameObject.js';
 import { PrefabNode } from './PrefabNode.js';
@@ -52,13 +51,12 @@ const PrefabRootBody = memo(forwardRef<Scene, Omit<PrefabRootProps, 'data' | 'st
     const rootId = usePrefabRootId();
     const rootNode = usePrefabStore(state => state.nodesById[state.rootId]);
     const lookup = useContext(ComponentLookupContext);
-    const runtime = useAssetRuntime();
     const events = useGameEvents();
     const prefix = useContext(RuntimeNodeIdPrefixContext);
     const parentScene = useContext(SceneContext);
     const [registry] = useState(createPrefabRegistry);
-    const document = useMemo(() => prefab ?? createPrefabApi(store, registry, () => runtime, basePath),
-        [prefab, store, registry, runtime, basePath]);
+    const document = useMemo(() => prefab ?? createPrefabApi(store, registry, basePath),
+        [prefab, store, registry, basePath]);
     const scene = useMemo<Scene>(() => parentScene ?? ({
         get root() { return document.root; },
         mode: editMode ? PrefabEditorMode.Edit : PrefabEditorMode.Play,

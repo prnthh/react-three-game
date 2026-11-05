@@ -4,7 +4,8 @@ import { act, createElement as h } from 'react';
 import { createRoot, extend } from '@react-three/fiber';
 import { Color, Group, Mesh } from 'three';
 import { PrefabRoot, registerBuiltInComponents } from '../../src/viewer/index.ts';
-import { createPrefabStore, prefabStoreToPrefab } from '../../src/core/prefabStore.ts';
+import { createPrefabStore } from '../../src/core/prefabStore.ts';
+import { denormalizePrefab } from '../../src/core/prefab.ts';
 import { SceneRuntime } from '../../src/runtime/SceneRuntime.tsx';
 import { SceneMaterialPool } from '../../src/runtime/components/MaterialComponent.tsx';
 
@@ -73,10 +74,10 @@ test('ID references resolve across loaded prefabs, follow edits, and empty on de
     assert.equal(reference.material.visible, false);
     await render(true);
     assert.ok(reference.material.color.equals(new Color('#00ff00')));
-    const saved = prefabStoreToPrefab(definitions.getState());
+    const saved = denormalizePrefab(definitions.getState());
     assert.equal(saved.materials, undefined);
     assert.equal(saved.root.children[0].components.material.properties.color, '#00ff00');
-    assert.deepEqual(prefabStoreToPrefab(references.getState()).root.children[0].components.material.properties, { name: 'paint' });
+    assert.deepEqual(denormalizePrefab(references.getState()).root.children[0].components.material.properties, { name: 'paint' });
 });
 
 test('separate scene runtimes do not share material IDs, and explicit defaults remain definitions', async t => {
@@ -88,7 +89,7 @@ test('separate scene runtimes do not share material IDs, and explicit defaults r
     function GroupComponent() { return h('group', null, h(PrefabRoot, { store: owner }), h(PrefabRoot, { store: reference })); }
     assert.equal(mesh(state.getState().scene, 'white-owner').material.visible, true);
     assert.equal(mesh(state.getState().scene, 'isolated').material.visible, false);
-    const saved = prefabStoreToPrefab(owner.getState());
+    const saved = denormalizePrefab(owner.getState());
     assert.equal(saved.root.children[0].components.material.properties.materialType, 'standard');
     assert.equal(saved.root.children[0].components.material.properties.color, '#ffffff');
 });
@@ -126,7 +127,7 @@ test('UI and command duplicates keep material references and attachment without 
     const store = createPrefabStore(prefab);
     const copyId = store.getState().duplicateNode('owner');
     const commandCopy = evaluateSceneCommands(prefab, { commands: [{ op: 'duplicate', id: 'owner', newId: 'copy' }] }).prefab.root.children.find(node => node.id === 'copy');
-    for (const copy of [prefabStoreToPrefab(store.getState()).root.children.find(node => node.id === copyId), commandCopy]) {
+    for (const copy of [denormalizePrefab(store.getState()).root.children.find(node => node.id === copyId), commandCopy]) {
         assert.deepEqual(copy.components.material.properties, { name: 'paint', attach: 'material-0' });
         assert.deepEqual(copy.children[0].components.material.properties, { name: 'paint' });
     }
@@ -162,7 +163,7 @@ test('core discovers unique inline materials and sharing persists a live ID refe
     assert.equal(catalog.length, 3, 'deduplicates defaults and ignores unresolved reference-only nodes');
     assert.equal(catalog.filter(entry => entry.material.color === '#ff0000').length, 1);
     const api = createPrefabDocumentApi(doc);
-    const before = prefabStoreToPrefab(doc.getState());
+    const before = denormalizePrefab(doc.getState());
     let id, publications = 0;
     const unsubscribe = doc.subscribe(() => publications++);
     api.batch(() => {
@@ -174,7 +175,7 @@ test('core discovers unique inline materials and sharing persists a live ID refe
     unsubscribe();
     assert.equal(publications, 1, 'source promotion and assignment are one atomic edit');
     assert.equal(ensureMaterialReference(api, 'red', 'material'), id, 'ID remains stable');
-    const saved = prefabStoreToPrefab(doc.getState());
+    const saved = denormalizePrefab(doc.getState());
     const loaded = createPrefabStore(JSON.parse(JSON.stringify(saved)));
     assert.equal(loaded.getState().materials[id].color, '#ff0000');
     assert.deepEqual(loaded.getState().nodesById.blue.components.material.properties, { name: id });
@@ -201,7 +202,7 @@ test('lit materials implement physical settings and preserve them through docume
     const object = mesh(state.getState().scene, 'glass');
     assert.equal(object.material.isMeshPhysicalNodeMaterial, true, 'fields must be backed by the physical shader');
     for (const key of ['transmission', 'thickness', 'ior', 'diffuseRoughness']) assert.equal(object.material[key], settings[key]);
-    const saved = prefabStoreToPrefab(store.getState());
+    const saved = denormalizePrefab(store.getState());
     const properties = saved.root.children[0].components.material.properties;
     for (const [key, value] of Object.entries(settings)) assert.equal(properties[key], value);
     const { decomposeModelToPrefabNodes } = await import('../../src/core/modelPrefab.ts');

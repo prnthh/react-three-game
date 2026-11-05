@@ -1,3 +1,5 @@
+import { useAssetRuntime } from '../../runtime/assets/AssetRuntime.js';
+import { withBasePath } from '../../runtime/assets/assetPaths.js';
 import MeshFields from "./MeshFields.js";
 import { Texture } from 'three';
 import type { ComponentEditorProps } from '../../core/ComponentRegistry.js';
@@ -130,6 +132,7 @@ function RepeatAxisEditor({
 function ModelComponentEditor({ properties, node, update }: ComponentEditorProps<ModelProperties>) {
     const { positionSnap } = useEditorContext();
     const editor = useEditorRef();
+    const runtime = useAssetRuntime();
     const { basePath } = editor;
     const repeatAxes = normalizeRepeatAxes(properties.repeatAxes);
     const filename = properties.filename;
@@ -138,7 +141,7 @@ function ModelComponentEditor({ properties, node, update }: ComponentEditorProps
     const handleDecompose = () => {
         if (!filename) return;
 
-        const model = editor.getModel(filename);
+        const model = runtime.getModel(withBasePath(basePath, filename));
         if (!model) {
             console.warn(`Model is not loaded yet: ${filename}`);
             return;
@@ -154,7 +157,7 @@ function ModelComponentEditor({ properties, node, update }: ComponentEditorProps
             },
         });
         textureRefs.forEach((texture, path) => {
-            editor.addTexture(path, texture);
+            runtime.registerTexture(withBasePath(basePath, path), texture);
         });
         const preservedComponents = Object.entries(node.components ?? {}).reduce<Record<string, ComponentData>>((result, [key, entry]) => {
             if (!entry?.type) return result;

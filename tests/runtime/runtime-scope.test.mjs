@@ -108,8 +108,8 @@ test('nested event providers reuse the outer bus; separate games are isolated', 
 test('repeated documents keep local edits and object lookups but use distinct event IDs', () => {
     const document = { root: { id: 'npc' } };
     const storeA = createPrefabStore(document), storeB = createPrefabStore(document);
-    const a = createPrefabApi(storeA, createPrefabRegistry(), () => null, '');
-    const b = createPrefabApi(storeB, createPrefabRegistry(), () => null, '');
+    const a = createPrefabApi(storeA, createPrefabRegistry(), '');
+    const b = createPrefabApi(storeB, createPrefabRegistry(), '');
     createPrefabDocumentApi(storeA).update('npc', node => ({ ...node, name: 'edited' }));
     assert.equal(createPrefabDocumentApi(storeB).get('npc').name, undefined);
     assert.equal(a.update, undefined, 'runtime access does not expose document mutations');

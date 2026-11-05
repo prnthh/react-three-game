@@ -1,9 +1,9 @@
 import type { Component, ComponentViewProps } from '../../core/ComponentRegistry.js';
 import type { ComponentContext } from '../../core/componentContext.js';
 import { useEffect, useLayoutEffect, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { useGameObject, useNode, usePrefab } from '../scene/SceneContext.js';
-import { useSceneRuntimeContext } from '../scene/useSceneRuntimeContext.js';
+import { useGameEvents } from '../scene/GameEvents.js';
 import { useComponentActive } from '../scene/useComponentActive.js';
 
 export type RuntimeComponentProperties = {
@@ -26,7 +26,8 @@ function compile(source: string): Script {
 
 /** Script execution is local to this View; the prefab renderer only composes Views. */
 function RuntimeView({ properties, enabled, children }: ComponentViewProps<RuntimeComponentProperties>) {
-    const scene = useSceneRuntimeContext();
+    const getThree = useThree(state => state.get);
+    const events = useGameEvents();
     const node = useGameObject();
     const prefab = usePrefab();
     const nodeId = useNode(node => node.nodeId);
@@ -43,7 +44,7 @@ function RuntimeView({ properties, enabled, children }: ComponentViewProps<Runti
         let data: Record<string, unknown> = {};
         const report = (phase: string, error: unknown) => console.error(`Runtime component on node "${node.id}" (${phase}):`, error);
         const context: RuntimeScriptContext = {
-            get three() { return scene.three; }, events: scene.events,
+            get three() { return getThree(); }, events,
             nodeId, node, prefab, get object() { return node.transform; },
             get properties() { return latest.current; },
             get data() {
@@ -79,7 +80,7 @@ function RuntimeView({ properties, enabled, children }: ComponentViewProps<Runti
             };
         } catch (error) { report('setup', error); dispose(); }
         return dispose;
-    }, [active, setup, update, nodeId, node, prefab, scene]);
+    }, [active, setup, update, nodeId, node, prefab, getThree, events]);
     // Run scripts before default frame consumers without taking over rendering.
     useFrame((_, delta) => { if (active) frame.current?.(delta); }, -1);
     return children;

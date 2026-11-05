@@ -1,6 +1,6 @@
 /** Shared type contracts. React/R3F implementations live in runtime/scene. */
 import type { RootState } from '@react-three/fiber';
-import type { Object3D, Texture } from 'three';
+import type { Object3D } from 'three';
 
 export interface PrefabRegistry {
     registerObject(id: string, object: Object3D | null): () => void;
@@ -22,14 +22,10 @@ export interface GameObjectHandle {
     getComponent<T>(type: NodeComponentType<T>): T | null;
 }
 
-/** Runtime objects and resources for one prefab instance; authored edits use PrefabDocumentApi. */
+/** Runtime objects for one prefab instance; authored edits use PrefabDocumentApi. */
 export interface PrefabApi extends PrefabRegistry {
     root: Object3D | null;
     basePath: string;
-    getModel(path: string): Object3D | null;
-    addModel(path: string, model: Object3D): void;
-    addTexture(path: string, texture: Texture): void;
-    addSound(path: string, sound: AudioBuffer): void;
 }
 
 export type GameEventHandler<TPayload = unknown> = (payload: TPayload) => void;
@@ -89,13 +85,9 @@ export interface GameEvents {
     hasListeners(type: string): boolean;
 }
 
-/** A live mapping onto R3F, not another renderer, clock, or scene store. */
-export interface SceneRuntimeContext {
+export interface ComponentContext<P extends object = Record<string, unknown>> {
     readonly three: RootState;
     readonly events: GameEvents;
-}
-
-export interface ComponentContext<P extends object = Record<string, unknown>> extends SceneRuntimeContext {
     readonly nodeId: string;
     readonly node: GameObjectHandle;
     readonly object: Object3D | null;

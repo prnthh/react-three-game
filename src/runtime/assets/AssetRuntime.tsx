@@ -6,7 +6,6 @@ import { useStore } from "zustand";
 import { createStore, type StoreApi } from "zustand/vanilla";
 import type { Object3D, Texture } from "three";
 import { useAssetCache, useAsset } from "./assetCache.js";
-import type { LoadedModels, LoadedSounds, LoadedTextures } from "./assetLoaders.js";
 import { AudioAssetsContext } from "../audio/AudioRuntime.js";
 import { denormalizePrefab, type PrefabState } from "../../core/prefab.js";
 import type { Prefab } from "../../core/types.js";
@@ -41,9 +40,9 @@ export const AssetRuntimeContext = createContext<AssetRuntime | null>(null);
 
 /** Per-asset subscriptions for editor replacements and audio/material observers. */
 interface AssetStoreState {
-    models: LoadedModels;
-    textures: LoadedTextures;
-    sounds: LoadedSounds;
+    models: Record<string, Object3D>;
+    textures: Record<string, Texture>;
+    sounds: Record<string, AudioBuffer>;
     soundVersions: Record<string, number>;
 }
 

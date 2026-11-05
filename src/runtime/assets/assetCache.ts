@@ -4,21 +4,9 @@ import { loadModel, loadSound, loadTexture } from './assetLoaders.js';
 import { loadPrefabSource } from '../prefabs/prefabSource.js';
 
 export const assetLoaders = {
-    model: async (path: string) => {
-        const result = await loadModel(path);
-        if (!result.success || !result.model) throw result.error;
-        return result.model;
-    },
-    texture: async (path: string) => {
-        const result = await loadTexture(path);
-        if (!result.success || !result.texture) throw result.error;
-        return result.texture;
-    },
-    sound: async (path: string) => {
-        const result = await loadSound(path);
-        if (!result.success || !result.sound) throw result.error;
-        return result.sound;
-    },
+    model: loadModel,
+    texture: loadTexture,
+    sound: loadSound,
     prefab: loadPrefabSource,
 };
 export type AssetLoaders = typeof assetLoaders;
@@ -65,10 +53,6 @@ export type AssetCache = ReturnType<typeof createAssetCache>;
 export const defaultAssetCache = createAssetCache();
 export const AssetCacheContext = createContext(defaultAssetCache);
 export const useAssetCache = () => useContext(AssetCacheContext);
-export const getAsset = defaultAssetCache.get;
-export const clearAsset = defaultAssetCache.clear;
-/** Await the same Suspense entry used by rendering. */
-export const loadAsset = defaultAssetCache.load;
 
 export class ResourceLoadError extends Error {
     constructor(path: string, cause: unknown, readonly retry: () => void) {

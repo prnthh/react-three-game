@@ -182,6 +182,9 @@ calls `model.update(delta)` once per tick. Use the mixer's events for completion
 removing listeners on cleanup. `animationState` tracks the built-in state selector.
 The model manages mixer lifetime; controllers choose and play live actions.
 
+Use R3F’s `useThree` for renderer, camera and scene access, and `useGameEvents`
+for the event bus. Runtime scripts receive `context.three` and `context.events`.
+
 ## Runtime scripts
 
 `RuntimeComponent` (`type: "Runtime"`) compiles its `setup` and `update` strings

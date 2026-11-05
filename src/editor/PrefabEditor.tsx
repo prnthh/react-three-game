@@ -274,7 +274,7 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
     }, []);
 
     const getPrefab = useCallback(() => denormalizePrefab(prefabStore.getState()), [prefabStore]);
-    const prefabValue = useMemo(() => createPrefabApi(prefabStore, prefabRegistry, () => runtimeRef.current, basePath), [basePath, prefabRegistry, prefabStore]);
+    const prefabValue = useMemo(() => createPrefabApi(prefabStore, prefabRegistry, basePath), [basePath, prefabRegistry, prefabStore]);
     const document = useMemo(() => createPrefabDocumentApi(prefabStore), [prefabStore]);
     const { getObject } = prefabValue;
     const { update } = document;

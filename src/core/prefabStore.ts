@@ -33,7 +33,6 @@ export type PrefabStoreApi = Mutate<
     [["zustand/subscribeWithSelector", never]]
 >;
 
-
 function removeSubtreeFromGraph(
     id: string,
     state: PrefabStoreState,
@@ -256,5 +255,3 @@ export function createPrefabStore(prefab: Prefab | PrefabState): PrefabStoreApi 
     store.getState = () => draft ?? read();
     return store;
 }
-
-export const prefabStoreToPrefab = denormalizePrefab;

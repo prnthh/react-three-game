@@ -1,14 +1,14 @@
 import { ChangeEvent, useRef } from "react";
 import type { DragEvent, HTMLAttributes, MouseEvent, ReactNode } from "react";
-import type { LoadedModel, LoadedSound, LoadedTexture } from "../../runtime/assets/assetLoaders.js";
+import type { Object3D, Texture } from "three";
 import { canParseModelFile, canParseSoundFile, canParseTextureFile, parseModelFromFile, parseSoundFromFile, parseTextureFromFile } from "../../runtime/assets/assetLoaders.js";
 
 export interface AssetLoadOptions {
-    onModelLoadStart?: (model: Promise<LoadedModel>, filename: string, file: File) => void | Promise<void>;
-    onModelLoaded?: (model: LoadedModel, filename: string, file: File) => void | Promise<void>;
-    onTextureLoadStart?: (texture: Promise<LoadedTexture>, filename: string, file: File) => void | Promise<void>;
-    onTextureLoaded?: (texture: LoadedTexture, filename: string, file: File) => void | Promise<void>;
-    onSoundLoaded?: (sound: LoadedSound, filename: string, file: File) => void | Promise<void>;
+    onModelLoadStart?: (model: Promise<Object3D>, filename: string, file: File) => void | Promise<void>;
+    onModelLoaded?: (model: Object3D, filename: string, file: File) => void | Promise<void>;
+    onTextureLoadStart?: (texture: Promise<Texture>, filename: string, file: File) => void | Promise<void>;
+    onTextureLoaded?: (texture: Texture, filename: string, file: File) => void | Promise<void>;
+    onSoundLoaded?: (sound: AudioBuffer, filename: string, file: File) => void | Promise<void>;
     onUnhandledFile?: (file: File) => void | Promise<void>;
     onFilesLoaded?: (files: File[]) => void | Promise<void>;
     onLoadError?: (error: unknown, filename: string, file: File) => void | Promise<void>;
@@ -193,14 +193,12 @@ async function loadFile(
     const shouldParseSound = canParseSoundFile(file);
 
     if (shouldParseModel) {
-        const load = parseModelFromFile(file).then(result => {
-            if (result.success && result.model) return result.model;
-            throw result.error ?? new Error(`Failed to parse ${file.name}`);
-        });
-        await onModelLoadStart?.(load, assetRef, file);
-
+        const load = parseModelFromFile(file);
+        void load.catch(() => {}); // Start callbacks may do asynchronous work before awaiting the asset.
         try {
-            await onModelLoaded?.(await load, assetRef, file);
+            await onModelLoadStart?.(load, assetRef, file);
+            const model = await load;
+            await onModelLoaded?.(model, assetRef, file);
             return;
         } catch (error) {
             if (onLoadError) await onLoadError(error, assetRef, file);
@@ -210,14 +208,12 @@ async function loadFile(
     }
 
     if (shouldParseTexture) {
-        const load = parseTextureFromFile(file).then(result => {
-            if (result.success && result.texture) return result.texture;
-            throw result.error ?? new Error(`Failed to parse ${file.name}`);
-        });
-        await onTextureLoadStart?.(load, assetRef, file);
-
+        const load = parseTextureFromFile(file);
+        void load.catch(() => {});
         try {
-            await onTextureLoaded?.(await load, assetRef, file);
+            await onTextureLoadStart?.(load, assetRef, file);
+            const texture = await load;
+            await onTextureLoaded?.(texture, assetRef, file);
             return;
         } catch (error) {
             if (onLoadError) await onLoadError(error, assetRef, file);
@@ -227,19 +223,14 @@ async function loadFile(
     }
 
     if (shouldParseSound) {
-        const result = await parseSoundFromFile(file);
-
-        if (result.success && result.sound) {
-            await onSoundLoaded?.(result.sound, assetRef, file);
+        let sound: AudioBuffer;
+        try { sound = await parseSoundFromFile(file); }
+        catch (error) {
+            if (onLoadError) await onLoadError(error, assetRef, file);
+            else console.error("Sound parse error:", error);
             return;
         }
-
-        if (onLoadError) {
-            await onLoadError(result.error, assetRef, file);
-            return;
-        }
-
-        console.error("Sound parse error:", result.error);
+        await onSoundLoaded?.(sound, assetRef, file);
         return;
     }
 

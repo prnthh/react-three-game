@@ -4,7 +4,7 @@ import { FieldRenderer, Label, NumberInput } from '../ui/Input.js';
 import type { FieldDefinition } from '../ui/Input.js';
 import { useEditorRef } from '../EditorContext.js';
 import { usePrefabStore } from "../../runtime/prefabs/PrefabStoreContext.js";
-import { collectSceneMaterials, getMaterialDefinition, samePrefabValue, MATERIAL_FIELDS } from '../../core/prefab.js';
+import { collectSceneMaterials, resolveMaterialProperties, getMaterialDefinition, samePrefabValue, MATERIAL_FIELDS } from '../../core/prefab.js';
 import { ensureMaterialReference } from '../../core/prefabDocumentApi.js';
 import { base, colors } from '../ui/styles.js';
 import type { MaterialComponentProperties, PrefabMaterial } from '../../core/types.js';
@@ -120,38 +120,10 @@ function MaterialComponentEditor({
     const canEditMaterial = !!definition;
     const replaceMaterial = (patch: Partial<MaterialComponentProperties>) =>
         update({ ...Object.fromEntries(MATERIAL_FIELDS.map(key => [key, undefined])), ...patch });
-    const materialType = material.materialType ?? 'standard';
-    const hasTexture = !!material.texture;
-    const hasRepeat = material.repeat;
+    const editorValues: PrefabMaterial = resolveMaterialProperties({ ...material, name: materialName });
+    const { materialType, texture: hasTexture, repeat: hasRepeat } = editorValues;
     const isStandardMaterial = materialType === 'standard';
     const isSpriteMaterial = materialType === 'sprite';
-    const editorValues: PrefabMaterial = {
-        name: materialName,
-        materialType,
-        color: material.color ?? '#ffffff',
-        toneMapped: material.toneMapped ?? true,
-        wireframe: material.wireframe ?? false,
-        transparent: material.transparent ?? isSpriteMaterial,
-        opacity: material.opacity ?? 1,
-        depthTest: material.depthTest ?? !isSpriteMaterial,
-        depthWrite: material.depthWrite ?? !isSpriteMaterial,
-        metalness: material.metalness ?? 0,
-        roughness: material.roughness ?? 1,
-        diffuseRoughness: material.diffuseRoughness ?? 0,
-        emissive: material.emissive ?? "#000000",
-        emissiveIntensity: material.emissiveIntensity ?? 1,
-        transmission: material.transmission ?? 0,
-        thickness: material.thickness ?? 0,
-        ior: material.ior ?? 1.5,
-        rotation: material.rotation ?? 0,
-        sizeAttenuation: material.sizeAttenuation ?? true,
-        side: material.side ?? 'FrontSide',
-        offset: material.offset ?? [0, 0],
-        ...material,
-        generateMipmaps: material.generateMipmaps ?? true,
-        minFilter: material.minFilter ?? 'LinearMipmapLinearFilter',
-        magFilter: material.magFilter ?? 'LinearFilter',
-    };
 
     const fields: FieldDefinition<PrefabMaterial>[] = [
         { name: 'name', type: 'string', label: 'Name' },
@@ -265,10 +237,12 @@ function MaterialComponentEditor({
                     <Vector2Editor label="Normal" value={value} onChange={onChange} min={0} max={5} step={0.01} />
                 ),
             });
+            if (isStandardMaterial) fields.push({ name: 'parallaxScale', type: 'number', label: 'Parallax depth (normal map alpha)', min: 0, max: 0.1, step: 0.001 });
         }
 
         fields.push(
             { name: 'generateMipmaps', type: 'boolean', label: 'Generate Mipmaps' },
+            { name: 'anisotropy', type: 'number', label: 'Anisotropic filtering', min: 1, max: 16, step: 1 },
             {
                 name: 'minFilter',
                 type: 'select',

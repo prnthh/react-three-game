@@ -5,15 +5,17 @@ import type { Component, ComponentViewProps } from "../../core/ComponentRegistry
 
 import { useHelper } from "@react-three/drei";
 
-import { useLayoutEffect, useMemo, useRef } from "react";
+import { useLayoutEffect, useMemo, useRef, type RefObject } from "react";
 
 import { CameraHelper, Object3D } from "three";
 
 import type { DirectionalLight } from "three";
 
-import { useNode } from "../scene/SceneContext.js";
+import { createNodeComponentType, useNode, useRegisterNodeComponent } from "../scene/SceneContext.js";
 
 import { createFollowState, stepCameraFollow, EditorLightGizmo, normalizeShadowMapSize, useShadowMapResolution } from "./lightUtils.js";
+
+export const DIRECTIONAL_LIGHT_COMPONENT = createNodeComponentType<RefObject<DirectionalLight | null>>('DirectionalLight');
 
 export const directionalLightDefaults = {
     color: '#ffffff',
@@ -66,6 +68,7 @@ function DirectionalLightView({ properties, children }: ComponentViewProps<Direc
         "shadow-camera-right": properties.shadowCameraRight,
     };
     const directionalLightRef = useRef<DirectionalLight>(null);
+    useRegisterNodeComponent(DIRECTIONAL_LIGHT_COMPONENT, directionalLightRef);
     const helperTargetRef = useRef<Object3D>(null!);
     const target = useMemo(() => new Object3D(), []);
     useShadowMapResolution(directionalLightRef, shadowMapSize);

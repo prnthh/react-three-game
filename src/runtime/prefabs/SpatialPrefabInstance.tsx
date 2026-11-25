@@ -1,11 +1,13 @@
-import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { PrefabStreamingOptions } from './streamingOptions.js';
+import { memo, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Group, Matrix4 } from 'three';
+import { useThree } from '@react-three/fiber';
 import { useAssetRuntime, type AssetRuntime } from '../assets/AssetRuntime.js';
 import { ResourceLoadError } from '../assets/assetCache.js';
 import type { PrefabInstanceProps, PrefabInstanceStatus } from './PrefabInstance.js';
 import { PreparedPrefabInstance } from './PreparedPrefabInstance.js';
 import type { PreparedPrefab } from './preparePrefab.js';
-import { createSpatialPrefabPlan, type PrefabStreamingOptions, type SpatialPrefabChunk, type SpatialPrefabPlan } from './spatialPrefabPlan.js';
+import { createSpatialPrefabPlan, type SpatialPrefabChunk, type SpatialPrefabPlan } from './spatialPrefabPlan.js';
 import { useSpatialStreamScheduler } from './SpatialStreamingRuntime.js';
 import type { SpatialStreamEntry, SpatialStreamPlacement } from './SpatialStreamScheduler.js';
 import type { PrefabState } from '../../core/prefab.js';
@@ -14,6 +16,8 @@ import { StaticPrimitiveBatchView } from '../rendering/StaticPrimitiveBatchView.
 import { getComponent, getComponentRegistryVersion } from '../../core/ComponentRegistry.js';
 import { useMaterialOverrides } from '../components/MaterialComponent.js';
 import { ComponentLookupContext } from './nodePlan.js';
+import type { ShaderCompileTiming } from '../rendering/compileInSlices.js';
+import { registerOcclusionCell } from '../rendering/chunkOcclusion.js';
 
 // Placements of the same source reuse the immutable plan, just like loaded assets.
 const plans = new WeakMap<AssetRuntime, WeakMap<PrefabState, Map<string, Promise<SpatialPrefabPlan>>>>();
@@ -59,6 +63,8 @@ type Cell = {
     chunk: SpatialPrefabChunk;
     group: Group;
     onStatus(status: PrefabInstanceStatus): void;
+    onShaderTiming?: (timing: ShaderCompileTiming) => void;
+    readyAt?: number;
 };
 
 /** Cold cells are scheduler records. Three objects are created on admission. */
@@ -90,12 +96,22 @@ function SpatialPlan({ props, plan }: { props: SpatialProps; plan: SpatialPrefab
                         retry?.();
                         retry = undefined;
                         const group = new Group();
+                        const reportTiming = callbacks.current.onChunkTiming;
+                        const admittedAt = reportTiming ? performance.now() : 0;
+                        let compilingAt = admittedAt;
+                        let shaders: ShaderCompileTiming | undefined;
                         const mountedCell: Cell = {
                             chunk, group,
+                            onShaderTiming: reportTiming ? timing => { shaders = timing; } : undefined,
                             onStatus(status) {
                                 if (cell !== mountedCell || entry.phase !== 'preparing') return;
-                                if (status.phase === 'active') {
+                                if (status.phase === 'compiling' && reportTiming) compilingAt = performance.now();
+                                else if (status.phase === 'active') {
                                     entry.phase = 'ready';
+                                    if (reportTiming) {
+                                        mountedCell.readyAt = performance.now();
+                                        reportTiming({ id, phase: 'ready', admittedAt, compilingAt, readyAt: mountedCell.readyAt, shaders });
+                                    }
                                     callbacks.current.onChunkStatus?.({ id, phase: 'ready' });
                                 } else if (status.phase === 'error') {
                                     entry.phase = 'error';
@@ -117,6 +133,10 @@ function SpatialPlan({ props, plan }: { props: SpatialProps; plan: SpatialPrefab
                     },
                     setVisible(visible) {
                         if (cell) cell.group.visible = visible;
+                        if (visible && cell?.readyAt !== undefined) {
+                            callbacks.current.onChunkTiming?.({ id, phase: 'visible', readyAt: cell.readyAt, visibleAt: performance.now() });
+                            cell.readyAt = undefined;
+                        }
                         if (visible) activate();
                     },
                 };
@@ -132,10 +152,18 @@ function SpatialPlan({ props, plan }: { props: SpatialProps; plan: SpatialPrefab
             onStatus={status => { if (status.phase === 'error') callbacks.current.onStatus?.(status); }}>
             {props.children}
         </PreparedPrefabInstance>
-        {mounted.map(cell => <PreparedPrefabInstance key={cell.group.uuid} id={`${props.id}/cell/${cell.chunk.id}`}
-            basePath={props.basePath} document={cell.chunk.document} streamGroup={cell.group} onStatus={cell.onStatus} static>
-            {cell.chunk.batches?.map((batch, index) => <StaticPrimitiveBatchView key={index} batch={batch} />)}
-        </PreparedPrefabInstance>)}
+        {mounted.map(cell => <StreamedCell key={cell.group.uuid} cell={cell} placementId={props.id} basePath={props.basePath} />)}
     </group>;
 }
+
+// Admitting one cell should not reconcile the contents of already mounted cells.
+const StreamedCell = memo(function StreamedCell({ cell, placementId, basePath }: { cell: Cell; placementId: string; basePath?: string }) {
+    const scene = useThree(state => state.scene);
+    useLayoutEffect(() => registerOcclusionCell(scene, cell.group, cell.chunk.bounds), [scene, cell]);
+    return <PreparedPrefabInstance id={`${placementId}/cell/${cell.chunk.id}`}
+        basePath={basePath} document={cell.chunk.document} streamGroup={cell.group} onStatus={cell.onStatus}
+        onShaderTiming={cell.onShaderTiming} static>
+        {cell.chunk.batches?.map((batch, index) => <StaticPrimitiveBatchView key={index} batch={batch} />)}
+    </PreparedPrefabInstance>;
+});
 const identity = new Matrix4();

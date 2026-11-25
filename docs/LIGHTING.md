@@ -57,6 +57,28 @@ for concrete or clay. Start around `0.7` for matte masonry and leave it at `0`
 for smooth surfaces. Transmission, thickness and IOR use the same physical material.
 These values remain editable and serialize with the prefab.
 
+For shallow relief on an opaque lit material, set `parallaxScale` and pack surface
+height into the normal map's alpha channel. White is the surface and black is
+recessed. The same UV offset drives color and normals, leaving the mesh silhouette
+and shadow geometry intact. Increase `anisotropy` to preserve texture detail viewed
+along roads and walls. It works with linear mipmap filtering.
+
+## Experimental contact AO and chunk visibility
+
+`PostProcessing.ambientOcclusionMode: "contact"` tests a four-tap screen-space
+AO pass against the default GTAO. It uses the existing scene depth and normals,
+limits occlusion by world-space distance and facing, and follows the authored AO
+radius, intensity and resolution. Both modes currently composite onto the scene
+color. [Fast SDF AO](https://github.com/wrong-nebula/Fast-SDF-AO) is the reference
+for capping the sample budget. [three-gtvbao](https://github.com/norio/three-gtvbao)
+shows how an opaque pre-pass can route an AO mask into indirect lighting.
+
+`PostProcessing.chunkOcclusion: true` enables a 32×20 software depth pre-pass
+from large opaque boxes already mounted by the streamer. A chunk is skipped
+in the camera pass only when every tile it touches is fully covered by nearer
+occluders. The software pass runs before Three builds the camera render list.
+Shadows still use the light's own visibility test.
+
 ## Authored sky, probes and render settings
 
 The built-in `DiffuseLightProbe` projects authored sky/ground colors into nine
@@ -64,15 +86,16 @@ spherical-harmonic coefficients. Its `directionality` and world-space `axis`
 approximate canyon openings with scene-wide diffuse lighting. `Environment` supplies the separate reflection capture
 from an authored `Sky` child. Both remain static until their authored inputs change.
 
-`Sky` exposes sun position, size, turbidity, Rayleigh and Mie scattering, and sun
-disc visibility. Pair it with `DirectionalLight` for direct lighting and shadows.
+`Sky` exposes sun position, size, turbidity, Rayleigh and Mie scattering, sun
+disc visibility, cloud coverage and cloud density. Pair it with `DirectionalLight`
+for direct lighting and shadows.
 `RenderSettings` on the scene root supplies optional tone mapping, exposure,
 output color space and shadow overrides in Edit and Play. Unspecified fields keep
 the renderer defaults; removing an override restores the previous value.
 
-A separate root `PostProcessing` component enables ambient occlusion and bloom.
-Enabled effects share their final composition with scene captures and shader preparation. These
-components use ordinary inspector fields, agent commands and JSON serialization.
+A separate root `PostProcessing` component enables ambient occlusion, bloom and sun shafts.
+Edit mode skips this pipeline. Press Play to preview the authored effects as they appear in the viewer.
+Scene captures follow the active mode.
 
 `ClusteredLighting` on the scene root opts into Three's clustered-lighting addon
 for scenes with many point and spot lights. Its schema exposes light capacity

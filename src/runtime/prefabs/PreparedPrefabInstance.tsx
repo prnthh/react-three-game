@@ -4,7 +4,7 @@ import { Group } from 'three';
 import type { WebGPURenderer } from 'three/webgpu';
 import { AssetBoundary } from '../assets/AssetBoundary.js';
 import { MeshInstanceProvider, useMeshInstanceRevision } from '../rendering/MeshInstanceProvider.js';
-import { compileInSlices } from '../rendering/compileInSlices.js';
+import { compileInSlices, type ShaderCompileTiming } from '../rendering/compileInSlices.js';
 import { createPrefabStore } from '../../core/prefabStore.js';
 import type { PrefabState } from '../../core/prefab.js';
 import { PrefabRoot } from './PrefabRoot.js';
@@ -15,6 +15,7 @@ import { readChunkSettings } from '../components/ChunkSettingsComponent.js';
 type PreparedInstanceProps = Pick<PrefabInstanceProps, 'id' | 'basePath' | 'static' | 'onStatus' | 'onActivate' | 'children'> & {
     document: PrefabState;
     streamGroup?: Group;
+    onShaderTiming?: (timing: ShaderCompileTiming) => void;
 };
 
 export function PreparedPrefabInstance(props: PreparedInstanceProps) {
@@ -33,14 +34,14 @@ export function PreparedPrefabInstance(props: PreparedInstanceProps) {
 }
 
 function InstanceView({
-    id, basePath, children, document, streamGroup, static: isStatic = false, onStatus, onActivate, container,
+    id, basePath, children, document, streamGroup, static: isStatic = false, onStatus, onActivate, onShaderTiming, container,
 }: PreparedInstanceProps & { container: Group }) {
     const store = useMemo(() => createPrefabStore(document), [document]);
     const [compiled, setCompiled] = useState(false);
     const { gl, camera, scene, invalidate } = useThree();
     const revision = useMeshInstanceRevision(!compiled);
-    const callbacks = useRef({ onStatus, onActivate });
-    callbacks.current = { onStatus, onActivate };
+    const callbacks = useRef({ onStatus, onActivate, onShaderTiming });
+    callbacks.current = { onStatus, onActivate, onShaderTiming };
 
     useEffect(() => {
         // Compile the materialized batches after their first frame, not the source meshes.
@@ -49,6 +50,9 @@ function InstanceView({
         callbacks.current.onStatus?.({ phase: 'compiling' });
         void compileInSlices(gl as unknown as WebGPURenderer, container, camera, scene, {
             signal: controller.signal,
+            onTiming: callbacks.current.onShaderTiming,
+            // A streamed cell has already waited for a frame to build its batches.
+            yieldBeforeFirstSlice: !streamGroup,
         }).then(() => {
             if (controller.signal.aborted) return;
             if (isStatic) {
@@ -64,7 +68,7 @@ function InstanceView({
             if (!controller.signal.aborted) callbacks.current.onStatus?.({ phase: 'error', error });
         });
         return () => controller.abort();
-    }, [camera, compiled, container, isStatic, gl, invalidate, document, revision, scene]);
+    }, [camera, compiled, container, isStatic, gl, invalidate, document, revision, scene, streamGroup]);
 
     useEffect(() => {
         if (!streamGroup) container.visible = compiled;

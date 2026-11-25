@@ -6,9 +6,10 @@ import {
     NoColorSpace, RepeatWrapping, SRGBColorSpace,
     type MagnificationTextureFilter, type Material, type MinificationTextureFilter, type Texture,
 } from 'three';
-import { MeshBasicNodeMaterial, MeshPhysicalNodeMaterial, MeshStandardNodeMaterial, SpriteNodeMaterial } from 'three/webgpu';
+import { MeshBasicNodeMaterial, MeshPhysicalNodeMaterial, MeshStandardNodeMaterial, SpriteNodeMaterial, type Node } from 'three/webgpu';
+import { Fn, materialReference, normalMap as sampleNormal, parallaxDirection, texture as sampleTexture, uv, vec2, vec4 } from 'three/tsl';
 import type { Component, ComponentViewProps } from '../../core/ComponentRegistry.js';
-import { compactPrefabMaterial, getMaterialDefinition } from '../../core/prefab.js';
+import { compactPrefabMaterial, getMaterialDefinition, resolveMaterialProperties } from '../../core/prefab.js';
 import type { MaterialComponentProperties, PrefabMaterial, PrefabMaterialType } from '../../core/types.js';
 import { useTextureAsset } from '../assets/AssetRuntime.js';
 import { withBasePath } from '../assets/assetPaths.js';
@@ -16,15 +17,7 @@ import { useNamedMaterialDefinition, useSharedMaterialResource } from '../render
 import { useInvalidateMeshInstances } from '../rendering/MeshInstanceProvider.js';
 import { usePrefab } from '../scene/SceneContext.js';
 
-type TextureConfig = {
-    colorSpace: Texture['colorSpace'];
-    repeat?: boolean;
-    repeatCount?: [number, number];
-    offset?: [number, number];
-    generateMipmaps: boolean;
-    minFilter: MinificationTextureFilter;
-    magFilter: MagnificationTextureFilter;
-};
+type ResolvedProperties = ReturnType<typeof resolveMaterialProperties>;
 
 declare module '@react-three/fiber' {
     interface ThreeElements {
@@ -73,26 +66,20 @@ const MAG_FILTER_MAP: Record<string, MagnificationTextureFilter> = {
     LinearFilter,
 };
 
-function configureTexture(
-    texture: Texture | null | undefined,
-    options: TextureConfig,
-) {
-    if (!texture) return;
-
-    if (options.repeat) {
-        texture.wrapS = texture.wrapT = RepeatWrapping;
-        texture.repeat.set(options.repeatCount?.[0] ?? 1, options.repeatCount?.[1] ?? 1);
-    } else {
-        texture.wrapS = texture.wrapT = ClampToEdgeWrapping;
-        texture.repeat.set(1, 1);
-    }
-
-    texture.offset.set(options.offset?.[0] ?? 0, options.offset?.[1] ?? 0);
-    texture.colorSpace = options.colorSpace;
+function cloneMaterialTexture(source: Texture | null | undefined, options: ResolvedProperties, colorSpace: Texture['colorSpace']) {
+    if (!source) return;
+    const texture = source.clone();
+    texture.wrapS = texture.wrapT = options.repeat ? RepeatWrapping : ClampToEdgeWrapping;
+    if (options.repeat) texture.repeat.fromArray(options.repeatCount);
+    else texture.repeat.set(1, 1);
+    texture.offset.fromArray(options.offset);
+    texture.colorSpace = colorSpace;
     texture.generateMipmaps = options.generateMipmaps;
-    texture.minFilter = options.minFilter;
-    texture.magFilter = options.magFilter;
+    texture.anisotropy = Math.min(16, Math.max(1, Math.round(options.anisotropy)));
+    texture.minFilter = MIN_FILTER_MAP[options.minFilter] ?? LinearMipmapLinearFilter;
+    texture.magFilter = MAG_FILTER_MAP[options.magFilter] ?? LinearFilter;
     texture.needsUpdate = true;
+    return texture;
 }
 
 export function useMaterialOverrides(): MaterialOverrides {
@@ -154,45 +141,60 @@ function getMaterialSignature(material: PrefabMaterial, basePath: string) {
 
 function applyMaterialProperties(
     material: RuntimeMaterial,
-    properties: PrefabMaterial,
+    properties: ResolvedProperties,
     map: Texture | null | undefined,
     normalMap: Texture | null | undefined,
 ) {
-    const materialType = properties.materialType ?? 'standard';
+    const materialType = properties.materialType;
     const common = {
         name: properties.name ?? '',
-        color: new Color(properties.color ?? '#ffffff'),
+        color: new Color(properties.color),
         visible: (!properties.texture || !!map) && (!properties.normalMapTexture || !!normalMap),
-        toneMapped: properties.toneMapped ?? true,
-        transparent: properties.transparent ?? materialType === 'sprite',
-        opacity: properties.opacity ?? 1,
-        alphaTest: properties.alphaTest ?? 0,
-        depthTest: properties.depthTest ?? materialType !== 'sprite',
-        depthWrite: properties.depthWrite ?? materialType !== 'sprite',
+        toneMapped: properties.toneMapped,
+        transparent: properties.transparent,
+        opacity: properties.opacity,
+        alphaTest: properties.alphaTest,
+        depthTest: properties.depthTest,
+        depthWrite: properties.depthWrite,
         map: map ?? null,
     };
 
     applyProps(material, materialType === 'sprite' ? {
         ...common,
-        rotation: properties.rotation ?? 0,
-        sizeAttenuation: properties.sizeAttenuation ?? true,
+        rotation: properties.rotation,
+        sizeAttenuation: properties.sizeAttenuation,
     } : {
         ...common,
-        wireframe: properties.wireframe ?? false,
-        side: properties.side ? SIDE_MAP[properties.side] : FrontSide,
+        wireframe: properties.wireframe,
+        side: SIDE_MAP[properties.side],
         ...(materialType === 'standard' ? {
-            metalness: properties.metalness ?? 0,
-            roughness: properties.roughness ?? 1,
-            diffuseRoughness: properties.diffuseRoughness ?? 0,
-            emissive: new Color(properties.emissive ?? "#000000"),
-            emissiveIntensity: properties.emissiveIntensity ?? 1,
-            transmission: properties.transmission ?? 0,
-            thickness: properties.thickness ?? 0,
-            ior: properties.ior ?? 1.5,
+            metalness: properties.metalness,
+            roughness: properties.roughness,
+            diffuseRoughness: properties.diffuseRoughness,
+            emissive: new Color(properties.emissive),
+            emissiveIntensity: properties.emissiveIntensity,
+            transmission: properties.transmission,
+            thickness: properties.thickness,
+            ior: properties.ior,
             normalMap: normalMap ?? null,
-            normalScale: normalMap ? properties.normalScale ?? [1, 1] : [1, 1],
+            normalScale: normalMap ? properties.normalScale : [1, 1],
         } : null),
     });
+    const parallaxScale = properties.parallaxScale;
+    if (material instanceof MeshPhysicalNodeMaterial && map && normalMap && parallaxScale > 0 && !material.transparent && material.alphaTest === 0) {
+        const surfaceUV = uv().mul(vec2(...map.repeat)).add(vec2(...map.offset));
+        const depth = sampleTexture(normalMap, surfaceUV).a.oneMinus().mul(parallaxScale);
+        const view = parallaxDirection as Node<'vec3'>;
+        // Limit the offset at grazing angles to keep shallow relief stable in motion.
+        const displacedUV = surfaceUV.sub(view.xy.div(view.z.max(0.35)).mul(depth)).toVar();
+        const tint = materialReference('color', 'color') as unknown as Node<'vec3'>;
+        material.colorNode = Fn(builder => {
+            // Three also reads colorNode alpha when building the shadow pass.
+            if (builder.material && 'isShadowPassMaterial' in builder.material) return vec4(1);
+            return vec4(tint, 1).mul(sampleTexture(map, displacedUV));
+        })();
+        material.normalNode = sampleNormal(sampleTexture(normalMap, displacedUV).rgb, vec2(...properties.normalScale));
+    }
     material.needsUpdate = true;
 }
 
@@ -225,18 +227,11 @@ function ResolvedMaterial({ material, basePath, attach }: { material: PrefabMate
     const sharedMaterial = useSharedMaterialResource(
         `standard:${getMaterialSignature(material, basePath)}:${texture?.uuid ?? ''}:${normal?.uuid ?? ''}`,
         () => {
-            const result = createMaterial(material.materialType);
-            const map = texture?.clone();
-            const normalMap = normal?.clone();
-            const config = {
-                repeat: material.repeat, repeatCount: material.repeatCount, offset: material.offset,
-                generateMipmaps: material.generateMipmaps !== false,
-                minFilter: MIN_FILTER_MAP[material.minFilter ?? 'LinearMipmapLinearFilter'] ?? LinearMipmapLinearFilter,
-                magFilter: MAG_FILTER_MAP[material.magFilter ?? 'LinearFilter'] ?? LinearFilter,
-            };
-            configureTexture(map, { ...config, colorSpace: SRGBColorSpace });
-            configureTexture(normalMap, { ...config, colorSpace: NoColorSpace });
-            applyMaterialProperties(result, material, map, normalMap);
+            const properties = resolveMaterialProperties(material);
+            const result = createMaterial(properties.materialType);
+            const map = cloneMaterialTexture(texture, properties, SRGBColorSpace);
+            const normalMap = cloneMaterialTexture(normal, properties, NoColorSpace);
+            applyMaterialProperties(result, properties, map, normalMap);
             result.addEventListener('dispose', () => { map?.dispose(); normalMap?.dispose(); });
             return result;
         },
@@ -302,7 +297,9 @@ const MaterialComponent = {
         repeat: { description: "Enable texture wrapping; set repeatCount to control tiling.", type: 'boolean', default: undefined },
         repeatCount: { description: "Texture tile counts along u and v; use with repeat:true.", type: 'vector2', default: undefined },
         normalScale: { type: 'vector2', default: undefined },
+        parallaxScale: { description: 'Shallow UV offset for opaque lit surfaces, using normal map alpha. White is the surface and black is recessed.', default: undefined, min: 0, max: 0.1, step: 0.001 },
         generateMipmaps: { type: 'boolean', default: undefined },
+        anisotropy: { description: 'Improve mipmapped texture detail at grazing angles.', default: undefined, min: 1, max: 16, step: 1 },
         minFilter: { type: 'string', default: undefined },
         magFilter: { type: 'string', default: undefined },
         side: { type: 'select', default: undefined, options: [

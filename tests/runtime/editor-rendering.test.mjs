@@ -31,6 +31,8 @@ test('authoring mount budget admits only a bounded number each frame, cancels re
   assert.deepEqual([...mounted], ['a', 'b', 'c', 'd']);
   await render(['a', 'b', 'c', 'd', 'play'], false);
   assert.ok(mounted.has('play'), 'Play bypasses the authoring budget so prefab preparation sees the complete tree');
+  await render(['a', 'b', 'c', 'd', 'play']);
+  assert.ok(mounted.has('play'), 'pausing keeps nodes first mounted in Play admitted');
 });
 
 test('captures await the host composition and dispose only their own registration', async () => {

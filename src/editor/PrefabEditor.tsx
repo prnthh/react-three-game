@@ -21,7 +21,7 @@ import { AssetRuntimeProvider } from "../runtime/assets/AssetRuntime.js";
 import type { AssetRuntime } from "../runtime/assets/AssetRuntime.js";
 import { createPrefabRegistry, PrefabEditorMode } from "../runtime/scene/SceneContext.js";
 import type { PrefabApi, Scene } from "../runtime/scene/SceneContext.js";
-import { createDefaultMaterial, createImageNode, createModelNode } from "../core/prefab.js";
+import { createImageNode, createModelNode } from "../core/prefab.js";
 import EditorUI from "./EditorUI.js";
 import { createSceneAgent, type SceneAgentHost, type SceneCaptureOptions } from "./agent/sceneAgent.js";
 import { exposeSceneAgent } from "./agent/sceneAgentBridge.js";
@@ -470,7 +470,7 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
             components: {
                 ...image.components,
                 material: { type: 'Material', properties: {
-                    name: materialName, ...createDefaultMaterial(), materialType: 'basic', texture: path, transparent: true,
+                    name: materialName, materialType: 'basic', texture: path, transparent: true,
                 } },
             },
         }, position);
@@ -584,6 +584,7 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
     }, [addImageNode, addParsedModel, basePath, enableWindowDrop, isEditMode, document, toRootLocalPosition]);
 
     const sceneValue = useMemo<Scene>(() => ({
+        editable: true,
         get root() { return prefabValue.root; },
         mode,
     }), [mode, prefabValue]);

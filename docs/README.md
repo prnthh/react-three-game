@@ -42,6 +42,16 @@ repeating tile window, and the library supplies authored lighting and
 [distance streaming](PREFABS.md#automatically-stream-static-scenery). Edit and
 save the home scene and its standalone kit prefabs directly.
 
+Open [the home demo with profiling enabled](http://localhost:3000/?profileCity)
+to see `City cell` entries in Chrome DevTools’ Performance **Timings** track.
+Each entry identifies its tile and cell. Shader warmup details include queue
+time, frame yields, time spent submitting compiler work, and time awaiting it.
+
+Add `&profileRender` to hold the starting camera and record WebGPU timestamps
+as `City GPU frame` marks. Compare stock GTAO with `&ao=contact`, then add
+`&chunkOcclusion` to measure the depth pre-pass separately. Keep the viewport
+and `aoScale` the same across runs.
+
 Author small scenes inline. Pack assemblies for repetition within a scene; export
 a separate prefab file when sharing across scenes. Saved demo documents live in
 `public/prefabs` and can be edited directly.

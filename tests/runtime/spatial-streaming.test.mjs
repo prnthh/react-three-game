@@ -172,12 +172,17 @@ test('world transforms, oversized bounds, failed loads and unregistering work ac
     const queue = new SpatialStreamScheduler(), events = [];
     const options = { visibleDistance: 5, preloadDistance: 8, unloadDistance: 12 };
     const transformed = entry('translated', boundsAt(100), events);
-    const dispose = queue.register(placement([transformed], options, new Matrix4().makeTranslation(-100, 0, 0)));
+    const matrix = new Matrix4().makeTranslation(-100, 0, 0);
+    const dispose = queue.register(placement([transformed], options, matrix));
     const second = entry('second', boundsAt(5), events); queue.register(placement([second], options));
     queue.update(new Vector3());
     assert.equal(transformed.phase, 'preparing');
     transformed.phase = 'error'; queue.update(new Vector3());
     assert.equal(second.phase, 'preparing', 'a failed cell cannot stall the shared queue');
+    matrix.makeScale(2, 1, 1).setPosition(-200, 0, 0);
+    transformed.phase = 'ready';
+    queue.update(new Vector3());
+    assert.ok(transformed.visible, 'scaled placements keep world-space bounds after moving');
     dispose(); second.phase = 'ready';
     queue.update(new Vector3(1000, 0, 0));
     assert.equal(second.phase, 'cold');
@@ -235,6 +240,16 @@ test('warm shader batches reuse a measured slice budget without turning into an 
     });
     assert.equal(yields, 4, 'twelve cheap batches fit into four bounded slices, instead of twelve frames');
     assert.equal(batches, 12);
+    yields = batches = 0;
+    let timing;
+    await compileInSlices(renderer, root, new PerspectiveCamera(), new Scene(), {
+        batchSize: 2, timeBudgetMs: 3, yieldBeforeFirstSlice: false,
+        yieldFrame: async () => { yields++; now += 16; },
+        onTiming: value => { timing = value; },
+    });
+    assert.equal(yields, 3, 'a cell can start its first slice without an extra frame');
+    assert.equal(batches, 12);
+    assert.deepEqual(timing, { objects: 24, queuedMs: 0, yieldMs: 48, submitMs: 12, awaitMs: 0 });
     geometry.dispose(); material.dispose();
 });
 
@@ -374,6 +389,7 @@ test('authored presentation remains resident without pinning ordinary scenery be
         probe: component('DiffuseLightProbe', { intensity: 0.3 }),
         fog: component('Fog', { far: 200 }),
         ambient: component('AmbientLight', { intensity: 0.2 }),
+        hemisphere: component('HemisphereLight'),
         transform: component('Transform', { position: [10, 0, 0] }),
     }, children: [
         box('scenery', [100, 0, 0]),
@@ -386,7 +402,7 @@ test('authored presentation remains resident without pinning ordinary scenery be
     assert.equal(plan.chunks.length, 1, 'presentation components must not disable scenery streaming');
     assert.ok(plan.chunks[0].bounds.containsPoint(new Vector3(110, 0, 0)));
     const resident = components(plan.resident);
-    for (const type of ['RenderSettings', 'DiffuseLightProbe', 'Fog', 'AmbientLight', 'Environment', 'Sky']) {
+    for (const type of ['RenderSettings', 'DiffuseLightProbe', 'Fog', 'AmbientLight', 'HemisphereLight', 'Environment', 'Sky']) {
         assert.equal(resident.filter(c => c.type === type).length, 1, `${type} must stay resident exactly once`);
         assert.ok(!plan.chunks.some(chunk => components(chunk.document).some(c => c.type === type)));
     }

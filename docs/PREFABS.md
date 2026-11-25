@@ -57,6 +57,8 @@ packed nodes. Relative asset URLs resolve against `basePath`.
 
 ## Load a prefab
 
+Nested prefab roots and instances inherit the enclosing prefab’s asset `basePath`. Pass an explicit path to override it, or an empty string to resolve from the application root.
+
 When the block is useful across scenes, save its JSON as
 `public/prefabs/block.json`. Replace each reference’s properties with
 `{ url: '/prefabs/block.json' }`. The original can also become a node with a

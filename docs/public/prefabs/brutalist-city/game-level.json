@@ -28,12 +28,16 @@
         "type": "PostProcessing",
         "properties": {
           "ambientOcclusion": true,
-          "ambientOcclusionRadius": 2.5,
-          "ambientOcclusionIntensity": 0.8,
+          "ambientOcclusionRadius": 2.1,
+          "ambientOcclusionIntensity": 0.85,
+          "ambientOcclusionResolutionScale": 0.65,
+          "ambientOcclusionSamples": 12,
           "bloom": true,
           "bloomStrength": 0.22,
           "bloomRadius": 0.45,
-          "bloomThreshold": 1.1
+          "bloomThreshold": 1.1,
+          "sunShaftLight": "brutalist-directional-sun",
+          "sunShaftDensity": 0.0012
         }
       },
       "chunkSettings": {
@@ -60,10 +64,10 @@
           "environment": {
             "type": "Environment",
             "properties": {
-              "intensity": 0.14,
-              "backgroundIntensity": 0.12,
-              "backgroundBlurriness": 0.25,
-              "resolution": 128
+              "intensity": 0.075,
+              "backgroundIntensity": 0.095,
+              "backgroundBlurriness": 0,
+              "resolution": 256
             }
           }
         },
@@ -76,10 +80,15 @@
                 "type": "Sky",
                 "properties": {
                   "sunPosition": [
-                    -60,
-                    30,
+                    -27,
+                    90,
                     45
-                  ]
+                  ],
+                  "turbidity": 2,
+                  "rayleigh": 1.65,
+                  "mieCoefficient": 0.0018,
+                  "cloudCoverage": 0.34,
+                  "cloudDensity": 0.25
                 }
               }
             }
@@ -93,9 +102,9 @@
           "ambientLight": {
             "type": "HemisphereLight",
             "properties": {
-              "skyColor": "#a7bbc7",
-              "groundColor": "#444b50",
-              "intensity": 0.32
+              "skyColor": "#b6c8df",
+              "groundColor": "#665a4d",
+              "intensity": 0.18
             }
           }
         }
@@ -107,9 +116,9 @@
             "type": "Transform",
             "properties": {
               "position": [
-                -60,
+                -27,
                 90,
-                35
+                45
               ]
             }
           },
@@ -119,9 +128,9 @@
               "color": "#ffe4c2",
               "intensity": 2.5,
               "targetOffset": [
-                60,
+                27,
                 -90,
-                -35
+                -45
               ],
               "castShadow": true,
               "shadowCascades": 3,
@@ -223,14 +232,21 @@
                         "type": "Material",
                         "properties": {
                           "name": "home-city:road",
-                          "color": "#394448",
-                          "roughness": 0.4,
-                          "metalness": 0.25,
-                          "texture": "/textures/home-city/formwork.png",
+                          "color": "#80786f",
+                          "roughness": 0.91,
+                          "diffuseRoughness": 0.55,
+                          "texture": "/textures/home-city/asphalt.webp",
+                          "normalMapTexture": "/textures/home-city/asphalt-normal-height.png",
+                          "normalScale": [
+                            0.55,
+                            0.55
+                          ],
+                          "parallaxScale": 0.004,
+                          "anisotropy": 8,
                           "repeat": true,
                           "repeatCount": [
-                            5,
-                            22
+                            40,
+                            67
                           ]
                         }
                       }
@@ -244,10 +260,10 @@
                         "type": "Material",
                         "properties": {
                           "name": "home-city:dark",
-                          "color": "#4d5555",
+                          "color": "#5a5953",
                           "roughness": 0.93,
                           "diffuseRoughness": 0.75,
-                          "texture": "/textures/home-city/formwork.png",
+                          "texture": "/textures/home-city/cast-concrete.webp",
                           "repeat": true,
                           "repeatCount": [
                             2,
@@ -265,10 +281,10 @@
                         "type": "Material",
                         "properties": {
                           "name": "home-city:pale",
-                          "color": "#b6b9b2",
+                          "color": "#cec4b2",
                           "roughness": 0.92,
                           "diffuseRoughness": 0.75,
-                          "texture": "/textures/home-city/formwork.png",
+                          "texture": "/textures/home-city/cast-concrete.webp",
                           "repeat": true,
                           "repeatCount": [
                             2,
@@ -301,15 +317,16 @@
                         "type": "Material",
                         "properties": {
                           "name": "home-city:concrete",
-                          "color": "#9c9e99",
+                          "color": "#ada99e",
                           "roughness": 0.94,
                           "diffuseRoughness": 0.8,
-                          "texture": "/textures/home-city/formwork.png",
-                          "normalMapTexture": "/textures/home-city/formwork-normal.png",
+                          "texture": "/textures/home-city/cast-concrete.webp",
+                          "normalMapTexture": "/textures/home-city/cast-concrete-normal-height.png",
                           "normalScale": [
-                            0.28,
-                            0.28
+                            0.48,
+                            0.48
                           ],
+                          "parallaxScale": 0.012,
                           "repeat": true,
                           "repeatCount": [
                             2,
@@ -327,9 +344,8 @@
                         "type": "Material",
                         "properties": {
                           "name": "home-city:glass",
-                          "color": "#192d32",
-                          "roughness": 0.26,
-                          "metalness": 0.55
+                          "color": "#172126",
+                          "roughness": 0.3
                         }
                       }
                     }
@@ -360,7 +376,7 @@
                           "name": "home-city:window",
                           "color": "#b4b29a",
                           "emissive": "#ffd39a",
-                          "emissiveIntensity": 0.38,
+                          "emissiveIntensity": 0.14,
                           "roughness": 0.4
                         }
                       }
@@ -37391,144 +37407,6 @@
                 "name": "Utility crossings",
                 "children": [
                   {
-                    "id": "city-utility-crossing-north",
-                    "name": "North pipe crossing",
-                    "children": [
-                      {
-                        "id": "city-1252",
-                        "name": "Cross-canyon service pipe",
-                        "components": {
-                          "transform": {
-                            "type": "Transform",
-                            "properties": {
-                              "position": [
-                                0,
-                                19,
-                                -46
-                              ],
-                              "scale": [
-                                0.3,
-                                44,
-                                0.3
-                              ],
-                              "rotation": [
-                                0,
-                                0,
-                                1.5708
-                              ]
-                            }
-                          },
-                          "geometry": {
-                            "type": "Geometry",
-                            "properties": {
-                              "geometryType": "cylinder",
-                              "args": [
-                                1,
-                                1,
-                                1,
-                                10
-                              ]
-                            }
-                          },
-                          "material": {
-                            "type": "Material",
-                            "properties": {
-                              "name": "home-city:metal"
-                            }
-                          }
-                        }
-                      },
-                      {
-                        "id": "city-1253",
-                        "name": "Cross-canyon service pipe",
-                        "components": {
-                          "transform": {
-                            "type": "Transform",
-                            "properties": {
-                              "position": [
-                                0,
-                                19.9,
-                                -46
-                              ],
-                              "scale": [
-                                0.3,
-                                44,
-                                0.3
-                              ],
-                              "rotation": [
-                                0,
-                                0,
-                                1.5708
-                              ]
-                            }
-                          },
-                          "geometry": {
-                            "type": "Geometry",
-                            "properties": {
-                              "geometryType": "cylinder",
-                              "args": [
-                                1,
-                                1,
-                                1,
-                                10
-                              ]
-                            }
-                          },
-                          "material": {
-                            "type": "Material",
-                            "properties": {
-                              "name": "home-city:rust"
-                            }
-                          }
-                        }
-                      },
-                      {
-                        "id": "city-1254",
-                        "name": "Cross-canyon service pipe",
-                        "components": {
-                          "transform": {
-                            "type": "Transform",
-                            "properties": {
-                              "position": [
-                                0,
-                                20.8,
-                                -46
-                              ],
-                              "scale": [
-                                0.3,
-                                44,
-                                0.3
-                              ],
-                              "rotation": [
-                                0,
-                                0,
-                                1.5708
-                              ]
-                            }
-                          },
-                          "geometry": {
-                            "type": "Geometry",
-                            "properties": {
-                              "geometryType": "cylinder",
-                              "args": [
-                                1,
-                                1,
-                                1,
-                                10
-                              ]
-                            }
-                          },
-                          "material": {
-                            "type": "Material",
-                            "properties": {
-                              "name": "home-city:metal"
-                            }
-                          }
-                        }
-                      }
-                    ]
-                  },
-                  {
                     "id": "city-utility-crossing-south",
                     "name": "South pipe crossing",
                     "children": [
@@ -37844,7 +37722,7 @@
                           "position": [
                             11.5,
                             10,
-                            -6.9
+                            -7.22
                           ],
                           "scale": [
                             3.2,
@@ -37873,8 +37751,8 @@
                       "transform": {
                         "properties": {
                           "position": [
-                            16,
-                            5,
+                            16.5,
+                            8,
                             -5
                           ],
                           "scale": [
@@ -37904,8 +37782,8 @@
                       "transform": {
                         "properties": {
                           "position": [
-                            13.2,
-                            4.65,
+                            13.5,
+                            7.65,
                             -5
                           ],
                           "scale": [
@@ -37933,9 +37811,9 @@
                       "transform": {
                         "properties": {
                           "position": [
-                            10,
-                            6,
-                            0
+                            14.6,
+                            7.35,
+                            -1.5
                           ]
                         },
                         "type": "Transform"
@@ -37965,6 +37843,601 @@
                         "type": "Transform"
                       }
                     }
+                  },
+                  {
+                    "id": "market-entry-stair",
+                    "name": "Market terrace / access stair",
+                    "children": [
+                      {
+                        "id": "market-entry-tread-1",
+                        "name": "Tread 1",
+                        "components": {
+                          "transform": {
+                            "type": "Transform",
+                            "properties": {
+                              "position": [
+                                11.8,
+                                0.09,
+                                7.2
+                              ],
+                              "scale": [
+                                3.5,
+                                0.18,
+                                0.4
+                              ]
+                            }
+                          },
+                          "geometry": {
+                            "type": "Geometry",
+                            "properties": {}
+                          },
+                          "material": {
+                            "type": "Material",
+                            "properties": {
+                              "name": "home-city:concrete"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "market-entry-tread-2",
+                        "name": "Tread 2",
+                        "components": {
+                          "transform": {
+                            "type": "Transform",
+                            "properties": {
+                              "position": [
+                                11.8,
+                                0.18,
+                                6.8
+                              ],
+                              "scale": [
+                                3.5,
+                                0.36,
+                                0.4
+                              ]
+                            }
+                          },
+                          "geometry": {
+                            "type": "Geometry",
+                            "properties": {}
+                          },
+                          "material": {
+                            "type": "Material",
+                            "properties": {
+                              "name": "home-city:concrete"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "market-entry-tread-3",
+                        "name": "Tread 3",
+                        "components": {
+                          "transform": {
+                            "type": "Transform",
+                            "properties": {
+                              "position": [
+                                11.8,
+                                0.27,
+                                6.4
+                              ],
+                              "scale": [
+                                3.5,
+                                0.54,
+                                0.4
+                              ]
+                            }
+                          },
+                          "geometry": {
+                            "type": "Geometry",
+                            "properties": {}
+                          },
+                          "material": {
+                            "type": "Material",
+                            "properties": {
+                              "name": "home-city:concrete"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "market-entry-tread-4",
+                        "name": "Tread 4",
+                        "components": {
+                          "transform": {
+                            "type": "Transform",
+                            "properties": {
+                              "position": [
+                                11.8,
+                                0.36,
+                                6
+                              ],
+                              "scale": [
+                                3.5,
+                                0.72,
+                                0.4
+                              ]
+                            }
+                          },
+                          "geometry": {
+                            "type": "Geometry",
+                            "properties": {}
+                          },
+                          "material": {
+                            "type": "Material",
+                            "properties": {
+                              "name": "home-city:concrete"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "market-entry-tread-5",
+                        "name": "Tread 5",
+                        "components": {
+                          "transform": {
+                            "type": "Transform",
+                            "properties": {
+                              "position": [
+                                11.8,
+                                0.44999999999999996,
+                                5.6
+                              ],
+                              "scale": [
+                                3.5,
+                                0.8999999999999999,
+                                0.4
+                              ]
+                            }
+                          },
+                          "geometry": {
+                            "type": "Geometry",
+                            "properties": {}
+                          },
+                          "material": {
+                            "type": "Material",
+                            "properties": {
+                              "name": "home-city:concrete"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "market-entry-tread-6",
+                        "name": "Tread 6",
+                        "components": {
+                          "transform": {
+                            "type": "Transform",
+                            "properties": {
+                              "position": [
+                                11.8,
+                                0.54,
+                                5.2
+                              ],
+                              "scale": [
+                                3.5,
+                                1.08,
+                                0.4
+                              ]
+                            }
+                          },
+                          "geometry": {
+                            "type": "Geometry",
+                            "properties": {}
+                          },
+                          "material": {
+                            "type": "Material",
+                            "properties": {
+                              "name": "home-city:concrete"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "market-entry-tread-7",
+                        "name": "Tread 7",
+                        "components": {
+                          "transform": {
+                            "type": "Transform",
+                            "properties": {
+                              "position": [
+                                11.8,
+                                0.63,
+                                4.8
+                              ],
+                              "scale": [
+                                3.5,
+                                1.26,
+                                0.4
+                              ]
+                            }
+                          },
+                          "geometry": {
+                            "type": "Geometry",
+                            "properties": {}
+                          },
+                          "material": {
+                            "type": "Material",
+                            "properties": {
+                              "name": "home-city:concrete"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "market-entry-tread-8",
+                        "name": "Tread 8",
+                        "components": {
+                          "transform": {
+                            "type": "Transform",
+                            "properties": {
+                              "position": [
+                                11.8,
+                                0.72,
+                                4.4
+                              ],
+                              "scale": [
+                                3.5,
+                                1.44,
+                                0.4
+                              ]
+                            }
+                          },
+                          "geometry": {
+                            "type": "Geometry",
+                            "properties": {}
+                          },
+                          "material": {
+                            "type": "Material",
+                            "properties": {
+                              "name": "home-city:concrete"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "market-entry-tread-9",
+                        "name": "Tread 9",
+                        "components": {
+                          "transform": {
+                            "type": "Transform",
+                            "properties": {
+                              "position": [
+                                11.8,
+                                0.8099999999999999,
+                                4
+                              ],
+                              "scale": [
+                                3.5,
+                                1.6199999999999999,
+                                0.4
+                              ]
+                            }
+                          },
+                          "geometry": {
+                            "type": "Geometry",
+                            "properties": {}
+                          },
+                          "material": {
+                            "type": "Material",
+                            "properties": {
+                              "name": "home-city:concrete"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "market-entry-tread-10",
+                        "name": "Tread 10",
+                        "components": {
+                          "transform": {
+                            "type": "Transform",
+                            "properties": {
+                              "position": [
+                                11.8,
+                                0.8999999999999999,
+                                3.6
+                              ],
+                              "scale": [
+                                3.5,
+                                1.7999999999999998,
+                                0.4
+                              ]
+                            }
+                          },
+                          "geometry": {
+                            "type": "Geometry",
+                            "properties": {}
+                          },
+                          "material": {
+                            "type": "Material",
+                            "properties": {
+                              "name": "home-city:concrete"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "market-entry-tread-11",
+                        "name": "Tread 11",
+                        "components": {
+                          "transform": {
+                            "type": "Transform",
+                            "properties": {
+                              "position": [
+                                11.8,
+                                0.99,
+                                3.2
+                              ],
+                              "scale": [
+                                3.5,
+                                1.98,
+                                0.4
+                              ]
+                            }
+                          },
+                          "geometry": {
+                            "type": "Geometry",
+                            "properties": {}
+                          },
+                          "material": {
+                            "type": "Material",
+                            "properties": {
+                              "name": "home-city:concrete"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "market-entry-tread-12",
+                        "name": "Tread 12",
+                        "components": {
+                          "transform": {
+                            "type": "Transform",
+                            "properties": {
+                              "position": [
+                                11.8,
+                                1.08,
+                                2.8
+                              ],
+                              "scale": [
+                                3.5,
+                                2.16,
+                                0.4
+                              ]
+                            }
+                          },
+                          "geometry": {
+                            "type": "Geometry",
+                            "properties": {}
+                          },
+                          "material": {
+                            "type": "Material",
+                            "properties": {
+                              "name": "home-city:concrete"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "market-entry-tread-13",
+                        "name": "Tread 13",
+                        "components": {
+                          "transform": {
+                            "type": "Transform",
+                            "properties": {
+                              "position": [
+                                11.8,
+                                1.17,
+                                2.3999999999999995
+                              ],
+                              "scale": [
+                                3.5,
+                                2.34,
+                                0.4
+                              ]
+                            }
+                          },
+                          "geometry": {
+                            "type": "Geometry",
+                            "properties": {}
+                          },
+                          "material": {
+                            "type": "Material",
+                            "properties": {
+                              "name": "home-city:concrete"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "market-entry-tread-14",
+                        "name": "Tread 14",
+                        "components": {
+                          "transform": {
+                            "type": "Transform",
+                            "properties": {
+                              "position": [
+                                11.8,
+                                1.26,
+                                2
+                              ],
+                              "scale": [
+                                3.5,
+                                2.52,
+                                0.4
+                              ]
+                            }
+                          },
+                          "geometry": {
+                            "type": "Geometry",
+                            "properties": {}
+                          },
+                          "material": {
+                            "type": "Material",
+                            "properties": {
+                              "name": "home-city:concrete"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "market-entry-tread-15",
+                        "name": "Tread 15",
+                        "components": {
+                          "transform": {
+                            "type": "Transform",
+                            "properties": {
+                              "position": [
+                                11.8,
+                                1.3499999999999999,
+                                1.5999999999999996
+                              ],
+                              "scale": [
+                                3.5,
+                                2.6999999999999997,
+                                0.4
+                              ]
+                            }
+                          },
+                          "geometry": {
+                            "type": "Geometry",
+                            "properties": {}
+                          },
+                          "material": {
+                            "type": "Material",
+                            "properties": {
+                              "name": "home-city:concrete"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "market-entry-tread-16",
+                        "name": "Tread 16",
+                        "components": {
+                          "transform": {
+                            "type": "Transform",
+                            "properties": {
+                              "position": [
+                                11.8,
+                                1.44,
+                                1.2000000000000002
+                              ],
+                              "scale": [
+                                3.5,
+                                2.88,
+                                0.4
+                              ]
+                            }
+                          },
+                          "geometry": {
+                            "type": "Geometry",
+                            "properties": {}
+                          },
+                          "material": {
+                            "type": "Material",
+                            "properties": {
+                              "name": "home-city:concrete"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "market-entry-tread-17",
+                        "name": "Tread 17",
+                        "components": {
+                          "transform": {
+                            "type": "Transform",
+                            "properties": {
+                              "position": [
+                                11.8,
+                                1.53,
+                                0.7999999999999998
+                              ],
+                              "scale": [
+                                3.5,
+                                3.06,
+                                0.4
+                              ]
+                            }
+                          },
+                          "geometry": {
+                            "type": "Geometry",
+                            "properties": {}
+                          },
+                          "material": {
+                            "type": "Material",
+                            "properties": {
+                              "name": "home-city:concrete"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "market-entry-tread-18",
+                        "name": "Tread 18",
+                        "components": {
+                          "transform": {
+                            "type": "Transform",
+                            "properties": {
+                              "position": [
+                                11.8,
+                                1.6199999999999999,
+                                0.39999999999999947
+                              ],
+                              "scale": [
+                                3.5,
+                                3.2399999999999998,
+                                0.4
+                              ]
+                            }
+                          },
+                          "geometry": {
+                            "type": "Geometry",
+                            "properties": {}
+                          },
+                          "material": {
+                            "type": "Material",
+                            "properties": {
+                              "name": "home-city:concrete"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "id": "market-entry-landing",
+                        "name": "Upper landing",
+                        "components": {
+                          "transform": {
+                            "type": "Transform",
+                            "properties": {
+                              "position": [
+                                11.8,
+                                1.62,
+                                -1
+                              ],
+                              "scale": [
+                                3.5,
+                                3.24,
+                                2.4
+                              ]
+                            }
+                          },
+                          "geometry": {
+                            "type": "Geometry",
+                            "properties": {}
+                          },
+                          "material": {
+                            "type": "Material",
+                            "properties": {
+                              "name": "home-city:concrete"
+                            }
+                          }
+                        }
+                      }
+                    ]
                   }
                 ]
               }
@@ -37980,9 +38453,9 @@
           "fog": {
             "type": "Fog",
             "properties": {
-              "color": "#71858a",
-              "near": 65,
-              "far": 330
+              "color": "#8296a4",
+              "near": 110,
+              "far": 385
             }
           }
         }
@@ -37994,8 +38467,10 @@
           "probe": {
             "type": "DiffuseLightProbe",
             "properties": {
-              "intensity": 0.45,
-              "directionality": 0.65
+              "intensity": 0.36,
+              "skyColor": "#afc2dc",
+              "groundColor": "#716558",
+              "directionality": 0.5
             }
           }
         }

@@ -53,8 +53,8 @@ export { default as MaterialComponent, MaterialOverridesProvider, useMaterialOve
 export type { MaterialOverrides } from "../runtime/components/MaterialComponent.js";
 
 export { PrefabInstance } from "../runtime/prefabs/PrefabInstance.js";
-export type { PrefabInstanceProps, PrefabInstanceStatus, PrefabChunkStatus } from "../runtime/prefabs/PrefabInstance.js";
-export type { PrefabStreamingOptions } from '../runtime/prefabs/spatialPrefabPlan.js';
+export type { PrefabInstanceProps, PrefabInstanceStatus, PrefabChunkStatus, PrefabChunkTiming } from "../runtime/prefabs/PrefabInstance.js";
+export type { PrefabStreamingOptions } from '../runtime/prefabs/streamingOptions.js';
 export { registerPrefabCompilationContext } from '../runtime/rendering/compileInSlices.js';
 export type { PreparedPrefab, PrefabPreparationOptions } from "../runtime/prefabs/preparePrefab.js";
 export { usePrefabStore, usePrefabStoreApi } from "../runtime/prefabs/PrefabStoreContext.js";

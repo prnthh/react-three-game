@@ -8,22 +8,7 @@ import { spatialCellKey } from '../spatial/spatialCell.js';
 import { withBasePath } from '../assets/assetPaths.js';
 import { batchStaticPrimitives, type StaticPrimitiveBatch } from './staticPrimitiveBatches.js';
 
-export interface PrefabStreamingOptions {
-    /** Spatial partition width in prefab-local units. */
-    cellSize?: number;
-    /** Ready chunks become visible inside this world-space distance from their bounds. */
-    visibleDistance?: number;
-    /** Prepare ahead of the visible range. */
-    preloadDistance?: number;
-    /** Release mounted chunks outside this range. Shared source assets remain cached. */
-    unloadDistance?: number;
-    /** Cap each React mount/unmount unit, including copied transform ancestors. */
-    maxNodesPerChunk?: number;
-}
-
-export const STREAMING_DEFAULTS: Required<PrefabStreamingOptions> = {
-    cellSize: 64, visibleDistance: 160, preloadDistance: 220, unloadDistance: 280, maxNodesPerChunk: 96,
-};
+import { finitePositive, STREAMING_DEFAULTS, type PrefabStreamingOptions } from './streamingOptions.js';
 
 export interface SpatialPrefabChunk {
     id: string;
@@ -46,12 +31,7 @@ export interface SpatialPlanRuntime {
 }
 
 const visualTypes = new Set(['Transform', 'Geometry', 'Material', 'Data', 'PrefabRef', 'Model']);
-// These components pass children through without changing their render context.
-// Keep their settings resident while allowing child scenery to stream normally.
-const residentSettings = new Set(['DiffuseLightProbe', 'Fog', 'AmbientLight']);
-// Other residents retain their subtree: Environment, for example, renders its
-// children into a capture scene rather than the main scene.
-const residentTypes = new Set([...residentSettings, 'PointLight', 'SpotLight', 'DirectionalLight', 'HemisphereLight', 'Camera', 'Environment', 'Sky']);
+const residentTypes = new Set(['DiffuseLightProbe', 'Fog', 'AmbientLight', 'PointLight', 'SpotLight', 'DirectionalLight', 'HemisphereLight', 'Camera', 'Environment', 'Sky']);
 const yieldFrame = () => new Promise<void>(resolve => {
     if (typeof requestAnimationFrame === 'undefined') setTimeout(resolve, 0);
     else requestAnimationFrame(() => setTimeout(resolve, 0));
@@ -185,9 +165,9 @@ export async function createSpatialPrefabPlan(document: PrefabState, runtime: Sp
         const geometry = values.find(c => c?.type === 'Geometry');
         const model = values.find(c => c?.type === 'Model');
         if (geometry?.properties.visible === false) return;
-        const hasResident = values.some(c => c && residentTypes.has(c.type) && !residentSettings.has(c.type));
-        if (hasResident) {
-            // A node that also carries a light stays intact, including its descendants.
+        const residents = Object.entries(localComponents).filter(([, c]) => c && residentTypes.has(c.type));
+        if (residents.some(([, c]) => lookup(c!.type)?.slot !== 'leaf')) {
+            // A resident wrapper owns its subtree, including Environment's capture scene.
             const copy = (sourceState: PrefabState, childId: string, scope: string): GameObject => {
                 const source = sourceState.nodesById[childId];
                 const children = (sourceState.childIdsById[childId] ?? []).map(next => copy(sourceState, next, scope));
@@ -200,10 +180,9 @@ export async function createSpatialPrefabPlan(document: PrefabState, runtime: Sp
             resident.push(wrap(copy(state, id, prefix), ancestors));
             return;
         }
-        const settings = Object.fromEntries(Object.entries(localComponents).filter(([, c]) => c && residentSettings.has(c.type)));
-        if (Object.keys(settings).length) {
-            resident.push(wrap({ ...shell, components: { ...shell.components, ...settings } }, ancestors));
-            for (const key of Object.keys(settings)) delete localComponents[key];
+        if (residents.length) {
+            resident.push(wrap({ ...shell, components: { ...shell.components, ...Object.fromEntries(residents) } }, ancestors));
+            for (const [key] of residents) delete localComponents[key];
         }
         const modelSource = model?.properties.filename && model.properties.visible !== false
             ? runtime.getModel?.(withBasePath(basePath, model.properties.filename)) : null;
@@ -250,8 +229,4 @@ export async function createSpatialPrefabPlan(document: PrefabState, runtime: Sp
     const renameResident = (node: GameObject, index: number): GameObject => ({ ...node, id: `resident-${index}/${node.id}`, children: node.children?.map(child => renameResident(child, index)) });
     root.children = resident.map(renameResident);
     return { chunks, resident: normalizePrefab({ root }), materials };
-}
-
-export function finitePositive(value: number | undefined, fallback: number) {
-    return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : fallback;
 }

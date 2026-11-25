@@ -19,6 +19,7 @@ export type {
 	NodeInteractionHandlers,
 } from "./ComponentRegistry.js";
 
+export { resolveInlinePrefab } from "./inlinePrefabs.js";
 export { createImageNode, createModelNode, collectSceneMaterials, normalizePrefab, denormalizePrefab } from "./prefab.js";
 export type { PrefabState, PrefabNodeRecord, SceneMaterialEntry } from "./prefab.js";
 export type {

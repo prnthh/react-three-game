@@ -27,14 +27,14 @@ export function createDiffuseProbeSH(p: DiffuseLightProbeProperties) {
     }
     return sh;
 }
-function DiffuseProbeView({ properties: p, children }: ComponentViewProps<DiffuseLightProbeProperties>) {
+function DiffuseProbeView({ properties: p }: ComponentViewProps<DiffuseLightProbeProperties>) {
     const [x, y, z] = p.axis;
     const sh = useMemo(() => createDiffuseProbeSH(p),
         [p.skyColor, p.groundColor, p.directionality, x, y, z]);
-    return <><lightProbe sh={sh} intensity={p.intensity} />{children}</>;
+    return <lightProbe sh={sh} intensity={p.intensity} />;
 }
 const DiffuseLightProbeComponent: Component<DiffuseLightProbeProperties> = {
-    name: 'DiffuseLightProbe', category: 'lighting', View: DiffuseProbeView,
+    name: 'DiffuseLightProbe', slot: 'leaf', category: 'lighting', View: DiffuseProbeView,
     description: 'Scene-wide static diffuse spherical-harmonic lighting from sky and ground colors. Complements Environment reflections; this is not a local baked probe volume.',
     properties: {
         intensity: { default: 0.35, min: 0, step: 0.05 },

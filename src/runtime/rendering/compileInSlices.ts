@@ -26,22 +26,34 @@ const yieldToFrame = () => new Promise<void>(resolve => {
     else requestAnimationFrame(() => setTimeout(resolve, 0));
 });
 
+export type ShaderCompileTiming = {
+    queuedMs: number;
+    yieldMs: number;
+    submitMs: number;
+    awaitMs: number;
+    objects: number;
+};
+
 /** Compile small groups between frames; an async GPU API alone does not yield shader generation. */
 export function compileInSlices(
     renderer: Pick<WebGPURenderer, 'compileAsync'>,
     root: Object3D,
     camera: Camera,
     scene: Scene,
-    { signal, batchSize = 2, timeBudgetMs = 3, yieldFrame = yieldToFrame }: {
+    { signal, batchSize = 2, timeBudgetMs = 3, yieldFrame = yieldToFrame, yieldBeforeFirstSlice = true, onTiming }: {
         signal?: AbortSignal;
         batchSize?: number;
         /** Reuse remaining slice time for cheap batches; 0 yields after every batch. */
         timeBudgetMs?: number;
         yieldFrame?: () => Promise<void>;
+        yieldBeforeFirstSlice?: boolean;
+        onTiming?: (timing: ShaderCompileTiming) => void;
     } = {},
 ): Promise<void> {
+    const queuedAt = onTiming ? performance.now() : 0;
     const run = async () => {
         signal?.throwIfAborted();
+        const timing = onTiming && { queuedMs: performance.now() - queuedAt, yieldMs: 0, submitMs: 0, awaitMs: 0, objects: 0 };
         const objects: Object3D[] = [];
         // The staging root is hidden, but authored visibility below it is respected.
         const collect = (object: Object3D) => {
@@ -55,13 +67,15 @@ export function compileInSlices(
         batch.matrixWorldAutoUpdate = false;
         const size = Number.isFinite(batchSize) ? Math.max(1, Math.floor(batchSize)) : 2;
         const budget = Number.isFinite(timeBudgetMs) ? Math.max(0, Math.min(8, timeBudgetMs)) : 3;
-        let sliceStarted = -Infinity, sliceBatches = 0;
+        let sliceStarted = performance.now(), sliceBatches = 0;
         const leave = contexts.get(renderer)?.();
         try {
             for (let offset = 0; offset < objects.length; offset += size) {
-                if (offset === 0 || budget === 0 || performance.now() - sliceStarted >= budget || sliceBatches >= 8) {
+                if (offset === 0 ? yieldBeforeFirstSlice : budget === 0 || performance.now() - sliceStarted >= budget || sliceBatches >= 8) {
+                    const waitingAt = timing ? performance.now() : 0;
                     await yieldFrame();
                     sliceStarted = performance.now(); sliceBatches = 0;
+                    if (timing) timing.yieldMs += sliceStarted - waitingAt;
                 }
                 signal?.throwIfAborted();
                 // Borrow references without reparenting, preserving world transforms and
@@ -73,16 +87,23 @@ export function compileInSlices(
                 const visible = root.visible;
                 root.visible = true;
                 let work: Promise<void>;
+                const submittedAt = timing ? performance.now() : 0;
                 try { work = renderer.compileAsync(batch, camera, scene); }
                 finally {
                     root.visible = visible;
                     batch.children.forEach((object, index) => { object.frustumCulled = culling[index]; });
                 }
+                const awaitingAt = timing ? performance.now() : 0;
                 await work;
+                if (timing) {
+                    timing.submitMs += awaitingAt - submittedAt;
+                    timing.awaitMs += performance.now() - awaitingAt;
+                }
                 sliceBatches++;
                 signal?.throwIfAborted();
             }
         } finally { leave?.(); }
+        if (timing) onTiming?.({ ...timing, objects: objects.length });
     };
     const next = (queues.get(renderer) ?? Promise.resolve()).catch(() => {}).then(run);
     queues.set(renderer, next);

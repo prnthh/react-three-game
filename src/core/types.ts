@@ -32,10 +32,12 @@ export interface PrefabMaterial {
     repeat?: boolean;
     repeatCount?: [number, number];
     generateMipmaps?: boolean;
+    anisotropy?: number;
     minFilter?: string;
     magFilter?: string;
     normalMapTexture?: string;
     normalScale?: [number, number];
+    parallaxScale?: number;
     side?: 'FrontSide' | 'BackSide' | 'DoubleSide';
 }
 

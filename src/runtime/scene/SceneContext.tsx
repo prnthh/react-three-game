@@ -149,6 +149,8 @@ export function createPrefabRegistry(): PrefabRegistry {
 }
 
 export interface Scene {
+    /** The host controls Edit/Play. Stays true while playing in the editor. */
+    readonly editable?: boolean;
     root: Object3D | null;
     mode: PrefabEditorMode;
 }

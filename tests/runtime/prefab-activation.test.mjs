@@ -26,7 +26,10 @@ test('prefab activation preserves descendants and active siblings', async t => {
     let streamerMounts = 0;
     let finishLoading;
     const preparation = new Promise(resolve => { finishLoading = resolve; });
-    const runtime = { preparePrefab: () => preparation };
+    const runtime = { preparePrefab: (_source, options) => {
+        assert.equal(options.basePath, '/assets');
+        return preparation;
+    } };
     const nestedDocument = { root: model('nested-mesh') };
     const definitions = {
         Model: { name: 'Model', slot: 'object', renderWhenDisabled: true, properties: {}, View: ({ children }) => children },
@@ -67,7 +70,7 @@ test('prefab activation preserves descendants and active siblings', async t => {
     let state;
     const render = async (ids, enabled = true) => act(async () => {
         state = root.render(h(StrictMode, null, h(ComponentLookupContext.Provider, { value: name => definitions[name] },
-            ids.map(id => h(PrefabRoot, { key: id, id, enabled, data: id === 'host' ? hostDocument : document })))));
+            ids.map(id => h(PrefabRoot, { key: id, id, enabled, basePath: '/assets', data: id === 'host' ? hostDocument : document })))));
     });
     await render(['a']);
     assert.ok(starts.includes('a/root'));

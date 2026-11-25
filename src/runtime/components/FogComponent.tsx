@@ -7,16 +7,13 @@ export interface FogProperties {
     far: number;
 }
 
-function FogView({ properties: { color, near, far }, children }: ComponentViewProps<FogProperties>) {
+function FogView({ properties: { color, near, far } }: ComponentViewProps<FogProperties>) {
     const scene = useThree(state => state.scene);
-    return <>
-        {createPortal(<fog attach="fog" args={[color, near, far]} />, scene)}
-        {children}
-    </>;
+    return createPortal(<fog attach="fog" args={[color, near, far]} />, scene);
 }
 
 const FogComponent: Component<FogProperties> = {
-    name: 'Fog',
+    name: 'Fog', slot: 'leaf',
     category: 'lighting',
     description: "Apply linear distance fog to the scene. Set color to match the background and near/far to the distances where fog begins and becomes opaque.",
     View: FogView,

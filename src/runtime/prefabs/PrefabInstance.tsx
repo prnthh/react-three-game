@@ -5,8 +5,9 @@ import type { PreparedPrefab } from './preparePrefab.js';
 import { PreparedPrefabInstance } from './PreparedPrefabInstance.js';
 import { SpatialPrefabInstance } from './SpatialPrefabInstance.js';
 import { ChunkSettingsContext, readChunkSettings } from '../components/ChunkSettingsComponent.js';
-import { SceneContext } from '../scene/SceneContext.js';
+import { PrefabContext, SceneContext } from '../scene/SceneContext.js';
 import type { PrefabState } from '../../core/prefab.js';
+import type { ShaderCompileTiming } from '../rendering/compileInSlices.js';
 
 export type PrefabInstanceStatus =
     | { phase: 'loading' }
@@ -24,18 +25,24 @@ export interface PrefabInstanceProps {
     /** Immutable terrain: freeze world transforms after preparation. Remount to move or edit it. */
     static?: boolean;
     onChunkStatus?: (status: PrefabChunkStatus) => void;
+    onChunkTiming?: (timing: PrefabChunkTiming) => void;
     onStatus?: (status: PrefabInstanceStatus) => void;
     onActivate?: () => void;
     children?: ReactNode;
 }
 
 export type PrefabChunkStatus = { id: string; phase: 'preparing' | 'ready' | 'unloaded' | 'error'; error?: unknown };
+export type PrefabChunkTiming =
+    | { id: string; phase: 'ready'; admittedAt: number; compilingAt: number; readyAt: number; shaders?: ShaderCompileTiming }
+    | { id: string; phase: 'visible'; readyAt: number; visibleAt: number };
 
 /** Load a shared definition, build an isolated instance, compile it, then activate gameplay. */
 export function PrefabInstance(props: PrefabInstanceProps) {
+    const parentPrefab = useContext(PrefabContext);
+    const basePath = props.basePath ?? parentPrefab?.basePath ?? '';
     if (!props.document && !props.url) throw new Error('PrefabInstance requires a document or url.');
     return <SceneRuntime>
-        <InstanceResource key={`${props.id}:${props.basePath ?? ''}:${props.url}:${!!props.static}`} {...props} />
+        <InstanceResource key={`${props.id}:${basePath}:${props.url}:${!!props.static}`} {...props} basePath={basePath} />
     </SceneRuntime>;
 }
 

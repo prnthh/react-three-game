@@ -48,7 +48,7 @@ function LoadedPrefabRef({ properties, enabled }: ComponentViewProps<PrefabRefPr
         {store && document && (
             <group>
                 <PrefabSourceAncestry.Provider value={ancestry}>
-                    <PrefabRoot id={nodeId} store={store} basePath={basePath} enabled={enabled} />
+                    <PrefabRoot id={nodeId} store={store} enabled={enabled} />
                 </PrefabSourceAncestry.Provider>
             </group>
         )}

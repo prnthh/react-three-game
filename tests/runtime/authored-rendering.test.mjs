@@ -69,19 +69,20 @@ test('sky uniform edits invalidate static environment capture without replacing 
         size: { width: 100, height: 100, top: 0, left: 0 }, frameloop: 'never' });
     t.after(async () => { await act(async () => root.unmount()); });
     let store;
-    const render = turbidity => act(async () => { store = root.render(h(SkyComponent.View, {
-        properties: resolveComponentProperties(SkyComponent, { turbidity }), enabled: true,
+    const render = (turbidity, cloudCoverage) => act(async () => { store = root.render(h(SkyComponent.View, {
+        properties: resolveComponentProperties(SkyComponent, { turbidity, cloudCoverage }), enabled: true,
     })); });
     await render(8);
     const sky = store.getState().scene.children.find(object => object.isSkyMesh);
     assert.ok(sky);
     const material = sky.material, revision = sky.userData.environmentVersion;
-    await render(12);
+    await render(12, 0.2);
     assert.equal(store.getState().scene.children.find(object => object.isSkyMesh), sky);
     assert.equal(sky.material, material);
     assert.equal(sky.turbidity.value, 12);
+    assert.equal(sky.cloudCoverage.value, 0.2);
     assert.equal(sky.userData.environmentVersion, revision + 1);
-    await render(12);
+    await render(12, 0.2);
     assert.equal(sky.userData.environmentVersion, revision + 1, 'unchanged values do not force another environment capture');
 });
 
@@ -165,9 +166,15 @@ test('scene root settings are explicit, live-editable and inherited without appl
     draws.raw = 0;
     await act(async () => state.getState().advance(2, false));
     assert.deepEqual(draws, { raw: 0, effects: 1 }, 'enabled effects render the composed frame exactly once');
-    await update({});
+    await act(async () => { root.render(h(PrefabRoot, { store, editMode: true })); });
     await act(async () => state.getState().advance(3, false));
-    assert.deepEqual(draws, { raw: 1, effects: 1 }, 'removing effects restores normal rendering');
+    assert.deepEqual(draws, { raw: 1, effects: 1 }, 'Edit renders directly with bloom still authored');
+    await act(async () => { root.render(h(PrefabRoot, { store, editMode: false })); });
+    await act(async () => state.getState().advance(4, false));
+    assert.deepEqual(draws, { raw: 1, effects: 2 }, 'Play resumes the authored effects');
+    await update({});
+    await act(async () => state.getState().advance(5, false));
+    assert.deepEqual(draws, { raw: 2, effects: 2 }, 'removing effects restores normal rendering');
 });
 
 test('scene-scope components are discoverable and edits reject child placement or duplicate owners', () => {

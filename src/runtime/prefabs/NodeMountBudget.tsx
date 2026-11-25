@@ -27,9 +27,10 @@ export function NodeMountBudget({ children, nodesPerFrame = 48 }: { children: Re
 
 export function useNodeMountAdmission(enabled = true) {
     const budget = useContext(MountBudgetContext);
-    const [admitted, setAdmitted] = useState(!budget);
+    const [admitted, setAdmitted] = useState(!budget || !enabled);
     useEffect(() => {
-        if (admitted || !budget || !enabled) return;
+        if (admitted) return;
+        if (!budget || !enabled) { setAdmitted(true); return; }
         return budget.enqueue(() => setAdmitted(true));
     }, [budget, admitted, enabled]);
     return admitted || !budget || !enabled;

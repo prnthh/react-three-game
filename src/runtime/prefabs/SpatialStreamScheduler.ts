@@ -1,5 +1,5 @@
 import { Box3, Matrix4, Vector3 } from 'three';
-import { finitePositive, STREAMING_DEFAULTS, type PrefabStreamingOptions } from './spatialPrefabPlan.js';
+import { finitePositive, STREAMING_DEFAULTS, type PrefabStreamingOptions } from './streamingOptions.js';
 
 export type StreamPhase = 'cold' | 'preparing' | 'ready' | 'error';
 export interface SpatialStreamEntry {
@@ -21,6 +21,8 @@ export interface SpatialStreamPlacement {
 export class SpatialStreamScheduler {
     private placements = new Set<SpatialStreamPlacement>();
     private box = new Box3();
+    private translation = new Matrix4();
+    private localCamera = new Vector3();
     register(placement: SpatialStreamPlacement) {
         this.placements.add(placement);
         return () => { this.placements.delete(placement); };
@@ -34,8 +36,14 @@ export class SpatialStreamScheduler {
             const visibleRange = finitePositive(options.visibleDistance, STREAMING_DEFAULTS.visibleDistance);
             const preloadRange = Math.max(visibleRange, finitePositive(options.preloadDistance, STREAMING_DEFAULTS.preloadDistance));
             const unloadRange = Math.max(preloadRange, finitePositive(options.unloadDistance, STREAMING_DEFAULTS.unloadDistance));
+            // Repeated tiles usually differ only by translation. Move the query point
+            // once instead of transforming eight corners of every chunk each frame.
+            this.localCamera.setFromMatrixPosition(matrix);
+            const translated = this.translation.makeTranslation(this.localCamera).equals(matrix);
+            this.localCamera.negate().add(camera);
             for (const entry of placement.entries) {
-                const distance = this.box.copy(entry.bounds).applyMatrix4(matrix).distanceToPoint(camera);
+                const distance = translated ? entry.bounds.distanceToPoint(this.localCamera)
+                    : this.box.copy(entry.bounds).applyMatrix4(matrix).distanceToPoint(camera);
                 const inVisibleRange = distance <= visibleRange;
                 const visible = entry.phase === 'ready' && inVisibleRange;
                 if (entry.visible !== visible) { entry.visible = visible; entry.setVisible(visible); }

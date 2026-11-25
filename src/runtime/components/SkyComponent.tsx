@@ -9,6 +9,8 @@ export interface SkyProperties {
     rayleigh: number;
     mieCoefficient: number;
     mieDirectionalG: number;
+    cloudCoverage?: number;
+    cloudDensity?: number;
     sunDisc: boolean;
 }
 
@@ -21,11 +23,13 @@ function SkyView({ properties: p, children }: ComponentViewProps<SkyProperties>)
         sky.rayleigh.value = p.rayleigh;
         sky.mieCoefficient.value = p.mieCoefficient;
         sky.mieDirectionalG.value = p.mieDirectionalG;
+        if (sky.cloudCoverage) sky.cloudCoverage.value = p.cloudCoverage ?? 0.4;
+        if (sky.cloudDensity) sky.cloudDensity.value = p.cloudDensity ?? 0.4;
         sky.showSunDisc.value = p.sunDisc ? 1 : 0;
         // Uniform edits do not change material.version; signal capture invalidation
         // without recompiling the sky shader or continuously recapturing the world.
         sky.userData.environmentVersion = (sky.userData.environmentVersion ?? 0) + 1;
-    }, [sky, p.sunPosition[0], p.sunPosition[1], p.sunPosition[2], p.size, p.turbidity, p.rayleigh, p.mieCoefficient, p.mieDirectionalG, p.sunDisc]);
+    }, [sky, p.sunPosition[0], p.sunPosition[1], p.sunPosition[2], p.size, p.turbidity, p.rayleigh, p.mieCoefficient, p.mieDirectionalG, p.cloudCoverage, p.cloudDensity, p.sunDisc]);
     useEffect(() => () => { sky.geometry.dispose(); sky.material.dispose(); }, [sky]);
     return <><primitive object={sky} />{children}</>;
 }
@@ -40,6 +44,8 @@ const SkyComponent: Component<SkyProperties> = {
         rayleigh: { default: 1.2, min: 0, max: 4, step: 0.1 },
         mieCoefficient: { default: 0.005, min: 0, max: 0.1, step: 0.001 },
         mieDirectionalG: { default: 0.8, min: 0, max: 0.999, step: 0.01 },
+        cloudCoverage: { default: 0.4, min: 0, max: 1, step: 0.01 },
+        cloudDensity: { default: 0.4, min: 0, max: 1, step: 0.01 },
         sunDisc: { type: 'boolean', default: false },
     },
 };

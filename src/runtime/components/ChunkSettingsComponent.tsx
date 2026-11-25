@@ -2,7 +2,7 @@ import { createContext } from 'react';
 import { resolveComponentProperties } from '../../core/ComponentRegistry.js';
 import { findComponent, type GameObject } from '../../core/types.js';
 import type { Component, ComponentViewProps } from '../../core/ComponentRegistry.js';
-import { STREAMING_DEFAULTS, type PrefabStreamingOptions } from '../prefabs/spatialPrefabPlan.js';
+import { STREAMING_DEFAULTS, type PrefabStreamingOptions } from '../prefabs/streamingOptions.js';
 import { DEFAULT_SPATIAL_CELL_SIZE } from '../spatial/spatialCell.js';
 
 export interface ChunkSettingsProperties extends Required<PrefabStreamingOptions> { batchCellSize: number }

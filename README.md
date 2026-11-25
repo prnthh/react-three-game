@@ -78,7 +78,9 @@ export default function App() {
 }
 ```
 
-Select **Cube** to edit its components. The editor also exposes `window.scene`.
+Select **Cube** to edit its components. For agent-driven edits, use the editor’s
+`window.scene` JavaScript API. On large scenes, find nodes with `scene.search()`
+and apply related changes in one `scene.batch()`.
 Run this in the browser console to move the cube and frame it:
 
 ```js

@@ -19,24 +19,11 @@ export interface PrefabState {
 	parentIdById: Record<string, string | null>;
 }
 
-export const DEFAULT_MATERIAL_ID = "default";
-
-export function createDefaultMaterial(): PrefabMaterial {
-	return {
-		materialType: "standard",
-		color: "#ffffff",
-		toneMapped: true,
-		wireframe: false,
-		transparent: false,
-		opacity: 1,
-		metalness: 0,
-		roughness: 1,
-		sizeAttenuation: true,
-		offset: [0, 0],
-	};
-}
-
-const MATERIAL_DEFAULTS: Record<string, unknown> = {
+type MaterialDefaults = Required<Omit<PrefabMaterial, 'name' | 'texture' | 'normalMapTexture'>>;
+const MATERIAL_DEFAULTS: MaterialDefaults = {
+	transparent: false,
+	depthTest: true,
+	depthWrite: true,
 	materialType: "standard",
 	color: "#ffffff",
 	toneMapped: true,
@@ -57,11 +44,24 @@ const MATERIAL_DEFAULTS: Record<string, unknown> = {
 	repeatCount: [1, 1],
 	offset: [0, 0],
 	generateMipmaps: true,
+	anisotropy: 1,
 	minFilter: "LinearMipmapLinearFilter",
 	magFilter: "LinearFilter",
 	normalScale: [1, 1],
+	parallaxScale: 0,
 	side: "FrontSide",
 };
+
+const SPRITE_DEFAULTS = { ...MATERIAL_DEFAULTS, transparent: true, depthTest: false, depthWrite: false };
+
+function materialDefaults(material: PrefabMaterial) {
+    return material.materialType === 'sprite' ? SPRITE_DEFAULTS : MATERIAL_DEFAULTS;
+}
+
+/** Apply defaults only after distinguishing authored definitions from named references. */
+export function resolveMaterialProperties(material: PrefabMaterial) {
+    return { ...materialDefaults(material), ...material };
+}
 
 /** @internal Compare prefab data by value, independently of object key order. */
 export function samePrefabValue(left: unknown, right: unknown): boolean {
@@ -83,17 +83,11 @@ export function samePrefabValue(left: unknown, right: unknown): boolean {
 
 /** Remove values supplied by the runtime so serialized prefab JSON only stores intent. */
 export function compactPrefabMaterial(material: PrefabMaterial): PrefabMaterial {
-	const materialType = material.materialType ?? "standard";
-	const defaults: Record<string, unknown> = {
-		...MATERIAL_DEFAULTS,
-		transparent: materialType === "sprite",
-		depthTest: materialType !== "sprite",
-		depthWrite: materialType !== "sprite",
-	};
+	const defaults = materialDefaults(material);
 	const compact: Record<string, unknown> = {};
 
 	Object.entries(material).forEach(([key, value]) => {
-		if (value === undefined || samePrefabValue(value, defaults[key])) return;
+		if (value === undefined || samePrefabValue(value, defaults[key as keyof MaterialDefaults])) return;
 		compact[key] = structuredClone(value);
 	});
 
@@ -102,7 +96,7 @@ export function compactPrefabMaterial(material: PrefabMaterial): PrefabMaterial 
 
 /** Authored fields only: a name with no settings is a reference, not a definition. */
 export const MATERIAL_FIELDS = [
-    ...Object.keys(MATERIAL_DEFAULTS), 'transparent', 'depthTest', 'depthWrite', 'texture', 'normalMapTexture',
+    ...Object.keys(MATERIAL_DEFAULTS), 'texture', 'normalMapTexture',
 ] as (keyof PrefabMaterial)[];
 
 export function getMaterialDefinition(properties: MaterialComponentProperties): PrefabMaterial | null {

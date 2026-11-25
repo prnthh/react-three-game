@@ -19,6 +19,7 @@ export type { Scene };
 export interface PrefabRootProps {
     /** Placement identity when the same document is mounted more than once. */
     id?: string;
+    /** Supply the editor's current mode, or omit for a standalone viewer. */
     editMode?: boolean;
     data?: Prefab;
     store?: PrefabStoreApi;
@@ -44,8 +45,10 @@ export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ data, store, id 
 });
 
 const PrefabRootBody = memo(forwardRef<Scene, Omit<PrefabRootProps, 'data' | 'store' | 'id'>>(({
-    prefab, editMode = false, basePath = '', onPointerEvent, enabled = true, children,
+    prefab, editMode, basePath: providedBasePath, onPointerEvent, enabled = true, children,
 }, ref) => {
+    const parentPrefab = useContext(PrefabContext);
+    const basePath = providedBasePath ?? parentPrefab?.basePath ?? '';
     const store = usePrefabStoreApi();
     const rootNode = usePrefabStore(state => state.nodesById[state.rootId]);
     const rootId = rootNode.id;
@@ -58,6 +61,7 @@ const PrefabRootBody = memo(forwardRef<Scene, Omit<PrefabRootProps, 'data' | 'st
         [prefab, store, registry, basePath]);
     const scene = useMemo<Scene>(() => parentScene ?? ({
         get root() { return document.root; },
+        editable: editMode !== undefined,
         mode: editMode ? PrefabEditorMode.Edit : PrefabEditorMode.Play,
     }), [parentScene, document, editMode]);
     useImperativeHandle(ref, () => scene, [scene]);
@@ -78,7 +82,7 @@ const PrefabRootBody = memo(forwardRef<Scene, Omit<PrefabRootProps, 'data' | 'st
         content = renderNodeContent(components, content, enabled);
     }
     return <SceneContext.Provider value={scene}>
-        <PrefabContext.Provider value={document}><NodeScope nodeId={rootId} editMode={editMode}>{content}</NodeScope></PrefabContext.Provider>
+        <PrefabContext.Provider value={document}><NodeScope nodeId={rootId} editMode={scene.mode === PrefabEditorMode.Edit}>{content}</NodeScope></PrefabContext.Provider>
     </SceneContext.Provider>;
 }));
 

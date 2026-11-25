@@ -2,7 +2,8 @@ import { DEFAULT_SPATIAL_CELL_SIZE } from '../spatial/spatialCell.js';
 import { ChunkSettingsContext } from '../components/ChunkSettingsComponent.js';
 import { createContext, useContext, useLayoutEffect, useMemo, useRef, useSyncExternalStore, type ReactNode, type RefObject } from 'react';
 import { Group, type Mesh } from 'three';
-import { useFrame, type ThreeEvent } from '@react-three/fiber';
+import { useStore, type ThreeEvent } from '@react-three/fiber';
+import { subscribeFrame } from '../scene/frame.js';
 import { MeshInstanceRegistry } from './MeshInstanceRuntime.js';
 
 /** Forward batched clicks to the host that owns each source mesh. */
@@ -12,8 +13,19 @@ const MeshInstanceContext = createContext<MeshInstanceRegistry | null>(null);
 
 function MeshInstanceBatches({ registry }: { registry: MeshInstanceRegistry }) {
     const root = useMemo(() => new Group(), []);
-    useLayoutEffect(() => registry.connect(root), [registry, root]);
-    useFrame(() => registry.update());
+    const store = useStore();
+    useLayoutEffect(() => {
+        let unsubscribe: (() => void) | undefined;
+        const tick = () => {
+            if (registry.update()) return;
+            unsubscribe?.();
+            unsubscribe = undefined;
+        };
+        const disconnect = registry.connect(root, () => {
+            unsubscribe ??= subscribeFrame(store, tick);
+        });
+        return () => { disconnect(); unsubscribe?.(); };
+    }, [registry, root, store]);
     return <primitive object={root} onClick={registry.handleClick} dispose={null} />;
 }
 

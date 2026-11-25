@@ -1,16 +1,15 @@
 import MeshFields from "./MeshFields.js";
 import type { ComponentEditorProps } from "../../core/ComponentRegistry.js";
 import { FieldGroup, NumberField, SelectField } from "../ui/Input.js";
-import { GEOMETRY_ARGS, GeometryProperties, getDefaultArgs } from "../../runtime/components/GeometryComponent.js";
+import { GEOMETRY_ARGS, type GeometryProperties, getDefaultArgs, primitiveOptions, resolvePrimitive } from "../../runtime/components/GeometryComponent.js";
 
 function GeometryComponentEditor({ properties, update }: ComponentEditorProps<GeometryProperties>) {
-    const geometryType = properties.geometryType ?? 'box';
-    const schema = GEOMETRY_ARGS[geometryType] ?? GEOMETRY_ARGS.box;
-    const args = properties.args ?? getDefaultArgs(geometryType);
+    const { type: geometryType, args } = resolvePrimitive(properties);
+    const schema = GEOMETRY_ARGS[geometryType];
 
     // Handle geometry type change to reset args
     const handleChange = (newValues: Partial<GeometryProperties>) => {
-        if (typeof newValues.geometryType === 'string' && newValues.geometryType !== geometryType) {
+        if (typeof newValues.geometryType === 'string' && newValues.geometryType !== (properties.geometryType ?? 'box')) {
             update({ geometryType: newValues.geometryType, args: getDefaultArgs(newValues.geometryType) });
         } else {
             update(newValues);
@@ -30,13 +29,7 @@ function GeometryComponentEditor({ properties, update }: ComponentEditorProps<Ge
                 label="Type"
                 values={properties}
                 onChange={handleChange}
-                options={[
-                    { value: 'box', label: 'Box' },
-                    { value: 'sphere', label: 'Sphere' },
-                    { value: 'plane', label: 'Plane' },
-                    { value: 'cylinder', label: 'Cylinder' },
-                    { value: 'torus', label: 'Torus' },
-                ]}
+                options={primitiveOptions}
             />
             {schema.fields.map((field, index) => (
                 <NumberField

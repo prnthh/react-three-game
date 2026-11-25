@@ -31,15 +31,26 @@ export class SceneMaterialPool {
     registerDefinition(owner: object, name: string, material: PrefabMaterial, basePath: string) {
         let peers = this.definitionsByName.get(name);
         if (!peers) this.definitionsByName.set(name, peers = new Map());
+        const previous = peers.get(owner);
+        if (previous?.material === material && previous.basePath === basePath) return;
         peers.set(owner, { material, basePath });
         if (peers.keys().next().value === owner) this.notify(name);
     }
     unregisterDefinition(owner: object, name: string) {
         const peers = this.definitionsByName.get(name);
-        const active = peers?.keys().next().value === owner;
-        if (!peers?.delete(owner)) return;
+        const previous = peers?.get(owner);
+        if (!peers || !previous) return;
+        const active = peers.keys().next().value === owner;
+        peers.delete(owner);
         if (!peers.size) this.definitionsByName.delete(name);
-        if (active) this.notify(name);
+        if (!active) return;
+        const next = peers.entries().next().value;
+        if (next && next[1].material === previous.material && next[1].basePath === previous.basePath) {
+            // Repeated placements share a plan. Preserve the subscribers' snapshot on ownership transfer.
+            peers.set(next[0], previous);
+            return;
+        }
+        this.notify(name);
     }
     resolve(name: string) {
         return this.definitionsByName.get(name)?.values().next().value ?? null;
@@ -56,6 +67,7 @@ export class SceneMaterialPool {
         entry.references++;
         return () => {
             entry.references--;
+            if (entry.references > 0) return;
             queueMicrotask(() => {
                 if (entry.references > 0 || this.entries.get(entry.key) !== entry) return;
                 this.entries.delete(entry.key);

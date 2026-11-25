@@ -1,3 +1,4 @@
+import { resolveInlinePrefab } from "./inlinePrefabs.js";
 import { normalizePrefab, type PrefabState } from "./prefab.js";
 import { findComponent, type Prefab, type GameObject } from "./types.js";
 import { Euler, Matrix4, Quaternion, Vector3 } from "three";
@@ -56,10 +57,9 @@ function resolvePrefabTree(document: Prefab): GameObject {
       if (component?.type !== "PrefabRef") continue;
       const { prefabId, url } = component.properties;
       if (prefabId) {
-        const definition = state.prefabs?.[prefabId];
-        if (!definition) throw new Error(`Unknown prefab: ${prefabId}`);
+        if (!Object.hasOwn(state.prefabs ?? {}, prefabId)) throw new Error(`Unknown prefab: ${prefabId}`);
         if (ancestors.includes(prefabId)) throw new Error(`Cyclic prefab: ${prefabId}`);
-        const nested = normalizePrefab(definition, state.prefabs);
+        const nested = resolveInlinePrefab(state, prefabId);
         children.push(expand(nested, nested.rootId, node.id, [...ancestors, prefabId]));
       } else if (url) throw new Error(`Resolve external prefab before compilation: ${url}`);
     }

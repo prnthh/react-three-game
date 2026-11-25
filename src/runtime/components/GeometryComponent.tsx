@@ -10,9 +10,11 @@ import { getComponent, getComponentRegistryVersion, resolveComponentProperties, 
 
 import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from "react";
 
-import { BoxGeometry, CylinderGeometry, PlaneGeometry, SphereGeometry, TorusGeometry, type BufferGeometry } from "three";
+import { Box3, Vector3, BoxGeometry, CylinderGeometry, PlaneGeometry, SphereGeometry, TorusGeometry, type BufferGeometry } from "three";
 
 export const GEOMETRY_ARGS: Record<string, {
+    create: (...args: number[]) => BufferGeometry;
+    halfExtents: (...args: number[]) => Vector3;
     fields: Array<{
         name: string;
         label: string;
@@ -23,6 +25,8 @@ export const GEOMETRY_ARGS: Record<string, {
     }>;
 }> = {
     box: {
+        create: (...args) => new BoxGeometry(...args),
+        halfExtents: (width = 1, height = 1, depth = 1) => new Vector3(Math.abs(width) / 2, Math.abs(height) / 2, Math.abs(depth) / 2),
         fields: [
             { name: 'width', label: 'Width', defaultValue: 1, min: 0.01, step: 0.1 },
             { name: 'height', label: 'Height', defaultValue: 1, min: 0.01, step: 0.1 },
@@ -33,6 +37,8 @@ export const GEOMETRY_ARGS: Record<string, {
         ],
     },
     sphere: {
+        create: (...args) => new SphereGeometry(...args),
+        halfExtents: (radius = 1) => new Vector3().setScalar(Math.abs(radius)),
         fields: [
             { name: 'radius', label: 'Radius', defaultValue: 1, min: 0.01, step: 0.1 },
             { name: 'widthSegments', label: 'Width Segments', defaultValue: 32, min: 3, step: 1 },
@@ -40,6 +46,8 @@ export const GEOMETRY_ARGS: Record<string, {
         ],
     },
     plane: {
+        create: (...args) => new PlaneGeometry(...args),
+        halfExtents: (width = 1, height = 1) => new Vector3(Math.abs(width) / 2, Math.abs(height) / 2, 0),
         fields: [
             { name: 'width', label: 'Width', defaultValue: 1, min: 0.01, step: 0.1 },
             { name: 'height', label: 'Height', defaultValue: 1, min: 0.01, step: 0.1 },
@@ -48,6 +56,11 @@ export const GEOMETRY_ARGS: Record<string, {
         ],
     },
     cylinder: {
+        create: (...args) => new CylinderGeometry(...args),
+        halfExtents: (top = 1, bottom = 1, height = 1) => {
+            const radius = Math.max(Math.abs(top), Math.abs(bottom));
+            return new Vector3(radius, Math.abs(height) / 2, radius);
+        },
         fields: [
             { name: 'radiusTop', label: 'Radius Top', defaultValue: 1, min: 0.01, step: 0.1 },
             { name: 'radiusBottom', label: 'Radius Bottom', defaultValue: 1, min: 0.01, step: 0.1 },
@@ -57,6 +70,11 @@ export const GEOMETRY_ARGS: Record<string, {
         ],
     },
     torus: {
+        create: (...args) => new TorusGeometry(...args),
+        halfExtents: (radius = 1, tube = 0.4) => {
+            const outer = Math.abs(radius) + Math.abs(tube);
+            return new Vector3(outer, outer, Math.abs(tube));
+        },
         fields: [
             { name: 'radius', label: 'Radius', defaultValue: 1, min: 0.01, step: 0.1 },
             { name: 'tube', label: 'Tube', defaultValue: 0.4, min: 0.01, step: 0.05 },
@@ -65,6 +83,8 @@ export const GEOMETRY_ARGS: Record<string, {
         ],
     },
 };
+
+export const primitiveOptions = Object.keys(GEOMETRY_ARGS).map(value => ({ value, label: value[0].toUpperCase() + value.slice(1) }));
 
 export type GeometryProperties = MeshProperties & {
     geometryType?: string;
@@ -75,10 +95,17 @@ export function getDefaultArgs(geometryType: string) {
     return (GEOMETRY_ARGS[geometryType]?.fields ?? []).filter(field => !field.optional).map(field => field.defaultValue);
 }
 
-const GEOMETRY_ELEMENTS = {
-    box: 'boxGeometry', sphere: 'sphereGeometry', plane: 'planeGeometry',
-    cylinder: 'cylinderGeometry', torus: 'torusGeometry',
-} as const;
+export function resolvePrimitive({ geometryType = 'box', args }: GeometryProperties) {
+    const type = Object.hasOwn(GEOMETRY_ARGS, geometryType) ? geometryType : 'box';
+    return { type, args: args?.length ? args : getDefaultArgs(type) };
+}
+
+/** Streaming only needs the conservative local bounds, before any buffers exist. */
+export function primitiveBounds(properties: GeometryProperties) {
+    const { type, args } = resolvePrimitive(properties);
+    const extent = GEOMETRY_ARGS[type].halfExtents(...args);
+    return new Box3(extent.clone().negate(), extent);
+}
 
 const SceneGeometryPoolContext = createContext<Map<string, BufferGeometry> | null>(null);
 
@@ -86,14 +113,6 @@ export function GeometryRuntimeProvider({ children }: { children: ReactNode }) {
     const [pool] = useState(() => new Map<string, BufferGeometry>());
     useEffect(() => () => pool.forEach(geometry => geometry.dispose()), [pool]);
     return <SceneGeometryPoolContext.Provider value={pool}>{children}</SceneGeometryPoolContext.Provider>;
-}
-
-function createGeometry(type: keyof typeof GEOMETRY_ELEMENTS, args: number[]) {
-    if (type === 'sphere') return new SphereGeometry(...args);
-    if (type === 'plane') return new PlaneGeometry(...args);
-    if (type === 'cylinder') return new CylinderGeometry(...args);
-    if (type === 'torus') return new TorusGeometry(...args);
-    return new BoxGeometry(...args);
 }
 
 /** Immutable custom geometry is shared across instances by its complete authoring key. */
@@ -142,19 +161,17 @@ export function applyGeometryModifiers(source: BufferGeometry, modifiers: Return
 const NO_GEOMETRY_MODIFIERS: ReturnType<typeof getGeometryModifiers> = [];
 
 export function usePrimitiveGeometry(properties: GeometryProperties, modifiers = NO_GEOMETRY_MODIFIERS) {
-    const { geometryType, args = [] } = properties;
-    const type = geometryType && geometryType in GEOMETRY_ELEMENTS ? geometryType as keyof typeof GEOMETRY_ELEMENTS : 'box';
-    const resolvedArgs = args.length ? args : getDefaultArgs(type);
-    const signature = JSON.stringify([type, resolvedArgs, modifiers.map(({ type, properties, context }) => [type, properties, context]), getComponentRegistryVersion()]);
+    const { type, args } = resolvePrimitive(properties);
+    const signature = JSON.stringify([type, args, modifiers.map(({ type, properties, context }) => [type, properties, context]), getComponentRegistryVersion()]);
     return useSharedGeometryResource(signature, () => {
-        const source = createGeometry(type, resolvedArgs);
+        const source = GEOMETRY_ARGS[type].create(...args);
         let result: BufferGeometry | undefined;
         try { result = applyGeometryModifiers(source, modifiers); return result; }
         finally { if (result !== source) source.dispose(); }
     });
 }
 
-function GeometryComponentView({ properties, enabled, children }: ComponentViewProps<GeometryProperties>) {
+function GeometryComponentView({ properties, children }: ComponentViewProps<GeometryProperties>) {
     const nodeId = useNode(node => node.nodeId);
     const prefab = usePrefabDocument();
     const lookup = useContext(ComponentLookupContext);
@@ -165,7 +182,7 @@ function GeometryComponentView({ properties, enabled, children }: ComponentViewP
         invalidateInstances();
         if (object.transform) notifyObjectChanged(object.transform, 'geometry');
     }, [geometry, invalidateInstances, object]);
-    return <MeshNode properties={properties} enabled={enabled}>
+    return <MeshNode properties={properties}>
         <primitive object={geometry} attach="geometry" dispose={null} />
         {children}
     </MeshNode>;
@@ -183,13 +200,7 @@ const GeometryComponent: Component<GeometryProperties> = {
         geometryType: {
             type: 'select',
             default: 'box',
-            options: [
-                { value: 'box', label: 'Box' },
-                { value: 'sphere', label: 'Sphere' },
-                { value: 'plane', label: 'Plane' },
-                { value: 'cylinder', label: 'Cylinder' },
-                { value: 'torus', label: 'Torus' },
-            ],
+            options: primitiveOptions,
         },
         args: {
             type: 'number[]',

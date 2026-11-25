@@ -11,7 +11,7 @@ export type HemisphereLightProperties = Partial<typeof hemisphereLightDefaults>;
 
 function HemisphereLightView({ properties }: ComponentViewProps<HemisphereLightProperties>) {
     const { skyColor, groundColor, intensity } = properties;
-    return <hemisphereLight args={[skyColor, groundColor, intensity]} />;
+    return <hemisphereLight color={skyColor} groundColor={groundColor} intensity={intensity} />;
 }
 
 const HemisphereLightComponent: Component<HemisphereLightProperties> = {

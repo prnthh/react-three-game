@@ -1,4 +1,5 @@
-import { Group, type Camera, type Object3D, type Scene } from 'three';
+import { yieldToFrame } from '../scene/frame.js';
+import { Group, REVISION, type Camera, type Object3D, type Scene } from 'three';
 import type { WebGPURenderer } from 'three/webgpu';
 
 // Three temporarily changes renderer state during projection. Only one preparation
@@ -21,26 +22,23 @@ export function registerPrefabCompilationContext(renderer: object, enter: () => 
     return () => { if (contexts.get(renderer) === enter) contexts.delete(renderer); };
 }
 
-const yieldToFrame = () => new Promise<void>(resolve => {
-    if (typeof requestAnimationFrame === 'undefined') setTimeout(resolve, 0);
-    else requestAnimationFrame(() => setTimeout(resolve, 0));
-});
-
 export type ShaderCompileTiming = {
     queuedMs: number;
     yieldMs: number;
     submitMs: number;
     awaitMs: number;
     objects: number;
+    /** Three node-builder starts for this cell’s objects, when the renderer exposes the debug hook. */
+    nodeBuilds?: number;
 };
 
 /** Compile small groups between frames; an async GPU API alone does not yield shader generation. */
 export function compileInSlices(
-    renderer: Pick<WebGPURenderer, 'compileAsync'>,
+    renderer: Pick<WebGPURenderer, 'compileAsync'> & { isWebGPURenderer?: boolean },
     root: Object3D,
     camera: Camera,
     scene: Scene,
-    { signal, batchSize = 2, timeBudgetMs = 3, yieldFrame = yieldToFrame, yieldBeforeFirstSlice = true, onTiming }: {
+    { signal, batchSize, timeBudgetMs = 3, yieldFrame = yieldToFrame, yieldBeforeFirstSlice = true, onTiming }: {
         signal?: AbortSignal;
         batchSize?: number;
         /** Reuse remaining slice time for cheap batches; 0 yields after every batch. */
@@ -53,7 +51,7 @@ export function compileInSlices(
     const queuedAt = onTiming ? performance.now() : 0;
     const run = async () => {
         signal?.throwIfAborted();
-        const timing = onTiming && { queuedMs: performance.now() - queuedAt, yieldMs: 0, submitMs: 0, awaitMs: 0, objects: 0 };
+        const timing: ShaderCompileTiming | undefined = onTiming && { queuedMs: performance.now() - queuedAt, yieldMs: 0, submitMs: 0, awaitMs: 0, objects: 0 };
         const objects: Object3D[] = [];
         // The staging root is hidden, but authored visibility below it is respected.
         const collect = (object: Object3D) => {
@@ -65,10 +63,29 @@ export function compileInSlices(
         const batch = new Group();
         batch.matrixAutoUpdate = false;
         batch.matrixWorldAutoUpdate = false;
-        const size = Number.isFinite(batchSize) ? Math.max(1, Math.floor(batchSize)) : 2;
+        // r187 yields within shader generation. Amortize its full target-scene
+        // light traversal while bounding the synchronous projection and cancellation delay.
+        const defaultSize = renderer.isWebGPURenderer && Number(REVISION) >= 187 ? 16 : 2;
+        const size = batchSize !== undefined && Number.isFinite(batchSize) ? Math.max(1, Math.floor(batchSize)) : defaultSize;
         const budget = Number.isFinite(timeBudgetMs) ? Math.max(0, Math.min(8, timeBudgetMs)) : 3;
         let sliceStarted = performance.now(), sliceBatches = 0;
         const leave = contexts.get(renderer)?.();
+        // Compiles may yield while other passes render. Attribute only requests for
+        // objects in this cell, including builds triggered by an overlapping pass.
+        type BuilderHook = (builder: unknown, target: { object?: Object3D }) => void;
+        const debug = timing && (renderer as { debug?: { onNodeBuilderCreated?: BuilderHook | null } }).debug;
+        const previous = debug?.onNodeBuilderCreated;
+        let observe: BuilderHook | undefined;
+        if (timing && debug && previous !== undefined) {
+            const tracked = new Set(objects);
+            let builds = 0;
+            timing.nodeBuilds = builds;
+            observe = (builder, target) => {
+                if (target.object && tracked.has(target.object)) timing.nodeBuilds = ++builds;
+                previous?.(builder, target);
+            };
+            debug.onNodeBuilderCreated = observe;
+        }
         try {
             for (let offset = 0; offset < objects.length; offset += size) {
                 if (offset === 0 ? yieldBeforeFirstSlice : budget === 0 || performance.now() - sliceStarted >= budget || sliceBatches >= 8) {
@@ -102,8 +119,14 @@ export function compileInSlices(
                 sliceBatches++;
                 signal?.throwIfAborted();
             }
-        } finally { leave?.(); }
-        if (timing) onTiming?.({ ...timing, objects: objects.length });
+        } finally {
+            if (debug && observe && debug.onNodeBuilderCreated === observe) debug.onNodeBuilderCreated = previous;
+            leave?.();
+        }
+        if (timing) {
+            timing.objects = objects.length;
+            onTiming?.(timing);
+        }
     };
     const next = (queues.get(renderer) ?? Promise.resolve()).catch(() => {}).then(run);
     queues.set(renderer, next);

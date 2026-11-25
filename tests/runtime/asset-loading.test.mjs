@@ -124,11 +124,14 @@ describe('Prefab preparation', () => {
             loadSound: async path => { requests.push(['sound', path]); },
         };
         const document = normalizePrefab({ root: { id: 'root', components: {
-            assets: { type: 'Assets', properties: {} },
+            assets: { type: 'Material', properties: {} },
         } } });
         const prepared = await preparePrefab(runtime, document, { basePath: '/app' });
         assert.equal(prepared.assetCount, 3);
         assert.deepEqual(requests, [['model', '/app/shared'], ['texture', '/app/shared'], ['sound', '/app/shared']]);
+        requests.length = 0;
+        await preparePrefab(runtime, document, { basePath: '/app', deferMaterialTextures: () => true });
+        assert.deepEqual(requests, [['model', '/app/shared'], ['sound', '/app/shared']], 'custom material dependencies can include non-texture assets');
     });
 
     function fixture(spec, assetLoader = async () => ({})) {
@@ -439,4 +442,23 @@ test('file-drop completion awaits an asset even without a loaded callback', asyn
     finish({ scene: new Group(), animations: [] });
     await pending;
     assert.equal(completed, true);
+});
+
+test('placements reuse dependency discovery while loading and registry changes stay independent', async () => {
+    const { getComponent, registerComponent } = await import('../../src/core/ComponentRegistry.ts');
+    let scans = 0;
+    const loads = [];
+    const install = path => registerComponent({ name: 'PreparationCacheTest', properties: {}, dependencies() {
+        scans++;
+        return [{ kind: 'texture', path }];
+    } });
+    install('a.png');
+    const document = normalizePrefab({ root: { id: 'root', components: { test: { type: 'PreparationCacheTest', properties: {} } } } });
+    const runtime = { getComponent, async loadTexture(path) { loads.push(path); } };
+    await Promise.all(['/one', '/two'].map(basePath => preparePrefab(runtime, document, { basePath })));
+    assert.equal(scans, 1);
+    install('b.png');
+    await preparePrefab(runtime, document, { basePath: '/one' });
+    assert.equal(scans, 2);
+    assert.deepEqual(loads, ['/one/a.png', '/two/a.png', '/one/b.png']);
 });

@@ -704,8 +704,9 @@
         }
       },
       {
-        "id": "street-luminaire-west-kit",
-        "name": "Street luminaire / west 1",
+        "id": "street-lamp",
+        "name": "Street lamp",
+        "packed": true,
         "components": {
           "transform": {
             "type": "Transform",
@@ -714,16 +715,6 @@
                 -14,
                 9,
                 25
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ],
-              "rotation": [
-                0,
-                0,
-                0
               ]
             }
           }
@@ -736,35 +727,16 @@
               "transform": {
                 "type": "Transform",
                 "properties": {
-                  "position": [
-                    0,
-                    0,
-                    0
-                  ],
                   "scale": [
                     0.4,
                     0.6,
                     3
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
                   ]
                 }
               },
               "geometry": {
                 "type": "Geometry",
-                "properties": {
-                  "geometryType": "box",
-                  "args": [
-                    1,
-                    1,
-                    1
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "material": {
                 "type": "Material",
@@ -790,25 +762,13 @@
                     0.3,
                     0.12,
                     2.6
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
                   ]
                 }
               },
               "geometry": {
                 "type": "Geometry",
                 "properties": {
-                  "geometryType": "box",
-                  "args": [
-                    1,
-                    1,
-                    1
-                  ],
-                  "castShadow": false,
-                  "receiveShadow": true
+                  "castShadow": false
                 }
               },
               "material": {
@@ -821,7 +781,35 @@
                   "roughness": 0.4
                 }
               }
-            }
+            },
+            "children": [
+              {
+                "id": "street-lamp-light",
+                "name": "Street lamp light",
+                "components": {
+                  "transform": {
+                    "type": "Transform",
+                    "properties": {
+                      "position": [
+                        0,
+                        -1.25,
+                        0
+                      ]
+                    }
+                  },
+                  "light": {
+                    "type": "SpotLight",
+                    "properties": {
+                      "color": "#ffc18a",
+                      "intensity": 280,
+                      "distance": 18,
+                      "angle": 1.02,
+                      "penumbra": 0.55
+                    }
+                  }
+                }
+              }
+            ]
           },
           {
             "id": "city-848",
@@ -839,26 +827,12 @@
                     0.2,
                     6.5,
                     0.2
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
                   ]
                 }
               },
               "geometry": {
                 "type": "Geometry",
-                "properties": {
-                  "geometryType": "box",
-                  "args": [
-                    1,
-                    1,
-                    1
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "material": {
                 "type": "Material",
@@ -884,26 +858,12 @@
                     0.8,
                     0.24,
                     0.25
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
                   ]
                 }
               },
               "geometry": {
                 "type": "Geometry",
-                "properties": {
-                  "geometryType": "box",
-                  "args": [
-                    1,
-                    1,
-                    1
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
+                "properties": {}
               },
               "material": {
                 "type": "Material",
@@ -913,8 +873,7 @@
               }
             }
           }
-        ],
-        "packed": true
+        ]
       },
       {
         "id": "city-850",
@@ -1584,23 +1543,13 @@
                 -14,
                 9,
                 -15
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ],
-              "rotation": [
-                0,
-                0,
-                0
               ]
             }
           },
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "prefabId": "street-luminaire-west-kit"
+              "prefabId": "street-lamp"
             }
           }
         }
@@ -2336,23 +2285,13 @@
                 -14,
                 9,
                 -55
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ],
-              "rotation": [
-                0,
-                0,
-                0
               ]
             }
           },
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "prefabId": "street-luminaire-west-kit"
+              "prefabId": "street-lamp"
             }
           }
         }
@@ -2902,23 +2841,13 @@
                 -14,
                 9,
                 -95
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ],
-              "rotation": [
-                0,
-                0,
-                0
               ]
             }
           },
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "prefabId": "street-luminaire-west-kit"
+              "prefabId": "street-lamp"
             }
           }
         }
@@ -3577,23 +3506,13 @@
                 -14,
                 9,
                 -135
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ],
-              "rotation": [
-                0,
-                0,
-                0
               ]
             }
           },
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "prefabId": "street-luminaire-west-kit"
+              "prefabId": "street-lamp"
             }
           }
         }
@@ -4329,23 +4248,13 @@
                 -14,
                 9,
                 -175
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ],
-              "rotation": [
-                0,
-                0,
-                0
               ]
             }
           },
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "prefabId": "street-luminaire-west-kit"
+              "prefabId": "street-lamp"
             }
           }
         }
@@ -4895,23 +4804,13 @@
                 -14,
                 9,
                 -215
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ],
-              "rotation": [
-                0,
-                0,
-                0
               ]
             }
           },
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "prefabId": "street-luminaire-west-kit"
+              "prefabId": "street-lamp"
             }
           }
         }
@@ -5570,23 +5469,13 @@
                 -14,
                 9,
                 -255
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ],
-              "rotation": [
-                0,
-                0,
-                0
               ]
             }
           },
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "prefabId": "street-luminaire-west-kit"
+              "prefabId": "street-lamp"
             }
           }
         }
@@ -6261,7 +6150,7 @@
         }
       },
       {
-        "id": "street-luminaire-east-kit",
+        "id": "street-luminaire-east-0",
         "name": "Street luminaire / east 1",
         "components": {
           "transform": {
@@ -6272,202 +6161,20 @@
                 9,
                 25
               ],
-              "scale": [
-                1,
-                1,
-                1
-              ],
               "rotation": [
                 0,
-                0,
+                3.141592653589793,
                 0
               ]
             }
-          }
-        },
-        "children": [
-          {
-            "id": "city-1012",
-            "name": "Street luminaire housing",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    0.4,
-                    0.6,
-                    3
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ]
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "geometryType": "box",
-                  "args": [
-                    1,
-                    1,
-                    1
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "name": "home-city:metal"
-                }
-              }
-            }
           },
-          {
-            "id": "city-1013",
-            "name": "Street luminaire lens",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    0,
-                    -0.35,
-                    0
-                  ],
-                  "scale": [
-                    0.3,
-                    0.12,
-                    2.6
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ]
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "geometryType": "box",
-                  "args": [
-                    1,
-                    1,
-                    1
-                  ],
-                  "castShadow": false,
-                  "receiveShadow": true
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "name": "home-city:amber"
-                }
-              }
-            }
-          },
-          {
-            "id": "city-1014",
-            "name": "Street lamp post",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    0.5,
-                    -3.2,
-                    0
-                  ],
-                  "scale": [
-                    0.2,
-                    6.5,
-                    0.2
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ]
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "geometryType": "box",
-                  "args": [
-                    1,
-                    1,
-                    1
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "name": "home-city:metal"
-                }
-              }
-            }
-          },
-          {
-            "id": "city-1015",
-            "name": "Luminaire mounting arm",
-            "components": {
-              "transform": {
-                "type": "Transform",
-                "properties": {
-                  "position": [
-                    0.25,
-                    0,
-                    0
-                  ],
-                  "scale": [
-                    0.8,
-                    0.24,
-                    0.25
-                  ],
-                  "rotation": [
-                    0,
-                    0,
-                    0
-                  ]
-                }
-              },
-              "geometry": {
-                "type": "Geometry",
-                "properties": {
-                  "geometryType": "box",
-                  "args": [
-                    1,
-                    1,
-                    1
-                  ],
-                  "castShadow": true,
-                  "receiveShadow": true
-                }
-              },
-              "material": {
-                "type": "Material",
-                "properties": {
-                  "name": "home-city:metal"
-                }
-              }
+          "prefab": {
+            "type": "PrefabRef",
+            "properties": {
+              "prefabId": "street-lamp"
             }
           }
-        ],
-        "packed": true
+        }
       },
       {
         "id": "city-1016",
@@ -7124,14 +6831,9 @@
                 9,
                 -15
               ],
-              "scale": [
-                1,
-                1,
-                1
-              ],
               "rotation": [
                 0,
-                0,
+                3.141592653589793,
                 0
               ]
             }
@@ -7139,7 +6841,7 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "prefabId": "street-luminaire-east-kit"
+              "prefabId": "street-lamp"
             }
           }
         }
@@ -7876,14 +7578,9 @@
                 9,
                 -55
               ],
-              "scale": [
-                1,
-                1,
-                1
-              ],
               "rotation": [
                 0,
-                0,
+                3.141592653589793,
                 0
               ]
             }
@@ -7891,7 +7588,7 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "prefabId": "street-luminaire-east-kit"
+              "prefabId": "street-lamp"
             }
           }
         }
@@ -8442,14 +8139,9 @@
                 9,
                 -95
               ],
-              "scale": [
-                1,
-                1,
-                1
-              ],
               "rotation": [
                 0,
-                0,
+                3.141592653589793,
                 0
               ]
             }
@@ -8457,7 +8149,7 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "prefabId": "street-luminaire-east-kit"
+              "prefabId": "street-lamp"
             }
           }
         }
@@ -9117,14 +8809,9 @@
                 9,
                 -135
               ],
-              "scale": [
-                1,
-                1,
-                1
-              ],
               "rotation": [
                 0,
-                0,
+                3.141592653589793,
                 0
               ]
             }
@@ -9132,7 +8819,7 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "prefabId": "street-luminaire-east-kit"
+              "prefabId": "street-lamp"
             }
           }
         }
@@ -9869,14 +9556,9 @@
                 9,
                 -175
               ],
-              "scale": [
-                1,
-                1,
-                1
-              ],
               "rotation": [
                 0,
-                0,
+                3.141592653589793,
                 0
               ]
             }
@@ -9884,7 +9566,7 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "prefabId": "street-luminaire-east-kit"
+              "prefabId": "street-lamp"
             }
           }
         }
@@ -10435,14 +10117,9 @@
                 9,
                 -215
               ],
-              "scale": [
-                1,
-                1,
-                1
-              ],
               "rotation": [
                 0,
-                0,
+                3.141592653589793,
                 0
               ]
             }
@@ -10450,7 +10127,7 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "prefabId": "street-luminaire-east-kit"
+              "prefabId": "street-lamp"
             }
           }
         }
@@ -11110,14 +10787,9 @@
                 9,
                 -255
               ],
-              "scale": [
-                1,
-                1,
-                1
-              ],
               "rotation": [
                 0,
-                0,
+                3.141592653589793,
                 0
               ]
             }
@@ -11125,7 +10797,7 @@
           "prefab": {
             "type": "PrefabRef",
             "properties": {
-              "prefabId": "street-luminaire-east-kit"
+              "prefabId": "street-lamp"
             }
           }
         }
@@ -11970,11 +11642,6 @@
                 34.2788,
                 -6
               ],
-              "scale": [
-                40,
-                0.12,
-                0.35
-              ],
               "rotation": [
                 0,
                 0,
@@ -11987,9 +11654,9 @@
             "properties": {
               "geometryType": "box",
               "args": [
-                1,
-                1,
-                1
+                40,
+                0.12,
+                0.35
               ],
               "castShadow": false,
               "receiveShadow": true
@@ -12001,7 +11668,40 @@
               "name": "home-city:amber"
             }
           }
-        }
+        },
+        "children": [
+          {
+            "id": "bridge-bounce-0",
+            "name": "bridge-bounce-0",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    -0.14,
+                    0
+                  ]
+                }
+              },
+              "light": {
+                "type": "SpotLight",
+                "properties": {
+                  "color": "#ffd09b",
+                  "intensity": 550,
+                  "distance": 43,
+                  "targetOffset": [
+                    0,
+                    -24,
+                    0
+                  ],
+                  "angle": 0.85,
+                  "penumbra": 0.65
+                }
+              }
+            }
+          }
+        ]
       },
       {
         "id": "city-1185",
@@ -12089,48 +11789,6 @@
             "type": "Material",
             "properties": {
               "name": "home-city:dark"
-            }
-          }
-        }
-      },
-      {
-        "id": "bridge-bounce-0",
-        "name": "bridge-bounce-0",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -1.5,
-                33.1788,
-                -8
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ]
-            }
-          },
-          "light": {
-            "type": "SpotLight",
-            "properties": {
-              "color": "#ffd09b",
-              "intensity": 550,
-              "distance": 43,
-              "decay": 2,
-              "targetOffset": [
-                0,
-                -24,
-                0
-              ],
-              "angle": 0.85,
-              "penumbra": 0.65
             }
           }
         }
@@ -12805,11 +12463,6 @@
                 53.21,
                 -86
               ],
-              "scale": [
-                37.5,
-                0.12,
-                0.35
-              ],
               "rotation": [
                 0,
                 0,
@@ -12822,9 +12475,9 @@
             "properties": {
               "geometryType": "box",
               "args": [
-                1,
-                1,
-                1
+                37.5,
+                0.12,
+                0.35
               ],
               "castShadow": false,
               "receiveShadow": true
@@ -12836,7 +12489,40 @@
               "name": "home-city:cyan"
             }
           }
-        }
+        },
+        "children": [
+          {
+            "id": "bridge-bounce-1",
+            "name": "bridge-bounce-1",
+            "components": {
+              "transform": {
+                "type": "Transform",
+                "properties": {
+                  "position": [
+                    0,
+                    -0.14,
+                    0
+                  ]
+                }
+              },
+              "light": {
+                "type": "SpotLight",
+                "properties": {
+                  "color": "#6fbfca",
+                  "intensity": 550,
+                  "distance": 43,
+                  "targetOffset": [
+                    0,
+                    -24,
+                    0
+                  ],
+                  "angle": 0.85,
+                  "penumbra": 0.65
+                }
+              }
+            }
+          }
+        ]
       },
       {
         "id": "city-1206",
@@ -12924,48 +12610,6 @@
             "type": "Material",
             "properties": {
               "name": "home-city:dark"
-            }
-          }
-        }
-      },
-      {
-        "id": "bridge-bounce-1",
-        "name": "bridge-bounce-1",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                0.75,
-                52.11,
-                -88
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ]
-            }
-          },
-          "light": {
-            "type": "SpotLight",
-            "properties": {
-              "color": "#6fbfca",
-              "intensity": 550,
-              "distance": 43,
-              "decay": 2,
-              "targetOffset": [
-                0,
-                -24,
-                0
-              ],
-              "angle": 0.85,
-              "penumbra": 0.65
             }
           }
         }
@@ -14892,76 +14536,6 @@
         }
       },
       {
-        "id": "Transit sign cyan spill",
-        "name": "Transit sign cyan spill",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                -17,
-                23,
-                -47
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ]
-            }
-          },
-          "light": {
-            "type": "PointLight",
-            "properties": {
-              "color": "#68c8ca",
-              "intensity": 360,
-              "distance": 31,
-              "decay": 2
-            }
-          }
-        }
-      },
-      {
-        "id": "Service terrace amber spill",
-        "name": "Service terrace amber spill",
-        "components": {
-          "transform": {
-            "type": "Transform",
-            "properties": {
-              "position": [
-                17,
-                14,
-                -145
-              ],
-              "scale": [
-                1,
-                1,
-                1
-              ],
-              "rotation": [
-                0,
-                0,
-                0
-              ]
-            }
-          },
-          "light": {
-            "type": "PointLight",
-            "properties": {
-              "color": "#ffc18a",
-              "intensity": 280,
-              "distance": 28,
-              "decay": 2
-            }
-          }
-        }
-      },
-      {
         "id": "transit-arrival",
         "name": "Transit arrival / market level",
         "components": {
@@ -15038,7 +14612,33 @@
                 },
                 "type": "Transform"
               }
-            }
+            },
+            "children": [
+              {
+                "id": "transit-cool-spill",
+                "name": "Transit cool spill",
+                "components": {
+                  "light": {
+                    "properties": {
+                      "color": "#6bd8d2",
+                      "distance": 27,
+                      "intensity": 380
+                    },
+                    "type": "PointLight"
+                  },
+                  "transform": {
+                    "type": "Transform",
+                    "properties": {
+                      "position": [
+                        0,
+                        0,
+                        0.16
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
           },
           {
             "id": "market-blade",
@@ -15145,7 +14745,13 @@
             "name": "Market canopy luminaire",
             "components": {
               "geometry": {
-                "properties": {},
+                "properties": {
+                  "args": [
+                    0.2,
+                    0.15,
+                    15
+                  ]
+                },
                 "type": "Geometry"
               },
               "material": {
@@ -15160,64 +14766,39 @@
                     13.2,
                     4.65,
                     -5
-                  ],
-                  "scale": [
-                    0.2,
-                    0.15,
-                    15
                   ]
                 },
                 "type": "Transform"
               }
-            }
-          },
-          {
-            "id": "market-warm-spill",
-            "name": "Market warm spill",
-            "components": {
-              "light": {
-                "properties": {
-                  "color": "#ffb66e",
-                  "distance": 28,
-                  "intensity": 420
-                },
-                "type": "PointLight"
-              },
-              "transform": {
-                "properties": {
-                  "position": [
-                    10,
-                    6,
-                    0
-                  ]
-                },
-                "type": "Transform"
+            },
+            "children": [
+              {
+                "id": "market-warm-spill",
+                "name": "Market warm spill",
+                "components": {
+                  "light": {
+                    "type": "SpotLight",
+                    "properties": {
+                      "color": "#ffb66e",
+                      "distance": 28,
+                      "intensity": 420,
+                      "angle": 1.2,
+                      "penumbra": 0.55
+                    }
+                  },
+                  "transform": {
+                    "type": "Transform",
+                    "properties": {
+                      "position": [
+                        0,
+                        -0.15,
+                        0
+                      ]
+                    }
+                  }
+                }
               }
-            }
-          },
-          {
-            "id": "transit-cool-spill",
-            "name": "Transit cool spill",
-            "components": {
-              "light": {
-                "properties": {
-                  "color": "#6bd8d2",
-                  "distance": 27,
-                  "intensity": 380
-                },
-                "type": "PointLight"
-              },
-              "transform": {
-                "properties": {
-                  "position": [
-                    -10,
-                    13,
-                    -22
-                  ]
-                },
-                "type": "Transform"
-              }
-            }
+            ]
           }
         ]
       }

@@ -4,6 +4,7 @@ import { AgXToneMapping, NoToneMapping, SRGBColorSpace, LinearSRGBColorSpace } f
 import { applyRendererSettings } from '../../src/runtime/components/RenderSettingsComponent.tsx';
 import { createDiffuseProbeSH } from '../../src/runtime/components/DiffuseLightProbeComponent.tsx';
 import { getPrefabEditorView } from '../../src/editor/sceneView.ts';
+import { denormalizePrefab, normalizePrefab } from '../../src/core/prefab.ts';
 import { evaluateSceneCommands } from '../../src/core/sceneCommands.ts';
 import { getComponent, resolveComponentProperties } from '../../src/core/ComponentRegistry.ts';
 import { registerBuiltInComponents } from '../../src/runtime/components/index.ts';
@@ -37,6 +38,14 @@ test('sky, probe and render settings use ordinary discovery, command validation 
     assert.ok(getComponent('DiffuseLightProbe').properties.skyColor);
     assert.throws(() => evaluateSceneCommands(original, { commands: [{ ...commands[0], component: { type: 'RenderSettings', properties: { toneMapping: 'unknown' } } }] }), /toneMapping/);
     assert.throws(() => evaluateSceneCommands(original, { commands: [{ ...commands[1], component: { type: 'Sky', properties: { sunPosition: [1] } } }] }), /sunPosition/);
+});
+
+test('frame cap defaults and an explicit uncapped choice survive scene export', () => {
+    for (const [properties, expected] of [[{}, 60], [{ fpsCap: undefined }, null], [{ fpsCap: null }, null], [{ fpsCap: 30 }, 30]]) {
+        const scene = { root: { id: 'world', components: { render: { type: 'RenderSettings', properties } } } };
+        const saved = JSON.parse(JSON.stringify(denormalizePrefab(normalizePrefab(scene))));
+        assert.equal(resolveComponentProperties(getComponent('RenderSettings'), saved.root.components.render.properties).fpsCap, expected);
+    }
 });
 
 test('sampled diffuse probes preserve constant radiance and respond to authored direction', () => {
@@ -224,7 +233,7 @@ test('root chunk settings reconfigure the real mesh grid and restore its default
     assert.equal(batches().length, 0);
 });
 
-test('authored clustered lighting changes live and releases its resources on removal', async t => {
+test('streamed lights keep a stable shader key and authored lighting overrides the shared runtime default', async t => {
     const { act, createElement: h } = await import('react');
     const { createRoot, extend } = await import('@react-three/fiber');
     const { Group } = await import('three');
@@ -233,7 +242,8 @@ test('authored clustered lighting changes live and releases its resources on rem
     const { ClusteredLighting } = await import('three/examples/jsm/lighting/ClusteredLighting.js');
     extend({ Group }); globalThis.IS_REACT_ACT_ENVIRONMENT = true;
     const canvas = { width: 100, height: 100, style: {}, addEventListener() {}, removeEventListener() {} };
-    const fallback = {}, renderer = { lighting: fallback, render() {}, setSize() {}, setPixelRatio() {}, domElement: canvas };
+    const { Lighting, Scene, SpotLight } = await import('three/webgpu');
+    const fallback = new Lighting(), renderer = { lighting: fallback, render() {}, setSize() {}, setPixelRatio() {}, domElement: canvas };
     const root = createRoot(canvas);
     await root.configure({ gl: renderer, size: { width: 100, height: 100, top: 0, left: 0 }, frameloop: 'never' });
     const document = createPrefabStore({ root: { id: 'root' } });
@@ -242,7 +252,8 @@ test('authored clustered lighting changes live and releases its resources on rem
     ClusteredLighting.prototype.dispose = function () { disposals++; return dispose.call(this); };
     t.after(async () => { await act(async () => root.unmount()); ClusteredLighting.prototype.dispose = dispose; });
     await act(async () => root.render(h(PrefabRoot, { store: document })));
-    assert.equal(renderer.lighting, fallback, 'absence retains Three lighting');
+    const automatic = renderer.lighting;
+    assert.ok(automatic instanceof ClusteredLighting);
     const update = properties => act(async () => document.getState().updateNode('root', node => ({ ...node,
         components: properties ? { lights: { type: 'ClusteredLighting', properties } } : {},
     })));
@@ -254,8 +265,37 @@ test('authored clustered lighting changes live and releases its resources on rem
     assert.equal(renderer.lighting.tileSize, 16);
     assert.equal(disposals, 1);
     await update(null);
-    assert.equal(renderer.lighting, fallback);
+    assert.equal(renderer.lighting, automatic);
     assert.equal(disposals, 2);
+    await act(async () => document.getState().updateNode('root', node => ({ ...node,
+        components: { chunks: { type: 'ChunkSettings', properties: {} } },
+    })));
+    assert.equal(renderer.lighting, automatic);
+    const lights = renderer.lighting.getNode(new Scene());
+    const resident = new SpotLight(), arriving = new SpotLight();
+    lights.setLights([resident]);
+    const key = lights.customCacheKey();
+    for (const streamed of [[resident, arriving], [arriving], []]) {
+        lights.setLights(streamed);
+        assert.equal(lights.customCacheKey(), key);
+        assert.deepEqual(lights.clusteredLights, streamed);
+    }
+    await act(async () => document.getState().updateNode('root', node => ({ ...node,
+        components: { ...node.components, lights: { type: 'ClusteredLighting', properties: { maxLights: 48 } } },
+    })));
+    assert.equal(renderer.lighting.maxLights, 48);
+    await update(null);
+    assert.equal(renderer.lighting, automatic);
+    assert.equal(disposals, 3);
+    const second = createPrefabStore({ root: { id: 'other' } });
+    const pair = first => [first && h(PrefabRoot, { key: 'first', store: document }),
+        h(PrefabRoot, { key: 'second', store: second })];
+    await act(async () => root.render(pair(true)));
+    const shared = renderer.lighting;
+    await act(async () => root.render(pair(false)));
+    assert.equal(renderer.lighting, shared);
+    await act(async () => root.render(null));
+    assert.equal(renderer.lighting, fallback);
 });
 
 test('declarative fog restores the host scene and probe edits preserve the light object', async t => {
@@ -294,4 +334,46 @@ test('declarative fog restores the host scene and probe edits preserve the light
     });
     assert.equal(scene.fog, originalFog);
     assert.equal(probe.parent, null);
+});
+
+test('capped and uncapped canvases share one pair of global effects per display tick', async t => {
+    const { act, createElement: h } = await import('react');
+    const { createRoot, addEffect, addAfterEffect } = await import('@react-three/fiber');
+    const settings = getComponent('RenderSettings').View;
+    globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+    const callbacks = new Map(), roots = [], stores = [], caps = [60, 30, null];
+    const counts = [0, 0, 0];
+    let id = 0, now = 100, before = 0, after = 0;
+    const originalRAF = globalThis.requestAnimationFrame, originalCancel = globalThis.cancelAnimationFrame;
+    t.mock.method(performance, 'now', () => now);
+    globalThis.requestAnimationFrame = callback => { callbacks.set(++id, callback); return id; };
+    globalThis.cancelAnimationFrame = handle => callbacks.delete(handle);
+    const stopBefore = addEffect(() => before++), stopAfter = addAfterEffect(() => after++);
+    t.after(async () => {
+        stopBefore(); stopAfter();
+        for (const root of roots) await act(() => root.unmount());
+        frame();
+        globalThis.requestAnimationFrame = originalRAF;
+        globalThis.cancelAnimationFrame = originalCancel;
+    });
+    function frame() {
+        now += 1000 / 120;
+        for (const [handle, callback] of [...callbacks]) if (callbacks.delete(handle)) callback(now);
+    }
+    for (const [i, fpsCap] of caps.entries()) {
+        const canvas = { width: 64, height: 64, style: {}, addEventListener() {}, removeEventListener() {} };
+        const root = createRoot(canvas);
+        roots.push(root);
+        await root.configure({ gl: { render() { counts[i]++; }, setSize() {}, setPixelRatio() {}, domElement: canvas, shadowMap: {} },
+            size: { width: 64, height: 64, top: 0, left: 0 } });
+        await act(() => { stores.push(root.render(h(settings, { properties: { fpsCap }, enabled: true }))); });
+    }
+    for (let i = 0; i < 5; i++) frame();
+    counts.fill(0); before = after = 0;
+    for (let i = 0; i < 120; i++) {
+        for (const store of stores) store.getState().invalidate();
+        frame();
+    }
+    assert.deepEqual(counts, [60, 30, 120]);
+    assert.deepEqual([before, after], [120, 120]);
 });

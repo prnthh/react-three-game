@@ -1,6 +1,8 @@
 import { useState, type ReactNode } from 'react';
 import { base, colors, ui } from '../ui/styles.js';
-import { FieldGroup, FieldRow, NumberInput } from '../ui/Input.js';
+import { BooleanField, FieldGroup, FieldRow, NumberField, NumberInput } from '../ui/Input.js';
+
+import { localLightProperties, type shadowDefaults } from '../../runtime/components/lightUtils.js';
 
 export function LightSection({ title, children }: { title: string; children: ReactNode }) {
     return (
@@ -105,4 +107,32 @@ export function ShadowBiasField({
             </div>
         </FieldRow>
     );
+}
+
+type ShadowValues = typeof shadowDefaults;
+export function ShadowSection({ values, update, updatePolicy, children }: {
+    values: ShadowValues;
+    update: (values: Partial<ShadowValues>) => void;
+    updatePolicy?: ReactNode;
+    children?: ReactNode;
+}) {
+    const fields = { values, onChange: update };
+    function numberField(name: 'shadowMapSize' | 'shadowIntensity' | 'shadowRadius' | 'shadowCameraNear' | 'shadowCameraFar', label: string) {
+        const { default: fallback, ...limits } = localLightProperties[name];
+        return <NumberField name={name} label={label} {...fields} {...limits} fallback={fallback} commitOnBlur={name === 'shadowMapSize'} />;
+    }
+    return <LightSection title="Shadow">
+        <BooleanField name="castShadow" label="Cast Shadow" {...fields} />
+        {values.castShadow && <>
+            {updatePolicy ?? <BooleanField name="shadowAutoUpdate" label="Update Every Frame" {...fields} fallback={true} />}
+            {numberField('shadowMapSize', 'Map Size')}
+            <ShadowBiasField name="shadowBias" label="Bias" {...fields} />
+            <ShadowBiasField name="shadowNormalBias" label="Normal Bias" {...fields} />
+            {numberField('shadowIntensity', 'Opacity')}
+            {numberField('shadowRadius', 'Softness')}
+            {numberField('shadowCameraNear', 'Near')}
+            {numberField('shadowCameraFar', 'Far')}
+            {children}
+        </>}
+    </LightSection>;
 }

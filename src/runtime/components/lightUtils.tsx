@@ -1,8 +1,62 @@
-import { useLayoutEffect, useRef, type RefObject } from 'react';
-import { DoubleSide, Quaternion, Vector3 } from 'three';
+import { useHelper } from '@react-three/drei';
+import { useLayoutEffect, useMemo, useRef, type RefObject } from 'react';
+import { CameraHelper, DoubleSide, Quaternion, Vector3, type DirectionalLight, type SpotLight } from 'three';
+
+/** Mounted beside the selected light after its ref has been attached. */
+export function ShadowCameraHelper({ light }: { light: RefObject<DirectionalLight | SpotLight | null> }) {
+    const camera = useMemo(() => ({ get current() { return light.current!.shadow.camera; } }), [light]);
+    useHelper(camera, CameraHelper);
+    return null;
+}
 
 export const MIN_SHADOW_MAP_SIZE = 64;
 export const MAX_SHADOW_MAP_SIZE = 2048;
+
+export const shadowDefaults = {
+    castShadow: false,
+    shadowMapSize: 512,
+    shadowBias: 0,
+    shadowNormalBias: 0,
+    shadowIntensity: 1,
+    shadowRadius: 1,
+    shadowAutoUpdate: true,
+    shadowCameraNear: 0.5,
+    shadowCameraFar: 500,
+};
+
+export const localLightDefaults = {
+    color: '#ffffff', intensity: 1, distance: 0, decay: 2,
+    ...shadowDefaults,
+};
+
+export const localLightProperties = {
+    color: { type: 'color', default: localLightDefaults.color },
+    intensity: { default: localLightDefaults.intensity, min: 0, step: 0.1 },
+    distance: { description: "Light cutoff distance in scene units; 0 means no finite cutoff.", default: localLightDefaults.distance, min: 0, step: 1 },
+    decay: { default: localLightDefaults.decay, min: 0, step: 0.1 },
+    castShadow: { type: 'boolean', default: localLightDefaults.castShadow },
+    shadowMapSize: { default: localLightDefaults.shadowMapSize, min: MIN_SHADOW_MAP_SIZE, max: MAX_SHADOW_MAP_SIZE, step: 128 },
+    shadowBias: { default: localLightDefaults.shadowBias, min: -1, max: 1 },
+    shadowNormalBias: { default: localLightDefaults.shadowNormalBias, min: -1, max: 1 },
+    shadowIntensity: { default: localLightDefaults.shadowIntensity, min: 0, max: 1, step: 0.05 },
+    shadowRadius: { default: localLightDefaults.shadowRadius, min: 0, step: 0.25 },
+    shadowAutoUpdate: { type: 'boolean', default: localLightDefaults.shadowAutoUpdate },
+    shadowCameraNear: { default: localLightDefaults.shadowCameraNear, min: 0.001, step: 0.1 },
+    shadowCameraFar: { default: localLightDefaults.shadowCameraFar, min: 0.1, step: 1 },
+} as const;
+
+export function shadowProps(properties: typeof shadowDefaults) {
+    return {
+        castShadow: properties.castShadow,
+        "shadow-bias": properties.shadowBias,
+        "shadow-normalBias": properties.shadowNormalBias,
+        "shadow-intensity": properties.shadowIntensity,
+        "shadow-radius": properties.shadowRadius,
+        "shadow-autoUpdate": properties.shadowAutoUpdate,
+        "shadow-camera-near": properties.shadowCameraNear,
+        "shadow-camera-far": properties.shadowCameraFar,
+    };
+}
 
 export function createFollowState() {
     return { elapsed: 0, x: NaN, z: NaN };
@@ -74,8 +128,9 @@ interface ShadowMapOwner {
 /** Let the renderer resize its own shadow target after the authored value commits. */
 export function useShadowMapResolution<T extends ShadowMapOwner>(
     lightRef: RefObject<T | null>,
-    mapSize: number,
+    requestedSize: number,
 ) {
+    const mapSize = normalizeShadowMapSize(requestedSize);
     const applied = useRef<{ owner: T; size: number } | null>(null);
 
     useLayoutEffect(() => {

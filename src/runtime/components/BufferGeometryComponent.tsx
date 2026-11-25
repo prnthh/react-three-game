@@ -55,7 +55,7 @@ function getIndexArray(indices: NumericArray) {
     return maxIndex > 65535 ? new Uint32Array(indices) : new Uint16Array(indices);
 }
 
-function BufferGeometryComponentView({ properties, enabled, children }: ComponentViewProps<BufferGeometryProperties>) {
+function BufferGeometryComponentView({ properties, children }: ComponentViewProps<BufferGeometryProperties>) {
     const positions = normalizeNumberArray(properties.positions, DEFAULT_TRIANGLE_POSITIONS);
     const indices = normalizeNumberArray(properties.indices, DEFAULT_TRIANGLE_INDICES);
     const normals = normalizeNumberArray(properties.normals, []);
@@ -65,7 +65,7 @@ function BufferGeometryComponentView({ properties, enabled, children }: Componen
     const hasUvs = uvs.length >= 2 && uvs.length % 2 === 0;
     const groups = isGeometryGroupArray(properties.groups) ? properties.groups : [];
 
-    return <MeshNode properties={properties} enabled={enabled}>
+    return <MeshNode properties={properties}>
         <bufferGeometry onUpdate={(geometry) => {
             geometry.clearGroups();
             groups.forEach(group => {

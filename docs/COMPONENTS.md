@@ -150,7 +150,10 @@ and [GameEvents](../src/runtime/scene/GameEvents.ts) for synchronous notificatio
 `useGameEvent(name, handler)` keeps its subscription while the event name is
 unchanged and calls the latest committed handler.
 The optional [Crashcat adapter](../src/plugins/crashcat/CrashcatRuntime.tsx)
-steps its own physics world from R3F frames.
+steps its own physics world from R3F frames. Dynamic props publish their final pose
+when they settle and resume on wake or contact. For a scripted teleport that keeps
+a body asleep, call `api.invalidateBodyPose(body)` after the Crashcat transform
+setter with `wake=false`. Ordinary wake-on-move setters and editor edits work automatically.
 
 ## Control model animation
 

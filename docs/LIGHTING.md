@@ -91,15 +91,22 @@ disc visibility, cloud coverage and cloud density. Pair it with `DirectionalLigh
 for direct lighting and shadows.
 `RenderSettings` on the scene root supplies optional tone mapping, exposure,
 output color space and shadow overrides in Edit and Play. Unspecified fields keep
-the renderer defaults; removing an override restores the previous value.
+the renderer defaults for those fields. Removing an override restores the previous value.
+On a continuously rendered canvas, `RenderSettings.fpsCap` defaults to 60. Set a
+positive frame rate to override it, or pass `fpsCap: undefined` in JavaScript
+(`"fpsCap": null` in saved JSON) to run at the host's frame rate. XR sessions
+follow headset timing.
 
 A separate root `PostProcessing` component enables ambient occlusion, bloom and sun shafts.
 Edit mode skips this pipeline. Press Play to preview the authored effects as they appear in the viewer.
 Scene captures follow the active mode.
 
-`ClusteredLighting` on the scene root opts into Three's clustered-lighting addon
-for scenes with many point and spot lights. Its schema exposes light capacity
-and cluster sizes.
+The core scene runtime enables clustered lighting whenever the host uses
+Three’s default lighting system. Streaming ordinary unshadowed point and spot
+lights updates GPU light data without rebuilding shaders for visible meshes.
+Shadow casters, projected lights and lights with custom color nodes still use
+Three’s per-light shader path. Add `ClusteredLighting` to tune capacity and
+cluster sizes. Removing the override restores the runtime default or the host’s custom lighting system.
 
 These settings are part of the scene document, so a viewer and editor can use
 the same authored appearance. For mesh batch cells and static-prefab residency, see [ChunkSettings](PREFABS.md#automatically-stream-static-scenery).

@@ -40,6 +40,8 @@ type ComponentPropertyDefault<T> = T | ((properties: Record<string, any>) => T);
 export type ComponentPropertySchema = Record<string, unknown>;
 
 type ComponentPropertyEditor = {
+    /** Preserve an explicit unset through JSON while allowing a different omitted default. */
+    undefinedAsNull?: boolean;
     /** Agent-facing semantics, units, asset paths, etc. */
     description?: string;
     /** Optional nested/positional JSON Schema; evaluated against resolved properties. */
@@ -166,7 +168,8 @@ export function resolveComponentProperties<P extends object>(
 	properties: P,
 ): P {
 	// Undefined is an unset field, including patches made before JSON serialization.
-	const authored = Object.fromEntries(Object.entries(properties).filter(([, value]) => value !== undefined));
+	const authored = Object.fromEntries(Object.entries(properties).flatMap(([key, value]) => value !== undefined ? [[key, value]]
+        : component?.properties[key as keyof P]?.undefinedAsNull ? [[key, null]] : []));
 	return { ...getComponentDefaultProperties(component, authored), ...authored } as P;
 }
 

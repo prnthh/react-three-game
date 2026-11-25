@@ -42,7 +42,15 @@ test('spatial batches split distant peers, retain oversized bounds and migrate m
     meshes[0].scale.x=80;
     function Source({mesh}){useMeshInstanceRegistration(mesh.uuid,useRef(mesh),true);return h('primitive',{object:mesh});}
     let commits=0;
-    let store;await act(async()=>{store=root.render(h(Profiler,{id:'batches',onRender:()=>commits++},h(ChunkSettingsContext.Provider,{value:{batchCellSize:10}},h(MeshInstanceProvider,null,...meshes.map(mesh=>h(Source,{key:mesh.uuid,mesh}))))));});
+    const show = sources => h(Profiler, { id: 'batches', onRender: () => commits++ },
+        h(ChunkSettingsContext.Provider, { value: { batchCellSize: 10 } },
+            h(MeshInstanceProvider, null, sources.map(mesh => h(Source, { key: mesh.uuid, mesh })))));
+    let store;
+    await act(async () => { store = root.render(show([])); });
+    await act(async () => store.getState().advance(0, false));
+    assert.equal(store.getState().internal.subscribers.length, 0, 'empty registry sleeps after initial reconciliation');
+    await act(async () => root.render(show(meshes)));
+    assert.equal(store.getState().internal.subscribers.length, 1, 'new registrations wake the registry');
     t.after(async()=>{await act(async()=>root.unmount());geometry.dispose();material.dispose();});
     const batches=()=>{const result=[];store.getState().scene.traverse(o=>{if(o.isInstancedMesh) result.push(o);});return result;};
     assert.equal(batches().length,0,'mounting registers sources; a rendering frame builds batches');
@@ -103,6 +111,28 @@ test('imperative batches retain GPU identity, edit picking, and ownership across
     assert.ok(meshes.every(mesh=>mesh.layers.mask===1));
     assert.equal(sourceDisposals,0,'batch disposal must not free shared geometry or materials');
     disconnect(); await Promise.resolve(); geometry.dispose(); material.dispose();
+});
+
+test('static rebatching refreshes bounds when a retained GPU slot becomes active again', async t => {
+    const { MeshInstanceRegistry } = await import('../../src/runtime/rendering/MeshInstanceRuntime.ts');
+    const geometry = new BoxGeometry(), material = new MeshBasicMaterial(), root = new Group();
+    geometry.userData.prefabGeometrySignature = 'static';
+    const registry = new MeshInstanceRegistry(true, null), disconnect = registry.connect(root);
+    t.after(() => { disconnect(); geometry.dispose(); material.dispose(); });
+    const sources = [1, 2, 3, 100].map(x => {
+        const mesh = new Mesh(geometry, material);
+        mesh.position.x = x;
+        return { id: mesh.uuid, mesh };
+    });
+    const remove = sources.map(source => registry.register(source));
+    registry.update();
+    const batch = root.children[0], point = sources[3].mesh.position;
+    assert.ok(batch.boundingSphere.containsPoint(point));
+    remove[3](); registry.update();
+    assert.equal(batch.boundingSphere.containsPoint(point), false);
+    registry.register(sources[3]); registry.update();
+    assert.equal(root.children[0], batch);
+    assert.ok(batch.boundingSphere.containsPoint(point));
 });
 
 test('instance material variants are released when the provider disconnects', async () => {

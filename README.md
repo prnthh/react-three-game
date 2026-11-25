@@ -190,9 +190,9 @@ Ship the JSON, its referenced assets, and custom component code with your app.
 
 `PrefabInstance` loads URL prefabs while the scene runs. Author `ChunkSettings`
 on the scene root and mark scenery placements `static` to prepare nearby cells
-gradually and hide/unmount distant cells. Repeated placements share source
-assets and the partition plan. See [distance streaming](docs/PREFABS.md#automatically-stream-static-scenery)
-for distances, mount limits, and lifecycle details.
+first and cull spatial branches per render pass. Repeated placements share source
+assets and the partition plan. See [spatial culling](docs/PREFABS.md#automatically-stream-static-scenery)
+for cell sizing, mount limits, and lifecycle details.
 
 ## Tools and examples
 

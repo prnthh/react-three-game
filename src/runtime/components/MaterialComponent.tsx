@@ -8,6 +8,7 @@ import {
 } from 'three';
 import { MeshBasicNodeMaterial, MeshPhysicalNodeMaterial, MeshStandardNodeMaterial, SpriteNodeMaterial, type Node } from 'three/webgpu';
 import { Fn, materialReference, normalMap as sampleNormal, parallaxDirection, texture as sampleTexture, uv, vec2, vec4 } from 'three/tsl';
+import { materialTextureDependencies } from '../../core/dependencies.js';
 import type { Component, ComponentViewProps } from '../../core/ComponentRegistry.js';
 import { compactPrefabMaterial, getMaterialDefinition, resolveMaterialProperties } from '../../core/prefab.js';
 import type { MaterialComponentProperties, PrefabMaterial, PrefabMaterialType } from '../../core/types.js';
@@ -265,8 +266,7 @@ const MaterialComponent = {
     description: 'Define a shared material with a name and settings, or reference a loaded scene material using only its name. Unresolved references remain invisible.',
     slot: 'material', exclusive: 'material',
     View: MaterialComponentView,
-    dependencies: properties => [properties.texture, properties.normalMapTexture]
-        .filter((path): path is string => !!path).map(path => ({ kind: 'texture' as const, path })),
+    dependencies: materialTextureDependencies,
     properties: {
         attach: { description: "R3F material attachment; normally leave as \"material\".", type: 'string', default: 'material' },
         name: { type: 'string', default: '', description: 'Scene-wide material name. With settings, defines this material; alone, references a definition on any loaded node.' },

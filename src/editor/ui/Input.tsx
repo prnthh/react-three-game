@@ -847,7 +847,7 @@ export function UnsettableField<Value>({ allowUnset = false, label, value, initi
     children: React.ReactNode;
 }) {
     if (!allowUnset) return children;
-    if (value === undefined) return <FieldRow label={label}>
+    if (value == null) return <FieldRow label={label}>
         <span style={{ color: colors.textMuted, fontSize: 11 }}>Unset</span>
         <button type="button" style={base.btn} aria-label={`Set ${label.toLowerCase()}`}
             onClick={() => onChange(initialValue)}>Set</button>
@@ -855,7 +855,7 @@ export function UnsettableField<Value>({ allowUnset = false, label, value, initi
     return <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <div style={{ flex: 1, minWidth: 0 }}>{children}</div>
         <button type="button" style={{ ...base.btn, padding: '2px 5px' }}
-            aria-label={`Unset ${label.toLowerCase()}`} title="Unset this field to inherit its default"
+            aria-label={`Unset ${label.toLowerCase()}`} title="Unset this field"
             onClick={() => onChange(undefined)}>↺</button>
     </div>;
 }

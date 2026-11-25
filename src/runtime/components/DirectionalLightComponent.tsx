@@ -1,40 +1,32 @@
 import { Group, Vector3 } from 'three';
-import { useFrame } from '@react-three/fiber';
+import { useStore } from '@react-three/fiber';
 import { CascadedDirectionalLight } from '../lighting/CascadedDirectionalLight.js';
 import type { Component, ComponentViewProps } from "../../core/ComponentRegistry.js";
 
-import { useHelper } from "@react-three/drei";
+import { subscribeFrame } from '../scene/frame.js';
 
 import { useLayoutEffect, useMemo, useRef, type RefObject } from "react";
 
-import { CameraHelper, Object3D } from "three";
+import { Object3D } from "three";
 
 import type { DirectionalLight } from "three";
 
 import { createNodeComponentType, useNode, useRegisterNodeComponent } from "../scene/SceneContext.js";
 
-import { createFollowState, stepCameraFollow, EditorLightGizmo, normalizeShadowMapSize, useShadowMapResolution } from "./lightUtils.js";
+import { createFollowState, stepCameraFollow, EditorLightGizmo, ShadowCameraHelper, shadowDefaults, shadowProps, useShadowMapResolution } from "./lightUtils.js";
 
 export const DIRECTIONAL_LIGHT_COMPONENT = createNodeComponentType<RefObject<DirectionalLight | null>>('DirectionalLight');
 
 export const directionalLightDefaults = {
     color: '#ffffff',
     intensity: 1,
+    ...shadowDefaults,
     followCamera: false,
     followCameraStep: 8,
     followCameraInterval: 0.25,
-    castShadow: false,
-    shadowMapSize: 512,
-    shadowBias: 0,
-    shadowNormalBias: 0,
-    shadowIntensity: 1,
-    shadowRadius: 1,
-    shadowAutoUpdate: true,
     shadowCascades: 1,
     shadowDistance: 100,
     shadowCameraLayers: 1,
-    shadowCameraNear: 0.5,
-    shadowCameraFar: 500,
     shadowCameraTop: 5,
     shadowCameraBottom: -5,
     shadowCameraLeft: -5,
@@ -49,19 +41,11 @@ export type DirectionalLightProperties = Partial<DirectionalLightValues>;
 function DirectionalLightView({ properties, children }: ComponentViewProps<DirectionalLightProperties>) {
     const editMode = useNode(node => node.editMode);
     const isSelected = useNode(node => node.isSelected);
-    const shadowMapSize = normalizeShadowMapSize(properties.shadowMapSize);
     const lightProps = {
         color: properties.color,
         intensity: properties.intensity,
-        castShadow: properties.castShadow,
-        "shadow-bias": properties.shadowBias,
-        "shadow-normalBias": properties.shadowNormalBias,
-        "shadow-intensity": properties.shadowIntensity,
-        "shadow-radius": properties.shadowRadius,
-        "shadow-autoUpdate": properties.shadowAutoUpdate,
+        ...shadowProps(properties),
         "shadow-camera-layers-mask": properties.shadowCameraLayers,
-        "shadow-camera-near": properties.shadowCameraNear,
-        "shadow-camera-far": properties.shadowCameraFar,
         "shadow-camera-top": properties.shadowCameraTop,
         "shadow-camera-bottom": properties.shadowCameraBottom,
         "shadow-camera-left": properties.shadowCameraLeft,
@@ -69,39 +53,32 @@ function DirectionalLightView({ properties, children }: ComponentViewProps<Direc
     };
     const directionalLightRef = useRef<DirectionalLight>(null);
     useRegisterNodeComponent(DIRECTIONAL_LIGHT_COMPONENT, directionalLightRef);
-    const helperTargetRef = useRef<Object3D>(null!);
     const target = useMemo(() => new Object3D(), []);
-    useShadowMapResolution(directionalLightRef, shadowMapSize);
+    useShadowMapResolution(directionalLightRef, properties.shadowMapSize);
     const rig = useRef<Group>(null);
-    const follow = useMemo(createFollowState, [properties.followCamera, properties.followCameraStep, properties.followCameraInterval]);
-    const cameraPosition = useMemo(() => new Vector3(), []);
-    const offset = useMemo(() => new Vector3(), []);
+    const store = useStore();
+    const { followCamera, followCameraInterval, followCameraStep } = properties;
     useLayoutEffect(() => {
         rig.current?.position.set(0, 0, 0);
         if (directionalLightRef.current) directionalLightRef.current.shadow.needsUpdate = true;
-    }, [follow]);
-    useFrame(({ camera }, delta) => {
-        const root = rig.current;
-        if (!properties.followCamera || !root) return;
-        camera.getWorldPosition(cameraPosition);
-        if (!stepCameraFollow(follow, delta, cameraPosition.x, cameraPosition.z,
-            Math.max(0.01, properties.followCameraInterval), Math.max(0.01, properties.followCameraStep))) return;
-        // Move light and target together in world X/Z; keep authored height and direction.
-        if (root.parent) {
-            root.parent.getWorldPosition(offset);
-            offset.x += follow.x;
-            offset.z += follow.z;
-            root.parent.worldToLocal(offset);
-        } else offset.set(follow.x, 0, follow.z);
-        root.position.copy(offset);
-        if (directionalLightRef.current) directionalLightRef.current.shadow.needsUpdate = true;
-    });
-
-    // Show CameraHelper only in edit mode, selected, and castShadow
-    const showHelper = editMode && isSelected && properties.castShadow;
-    const shadowCamera = directionalLightRef.current?.shadow.camera ?? null;
-    if (shadowCamera) helperTargetRef.current = shadowCamera;
-    useHelper(showHelper && shadowCamera ? helperTargetRef : null, CameraHelper);
+        if (!followCamera) return;
+        const follow = createFollowState(), cameraPosition = new Vector3(), offset = new Vector3();
+        return subscribeFrame(store, ({ camera }, delta) => {
+            const root = rig.current;
+            if (!root) return;
+            camera.getWorldPosition(cameraPosition);
+            if (!stepCameraFollow(follow, delta, cameraPosition.x, cameraPosition.z,
+                Math.max(0.01, followCameraInterval), Math.max(0.01, followCameraStep))) return;
+            if (root.parent) {
+                root.parent.getWorldPosition(offset);
+                offset.x += follow.x;
+                offset.z += follow.z;
+                root.parent.worldToLocal(offset);
+            } else offset.set(follow.x, 0, follow.z);
+            root.position.copy(offset);
+            if (directionalLightRef.current) directionalLightRef.current.shadow.needsUpdate = true;
+        });
+    }, [store, followCamera, followCameraInterval, followCameraStep]);
 
     const Light = properties.castShadow && properties.shadowCascades > 1 ? CascadedDirectionalLight : 'directionalLight';
     const cascadeProps = Light === CascadedDirectionalLight
@@ -143,6 +120,8 @@ function DirectionalLightView({ properties, children }: ComponentViewProps<Direc
                 )}
             </Light>
 
+            {editMode && isSelected && properties.castShadow && <ShadowCameraHelper
+                key={`${properties.shadowCascades}/${properties.shadowDistance}`} light={directionalLightRef} />}
             <primitive object={target} position={properties.targetOffset} />
 
         </group>

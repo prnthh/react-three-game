@@ -1,15 +1,13 @@
 import type { MeshProperties } from "./meshProperties.js";
-import { useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useRef, type PropsWithChildren } from 'react';
 
 import type { Mesh } from 'three';
-
-import type { ComponentViewProps } from '../../core/ComponentRegistry.js';
 
 import { useGameObject, useNode } from '../scene/SceneContext.js';
 
 import { useMeshInstanceRegistration, useInvalidateMeshInstances } from '../rendering/MeshInstanceProvider.js';
 
-export function MeshNode({ properties, children }: ComponentViewProps<MeshProperties>) {
+export function MeshNode({ properties, children }: PropsWithChildren<{ properties: MeshProperties }>) {
     const isSelected = useNode(node => node.isSelected);
     const { id: runtimeNodeId } = useGameObject();
     const mesh = useRef<Mesh>(null);

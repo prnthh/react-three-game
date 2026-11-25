@@ -57,11 +57,8 @@ test('home document carries reusable definitions and executable script source wi
       assert.ok(readFileSync(new URL(`../public${texture}`, import.meta.url)).length > 0);
     }
   }
-  for (const side of ['east', 'west']) {
-    const kit = `street-luminaire-${side}-kit`;
-    assert.equal(restored.prefabs[kit].root.children.length, 4);
-    assert.equal(Object.values(prototype.nodesById).filter(node => node.components?.prefab?.properties.prefabId === kit).length, 7);
-  }
+  assert.ok(restored.prefabs['street-lamp']);
+  assert.equal(Object.values(prototype.nodesById).filter(node => node.components?.prefab?.properties.prefabId === 'street-lamp').length, 15);
   const plan = await createSpatialPrefabPlan(prototype, runtime, { cellSize: 64, maxNodesPerChunk: 96 });
   assert.ok(plan.chunks.length > 0);
   assert.deepEqual(Object.fromEntries(plan.materials), prototype.materials);
@@ -105,4 +102,24 @@ test('editor playback keeps the authored origin and resident neighbors across mo
     assert.equal(street(), original);
     assert.equal(findNeighbor(), streamed);
   }
+  // A turn and then a reversal inside the same cell must change streaming demand.
+  const camera = state.getState().camera;
+  camera.rotation.y = Math.PI;
+  await act(async () => state.getState().advance(2, false));
+  const hasTile = z => state.getState().scene.getObjectsByProperty('type', 'Group').some(o => o.position.z === z);
+  assert.ok(hasTile(320), 'turning in place requests the tile in view');
+  assert.equal(findNeighbor(), streamed, 'a spare slot keeps the existing neighbor mounted');
+  camera.position.z -= 2;
+  await act(async () => state.getState().advance(3, false));
+  assert.ok(hasTile(-320) && hasTile(320), 'backward travel and forward view both fit within three tiles');
+  camera.position.z = -3200;
+  await act(async () => state.getState().advance(4, false));
+  assert.equal(hasTile(320), false);
+  assert.equal(findNeighbor(), undefined, 'a teleport releases the old neighborhood');
+  assert.ok(hasTile(-3200));
+  await show(undefined); // Standalone viewer, without the editor's authored origin.
+  assert.equal(street(), undefined);
+  assert.equal(hasTile(-3200), false);
+  await act(async () => state.getState().advance(5, false));
+  assert.ok(hasTile(-3200), 'the first viewer frame places the tile at the remote spawn');
 });

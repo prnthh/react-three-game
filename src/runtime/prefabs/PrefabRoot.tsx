@@ -77,8 +77,8 @@ const PrefabRootBody = memo(forwardRef<Scene, Omit<PrefabRootProps, 'data' | 'st
         <PrefabNode key={rootId} nodeId={rootId} onPointerEvent={handlePointerEvent} isEnabled={enabled} />
         {children}
     </MeshInstanceProvider>;
-    if (!parentScene && !rootNode.disabled && !rootNode.hidden) {
-        const components = analyzeNodeComponents(rootNode, lookup, 'scene').composition;
+    if (!parentScene) {
+        const components = rootNode.disabled || rootNode.hidden ? [] : analyzeNodeComponents(rootNode, lookup, 'scene').composition;
         content = renderNodeContent(components, content, enabled);
     }
     return <SceneContext.Provider value={scene}>

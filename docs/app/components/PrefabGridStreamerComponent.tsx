@@ -1,9 +1,9 @@
-import { useFrame, useThree } from '@react-three/fiber';
-import { useContext, useLayoutEffect, useMemo, useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
+import { useContext, useLayoutEffect, useMemo, useState } from 'react';
 import { CityProfiling, reportCityTiming } from './cityProfiling';
-import { Vector3 } from 'three';
+import { Matrix4, Vector3 } from 'three';
 import { createStore, useStore } from 'zustand';
-import { PrefabEditorMode, PrefabInstance, useGameObject, usePrefab, useScene, usePrefabStore, type Component, type ComponentViewProps } from 'react-three-game/viewer';
+import { framePriority, PrefabEditorMode, PrefabInstance, useGameObject, usePrefab, useScene, usePrefabStore, type Component, type ComponentViewProps } from 'react-three-game/viewer';
 import { findComponent, resolveInlinePrefab } from 'react-three-game/core';
 
 
@@ -12,20 +12,32 @@ type Tile = { key: string; coordinate: Coordinate };
 const tileKey = (coordinate: Coordinate) => coordinate.join(',');
 const tileAt = (coordinate: Coordinate): Tile => ({ key: tileKey(coordinate), coordinate });
 
-function gridCell(position: Coordinate, size: Coordinate, center: Coordinate): Coordinate {
-    return size.map((length, axis) => length > 0
-        ? Math.floor((position[axis] - center[axis] + length / 2) / length) : 0) as Coordinate;
+// Signed axis of the first tile face intersected by the ray, or zero for no exit.
+function nextFace(position: Vector3, ray: Vector3, cell: Coordinate, size: Coordinate, center: Coordinate) {
+    let nearest = Infinity, face = 0;
+    for (let axis = 0; axis < 3; axis++) {
+        const speed = ray.getComponent(axis);
+        if (!speed || size[axis] <= 0) continue;
+        const sign = Math.sign(speed);
+        const boundary = center[axis] + (cell[axis] + sign * 0.5) * size[axis];
+        const time = (boundary - position.getComponent(axis)) / speed;
+        if (time < nearest) { nearest = time; face = sign * (axis + 1); }
+    }
+    return face;
 }
 
 /** Placement policy only; PrefabInstance owns resource loading and activation. */
-function createPrefabGrid() {
+function createPrefabGrid(editor = false) {
     let limit = 0;
     let current = tileAt([0, 0, 0]);
-    let previous: Tile | undefined;
-    let direction: Coordinate | undefined;
-    const placements = createStore<Tile[]>(() => [current]);
+    const lastPosition = new Vector3(), motion = new Vector3();
+    let sampled = false, travelFace = 0, viewFace = 0;
+    const placements = createStore<Tile[]>(() => editor ? [current] : []);
     const active = new Set<string>();
     let dirty = true;
+    const sample: Coordinate = [0, 0, 0];
+
+    const adjacent = (tile: Tile) => sample.every((value, axis) => Math.abs(value - tile.coordinate[axis]) <= 1);
 
     return {
         placements,
@@ -35,19 +47,28 @@ function createPrefabGrid() {
             active.add(key);
             dirty = true;
         },
-        update(coordinate: Coordinate, size: Coordinate, maxTiles: number) {
+        update(position: Vector3, forward: Vector3, size: Coordinate, center: Coordinate, maxTiles: number) {
             const capacity = Number.isFinite(maxTiles) ? Math.max(2, Math.min(3, Math.floor(maxTiles))) : 3;
             if (limit !== capacity) { limit = capacity; dirty = true; }
 
-            const key = tileKey(coordinate);
-            if (key !== current.key) {
-                direction = coordinate.map((value, axis) => size[axis] > 0
-                    ? Math.sign(value - current.coordinate[axis]) : 0) as Coordinate;
-                previous = current;
-                current = tileAt(coordinate);
+            for (let axis = 0; axis < 3; axis++) {
+                sample[axis] = size[axis] > 0 ? Math.floor((position.getComponent(axis) - center[axis]) / size[axis] + 0.5) : 0;
+            }
+            if (sampled) motion.subVectors(position, lastPosition);
+            lastPosition.copy(position);
+            const coordinate = current.coordinate;
+            if (sample[0] !== coordinate[0] || sample[1] !== coordinate[1] || sample[2] !== coordinate[2]) {
+                if (!adjacent(current)) motion.set(0, 0, 0);
+                for (const tile of placements.getState()) if (!adjacent(tile)) active.delete(tile.key);
+                current = tileAt([...sample]);
                 dirty = true;
             }
-            if (!dirty) return;
+            sampled = true;
+            const view = nextFace(position, forward, sample, size, center);
+            const travel = nextFace(position, motion, sample, size, center);
+            if (!dirty && view === viewFace && travel === travelFace) return;
+            viewFace = view;
+            travelFace = travel;
             dirty = false;
             const tiles = placements.getState();
             const next = new Map<string, Tile>([[current.key, current]]);
@@ -59,9 +80,14 @@ function createPrefabGrid() {
                 add(tiles.find(tile => active.has(tile.key)));
             }
             if (active.size) {
-                const ahead = direction ?? [0, 0, size[2] > 0 ? -1 : 0];
-                add(tileAt(coordinate.map((value, axis) => value + ahead[axis]) as Coordinate));
-                add(previous);
+                for (const face of [travelFace, viewFace]) {
+                    if (!face || next.size >= limit) continue;
+                    const neighbor: Coordinate = [...current.coordinate];
+                    neighbor[Math.abs(face) - 1] += Math.sign(face);
+                    add(tileAt(neighbor));
+                }
+                // Keep already mounted neighbors when demand leaves a spare slot.
+                for (const tile of tiles) if (adjacent(tile)) add(tile);
             }
             const values = [...next.values()];
             if (values.length === tiles.length && values.every((tile, index) => tile.key === tiles[index].key)) return;
@@ -79,8 +105,7 @@ function PrefabGridStreamerView({ properties, children }: ComponentViewProps<Pro
     const host = useGameObject();
     const { nodeId } = host;
     const { basePath } = usePrefab();
-    const camera = useThree(state => state.camera);
-    const position = useRef(new Vector3());
+    const [sample] = useState(() => ({ position: new Vector3(), forward: new Vector3(), inverse: new Matrix4() }));
     const { url, tileSize, tileCenter } = properties;
     const document = usePrefabStore(state => properties.prefabId && Object.hasOwn(state.prefabs ?? {}, properties.prefabId)
         ? resolveInlinePrefab(state, properties.prefabId) : undefined);
@@ -100,18 +125,20 @@ function PrefabGridStreamerView({ properties, children }: ComponentViewProps<Pro
     const reuseOrigin = !!document && ownsOrigin;
     // Only source or placement changes replace prepared tiles.
     const placementKey = JSON.stringify([basePath, properties.prefabId || url, tileSize, properties.static]);
-    const grid = useMemo(createPrefabGrid, [placementKey]);
+    const grid = useMemo(() => createPrefabGrid(editable), [placementKey, editable]);
     const tiles = useStore(grid.placements);
     const residentOrigin = reuseOrigin && tiles.some(tile => tile.key === '0,0,0');
     useLayoutEffect(() => {
         if (residentOrigin) grid.activate('0,0,0');
     }, [grid, residentOrigin]);
-    useFrame(() => {
+    useFrame(({ camera }) => {
         if (editing || !host.transform || (!document && !url)) return;
-        camera.getWorldPosition(position.current);
-        host.transform.worldToLocal(position.current);
-        grid.update(gridCell(position.current.toArray(), tileSize, tileCenter), tileSize, properties.maxTiles);
-    });
+        host.transform.updateWorldMatrix(true, false);
+        sample.inverse.copy(host.transform.matrixWorld).invert();
+        camera.getWorldDirection(sample.forward).transformDirection(sample.inverse);
+        sample.position.setFromMatrixPosition(camera.matrixWorld).applyMatrix4(sample.inverse);
+        grid.update(sample.position, sample.forward, tileSize, tileCenter, properties.maxTiles);
+    }, framePriority.streamingPlacements);
 
     return <>
         {(!document || editing || residentOrigin) && children}
@@ -130,7 +157,7 @@ const PrefabGridStreamerComponent: Component<Properties> = {
     name: 'PrefabGridStreamer',
     View: PrefabGridStreamerView,
     category: 'misc',
-    description: 'Repeat a prefab around the active camera in Play. Uses a packed child definition or URL; ChunkSettings on the scene root controls distance streaming. Packed prototypes remain editable in Edit.',
+    description: 'Repeat a prefab around the active camera in Play. Uses a packed child definition or URL; ChunkSettings on the scene root controls spatial partitioning. Packed prototypes remain editable in Edit.',
     dependencies: properties => !properties.prefabId && properties.url ? [{ kind: 'prefab', path: properties.url }] : [],
     properties: {
         url: { type: 'string', default: '' },

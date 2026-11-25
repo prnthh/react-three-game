@@ -55,6 +55,7 @@ function component(value: unknown) {
     for (const [key, value] of Object.entries(props)) {
         const schema = definition.properties[key];
         if (!schema) throw new Error(`Unknown ${data.type} property "${key}".`);
+        if (schema.undefinedAsNull && value == null) continue;
         const type = schema.type ?? 'number';
         if (type === 'vector2' || type === 'vector3') vector(value, key, type === 'vector2' ? 2 : 3);
         else if (type === 'select') {

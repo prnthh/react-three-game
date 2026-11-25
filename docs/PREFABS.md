@@ -89,8 +89,10 @@ export function StreamedBlock() {
 
 Loading prepares assets and pipelines before activation. The host mounts the
 instances it needs and unmounts them to release their objects; URL assets stay in
-the shared cache. `static` freezes placement and content for immutable chunks;
-remount to change either.
+the shared cache. Mark an immutable scenery prefab with `static` to skip its entire
+subtree during ordinary Play-mode matrix updates. Moving the placement updates
+its descendants on the next pass. Edit mode uses normal traversal. Keep independently
+moving items such as physics props outside the static subtree.
 
 Prefab nodes mount through React reconciliation. Disabled Views unmount by
 default. `renderWhenDisabled` opts into keeping a View mounted for preparation or a persistent scene graph; those Views
@@ -113,7 +115,7 @@ or a Promise rejection handler.
 ### Automatically stream static scenery
 
 A `ChunkSettings` component on the scene root configures spatial mesh batching
-and distance streaming for `static` prefab placements. Placements prepare their
+and per-pass frustum culling for `static` prefab placements. Placements prepare their
 complete document by default. The host can continue mounting copies of the same URL as the
 camera travels; source documents, assets and partition plans are shared within
 the runtime. A camera can travel in either direction.
@@ -128,52 +130,53 @@ the runtime. A camera can travel in either direction.
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `cellSize` | 64 | Partition width in prefab-local units. |
-| `visibleDistance` | 160 | Show prepared cells within this world-space distance of their bounds. |
-| `preloadDistance` | 220 | Start preparation ahead of the visible range. Clamped to at least `visibleDistance`. |
-| `unloadDistance` | 280 | Release cell objects outside this range. Clamped to at least `preloadDistance`. |
 | `maxNodesPerChunk` | 96 | Split busy cells into small mount units, counting transform ancestors. Minimum 8. |
 
-One canvas-wide queue selects the nearest cold cell across all placements. Only
-one cell prepares at a time, and at most one mount or unmount is admitted in a
-frame. Preparation yields between batches to spread work across frames. Cold
-cells have no React or Three subtrees. Prepared cells outside the visible band are hidden;
-they stay warm until the wider unload boundary prevents boundary thrashing.
-Selection uses transformed bounding boxes, so a large floor or tower remains
-eligible when its center is far away but its geometry is close to the camera.
+The built-in frame order is gameplay scripts → camera follow → tile selection → cell admission.
+Custom camera controllers and placement hosts can use the corresponding `framePriority`
+from `react-three-game/viewer` with R3F's `useFrame`. Newly selected placements
+enter the queue when React commits their prepared plans.
 
-`onChunkStatus` reports `preparing`, `ready`, `unloaded`, and `error` with a cell ID
-local to the placement. `onActivate` and the placement's `active` status fire once
-its first prepared cell enters the visible band (or its resident document is
-ready when there are no streamable cells). Unmounting cancels preparation. Cells prepare independently and report
-their own failures. An errored cell is retried after leaving its unload
-range and returning, or after remounting the placement.
+The tile host owns residency. Placements sharing an R3F root store share one
+admission queue, including placements under sibling prefab roots. The queue admits at most one cell per frame. It first prunes octree branches using their combined
+bounds. For each remaining mesh or model, it measures the distance from the
+camera to the nearest point on its bounding box and doubles that distance for
+offscreen boxes. The cell with the lowest individual score prepares next. Geometry intersecting the camera therefore takes
+priority even when its pivot is far away. Two cells can prepare concurrently, so one stalled texture request leaves room for nearby geometry. Shader compilation remains serialized per renderer. Once prepared, a cell stays mounted until its tile leaves.
 
-Visible-range work takes priority over warming cells. If the camera moves
-while a cell outside the visible range is preparing, the scheduler can release
-that cell to make room for visible work. The placement prepares prefab documents
-and model bounds before scheduling. Each admitted cell requests its material
-textures and compiles before it becomes visible.
+Each render pass tests the placement bounds and then its visible draw cells against its own frustum. The main
+camera, shadows and reflections can select different cells in the same frame.
+Existing scenes may contain `visibleDistance`, `preloadDistance` or
+`unloadDistance`. The runtime ignores these legacy cell radii.
+
+`onChunkStatus` reports preparation, readiness and failures. The placement
+activates once its first cell is ready, or when its resident document is ready
+if there are no cells. Unmounting a tile cancels its pending work.
 
 Streaming is inherited from the outer scene root and requires `static={true}`. Primitive geometry and ordinary static model
 placements are partitioned; external and packed prefab references are expanded
 while retaining their transform chains. The graph walk registers named material
 definitions for the lifetime of the streamed placement. Cells keep their name
 references and share the scene's material pool, so nearby surfaces retain their
-materials as distant cells unload. A reference stays invisible until its
+materials across cells. A reference stays invisible until its
 definition is available. The first encountered definition owns a name until it unloads. Editing that definition updates its references.
 In static cells, compatible opaque built-in primitive meshes from different
 prefab placements can mount directly as one instanced mesh. The authored tree
 stays editable. Use `Geometry.instanced: false` when a primitive needs its own
 mounted object.
-Lights, cameras, fog and environments remain resident. A prefab containing custom
+Lights, cameras, fog and environments remain resident for the lifetime of their placement.
+A resident branch containing only fixed lights and scenery can sleep. Camera rigs, scripts
+and caller-supplied children keep their resident branch live.
+Clustered lighting assigns eligible resident lights to view-space clusters during rendering.
+Only the tile host and cell admission queue control prefab residency and mounting. A prefab containing custom
 behavior, colliders, geometry modifiers, animated/skinned models, model repeat
 arrays, or unsupported render compositions keeps its complete document resident
 to preserve object references and gameplay lifecycles. Streamed visual node IDs
 are cell-scoped and their mounted objects are transient; keep gameplay in a
 separate prefab when using spatial scenery streaming.
 
-The source JSON and referenced assets are fetched before partitioning. Spatial
-unloading releases cell objects and instance batches, while shared source assets,
+The source JSON and referenced assets are fetched before partitioning. Unmounting a placement
+releases its cell objects and instance batches, while shared source assets,
 geometry pools and the plan remain cached. Mount units are bounded by node count.
 Individual model mounts, deep transform chains, texture uploads, and driver shader
 compilation can take longer than a frame. Keep such assets reasonably sized and measure

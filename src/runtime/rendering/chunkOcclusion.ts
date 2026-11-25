@@ -1,18 +1,17 @@
 import { Box3, Matrix4, Vector4, type Camera, type Group, type InstancedMesh, type Mesh, type Object3D, type Scene } from 'three';
 import { MeshPhysicalNodeMaterial, type WebGPURenderer } from 'three/webgpu';
 
+import { getSceneDrawCells, retainChunkProjection } from './chunkFrustum.js';
+
 const WIDTH = 32, HEIGHT = 20;
-const cells = new WeakMap<Scene, Map<Group, Box3>>();
 const stats = new WeakMap<WebGPURenderer, { tested: number; culled: number; cpuMs: number }>();
 
-export const getChunkOcclusionStats = (renderer: WebGPURenderer) => stats.get(renderer);
-
-export function registerOcclusionCell(scene: Scene, group: Group, bounds: Box3) {
-    let entries = cells.get(scene);
-    if (!entries) cells.set(scene, entries = new Map());
-    entries.set(group, bounds);
-    return () => { entries.delete(group); };
+export function profileChunkOcclusion(renderer: WebGPURenderer) {
+    stats.set(renderer, { tested: 0, culled: 0, cpuMs: 0 });
+    return () => { stats.delete(renderer); };
 }
+
+export const getChunkOcclusionStats = (renderer: WebGPURenderer) => stats.get(renderer);
 
 type Point = { x: number; y: number };
 type Projection = { points: Point[]; left: number; right: number; bottom: number; top: number; near: number; far: number };
@@ -122,14 +121,10 @@ function getOccluders(group: Group) {
     return candidates;
 }
 
-type Project = (object: Object3D, camera: Camera, ...args: unknown[]) => void;
-
 // Installed only on the opt-in main scene render. Shadow/capture/compilation
 // cameras retain Three's normal projection and the streamer retains ownership.
 export function installChunkOcclusion(renderer: WebGPURenderer, scene: Scene, camera: Camera, target: unknown) {
-    const pipeline = (renderer as unknown as { drawingPipeline?: { project: Project } }).drawingPipeline;
-    if (!pipeline || renderer.reversedDepthBuffer) return () => {};
-    const original = pipeline.project;
+    if (renderer.reversedDepthBuffer || 'isArrayCamera' in camera) return () => {};
     const depth = new Float32Array(WIDTH * HEIGHT);
     const viewProjection = new Matrix4(), matrix = new Matrix4(), point = new Vector4();
     const candidates = new WeakMap<Group, Occluder[]>();
@@ -137,17 +132,14 @@ export function installChunkOcclusion(renderer: WebGPURenderer, scene: Scene, ca
     const boxOnScreen: Projection = { points: Array.from({ length: 8 }, () => ({ x: 0, y: 0 })),
         left: 0, right: 0, bottom: 0, top: 0, near: 0, far: 0 };
     const hull: Point[] = [];
-    const counts = { tested: 0, culled: 0, cpuMs: 0 };
-    stats.set(renderer, counts);
-    let projecting = false;
-    function prepass() {
-        counts.tested = 0;
-        const entries = cells.get(scene);
-        if (!entries?.size) return;
+    function prepass(counts: ReturnType<typeof getChunkOcclusionStats>) {
+        if (counts) counts.tested = 0;
+        const placements = getSceneDrawCells(scene);
+        if (!placements?.size) return;
         depth.fill(1);
         let hasDepth = false;
         viewProjection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
-        for (const [group] of entries) {
+        for (const query of placements) for (const { group } of query(camera)) {
             let parent: Object3D | null = group;
             while (parent?.visible && !('isClippingGroup' in parent) && parent !== scene) parent = parent.parent;
             if (parent !== scene) continue;
@@ -167,12 +159,12 @@ export function installChunkOcclusion(renderer: WebGPURenderer, scene: Scene, ca
             }
         }
         if (!hasDepth) return;
-        for (const [group, bounds] of entries) {
+        for (const query of placements) for (const { group, bounds } of query(camera)) {
             if (!group.visible || !group.parent) continue;
             matrix.multiplyMatrices(viewProjection, group.matrixWorld);
             const box = projectBounds(bounds, matrix, point, boxOnScreen);
             if (!box) continue;
-            counts.tested++;
+            if (counts) counts.tested++;
             const left = Math.max(0, Math.floor(box.left)), right = Math.min(WIDTH, Math.ceil(box.right));
             const bottom = Math.max(0, Math.floor(box.bottom)), top = Math.min(HEIGHT, Math.ceil(box.top));
             let occluded = true;
@@ -182,28 +174,16 @@ export function installChunkOcclusion(renderer: WebGPURenderer, scene: Scene, ca
             if (occluded) hidden.add(group);
         }
     }
-    const project: Project = function (object, view, ...args) {
-        if (view !== camera || renderer.getRenderTarget() !== target || scene.overrideMaterial) return original.call(pipeline, object, view, ...args);
-        if (projecting) {
-            if (!hidden.has(object)) original.call(pipeline, object, view, ...args);
-            return;
-        }
-        if (object !== scene) return original.call(pipeline, object, view, ...args);
-        projecting = true;
-        try {
-            const start = performance.now();
-            prepass();
+    return retainChunkProjection(renderer, (root, view) => {
+        if (root !== scene || view !== camera || renderer.getRenderTarget() !== target || scene.overrideMaterial) return;
+        const counts = stats.get(renderer);
+        const start = counts ? performance.now() : 0;
+        hidden.clear();
+        prepass(counts);
+        if (counts) {
             counts.cpuMs = performance.now() - start;
             counts.culled = hidden.size;
-            original.call(pipeline, object, view, ...args);
-        } finally {
-            hidden.clear();
-            projecting = false;
         }
-    };
-    pipeline.project = project;
-    return () => {
-        if (pipeline.project === project) pipeline.project = original;
-        if (stats.get(renderer) === counts) stats.delete(renderer);
-    };
+        return hidden;
+    });
 }

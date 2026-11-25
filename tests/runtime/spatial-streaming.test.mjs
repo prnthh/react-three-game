@@ -1,10 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Box3, Matrix4, Vector3 } from 'three';
+import { Box3, Matrix4, PerspectiveCamera, Vector3 } from 'three';
 import { registerBuiltInComponents } from '../../src/runtime/components/index.ts';
 registerBuiltInComponents();
 import { normalizePrefab } from '../../src/core/prefab.ts';
 import { createSpatialPrefabPlan } from '../../src/runtime/prefabs/spatialPrefabPlan.ts';
+import { looseOctreeKey } from '../../src/runtime/spatial/spatialCell.ts';
+import { buildChunkTree } from '../../src/runtime/spatial/chunkTree.ts';
+import { registerChunkDraws } from '../../src/runtime/rendering/chunkFrustum.ts';
 import { SpatialStreamScheduler } from '../../src/runtime/prefabs/SpatialStreamScheduler.ts';
 
 const component = (type, properties = {}) => ({ type, properties });
@@ -16,13 +19,27 @@ const state = children => normalizePrefab({ root: { id: 'world', children } });
 const runtime = { getPrefab: () => null };
 const components = document => Object.values(document.nodesById).flatMap(n => Object.values(n.components ?? {}));
 
+test('streamed bounds contain the rendered vertices for signed primitive radii', async () => {
+    const { CylinderGeometry, TorusGeometry } = await import('three');
+    for (const [type, args, Geometry] of [['cylinder', [-6, 2, 4], CylinderGeometry], ['torus', [4, -2], TorusGeometry]]) {
+        const node = box(type, [0, 0, 0]);
+        node.components.geometry.properties = { geometryType: type, args };
+        const plan = await createSpatialPrefabPlan(state([node]), runtime);
+        const geometry = new Geometry(...args);
+        geometry.computeBoundingBox();
+        assert.ok(plan.chunks[0].bounds.containsBox(geometry.boundingBox), type);
+        geometry.dispose();
+    }
+});
+
 test('spatial planning retains named references, preserves transforms and bounds oversized geometry', async () => {
     const floor = box('long-floor', [500, 0, 0]);
     floor.components.transform.properties.scale = [1200, 1, 10];
     const source = state([box('definition', [1000, 0, 0], { name: 'shared', color: '#abc123' }),
         { id: 'rotated', components: { transform: component('Transform', { position: [10, 0, 0], rotation: [0, 0, Math.PI / 2], scale: [2, 3, 1] }) }, children: [box('near', [2, 0, 0], { name: 'shared' })] }, floor, box('duplicate', [1100, 0, 0], { name: 'shared', color: '#ffffff' })]);
     const before = JSON.stringify(source);
-    const plan = await createSpatialPrefabPlan(source, runtime, { cellSize: 32, maxNodesPerChunk: 12 });
+    const plan = await createSpatialPrefabPlan(source, { ...runtime, batchPrimitives: false }, { cellSize: 32, maxNodesPerChunk: 12 });
+    assert.ok(plan.chunks.every(chunk => chunk.cullable), 'ordinary primitives can be culled with instancing disabled');
     assert.equal(JSON.stringify(source), before, 'planning cannot mutate the shared loaded definition');
     const near = plan.chunks.find(c => Object.values(c.document.nodesById).some(n => n.name === 'near'));
     assert.ok(near);
@@ -32,7 +49,7 @@ test('spatial planning retains named references, preserves transforms and bounds
     assert.ok(near.bounds.max.distanceTo(new Vector3(11.5, 5, 0.5)) < 1e-9);
     const long = plan.chunks.find(c => Object.values(c.document.nodesById).some(n => n.name === 'long-floor'));
     assert.equal(long.bounds.distanceToPoint(new Vector3()), 0, 'a distant center must not hide a mesh extending to the camera');
-    assert.ok(plan.chunks.every(c => c.nodeCount <= 12));
+    assert.ok(plan.chunks.every(c => Object.keys(c.document.nodesById).length <= 12));
     for (const chunk of plan.chunks) {
         const ids = Object.keys(chunk.document.nodesById);
         assert.equal(ids.length, new Set(ids).size);
@@ -85,19 +102,32 @@ test('cell meshes share ancestor paths while preserving exact nested affine tran
     assert.equal(actual.size, 100);
     const nodes = plan.chunks.flatMap(c => Object.values(c.document.nodesById));
     assert.ok(nodes.length < 125, 'a hundred siblings must not create a hundred copies of their parent chain');
-    assert.ok(plan.chunks.every(c => c.nodeCount <= 96));
+    assert.ok(plan.chunks.every(c => Object.keys(c.document.nodesById).length <= 96));
     assert.ok(plan.chunks.every(c => components(c.document).filter(p => p.type === 'Geometry').length <= 48), 'sharing groups must not turn admission into a large mesh burst');
 });
 
 test('lights remain resident; unknown behavior preserves its whole document and cross-node references', async () => {
-    const source = state([box('visual', [1000, 0, 0]), { id: 'lamp', components: { light: component('PointLight', { intensity: 4 }) } }]);
+    const fixture = box('fixture', [1000, 0, 0]);
+    fixture.children = [{ id: 'lamp', components: { light: component('PointLight', { intensity: 4 }) },
+        children: [box('light-child', [0, 1, 0])] }];
+    fixture.children.push({ id: 'second-lamp', components: { light: component('SpotLight') } });
+    const source = state([fixture]);
     const plan = await createSpatialPrefabPlan(source, runtime);
     assert.equal(plan.chunks.length, 1);
-    assert.ok(components(plan.resident).some(c => c.type === 'PointLight'));
-    assert.ok(!components(plan.resident).some(c => c.type === 'Geometry'));
+    assert.equal(plan.residentStatic, true);
+    const follow = state([{ id: 'sun', components: { light: component('DirectionalLight', { followCamera: true }) } }]);
+    assert.equal((await createSpatialPrefabPlan(follow, runtime)).residentStatic, false);
+    const [residentFixture] = Object.values(plan.resident.nodesById).filter(node => node.name === 'fixture');
+    assert.ok(residentFixture);
+    assert.deepEqual(plan.resident.childIdsById[residentFixture.id].map(id =>
+        plan.resident.nodesById[id].components.light.type), ['PointLight', 'SpotLight']);
+    assert.equal(Object.values(plan.resident.nodesById).filter(node => node.name === 'fixture').length, 1);
+    assert.deepEqual(Object.values(plan.resident.nodesById).filter(n => n.components?.geometry).map(n => n.name), ['light-child']);
+    assert.deepEqual(Object.values(plan.chunks[0].document.nodesById).filter(n => n.components?.geometry).map(n => n.name), ['fixture']);
     const scripted = state([{ id: 'script', components: { behavior: component('Follow', { target: 'visual' }) } }, box('visual', [1000, 0, 0])]);
     const pinned = await createSpatialPrefabPlan(scripted, runtime);
     assert.equal(pinned.resident, scripted);
+    assert.equal(pinned.residentStatic, false);
     const { getComponent } = await import('../../src/core/ComponentRegistry.ts');
     const override = { ...getComponent('Data'), View: () => null };
     const custom = state([{ id: 'behavior', components: { data: component('Data') } }, box('mesh', [0, 0, 0])]);
@@ -136,69 +166,104 @@ test('hidden subtrees, cancellation and invalid reference graphs cannot activate
     await assert.rejects(createSpatialPrefabPlan(cyclic, { getPrefab: () => cyclic }), /Cyclic/);
 });
 
-function entry(id, bounds, events) {
-    return { id, bounds, phase: 'cold', visible: false,
-        mount: () => events.push(`mount:${id}`), unmount: () => events.push(`unmount:${id}`),
-        setVisible: value => events.push(`visible:${id}:${value}`),
+test('preparation ranks bounds across tiles and octants, preserving in-flight work and residency', () => {
+    const queue = new SpatialStreamScheduler(), events = [];
+    const cell = (id, ...positions) => {
+        const rendererBounds = positions.map(z => new Box3(new Vector3(-1, -1, z - 1), new Vector3(1, 1, z + 1)));
+        const bounds = rendererBounds.reduce((union, box) => union.union(box), new Box3());
+        return { phase: 'cold', bounds, cellKey: looseOctreeKey(bounds, bounds.getCenter(new Vector3()), 16),
+            rendererBounds, mount: () => events.push(id) };
     };
-}
-const placement = (entries, options, matrix = new Matrix4()) => ({ entries, options, matrix: () => matrix });
-const boundsAt = x => new Box3(new Vector3(x - 1, -1, -1), new Vector3(x + 1, 1, 1));
-
-test('one global queue prepares nearest bounds first, hides warmed chunks, and applies unload hysteresis', () => {
-    const queue = new SpatialStreamScheduler(), events = [];
-    const options = { visibleDistance: 10, preloadDistance: 20, unloadDistance: 30 };
-    const far = entry('far', boundsAt(15), events), near = entry('near', boundsAt(0), events);
-    queue.register(placement([far], options)); queue.register(placement([near], options));
-    queue.update(new Vector3());
-    assert.deepEqual(events, ['mount:near']);
-    queue.update(new Vector3());
-    assert.equal(events.length, 1, 'another placement cannot mount during an in-flight preparation');
-    near.phase = 'ready'; queue.update(new Vector3());
-    assert.deepEqual(events.slice(1), ['visible:near:true', 'mount:far']);
-    far.phase = 'ready'; queue.update(new Vector3());
-    assert.equal(far.visible, false, 'prefetch is prepared without being drawn');
-    queue.update(new Vector3(15, 0, 0));
-    assert.equal(near.visible, false); assert.equal(near.phase, 'ready', 'hidden warm chunks stay mounted within the unload band');
-    assert.equal(far.visible, true);
-    queue.update(new Vector3(40, 0, 0));
-    assert.equal(near.phase, 'cold'); assert.equal(far.phase, 'ready');
-    assert.equal(events.filter(e => e.startsWith('unmount:')).length, 1, 'unmount work is bounded per frame too');
-    queue.update(new Vector3());
-    assert.equal(near.phase, 'preparing', 'returning to an evicted cell prepares it again');
+    const add = (entries, matrix = new Matrix4()) => queue.register({ entries, tree: buildChunkTree(entries), matrix: () => matrix });
+    const far = Array.from({ length: 20 }, (_, i) => cell('far', -100 - i));
+    const behind = cell('behind', 5), road = cell('road', 100);
+    add([cell('empty gap', -200, 200)]); add(far); add([behind]); add([road], new Matrix4().makeTranslation(0, 0, -105));
+    const camera = new PerspectiveCamera(60, 1, 0.1, 1000);
+    queue.update(camera);
+    assert.deepEqual(events, ['road']);
+    queue.update(camera); queue.update(camera);
+    assert.deepEqual(events, ['road', 'behind']);
+    behind.phase = 'error';
+    camera.position.z = -115; queue.update(camera);
+    assert.deepEqual(events, ['road', 'behind', 'far']);
+    assert.equal(road.phase, 'preparing');
 });
 
-test('world transforms, oversized bounds, failed loads and unregistering work across repeated placements', () => {
-    const queue = new SpatialStreamScheduler(), events = [];
-    const options = { visibleDistance: 5, preloadDistance: 8, unloadDistance: 12 };
-    const transformed = entry('translated', boundsAt(100), events);
-    const matrix = new Matrix4().makeTranslation(-100, 0, 0);
-    const dispose = queue.register(placement([transformed], options, matrix));
-    const second = entry('second', boundsAt(5), events); queue.register(placement([second], options));
-    queue.update(new Vector3());
-    assert.equal(transformed.phase, 'preparing');
-    transformed.phase = 'error'; queue.update(new Vector3());
-    assert.equal(second.phase, 'preparing', 'a failed cell cannot stall the shared queue');
-    matrix.makeScale(2, 1, 1).setPosition(-200, 0, 0);
-    transformed.phase = 'ready';
-    queue.update(new Vector3());
-    assert.ok(transformed.visible, 'scaled placements keep world-space bounds after moving');
-    dispose(); second.phase = 'ready';
-    queue.update(new Vector3(1000, 0, 0));
-    assert.equal(second.phase, 'cold');
-    assert.ok(!events.includes('unmount:translated'), 'unregistered placements cannot receive late work');
+test('sibling placements share one frame admission and transfer it when the first unmounts', async t => {
+    const { act, createElement: h } = await import('react');
+    const { createRoot } = await import('@react-three/fiber');
+    const { useStreamPlacement } = await import('../../src/runtime/prefabs/useStreamPlacement.ts');
+    globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+    const canvas = { width: 100, height: 100, style: {}, addEventListener() {}, removeEventListener() {} };
+    const root = createRoot(canvas);
+    await root.configure({ gl: { domElement: canvas, render() {}, setSize() {}, setPixelRatio() {} },
+        size: { width: 100, height: 100, top: 0, left: 0 }, frameloop: 'never' });
+    t.after(async () => { await act(async () => root.unmount()); });
+    const admitted = [];
+    function placement(...positions) {
+        const entries = positions.map(z => {
+            const bounds = new Box3().setFromCenterAndSize(new Vector3(0, 0, z), new Vector3(1, 1, 1));
+            return { phase: 'cold', bounds, cellKey: looseOctreeKey(bounds, bounds.getCenter(new Vector3()), 16),
+                rendererBounds: [bounds], mount() { admitted.push(z); this.phase = 'ready'; } };
+        });
+        return { entries, tree: buildChunkTree(entries), matrix: () => new Matrix4() };
+    }
+    function Placement({ value }) { useStreamPlacement(value); return null; }
+    const far = h(Placement, { key: 'far', value: placement(-100) });
+    const near = h(Placement, { key: 'near', value: placement(-2, -4) });
+    let store;
+    await act(async () => { store = root.render([far, near]); });
+    assert.equal(store.getState().internal.subscribers.length, 1);
+    await act(async () => store.getState().advance(1, false));
+    assert.deepEqual(admitted, [-2]);
+    await act(async () => root.render([near]));
+    await act(async () => store.getState().advance(2, false));
+    assert.deepEqual(admitted, [-2, -4]);
+    assert.equal(store.getState().internal.subscribers.length, 0, 'the last admission stops the frame subscription');
+    await act(async () => root.render([near, far]));
+    assert.equal(store.getState().internal.subscribers.length, 1);
+    await act(async () => store.getState().advance(3, false));
+    assert.deepEqual(admitted, [-2, -4, -100]);
+    await act(async () => root.render(null));
+    assert.equal(store.getState().internal.subscribers.length, 0);
 });
 
-test('visible work preempts preparation for a cell that only needs warming', () => {
-    const queue = new SpatialStreamScheduler(), events = [];
-    const warming = entry('warming', boundsAt(6), events);
-    const visible = entry('visible', boundsAt(15), events);
-    queue.register(placement([warming], { visibleDistance: 2, preloadDistance: 10, unloadDistance: 20 }));
-    queue.register(placement([visible], { visibleDistance: 6, preloadDistance: 8, unloadDistance: 20 }));
-    queue.update(new Vector3());
-    queue.update(new Vector3(10, 0, 0));
-    queue.update(new Vector3(10, 0, 0));
-    assert.deepEqual(events, ['mount:warming', 'unmount:warming', 'mount:visible']);
+test('camera passes independently select chunks and distant emitters retain their visual children', async () => {
+    const { Group, SpotLight, Scene } = await import('three');
+    const root = new Group(), near = new Group(), behind = new Group(), lamp = new SpotLight(), lens = new Group();
+    lamp.distance = 10; lamp.add(lens); lamp.position.z = -100;
+    root.add(near, behind); root.updateMatrixWorld(); lamp.updateMatrixWorld();
+    const cells = [near, behind].map((group, i) => ({ group, cellKey: i ? '0/0,0,0' : '0/0,0,-1', bounds: new Box3().setFromCenterAndSize(new Vector3(0, 0, i ? 10 : -10), new Vector3(1, 1, 1)) }));
+    const visits = [];
+    const renderer = { drawingPipeline: { project(object, camera) {
+        visits.push(object);
+        for (const child of object.children) this.project(child, camera);
+    } } };
+    const nativeProject = renderer.drawingPipeline.project;
+    const release = registerChunkDraws(renderer, new Scene(), root, new Map(cells.entries()), buildChunkTree(cells));
+    const camera = new PerspectiveCamera(60, 1, 0.1, 500);
+    renderer.drawingPipeline.project(root, camera);
+    assert.deepEqual(visits, [near]); visits.length = 0;
+    camera.rotation.y = Math.PI; camera.updateMatrixWorld();
+    renderer.drawingPipeline.project(root, camera);
+    assert.deepEqual(visits, [behind]); visits.length = 0;
+    renderer.drawingPipeline.project(lamp, camera);
+    assert.deepEqual(visits, [lamp, lens]);
+    // Compare placement-local results against independent Three tests for transformed placements.
+    const { Frustum } = await import('three');
+    root.position.set(3, 1, -5); root.rotation.y = 0.7; root.scale.set(2, 1, 0.5);
+    root.updateMatrixWorld();
+    for (let z = -40; z <= 40; z++) {
+        camera.position.set(4, 0, z);
+        camera.lookAt(root.position); camera.updateMatrixWorld();
+        const clip = new Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse).multiply(root.matrixWorld);
+        const reference = new Frustum().setFromProjectionMatrix(clip);
+        visits.length = 0;
+        renderer.drawingPipeline.project(root, camera);
+        assert.deepEqual(new Set(visits), new Set(cells.filter(cell => reference.intersectsBox(cell.bounds)).map(cell => cell.group)));
+    }
+    release();
+    assert.equal(renderer.drawingPipeline.project, nativeProject);
 });
 
 test('shader preparation yields between bounded draw groups and serializes/cancels renderer work', async () => {
@@ -278,7 +343,7 @@ test('compilation pass state survives frame yields and restores on failure or re
     remove(); geometry.dispose(); material.dispose();
 });
 
-for (const mode of ['url', 'embedded']) test(`PrefabInstance streams ${mode} and can unload and revisit cells`, async t => {
+for (const mode of ['url', 'embedded']) test(`PrefabInstance streams ${mode} and keeps prepared cells on camera moves`, async t => {
     const embedded = mode !== 'url';
     const { act, createElement: h, StrictMode, useEffect } = await import('react');
     const { createRoot, extend } = await import('@react-three/fiber');
@@ -302,7 +367,7 @@ for (const mode of ['url', 'embedded']) test(`PrefabInstance streams ${mode} and
     const document = state([box('near-mesh', [0, 0, 0], { name: 'paint' }), box('near-peer', [25, 0, 0], { name: 'paint' }),
         box('paint-definition', [1000, 0, 0], { name: 'paint', color: '#abc123' }),
         box('far-mesh', [1000, 0, 0], { texture: '/far.png' }), box('missing', [5, 0, 0], { name: 'missing' })]);
-    document.nodesById[document.rootId].components = { chunks: component('ChunkSettings', { cellSize: 64, visibleDistance: 20, preloadDistance: 30, unloadDistance: 40, maxNodesPerChunk: 16 }) };
+    document.nodesById[document.rootId].components = { chunks: component('ChunkSettings', { cellSize: 64, maxNodesPerChunk: 16 }) };
     const sources = [], textureRequests = [];
     const texture = new Texture();
     let finishTexture;
@@ -327,9 +392,9 @@ for (const mode of ['url', 'embedded']) test(`PrefabInstance streams ${mode} and
         useEffect(() => { assert.ok(prefab); residentMounts++; }, [prefab]);
         return null;
     }
-    const view = settings => h(StrictMode, null, h(AssetCacheContext.Provider, { value: cache }, h(SceneRuntime, null, h(ChunkSettingsContext.Provider, { value: settings },
+    const view = (settings, url = '/same-prefab.json') => h(StrictMode, null, h(AssetCacheContext.Provider, { value: cache }, h(SceneRuntime, null, h(ChunkSettingsContext.Provider, { value: settings },
         h(AssetRuntimeContext.Provider, { value: assets }, h(PrefabInstance, {
-            id: 'runtime', ...(embedded ? { document } : { url: '/same-prefab.json' }), static: true,
+            id: 'runtime', document: embedded ? document : undefined, url, static: true,
             onStatus: s => statuses.push(s.phase), onChunkStatus: s => chunks.push(s),
         }, h(ResidentChild)))))));
     let scene;
@@ -338,6 +403,11 @@ for (const mode of ['url', 'embedded']) test(`PrefabInstance streams ${mode} and
     const advance = async () => {
         await act(async () => { scene.getState().advance(++frame / 60, false); await new Promise(resolve => setTimeout(resolve, 4)); });
     };
+    // Admit the textured cell first, then move away while its request is stalled.
+    scene.getState().camera.position.x = 1000;
+    for (let i = 0; i < 12 && !textureRequests.length; i++) await advance();
+    assert.deepEqual(textureRequests, ['/far.png']);
+    scene.getState().camera.position.x = 0;
     for (let i = 0; i < 12; i++) await advance();
     const batch = () => {
         let result;
@@ -347,23 +417,22 @@ for (const mode of ['url', 'embedded']) test(`PrefabInstance streams ${mode} and
     const near = () => scene.getState().scene.getObjectByName('near-mesh');
     assert.equal(near(), undefined);
     const materialOf = name => scene.getState().scene.getObjectByName(name).children.find(child => child.isMesh).material;
+    assert.ok(batch(), 'nearby untextured geometry mounts while the first request is stalled');
+    for (let object = batch(); object; object = object.parent) assert.ok(object.visible, 'the nearby batch is draw-visible');
     assert.equal(batch().material.color.getHexString(), 'abc123');
     assert.equal(materialOf('missing').visible, false);
     assert.ok(batch(), 'one bounded stream chunk batches peers across the global 24-unit grid boundary');
     assert.deepEqual([batch().instanceMatrix.array[12], batch().instanceMatrix.array[28]], [0, 25]);
     assert.equal(scene.getState().scene.getObjectByName('near-peer'), undefined, 'direct batches have no source mesh');
-    assert.ok(!scene.getState().scene.getObjectByName('far-mesh'), 'distant cells do not create their Three objects');
-    assert.deepEqual(textureRequests, [], 'distant material textures do not delay the first visible cell');
     assert.ok(statuses.includes('active')); assert.ok(compiles > 0);
+    if (embedded) {
+        const residentBatch = batch(), preparations = sources.length;
+        await act(async () => { root.render(view(null, '/unused-fallback.json')); });
+        assert.equal(sources.length, preparations, 'an unused fallback URL cannot restart preparation');
+        assert.ok(batch() === residentBatch, 'editing a fallback preserves the live GPU batch');
+    }
     const mounts = residentMounts;
     assert.ok(mounts > 0, 'host children inherit the resident prefab context');
-    const readyCount = chunks.filter(chunk => chunk.phase === 'ready').length;
-    const compiledCount = compiles;
-    await act(async () => { root.render(view({ ...document.nodesById[document.rootId].components.chunks.properties, batchCellSize: 24, visibleDistance: 24 })); });
-    for (let i = 0; i < 3; i++) await advance();
-    assert.equal(residentMounts, mounts, 'distance edits preserve the resident scene');
-    assert.equal(chunks.filter(chunk => chunk.phase === 'ready').length, readyCount, 'distance edits preserve prepared chunks');
-    assert.equal(compiles, compiledCount, 'distance edits do not restart shader preparation');
     scene.getState().camera.position.x = 1000;
     for (let i = 0; i < 4; i++) await advance();
     assert.deepEqual(textureRequests, ['/far.png']);
@@ -371,13 +440,13 @@ for (const mode of ['url', 'embedded']) test(`PrefabInstance streams ${mode} and
     finishTexture(texture);
     for (let i = 0; i < 12; i++) await advance();
     assert.ok(!scene.getState().scene.getObjectByName('near-mesh'));
-    assert.equal(batch(), undefined);
+    assert.ok(batch());
     assert.ok(scene.getState().scene.getObjectByName('far-mesh'));
     scene.getState().camera.position.x = 0;
     for (let i = 0; i < 12; i++) await advance();
     assert.equal(near(), undefined);
     assert.equal(batch().material.color.getHexString(), 'abc123');
-    assert.ok(chunks.filter(s => s.phase === 'unloaded').length >= 2);
+    assert.ok(chunks.every(s => s.phase !== 'unloaded'));
     assert.ok(!statuses.includes('error'));
     assert.equal(residentMounts, mounts, 'cell residency cannot remount host children');
     assert.ok(sources.every(source => source === (embedded ? document : '/same-prefab.json')));
@@ -439,4 +508,196 @@ test('render-pass resources survive replacement until admitted shader preparatio
             assert.equal(disposed, true);
         }
     } finally { geometry.dispose(); material.dispose(); }
+});
+
+test('shader profiling distinguishes submissions from builds when distinct chunks share a material', async () => {
+    const { Group, Scene, Mesh, BoxGeometry, SphereGeometry, MeshBasicMaterial } = await import('three');
+    const { compileInSlices } = await import('../../src/runtime/rendering/compileInSlices.ts');
+    const camera = new PerspectiveCamera(), scene = new Scene();
+    const shared = new MeshBasicMaterial(), unique = new MeshBasicMaterial();
+    const current = new Mesh(new BoxGeometry(), shared);
+    const incoming = new Group();
+    const sphere = new SphereGeometry();
+    incoming.add(new Mesh(sphere, shared), new Mesh(sphere, unique));
+    scene.add(current, incoming);
+    let calls = 0;
+    const original = () => { calls++; };
+    const renderer = { debug: { onNodeBuilderCreated: original }, compileAsync: async group => {
+        // Simulate a warm shared shader, a new variant and an unrelated pass during the await.
+        await Promise.resolve();
+        renderer.debug.onNodeBuilderCreated({}, { object: current });
+        for (const object of group.children) {
+            if (object.material === unique) renderer.debug.onNodeBuilderCreated({}, { object });
+        }
+    } };
+    let timing;
+    await compileInSlices(renderer, incoming, camera, scene, { yieldBeforeFirstSlice: false, onTiming: t => { timing = t; } });
+    assert.equal(timing.objects, 2);
+    assert.equal(timing.nodeBuilds, 1);
+    assert.equal(calls, 2);
+    assert.equal(renderer.debug.onNodeBuilderCreated, original);
+});
+
+test('frozen placement descendants refresh when an ancestor moves and sleep when it holds still', async t => {
+    const { Group } = await import('three');
+    const { PlacementGroup } = await import('../../src/runtime/prefabs/PlacementGroup.ts');
+    const parent = new Group(), placement = new PlacementGroup(), mesh = new Group();
+    parent.add(placement); placement.add(mesh);
+    mesh.position.x = 2;
+    mesh.updateMatrix();
+    mesh.matrixAutoUpdate = placement.matrixAutoUpdate = false;
+    parent.updateMatrixWorld();
+    const multiply = t.mock.method(mesh.matrixWorld, 'multiplyMatrices');
+    for (let i = 0; i < 60; i++) parent.updateMatrixWorld();
+    assert.equal(multiply.mock.callCount(), 0);
+    parent.position.x = 10;
+    parent.scale.x = 3;
+    parent.updateMatrixWorld();
+    assert.equal(mesh.matrixWorld.elements[12], 16);
+    assert.equal(multiply.mock.callCount(), 1);
+});
+
+test('compiled cells skip static descendants and refresh moved placements, edits and late attachments', async t => {
+    const { Group } = await import('three');
+    const { PlacementGroup } = await import('../../src/runtime/prefabs/PlacementGroup.ts');
+    const { notifyObjectChanged } = await import('../../src/runtime/scene/objectChanges.ts');
+    const world = new Group(), placement = new PlacementGroup(), cell = new PlacementGroup();
+    const branch = new Group(), leaf = new Group(), actor = new Group();
+    const camera = new PerspectiveCamera();
+    world.add(placement, camera);
+    placement.matrixAutoUpdate = false;
+    placement.add(cell, actor);
+    cell.add(branch); branch.add(leaf);
+    leaf.position.x = 2;
+    const edit = cell.sleep();
+    world.updateMatrixWorld();
+    const visits = t.mock.method(leaf, 'updateMatrixWorld');
+    const updates = t.mock.method(leaf.matrixWorld, 'multiplyMatrices');
+    for (let i = 0; i < 60; i++) {
+        camera.rotation.y += 0.01;
+        actor.position.x++;
+        world.updateMatrixWorld();
+    }
+    assert.equal(actor.matrixWorld.elements[12], 60);
+    assert.equal(visits.mock.callCount(), 0);
+    assert.equal(updates.mock.callCount(), 0);
+    world.position.set(10, 3, 0);
+    world.rotation.z = Math.PI / 2;
+    world.scale.x = 2;
+    world.updateMatrixWorld();
+    assert.ok(new Vector3().setFromMatrixPosition(leaf.matrixWorld).distanceTo(new Vector3(10, 7, 0)) < 1e-9);
+    assert.equal(visits.mock.callCount(), 1);
+    branch.position.x = 1;
+    notifyObjectChanged(branch);
+    world.updateMatrixWorld();
+    assert.equal(leaf.matrixWorld.elements[13], 9);
+    const late = new Group();
+    branch.add(late);
+    world.updateMatrixWorld();
+    const batch = new Group();
+    batch.position.x = 4;
+    late.add(batch);
+    world.updateMatrixWorld();
+    assert.equal(batch.matrixWorld.elements[13], 13, 'a nested late batch receives its world matrix');
+    late.removeFromParent();
+    const previous = visits.mock.callCount();
+    late.add(new Group());
+    world.updateMatrixWorld();
+    assert.equal(visits.mock.callCount(), previous, 'detached objects no longer wake the cell');
+    edit();
+    leaf.position.x = 5;
+    world.updateMatrixWorld();
+    assert.equal(leaf.matrixWorld.elements[13], 15, 'edit mode sees direct gizmo writes without notifications');
+    const resumeEdit = cell.sleep();
+    world.updateMatrixWorld();
+    const afterEdit = visits.mock.callCount();
+    world.updateMatrixWorld();
+    assert.equal(visits.mock.callCount(), afterEdit, 'returning to play sleeps the cell again');
+    resumeEdit();
+});
+
+test('large draw placements prune empty branches and admit new cells at a stationary camera', async () => {
+    const { Group, Scene } = await import('three');
+    const { getSceneDrawCells } = await import('../../src/runtime/rendering/chunkFrustum.ts');
+    const cells = Array.from({ length: 256 }, (_, i) => ({
+        bounds: new Box3().setFromCenterAndSize(new Vector3(i * 8, 0, -10), new Vector3(1, 1, 1)),
+        cellKey: '0/' + i + ',0,-2', group: new Group(),
+    }));
+    const scene = new Scene(), ready = new Map(cells.entries());
+    ready.delete(0);
+    const release = registerChunkDraws({}, scene, new Group(), ready, buildChunkTree(cells));
+    const [query] = getSceneDrawCells(scene);
+    const camera = new PerspectiveCamera(40, 1, 0.1, 50);
+    assert.equal(query(camera).length, 0);
+    ready.set(0, cells[0]);
+    assert.deepEqual(query(camera), [cells[0]]);
+    camera.position.x = 1200; camera.updateMatrixWorld();
+    assert.deepEqual(query(camera), [cells[150]]);
+    release();
+});
+
+test('a static prefab sleeps as a unit, editor moves and streamed gameplay stay live', async t => {
+    const { createElement: h, act } = await import('react');
+    const { createRoot, extend } = await import('@react-three/fiber');
+    const { Group, Mesh } = await import('three');
+    const { PrefabInstance } = await import('../../src/runtime/prefabs/PrefabInstance.tsx');
+    const { SceneContext, PrefabEditorMode } = await import('../../src/runtime/scene/SceneContext.tsx');
+    const { AssetRuntimeContext } = await import('../../src/runtime/assets/AssetRuntime.tsx');
+    const { ChunkSettingsContext } = await import('../../src/runtime/components/ChunkSettingsComponent.tsx');
+    globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+    extend({ Group, Mesh });
+    const canvas = { width: 100, height: 100, style: {}, addEventListener() {}, removeEventListener() {} };
+    const root = createRoot(canvas);
+    await root.configure({ gl: { render() {}, async compileAsync() {}, setSize() {}, setPixelRatio() {}, domElement: canvas },
+        size: { width: 100, height: 100, top: 0, left: 0 }, frameloop: 'never' });
+    t.after(() => act(async () => root.unmount()));
+
+    const shelf = state([{ id: 'mug', name: 'mug', components: {
+        pose: component('Transform', { position: [1, 0, 0] }), shape: component('Geometry'),
+    } }]);
+    const actor = state([{ id: 'actor', name: 'Actor', components: {
+        motion: component('Runtime', { update: 'object.position.y += 1;' }),
+    } }]);
+    const assets = { preparePrefab: async document => ({ document }) };
+    const active = new Set();
+    const place = (id, document) => h(PrefabInstance, { id, document, static: true, onActivate: () => active.add(id) });
+    let store;
+    const render = mode => act(async () => {
+        store = root.render(h(SceneContext.Provider, { value: { mode, editable: true } },
+            h(AssetRuntimeContext.Provider, { value: assets },
+                h('group', { name: 'placement' }, place('shelf', shelf)),
+                h(ChunkSettingsContext.Provider, { value: { cellSize: 64, maxNodesPerChunk: 16 } }, place('gameplay', actor)))));
+    });
+    await render(PrefabEditorMode.Play);
+    const scene = store.getState().scene;
+    let frame = 0;
+    const advance = () => act(async () => {
+        store.getState().advance(++frame / 60, false);
+        await new Promise(resolve => setTimeout(resolve, 4));
+    });
+    for (let i = 0; i < 30 && active.size < 2; i++) await advance();
+    assert.deepEqual([...active].sort(), ['gameplay', 'shelf']);
+    const mug = scene.getObjectByName('mug'), actorObject = scene.getObjectByName('Actor');
+    scene.updateMatrixWorld();
+    const visits = t.mock.method(mug, 'updateMatrixWorld');
+    const y = actorObject.position.y;
+    await advance();
+    scene.updateMatrixWorld();
+    assert.equal(actorObject.matrixWorld.elements[13], y + 1);
+    assert.equal(visits.mock.callCount(), 0);
+    scene.getObjectByName('placement').position.x = 10;
+    scene.updateMatrixWorld();
+    assert.equal(mug.matrixWorld.elements[12], 11);
+    scene.updateMatrixWorld();
+    assert.equal(visits.mock.callCount(), 1);
+
+    await render(PrefabEditorMode.Edit);
+    mug.position.x = 3;
+    scene.updateMatrixWorld();
+    assert.equal(mug.matrixWorld.elements[12], 13);
+    await render(PrefabEditorMode.Play);
+    scene.updateMatrixWorld();
+    const afterEdit = visits.mock.callCount();
+    scene.updateMatrixWorld();
+    assert.equal(visits.mock.callCount(), afterEdit);
 });

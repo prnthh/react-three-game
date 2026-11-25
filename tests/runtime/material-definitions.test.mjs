@@ -208,3 +208,23 @@ test('lit materials implement physical settings and preserve them through docume
     assert.equal(object.material.transmission, 0);
     assert.equal(object.material.diffuseRoughness, 0);
 });
+
+test('evicting a placement only publishes changes to the effective material or asset path', async () => {
+    const { SceneMaterialPool } = await import('../../src/runtime/rendering/MaterialPoolProvider.tsx');
+    const pool = new SceneMaterialPool();
+    const material = { texture: 'wall.png' };
+    const [first, second, third] = [{}, {}, {}];
+    const updates = [];
+    pool.subscribe('wall', () => updates.push(pool.resolve('wall')));
+    pool.registerDefinition(first, 'wall', material, '/city');
+    pool.registerDefinition(second, 'wall', material, '/city');
+    pool.registerDefinition(third, 'wall', material, '/interior');
+    const initial = pool.resolve('wall');
+    pool.unregisterDefinition(first, 'wall');
+    assert.equal(pool.resolve('wall'), initial);
+    assert.equal(updates.length, 1);
+    pool.unregisterDefinition(second, 'wall');
+    assert.equal(pool.resolve('wall').basePath, '/interior');
+    pool.unregisterDefinition(third, 'wall');
+    assert.deepEqual(updates, [initial, { material, basePath: '/interior' }, null]);
+});

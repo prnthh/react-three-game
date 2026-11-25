@@ -98,3 +98,5 @@ export type { TerrainSurface } from '../runtime/terrain/terrainSurface.js';
 export { default as BoxColliderComponent } from "../runtime/components/BoxColliderComponent.js";
 
 export { useComponentActive } from '../runtime/scene/useComponentActive.js';
+
+export { framePriority } from '../runtime/scene/frame.js';

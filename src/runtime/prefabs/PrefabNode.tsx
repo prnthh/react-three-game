@@ -150,14 +150,18 @@ export function renderNodeContent(
     childNodes?: React.ReactNode,
     enabled = true,
 ) {
-    let content = childNodes;
+    // Keep authored children and component views in separate key namespaces.
+    let siblings: React.ReactNode[] = [<Fragment key="children">{childNodes}</Fragment>];
     for (let index = components.length - 1; index >= 0; index -= 1) {
         const component = components[index];
         if (!enabled && component.component.scope !== 'scene' && !component.component.renderWhenDisabled) continue;
         const View = component.View;
-        content = component.component.slot === 'leaf'
-            ? <Fragment key={component.key}><View properties={component.properties} enabled={enabled} />{content}</Fragment>
-            : <View key={component.key} properties={component.properties} enabled={enabled}>{content}</View>;
+        const key = `component:${component.key}`;
+        if (component.component.slot === 'leaf') {
+            siblings.push(<View key={key} properties={component.properties} enabled={enabled} />);
+        } else {
+            siblings = [<View key={key} properties={component.properties} enabled={enabled}>{siblings.reverse()}</View>];
+        }
     }
-    return content;
+    return siblings.reverse();
 }

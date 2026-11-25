@@ -1,9 +1,8 @@
 import type { ComponentEditorProps } from "../../core/ComponentRegistry.js";
-import { BooleanField, ColorField, Label, NumberField, Vector3Input } from "../ui/Input.js";
+import { ColorField, Label, NumberField, Vector3Input } from "../ui/Input.js";
 import { useEditorRef } from "../EditorContext.js";
 import { TexturePicker } from "../assets/AssetBrowser.js";
-import { MAX_SHADOW_MAP_SIZE, MIN_SHADOW_MAP_SIZE } from "../../runtime/components/lightUtils.js";
-import { LightSection, ShadowBiasField } from "./lightUtils.editor.js";
+import { LightSection, ShadowSection } from "./lightUtils.editor.js";
 import { SpotLightProperties } from "../../runtime/components/SpotLightComponent.js";
 
 function SpotLightComponentEditor({ properties: values, update }: ComponentEditorProps<SpotLightProperties>) {
@@ -33,31 +32,7 @@ function SpotLightComponentEditor({ properties: values, update }: ComponentEdito
                     />
                 </div>
             </LightSection>
-            <LightSection title="Shadow">
-                <BooleanField name="castShadow" label="Cast Shadow" values={values} onChange={update} fallback={false} />
-                {values.castShadow ? (
-                    <>
-                        <BooleanField name="shadowAutoUpdate" label="Update Every Frame" values={values} onChange={update} fallback={true} />
-                        <NumberField
-                            name="shadowMapSize"
-                            label="Map Size"
-                            values={values}
-                            onChange={update}
-                            min={MIN_SHADOW_MAP_SIZE}
-                            max={MAX_SHADOW_MAP_SIZE}
-                            step={128}
-                            fallback={512}
-                            commitOnBlur
-                        />
-                        <ShadowBiasField name="shadowBias" label="Bias" values={values} onChange={update} fallback={0} />
-                        <ShadowBiasField name="shadowNormalBias" label="Normal Bias" values={values} onChange={update} fallback={0} />
-                        <NumberField name="shadowIntensity" label="Opacity" values={values} onChange={update} min={0} max={1} step={0.05} fallback={1} />
-                        <NumberField name="shadowRadius" label="Softness" values={values} onChange={update} min={0} step={0.25} fallback={1} />
-                        <NumberField name="shadowCameraNear" label="Near" values={values} onChange={update} min={0.001} step={0.1} fallback={0.5} />
-                        <NumberField name="shadowCameraFar" label="Far" values={values} onChange={update} min={0.1} step={1} fallback={500} />
-                    </>
-                ) : null}
-            </LightSection>
+            <ShadowSection values={values} update={update} />
         </div>
     );
 }

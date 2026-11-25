@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
+import { useFrame, useStore, useThree } from '@react-three/fiber';
+import { capFrames } from '../scene/frameCap.js';
 import { AgXToneMapping, ACESFilmicToneMapping, BasicShadowMap, CineonToneMapping, LinearToneMapping, NeutralToneMapping, NoToneMapping, PCFShadowMap, ReinhardToneMapping, SRGBColorSpace, LinearSRGBColorSpace, type ToneMapping, type ShadowMapType } from 'three';
 import type { Component, ComponentViewProps } from '../../core/ComponentRegistry.js';
 
@@ -8,6 +9,7 @@ const shadowTypes = { basic: BasicShadowMap, pcf: PCFShadowMap };
 export interface RenderSettingsProperties {
     toneMapping?: keyof typeof toneMappings;
     exposure?: number;
+    fpsCap?: number | null;
     outputColorSpace?: 'srgb' | 'linear-srgb';
     shadows?: boolean;
     shadowMapType?: keyof typeof shadowTypes;
@@ -35,6 +37,8 @@ export function applyRendererSettings(renderer: Renderer, p: RenderSettingsPrope
 }
 function RenderSettingsView({ properties: p, children }: ComponentViewProps<RenderSettingsProperties>) {
     const renderer = useThree(state => state.gl);
+    const store = useStore();
+    useLayoutEffect(() => capFrames(store, p.fpsCap), [store, p.fpsCap]);
     const current = useRef<ReturnType<typeof applyRendererSettings> | null>(null);
     useLayoutEffect(() => {
         const settings = applyRendererSettings(renderer, p);
@@ -51,6 +55,7 @@ const RenderSettingsComponent: Component<RenderSettingsProperties> = {
     description: 'Scene-root renderer overrides. Unspecified fields keep the renderer defaults. Applies in Edit and Play; removal restores the overridden values. Effects are authored separately with PostProcessing.',
     properties: {
         toneMapping: { type: 'select', default: undefined, options: Object.keys(toneMappings).map(value => ({ value: value as NonNullable<RenderSettingsProperties['toneMapping']>, label: value })) },
+        fpsCap: { default: 60, min: 1, step: 1, undefinedAsNull: true, description: 'Maximum frames per second. Omit for 60; explicit undefined (null in JSON) is uncapped.' },
         exposure: { default: undefined, min: 0, max: 10, step: 0.05 },
         outputColorSpace: { type: 'select', default: undefined, options: [{ value: 'srgb', label: 'sRGB' }, { value: 'linear-srgb', label: 'Linear sRGB' }] },
         shadows: { type: 'boolean', default: undefined },

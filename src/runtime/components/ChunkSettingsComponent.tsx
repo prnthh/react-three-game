@@ -12,13 +12,10 @@ function ChunkSettingsView({ properties, children }: ComponentViewProps<ChunkSet
 }
 const ChunkSettingsComponent: Component<ChunkSettingsProperties> = {
     name: 'ChunkSettings', scope: 'scene', exclusive: 'chunk-settings', category: 'misc', View: ChunkSettingsView,
-    description: 'Scene-root spatial policy. Static PrefabInstance placements inherit distance streaming; ordinary meshes inherit the batch cell size. Without this component, static prefabs load whole and batching uses its normal grid.',
+    description: 'Scene-root spatial policy. Static PrefabInstance placements prepare octree cells progressively; ordinary meshes inherit the batch cell size. Without this component, static prefabs load whole and batching uses its normal grid.',
     properties: {
         batchCellSize: { default: DEFAULT_SPATIAL_CELL_SIZE, min: 1, description: 'Spatial cell size for automatic mesh batches, in world units.' },
         cellSize: { default: STREAMING_DEFAULTS.cellSize, min: 1, description: 'Static scenery partition width, in prefab-local units.' },
-        visibleDistance: { default: STREAMING_DEFAULTS.visibleDistance, min: 1 },
-        preloadDistance: { default: STREAMING_DEFAULTS.preloadDistance, min: 1 },
-        unloadDistance: { default: STREAMING_DEFAULTS.unloadDistance, min: 1 },
         maxNodesPerChunk: { default: STREAMING_DEFAULTS.maxNodesPerChunk, min: 8, step: 1 },
     },
 };

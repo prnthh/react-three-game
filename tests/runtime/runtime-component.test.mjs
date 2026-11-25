@@ -19,9 +19,14 @@ test('Runtime composes children without remounting them across activation change
         return null;
     }
     function View(props) { return h(RuntimeComponent.View, props, h(Child)); }
-    const fixture = await mount(t, {}, RuntimeComponent, View);
+    const fixture = await mount(t, { setup: 'return () => {};', update: 'object.position.x++;' }, RuntimeComponent, View);
     await fixture.render({ editMode: true });
+    const subscribers = () => fixture.store.getState().internal.subscribers.length;
+    const idle = subscribers();
     await fixture.render();
+    assert.equal(subscribers(), idle + 1);
+    await fixture.render({}, { ...fixture.properties, update: '' });
+    assert.equal(subscribers(), idle, 'setup-only scripts do not subscribe to the frame loop');
     await fixture.render({ enabled: false });
     await fixture.render();
     assert.equal(mounts, 1);

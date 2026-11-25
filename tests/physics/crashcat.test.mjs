@@ -1,6 +1,7 @@
 import { createColliderResidencyScheduler } from '../../src/plugins/crashcat/colliderResidency.ts';
 import { terrainPhysicsProblem } from '../../src/plugins/crashcat/TerrainPhysicsComponent.tsx';
-import { registerAll, createWorldSettings, addBroadphaseLayer, addObjectLayer, enableCollision, createWorld, rigidBody, MotionType, triangleMesh, capsule, kcc, filter } from 'crashcat';
+import { registerAll, createWorldSettings, addBroadphaseLayer, addObjectLayer, enableCollision, createWorld, rigidBody, MotionType, triangleMesh, capsule, box, sphere, kcc, filter } from 'crashcat';
+import { CrashcatBodyUpdates } from '../../src/plugins/crashcat/bodySync.ts';
 import test, { describe } from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -9,6 +10,14 @@ import { getPhysicsScene } from '../../src/plugins/crashcat/physicsScene.ts';
 import { createShapeForObject } from '../../src/plugins/crashcat/collisionShapes.ts';
 import { decomposeModelToPrefabNodes } from '../../src/editor/modelPrefab.ts';
 import { importCollisionModel } from '../../src/plugins/crashcat/importCollisionModel.ts';
+import { act, createElement as h } from 'react';
+import { createRoot, extend } from '@react-three/fiber';
+import { CrashcatRuntime } from '../../src/plugins/crashcat/CrashcatRuntime.tsx';
+import CrashcatPhysics from '../../src/plugins/crashcat/CrashcatPhysicsComponent.tsx';
+import Transform from '../../src/runtime/components/TransformComponent.tsx';
+import { PrefabRoot } from '../../src/runtime/prefabs/PrefabRoot.tsx';
+import { ComponentLookupContext } from '../../src/runtime/prefabs/nodePlan.ts';
+import { createPrefabStore } from '../../src/core/prefabStore.ts';
 
 describe('Scene ownership', () => {
     test('physics ownership is isolated per Three.js scene and releases on unmount', () => {
@@ -97,6 +106,122 @@ describe('Model import', () => {
 
 const settle = () => new Promise(resolve => setImmediate(resolve));
 const target = (id, distance, revision='1') => ({id, distance, revision});
+
+test('a collision wakes one of 1,000 sleeping props and publishes its final pose once', () => {
+    const settings = createWorldSettings();
+    settings.sleeping.timeBeforeSleep = 0.1;
+    const layer = addObjectLayer(settings, addBroadphaseLayer(settings));
+    enableCollision(settings, layer, layer);
+    const world = createWorld(settings), updates = new CrashcatBodyUpdates();
+    const propShape = box.create({ halfExtents: [0.45, 0.45, 0.45] });
+    const makeBody = (shape, position, motionType = MotionType.DYNAMIC) =>
+        rigidBody.create(world, { shape, position, motionType, objectLayer: layer });
+    makeBody(box.create({ halfExtents: [10, 0.5, 10] }), [0, -0.5, 0], MotionType.STATIC);
+    const hits = new Set();
+    let publications = 0;
+    const prop = new Group();
+    let target;
+    for (let i = 0; i < 1000; i++) {
+        const body = makeBody(propShape, [i * 4, 0.45, 0]);
+        if (i === 0) target = body;
+        rigidBody.sleep(world, body);
+        updates.register(body, { syncPose(b) {
+            publications++;
+            hits.add(b.id);
+            if (b === target) {
+                prop.position.fromArray(b.position);
+                prop.quaternion.fromArray(b.quaternion);
+            }
+        } });
+    }
+    const tick = () => updates.step(world, {}, 1 / 60);
+    tick();
+    assert.equal(publications, 1000, 'publish initial poses once');
+    hits.clear();
+    publications = 0;
+    for (let i = 0; i < 120; i++) tick();
+    assert.equal(publications, 0);
+    const ball = makeBody(sphere.create({ radius: 0.35 }), [0.36, 3, 0]);
+    for (let i = 0; i < 120 && target.sleeping; i++) tick();
+    assert.equal(target.sleeping, false, 'a real contact wakes the shelf prop');
+    assert.deepEqual([...hits], [target.id]);
+    assert.deepEqual(prop.position.toArray(), [...target.position]);
+    rigidBody.remove(world, ball);
+    let frames = 0;
+    while (!target.sleeping && frames++ < 180) {
+        const previous = publications;
+        updates.step(world, {}, 3 / 60);
+        assert.equal(publications, previous + 1, 'three substeps publish once, including the final sleep frame');
+    }
+    assert.ok(target.sleeping);
+    assert.deepEqual(prop.position.toArray(), [...target.position]);
+    assert.deepEqual(prop.quaternion.toArray(), [...target.quaternion]);
+    const settled = publications;
+    for (let i = 0; i < 120; i++) tick();
+    assert.equal(publications, settled);
+    assert.deepEqual([...hits], [target.id]);
+    rigidBody.setPosition(world, target, [0, 2, 0], false);
+    updates.invalidatePose(target);
+    tick();
+    assert.deepEqual(prop.position.toArray(), [0, 2, 0]);
+    assert.ok(target.sleeping);
+    updates.invalidatePose(target);
+    updates.remove(target);
+    rigidBody.remove(world, target);
+    const replacement = makeBody(propShape, [0, 3, 0]);
+    rigidBody.sleep(world, replacement);
+    const calls = [];
+    updates.register(replacement, {
+        beforeStep: () => calls.push('before'), afterStep: () => calls.push('after'),
+    });
+    tick();
+    assert.equal(publications, settled + 1, 'an unregistered body is removed from pending work');
+    assert.deepEqual(calls, ['before', 'after'], 'explicit frame callbacks run even with no active bodies');
+    updates.remove(replacement);
+});
+
+test('editing a sleeping prefab prop updates the body and playback starts at the edited pose', async t => {
+    globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+    extend({ Group });
+    const canvas = { width: 100, height: 100, style: {}, addEventListener() {}, removeEventListener() {} };
+    const root = createRoot(canvas);
+    await root.configure({ gl: { render() {}, setSize() {}, setPixelRatio() {}, domElement: canvas },
+        size: { width: 100, height: 100, top: 0, left: 0 }, frameloop: 'never' });
+    t.after(() => act(async () => root.unmount()));
+    const transform = position => ({ type: 'Transform', properties: { position } });
+    const store = createPrefabStore({ root: { id: 'shelf', components: { place: transform([10, 0, 0]) },
+        children: [{ id: 'bucket', name: 'Bucket', components: { place: transform([1, 2, 3]),
+            physics: { type: 'CrashcatPhysics', properties: { type: 'dynamic', colliders: 'capsule', startSleeping: true } } } }] } });
+    const lookup = name => ({ Transform, CrashcatPhysics })[name];
+    let state;
+    const renderMode = editMode => act(async () => {
+        state = root.render(h(ComponentLookupContext.Provider, { value: lookup },
+            h(PrefabRoot, { store, editMode }, h(CrashcatRuntime))));
+    });
+    await renderMode(true);
+    const scene = state.getState().scene;
+    const api = getPhysicsScene(scene).getSnapshot();
+    assert.deepEqual([...api.getBody('bucket').position], [11, 2, 3]);
+    await act(async () => store.getState().updateNode('shelf', node => ({
+        ...node, components: { place: transform([15, 0, 0]) },
+    })));
+    const body = api.getBody('bucket');
+    const object = scene.getObjectByName('Bucket');
+    assert.ok(body.sleeping);
+    assert.deepEqual([...body.position], [16, 2, 3]);
+    await renderMode(false);
+    await act(async () => state.getState().advance(1, false));
+    assert.ok(body.sleeping);
+    assert.deepEqual(object.position.toArray(), [1, 2, 3]);
+    rigidBody.setPosition(api.world, body, [18, 5, 2], true);
+    await act(async () => state.getState().advance(1 + 1 / 60, false));
+    assert.ok(body.position[1] < 5);
+    assert.deepEqual(object.matrixWorld.elements.slice(12, 15), [...body.position]);
+    await renderMode(true);
+    const y = body.position[1];
+    await act(async () => state.getState().advance(2, false));
+    assert.equal(body.position[1], y, 'edit mode pauses simulation and pose writes');
+});
 
 test('nearest-two terrain bodies reuse prepared shapes across camera changes', async () => {
     const built=[], active=new Set(), reports=[];

@@ -38,17 +38,32 @@ Also available: [general editor](app/editor/page.tsx),
 
 The home viewer loads [the authored Sector 09 prefab](public/prefabs/brutalist-city/game-level.json). Its demo-owned
 [`PrefabGridStreamer`](app/components/PrefabGridStreamerComponent.tsx) defines the
-repeating tile window, and the library supplies authored lighting and
-[distance streaming](PREFABS.md#automatically-stream-static-scenery). Edit and
+repeating tile window. It starts at the camera, then prefetches the neighboring tiles the camera is moving toward and looking into. A spare slot retains an existing neighbor across turns. The library supplies authored lighting and
+[spatial culling](PREFABS.md#automatically-stream-static-scenery). Edit and
 save the home scene and its standalone kit prefabs directly.
 
-Open [the home demo with profiling enabled](http://localhost:3000/?profileCity)
-to see `City cell` entries in Chrome DevTools’ Performance **Timings** track.
+Open [the home demo in debug mode](http://localhost:3000/?debug) and filter the
+Chrome console for `[city-profile]`. Each active one-second interval emits a JSON
+record with ready cell counts by tile, the slowest cell’s elapsed time, shader
+submission time, renderer-wide node builds, and the longest browser-reported
+long animation frame. A zero long-frame value means none reached the browser’s
+50 ms threshold. A null value means the browser lacks that measurement.
+Warmup build counts are attributed to cells that finished during the interval.
+Benchmark mode also reports the peak sampled GPU frame and its pass breakdown.
+The Perf button independently enables the live graph.
+
+The previous `?profileCity` URL also enables debug mode. For per-cell details,
+see `City cell` entries in Chrome DevTools’ Performance **Timings** track.
 Each entry identifies its tile and cell. Shader warmup details include queue
 time, frame yields, time spent submitting compiler work, and time awaiting it.
+On supported renderers, `detail.nodeBuilds` counts shader-builder starts for the
+cell’s objects during warmup. A cell can submit draws with zero new builds when
+a visible chunk already uses compatible shaders. Buffer and binding setup can
+still take time on those draws.
 
 Add `&profileRender` to hold the starting camera and record WebGPU timestamps
-as `City GPU frame` marks. Compare stock GTAO with `&ao=contact`, then add
+as `City GPU frame` marks. Each mark includes milliseconds by render pass in `detail.passes`.
+Cell timings span asset waits and frame yields, so use the Performance panel’s main-thread track for CPU spikes. Compare stock GTAO with `&ao=contact`, then add
 `&chunkOcclusion` to measure the depth pre-pass separately. Keep the viewport
 and `aoScale` the same across runs.
 

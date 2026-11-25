@@ -15,9 +15,9 @@ import {
     type Listener,
     type RigidBody,
     type World,
-    updateWorld,
 } from "crashcat";
 import { getPhysicsScene } from "./physicsScene.js";
+import { CrashcatBodyUpdates, type CrashcatBodySync } from "./bodySync.js";
 import { debugRenderer } from "crashcat/three";
 import { useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { Object3D } from "three";
@@ -27,8 +27,6 @@ import { PrefabEditorMode, SceneContext } from "../../runtime/scene/SceneContext
 
 const SLEEP_TIME_BEFORE_REST = 0.1;
 const SLEEP_POINT_VELOCITY_THRESHOLD = 0.06;
-const MAX_PHYSICS_STEP_DELTA = 1 / 60;
-const MAX_PHYSICS_CATCH_UP_DELTA = 1 / 10;
 
 let didRegisterCrashcat = false;
 function ensureCrashcatRegistered() {
@@ -52,14 +50,7 @@ export type BodyMeta = {
     events?: CrashcatEventConfig;
 };
 
-type BodyEntry = {
-    body: RigidBody;
-    meta: BodyMeta;
-    beforeStep?: (body: RigidBody, delta: number) => void;
-    afterStep?: (body: RigidBody) => void;
-};
-
-export type CrashcatBodySync = Pick<BodyEntry, "beforeStep" | "afterStep">;
+export type { CrashcatBodySync } from "./bodySync.js";
 
 export interface CrashcatApi {
     world: World;
@@ -69,6 +60,8 @@ export interface CrashcatApi {
     register: (nodeId: string, body: RigidBody, meta: Omit<BodyMeta, "nodeId">, sync?: CrashcatBodySync) => void;
     unregister: (nodeId: string) => void;
     getBody: (nodeId: string) => RigidBody | null;
+    /** Queue a render pose after teleporting a sleeping body with wake=false. */
+    invalidateBodyPose: (body: RigidBody) => void;
 }
 
 export function useCrashcat(): CrashcatApi | null {
@@ -130,7 +123,7 @@ export function CrashcatRuntime({ debug = false, children }: { debug?: boolean; 
     const gameEvents = useGameEvents();
     const mode = useContext(SceneContext)?.mode ?? PrefabEditorMode.Play;
     const physicsScene = getPhysicsScene(useThree(state => state.scene));
-    const bodiesRef = useRef(new Map<string, BodyEntry>());
+    const [updates] = useState(() => new CrashcatBodyUpdates());
     const bodyByIdRef = useRef(new Map<number, BodyMeta>());
     const apiRef = useRef<CrashcatApi | null>(null);
     const debugStateRef = useRef<ReturnType<typeof createDebugState> | null>(null);
@@ -171,14 +164,15 @@ export function CrashcatRuntime({ debug = false, children }: { debug?: boolean; 
 
         const world = createWorld(settings);
         const queryFilter = filter.forWorld(world);
-        const bodies = bodiesRef.current;
+        const bodies = new Map<string, RigidBody>();
         const bodyById = bodyByIdRef.current;
 
         const unregister = (nodeId: string) => {
-            const entry = bodies.get(nodeId);
-            if (!entry) return;
-            bodyById.delete(Number(entry.body.id));
-            rigidBody.remove(world, entry.body);
+            const body = bodies.get(nodeId);
+            if (!body) return;
+            updates.remove(body);
+            bodyById.delete(Number(body.id));
+            rigidBody.remove(world, body);
             bodies.delete(nodeId);
         };
 
@@ -190,11 +184,13 @@ export function CrashcatRuntime({ debug = false, children }: { debug?: boolean; 
             register: (nodeId, body, meta, sync) => {
                 unregister(nodeId);
                 const full: BodyMeta = { nodeId, ...meta };
-                bodies.set(nodeId, { body, meta: full, ...sync });
+                bodies.set(nodeId, body);
                 bodyById.set(Number(body.id), full);
+                updates.register(body, sync);
             },
             unregister,
-            getBody: (nodeId) => bodies.get(nodeId)?.body ?? null,
+            getBody: (nodeId) => bodies.get(nodeId) ?? null,
+            invalidateBodyPose: updates.invalidatePose,
         };
 
         apiRef.current = runtimeApi;
@@ -203,13 +199,9 @@ export function CrashcatRuntime({ debug = false, children }: { debug?: boolean; 
         return () => {
             apiRef.current = null;
             unregisterRuntime();
-            for (const entry of bodies.values()) {
-                rigidBody.remove(world, entry.body);
-            }
-            bodies.clear();
-            bodyById.clear();
+            for (const id of bodies.keys()) unregister(id);
         };
-    }, [listener, physicsScene]);
+    }, [listener, physicsScene, updates]);
 
     useEffect(() => {
         if (!debug) return;
@@ -227,23 +219,7 @@ export function CrashcatRuntime({ debug = false, children }: { debug?: boolean; 
         const runtimeApi = apiRef.current;
         if (!runtimeApi) return;
         const { world } = runtimeApi;
-        const frameDelta = Math.min(delta, MAX_PHYSICS_CATCH_UP_DELTA);
-
-        if (mode === PrefabEditorMode.Play) {
-            for (const entry of bodiesRef.current.values()) {
-                entry.beforeStep?.(entry.body, frameDelta);
-            }
-            const stepCount = Math.max(1, Math.ceil(frameDelta / MAX_PHYSICS_STEP_DELTA));
-            const stepDelta = frameDelta / stepCount;
-
-            for (let stepIndex = 0; stepIndex < stepCount; stepIndex += 1) {
-                updateWorld(world, listener, stepDelta);
-            }
-
-            for (const entry of bodiesRef.current.values()) {
-                entry.afterStep?.(entry.body);
-            }
-        }
+        if (mode === PrefabEditorMode.Play) updates.step(world, listener, delta);
 
         const debugState = debugStateRef.current;
         if (debugState) debugRenderer.update(debugState, world);

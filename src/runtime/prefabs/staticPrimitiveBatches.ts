@@ -1,7 +1,7 @@
 import type { Matrix4 } from 'three';
 import { compactPrefabMaterial } from '../../core/prefab.js';
 import { findComponent, type GameObject, type MaterialComponentProperties, type PrefabMaterial } from '../../core/types.js';
-import { getDefaultArgs, type GeometryProperties } from '../components/GeometryComponent.js';
+import { resolvePrimitive, type GeometryProperties } from '../components/GeometryComponent.js';
 
 export interface StaticPrimitiveBatch {
     geometry: GeometryProperties;
@@ -25,8 +25,7 @@ export function batchStaticPrimitives(root: GameObject, candidates: ReadonlyMap<
             new Set(components.map(component => component?.type)).size !== components.length) continue;
         const surface = material.name ? palette.get(material.name) : material;
         if (!surface || surface.materialType === 'sprite' || surface.transparent || (surface.transmission ?? 0) > 0) continue;
-        const type = geometry.geometryType ?? 'box';
-        const args = geometry.args?.length ? geometry.args : getDefaultArgs(type);
+        const { type, args } = resolvePrimitive(geometry);
         const key = JSON.stringify([
             type, args, geometry.castShadow !== false, geometry.receiveShadow !== false, geometry.frustumCulled !== false,
             material.name || Object.entries(compactPrefabMaterial(surface)).sort(([left], [right]) => left.localeCompare(right)),

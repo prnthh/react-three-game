@@ -1,3 +1,4 @@
+import { framePriority } from '../scene/frame.js';
 import { useComponentActive } from '../scene/useComponentActive.js';
 import { useFrame } from '@react-three/fiber';
 import { useRef } from 'react';
@@ -45,7 +46,7 @@ function CameraFollowView({ properties, enabled, children }: ComponentViewProps<
         // Node objects are groups: lookAt aims +Z, while the child camera looks down -Z.
         cameraObject.lookAt(lookAtPosition.current);
         cameraObject.rotateY(Math.PI);
-    }, 0);
+    }, framePriority.followCamera);
 
     return <>{children}</>;
 }

@@ -104,3 +104,49 @@ test('prefab activation preserves descendants and active siblings', async t => {
     assert.ok(state.getState().scene.getObjectByName('streamed-mesh'));
     assert.deepEqual(activeVisibility, [true], 'activation observes an already visible prefab');
 });
+
+test('editing leaf components preserves sibling effects, wrappers and authored children', async t => {
+    globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+    extend({ Group });
+    const canvas = { width: 100, height: 100, style: {}, addEventListener() {}, removeEventListener() {} };
+    const root = createRoot(canvas);
+    await root.configure({ gl: { render() {}, setSize() {}, setPixelRatio() {}, domElement: canvas },
+        size: { width: 100, height: 100, top: 0, left: 0 }, frameloop: 'never' });
+    t.after(() => act(async () => root.unmount()));
+    const events = [];
+    function Leaf({ properties }) {
+        useEffect(() => {
+            events.push('start ' + properties.name);
+            return () => events.push('stop ' + properties.name);
+        }, []);
+        return null;
+    }
+    function Wrapper({ children }) { return h('group', { name: 'wrapper' }, children); }
+    const definitions = {
+        Leaf: { slot: 'leaf', properties: {}, View: Leaf },
+        Wrapper: { properties: {}, View: Wrapper },
+    };
+    const lookup = name => definitions[name];
+    const render = async (keys, hidden = false) => {
+        const components = Object.fromEntries(keys.map(name => [name, {
+            type: name === 'wrapper' ? 'Wrapper' : 'Leaf', properties: { name },
+        }]));
+        const data = { root: { id: 'parent', hidden, components, children: [{ id: 'child', name: 'child', components: {} }] } };
+        let store;
+        await act(async () => { store = root.render(h(ComponentLookupContext.Provider, { value: lookup },
+            h(PrefabRoot, { id: 'placement', data }))); });
+        return store.getState().scene;
+    };
+    const scene = await render(['a', 'wrapper', 'b']);
+    const wrapper = scene.getObjectByName('wrapper'), child = scene.getObjectByName('child');
+    assert.ok(wrapper && child && wrapper.getObjectByName('child') === child);
+    const initial = events.length;
+    await render(['extra', 'a', 'wrapper', 'inside', 'b']);
+    await render(['a', 'extra', 'wrapper', 'b', 'inside']);
+    await render(['wrapper', 'b']);
+    await render(['wrapper', 'b'], true);
+    await render(['wrapper', 'b']);
+    assert.ok(scene.getObjectByName('wrapper') === wrapper);
+    assert.ok(scene.getObjectByName('child') === child);
+    assert.deepEqual(events.slice(initial).sort(), ['start extra', 'start inside', 'stop a', 'stop extra', 'stop inside']);
+});

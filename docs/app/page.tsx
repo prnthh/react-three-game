@@ -2,7 +2,7 @@
 import type { Viewport } from "next";
 import Link from "next/link";
 import ClickToCopy from "./components/ClickToCopy";
-import DemoApp from "./components/DemoApp";
+import HomeHero from "./components/HomeHero";
 import Dropdown from "./components/Dropdown";
 
 function Features() {
@@ -80,7 +80,7 @@ export const viewport: Viewport = {
 
 export default function Home() {
   return <>
-    <main className="relative flex h-screen w-full flex-col items-center justify-center px-4 text-zinc-900">
+    <HomeHero>
       <div className="relative z-10 flex flex-col items-center">
         <div className="text-center font-bold">
           <h1 className="metal-title mb-2">REACT-THREE-GAME</h1>
@@ -110,8 +110,7 @@ export default function Home() {
         </div>
       </div>
 
-      <DemoApp />
-    </main>
+    </HomeHero>
     <div className="relative flex w-full flex-col items-center gap-6 bg-zinc-950 py-12 text-center">
       <p className="max-w-2xl px-4 text-zinc-300">Build games with JavaScript and Three.js, a visual scene editor, and WebGPU rendering. We use React to make behavior reusable and easy to compose, so the components you start with can grow with your game. Grab a demo and build from there.</p>
       <div className="flex w-full max-w-5xl flex-col gap-5 px-4 md:flex-row">

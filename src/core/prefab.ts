@@ -206,9 +206,11 @@ export function denormalizeNode(
 	const { components: _components, ...nodeProperties } = node;
 	const components = Object.entries(node.components ?? {}).reduce<Record<string, ComponentData>>((result, [key, component]) => {
 		if (!component) return result;
-		const defaults = getComponentDefaultProperties(getComponent(component.type), component.properties);
+		const definition = getComponent(component.type);
+		const defaults = getComponentDefaultProperties(definition, component.properties);
 		const properties = Object.entries(component.properties ?? {}).reduce<Record<string, unknown>>((sparse, [name, value]) => {
-			if (!samePrefabValue(value, defaults[name])) sparse[name] = structuredClone(value);
+			if (value === undefined && definition?.properties[name]?.undefinedAsNull) sparse[name] = null;
+			else if (!samePrefabValue(value, defaults[name])) sparse[name] = structuredClone(value);
 			return sparse;
 		}, {});
 		result[key] = { ...component, properties };

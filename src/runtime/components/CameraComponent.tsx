@@ -1,10 +1,8 @@
-import { OrthographicCamera as DreiOrthographicCamera, PerspectiveCamera as DreiPerspectiveCamera, useHelper } from '@react-three/drei';
+import { OrthographicCamera as DreiOrthographicCamera, PerspectiveCamera as DreiPerspectiveCamera, Helper } from '@react-three/drei';
 
 import { useThree } from '@react-three/fiber';
 
-import { useRef } from 'react';
-
-import { CameraHelper, MathUtils, type OrthographicCamera, type PerspectiveCamera } from 'three';
+import { CameraHelper, MathUtils } from 'three';
 
 import { useNode } from '../scene/SceneContext.js';
 
@@ -44,7 +42,7 @@ export type CameraProperties = {
 function CameraComponentView({ properties, enabled, children }: ComponentViewProps<CameraProperties>) {
     const editMode = useNode(node => node.editMode);
     const isSelected = useNode(node => node.isSelected);
-    const { size } = useThree();
+    const size = useThree(state => state.size);
     const merged = properties;
     const projection = merged.projection;
     const fov = MathUtils.clamp(merged.fov, 1, 179);
@@ -55,12 +53,6 @@ function CameraComponentView({ properties, enabled, children }: ComponentViewPro
     const aspect = size.height > 0 ? size.width / size.height : 1;
     const halfHeight = orthographicSize / 2;
     const halfWidth = halfHeight * aspect;
-    const orthographicCameraRef = useRef<OrthographicCamera>(null!);
-    const perspectiveCameraRef = useRef<PerspectiveCamera>(null!);
-    const cameraRef = projection === 'orthographic' ? orthographicCameraRef : perspectiveCameraRef;
-
-    useHelper(editMode && isSelected ? cameraRef : null, CameraHelper);
-
     const editorGizmo = editMode ? (
         <group userData={{ editorHelper: true }}>
             <mesh>
@@ -78,7 +70,6 @@ function CameraComponentView({ properties, enabled, children }: ComponentViewPro
         return (
             <group>
                 <DreiOrthographicCamera
-                    ref={orthographicCameraRef}
                     makeDefault={enabled && !editMode}
                     near={near}
                     zoom={zoom}
@@ -89,6 +80,7 @@ function CameraComponentView({ properties, enabled, children }: ComponentViewPro
                     bottom={-halfHeight}
                 >
                     {children}
+                    {editMode && isSelected && <Helper type={CameraHelper} />}
                 </DreiOrthographicCamera>
                 {editorGizmo}
             </group>
@@ -98,7 +90,6 @@ function CameraComponentView({ properties, enabled, children }: ComponentViewPro
     return (
         <group>
             <DreiPerspectiveCamera
-                ref={perspectiveCameraRef}
                 makeDefault={enabled && !editMode}
                 fov={fov}
                 near={near}
@@ -109,6 +100,7 @@ function CameraComponentView({ properties, enabled, children }: ComponentViewPro
                 filmOffset={merged.filmOffset}
             >
                 {children}
+                {editMode && isSelected && <Helper type={CameraHelper} />}
             </DreiPerspectiveCamera>
             {editorGizmo}
         </group>

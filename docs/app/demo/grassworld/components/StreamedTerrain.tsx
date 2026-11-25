@@ -105,7 +105,7 @@ const TerrainChunk = memo(function TerrainChunk({
 
     // R3F owns the mounted geometry and defers GPU disposal when a chunk leaves.
     // The streamer owns the material shared by all chunks.
-    return <mesh material={material} position={[x * chunkSize, 0, z * chunkSize]} receiveShadow>
+    return <mesh material={material} receiveShadow>
         <bufferGeometry index={geometry.index} attributes={geometry.attributes} />
     </mesh>;
 });
@@ -166,7 +166,7 @@ export default function StreamedTerrain({
     for (let z = center.z - chunkRadius; z <= center.z + chunkRadius; z += 1) {
         for (let x = center.x - chunkRadius; x <= center.x + chunkRadius; x += 1) {
             chunks.push(
-                <group key={`${x}:${z}`} name={`terrain-chunk-${x}:${z}`}>
+                <group key={`${x}:${z}`} name={`terrain-chunk-${x}:${z}`} position={[x * chunkSize, 0, z * chunkSize]}>
                     <TerrainChunk
                         x={x}
                         z={z}
@@ -175,10 +175,8 @@ export default function StreamedTerrain({
                         material={material}
                         waterLevel={waterLevel}
                     />
-                    <group position={[x * chunkSize, 0, z * chunkSize]}>
-                        <Grass x={x} z={z} chunkSize={chunkSize} heightAt={heightAt} waterLevel={waterLevel}
-                            shoreClearance={shoreClearance} transitionWidth={transitionWidth} resources={vegetation} />
-                    </group>
+                    <Grass x={x} z={z} chunkSize={chunkSize} heightAt={heightAt} waterLevel={waterLevel}
+                        shoreClearance={shoreClearance} transitionWidth={transitionWidth} resources={vegetation} />
                 </group>,
             );
         }

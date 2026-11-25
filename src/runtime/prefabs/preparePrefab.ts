@@ -1,10 +1,9 @@
-import type { Component } from '../../core/ComponentRegistry.js';
-import { resolveComponentProperties } from '../../core/ComponentRegistry.js';
+import { getComponent, getComponentRegistryVersion, resolveComponentProperties, type Component } from '../../core/ComponentRegistry.js';
 import type { PrefabState } from '../../core/prefab.js';
 import type { Prefab } from '../../core/types.js';
 import { resolveInlinePrefab } from '../../core/inlinePrefabs.js';
 import { withBasePath } from '../assets/assetPaths.js';
-import type { AssetDependency } from '../../core/dependencies.js';
+import { materialTextureDependencies, type AssetDependency, type ComponentDependency } from '../../core/dependencies.js';
 
 export interface PreparedPrefab {
     readonly document: PrefabState;
@@ -25,6 +24,42 @@ export interface PrefabPreparationRuntime {
     loadSound(path: string): Promise<unknown>;
 }
 
+type Dependency = ComponentDependency | { kind: 'inline'; path: string };
+const dependencies = new WeakMap<PrefabState, { version: number; eager?: Dependency[]; streamed?: Dependency[] }>();
+
+function documentDependencies(document: PrefabState, runtime: PrefabPreparationRuntime, deferTextures: boolean, source: string) {
+    const version = getComponentRegistryVersion();
+    const mode = deferTextures ? 'streamed' : 'eager';
+    const cached = runtime.getComponent === getComponent ? dependencies.get(document) : undefined;
+    if (cached?.version === version && cached[mode]) return cached[mode];
+
+    const unique = new Map<string, Dependency>();
+    for (const node of Object.values(document.nodesById)) {
+        for (const component of Object.values(node.components ?? {})) {
+            if (!component) continue;
+            const definition = runtime.getComponent(component.type);
+            if (!definition) throw new Error(`Unknown component "${component.type}" in ${source}, node "${node.id}"`);
+            if (!definition.dependencies && component.type !== 'PrefabRef') continue;
+            const defer = deferTextures && component.type === 'Material';
+            if (defer && definition.dependencies === materialTextureDependencies) continue;
+            const properties = resolveComponentProperties(definition, component.properties);
+            if (component.type === 'PrefabRef' && properties.prefabId) {
+                unique.set('inline:' + properties.prefabId, { kind: 'inline', path: properties.prefabId });
+            }
+            for (const dep of definition.dependencies?.(properties) ?? []) {
+                if (dep.path && !(defer && dep.kind === 'texture')) unique.set(dep.kind + ':' + dep.path, dep);
+            }
+        }
+    }
+    const result = [...unique.values()];
+    if (runtime.getComponent === getComponent) {
+        const entry = cached?.version === version ? cached : { version };
+        entry[mode] = result;
+        dependencies.set(document, entry);
+    }
+    return result;
+}
+
 /** Resolve inline and URL definitions through one dependency graph before activation. */
 export async function preparePrefab(
     runtime: PrefabPreparationRuntime,
@@ -34,7 +69,7 @@ export async function preparePrefab(
     type Source = string | Prefab | PrefabState;
     const documents = new Map<Source, Promise<PrefabState>>();
     const assets = new Map<string, Promise<unknown>>();
-    const edges = new Map<Source, Source[]>();
+    const edges = new Map<Source, Set<Source>>();
     const queue: Source[] = [];
     const describe = (source: Source) => typeof source === 'string' ? source : 'rootId' in source ? source.prefabName ?? source.rootId : source.name ?? source.id ?? 'inline prefab';
     const check = () => {
@@ -68,31 +103,19 @@ export async function preparePrefab(
             await Promise.all(queue.splice(0).map(async source => {
                 const document = await documents.get(source)!;
                 check();
-                const references: Source[] = [];
+                const references = new Set<Source>();
                 edges.set(source, references);
-                for (const node of Object.values(document.nodesById)) {
-                    for (const component of Object.values(node.components ?? {})) {
-                        if (!component) continue;
-                        const definition = runtime.getComponent(component.type);
-                        if (!definition) throw new Error(`Unknown component "${component.type}" in ${describe(source)}, node "${node.id}"`);
-                        const properties = resolveComponentProperties(definition, component.properties);
-                        if (component.type === 'PrefabRef' && properties.prefabId) {
-                            const inline = resolveInlinePrefab(document, properties.prefabId);
-                            const next = document.prefabs![properties.prefabId];
-                            references.push(next);
-                            enqueue(next, inline);
-                        }
-                        for (const dependency of definition.dependencies?.(properties) ?? []) {
-                            if (!dependency.path) continue;
-                            if (dependency.kind === 'prefab') {
-                                const next = withBasePath(basePath, dependency.path);
-                                references.push(next);
-                                enqueue(next);
-                            } else if (!deferTextures || component.type !== 'Material' || dependency.kind !== 'texture') {
-                                enqueueAsset(dependency);
-                            }
-                        }
-                    }
+                for (const dep of documentDependencies(document, runtime, !!deferTextures, describe(source))) {
+                    if (dep.kind === 'inline') {
+                        const inline = resolveInlinePrefab(document, dep.path);
+                        const next = document.prefabs![dep.path];
+                        references.add(next);
+                        enqueue(next, inline);
+                    } else if (dep.kind === 'prefab') {
+                        const next = withBasePath(basePath, dep.path);
+                        references.add(next);
+                        enqueue(next);
+                    } else enqueueAsset(dep);
                 }
             }));
         }

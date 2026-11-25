@@ -6,7 +6,6 @@ import { registerRenderSources } from '../scene/gameObject.js';
 import { getInstancedMaterialFactory } from './materialInstancing.js';
 
 const HIDDEN_MATRIX = new Matrix4().makeScale(0, 0, 0);
-const IDENTITY_MATRIX = new Matrix4();
 const BATCH_PARENT_INVERSE = new Matrix4();
 const INSTANCE_MATRIX = new Matrix4();
 const INVERSE_MATRIX = new Matrix4();
@@ -52,9 +51,7 @@ function writeMatrix(array: { [index: number]: number }, offset: number, matrix:
     return changed;
 }
 
-function isHierarchyVisible(source: InstancedMeshSource) {
-    if (!source.mesh.visible) return false;
-    let current: Object3D | null = source.mesh.parent;
+function isHierarchyVisible(current: Object3D | null) {
     while (current) {
         if (!current.visible) return false;
         current = current.parent;
@@ -75,11 +72,9 @@ class MeshInstanceBatch {
     private inverseMatrixBuffer: InstancedInterleavedBuffer | null = null;
     private sourceVisibility: ReturnType<typeof manageInstancedSourceVisibility> | null = null;
     private unregisterSources = () => {};
-    private lastParentMatrix = new Matrix4();
-    private lastVisibility: boolean | null = null;
     sources: InstancedMeshSource[] = [];
 
-    constructor(sources: InstancedMeshSource[], private isStatic: boolean) {
+    constructor(sources: InstancedMeshSource[]) {
         const source = sources[0].mesh;
         const capacity = Math.max(2, 2 ** Math.ceil(Math.log2(sources.length)));
         this.factory = getInstancedMaterialFactory(source.material);
@@ -106,41 +101,32 @@ class MeshInstanceBatch {
         this.sources = sources;
         this.sourceVisibility = manageInstancedSourceVisibility(sources);
         this.unregisterSources = registerRenderSources(this.mesh, sources.map(source => source.mesh));
-        if (sources.length) this.update(true);
-        else this.mesh.count = 0;
     }
 
-    update(force = false) {
-        const { mesh: batch, sources, isStatic, inverseMatrixBuffer } = this;
+    update(sourceMatricesCurrent: boolean) {
+        const { mesh: batch, sources, inverseMatrixBuffer } = this;
+        const countChanged = batch.count !== sources.length;
         batch.count = sources.length;
-        batch.parent?.updateWorldMatrix(true, false);
-        const parentMatrix = batch.parent?.matrixWorld ?? IDENTITY_MATRIX;
-        let visible = true;
-        for (let parent = batch.parent; parent; parent = parent.parent) visible = visible && parent.visible;
-        if (isStatic && !force && this.lastVisibility === visible && this.lastParentMatrix.equals(parentMatrix)) return;
-        this.lastParentMatrix.copy(parentMatrix);
-        this.lastVisibility = visible;
-        BATCH_PARENT_INVERSE.copy(parentMatrix).invert();
         let matricesChanged = false;
         let inverseMatricesChanged = false;
         for (let index = 0; index < sources.length; index += 1) {
             const source = sources[index];
-            source.mesh.updateWorldMatrix(true, false);
+            if (!sourceMatricesCurrent) source.mesh.updateWorldMatrix(true, false);
             INSTANCE_MATRIX.multiplyMatrices(BATCH_PARENT_INVERSE, source.mesh.matrixWorld);
             // Reflection needs the ordinary mesh draw's winding correction. Keep
             // its batch slot hidden and restore the source, including when an
             // authored or animated transform changes handedness after mounting.
             const batched = supportsInstanceMatrix(INSTANCE_MATRIX);
             this.sourceVisibility?.setBatched(index, batched);
-            const renderedMatrix = batched && isHierarchyVisible(source) ? INSTANCE_MATRIX : HIDDEN_MATRIX;
+            const renderedMatrix = batched && isHierarchyVisible(source.mesh) ? INSTANCE_MATRIX : HIDDEN_MATRIX;
             matricesChanged = writeMatrix(batch.instanceMatrix.array, index * 16, renderedMatrix) || matricesChanged;
             if (inverseMatrixBuffer) {
                 INVERSE_MATRIX.copy(INSTANCE_MATRIX).invert();
                 inverseMatricesChanged = writeMatrix(inverseMatrixBuffer.array, index * 16, INVERSE_MATRIX) || inverseMatricesChanged;
             }
         }
-        if (matricesChanged) {
-            batch.instanceMatrix.needsUpdate = true;
+        if (matricesChanged) batch.instanceMatrix.needsUpdate = true;
+        if (matricesChanged || countChanged) {
             // Full geometry bounds keep oversized objects and shadow passes conservative.
             batch.computeBoundingSphere();
         }
@@ -166,6 +152,9 @@ export class MeshInstanceRegistry {
     private listeners = new Set<() => void>();
     private revision = 0;
     private dirty = true;
+    private wake?: () => void;
+    private lastParentMatrix = new Matrix4();
+    private lastVisibility = false;
     constructor(readonly isStatic = false, private readonly cellSize: number | null = DEFAULT_SPATIAL_CELL_SIZE) {
         if (cellSize !== null && (!Number.isFinite(cellSize) || cellSize <= 0)) throw new Error('Spatial cell size must be positive and finite');
     }
@@ -174,10 +163,12 @@ export class MeshInstanceRegistry {
     }
     subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
     getSnapshot = () => this.revision;
-    connect(root: Group) {
+    connect(root: Group, wake?: () => void) {
+        this.wake = wake;
         this.root = root;
         this.invalidate();
         return () => {
+            this.wake = undefined;
             this.root = null;
             this.batches.forEach(batch => batch.dispose());
             this.batches.clear();
@@ -185,7 +176,7 @@ export class MeshInstanceRegistry {
         };
     }
     register(source: InstancedMeshSource) {
-        const registered = { ...source, cell: this.cellOf(source.mesh) };
+        const registered = { ...source, cell: this.isStatic ? this.cellOf(source.mesh) : '' };
         this.sources.set(source.id, registered);
         this.invalidate();
         return () => {
@@ -194,16 +185,30 @@ export class MeshInstanceRegistry {
             this.invalidate();
         };
     }
-    invalidate = () => { this.dirty = true; };
+    invalidate = () => { this.dirty = true; this.wake?.(); };
     update() {
-        if (this.cellSize !== null && !this.isStatic) for (const source of this.sources.values()) {
+        // getWorldPosition refreshes each source matrix during the migration scan.
+        const scanCells = this.cellSize !== null && !this.isStatic;
+        if (scanCells) for (const source of this.sources.values()) {
             const cell = this.cellOf(source.mesh);
             if (source.cell !== cell) { source.cell = cell; this.invalidate(); }
         }
         const changed = this.root !== null && this.dirty;
         this.reconcile();
-        this.batches.forEach(batch => batch.update());
+        if (this.root && this.batches.size) {
+            this.root.updateWorldMatrix(true, false);
+            const matrix = this.root.matrixWorld;
+            const visible = this.isStatic && isHierarchyVisible(this.root);
+            if (!this.isStatic || changed || this.lastVisibility !== visible || !this.lastParentMatrix.equals(matrix)) {
+                this.lastVisibility = visible;
+                this.lastParentMatrix.copy(matrix);
+                BATCH_PARENT_INVERSE.copy(matrix).invert();
+                this.batches.forEach(batch => batch.update(scanCells));
+            }
+        }
         if (changed) { this.revision++; this.listeners.forEach(listener => listener()); }
+        // A singleton dynamic source may still migrate into another source's cell.
+        return this.dirty || (this.isStatic ? this.batches.size > 0 : this.sources.size > 0);
     }
     private reconcile() {
         if (!this.root || !this.dirty) return;
@@ -230,7 +235,7 @@ export class MeshInstanceRegistry {
             if (sources.length < 2) continue;
             let batch = this.batches.get(key);
             if (!batch) {
-                batch = new MeshInstanceBatch(sources, this.isStatic);
+                batch = new MeshInstanceBatch(sources);
                 this.batches.set(key, batch); this.hits.set(batch.mesh, batch);
                 this.root.add(batch.mesh);
             }

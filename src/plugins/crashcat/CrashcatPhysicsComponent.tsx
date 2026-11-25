@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useStore } from "zustand";
 
@@ -83,23 +83,10 @@ function setObjectWorldTransform(object: Object3D, position: [number, number, nu
 function syncObjectToBody(world: World, body: RigidBody, object: Object3D, position: [number, number, number], quaternion: [number, number, number, number], delta: number) {
     object.getWorldPosition(scratchPosition);
     object.getWorldQuaternion(worldQuaternion);
-    position.splice(0, 3, scratchPosition.x, scratchPosition.y, scratchPosition.z);
-    quaternion.splice(0, 4, worldQuaternion.x, worldQuaternion.y, worldQuaternion.z, worldQuaternion.w);
+    scratchPosition.toArray(position);
+    worldQuaternion.toArray(quaternion);
 
     moveKinematicBody(world, body, position, quaternion, delta);
-}
-
-function bodyTransformChanged(body: RigidBody, lastPosition: [number, number, number] | null, lastQuaternion: [number, number, number, number] | null) {
-    const position = body.position;
-    const quaternion = body.quaternion;
-    return !lastPosition
-        || position[0] !== lastPosition[0]
-        || position[1] !== lastPosition[1]
-        || position[2] !== lastPosition[2]
-        || quaternion[0] !== lastQuaternion?.[0]
-        || quaternion[1] !== lastQuaternion?.[1]
-        || quaternion[2] !== lastQuaternion?.[2]
-        || quaternion[3] !== lastQuaternion?.[3];
 }
 
 function createAndRegisterBody(
@@ -175,10 +162,6 @@ function CrashcatPhysicsView({ properties, children }: ComponentViewProps<Crashc
         return filename ? withBasePath(basePath ?? "", filename) : null;
     }, [basePath, node]);
     const loadedModel = useModelAsset(modelPath);
-    const syncPositionRef = useRef<[number, number, number]>([0, 0, 0]);
-    const syncQuaternionRef = useRef<[number, number, number, number]>([0, 0, 0, 1]);
-    const lastPositionRef = useRef<[number, number, number] | null>(null);
-    const lastQuaternionRef = useRef<[number, number, number, number] | null>(null);
     const [objectRevision, setObjectRevision] = useState(0);
     const physics = properties;
 
@@ -200,28 +183,28 @@ function CrashcatPhysicsView({ properties, children }: ComponentViewProps<Crashc
         const sync: CrashcatBodySync = {};
 
         if (physics.type === "kinematicPosition") {
+            const position: [number, number, number] = [0, 0, 0];
+            const rotation: [number, number, number, number] = [0, 0, 0, 1];
             sync.beforeStep = (body, delta) => {
                 const currentObject = gameObject.transform;
                 if (!currentObject) return;
-                syncObjectToBody(api.world, body, currentObject, syncPositionRef.current, syncQuaternionRef.current, delta);
+                syncObjectToBody(api.world, body, currentObject, position, rotation, delta);
             };
         } else if (motionType !== MotionType.STATIC) {
-            sync.afterStep = (body) => {
+            const position = new Vector3(NaN, 0, 0), rotation = new Quaternion();
+            sync.syncPose = (body) => {
                 const currentObject = gameObject.transform;
                 if (!currentObject) return;
-
-                if (bodyTransformChanged(body, lastPositionRef.current, lastQuaternionRef.current)) {
-                    setObjectWorldTransform(currentObject, body.position, body.quaternion);
-                    lastPositionRef.current = [body.position[0], body.position[1], body.position[2]];
-                    lastQuaternionRef.current = [body.quaternion[0], body.quaternion[1], body.quaternion[2], body.quaternion[3]];
-                }
-
+                scratchPosition.fromArray(body.position);
+                worldQuaternion.fromArray(body.quaternion);
+                if (position.equals(scratchPosition) && rotation.equals(worldQuaternion)) return;
+                position.copy(scratchPosition);
+                rotation.copy(worldQuaternion);
+                setObjectWorldTransform(currentObject, body.position, body.quaternion);
             };
         }
 
         setBody(createAndRegisterBody(api, runtimeNodeId, object, physics, sync));
-        lastPositionRef.current = null;
-        lastQuaternionRef.current = null;
         return () => {
             setBody(null);
             api.unregister(runtimeNodeId);

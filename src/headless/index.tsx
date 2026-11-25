@@ -95,6 +95,7 @@ async function mountHeadlessScene(prefab: Prefab, options: HeadlessSceneOptions,
                 if (name === 'Environment' || name === 'Text') {
                     throw new Error(`Headless scene does not support ${name} yet; it requires a GPU or font host adapter`);
                 }
+                if (!definition.dependencies) return definition;
                 return { ...definition, dependencies: properties =>
                     (definition.dependencies?.(properties) ?? []).filter(dependency => dependency.kind !== 'sound') };
             },

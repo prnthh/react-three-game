@@ -59,8 +59,7 @@ export { registerPrefabCompilationContext } from '../runtime/rendering/compileIn
 export type { PreparedPrefab, PrefabPreparationOptions } from "../runtime/prefabs/preparePrefab.js";
 export { usePrefabStore, usePrefabStoreApi } from "../runtime/prefabs/PrefabStoreContext.js";
 
-export type { SharedMaterialOptions } from "../runtime/components/MaterialComponent.js";
-export { useSharedMaterialResource } from "../runtime/components/MaterialComponent.js";
+export { useSharedMaterialResource, type SharedMaterialOptions } from "../runtime/rendering/MaterialPoolProvider.js";
 export { useInvalidateMeshInstances } from "../runtime/rendering/MeshInstanceProvider.js";
 
 export { withBasePath as resolveAssetPath } from "../runtime/assets/assetPaths.js";

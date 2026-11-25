@@ -36,11 +36,11 @@ Components stay in the demo that owns them and may be imported by other demos.
 Also available: [general editor](app/editor/page.tsx),
 [home city composition](app/components/DemoApp.tsx), and the [Scene API guide](public/editor-scene-for-agents.md).
 
-The home viewer loads its saved scene document. Its demo-owned
+The home viewer loads [the authored Sector 09 prefab](public/prefabs/brutalist-city/game-level.json). Its demo-owned
 [`PrefabGridStreamer`](app/components/PrefabGridStreamerComponent.tsx) defines the
-repeating tile window; the library supplies authored lighting and
-[distance streaming](PREFABS.md#automatically-stream-static-scenery). Its
-[generator](../scripts/generate-home-city.mjs) maintains the authored scene.
+repeating tile window, and the library supplies authored lighting and
+[distance streaming](PREFABS.md#automatically-stream-static-scenery). Edit and
+save the home scene and its standalone kit prefabs directly.
 
 Author small scenes inline. Pack assemblies for repetition within a scene; export
 a separate prefab file when sharing across scenes. Saved demo documents live in

@@ -1,6 +1,6 @@
 import { AssetBoundary } from '../assets/AssetBoundary.js';
 import { useHasNodeMountBudget, useNodeMountAdmission } from './NodeMountBudget.js';
-import { memo, useCallback, useContext, useLayoutEffect, useMemo, useRef } from "react";
+import { Fragment, memo, useCallback, useContext, useLayoutEffect, useMemo, useRef } from "react";
 import { registerGameObjectOwner } from '../scene/gameObject.js';
 import { notifyObjectChanged } from '../scene/objectChanges.js';
 import type { Object3D } from "three";
@@ -57,7 +57,7 @@ function NodeTree({
         isVisible={nodeVisible}
         isEnabled={nodeEnabled}
     />);
-    const inner = renderNodeContent(analyzedComponents, childNodes, nodeEnabled);
+    const inner = renderNodeContent(analyzedComponents.composition, childNodes, nodeEnabled);
 
     return <NodeGroup
         node={gameObject}
@@ -145,18 +145,19 @@ export interface RendererProps {
     isEnabled?: boolean;
 }
 
-function renderNodeContent(
-    analyzedComponents: ReturnType<typeof analyzeNodeComponents>,
+export function renderNodeContent(
+    components: ReturnType<typeof analyzeNodeComponents>["composition"],
     childNodes?: React.ReactNode,
     enabled = true,
 ) {
-    const components = analyzedComponents.composition;
     let content = childNodes;
     for (let index = components.length - 1; index >= 0; index -= 1) {
         const component = components[index];
-        if (!enabled && !component.component.renderWhenDisabled) continue;
+        if (!enabled && component.component.scope !== 'scene' && !component.component.renderWhenDisabled) continue;
         const View = component.View;
-        content = <View key={component.key} properties={component.properties} enabled={enabled}>{content}</View>;
+        content = component.component.slot === 'leaf'
+            ? <Fragment key={component.key}><View properties={component.properties} enabled={enabled} />{content}</Fragment>
+            : <View key={component.key} properties={component.properties} enabled={enabled}>{content}</View>;
     }
     return content;
 }

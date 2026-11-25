@@ -1,31 +1,20 @@
-import { registerInstancedMaterial } from '../rendering/materialInstancing.js';
-import type { Node } from 'three/webgpu';
-import { useInvalidateMeshInstances } from "../rendering/MeshInstanceProvider.js";
-import { Color, BackSide, DoubleSide, NearestFilter, NearestMipmapNearestFilter, NearestMipmapLinearFilter, LinearMipmapNearestFilter } from "three";
-import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
-
-import { applyProps, extend } from '@react-three/fiber';
-
-import type { ThreeElement } from '@react-three/fiber';
-
+import { applyProps, extend, type ThreeElement } from '@react-three/fiber';
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, type ReactNode } from 'react';
+import {
+    BackSide, ClampToEdgeWrapping, Color, DoubleSide, FrontSide, LinearFilter, LinearMipmapLinearFilter,
+    LinearMipmapNearestFilter, NearestFilter, NearestMipmapLinearFilter, NearestMipmapNearestFilter,
+    NoColorSpace, RepeatWrapping, SRGBColorSpace,
+    type MagnificationTextureFilter, type Material, type MinificationTextureFilter, type Texture,
+} from 'three';
+import { MeshBasicNodeMaterial, MeshPhysicalNodeMaterial, MeshStandardNodeMaterial, SpriteNodeMaterial } from 'three/webgpu';
 import type { Component, ComponentViewProps } from '../../core/ComponentRegistry.js';
-
-import { useTextureAsset } from '../assets/AssetRuntime.js';
-
-import { usePrefab } from '../scene/SceneContext.js';
-
-
 import { compactPrefabMaterial, getMaterialDefinition } from '../../core/prefab.js';
-
 import type { MaterialComponentProperties, PrefabMaterial, PrefabMaterialType } from '../../core/types.js';
-
-import { MeshBasicNodeMaterial, MeshStandardNodeMaterial, MeshPhysicalNodeMaterial, SpriteNodeMaterial } from 'three/webgpu';
-
-import { withBasePath } from "../assets/assetPaths.js";
-
-import { RepeatWrapping, ClampToEdgeWrapping, NoColorSpace, SRGBColorSpace, LinearFilter, LinearMipmapLinearFilter, FrontSide } from 'three';
-
-import type { MinificationTextureFilter, MagnificationTextureFilter, Material, Texture } from 'three';
+import { useTextureAsset } from '../assets/AssetRuntime.js';
+import { withBasePath } from '../assets/assetPaths.js';
+import { useNamedMaterialDefinition, useSharedMaterialResource } from '../rendering/MaterialPoolProvider.js';
+import { useInvalidateMeshInstances } from '../rendering/MeshInstanceProvider.js';
+import { usePrefab } from '../scene/SceneContext.js';
 
 type TextureConfig = {
     colorSpace: Texture['colorSpace'];
@@ -136,86 +125,6 @@ extend({
 
 type RuntimeMaterial = MeshBasicNodeMaterial | MeshStandardNodeMaterial | SpriteNodeMaterial;
 
-type MaterialEntry = {
-    key: string;
-    material: Material;
-    references: number;
-};
-
-type MaterialName = string | object;
-type MaterialDefinition = { name: MaterialName; material: PrefabMaterial; basePath: string; order: number };
-
-export class SceneMaterialPool {
-    readonly entries = new Map<string, MaterialEntry>();
-    private definitions = new Map<object, MaterialDefinition>();
-    private definitionsByName = new Map<MaterialName, Map<object, MaterialDefinition>>();
-    private nextOrder = 0;
-    lifetime: object | null = null;
-    private listeners = new Map<MaterialName, Set<() => void>>();
-    subscribe = (name: MaterialName, listener: () => void) => {
-        let listeners = this.listeners.get(name);
-        if (!listeners) this.listeners.set(name, listeners = new Set());
-        listeners.add(listener);
-        return () => {
-            listeners?.delete(listener);
-            if (listeners?.size === 0) this.listeners.delete(name);
-        };
-    };
-    private notify(name: MaterialName) { this.listeners.get(name)?.forEach(listener => listener()); }
-    registerDefinition(owner: object, name: MaterialName, material: PrefabMaterial, basePath: string) {
-        const previous = this.definitions.get(owner);
-        if (previous && previous.name !== name) {
-            const peers = this.definitionsByName.get(previous.name)!;
-            peers.delete(owner);
-            if (!peers.size) this.definitionsByName.delete(previous.name);
-        }
-        const definition = { name, material, basePath, order: previous?.order ?? this.nextOrder++ };
-        this.definitions.set(owner, definition);
-        let peers = this.definitionsByName.get(name);
-        if (!peers) this.definitionsByName.set(name, peers = new Map());
-        peers.set(owner, definition);
-        if (previous && previous.name !== name) this.notify(previous.name);
-        this.notify(name);
-    }
-    unregisterDefinition(owner: object) {
-        const definition = this.definitions.get(owner);
-        if (!definition) return;
-        this.definitions.delete(owner);
-        const peers = this.definitionsByName.get(definition.name)!;
-        peers.delete(owner);
-        if (!peers.size) this.definitionsByName.delete(definition.name);
-        this.notify(definition.name);
-    }
-    resolve(name: MaterialName) {
-        let resolved: MaterialDefinition | null = null;
-        for (const definition of this.definitionsByName.get(name)?.values() ?? []) {
-            if (!resolved || definition.order > resolved.order) resolved = definition;
-        }
-        return resolved;
-    }
-    get(key: string, create: () => Material) {
-        let entry = this.entries.get(key);
-        if (!entry) {
-            entry = { key, material: create(), references: 0 };
-            this.entries.set(key, entry);
-        }
-        return entry;
-    }
-    retain(entry: MaterialEntry) {
-        entry.references++;
-        return () => {
-            entry.references--;
-            queueMicrotask(() => {
-                if (entry.references > 0 || this.entries.get(entry.key) !== entry) return;
-                this.entries.delete(entry.key);
-                entry.material.dispose();
-            });
-        };
-    }
-    dispose() { this.entries.forEach(entry => entry.material.dispose()); this.entries.clear(); }
-}
-const SceneMaterialPoolContext = createContext<SceneMaterialPool | null>(null);
-
 function createMaterial(type: PrefabMaterialType = 'standard'): RuntimeMaterial {
     if (type === 'basic') return new MeshBasicNodeMaterial();
     if (type === 'sprite') return new SpriteNodeMaterial();
@@ -241,41 +150,6 @@ function getMaterialSignature(material: PrefabMaterial, basePath: string) {
     if (!byPath) materialSignatures.set(material, byPath = new Map());
     byPath.set(basePath, signature);
     return signature;
-}
-
-export function MaterialPoolProvider({ children }: { children: ReactNode }) {
-    const [pool] = useState(() => new SceneMaterialPool());
-    useEffect(() => {
-        const lifetime = {};
-        pool.lifetime = lifetime;
-        return () => { queueMicrotask(() => { if (pool.lifetime === lifetime) pool.dispose(); }); };
-    }, [pool]);
-    return <SceneMaterialPoolContext.Provider value={pool}>
-        {children}
-    </SceneMaterialPoolContext.Provider>;
-}
-
-export type SharedMaterialOptions<T extends Material> = {
-    /** Optional shader variant for object-local calculations in an instance batch.
-     * Return a new material; the renderer owns its disposal. Never mutate source.
-     * Include every shader dependency in the resource key, just as for create(). */
-    createInstanced?: (source: T, inverseInstanceMatrix: Node<'mat4'>) => Material;
-};
-
-/** Immutable materials are shared by key; resource changes automatically refresh batches. */
-export function useSharedMaterialResource<T extends Material>(key: string, create: () => T, options?: SharedMaterialOptions<T>): T {
-    const pool = useContext(SceneMaterialPoolContext);
-    if (!pool) throw new Error('Shared materials require a scene material pool');
-    const entry = useMemo(() => pool.get(`custom:${key}`, () => {
-        const material = create();
-        const createInstanced = options?.createInstanced;
-        if (createInstanced) registerInstancedMaterial(material, inverse => createInstanced(material, inverse));
-        return material;
-    }), [pool, key]);
-    useEffect(() => pool.retain(entry), [entry, pool]);
-    const invalidateInstances = useInvalidateMeshInstances();
-    useLayoutEffect(invalidateInstances, [entry.material, invalidateInstances]);
-    return entry.material as T;
 }
 
 function applyMaterialProperties(
@@ -339,17 +213,7 @@ function MaterialComponentView({ properties, children }: { properties: MaterialC
 function NamedMaterial({ name, material, basePath, attach }: {
     name: string; material: PrefabMaterial | null; basePath: string; attach?: string;
 }) {
-    const pool = useContext(SceneMaterialPoolContext);
-    if (!pool) throw new Error('Materials require a scene material pool');
-    const [owner] = useState(() => ({}));
-    const subscribe = useMemo(() => (listener: () => void) => pool.subscribe(name, listener), [pool, name]);
-    const resolve = useMemo(() => () => pool.resolve(name), [pool, name]);
-    const definition = useSyncExternalStore(subscribe, resolve, () => null);
-    useLayoutEffect(() => {
-        if (!material) return;
-        pool.registerDefinition(owner, name, material, basePath);
-        return () => pool.unregisterDefinition(owner);
-    }, [pool, owner, name, material, basePath]);
+    const definition = useNamedMaterialDefinition(name, material, basePath);
     return definition
         ? <ResolvedMaterial material={definition.material} basePath={definition.basePath} attach={attach} />
         : <primitive object={unresolvedMaterial} attach={attach ?? 'material'} dispose={null} />;

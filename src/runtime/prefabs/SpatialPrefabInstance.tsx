@@ -1,127 +1,141 @@
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Group, Matrix4 } from 'three';
 import { useAssetRuntime, type AssetRuntime } from '../assets/AssetRuntime.js';
-import type { PrefabInstanceProps } from './PrefabInstance.js';
+import { ResourceLoadError } from '../assets/assetCache.js';
+import type { PrefabInstanceProps, PrefabInstanceStatus } from './PrefabInstance.js';
 import { PreparedPrefabInstance } from './PreparedPrefabInstance.js';
 import type { PreparedPrefab } from './preparePrefab.js';
 import { createSpatialPrefabPlan, type PrefabStreamingOptions, type SpatialPrefabChunk, type SpatialPrefabPlan } from './spatialPrefabPlan.js';
 import { useSpatialStreamScheduler } from './SpatialStreamingRuntime.js';
 import type { SpatialStreamEntry, SpatialStreamPlacement } from './SpatialStreamScheduler.js';
 import type { PrefabState } from '../../core/prefab.js';
+import { useStreamedMaterialDefinitions } from '../rendering/MaterialPoolProvider.js';
+import { StaticPrimitiveBatchView } from '../rendering/StaticPrimitiveBatchView.js';
+import { getComponent, getComponentRegistryVersion } from '../../core/ComponentRegistry.js';
+import { useMaterialOverrides } from '../components/MaterialComponent.js';
+import { ComponentLookupContext } from './nodePlan.js';
 
 // Placements of the same source reuse the immutable plan, just like loaded assets.
 const plans = new WeakMap<AssetRuntime, WeakMap<PrefabState, Map<string, Promise<SpatialPrefabPlan>>>>();
-function sharedPlan(prepared: PreparedPrefab, runtime: AssetRuntime, options: PrefabStreamingOptions, basePath = '') {
+function sharedPlan(document: PrefabState, runtime: AssetRuntime, key: string, options: PrefabStreamingOptions, batchPrimitives: boolean, lookup: typeof getComponent, basePath?: string) {
+    const plan = () => createSpatialPrefabPlan(document, { ...runtime, batchPrimitives, lookup }, options, basePath);
+    if (lookup !== getComponent) return plan();
     let documents = plans.get(runtime);
     if (!documents) plans.set(runtime, documents = new WeakMap());
-    let variants = documents.get(prepared.document);
-    if (!variants) documents.set(prepared.document, variants = new Map());
-    const key = JSON.stringify([basePath, options.cellSize, options.maxNodesPerChunk]);
+    let variants = documents.get(document);
+    if (!variants) documents.set(document, variants = new Map());
     let promise = variants.get(key);
     if (!promise) {
-        promise = createSpatialPrefabPlan(prepared.document, runtime, options, basePath);
+        promise = plan();
         variants.set(key, promise);
         void promise.catch(() => { if (variants.get(key) === promise) variants.delete(key); });
     }
     return promise;
 }
 
-export function SpatialPrefabInstance(props: PrefabInstanceProps & { prepared: PreparedPrefab; options: PrefabStreamingOptions }) {
+type SpatialProps = PrefabInstanceProps & { prepared: PreparedPrefab; options: PrefabStreamingOptions };
+export function SpatialPrefabInstance(props: SpatialProps) {
     const runtime = useAssetRuntime();
+    const lookup = useContext(ComponentLookupContext);
+    const overrides = useMaterialOverrides();
+    const batchPrimitives = Object.keys(overrides).length === 0;
     const [resource, setResource] = useState<{ source: PreparedPrefab; key: string; plan: SpatialPrefabPlan } | null>(null);
     const callbacks = useRef(props); callbacks.current = props;
-    const optionsValue = props.options;
-    const options = useMemo(() => ({ ...optionsValue }), [optionsValue.cellSize, optionsValue.visibleDistance,
-        optionsValue.preloadDistance, optionsValue.unloadDistance, optionsValue.maxNodesPerChunk]);
-    const key = JSON.stringify([props.basePath, options.cellSize, options.maxNodesPerChunk]);
+    const { cellSize, maxNodesPerChunk } = props.options;
+    const key = JSON.stringify([props.basePath, cellSize, maxNodesPerChunk, batchPrimitives, getComponentRegistryVersion()]);
     useEffect(() => {
         let cancelled = false;
         callbacks.current.onStatus?.({ phase: 'compiling' });
-        void sharedPlan(props.prepared, runtime, { cellSize: options.cellSize, maxNodesPerChunk: options.maxNodesPerChunk }, props.basePath).then(value => {
+        void sharedPlan(props.prepared.document, runtime, key, { cellSize, maxNodesPerChunk }, batchPrimitives, lookup, props.basePath).then(value => {
             if (!cancelled) setResource({ source: props.prepared, key, plan: value });
         }, error => { if (!cancelled) callbacks.current.onStatus?.({ phase: 'error', error }); });
         return () => { cancelled = true; };
-    }, [props.prepared, props.basePath, options.cellSize, options.maxNodesPerChunk, key, runtime]);
+    }, [props.prepared, props.basePath, cellSize, maxNodesPerChunk, key, runtime, batchPrimitives, lookup]);
     const plan = resource?.source === props.prepared && resource.key === key ? resource.plan : null;
-    return plan ? <SpatialPlan key={key} props={props} plan={plan} options={options} /> : null;
+    return plan ? <SpatialPlan key={key} props={props} plan={plan} /> : null;
 }
 
-type InstanceProps = PrefabInstanceProps & { prepared: PreparedPrefab };
-type CellRecord = SpatialStreamEntry & { chunk: SpatialPrefabChunk; group: Group | null };
+type Cell = {
+    chunk: SpatialPrefabChunk;
+    group: Group;
+    onStatus(status: PrefabInstanceStatus): void;
+};
 
-/** Cold cells are scheduler records, not mounted React or Three subtrees. */
-function SpatialPlan({ props, plan, options }: { props: InstanceProps; plan: SpatialPrefabPlan; options: PrefabStreamingOptions }) {
+/** Cold cells are scheduler records. Three objects are created on admission. */
+function SpatialPlan({ props, plan }: { props: SpatialProps; plan: SpatialPrefabPlan }) {
+    useStreamedMaterialDefinitions(plan.materials, props.basePath);
     const host = useRef<Group>(null);
     const scheduler = useSpatialStreamScheduler();
-    const [mounted, setMounted] = useState<CellRecord[]>([]);
-    const callbacks = useRef(props); callbacks.current = props;
-    const activated = useRef(false);
-    const ready = useCallback(() => {
-        if (activated.current) return;
-        activated.current = true;
-        callbacks.current.onStatus?.({ phase: 'active' });
-        callbacks.current.onActivate?.();
-    }, []);
-    const records = useMemo(() => plan.chunks.map(chunk => {
-        const record: CellRecord = {
-            chunk, group: null, bounds: chunk.bounds, phase: 'cold', visible: false,
-            mount: () => {
-                callbacks.current.onChunkStatus?.({ id: chunk.id, phase: 'preparing' });
-                setMounted(cells => cells.includes(record) ? cells : [...cells, record]);
-            },
-            unmount: () => {
-                if (record.group) record.group.visible = false;
-                callbacks.current.onChunkStatus?.({ id: chunk.id, phase: 'unloaded' });
-                setMounted(cells => cells.filter(cell => cell !== record));
-            },
-            setVisible: visible => {
-                if (record.group) record.group.visible = visible;
-                if (visible) ready();
-            },
+    const [mounted, setMounted] = useState<Cell[]>([]);
+    const callbacks = useRef(props);
+    callbacks.current = props;
+    const placement = useMemo<SpatialStreamPlacement & { activate(): void }>(() => {
+        let active = false;
+        const activate = () => {
+            if (active) return;
+            active = true;
+            callbacks.current.onStatus?.({ phase: 'active' });
+            callbacks.current.onActivate?.();
         };
-        return record;
-    }), [plan, ready]);
-    const placement = useMemo<SpatialStreamPlacement>(() => ({
-        entries: records, options: {},
-        matrix: () => {
-            host.current?.updateWorldMatrix(true, false);
-            return host.current?.matrixWorld ?? identity;
-        },
-    }), [records]);
-    useLayoutEffect(() => { placement.options = options; }, [placement, options]);
+        return {
+            activate, options: {},
+            matrix: () => { host.current?.updateWorldMatrix(true, false); return host.current?.matrixWorld ?? identity; },
+            entries: plan.chunks.map(chunk => {
+                const { id, bounds } = chunk;
+                let cell: Cell | undefined;
+                let retry: (() => void) | undefined;
+                const entry: SpatialStreamEntry = {
+                    bounds, phase: 'cold', visible: false,
+                    mount() {
+                        retry?.();
+                        retry = undefined;
+                        const group = new Group();
+                        const mountedCell: Cell = {
+                            chunk, group,
+                            onStatus(status) {
+                                if (cell !== mountedCell || entry.phase !== 'preparing') return;
+                                if (status.phase === 'active') {
+                                    entry.phase = 'ready';
+                                    callbacks.current.onChunkStatus?.({ id, phase: 'ready' });
+                                } else if (status.phase === 'error') {
+                                    entry.phase = 'error';
+                                    if (status.error instanceof ResourceLoadError) retry = status.error.retry;
+                                    callbacks.current.onChunkStatus?.({ id, phase: 'error', error: status.error });
+                                    callbacks.current.onStatus?.(status);
+                                }
+                            },
+                        };
+                        cell = mountedCell;
+                        callbacks.current.onChunkStatus?.({ id, phase: 'preparing' });
+                        setMounted(cells => [...cells, mountedCell]);
+                    },
+                    unmount() {
+                        const evicted = cell;
+                        cell = undefined;
+                        callbacks.current.onChunkStatus?.({ id, phase: 'unloaded' });
+                        setMounted(cells => cells.filter(candidate => candidate !== evicted));
+                    },
+                    setVisible(visible) {
+                        if (cell) cell.group.visible = visible;
+                        if (visible) activate();
+                    },
+                };
+                return entry;
+            }),
+        };
+    }, [plan]);
+    useLayoutEffect(() => { placement.options = props.options; }, [placement, props.options]);
     useLayoutEffect(() => scheduler.register(placement), [placement, scheduler]);
-    const resident = useMemo(() => ({ ...props.prepared, document: plan.resident }), [plan, props.prepared]);
     return <group ref={host}>
-        <PreparedPrefabInstance id={`${props.id}/resident`} url={props.url} basePath={props.basePath} prepared={resident}
-            static onActivate={() => { if (!plan.chunks.length) ready(); }}
+        <PreparedPrefabInstance id={`${props.id}/resident`} basePath={props.basePath} document={plan.resident}
+            static onActivate={plan.chunks.length ? undefined : placement.activate}
             onStatus={status => { if (status.phase === 'error') callbacks.current.onStatus?.(status); }}>
             {props.children}
         </PreparedPrefabInstance>
-        {mounted.map(record => <StreamedCell key={record.chunk.id} record={record} props={props} />)}
+        {mounted.map(cell => <PreparedPrefabInstance key={cell.group.uuid} id={`${props.id}/cell/${cell.chunk.id}`}
+            basePath={props.basePath} document={cell.chunk.document} streamGroup={cell.group} onStatus={cell.onStatus} static>
+            {cell.chunk.batches?.map((batch, index) => <StaticPrimitiveBatchView key={index} batch={batch} />)}
+        </PreparedPrefabInstance>)}
     </group>;
 }
-
-const StreamedCell = memo(function StreamedCell({ record, props }: { record: CellRecord; props: InstanceProps }) {
-    const { chunk } = record;
-    const callbacks = useRef(props); callbacks.current = props;
-    const prepared = useMemo(() => ({ ...props.prepared, document: chunk.document }), [props.prepared, chunk]);
-    const groupRef = useCallback((group: Group | null) => { record.group = group; if (group) group.visible = record.visible; }, [record]);
-    return <group ref={groupRef} visible={false}>
-        {/* The plan already bounds this chunk. A second grid splits compatible
-            neighbors into tiny draws without improving chunk residency. */}
-        <PreparedPrefabInstance id={`${props.id}/cell/${chunk.id}`} url={props.url} basePath={props.basePath}
-            prepared={prepared} static spatialCellSize={null}
-            onStatus={status => {
-                if (record.phase !== 'preparing') return;
-                if (status.phase === 'active') {
-                    record.phase = 'ready';
-                    callbacks.current.onChunkStatus?.({ id: chunk.id, phase: 'ready' });
-                } else if (status.phase === 'error') {
-                    record.phase = 'error';
-                    callbacks.current.onChunkStatus?.({ id: chunk.id, phase: 'error', error: status.error });
-                    callbacks.current.onStatus?.(status);
-                }
-            }} />
-    </group>;
-});
 const identity = new Matrix4();

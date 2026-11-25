@@ -60,6 +60,9 @@ describe('Component contracts', () => {
         const { analyzeNodeComponents } = await import('../../src/runtime/prefabs/nodePlan.ts');
         const { registerBuiltInComponents } = await import('../../src/viewer/index.ts');
         registerBuiltInComponents();
+        assert.throws(() => analyzeNodeComponents({ id: 'player', components: {
+            missing: { type: 'MissingPlugin', properties: {} },
+        } }), /MissingPlugin.*player/);
         const plan = analyzeNodeComponents({ id: 'lit-mesh', components: {
             light: { type: 'PointLight', properties: {} },
             material: { type: 'Material', properties: {} },
@@ -82,6 +85,7 @@ test('JSON attaches registered behaviors and built-ins; editor API edits update 
     let attached = 0;
     let ready = false;
     registerComponent({ name: 'TestObjectWrapper', slot: 'object', properties: {}, View: ({ children }) => h('group', null, children) });
+    registerComponent({ name: 'TestLeaf', slot: 'leaf', properties: {}, View: () => h('group', { name: 'Leaf' }) });
     let viewlessUpdates = 0;
     registerComponent({ name: 'TestFrameBehavior', properties: {}, View({ children }) { useFrame(() => { viewlessUpdates++; }); return children; } });
     registerComponent({ name: 'TestMotion', properties: { speed: { default: 1 } },
@@ -99,6 +103,7 @@ test('JSON attaches registered behaviors and built-ins; editor API edits update 
             paint: { type: 'Material', properties: { color: '#ff0000' } },
             shape: { type: 'Geometry', properties: { geometryType: 'box', args: [2, 2, 2], instanced: false } },
             object: { type: 'TestObjectWrapper', properties: {} },
+            leaf: { type: 'TestLeaf', properties: {} },
             motion: { type: 'TestMotion', properties: { speed: 2 } },
         }, children: [{ id: 'child', name: 'Child', components: { behavior: { type: 'TestFrameBehavior', properties: {} } } }],
     }] } })));
@@ -114,6 +119,7 @@ test('JSON attaches registered behaviors and built-ins; editor API edits update 
     assert.ok(box);
     assert.deepEqual(box.userData, { prefabNodeId: 'box', prefabNodeName: 'Box', prefabNodeScope: '', team: 'blue' },
         'application data cannot overwrite renderer metadata');
+    assert.ok(box.getObjectByName('Leaf'));
     assert.ok(box.getObjectByName('Child'), 'behaviors preserve composed children');
     const meshes = []; box.traverse(object => { if (object.isMesh) meshes.push(object); });
     assert.equal(meshes.length, 1, 'geometry owns its mesh even alongside an object wrapper');
@@ -162,6 +168,10 @@ test('changing prefab metadata updates the mounted root without replacing its ob
     assert.ok(replacement);
     assert.notEqual(replacement, before);
     assert.equal(replacement.userData.prefabNodeId, 'new-root');
+    for (const name of ['first', 'second']) {
+        await act(async () => root.render(h(PrefabRoot, { data: { root: { id: name, name } } })));
+        assert.ok(state.getState().scene.getObjectByName(name));
+    }
 });
 
 test('switching edit mode preserves composed views and skips unrelated renders', async t => {

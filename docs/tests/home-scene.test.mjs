@@ -33,6 +33,37 @@ test('home document carries reusable definitions and executable script source wi
   const restored = normalizePrefab(JSON.parse(JSON.stringify(denormalizePrefab(document))));
   assert.equal(restored.nodesById[camera.id].components.flythrough.properties.update, source);
   const prototype = normalizePrefab(restored.prefabs[streamer.prefabId], restored.prefabs);
+  for (const side of ['west', 'east']) {
+    const frontage = prototype.childIdsById[`city-${side}-frontage`];
+    assert.equal(frontage.filter(id => id.startsWith(`city-${side}-block-`)).length, 8);
+  }
+  assert.equal(prototype.childIdsById['city-skybridges'].length, 4);
+  for (const [variant, floors] of [[1, 13], [2, 17], [3, 11]]) {
+    const habitat = restored.prefabs[`habitat-${variant}-root`].root;
+    assert.equal(habitat.children.filter(node => node.id.startsWith(`habitat-${variant}-floor-`)).length, floors);
+  }
+  const paletteNodes = new Set(prototype.childIdsById['home-city-materials']);
+  const materialNodes = Object.values(prototype.nodesById).filter(node => node.components?.material);
+  for (const node of materialNodes) {
+    const { name, ...settings } = node.components.material.properties;
+    assert.ok(Object.hasOwn(prototype.materials, name), `Missing material definition for ${name}`);
+    assert.equal(Object.keys(settings).length > 0, paletteNodes.has(node.id));
+  }
+  assert.equal(paletteNodes.size, Object.keys(prototype.materials).length);
+  for (const side of ['east', 'west']) {
+    const kit = `street-luminaire-${side}-kit`;
+    assert.equal(restored.prefabs[kit].root.children.length, 4);
+    assert.equal(Object.values(prototype.nodesById).filter(node => node.components?.prefab?.properties.prefabId === kit).length, 7);
+  }
   const plan = await createSpatialPrefabPlan(prototype, runtime, { cellSize: 64, maxNodesPerChunk: 96 });
   assert.ok(plan.chunks.length > 0);
+  assert.deepEqual(Object.fromEntries(plan.materials), prototype.materials);
+  const batched = await createSpatialPrefabPlan(prototype, { ...runtime, batchPrimitives: true }, { cellSize: 64, maxNodesPerChunk: 96 });
+  const geometryCount = cells => cells.reduce((count, cell) => count + Object.values(cell.document.nodesById)
+    .filter(node => Object.values(node.components ?? {}).some(entry => entry?.type === 'Geometry')).length, 0);
+  const instanceCount = batched.chunks.flatMap(cell => cell.batches ?? [])
+    .reduce((count, batch) => count + batch.matrices.length / 16, 0);
+  assert.ok(instanceCount > 0);
+  assert.equal(geometryCount(batched.chunks) + instanceCount, geometryCount(plan.chunks));
+  assert.deepEqual(batched.chunks.map(cell => cell.bounds), plan.chunks.map(cell => cell.bounds));
 });

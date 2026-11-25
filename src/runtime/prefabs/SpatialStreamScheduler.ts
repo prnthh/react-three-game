@@ -28,7 +28,7 @@ export class SpatialStreamScheduler {
     update(camera: Vector3) {
         let nearest: SpatialStreamEntry | undefined, nearestDistance = Infinity;
         let eviction: SpatialStreamEntry | undefined, evictionDistance = -Infinity;
-        let preparing = false;
+        let preparing: SpatialStreamEntry | undefined, preparingVisible = false, nearestVisible = false;
         for (const placement of this.placements) {
             const matrix = placement.matrix(), options = placement.options;
             const visibleRange = finitePositive(options.visibleDistance, STREAMING_DEFAULTS.visibleDistance);
@@ -36,19 +36,22 @@ export class SpatialStreamScheduler {
             const unloadRange = Math.max(preloadRange, finitePositive(options.unloadDistance, STREAMING_DEFAULTS.unloadDistance));
             for (const entry of placement.entries) {
                 const distance = this.box.copy(entry.bounds).applyMatrix4(matrix).distanceToPoint(camera);
-                const visible = entry.phase === 'ready' && distance <= visibleRange;
+                const inVisibleRange = distance <= visibleRange;
+                const visible = entry.phase === 'ready' && inVisibleRange;
                 if (entry.visible !== visible) { entry.visible = visible; entry.setVisible(visible); }
-                if (entry.phase === 'preparing') preparing = true;
+                if (entry.phase === 'preparing') { preparing = entry; preparingVisible = inVisibleRange; }
                 if (entry.phase !== 'cold' && distance > unloadRange && distance > evictionDistance) {
                     eviction = entry; evictionDistance = distance;
                 }
-                if (entry.phase === 'cold' && distance <= preloadRange && distance < nearestDistance) {
-                    nearest = entry; nearestDistance = distance;
+                if (entry.phase === 'cold' && distance <= preloadRange &&
+                    (inVisibleRange === nearestVisible ? distance < nearestDistance : inVisibleRange)) {
+                    nearest = entry; nearestDistance = distance; nearestVisible = inVisibleRange;
                 }
             }
         }
-        // Unmounts can be expensive too. Spread both directions of travel across
-        // frames, and cancel stale preparation before admitting another chunk.
+        // Yield a warm-up slot to newly visible work after the camera moves.
+        // Admit on the next frame so eviction and mounting remain separate.
+        if (preparing && !preparingVisible && nearestVisible) eviction = preparing;
         if (eviction) {
             eviction.phase = 'cold'; eviction.visible = false;
             eviction.unmount();

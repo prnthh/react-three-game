@@ -11,7 +11,12 @@ export interface PreparedPrefab {
     readonly documentCount: number;
     readonly assetCount: number;
 }
-export interface PrefabPreparationOptions { basePath?: string; signal?: AbortSignal; }
+export interface PrefabPreparationOptions {
+    basePath?: string;
+    signal?: AbortSignal;
+    /** Let streamed material views request their textures when their cell mounts. */
+    deferMaterialTextures?: (root: PrefabState) => boolean;
+}
 export interface PrefabPreparationRuntime {
     getComponent(name: string): Component | undefined;
     loadDocument(path: string): Promise<PrefabState>;
@@ -24,7 +29,7 @@ export interface PrefabPreparationRuntime {
 export async function preparePrefab(
     runtime: PrefabPreparationRuntime,
     path: string | PrefabState,
-    { basePath = '', signal }: PrefabPreparationOptions = {},
+    { basePath = '', signal, deferMaterialTextures }: PrefabPreparationOptions = {},
 ): Promise<PreparedPrefab> {
     type Source = string | Prefab | PrefabState;
     const documents = new Map<Source, Promise<PrefabState>>();
@@ -57,6 +62,8 @@ export async function preparePrefab(
     const rootSource = typeof path === 'string' ? withBasePath(basePath, path) : path;
     const run = async () => {
         enqueue(rootSource, typeof path === 'string' ? undefined : path);
+        const root = await documents.get(rootSource)!;
+        const deferTextures = deferMaterialTextures?.(root);
         while (queue.length) {
             await Promise.all(queue.splice(0).map(async source => {
                 const document = await documents.get(source)!;
@@ -81,7 +88,9 @@ export async function preparePrefab(
                                 const next = withBasePath(basePath, dependency.path);
                                 references.push(next);
                                 enqueue(next);
-                            } else enqueueAsset(dependency);
+                            } else if (!deferTextures || component.type !== 'Material' || dependency.kind !== 'texture') {
+                                enqueueAsset(dependency);
+                            }
                         }
                     }
                 }
@@ -100,10 +109,7 @@ export async function preparePrefab(
         validate(rootSource);
         await Promise.all(assets.values());
         check();
-        return {
-            document: await documents.get(rootSource)!, documentCount: documents.size,
-            assetCount: assets.size,
-        };
+        return { document: root, documentCount: documents.size, assetCount: assets.size };
     };
     let onAbort = () => {};
     const cancelled = new Promise<never>((_, reject) => {

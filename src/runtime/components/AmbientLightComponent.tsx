@@ -8,19 +8,15 @@ export const ambientLightDefaults = {
 
 export type AmbientLightProperties = Partial<typeof ambientLightDefaults>;
 
-function AmbientLightComponentView({ properties, children }: ComponentViewProps<AmbientLightProperties>) {
+function AmbientLightComponentView({ properties }: ComponentViewProps<AmbientLightProperties>) {
     const { color, intensity } = properties;
 
-    return (
-        <>
-            <ambientLight color={color} intensity={intensity} />
-            {children}
-        </>
-    );
+    return <ambientLight color={color} intensity={intensity} />;
 }
 
 const AmbientLightComponent: Component<AmbientLightProperties> = {
     name: 'AmbientLight',
+    slot: 'leaf',
     renderWhenDisabled: true,
     description: "Add uniform fill lighting to the scene using color and intensity. Position has no effect; this light does not cast shadows.",
     category: 'lighting',

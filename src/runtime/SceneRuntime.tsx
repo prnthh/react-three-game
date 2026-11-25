@@ -1,7 +1,7 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import { AssetRuntimeProvider } from './assets/AssetRuntime.js';
 import { GeometryRuntimeProvider } from './components/GeometryComponent.js';
-import { MaterialPoolProvider } from './components/MaterialComponent.js';
+import { MaterialPoolProvider } from './rendering/MaterialPoolProvider.js';
 import { SceneComponentsProvider } from './scene/SceneContext.js';
 import { GameEventsProvider } from './scene/GameEvents.js';
 import { SpatialStreamingRuntime } from './prefabs/SpatialStreamingRuntime.js';

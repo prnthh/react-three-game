@@ -146,10 +146,23 @@ ready when there are no streamable cells). Unmounting cancels preparation. Cells
 their own failures. An errored cell is retried after leaving its unload
 range and returning, or after remounting the placement.
 
+Visible-range work takes priority over warming cells. If the camera moves
+while a cell outside the visible range is preparing, the scheduler can release
+that cell to make room for visible work. The placement prepares prefab documents
+and model bounds before scheduling. Each admitted cell requests its material
+textures and compiles before it becomes visible.
+
 Streaming is inherited from the outer scene root and requires `static={true}`. Primitive geometry and ordinary static model
 placements are partitioned; external and packed prefab references are expanded
-while retaining their transform chains. Named materials are resolved into each
-cell, so nearby surfaces retain their materials as distant cells unload.
+while retaining their transform chains. The graph walk registers named material
+definitions for the lifetime of the streamed placement. Cells keep their name
+references and share the scene's material pool, so nearby surfaces retain their
+materials as distant cells unload. A reference stays invisible until its
+definition is available. The first encountered definition owns a name until it unloads. Editing that definition updates its references.
+In static cells, compatible opaque built-in primitive meshes from different
+prefab placements can mount directly as one instanced mesh. The authored tree
+stays editable. Use `Geometry.instanced: false` when a primitive needs its own
+mounted object.
 Lights, cameras, fog and environments remain resident. A prefab containing custom
 behavior, colliders, geometry modifiers, animated/skinned models, model repeat
 arrays, or unsupported render compositions keeps its complete document resident

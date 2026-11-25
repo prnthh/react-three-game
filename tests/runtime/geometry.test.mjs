@@ -136,8 +136,8 @@ test('projected decals clip curved parent meshes, preserve sources and follow tr
 });
 
 test('decal component resolves its scene parent and updates projection without remounting', async t => {
- const { default: Decal } = await import('../../src/runtime/components/DecalComponent.tsx');
- registerComponent(Decal);
+ const { registerBuiltInComponents } = await import('../../src/runtime/components/index.ts');
+ registerBuiltInComponents();
  const previousWindow = globalThis.window;
  globalThis.window = { addEventListener(){}, removeEventListener(){} };
  AudioContext.setContext({createGain:()=>({connect(){}}),destination:{},listener:{}});

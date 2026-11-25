@@ -9,16 +9,14 @@ export const hemisphereLightDefaults = {
 
 export type HemisphereLightProperties = Partial<typeof hemisphereLightDefaults>;
 
-function HemisphereLightView({ properties, children }: ComponentViewProps<HemisphereLightProperties>) {
+function HemisphereLightView({ properties }: ComponentViewProps<HemisphereLightProperties>) {
     const { skyColor, groundColor, intensity } = properties;
-    return <>
-        <hemisphereLight args={[skyColor, groundColor, intensity]} />
-        {children}
-    </>;
+    return <hemisphereLight args={[skyColor, groundColor, intensity]} />;
 }
 
 const HemisphereLightComponent: Component<HemisphereLightProperties> = {
     name: "HemisphereLight",
+    slot: 'leaf',
     renderWhenDisabled: true,
     description: "Add sky/ground fill lighting using skyColor, groundColor and intensity. This light does not cast shadows.",
     category: 'lighting',

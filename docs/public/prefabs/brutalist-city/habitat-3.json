@@ -926,7 +926,8 @@
               "name": "home-city:concrete"
             }
           }
-        }
+        },
+        "packed": true
       },
       {
         "id": "city-614",
@@ -1042,23 +1043,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -1106,7 +1094,8 @@
               "name": "home-city:glass"
             }
           }
-        }
+        },
+        "packed": true
       },
       {
         "id": "city-618",
@@ -1132,23 +1121,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -1177,23 +1153,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:glass"
+              "prefabId": "city-617"
             }
           }
         }
@@ -1222,23 +1185,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -1267,23 +1217,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:glass"
+              "prefabId": "city-617"
             }
           }
         }
@@ -1312,23 +1249,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -1537,23 +1461,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:glass"
+              "prefabId": "city-617"
             }
           }
         }
@@ -1582,23 +1493,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -1627,23 +1525,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:glass"
+              "prefabId": "city-617"
             }
           }
         }
@@ -1672,23 +1557,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -1807,23 +1679,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -1942,23 +1801,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -1987,23 +1833,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:glass"
+              "prefabId": "city-617"
             }
           }
         }
@@ -2032,23 +1865,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -2302,23 +2122,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:glass"
+              "prefabId": "city-617"
             }
           }
         }
@@ -2347,23 +2154,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:glass"
+              "prefabId": "city-617"
             }
           }
         }
@@ -2392,23 +2186,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -2527,23 +2308,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -2887,23 +2655,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:glass"
+              "prefabId": "city-617"
             }
           }
         }
@@ -2932,23 +2687,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -2977,23 +2719,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:glass"
+              "prefabId": "city-617"
             }
           }
         }
@@ -3022,23 +2751,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -3157,23 +2873,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -3202,23 +2905,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:glass"
+              "prefabId": "city-617"
             }
           }
         }
@@ -3247,23 +2937,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -3292,23 +2969,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:glass"
+              "prefabId": "city-617"
             }
           }
         }
@@ -3337,23 +3001,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -3607,23 +3258,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -3652,23 +3290,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:glass"
+              "prefabId": "city-617"
             }
           }
         }
@@ -3697,23 +3322,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -3742,23 +3354,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:glass"
+              "prefabId": "city-617"
             }
           }
         }
@@ -3787,23 +3386,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -3832,23 +3418,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:glass"
+              "prefabId": "city-617"
             }
           }
         }
@@ -3877,23 +3450,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -4012,23 +3572,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -4237,23 +3784,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:glass"
+              "prefabId": "city-617"
             }
           }
         }
@@ -4282,23 +3816,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -4417,23 +3938,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -4552,23 +4060,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -4957,23 +4452,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:glass"
+              "prefabId": "city-617"
             }
           }
         }
@@ -5002,23 +4484,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -5047,23 +4516,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:glass"
+              "prefabId": "city-617"
             }
           }
         }
@@ -5092,23 +4548,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -5137,23 +4580,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:glass"
+              "prefabId": "city-617"
             }
           }
         }
@@ -5182,23 +4612,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -5317,23 +4734,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -5452,23 +4856,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -5677,23 +5068,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:glass"
+              "prefabId": "city-617"
             }
           }
         }
@@ -5722,23 +5100,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -5857,23 +5222,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -5902,23 +5254,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:glass"
+              "prefabId": "city-617"
             }
           }
         }
@@ -5947,23 +5286,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -5992,23 +5318,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:glass"
+              "prefabId": "city-617"
             }
           }
         }
@@ -6037,23 +5350,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -6082,23 +5382,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:glass"
+              "prefabId": "city-617"
             }
           }
         }
@@ -6127,23 +5414,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -6352,23 +5626,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:glass"
+              "prefabId": "city-617"
             }
           }
         }
@@ -6487,23 +5748,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -6532,23 +5780,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:glass"
+              "prefabId": "city-617"
             }
           }
         }
@@ -6577,23 +5812,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -7027,23 +6249,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -7162,23 +6371,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -7207,23 +6403,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:glass"
+              "prefabId": "city-617"
             }
           }
         }
@@ -7252,23 +6435,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -7297,23 +6467,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:glass"
+              "prefabId": "city-617"
             }
           }
         }
@@ -7342,23 +6499,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -7387,23 +6531,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:glass"
+              "prefabId": "city-617"
             }
           }
         }
@@ -7432,23 +6563,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -7657,23 +6775,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:glass"
+              "prefabId": "city-617"
             }
           }
         }
@@ -7702,23 +6807,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -7747,23 +6839,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:glass"
+              "prefabId": "city-617"
             }
           }
         }
@@ -7792,23 +6871,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -7927,23 +6993,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -8062,23 +7115,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }
@@ -8107,23 +7147,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:glass"
+              "prefabId": "city-617"
             }
           }
         }
@@ -8152,23 +7179,10 @@
               ]
             }
           },
-          "geometry": {
-            "type": "Geometry",
+          "prefab": {
+            "type": "PrefabRef",
             "properties": {
-              "geometryType": "box",
-              "args": [
-                1,
-                1,
-                1
-              ],
-              "castShadow": true,
-              "receiveShadow": true
-            }
-          },
-          "material": {
-            "type": "Material",
-            "properties": {
-              "name": "home-city:concrete"
+              "prefabId": "city-613"
             }
           }
         }

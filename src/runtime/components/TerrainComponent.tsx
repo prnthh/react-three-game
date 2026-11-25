@@ -1,4 +1,4 @@
-import { useSharedMaterialResource } from './MaterialComponent.js';
+import { useSharedMaterialResource } from '../rendering/MaterialPoolProvider.js';
 import { useSharedGeometryResource } from './GeometryComponent.js';
 import { Component as ReactComponent, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { TextureLoader, type Mesh, type Texture } from 'three';

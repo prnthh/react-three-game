@@ -47,6 +47,7 @@ export function analyzeNodeComponents(node: GameObjectType, lookup = getComponen
     for (const [key, component] of Object.entries(componentMap)) {
         if (!component?.type) continue;
         const registeredComponent = lookup(component.type);
+        if (!registeredComponent) throw new Error(`Unknown component "${component.type}" on node "${node.id}"`);
         const properties = resolveComponentProperties(registeredComponent, component.properties);
 
         if (component.type === "Transform") {
@@ -56,7 +57,7 @@ export function analyzeNodeComponents(node: GameObjectType, lookup = getComponen
                 scale: properties.scale ?? [1, 1, 1],
             };
         }
-        if (!registeredComponent || !registeredComponent.View || (registeredComponent.scope === 'scene') !== (scope === 'scene')) continue;
+        if (!registeredComponent.View || (registeredComponent.scope === 'scene') !== (scope === 'scene')) continue;
 
         composition.push({
             key,

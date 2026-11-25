@@ -19,6 +19,8 @@
     "/models/fps/relay-desk.glb",
     "/models/fps/relay-equipment.glb",
     "/models/fps/relay-grenade.glb",
+    "/models/frozen-yard/navmesh.glb",
+    "/models/frozen-yard/scene.glb",
     "/models/human/anim/idle.fbx",
     "/models/human/anim/walk.fbx",
     "/models/human/mixamo-anatomical-character.fbx",

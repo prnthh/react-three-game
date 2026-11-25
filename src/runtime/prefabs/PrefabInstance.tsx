@@ -1,4 +1,4 @@
-import { startTransition, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { startTransition, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useAssetRuntime } from '../assets/AssetRuntime.js';
 import { SceneRuntime } from '../SceneRuntime.js';
 import type { PreparedPrefab } from './preparePrefab.js';
@@ -44,23 +44,27 @@ function InstanceResource(props: PrefabInstanceProps) {
     const source = props.document ?? props.url!;
     const inheritedSettings = useContext(ChunkSettingsContext);
     const parentScene = useContext(SceneContext);
+    const settingsFor = (document: PrefabState) =>
+        inheritedSettings ?? (!parentScene ? readChunkSettings(document.nodesById[document.rootId]) : null);
     const [resource, setResource] = useState<{ source: typeof source; prepared: PreparedPrefab } | null>(null);
-    const callbacks = useRef(props);
-    callbacks.current = props;
+    const latest = useRef({ onStatus: props.onStatus, settingsFor });
+    latest.current = { onStatus: props.onStatus, settingsFor };
     useEffect(() => {
         const controller = new AbortController();
-        callbacks.current.onStatus?.({ phase: 'loading' });
-        void runtime.preparePrefab(source, { basePath: props.basePath, signal: controller.signal }).then(value => {
+        latest.current.onStatus?.({ phase: 'loading' });
+        void runtime.preparePrefab(source, { basePath: props.basePath, signal: controller.signal,
+            deferMaterialTextures: props.static ? document => !!latest.current.settingsFor(document) : undefined,
+        }).then(value => {
             if (controller.signal.aborted) return;
             startTransition(() => setResource({ source, prepared: value }));
         }, error => {
-            if (!controller.signal.aborted) callbacks.current.onStatus?.({ phase: 'error', error });
+            if (!controller.signal.aborted) latest.current.onStatus?.({ phase: 'error', error });
         });
         return () => controller.abort();
-    }, [props.basePath, source, runtime]);
+    }, [props.basePath, props.static, source, runtime]);
     const prepared = resource?.source === source ? resource.prepared : null;
-    const settings = useMemo(() => inheritedSettings ?? (!parentScene && prepared ? readChunkSettings(prepared.document.nodesById[prepared.document.rootId]) : null), [inheritedSettings, parentScene, prepared]);
     if (!prepared) return null;
-    if (props.static && settings) return <SpatialPrefabInstance {...props} prepared={prepared} options={settings} />;
-    return <PreparedPrefabInstance {...props} prepared={prepared} />;
+    const settings = props.static && settingsFor(prepared.document);
+    if (settings) return <SpatialPrefabInstance {...props} prepared={prepared} options={settings} />;
+    return <PreparedPrefabInstance {...props} document={prepared.document} />;
 }

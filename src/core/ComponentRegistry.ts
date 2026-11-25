@@ -89,7 +89,7 @@ export type ComponentCategory = 'mesh' | 'materials' | 'lighting' | 'camera' | '
 
 export interface ComponentRendering<P extends object> {
     /** Render composition only. Coexistence is declared separately with exclusive. */
-    slot?: 'object' | 'geometry' | 'material';
+    slot?: 'leaf' | 'object' | 'geometry' | 'material';
     /** Keep visual resources mounted while disabled. Use useComponentActive(enabled) to gate behavior. */
     renderWhenDisabled?: boolean;
     /** Wrap node contents; return children to preserve subsequent components and child nodes. */
@@ -116,7 +116,9 @@ export interface Component<P extends object = Record<string, any>> extends Compo
     properties: ComponentPropertyDefinitions<P>;
 }
 
-const REGISTRY: Record<string, Component<any>> = {};
+const REGISTRY: Record<string, Component<any>> = Object.create(null);
+const builtIns = new WeakSet<Component<any>>();
+export const isBuiltInComponent = (component: Component<any>) => builtIns.has(component);
 let registryVersion = 0;
 export const getComponentRegistryVersion = () => registryVersion;
 
@@ -129,6 +131,7 @@ export function registerComponent(component: Component<any>) {
 /** @internal Install engine defaults without replacing runtime plugins. */
 export function registerBuiltInComponents(components: readonly Component<any>[]) {
 	components.forEach(component => {
+		builtIns.add(component);
 		if (!REGISTRY[component.name]) registerComponent(component);
 	});
 }

@@ -8,7 +8,7 @@ import { createPrefabRegistry, PrefabContext, PrefabEditorMode, SceneContext, Ru
 import { SceneRuntime } from '../SceneRuntime.js';
 import { createPrefabApi } from './prefabApi.js';
 import { scopedNodeId } from '../scene/gameObject.js';
-import { PrefabNode } from './PrefabNode.js';
+import { PrefabNode, renderNodeContent } from './PrefabNode.js';
 import { ComponentLookupContext, analyzeNodeComponents } from './nodePlan.js';
 import { MeshInstanceProvider } from '../rendering/MeshInstanceProvider.js';
 import { usePrefabStore } from './PrefabStoreContext.js';
@@ -32,8 +32,7 @@ export interface PrefabRootProps {
 
 /** Establish a document instance, then render its root node. Shared services are inherited. */
 export const PrefabRoot = forwardRef<Scene, PrefabRootProps>(({ data, store, id = '', ...props }, ref) => {
-    const [ownedStore] = useState(() => !store && data ? createPrefabStore(data) : null);
-    const resolvedStore = store ?? ownedStore;
+    const resolvedStore = useMemo(() => store ?? (data ? createPrefabStore(data) : null), [store, data]);
     if (!resolvedStore) throw new Error('PrefabRoot requires either a `data` or `store` prop');
     return <SceneRuntime>
         <RuntimeNodeIdScope prefix={id}>
@@ -76,10 +75,7 @@ const PrefabRootBody = memo(forwardRef<Scene, Omit<PrefabRootProps, 'data' | 'st
     </MeshInstanceProvider>;
     if (!parentScene && !rootNode.disabled && !rootNode.hidden) {
         const components = analyzeNodeComponents(rootNode, lookup, 'scene').composition;
-        for (let index = components.length - 1; index >= 0; index--) {
-            const { View, key, properties } = components[index];
-            content = <View key={key} properties={properties} enabled={enabled}>{content}</View>;
-        }
+        content = renderNodeContent(components, content, enabled);
     }
     return <SceneContext.Provider value={scene}>
         <PrefabContext.Provider value={document}><NodeScope nodeId={rootId} editMode={editMode}>{content}</NodeScope></PrefabContext.Provider>

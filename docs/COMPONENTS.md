@@ -12,7 +12,7 @@ Copy [Rotator](app/demo/customcomponent/components/RotatorComponent.tsx) for a b
 Register it as in the [custom component demo](app/demo/customcomponent/page.tsx).
 
 Put editable fields and defaults in the definition; views receive resolved
-properties. Return `children` to preserve subsequent components and child nodes.
+properties. Use `slot: 'leaf'` for a View that renders alongside the other components and child nodes. Wrapper Views return `children` where their contents belong.
 
 Use React effects and R3F frames for behavior. `useComponentActive(enabled)`
 combines Play mode with enabled/preparation state; gate effects and frame work
@@ -58,7 +58,7 @@ supplies a `View`. For a custom visual helper, use an ordinary view:
 import { registerComponent, useNode,
   type ComponentViewProps } from 'react-three-game/viewer';
 
-function GuideView({ properties, children }: ComponentViewProps<{ radius: number }>) {
+function GuideView({ properties }: ComponentViewProps<{ radius: number }>) {
   const editMode = useNode(node => node.editMode);
   const isSelected = useNode(node => node.isSelected);
   return <>
@@ -66,11 +66,10 @@ function GuideView({ properties, children }: ComponentViewProps<{ radius: number
       <sphereGeometry args={[properties.radius, 12, 8]} />
       <meshBasicMaterial wireframe color={isSelected ? 'cyan' : 'gray'} />
     </mesh>}
-    {children}
   </>;
 }
 registerComponent({
-  name: 'Guide',
+  name: 'Guide', slot: 'leaf',
   properties: { radius: { default: 1, min: 0.01, description: 'Local radius in scene units.' } },
   View: GuideView,
 });
@@ -78,7 +77,7 @@ registerComponent({
 
 The view inherits the node's transform; changing its settings supplies new
 `properties` automatically. Ordinary descendant meshes participate in editor
-picking. Return `children` to render other components and child nodes.
+picking. Leaf Views render alongside the node’s other contents.
 Import the registration module before loading its prefab in both editor and viewer.
 The same property definitions generate inspector fields and window API
 `scene.components()` output. Use `registerComponentEditor` from `/editor`

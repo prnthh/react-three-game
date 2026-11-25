@@ -1,11 +1,12 @@
 import { Box3, Matrix4, Vector3, type Object3D } from 'three';
-import { normalizePrefab, type PrefabState } from '../../core/prefab.js';
-import { getComponent } from '../../core/ComponentRegistry.js';
+import { getMaterialDefinition, normalizePrefab, type PrefabState } from '../../core/prefab.js';
+import { getComponent, isBuiltInComponent } from '../../core/ComponentRegistry.js';
 import { findComponent, type GameObject, type Prefab, type PrefabMaterial } from '../../core/types.js';
 import { composeTransform } from '../../core/transforms.js';
 import { resolveInlinePrefab } from '../../core/inlinePrefabs.js';
 import { spatialCellKey } from '../spatial/spatialCell.js';
 import { withBasePath } from '../assets/assetPaths.js';
+import { batchStaticPrimitives, type StaticPrimitiveBatch } from './staticPrimitiveBatches.js';
 
 export interface PrefabStreamingOptions {
     /** Spatial partition width in prefab-local units. */
@@ -29,12 +30,19 @@ export interface SpatialPrefabChunk {
     bounds: Box3;
     document: PrefabState;
     nodeCount: number;
+    batches?: StaticPrimitiveBatch[];
 }
-export interface SpatialPrefabPlan { chunks: SpatialPrefabChunk[]; resident: PrefabState; }
-type Bucket = { roots: GameObject[]; nodes: Map<string, GameObject>; bounds: Box3; renderers: number; part: number };
+export interface SpatialPrefabPlan {
+    chunks: SpatialPrefabChunk[];
+    resident: PrefabState;
+    materials: ReadonlyMap<string, PrefabMaterial>;
+}
+type Bucket = { roots: GameObject[]; nodes: Map<string, GameObject>; bounds: Box3; renderers: number; part: number; primitives?: Map<GameObject, Matrix4> };
 export interface SpatialPlanRuntime {
     getPrefab(path: string): PrefabState | null;
     getModel?(path: string): Object3D | null;
+    batchPrimitives?: boolean;
+    lookup?: typeof getComponent;
 }
 
 const visualTypes = new Set(['Transform', 'Geometry', 'Material', 'Data', 'PrefabRef', 'Model']);
@@ -54,12 +62,12 @@ function matrixOf(node: GameObject) {
     return composeTransform(properties?.position, properties?.rotation, properties?.scale);
 }
 
-/** Resolve named surfaces before either a resident branch or a cell is copied. */
-function resolvedComponents(node: GameObject, materials: Record<string, PrefabMaterial>) {
-    return Object.fromEntries(Object.entries(node.components ?? {}).filter(([, c]) => c && c.type !== 'PrefabRef' && getComponent(c.type)?.scope !== 'scene').map(([key, c]) => {
-        if (c?.type !== 'Material') return [key, c];
-        const { name, ...properties } = { ...(materials[c.properties.name] ?? {}), ...c.properties };
-        return [key, { ...c, properties }];
+/** Named definitions live for the whole placement, including while its cells are cold. */
+function cellComponents(node: GameObject, lookup: typeof getComponent) {
+    return Object.fromEntries(Object.entries(node.components ?? {}).filter(([, c]) => c && c.type !== 'PrefabRef' && lookup(c.type)?.scope !== 'scene').map(([key, c]) => {
+        if (c?.type !== 'Material' || !c.properties.name) return [key, c];
+        const { name, attach } = c.properties;
+        return [key, { ...c, properties: { name, ...(attach !== undefined && { attach }) } }];
     }));
 }
 
@@ -77,13 +85,13 @@ function geometryBounds(type = 'box', args: number[] = []) {
 
 /**
  * Partition immutable visual scenery without mounting Three objects. Transform
- * chains are retained (including shear), references are expanded, and named
- * materials are resolved before a distant defining mesh can be unloaded.
+ * chains are retained (including shear) and references are expanded.
  * Unknown behavior keeps its complete document resident to preserve references.
  */
 export async function createSpatialPrefabPlan(document: PrefabState, runtime: SpatialPlanRuntime,
     options: PrefabStreamingOptions = {}, basePath = '', signal?: AbortSignal,
     yieldWork: () => Promise<void> = yieldFrame): Promise<SpatialPrefabPlan> {
+    const lookup = runtime.lookup ?? getComponent;
     const cellSize = finitePositive(options.cellSize, STREAMING_DEFAULTS.cellSize);
     const limit = Math.max(8, Math.floor(finitePositive(options.maxNodesPerChunk, STREAMING_DEFAULTS.maxNodesPerChunk)));
     const chunks: SpatialPrefabChunk[] = [];
@@ -92,8 +100,9 @@ export async function createSpatialPrefabPlan(document: PrefabState, runtime: Sp
     // separate renderable cap when sharing ancestor paths frees node capacity.
     const rendererLimit = Math.max(1, Math.floor(limit / 2));
     const resident: GameObject[] = [];
+    const materials = new Map<string, PrefabMaterial>();
     const modelBounds = new Map<Object3D, Box3>();
-    const root: GameObject = { id: '__stream-root', components: Object.fromEntries(Object.entries(document.nodesById[document.rootId].components ?? {}).filter(([, c]) => c && getComponent(c.type)?.scope === 'scene')), children: resident };
+    const root: GameObject = { id: '__stream-root', components: Object.fromEntries(Object.entries(document.nodesById[document.rootId].components ?? {}).filter(([, c]) => c && lookup(c.type)?.scope === 'scene')), children: resident };
     let lastYield = performance.now(), visits = 0;
     const checkpoint = async () => {
         signal?.throwIfAborted();
@@ -121,9 +130,16 @@ export async function createSpatialPrefabPlan(document: PrefabState, runtime: Sp
             const renderers = Object.values(node.components ?? {}).filter(c => c && ['Geometry', 'Model', 'PrefabRef'].includes(c.type));
             if (renderers.length > 1) return false;
             for (const c of Object.values(node.components ?? {})) {
-                if (!c || getComponent(c.type)?.scope === 'scene') continue;
+                if (!c) continue;
+                const definition = lookup(c.type);
+                if (!definition || !isBuiltInComponent(definition)) return false;
+                if (definition.scope === 'scene') continue;
                 if (!visualTypes.has(c.type) && !residentTypes.has(c.type)) return false;
                 if (c.type === 'Geometry' && !['box', 'plane', 'sphere', 'cylinder', 'torus'].includes(c.properties.geometryType ?? 'box')) return false;
+                if (c.type === 'Material' && c.properties.name && !materials.has(c.properties.name)) {
+                    const definition = getMaterialDefinition(c.properties);
+                    if (definition) materials.set(c.properties.name, definition);
+                }
                 if (c.type === 'Model' && c.properties.filename) {
                     const model = runtime.getModel?.(withBasePath(basePath, c.properties.filename));
                     // Animated/skinned models and repeat arrays need their original
@@ -140,19 +156,22 @@ export async function createSpatialPrefabPlan(document: PrefabState, runtime: Sp
         checking.delete(state); checked.add(state);
         return true;
     };
-    if (!await safe(document)) return { chunks, resident: document };
+    if (!await safe(document)) return { chunks, resident: document, materials: new Map() };
     const flush = (key: string, bucket: Bucket) => {
         if (!bucket.roots.length) return;
         const id = `${key}/${bucket.part++}`;
         let rootId = `__cell/${id}`;
         while (bucket.nodes.has(rootId)) rootId += '/root';
         const prefab: Prefab = { root: { id: rootId, children: bucket.roots } };
-        chunks.push({ id, bounds: bucket.bounds, nodeCount: bucket.nodes.size + 1, document: normalizePrefab(prefab) });
+        const batches = bucket.primitives && batchStaticPrimitives(prefab.root, bucket.primitives, materials);
+        const document = normalizePrefab(prefab);
+        chunks.push({ id, bounds: bucket.bounds, nodeCount: Object.keys(document.nodesById).length, document, batches });
         bucket.roots = []; bucket.nodes = new Map(); bucket.bounds = new Box3(); bucket.renderers = 0;
+        bucket.primitives?.clear();
     };
     const wrap = (node: GameObject, ancestors: GameObject[]) => ancestors.reduceRight((child, parent) => ({ ...parent, children: [child] }), node);
     const visit = async (state: PrefabState, id: string, ancestors: GameObject[], parentMatrix: Matrix4,
-        prefix: string, inheritedMaterials: Record<string, PrefabMaterial>) => {
+        prefix: string) => {
         await checkpoint();
         const node = state.nodesById[id];
         if (!node || node.disabled || node.hidden) return;
@@ -160,28 +179,25 @@ export async function createSpatialPrefabPlan(document: PrefabState, runtime: Sp
         const components = Object.fromEntries(Object.entries(node.components ?? {}).filter(([, c]) => c));
         const values = Object.values(components);
         const world = parentMatrix.clone().multiply(matrixOf(node));
-        const materials = { ...inheritedMaterials, ...state.materials };
         // Ancestors carry only transforms and metadata, never duplicate renderers or lights.
         const shell: GameObject = { id: scopedId, name: node.name, components: Object.fromEntries(Object.entries(components).filter(([, c]) => c?.type === 'Transform' || c?.type === 'Data')) };
-        const localComponents = resolvedComponents(node, materials);
+        const localComponents = cellComponents(node, lookup);
         const geometry = values.find(c => c?.type === 'Geometry');
         const model = values.find(c => c?.type === 'Model');
         if (geometry?.properties.visible === false) return;
         const hasResident = values.some(c => c && residentTypes.has(c.type) && !residentSettings.has(c.type));
         if (hasResident) {
             // A node that also carries a light stays intact, including its descendants.
-            const copy = (sourceState: PrefabState, childId: string, scope: string, inherited: Record<string, PrefabMaterial>): GameObject => {
+            const copy = (sourceState: PrefabState, childId: string, scope: string): GameObject => {
                 const source = sourceState.nodesById[childId];
-                const definitions = { ...inherited, ...sourceState.materials };
-                const resolved = resolvedComponents(source, definitions);
-                const children = (sourceState.childIdsById[childId] ?? []).map(next => copy(sourceState, next, scope, definitions));
+                const children = (sourceState.childIdsById[childId] ?? []).map(next => copy(sourceState, next, scope));
                 for (const c of Object.values(source.components ?? {})) if (c?.type === 'PrefabRef' && (c.properties.url || c.properties.prefabId)) {
                     const external = reference(sourceState, c.properties);
-                    children.push(copy(external, external.rootId, `${scope}${childId}/`, definitions));
+                    children.push(copy(external, external.rootId, `${scope}${childId}/`));
                 }
-                return { ...source, packed: undefined, id: `${scope}${childId}`, components: resolved, children };
+                return { ...source, packed: undefined, id: `${scope}${childId}`, components: cellComponents(source, lookup), children };
             };
-            resident.push(wrap(copy(state, id, prefix, materials), ancestors));
+            resident.push(wrap(copy(state, id, prefix), ancestors));
             return;
         }
         const settings = Object.fromEntries(Object.entries(localComponents).filter(([, c]) => c && residentSettings.has(c.type)));
@@ -198,7 +214,10 @@ export async function createSpatialPrefabPlan(document: PrefabState, runtime: Sp
             const center = bounds.getCenter(new Vector3());
             const key = spatialCellKey(center, cellSize);
             let bucket = buckets.get(key);
-            if (!bucket) buckets.set(key, bucket = { roots: [], nodes: new Map(), bounds: new Box3(), renderers: 0, part: 0 });
+            if (!bucket) buckets.set(key, bucket = {
+                roots: [], nodes: new Map(), bounds: new Box3(), renderers: 0, part: 0,
+                primitives: runtime.batchPrimitives ? new Map() : undefined,
+            });
             const chain = [...ancestors, { id: scopedId, name: node.name, components: localComponents }];
             const cost = chain.filter(part => !bucket.nodes.has(part.id)).length;
             if (bucket.nodes.size + cost + 1 > limit || bucket.renderers >= rendererLimit) flush(key, bucket);
@@ -213,6 +232,7 @@ export async function createSpatialPrefabPlan(document: PrefabState, runtime: Sp
                     // This path may already be an ancestor shell of another mesh.
                     shared.components = part.components;
                 }
+                if (geometry && index === chain.length - 1) bucket.primitives?.set(shared, world);
                 siblings = shared.children!;
             }
             bucket.bounds.union(bounds); bucket.renderers++;
@@ -220,16 +240,16 @@ export async function createSpatialPrefabPlan(document: PrefabState, runtime: Sp
         const nextAncestors = [...ancestors, shell];
         for (const c of values) if (c?.type === 'PrefabRef' && (c.properties.url || c.properties.prefabId)) {
             const external = reference(state, c.properties);
-            await visit(external, external.rootId, nextAncestors, world, `${scopedId}/`, materials);
+            await visit(external, external.rootId, nextAncestors, world, `${scopedId}/`);
         }
-        for (const childId of state.childIdsById[id] ?? []) await visit(state, childId, nextAncestors, world, prefix, materials);
+        for (const childId of state.childIdsById[id] ?? []) await visit(state, childId, nextAncestors, world, prefix);
     };
-    await visit(document, document.rootId, [], new Matrix4(), '', {});
+    await visit(document, document.rootId, [], new Matrix4(), '');
     for (const [key, bucket] of buckets) { await checkpoint(); flush(key, bucket); }
     // Resident branches can share ancestors too; give each branch its own scope.
     const renameResident = (node: GameObject, index: number): GameObject => ({ ...node, id: `resident-${index}/${node.id}`, children: node.children?.map(child => renameResident(child, index)) });
     root.children = resident.map(renameResident);
-    return { chunks, resident: normalizePrefab({ root }) };
+    return { chunks, resident: normalizePrefab({ root }), materials };
 }
 
 export function finitePositive(value: number | undefined, fallback: number) {

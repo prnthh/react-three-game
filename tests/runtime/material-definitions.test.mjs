@@ -7,20 +7,6 @@ import { PrefabRoot, registerBuiltInComponents } from '../../src/viewer/index.ts
 import { createPrefabStore } from '../../src/core/prefabStore.ts';
 import { denormalizePrefab } from '../../src/core/prefab.ts';
 import { SceneRuntime } from '../../src/runtime/SceneRuntime.tsx';
-import { SceneMaterialPool } from '../../src/runtime/components/MaterialComponent.tsx';
-
-test('indexed material lookup preserves definition precedence across edits, renames and unloads', () => {
-    const pool = new SceneMaterialPool(), first = {}, second = {};
-    pool.registerDefinition(first, 'other', { color: '#ff0000' }, '/first');
-    pool.registerDefinition(second, 'paint', { color: '#00ff00' }, '/second');
-    pool.registerDefinition(first, 'paint', { color: '#0000ff' }, '/first');
-    assert.equal(pool.resolve('other'), null);
-    assert.equal(pool.resolve('paint').basePath, '/second');
-    pool.unregisterDefinition(second);
-    assert.equal(pool.resolve('paint').material.color, '#0000ff');
-    pool.unregisterDefinition(first);
-    assert.equal(pool.resolve('paint'), null);
-});
 
 registerBuiltInComponents();
 extend({ Group, Mesh });
@@ -94,7 +80,7 @@ test('separate scene runtimes do not share material IDs, and explicit defaults r
     assert.equal(saved.root.children[0].components.material.properties.color, '#ffffff');
 });
 
-test('the latest edited definition wins when names collide', async t => {
+test('the first live definition retains ownership across edits', async t => {
     const root = await host(t);
     const store = document('root', [
         box('owner', { name: 'metal', metalness: 1, roughness: 0.2 }),
@@ -107,7 +93,7 @@ test('the latest edited definition wins when names collide', async t => {
     await act(async () => store.getState().updateNode('duplicate', node => ({ ...node, components: {
         ...node.components, material: { ...node.components.material, properties: { ...node.components.material.properties, metalness: 0.6 } },
     } })));
-    for (const id of ['owner', 'duplicate', 'reference']) assert.equal(mesh(scene, id).material.metalness, 0.6);
+    for (const id of ['owner', 'duplicate', 'reference']) assert.equal(mesh(scene, id).material.metalness, 1);
     for (const metalness of [0.8, 0.4, 1]) {
         await act(async () => store.getState().updateNode('owner', node => ({ ...node, components: {
             ...node.components, material: { ...node.components.material, properties: { ...node.components.material.properties, materialType: 'standard', metalness, roughness: 0.2 } },
@@ -117,6 +103,8 @@ test('the latest edited definition wins when names collide', async t => {
             assert.equal(mesh(scene, id).material, mesh(scene, 'owner').material);
         }
     }
+    await act(async () => store.getState().deleteNode('owner'));
+    assert.equal(mesh(scene, 'reference').material.metalness, 0.6);
 });
 
 test('UI and command duplicates keep material references and attachment without copying definitions', async () => {

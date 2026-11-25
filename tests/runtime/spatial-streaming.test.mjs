@@ -16,18 +16,18 @@ const state = children => normalizePrefab({ root: { id: 'world', children } });
 const runtime = { getPrefab: () => null };
 const components = document => Object.values(document.nodesById).flatMap(n => Object.values(n.components ?? {}));
 
-test('spatial planning resolves distant material definitions, preserves transforms and bounds oversized geometry', async () => {
+test('spatial planning retains named references, preserves transforms and bounds oversized geometry', async () => {
     const floor = box('long-floor', [500, 0, 0]);
     floor.components.transform.properties.scale = [1200, 1, 10];
     const source = state([box('definition', [1000, 0, 0], { name: 'shared', color: '#abc123' }),
-        { id: 'rotated', components: { transform: component('Transform', { position: [10, 0, 0], rotation: [0, 0, Math.PI / 2], scale: [2, 3, 1] }) }, children: [box('near', [2, 0, 0], { name: 'shared' })] }, floor]);
+        { id: 'rotated', components: { transform: component('Transform', { position: [10, 0, 0], rotation: [0, 0, Math.PI / 2], scale: [2, 3, 1] }) }, children: [box('near', [2, 0, 0], { name: 'shared' })] }, floor, box('duplicate', [1100, 0, 0], { name: 'shared', color: '#ffffff' })]);
     const before = JSON.stringify(source);
     const plan = await createSpatialPrefabPlan(source, runtime, { cellSize: 32, maxNodesPerChunk: 12 });
     assert.equal(JSON.stringify(source), before, 'planning cannot mutate the shared loaded definition');
     const near = plan.chunks.find(c => Object.values(c.document.nodesById).some(n => n.name === 'near'));
     assert.ok(near);
-    assert.ok(components(near.document).some(c => c.type === 'Material' && c.properties.color === '#abc123' && !c.properties.name),
-        'the defining cell can be absent without making references invisible');
+    assert.deepEqual(components(near.document).find(c => c.type === 'Material').properties, { name: 'shared' });
+    assert.deepEqual([...plan.materials], [['shared', { color: '#abc123' }]]);
     assert.ok(near.bounds.min.distanceTo(new Vector3(8.5, 3, -0.5)) < 1e-9);
     assert.ok(near.bounds.max.distanceTo(new Vector3(11.5, 5, 0.5)) < 1e-9);
     const long = plan.chunks.find(c => Object.values(c.document.nodesById).some(n => n.name === 'long-floor'));
@@ -39,7 +39,7 @@ test('spatial planning resolves distant material definitions, preserves transfor
     }
 });
 
-test('external and packed references expand with distinct placement transforms, material scopes and stable plans', async () => {
+test('external and packed references expand with distinct placement transforms and stable plans', async () => {
     const habitat = state([box('bay', [2, 0, 0], { name: 'concrete', color: '#888888' })]);
     const inline = { id: 'inline-kit', packed: true, components: { transform: component('Transform', { position: [3, 0, 0] }) }, children: [box('inline-bay', [1, 0, 0])] };
     const source = state([
@@ -54,6 +54,7 @@ test('external and packed references expand with distinct placement transforms, 
     assert.ok(plan.chunks.some(c => c.bounds.containsPoint(new Vector3(-98, 0, 0))));
     assert.ok(plan.chunks.some(c => c.bounds.containsPoint(new Vector3(4, 0, 0))));
     assert.ok(plan.chunks.every(c => !components(c.document).some(p => p.type === 'PrefabRef')));
+    assert.deepEqual([...plan.materials], [['concrete', { color: '#888888' }]]);
     const again = await createSpatialPrefabPlan(source, load, { cellSize: 16 }, '/demo');
     assert.deepEqual(again.chunks.map(c => c.id), plan.chunks.map(c => c.id));
 });
@@ -97,6 +98,12 @@ test('lights remain resident; unknown behavior preserves its whole document and 
     const scripted = state([{ id: 'script', components: { behavior: component('Follow', { target: 'visual' }) } }, box('visual', [1000, 0, 0])]);
     const pinned = await createSpatialPrefabPlan(scripted, runtime);
     assert.equal(pinned.resident, scripted);
+    const { getComponent } = await import('../../src/core/ComponentRegistry.ts');
+    const override = { ...getComponent('Data'), View: () => null };
+    const custom = state([{ id: 'behavior', components: { data: component('Data') } }, box('mesh', [0, 0, 0])]);
+    assert.equal((await createSpatialPrefabPlan(custom, {
+        ...runtime, lookup: name => name === 'Data' ? override : getComponent(name),
+    })).resident, custom);
     assert.equal(pinned.chunks.length, 0);
 });
 
@@ -177,6 +184,18 @@ test('world transforms, oversized bounds, failed loads and unregistering work ac
     assert.ok(!events.includes('unmount:translated'), 'unregistered placements cannot receive late work');
 });
 
+test('visible work preempts preparation for a cell that only needs warming', () => {
+    const queue = new SpatialStreamScheduler(), events = [];
+    const warming = entry('warming', boundsAt(6), events);
+    const visible = entry('visible', boundsAt(15), events);
+    queue.register(placement([warming], { visibleDistance: 2, preloadDistance: 10, unloadDistance: 20 }));
+    queue.register(placement([visible], { visibleDistance: 6, preloadDistance: 8, unloadDistance: 20 }));
+    queue.update(new Vector3());
+    queue.update(new Vector3(10, 0, 0));
+    queue.update(new Vector3(10, 0, 0));
+    assert.deepEqual(events, ['mount:warming', 'unmount:warming', 'mount:visible']);
+});
+
 test('shader preparation yields between bounded draw groups and serializes/cancels renderer work', async () => {
     const { Group, Scene, PerspectiveCamera, Mesh, BoxGeometry, MeshBasicMaterial } = await import('three');
     const { compileInSlices } = await import('../../src/runtime/rendering/compileInSlices.ts');
@@ -244,39 +263,48 @@ test('compilation pass state survives frame yields and restores on failure or re
     remove(); geometry.dispose(); material.dispose();
 });
 
-for (const embedded of [false, true]) test(`PrefabInstance streams ${embedded ? 'an embedded document' : 'a URL'} and can unload and revisit cells`, async t => {
-    const { act, createElement: h, StrictMode, useEffect, useRef } = await import('react');
+for (const mode of ['url', 'embedded']) test(`PrefabInstance streams ${mode} and can unload and revisit cells`, async t => {
+    const embedded = mode !== 'url';
+    const { act, createElement: h, StrictMode, useEffect } = await import('react');
     const { createRoot, extend } = await import('@react-three/fiber');
-    const { Group, Mesh, BoxGeometry, MeshBasicMaterial } = await import('three');
+    const { Group, Mesh, Texture } = await import('three');
     const { PrefabInstance } = await import('../../src/runtime/prefabs/PrefabInstance.tsx');
+    const { preparePrefab } = await import('../../src/runtime/prefabs/preparePrefab.ts');
+    const { AssetCacheContext, createAssetCache } = await import('../../src/runtime/assets/assetCache.ts');
+    const { SceneRuntime } = await import('../../src/runtime/SceneRuntime.tsx');
+    const { getComponent } = await import('../../src/core/ComponentRegistry.ts');
     const { AssetRuntimeContext } = await import('../../src/runtime/assets/AssetRuntime.tsx');
-    const { ComponentLookupContext } = await import('../../src/runtime/prefabs/nodePlan.ts');
-    const { usePrefab, useGameObject } = await import('../../src/runtime/scene/SceneContext.tsx');
-    const { useMeshInstanceRegistration } = await import('../../src/runtime/rendering/MeshInstanceProvider.tsx');
+    const { usePrefab } = await import('../../src/runtime/scene/SceneContext.tsx');
     const { ChunkSettingsContext } = await import('../../src/runtime/components/ChunkSettingsComponent.tsx');
     globalThis.IS_REACT_ACT_ENVIRONMENT = true;
     extend({ Group, Mesh });
     const canvas = { width: 100, height: 100, style: {}, addEventListener() {}, removeEventListener() {} };
-    const root = createRoot(canvas), geometry = new BoxGeometry(), material = new MeshBasicMaterial();
-    geometry.userData.prefabGeometrySignature = 'streamed-shared-box';
+    const root = createRoot(canvas);
     let compiles = 0;
     await root.configure({ gl: { render() {}, compileAsync: async () => { compiles++; }, setSize() {}, setPixelRatio() {}, domElement: canvas },
         size: { width: 100, height: 100, top: 0, left: 0 }, frameloop: 'never' });
-    t.after(async () => { await act(async () => root.unmount()); geometry.dispose(); material.dispose(); });
-    function GeometryView() {
-        const mesh = useRef(null), { id } = useGameObject();
-        useMeshInstanceRegistration(id, mesh, true);
-        return h('mesh', { ref: mesh, geometry, material });
-    }
-    const definitions = {
-        Geometry: { name: 'Geometry', properties: {}, renderWhenDisabled: true, View: GeometryView },
-        Transform: { name: 'Transform', properties: {} }, Material: { name: 'Material', properties: {} },
-    };
-    const document = state([box('near-mesh', [0, 0, 0]), box('near-peer', [25, 0, 0]), box('far-mesh', [1000, 0, 0])]);
+    t.after(async () => { await act(async () => root.unmount()); });
+    const document = state([box('near-mesh', [0, 0, 0], { name: 'paint' }), box('near-peer', [25, 0, 0], { name: 'paint' }),
+        box('paint-definition', [1000, 0, 0], { name: 'paint', color: '#abc123' }),
+        box('far-mesh', [1000, 0, 0], { texture: '/far.png' }), box('missing', [5, 0, 0], { name: 'missing' })]);
     document.nodesById[document.rootId].components = { chunks: component('ChunkSettings', { cellSize: 64, visibleDistance: 20, preloadDistance: 30, unloadDistance: 40, maxNodesPerChunk: 16 }) };
-    definitions.ChunkSettings = { name: 'ChunkSettings', scope: 'scene', properties: {} };
-    const sources = [];
-    const assets = { preparePrefab: async source => { sources.push(source); return { document }; }, getPrefab: () => null };
+    const sources = [], textureRequests = [];
+    const texture = new Texture();
+    let finishTexture;
+    const pendingTexture = new Promise(resolve => { finishTexture = resolve; });
+    const cache = createAssetCache({ texture: path => { textureRequests.push(path); return pendingTexture; } });
+    t.after(() => { cache.dispose(); texture.dispose(); });
+    const assets = {
+        preparePrefab(source, options) {
+            sources.push(source);
+            return preparePrefab({
+                getComponent,
+                loadDocument: async () => document,
+                loadTexture: path => cache.load('texture', path),
+            }, source, options);
+        },
+        getPrefab: () => null,
+    };
     const statuses = [], chunks = [];
     let residentMounts = 0;
     function ResidentChild() {
@@ -284,11 +312,11 @@ for (const embedded of [false, true]) test(`PrefabInstance streams ${embedded ? 
         useEffect(() => { assert.ok(prefab); residentMounts++; }, [prefab]);
         return null;
     }
-    const view = settings => h(StrictMode, null, h(ChunkSettingsContext.Provider, { value: settings }, h(ComponentLookupContext.Provider, { value: name => definitions[name] },
+    const view = settings => h(StrictMode, null, h(AssetCacheContext.Provider, { value: cache }, h(SceneRuntime, null, h(ChunkSettingsContext.Provider, { value: settings },
         h(AssetRuntimeContext.Provider, { value: assets }, h(PrefabInstance, {
             id: 'runtime', ...(embedded ? { document } : { url: '/same-prefab.json' }), static: true,
             onStatus: s => statuses.push(s.phase), onChunkStatus: s => chunks.push(s),
-        }, h(ResidentChild))))));
+        }, h(ResidentChild)))))));
     let scene;
     await act(async () => { scene = root.render(view(null)); });
     let frame = 0;
@@ -296,11 +324,21 @@ for (const embedded of [false, true]) test(`PrefabInstance streams ${embedded ? 
         await act(async () => { scene.getState().advance(++frame / 60, false); await new Promise(resolve => setTimeout(resolve, 4)); });
     };
     for (let i = 0; i < 12; i++) await advance();
-    assert.ok(scene.getState().scene.getObjectByName('near-mesh'));
-    const batches = [];
-    scene.getState().scene.traverse(object => { if (object.isInstancedMesh) batches.push(object); });
-    assert.ok(batches.some(batch => batch.count === 2), 'one bounded stream chunk batches peers across the global 24-unit grid boundary');
+    const batch = () => {
+        let result;
+        scene.getState().scene.traverse(object => { if (object.isInstancedMesh && object.count === 2) result = object; });
+        return result;
+    };
+    const near = () => scene.getState().scene.getObjectByName('near-mesh');
+    assert.equal(near(), undefined);
+    const materialOf = name => scene.getState().scene.getObjectByName(name).children.find(child => child.isMesh).material;
+    assert.equal(batch().material.color.getHexString(), 'abc123');
+    assert.equal(materialOf('missing').visible, false);
+    assert.ok(batch(), 'one bounded stream chunk batches peers across the global 24-unit grid boundary');
+    assert.deepEqual([batch().instanceMatrix.array[12], batch().instanceMatrix.array[28]], [0, 25]);
+    assert.equal(scene.getState().scene.getObjectByName('near-peer'), undefined, 'direct batches have no source mesh');
     assert.ok(!scene.getState().scene.getObjectByName('far-mesh'), 'distant cells do not create their Three objects');
+    assert.deepEqual(textureRequests, [], 'distant material textures do not delay the first visible cell');
     assert.ok(statuses.includes('active')); assert.ok(compiles > 0);
     const mounts = residentMounts;
     assert.ok(mounts > 0, 'host children inherit the resident prefab context');
@@ -312,12 +350,18 @@ for (const embedded of [false, true]) test(`PrefabInstance streams ${embedded ? 
     assert.equal(chunks.filter(chunk => chunk.phase === 'ready').length, readyCount, 'distance edits preserve prepared chunks');
     assert.equal(compiles, compiledCount, 'distance edits do not restart shader preparation');
     scene.getState().camera.position.x = 1000;
+    for (let i = 0; i < 4; i++) await advance();
+    assert.deepEqual(textureRequests, ['/far.png']);
+    assert.ok(!scene.getState().scene.getObjectByName('far-mesh'), 'a cell waits for its textures before committing');
+    finishTexture(texture);
     for (let i = 0; i < 12; i++) await advance();
     assert.ok(!scene.getState().scene.getObjectByName('near-mesh'));
+    assert.equal(batch(), undefined);
     assert.ok(scene.getState().scene.getObjectByName('far-mesh'));
     scene.getState().camera.position.x = 0;
     for (let i = 0; i < 12; i++) await advance();
-    assert.ok(scene.getState().scene.getObjectByName('near-mesh'));
+    assert.equal(near(), undefined);
+    assert.equal(batch().material.color.getHexString(), 'abc123');
     assert.ok(chunks.filter(s => s.phase === 'unloaded').length >= 2);
     assert.ok(!statuses.includes('error'));
     assert.equal(residentMounts, mounts, 'cell residency cannot remount host children');

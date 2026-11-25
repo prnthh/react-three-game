@@ -139,21 +139,26 @@ export function applyGeometryModifiers(source: BufferGeometry, modifiers: Return
     }
 }
 
-function GeometryComponentView({ properties, enabled, children }: ComponentViewProps<GeometryProperties>) {
+const NO_GEOMETRY_MODIFIERS: ReturnType<typeof getGeometryModifiers> = [];
+
+export function usePrimitiveGeometry(properties: GeometryProperties, modifiers = NO_GEOMETRY_MODIFIERS) {
     const { geometryType, args = [] } = properties;
     const type = geometryType && geometryType in GEOMETRY_ELEMENTS ? geometryType as keyof typeof GEOMETRY_ELEMENTS : 'box';
     const resolvedArgs = args.length ? args : getDefaultArgs(type);
-    const nodeId = useNode(node => node.nodeId);
-    const prefab = usePrefabDocument();
-    const lookup = useContext(ComponentLookupContext);
-    const modifiers = getGeometryModifiers(prefab.get(nodeId), lookup);
     const signature = JSON.stringify([type, resolvedArgs, modifiers.map(({ type, properties, context }) => [type, properties, context]), getComponentRegistryVersion()]);
-    const geometry = useSharedGeometryResource(signature, () => {
+    return useSharedGeometryResource(signature, () => {
         const source = createGeometry(type, resolvedArgs);
         let result: BufferGeometry | undefined;
         try { result = applyGeometryModifiers(source, modifiers); return result; }
         finally { if (result !== source) source.dispose(); }
     });
+}
+
+function GeometryComponentView({ properties, enabled, children }: ComponentViewProps<GeometryProperties>) {
+    const nodeId = useNode(node => node.nodeId);
+    const prefab = usePrefabDocument();
+    const lookup = useContext(ComponentLookupContext);
+    const geometry = usePrimitiveGeometry(properties, getGeometryModifiers(prefab.get(nodeId), lookup));
     const invalidateInstances = useInvalidateMeshInstances();
     const object = useGameObject();
     useLayoutEffect(() => {

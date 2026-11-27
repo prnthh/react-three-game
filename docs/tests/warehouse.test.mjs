@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { createWarehouse, RACK_HEIGHT, SHELF_TOPS, BOXES_PER_SHELF } from '../app/demo/coolstuff/warehouse.ts';
+import { createWarehouse, RACK_HEIGHT, SHELF_TOPS, BOXES_PER_SHELF } from '../app/demo/village/warehouse.ts';
 
-const rack = JSON.parse(readFileSync(new URL('../public/prefabs/coolstuff/warehouse-rack.json', import.meta.url), 'utf8'));
+const rack = JSON.parse(readFileSync(new URL('../public/prefabs/village/warehouse-rack.json', import.meta.url), 'utf8'));
 
 test('warehouse population is reproducible and seed changes only item appearance and dimensions', () => {
     const a = createWarehouse();

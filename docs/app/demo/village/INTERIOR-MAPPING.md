@@ -1,8 +1,8 @@
 # Interior mapping example
 
-Open `/demo/coolstuff` and select the Interior mapping subtree. Its windows share the InteriorMap component and custom inspector with the other exhibits in one editor scene.
+Open `/demo/village` and select a mapped cottage window under Orchard End. Its windows share the InteriorMap component and custom inspector with the other exhibits in one editor scene.
 
-The component lives in `app/demo/coolstuff/components/InteriorMapComponent.tsx`. Register it before mounting a prefab:
+The component lives in `app/demo/village/components/InteriorMapComponent.tsx`. Register it before mounting a prefab:
 
 ```tsx
 registerComponent(InteriorMapComponent);

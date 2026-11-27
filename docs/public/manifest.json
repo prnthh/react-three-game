@@ -312,6 +312,8 @@
     "/textures/terrain-demo/tiles/weights-9-8.png",
     "/textures/terrain-demo/tiles/weights-9-9.png",
     "/textures/terrain-demo/weights.png",
+    "/textures/village/relief.png",
+    "/textures/village/track.png",
     "/textures/water1.png"
   ],
   "sound": [
@@ -342,8 +344,6 @@
     "/prefabs/brutalist-city/habitat-2.json",
     "/prefabs/brutalist-city/habitat-3.json",
     "/prefabs/brutalist-city/waterworks.json",
-    "/prefabs/coolstuff/coolstuff.json",
-    "/prefabs/coolstuff/warehouse-rack.json",
     "/prefabs/detective-oni/characters/oni.json",
     "/prefabs/detective-oni/characters/partner.json",
     "/prefabs/detective-oni/detective-oni.json",
@@ -358,6 +358,8 @@
     "/prefabs/prefab.json",
     "/prefabs/rotator-demo.json",
     "/prefabs/starter-scene.json",
-    "/prefabs/the-cave/the-cave.json"
+    "/prefabs/the-cave/the-cave.json",
+    "/prefabs/village/village.json",
+    "/prefabs/village/warehouse-rack.json"
   ]
 }

@@ -4,7 +4,7 @@ import { capsule, kcc } from 'crashcat';
 import { useEffect, useMemo, useRef } from 'react';
 import { Vector3, type PerspectiveCamera as Camera } from 'three';
 import { useGameObject, useNode, type Component, type ComponentViewProps } from 'react-three-game/viewer';
-import { useCrashcat } from 'react-three-game/plugins/crashcat';
+import { getTerrainPhysicsStatus, useCrashcat } from 'react-three-game/plugins/crashcat';
 
 type Properties = { speed: number; jumpSpeed: number; radius: number; height: number; sensitivity: number; pushForce: number };
 const STEP = 1 / 60;
@@ -61,9 +61,10 @@ function Controller({ speed, jumpSpeed, radius, height, sensitivity, pushForce }
         clock.current = 0;
     }, [physics, radius, height, pushForce]);
 
-    useFrame((_, delta) => {
+    useFrame(({ scene }, delta) => {
         const transform = object.transform;
         if (!physics || !transform || !camera.current) return;
+        if (getTerrainPhysicsStatus(scene)?.ready === false) return;
         if (!character.current) {
             transform.getWorldPosition(position);
             const shape = capsule.create({ radius, halfHeightOfCylinder: Math.max(0, height / 2 - radius) });

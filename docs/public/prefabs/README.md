@@ -8,7 +8,7 @@ have a folder named after the project, containing the main JSON and its supporti
 prefabs. Assets such as models and textures stay in their own public folders.
 
 - `brutalist-city/game-level.json`: city scene with packed building definitions, lighting, chunk settings and camera script. The home viewer loads this saved document; generation is a separate authoring step.
-- `coolstuff/coolstuff.json`: warehouse demo, with `warehouse-rack.json`.
+- `village/village.json`: village demo, with `warehouse-rack.json`.
 - `killbox/killbox.json`: Killbox, with player, NPC, and street prefabs.
 - `detective-oni/detective-oni.json`: point-and-click entry prefab with a scene redirect, with
   `scenes/`, `characters/`, and a shared `dialogue.json`.

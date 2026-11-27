@@ -1,6 +1,6 @@
 import { PerspectiveCamera, PointerLockControls } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { useContext, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { CameraHelper, MathUtils, PerspectiveCamera as AimCamera, Quaternion, Vector3 } from 'three';
 import { soundManager, useGameObject, useNode, type ComponentViewProps } from 'react-three-game/viewer';
 import { withBasePath } from '../../../basePath';
@@ -12,6 +12,7 @@ import { CROUCH_HEIGHT, CROUCH_SPEED, DEFAULT_MOVEMENT_SETTINGS, STANDING_HEIGHT
 import { PLAYER_RADIUS } from '../collision';
 import { advanceParkour, createParkourSimulation, parkourRenderPosition, PARKOUR_STEP, type ParkourSimulation } from '../simulation';
 
+import { ParkourProfile } from '../profiling';
 import { Buttons, createAttempt, packCommand, unpackCommand, Replay, type Attempt } from '../replay';
 
 export type CharacterProperties = { speed: number; jumpSpeed: number; slideBoost: number; color: string; cameraBob: boolean; debug: boolean };
@@ -28,7 +29,9 @@ function crouchLean(speed: number) {
 function Controller(settings: CharacterProperties) {
     const object = useGameObject();
     const world = useCollisionWorld();
-    const { gl, scene } = useThree();
+    const gl = useThree(state => state.gl);
+    const scene = useThree(state => state.scene);
+    const profile = useContext(ParkourProfile);
     // Controls own yaw/pitch. The rendered camera adds roll separately, so mouse look cannot erase it.
     const aim = useMemo(() => new AimCamera(), []);
     const camera = useRef<AimCamera>(null);
@@ -200,6 +203,9 @@ function Controller(settings: CharacterProperties) {
             if (!attempt.current) {
                 attempt.current = createAttempt(spawn.current.toArray(), settings, world);
             }
+            const started = profile ? performance.now() : 0;
+            const playback = replay.current;
+            const previousTick = playback?.tick ?? 0;
             const steps = advanceParkour(motion.current, frameDelta, unpackCommand(packed),
                 attempt.current.settings, attempt.current.collision, command => {
                     // advanceParkour consumes a jump on only the first physics tick.
@@ -210,6 +216,7 @@ function Controller(settings: CharacterProperties) {
                         else replay.current = null;
                     }
                 });
+            profile?.sample(steps, (playback?.tick ?? 0) - previousTick, performance.now() - started);
             if (steps) {
                 input.current.jump = false;
                 const next = motion.current.current;

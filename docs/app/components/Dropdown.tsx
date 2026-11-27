@@ -14,7 +14,7 @@ const options: DemoOption[] = [
     { label: "Asset Viewer", href: "/demo/assetviewer" },
     { label: "Custom Component", href: "/demo/customcomponent" },
     { label: "Music Video", href: "/demo/musicvideo" },
-    { label: "Cool stuff", href: "/demo/coolstuff" },
+    { label: "Village", href: "/demo/village" },
     { label: "Relay Yard FPS", href: "/demo/fps" },
     { label: "Frozen Yard", href: "/demo/frozen-yard" },
     { label: "Terrain Workshop", href: "/demo/terrain" },

@@ -64,6 +64,7 @@ export type RagdollSettings = {
 
 export type CrashcatRagdollProps = {
     position?: [number, number, number];
+    seated?: boolean;
     scale?: number;
     swingAngle?: number;
     shoulderAngle?: number;
@@ -76,17 +77,7 @@ export type CrashcatRagdollProps = {
     nodeInteractionHandlers?: NodeInteractionHandlers;
 };
 
-export type CrashcatRagdollComponentProperties = {
-    scale?: number;
-    swingAngle?: number;
-    shoulderAngle?: number;
-    twistAngle?: number;
-    stabilize?: boolean;
-    color?: string;
-    clickImpulse?: number;
-    initialLinearVelocity?: [number, number, number];
-    initialAngularVelocity?: [number, number, number];
-};
+export type CrashcatRagdollComponentProperties = Omit<CrashcatRagdollProps, "position" | "nodeInteractionHandlers">;
 
 let nextRagdollId = 0;
 
@@ -99,6 +90,7 @@ export function createRagdollSettings(
     angleA = Math.PI / 4,
     angleB = Math.PI / 4,
     twistAngle = 0,
+    seated = false,
 ): RagdollSettings {
     const shouldersDistance = 0.45 * scale;
     const upperArmLength = 0.4 * scale;
@@ -153,6 +145,27 @@ export function createRagdollSettings(
         { bodyA: RagdollBodyPart.LowerLeftArm, bodyB: RagdollBodyPart.UpperLeftArm, pivotA: [lowerArmLength / 2, 0, 0], pivotB: [-upperArmLength / 2, 0, 0], axisA: [1, 0, 0], axisB: [1, 0, 0], angle: angleA, twistAngle },
         { bodyA: RagdollBodyPart.LowerRightArm, bodyB: RagdollBodyPart.UpperRightArm, pivotA: [-lowerArmLength / 2, 0, 0], pivotB: [upperArmLength / 2, 0, 0], axisA: [1, 0, 0], axisB: [1, 0, 0], angle: angleA, twistAngle },
     ];
+
+    if (seated) {
+        // Fold the thighs forward about the hips, keeping both knee anchors coincident.
+        const thighs = new Set([RagdollBodyPart.UpperLeftLeg, RagdollBodyPart.UpperRightLeg]);
+        for (const [part, shape] of shapes) {
+            if (thighs.has(part)) {
+                shape.position[1] = lowerLegLength;
+                shape.position[2] = upperLegLength / 2;
+                [shape.args[1], shape.args[2]] = [shape.args[2], shape.args[1]];
+            } else if (part === RagdollBodyPart.LowerLeftLeg || part === RagdollBodyPart.LowerRightLeg) {
+                shape.position[2] = upperLegLength;
+            } else {
+                shape.position[1] -= upperLegLength;
+            }
+        }
+        for (const joint of joints) {
+            for (const [part, pivot] of [[joint.bodyA, joint.pivotA], [joint.bodyB, joint.pivotB]] as const) {
+                if (thighs.has(part)) [pivot[1], pivot[2]] = [0, -pivot[1]];
+            }
+        }
+    }
 
     const skeleton: SkeletonJoint[] = [
         { bodyPart: RagdollBodyPart.Pelvis, parentBodyPart: null },
@@ -408,6 +421,7 @@ const meshQuaternion = new Quaternion();
 
 export function CrashcatRagdoll({
     position = DEFAULT_POSITION,
+    seated = false,
     scale = 1.8,
     swingAngle = Math.PI / 4,
     shoulderAngle = Math.PI / 4,
@@ -424,8 +438,8 @@ export function CrashcatRagdoll({
     const stateRef = useRef<ReturnType<typeof createRagdollBodies> | null>(null);
     const meshRefs = useRef(new Map<RagdollBodyPart, Mesh>());
     const settings = useMemo(
-        () => createRagdollSettings(scale, swingAngle, shoulderAngle, twistAngle),
-        [scale, shoulderAngle, swingAngle, twistAngle],
+        () => createRagdollSettings(scale, swingAngle, shoulderAngle, twistAngle, seated),
+        [scale, seated, shoulderAngle, swingAngle, twistAngle],
     );
     const shapeEntries = useMemo(() => [...settings.shapes], [settings]);
     const [px, py, pz] = position;
@@ -556,6 +570,7 @@ function CrashcatRagdollView({
             {worldPosition
                 ? createPortal(
                     <CrashcatRagdoll
+                        seated={properties.seated}
                         position={worldPosition}
                         scale={properties.scale ?? 1.8}
                         swingAngle={properties.swingAngle ?? Math.PI / 4}
@@ -579,6 +594,7 @@ const CrashcatRagdollComponent: Component<CrashcatRagdollComponentProperties> = 
     name: "CrashcatRagdoll",
     View: CrashcatRagdollView,
     properties: {
+        seated: { type: "boolean", default: false },
         scale: { default: 1.8, step: 0.1 },
         swingAngle: { default: Math.PI / 4, step: 0.05 },
         shoulderAngle: { default: Math.PI / 4, step: 0.05 },

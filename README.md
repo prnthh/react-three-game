@@ -238,9 +238,9 @@ produces static geometry and material settings for use in other 3D tools.
 | Edit through scripts | [Scene API](docs/public/editor-scene-for-agents.md) |
 | Compose prefabs, then load chunks | [Prefab guide](docs/PREFABS.md#compose-an-inline-prefab) |
 | Connect gameplay to live objects | [Host integration](docs/COMPONENTS.md#connect-a-host-system) |
-| Physics | [Cool stuff demo](docs/app/demo/coolstuff/page.tsx) |
+| Physics | [Village demo](docs/app/demo/village/page.tsx) |
 | Parkour movement and procedural concrete | [Parkour demo](docs/app/demo/parkour/page.tsx) |
-| Custom inspector controls | [Interior mapping](docs/app/demo/coolstuff/INTERIOR-MAPPING.md) |
+| Custom inspector controls | [Interior mapping](docs/app/demo/village/INTERIOR-MAPPING.md) |
 | More working scenes | [Demo index](docs/README.md) |
 
 ## Development

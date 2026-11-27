@@ -24,7 +24,7 @@ Components stay in the demo that owns them and may be imported by other demos.
 | [Viewer](app/viewer/page.tsx) | A Rotator scene shared with the component editor. |
 | [Asset Viewer](app/demo/assetviewer/page.tsx) | Browse the shared asset manifest, with loading and error states. |
 | [Custom Component](app/demo/customcomponent/page.tsx) | Minimal scene shared with Viewer; Rotator and Squish are registered for editing. |
-| [Cool stuff](app/demo/coolstuff/page.tsx) | One scene with interior mapping, ragdolls, and a small sleeping-box warehouse, each under its own parent node. |
+| [Village](app/demo/village/page.tsx) | Two villages on a terrain road with interior-mapped cottages, enterable buildings, and ragdolls. |
 | [Parkour](app/demo/parkour/page.tsx) | Concrete passage course with local lighting, player movement and procedural concrete. |
 | [Point n Click](app/demo/stage/page.tsx) | Inline interaction/dialogue/transition flow; shared component registration with its editor. |
 | [Relay Yard FPS](app/demo/fps/page.tsx) | Authored map and gameplay prefabs, authoritative simulation, snapshot-driven views and replay; includes a map editor. |
@@ -50,7 +50,9 @@ browser’s 50 ms threshold. Null means the browser lacks that measurement.
 `tileActivations` gives the tile coordinate and elapsed milliseconds from placement
 loading to activation, including dependency discovery, partitioning and the wait
 for its first ready cell. A prefab with no cells activates when its resident content is ready.
-The Perf button independently enables the live graph.
+The Perf button independently enables the live graph. The
+[parkour benchmark](app/demo/parkour/README.md#benchmarking-a-run) uses the same
+frame interval measurements and adds live and replay simulation timing.
 
 For per-cell details,
 see `City cell` entries in Chrome DevTools’ Performance **Timings** track.

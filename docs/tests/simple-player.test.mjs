@@ -1,7 +1,7 @@
 import test, { describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { registerAll, createWorldSettings, addBroadphaseLayer, addObjectLayer, enableCollision, createWorld, rigidBody, MotionType, box, capsule, kcc, filter, updateWorld } from 'crashcat';
-import { SimplePlayerComponent } from '../app/demo/coolstuff/components/SimplePlayerComponent.tsx';
+import { SimplePlayerComponent } from '../app/demo/village/components/SimplePlayerComponent.tsx';
 import { moveKinematicBody } from '../../src/plugins/crashcat/kinematic.ts';
 import { createPlatformSupport } from '../app/demo/killbox/components/platformSupport.ts';
 

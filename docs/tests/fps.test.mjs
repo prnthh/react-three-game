@@ -264,9 +264,7 @@ test("FPS prefab has stable node identities, manager references and matching col
   const { composeScene, compileMap } = await import("../app/demo/fps/shared/map.ts");
   assert.throws(() => composeScene(mapPrefab, mapPrefab), /Duplicate scene node ID/);
   const composed = composeScene(mapPrefab, gameplayPrefab);
-  assert.equal(composed.root.components.clusteredLighting.type, 'ClusteredLighting');
-  assert.equal(composed.root.components.clusteredLighting.properties.maxLights, 32);
-  assert.ok(mapPrefab.root.components.clusteredLighting, 'composition preserves authored source settings');
+  assert.deepEqual(composed.root.components.renderSettings, mapPrefab.root.components.renderSettings);
   const player = gameplayPrefab.root.children.find(node => node.id === 'player-controller');
   assert.deepEqual(player.components.camera.properties, { fov: 76, near: 0.04, far: 150 });
   composed.root.children[0].name = "Edited copy";

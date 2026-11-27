@@ -128,8 +128,7 @@ the library supplies the scene API, discovery and structured tools.
 Dense authoring hosts can wrap `PrefabEditorScene` in `NodeMountBudget` (from
 `react-three-game/viewer`) to bound initial Edit mounts per frame. It preserves
 the editor store and IDs and bypasses admission in Play, where prefab preparation
-owns activation. `PrefabInstance` accepts a normalized `document` as an alternative
-to `url`; both use dependency preparation, shader preparation and spatial streaming.
+owns activation. `PrefabInstance` accepts a URL or normalized prefab document through its `source` prop. Both use dependency preparation, shader preparation and spatial streaming.
 Hosts with postprocessing can use `registerSceneCaptureRenderer(renderer, render)`
 so agent captures include the final composition; dispose the registration on cleanup.
 

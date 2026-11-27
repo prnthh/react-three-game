@@ -43,8 +43,9 @@ test('prefab activation preserves descendants and active siblings', async t => {
         Streamer: { name: 'Streamer', properties: {}, View() {
             useEffect(() => { streamerMounts++; }, []);
             return h(AssetRuntimeContext.Provider, { value: runtime }, h(PrefabInstance, {
-                id: 'chunk', url: '/chunk.json', onStatus: status => statuses.push(status.phase),
-                onActivate: () => {
+                id: 'chunk', source: '/chunk.json', onStatus: status => {
+                    statuses.push(status.phase);
+                    if (status.phase !== 'active') return;
                     let object = state.getState().scene.getObjectByName('streamed-mesh');
                     let visible = Boolean(object);
                     for (; object; object = object.parent) visible = visible && object.visible;
@@ -96,7 +97,7 @@ test('prefab activation preserves descendants and active siblings', async t => {
     const initialMounts = streamerMounts;
     assert.ok(statuses.includes('loading'));
     assert.ok(!statuses.includes('active'));
-    await act(async () => finishLoading({ document: { root: model('streamed-mesh') } }));
+    await act(async () => finishLoading({ root: model('streamed-mesh') }));
     await render(['host']);
     assert.equal(streamerMounts, initialMounts, 'a streamed placement must not disable and remount its host streamer');
     await act(async () => state.getState().advance(2, false));

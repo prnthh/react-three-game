@@ -85,6 +85,22 @@ describe('Caching and ownership', () => {
         cache.dispose();
     });
 
+    test('a failed request cannot evict a replacement for the same asset', async () => {
+        const old = Promise.withResolvers(), replacement = Promise.withResolvers();
+        const requests = [old, replacement];
+        const cache = createAssetCache({ model: () => requests.shift().promise });
+        const first = cache.load('model', '/tree.glb');
+        cache.clear('model', '/tree.glb');
+        const second = cache.load('model', '/tree.glb');
+        old.reject(new Error('stale request'));
+        await assert.rejects(first, /stale request/);
+        const model = new Group();
+        replacement.resolve(model);
+        assert.equal(await second, model);
+        assert.equal(cache.read('model', '/tree.glb'), model);
+        cache.dispose();
+    });
+
     test('imperative preparation and Suspense reads share pending and decoded assets in either order', async t => {
         for (const renderFirst of [true, false]) {
             const path = `/shared-${renderFirst}.json`;
@@ -127,7 +143,7 @@ describe('Prefab preparation', () => {
             assets: { type: 'Material', properties: {} },
         } } });
         const prepared = await preparePrefab(runtime, document, { basePath: '/app' });
-        assert.equal(prepared.assetCount, 3);
+        assert.equal(prepared, document);
         assert.deepEqual(requests, [['model', '/app/shared'], ['texture', '/app/shared'], ['sound', '/app/shared']]);
         requests.length = 0;
         await preparePrefab(runtime, document, { basePath: '/app', deferMaterialTextures: () => true });
@@ -180,11 +196,8 @@ describe('Prefab preparation', () => {
 
     test('preparation discovers a shared DAG once and resolves defaults/basePath', async () => {
         const f = fixture({ '/game/root': [ref('/a'), ref('/b')], '/game/a': [ref('/c'), image()], '/game/b': [ref('/c'), image()], '/game/c': [] });
-        const result = await preparePrefab(f.runtime, '/root', { basePath: '/game' });
-        assert.equal(result.documentCount, 4);
-        assert.equal(result.assetCount, 1);
-        assert.equal(f.requested.filter(p => p === '/game/c').length, 1);
-        assert.equal(f.requested.filter(p => p === '/game/shared.png').length, 1);
+        await preparePrefab(f.runtime, '/root', { basePath: '/game' });
+        assert.deepEqual(f.requested.sort(), ['/game/a', '/game/b', '/game/c', '/game/root', '/game/shared.png']);
     });
 
     test('cross-branch cycles fail instead of awaiting one another forever', async () => {
@@ -298,8 +311,7 @@ test('inline and external definitions prepare together, sharing dependencies and
         loadSound: async () => { throw Error('Unexpected sound'); },
     };
     const prepared = await preparePrefab(runtime, '/root.json', { basePath: '/app' });
-    assert.equal(prepared.documentCount, 4);
-    assert.equal(prepared.assetCount, 1);
+    assert.equal(prepared, document);
     assert.deepEqual(requests.sort(), ['/app/external.json', '/app/root.json', '/app/stone.png']);
     const cycle = normalizePrefab({ root: { ...ref('loop', { prefabId: 'loop' }), packed: true } });
     await assert.rejects(preparePrefab({ ...runtime, loadDocument: async () => cycle }, '/cycle'), /Cyclic prefab/);
@@ -373,7 +385,7 @@ test('preparation resolves packed owners and detects packed reference cycles', a
         loadSound: async () => { throw Error('No external dependencies'); },
     };
     const prepared = await preparePrefab(runtime, '/scene.json');
-    assert.equal(prepared.documentCount, 2);
+    assert.equal(prepared, document);
     const cycle = normalizePrefab({ root: { id: 'world', children: [
         { id: 'loop', packed: true, children: [ref('self', 'loop')] },
     ] } });

@@ -137,9 +137,9 @@ test('renaming a material component only changes that node', () => {
     assert.equal(updates, 1);
 });
 
-test('core discovers unique inline materials and sharing persists a live ID reference', async t => {
-    const { collectSceneMaterials } = await import('../../src/core/prefab.ts');
-    const { createPrefabDocumentApi, ensureMaterialReference } = await import('../../src/core/prefabDocumentApi.ts');
+test('the editor discovers unique inline materials and sharing persists a live ID reference', async t => {
+    const { collectSceneMaterials, ensureMaterialReference } = await import('../../src/editor/components/materialPicker.ts');
+    const { createPrefabDocumentApi } = await import('../../src/core/prefabDocumentApi.ts');
     const doc = document('catalog', [
         box('red', { color: '#ff0000', roughness: 1 }),
         box('same-red', { color: '#ff0000' }),

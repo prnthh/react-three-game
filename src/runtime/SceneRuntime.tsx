@@ -4,7 +4,7 @@ import { GeometryRuntimeProvider } from './components/GeometryComponent.js';
 import { MaterialPoolProvider } from './rendering/MaterialPoolProvider.js';
 import { SceneComponentsProvider } from './scene/SceneContext.js';
 import { GameEventsProvider } from './scene/GameEvents.js';
-import { SceneClusteredLighting } from './components/ClusteredLightingComponent.js';
+import { RendererLighting } from './lighting/RendererLighting.js';
 
 const RuntimeContext = createContext(false);
 
@@ -13,7 +13,7 @@ export function SceneRuntime({ children }: { children: ReactNode; }) {
     const inherited = useContext(RuntimeContext);
     if (inherited) return children;
     return <RuntimeContext.Provider value={true}>
-        <SceneClusteredLighting />
+        <RendererLighting />
         <GameEventsProvider>
             <AssetRuntimeProvider>
                 <GeometryRuntimeProvider>

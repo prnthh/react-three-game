@@ -1,52 +1,24 @@
 'use client';
-import { memo, useEffect, useMemo, useState } from 'react';
-import type { WebGPURenderer } from 'three/webgpu';
+import { memo } from 'react';
 import { GameCanvas, PrefabRoot, registerComponent } from 'react-three-game/viewer';
 import type { Prefab } from 'react-three-game/core';
 import { BASE_PATH } from '../basePath';
 import homePrefab from '../../public/prefabs/brutalist-city/game-level.json';
-import PrefabGridStreamerComponent from './PrefabGridStreamerComponent';
-import { CityDebugLog, CityProfiling, profileCityRenderer } from './cityProfiling';
+import DistrictRouteComponent from './DistrictRouteComponent';
+import { CityDebugLog, CityProfiling } from './cityProfiling';
 
 import { FrameSampler, type FrameSample } from './FrameSampler';
 
-registerComponent(PrefabGridStreamerComponent);
+registerComponent(DistrictRouteComponent);
 
 export default memo(function DemoApp({ onFrameSample }: { onFrameSample?: (sample: FrameSample) => void }) {
-    const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-    const bench = params?.has('profileRender') ?? false;
-    const profiling = Boolean(bench || params?.has('debug') || params?.has('profileCity'));
-    const [comparison, setComparison] = useState({ contact: false, occlusion: false, scale: 0 });
-    useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        setComparison({ contact: params.get('ao') === 'contact', occlusion: params.has('chunkOcclusion'), scale: Number(params.get('aoScale')) });
-    }, []);
-    const prefab = useMemo<Prefab>(() => {
-        if (!comparison.contact && !comparison.occlusion && !comparison.scale && !bench) return homePrefab as Prefab;
-        const root = homePrefab.root;
-        const post = root.components.postProcessing;
-        return { ...homePrefab, root: { ...root,
-            children: bench ? root.children.map(node => {
-                const flythrough = node.components?.flythrough;
-                return flythrough ? { ...node, components: { ...node.components, flythrough: {
-                    ...flythrough, properties: { ...flythrough.properties, data: { speed: 0 } },
-                } } } : node;
-            }) : root.children,
-            components: { ...root.components, ...(bench && { renderSettings: { ...root.components.renderSettings,
-                properties: { ...root.components.renderSettings.properties, fpsCap: null } } }), postProcessing: {
-                ...post, properties: { ...post.properties, ambientOcclusionMode: comparison.contact ? 'contact' : 'gtao',
-                    ambientOcclusionResolutionScale: comparison.scale || post.properties.ambientOcclusionResolutionScale,
-                    chunkOcclusion: comparison.occlusion },
-            } },
-        } } as Prefab;
-    }, [bench, comparison]);
+    const profiling = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('debug');
     return <div className="absolute inset-0 -z-1 h-full w-full bg-[#677d83]">
-        <GameCanvas glConfig={bench ? { trackTimestamp: true } : undefined}
-            onCreated={bench ? ({ gl }) => profileCityRenderer(gl as unknown as WebGPURenderer) : undefined}>
+        <GameCanvas>
             {profiling && <CityDebugLog />}
-            {onFrameSample && <FrameSampler onSample={onFrameSample} benchmark={bench} />}
+            {onFrameSample && <FrameSampler onSample={onFrameSample} />}
             <CityProfiling.Provider value={profiling}>
-                <PrefabRoot basePath={BASE_PATH} data={prefab} />
+                <PrefabRoot basePath={BASE_PATH} data={homePrefab as Prefab} />
             </CityProfiling.Provider>
         </GameCanvas>
     </div>;

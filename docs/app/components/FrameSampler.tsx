@@ -4,7 +4,7 @@ import type { WebGPURenderer } from 'three/webgpu';
 
 export interface FrameSample { time: number; cpu: number; gpu?: number }
 
-export function FrameSampler({ onSample, benchmark }: { onSample(sample: FrameSample): void; benchmark: boolean }) {
+export function FrameSampler({ onSample }: { onSample(sample: FrameSample): void }) {
     const renderer = useThree(state => state.gl) as unknown as WebGPURenderer;
     const begin = useRef<(() => void) | null>(null);
     useFrame(() => begin.current?.(), -Infinity);
@@ -19,16 +19,15 @@ export function FrameSampler({ onSample, benchmark }: { onSample(sample: FrameSa
             const now = performance.now();
             if (now < next || pending) return;
             start = now;
-            if (supported && !benchmark) backend.trackTimestamp = true;
+            if (supported) backend.trackTimestamp = true;
         };
         const unsubscribe = addAfterEffect(() => {
             if (start === undefined) return;
             const time = performance.now(), cpu = time - start;
             start = undefined;
             next = time + 250;
-            if (!supported || benchmark) {
-                // The benchmark already resolves the same GPU query pool.
-                onSample({ time, cpu, gpu: supported && renderer.info.render.timestamp > 0 ? renderer.info.render.timestamp : undefined });
+            if (!supported) {
+                onSample({ time, cpu });
                 return;
             }
             pending = true;
@@ -38,6 +37,6 @@ export function FrameSampler({ onSample, benchmark }: { onSample(sample: FrameSa
             backend.trackTimestamp = previous;
         });
         return () => { active = false; begin.current = null; unsubscribe(); backend.trackTimestamp = previous; };
-    }, [renderer, onSample, benchmark]);
+    }, [renderer, onSample]);
     return null;
 }

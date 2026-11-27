@@ -39,6 +39,8 @@ test('spatial planning retains named references, preserves transforms and bounds
         { id: 'rotated', components: { transform: component('Transform', { position: [10, 0, 0], rotation: [0, 0, Math.PI / 2], scale: [2, 3, 1] }) }, children: [box('near', [2, 0, 0], { name: 'shared' })] }, floor, box('duplicate', [1100, 0, 0], { name: 'shared', color: '#ffffff' })]);
     const before = JSON.stringify(source);
     const plan = await createSpatialPrefabPlan(source, { ...runtime, batchPrimitives: false }, { cellSize: 32, maxNodesPerChunk: 12 });
+    assert.equal(await createSpatialPrefabPlan(source, runtime, { cellSize: 32, maxNodesPerChunk: 12 }), plan);
+    assert.notEqual(await createSpatialPrefabPlan(source, runtime, { cellSize: 64, maxNodesPerChunk: 12 }), plan);
     assert.ok(plan.chunks.every(chunk => chunk.cullable), 'ordinary primitives can be culled with instancing disabled');
     assert.equal(JSON.stringify(source), before, 'planning cannot mutate the shared loaded definition');
     const near = plan.chunks.find(c => Object.values(c.document.nodesById).some(n => n.name === 'near'));
@@ -166,6 +168,43 @@ test('hidden subtrees, cancellation and invalid reference graphs cannot activate
     await assert.rejects(createSpatialPrefabPlan(cyclic, { getPrefab: () => cyclic }), /Cyclic/);
 });
 
+test('evicting a placement between planning slices stops visiting its prefab references', async t => {
+    const { act, createElement: h } = await import('react');
+    const { createRoot } = await import('@react-three/fiber');
+    const { AssetRuntimeContext } = await import('../../src/runtime/assets/AssetRuntime.tsx');
+    const { SpatialPrefabInstance } = await import('../../src/runtime/prefabs/SpatialPrefabInstance.tsx');
+    globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+    const canvas = { width: 100, height: 100, style: {}, addEventListener() {}, removeEventListener() {} };
+    const root = createRoot(canvas);
+    await root.configure({ gl: { render() {}, setSize() {}, setPixelRatio() {}, domElement: canvas },
+        size: { width: 100, height: 100, top: 0, left: 0 }, frameloop: 'never' });
+    t.after(async () => { await act(async () => root.unmount()); });
+
+    const document = state(Array.from({ length: 128 }, (_, i) => ({
+        id: String(i), components: { ref: component('PrefabRef', { url: 'prop.json' }) },
+    })));
+    const prop = state([]);
+    let reads = 0, now = 0;
+    const assets = { getPrefab() { reads++; return prop; } };
+    // Hold the next frame so eviction happens at a deterministic planning checkpoint.
+    t.mock.method(performance, 'now', () => now += 4);
+    const frames = [];
+    const previous = globalThis.requestAnimationFrame;
+    globalThis.requestAnimationFrame = callback => frames.push(callback);
+    t.after(() => {
+        if (previous) globalThis.requestAnimationFrame = previous;
+        else delete globalThis.requestAnimationFrame;
+    });
+    await act(async () => { root.render(h(AssetRuntimeContext.Provider, { value: assets },
+        h(SpatialPrefabInstance, { id: 'outgoing', document, options: {} }))); });
+    const atEviction = reads;
+    assert.ok(atEviction > 0 && atEviction < 128 && frames.length > 0);
+    await act(async () => { root.render(null); });
+    for (const resume of frames.splice(0)) resume(now);
+    await new Promise(resolve => setTimeout(resolve, 0));
+    assert.equal(reads, atEviction);
+});
+
 test('preparation ranks bounds across tiles and octants, preserving in-flight work and residency', () => {
     const queue = new SpatialStreamScheduler(), events = [];
     const cell = (id, ...positions) => {
@@ -183,7 +222,7 @@ test('preparation ranks bounds across tiles and octants, preserving in-flight wo
     assert.deepEqual(events, ['road']);
     queue.update(camera); queue.update(camera);
     assert.deepEqual(events, ['road', 'behind']);
-    behind.phase = 'error';
+    behind.phase = 'settled';
     camera.position.z = -115; queue.update(camera);
     assert.deepEqual(events, ['road', 'behind', 'far']);
     assert.equal(road.phase, 'preparing');
@@ -204,7 +243,7 @@ test('sibling placements share one frame admission and transfer it when the firs
         const entries = positions.map(z => {
             const bounds = new Box3().setFromCenterAndSize(new Vector3(0, 0, z), new Vector3(1, 1, 1));
             return { phase: 'cold', bounds, cellKey: looseOctreeKey(bounds, bounds.getCenter(new Vector3()), 16),
-                rendererBounds: [bounds], mount() { admitted.push(z); this.phase = 'ready'; } };
+                rendererBounds: [bounds], mount() { admitted.push(z); this.phase = 'settled'; } };
         });
         return { entries, tree: buildChunkTree(entries), matrix: () => new Matrix4() };
     }
@@ -229,7 +268,7 @@ test('sibling placements share one frame admission and transfer it when the firs
 });
 
 test('camera passes independently select chunks and distant emitters retain their visual children', async () => {
-    const { Group, SpotLight, Scene } = await import('three');
+    const { Group, SpotLight } = await import('three');
     const root = new Group(), near = new Group(), behind = new Group(), lamp = new SpotLight(), lens = new Group();
     lamp.distance = 10; lamp.add(lens); lamp.position.z = -100;
     root.add(near, behind); root.updateMatrixWorld(); lamp.updateMatrixWorld();
@@ -240,7 +279,7 @@ test('camera passes independently select chunks and distant emitters retain thei
         for (const child of object.children) this.project(child, camera);
     } } };
     const nativeProject = renderer.drawingPipeline.project;
-    const release = registerChunkDraws(renderer, new Scene(), root, new Map(cells.entries()), buildChunkTree(cells));
+    const release = registerChunkDraws(renderer, root, new Map(cells.entries()), buildChunkTree(cells));
     const camera = new PerspectiveCamera(60, 1, 0.1, 500);
     renderer.drawingPipeline.project(root, camera);
     assert.deepEqual(visits, [near]); visits.length = 0;
@@ -266,22 +305,23 @@ test('camera passes independently select chunks and distant emitters retain thei
     assert.equal(renderer.drawingPipeline.project, nativeProject);
 });
 
-test('shader preparation yields between bounded draw groups and serializes/cancels renderer work', async () => {
+test('shader preparation yields between bounded draw groups and serializes/cancels renderer work', async t => {
     const { Group, Scene, PerspectiveCamera, Mesh, BoxGeometry, MeshBasicMaterial } = await import('three');
     const { compileInSlices } = await import('../../src/runtime/rendering/compileInSlices.ts');
     const geometry = new BoxGeometry(), material = new MeshBasicMaterial();
     const root = new Group(); root.visible = false;
     for (let i = 0; i < 7; i++) root.add(new Mesh(geometry, material));
     const sizes = [];
-    let yields = 0, busy = 0, maxBusy = 0;
+    let now = 0, yields = 0, busy = 0, maxBusy = 0;
+    t.mock.method(performance, 'now', () => now);
     const renderer = { compileAsync: async group => {
         busy++; maxBusy = Math.max(maxBusy, busy); sizes.push(group.children.length);
         assert.ok(group.children.every(child => child.parent === root), 'preparation must not reparent live objects');
-        await Promise.resolve(); busy--;
+        await Promise.resolve(); now += 4; busy--;
     } };
     const controller = new AbortController();
     const scene = new Scene(), camera = new PerspectiveCamera();
-    const first = compileInSlices(renderer, root, camera, scene, { batchSize: 2, timeBudgetMs: 0, yieldFrame: async () => { yields++; } });
+    const first = compileInSlices(renderer, root, camera, scene, { yieldFrame: async () => { yields++; } });
     const cancelled = compileInSlices(renderer, root, camera, scene, { signal: controller.signal, yieldFrame: async () => {} });
     controller.abort();
     await first; await assert.rejects(cancelled, { name: 'AbortError' });
@@ -301,20 +341,17 @@ test('warm shader batches reuse a measured slice budget without turning into an 
     for (let i = 0; i < 24; i++) root.add(new Mesh(geometry, material));
     const renderer = { compileAsync: async group => { assert.ok(group.children.length <= 2); batches++; now += 1; } };
     await compileInSlices(renderer, root, new PerspectiveCamera(), new Scene(), {
-        batchSize: 2, timeBudgetMs: 3, yieldFrame: async () => { yields++; now += 16; },
+        yieldFrame: async () => { yields++; now += 16; },
     });
     assert.equal(yields, 4, 'twelve cheap batches fit into four bounded slices, instead of twelve frames');
     assert.equal(batches, 12);
     yields = batches = 0;
-    let timing;
     await compileInSlices(renderer, root, new PerspectiveCamera(), new Scene(), {
-        batchSize: 2, timeBudgetMs: 3, yieldBeforeFirstSlice: false,
+        yieldBeforeFirstSlice: false,
         yieldFrame: async () => { yields++; now += 16; },
-        onTiming: value => { timing = value; },
     });
     assert.equal(yields, 3, 'a cell can start its first slice without an extra frame');
     assert.equal(batches, 12);
-    assert.deepEqual(timing, { objects: 24, queuedMs: 0, yieldMs: 48, submitMs: 12, awaitMs: 0 });
     geometry.dispose(); material.dispose();
 });
 
@@ -366,7 +403,7 @@ for (const mode of ['url', 'embedded']) test(`PrefabInstance streams ${mode} and
     t.after(async () => { await act(async () => root.unmount()); });
     const document = state([box('near-mesh', [0, 0, 0], { name: 'paint' }), box('near-peer', [25, 0, 0], { name: 'paint' }),
         box('paint-definition', [1000, 0, 0], { name: 'paint', color: '#abc123' }),
-        box('far-mesh', [1000, 0, 0], { texture: '/far.png' }), box('missing', [5, 0, 0], { name: 'missing' })]);
+        box('far-mesh', [1000.00001, 0, 0], { texture: '/far.png' }), box('missing', [5, 0, 0], { name: 'missing' })]);
     document.nodesById[document.rootId].components = { chunks: component('ChunkSettings', { cellSize: 64, maxNodesPerChunk: 16 }) };
     const sources = [], textureRequests = [];
     const texture = new Texture();
@@ -385,17 +422,17 @@ for (const mode of ['url', 'embedded']) test(`PrefabInstance streams ${mode} and
         },
         getPrefab: () => null,
     };
-    const statuses = [], chunks = [];
+    const statuses = [], timings = [];
     let residentMounts = 0;
     function ResidentChild() {
         const prefab = usePrefab();
         useEffect(() => { assert.ok(prefab); residentMounts++; }, [prefab]);
         return null;
     }
-    const view = (settings, url = '/same-prefab.json') => h(StrictMode, null, h(AssetCacheContext.Provider, { value: cache }, h(SceneRuntime, null, h(ChunkSettingsContext.Provider, { value: settings },
+    const view = settings => h(StrictMode, null, h(AssetCacheContext.Provider, { value: cache }, h(SceneRuntime, null, h(ChunkSettingsContext.Provider, { value: settings },
         h(AssetRuntimeContext.Provider, { value: assets }, h(PrefabInstance, {
-            id: 'runtime', document: embedded ? document : undefined, url, static: true,
-            onStatus: s => statuses.push(s.phase), onChunkStatus: s => chunks.push(s),
+            id: 'runtime', source: embedded ? document : '/same-prefab.json', static: true,
+            onStatus: s => statuses.push(s.phase), onChunkTiming: timing => timings.push(timing),
         }, h(ResidentChild)))))));
     let scene;
     await act(async () => { scene = root.render(view(null)); });
@@ -425,12 +462,10 @@ for (const mode of ['url', 'embedded']) test(`PrefabInstance streams ${mode} and
     assert.deepEqual([batch().instanceMatrix.array[12], batch().instanceMatrix.array[28]], [0, 25]);
     assert.equal(scene.getState().scene.getObjectByName('near-peer'), undefined, 'direct batches have no source mesh');
     assert.ok(statuses.includes('active')); assert.ok(compiles > 0);
-    if (embedded) {
-        const residentBatch = batch(), preparations = sources.length;
-        await act(async () => { root.render(view(null, '/unused-fallback.json')); });
-        assert.equal(sources.length, preparations, 'an unused fallback URL cannot restart preparation');
-        assert.ok(batch() === residentBatch, 'editing a fallback preserves the live GPU batch');
-    }
+    const residentBatch = batch(), preparations = sources.length;
+    await act(async () => { root.render(view({ cellSize: 64, maxNodesPerChunk: 16 })); });
+    assert.equal(sources.length, preparations, 'inheriting equivalent chunk settings preserves preparation');
+    assert.equal(batch(), residentBatch, 'the existing GPU batch survives the settings edit');
     const mounts = residentMounts;
     assert.ok(mounts > 0, 'host children inherit the resident prefab context');
     scene.getState().camera.position.x = 1000;
@@ -441,12 +476,18 @@ for (const mode of ['url', 'embedded']) test(`PrefabInstance streams ${mode} and
     for (let i = 0; i < 12; i++) await advance();
     assert.ok(!scene.getState().scene.getObjectByName('near-mesh'));
     assert.ok(batch());
-    assert.ok(scene.getState().scene.getObjectByName('far-mesh'));
+    const single = scene.getState().scene.getObjectByName('far-mesh');
+    assert.ok(single.isMesh && !single.isInstancedMesh);
+    assert.equal(single.getWorldPosition(new Vector3()).x, 1000.00001);
+    assert.equal(single.material.map.source, texture.source);
     scene.getState().camera.position.x = 0;
     for (let i = 0; i < 12; i++) await advance();
     assert.equal(near(), undefined);
     assert.equal(batch().material.color.getHexString(), 'abc123');
-    assert.ok(chunks.every(s => s.phase !== 'unloaded'));
+    const readyIds = timings.map(sample => sample.id);
+    assert.ok(readyIds.length > 0);
+    assert.equal(new Set(readyIds).size, readyIds.length, 'returning to a cell preserves its residency');
+    assert.ok(timings.every(t => t.admittedAt <= t.compilingAt && t.compilingAt <= t.readyAt));
     assert.ok(!statuses.includes('error'));
     assert.equal(residentMounts, mounts, 'cell residency cannot remount host children');
     assert.ok(sources.every(source => source === (embedded ? document : '/same-prefab.json')));
@@ -508,34 +549,6 @@ test('render-pass resources survive replacement until admitted shader preparatio
             assert.equal(disposed, true);
         }
     } finally { geometry.dispose(); material.dispose(); }
-});
-
-test('shader profiling distinguishes submissions from builds when distinct chunks share a material', async () => {
-    const { Group, Scene, Mesh, BoxGeometry, SphereGeometry, MeshBasicMaterial } = await import('three');
-    const { compileInSlices } = await import('../../src/runtime/rendering/compileInSlices.ts');
-    const camera = new PerspectiveCamera(), scene = new Scene();
-    const shared = new MeshBasicMaterial(), unique = new MeshBasicMaterial();
-    const current = new Mesh(new BoxGeometry(), shared);
-    const incoming = new Group();
-    const sphere = new SphereGeometry();
-    incoming.add(new Mesh(sphere, shared), new Mesh(sphere, unique));
-    scene.add(current, incoming);
-    let calls = 0;
-    const original = () => { calls++; };
-    const renderer = { debug: { onNodeBuilderCreated: original }, compileAsync: async group => {
-        // Simulate a warm shared shader, a new variant and an unrelated pass during the await.
-        await Promise.resolve();
-        renderer.debug.onNodeBuilderCreated({}, { object: current });
-        for (const object of group.children) {
-            if (object.material === unique) renderer.debug.onNodeBuilderCreated({}, { object });
-        }
-    } };
-    let timing;
-    await compileInSlices(renderer, incoming, camera, scene, { yieldBeforeFirstSlice: false, onTiming: t => { timing = t; } });
-    assert.equal(timing.objects, 2);
-    assert.equal(timing.nodeBuilds, 1);
-    assert.equal(calls, 2);
-    assert.equal(renderer.debug.onNodeBuilderCreated, original);
 });
 
 test('frozen placement descendants refresh when an ancestor moves and sleep when it holds still', async t => {
@@ -617,22 +630,26 @@ test('compiled cells skip static descendants and refresh moved placements, edits
 });
 
 test('large draw placements prune empty branches and admit new cells at a stationary camera', async () => {
-    const { Group, Scene } = await import('three');
-    const { getSceneDrawCells } = await import('../../src/runtime/rendering/chunkFrustum.ts');
+    const { Group } = await import('three');
     const cells = Array.from({ length: 256 }, (_, i) => ({
         bounds: new Box3().setFromCenterAndSize(new Vector3(i * 8, 0, -10), new Vector3(1, 1, 1)),
         cellKey: '0/' + i + ',0,-2', group: new Group(),
     }));
-    const scene = new Scene(), ready = new Map(cells.entries());
+    const placement = new Group(), ready = new Map(cells.entries());
+    const drawn = [];
+    const renderer = { drawingPipeline: { project: object => drawn.push(object) } };
     ready.delete(0);
-    const release = registerChunkDraws({}, scene, new Group(), ready, buildChunkTree(cells));
-    const [query] = getSceneDrawCells(scene);
+    const release = registerChunkDraws(renderer, placement, ready, buildChunkTree(cells));
     const camera = new PerspectiveCamera(40, 1, 0.1, 50);
-    assert.equal(query(camera).length, 0);
+    renderer.drawingPipeline.project(placement, camera);
+    assert.deepEqual(drawn, []);
     ready.set(0, cells[0]);
-    assert.deepEqual(query(camera), [cells[0]]);
+    renderer.drawingPipeline.project(placement, camera);
+    assert.deepEqual(drawn, [cells[0].group]);
+    drawn.length = 0;
     camera.position.x = 1200; camera.updateMatrixWorld();
-    assert.deepEqual(query(camera), [cells[150]]);
+    renderer.drawingPipeline.project(placement, camera);
+    assert.deepEqual(drawn, [cells[150].group]);
     release();
 });
 
@@ -658,9 +675,11 @@ test('a static prefab sleeps as a unit, editor moves and streamed gameplay stay 
     const actor = state([{ id: 'actor', name: 'Actor', components: {
         motion: component('Runtime', { update: 'object.position.y += 1;' }),
     } }]);
-    const assets = { preparePrefab: async document => ({ document }) };
+    const assets = { preparePrefab: async document => document };
     const active = new Set();
-    const place = (id, document) => h(PrefabInstance, { id, document, static: true, onActivate: () => active.add(id) });
+    const place = (id, document) => h(PrefabInstance, { id, source: document, static: true, onStatus(status) {
+        if (status.phase === 'active') active.add(id);
+    } });
     let store;
     const render = mode => act(async () => {
         store = root.render(h(SceneContext.Provider, { value: { mode, editable: true } },

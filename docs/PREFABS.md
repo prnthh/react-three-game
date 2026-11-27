@@ -79,7 +79,7 @@ export function StreamedBlock() {
     <GameCanvas camera={{ position: [8, 5, 10] }}>
       <ambientLight intensity={2} />
       <group position={[4, 1.5, 0]}>
-        <PrefabInstance id="block-1" url="/prefabs/block.json"
+        <PrefabInstance id="block-1" source="/prefabs/block.json"
           onStatus={status => console.log(status.phase)} />
       </group>
     </GameCanvas>
@@ -116,14 +116,14 @@ or a Promise rejection handler.
 
 A `ChunkSettings` component on the scene root configures spatial mesh batching
 and per-pass frustum culling for `static` prefab placements. Placements prepare their
-complete document by default. The host can continue mounting copies of the same URL as the
-camera travels; source documents, assets and partition plans are shared within
-the runtime. A camera can travel in either direction.
+complete document by default. The host selects a prefab for each tile coordinate as the camera travels. Repeated placements can share the latest completed partition plan for a self-contained
+source document, including its packed prefabs. External prefab references, imported models and custom component
+lookups are evaluated per placement. Source documents and URL assets use the shared asset cache.
 
 ```tsx
-<PrefabInstance id="district" url="/prefabs/district.json"
+<PrefabInstance id="district" source="/prefabs/district.json"
   static
-  onChunkStatus={({ id, phase }) => console.log(id, phase)}
+  onChunkTiming={({ id, admittedAt, readyAt }) => console.log(id, readyAt - admittedAt)}
 />
 ```
 
@@ -146,12 +146,12 @@ priority even when its pivot is far away. Two cells can prepare concurrently, so
 
 Each render pass tests the placement bounds and then its visible draw cells against its own frustum. The main
 camera, shadows and reflections can select different cells in the same frame.
-Existing scenes may contain `visibleDistance`, `preloadDistance` or
-`unloadDistance`. The runtime ignores these legacy cell radii.
 
-`onChunkStatus` reports preparation, readiness and failures. The placement
-activates once its first cell is ready, or when its resident document is ready
-if there are no cells. Unmounting a tile cancels its pending work.
+Placement failures reach `onStatus` with an error and, for a streamed cell, its `cellId`. For profiling,
+`onChunkTiming` reports admission, compilation start and readiness timestamps
+once per ready cell. The placement emits `onStatus({ phase: 'active' })` once
+its first cell is ready, or when its resident document is ready if there are no
+cells. Unmounting a tile cancels its pending work.
 
 Streaming is inherited from the outer scene root and requires `static={true}`. Primitive geometry and ordinary static model
 placements are partitioned; external and packed prefab references are expanded
@@ -176,8 +176,8 @@ are cell-scoped and their mounted objects are transient; keep gameplay in a
 separate prefab when using spatial scenery streaming.
 
 The source JSON and referenced assets are fetched before partitioning. Unmounting a placement
-releases its cell objects and instance batches, while shared source assets,
-geometry pools and the plan remain cached. Mount units are bounded by node count.
+releases its cell objects and instance batches. A reusable partition plan follows its source document’s lifetime. The asset cache retains
+source documents and assets until the host clears them. Mount units are bounded by node count.
 Individual model mounts, deep transform chains, texture uploads, and driver shader
 compilation can take longer than a frame. Keep such assets reasonably sized and measure
 on target devices.

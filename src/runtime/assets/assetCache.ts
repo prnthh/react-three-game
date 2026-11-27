@@ -1,4 +1,3 @@
-import { clear, peek, suspend } from 'suspend-react';
 import { createContext, useContext } from 'react';
 import { loadModel, loadSound, loadTexture } from './assetLoaders.js';
 import { loadPrefabSource } from '../prefabs/prefabSource.js';
@@ -16,40 +15,44 @@ type AssetValue<K extends AssetKind> = Awaited<ReturnType<AssetLoaders[K]>>;
 /** Scoped Suspense cache. Custom hosts do not replace the browser's shared loaders. */
 export function createAssetCache(overrides: Partial<AssetLoaders> = {}) {
     let disposed = false;
-    const keys = Object.fromEntries(Object.keys(assetLoaders).map(kind => [kind, {}])) as Record<AssetKind, object>;
-    const paths = new Map<string, [object, string]>();
-    function key(kind: AssetKind, path: string): [object, string] {
-        const value: [object, string] = [keys[kind], path];
-        paths.set(`${kind}:${path}`, value);
-        return value;
+    type Entry = { promise: Promise<AssetValue<AssetKind>>; value?: AssetValue<AssetKind>; error?: unknown };
+    const entries = new Map<string, Entry>();
+    function request(kind: AssetKind, path: string, key: string): Entry {
+        if (disposed) throw new Error('Asset cache is disposed');
+        const existing = entries.get(key);
+        if (existing) return existing;
+        const promise = (overrides[kind] ?? assetLoaders[kind])(path);
+        const entry: Entry = { promise };
+        entries.set(key, entry);
+        promise.then(value => { entry.value = value; }, error => { entry.error = error; });
+        return entry;
     }
-    function get<K extends AssetKind>(kind: K, path: string): AssetValue<K> | null {
-        return peek(key(kind, path)) as AssetValue<K> ?? null;
+    function get<K extends AssetKind>(kind: K, path: string) {
+        return entries.get(`${kind}:${path}`)?.value as AssetValue<K> | undefined ?? null;
     }
-    function evict<K extends AssetKind>(kind: K, path: string): AssetValue<K> | null {
+    function clear<K extends AssetKind>(kind: K, path: string) {
         const value = get(kind, path);
-        clear(key(kind, path));
-        paths.delete(`${kind}:${path}`);
+        entries.delete(`${kind}:${path}`);
         return value;
     }
     function read<K extends AssetKind>(kind: K, path: string): AssetValue<K> {
-        if (disposed) throw new Error('Asset cache is disposed');
-        return suspend(() => (overrides[kind] ?? assetLoaders[kind])(path), key(kind, path)) as AssetValue<K>;
+        const entry = request(kind, path, `${kind}:${path}`);
+        if ('error' in entry) throw entry.error;
+        if ('value' in entry) return entry.value as AssetValue<K>;
+        throw entry.promise;
     }
     async function load<K extends AssetKind>(kind: K, path: string): Promise<AssetValue<K>> {
-        for (;;) {
-            try { return read(kind, path); }
-            catch (pending) {
-                if (!(pending instanceof Promise)) { evict(kind, path); throw pending; }
-                await pending;
-            }
+        const key = `${kind}:${path}`;
+        const entry = request(kind, path, key);
+        try { return await entry.promise as AssetValue<K>; }
+        catch (error) {
+            if (entries.get(key) === entry) entries.delete(key);
+            throw error;
         }
     }
-    const clearAll = () => { paths.forEach(value => clear(value)); paths.clear(); };
-    return { get, clear: evict, read, load, clearAll, dispose() { disposed = true; clearAll(); } };
+    return { get, clear, read, load, dispose() { disposed = true; entries.clear(); } };
 }
 
-export type AssetCache = ReturnType<typeof createAssetCache>;
 export const defaultAssetCache = createAssetCache();
 export const AssetCacheContext = createContext(defaultAssetCache);
 export const useAssetCache = () => useContext(AssetCacheContext);

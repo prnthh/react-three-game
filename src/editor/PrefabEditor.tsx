@@ -21,7 +21,7 @@ import { AssetRuntimeProvider } from "../runtime/assets/AssetRuntime.js";
 import type { AssetRuntime } from "../runtime/assets/AssetRuntime.js";
 import { createPrefabRegistry, PrefabEditorMode } from "../runtime/scene/SceneContext.js";
 import type { PrefabApi, Scene } from "../runtime/scene/SceneContext.js";
-import { createImageNode, createModelNode } from "../core/prefab.js";
+import { createNode } from "../core/prefab.js";
 import EditorUI from "./EditorUI.js";
 import { createSceneAgent, type SceneAgentHost, type SceneCaptureOptions } from "./agent/sceneAgent.js";
 import { exposeSceneAgent } from "./agent/sceneAgentBridge.js";
@@ -69,6 +69,10 @@ function raycastDropPosition(event: DragEvent, state: RootState, target: Vector3
     }
 
     return state.raycaster.ray.intersectPlane(DROP_GROUND, target) !== null;
+}
+
+function createModelNode(filename: string, name: string) {
+    return createNode(name, { model: { type: 'Model', properties: { filename } } });
 }
 
 function offsetNodePosition(node: GameObject, offset: Vec3): GameObject {
@@ -438,7 +442,7 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
         });
         if (!decomposed) {
             if (!replaceId) {
-                const node = offsetNodePosition(createModelNode(path, file.name.replace(/\.[^.]+$/, '')), position);
+                const node = offsetNodePosition(createModelNode(path, modelName), position);
                 document.add(node);
                 setSelectedId(node.id);
             }
@@ -464,16 +468,12 @@ function useEditorState({ basePath = "", prefab, mode: providedMode = PrefabEdit
         const path = getPrefabAssetRef(filename, 'textures');
         const name = file.name.replace(/\.[^.]+$/, '');
         const materialName = `material-${crypto.randomUUID()}`;
-        const image = createImageNode(path, materialName, name);
-        const node = offsetNodePosition({
-            ...image,
-            components: {
-                ...image.components,
-                material: { type: 'Material', properties: {
-                    name: materialName, materialType: 'basic', texture: path, transparent: true,
-                } },
-            },
-        }, position);
+        const node = offsetNodePosition(createNode(name, {
+            geometry: { type: 'Geometry', properties: { geometryType: 'plane', args: [1, 1] } },
+            material: { type: 'Material', properties: {
+                name: materialName, materialType: 'basic', texture: path, transparent: true,
+            } },
+        }), position);
         {
             const s = prefabStore.getState();
             s.addChild(s.rootId, node);

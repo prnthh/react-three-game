@@ -97,20 +97,14 @@
             "properties": {}
           },
           "prefabGridStreamer": {
-            "type": "PrefabGridStreamer",
+            "type": "DistrictRoute",
             "properties": {
-              "tileSize": [
-                0,
-                0,
-                320
-              ],
-              "tileCenter": [
-                0,
-                0,
-                -80
-              ],
-              "static": true,
-              "prefabId": "city-chunk-root"
+              "centerZ": -80,
+              "prefabId": "city-chunk-root",
+              "nextTileUrls": [
+                "/prefabs/brutalist-city/waterworks.json",
+                "/prefabs/brutalist-city/conservatory.json"
+              ]
             }
           }
         },

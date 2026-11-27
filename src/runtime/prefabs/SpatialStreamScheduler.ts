@@ -4,7 +4,7 @@ import { visitChunkTree, type ChunkTree } from '../spatial/chunkTree.js';
 export interface SpatialStreamEntry {
     bounds: Box3;
     rendererBounds: readonly Box3[];
-    phase: 'cold' | 'preparing' | 'ready' | 'error';
+    phase: 'cold' | 'preparing' | 'settled';
     mount(): void;
 }
 
@@ -20,8 +20,8 @@ export class SpatialStreamScheduler {
     private preparing = new Set<SpatialStreamEntry>();
     private eye = new Vector3();
     private localEye = new Vector3();
-    private translation = new Matrix4();
     private worldBounds = new Box3();
+    private viewProjection = new Matrix4();
     private clip = new Matrix4();
     private frustum = new Frustum();
 
@@ -45,17 +45,18 @@ export class SpatialStreamScheduler {
         if (this.preparing.size >= 2) return;
         camera.updateWorldMatrix(true, false);
         this.eye.setFromMatrixPosition(camera.matrixWorld);
+        this.viewProjection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
         let best = Infinity;
         let chosen: SpatialStreamEntry | undefined;
         let owner: SpatialStreamPlacement | undefined;
         for (const placement of this.pending.keys()) {
             const matrix = placement.matrix();
             this.localEye.setFromMatrixPosition(matrix);
-            const translated = this.translation.makeTranslation(this.localEye).equals(matrix);
+            const translated = this.clip.makeTranslation(this.localEye).equals(matrix);
             this.localEye.negate().add(this.eye);
             const distanceTo = (bounds: Box3) => translated ? bounds.distanceToPoint(this.localEye)
                 : this.worldBounds.copy(bounds).applyMatrix4(matrix).distanceToPoint(this.eye);
-            this.clip.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse).multiply(matrix);
+            this.clip.multiplyMatrices(this.viewProjection, matrix);
             this.frustum.setFromProjectionMatrix(this.clip, camera.coordinateSystem, camera.reversedDepth);
             visitChunkTree(placement.tree, bounds => distanceTo(bounds) <= best, i => {
                 const entry = placement.entries[i];
@@ -74,6 +75,7 @@ export class SpatialStreamScheduler {
                     if (best === 0) break;
                 }
             });
+            if (best === 0) break;
         }
         if (!chosen || !owner) return;
         const remaining = this.pending.get(owner)! - 1;

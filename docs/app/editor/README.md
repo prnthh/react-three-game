@@ -26,4 +26,4 @@ that view. The page uses its fallback view by default, including for the starter
 
 The page supplies [DemoSceneTools](../components/agent/README.md), which adds chat
 beside the library's structured Scene tools panel. It also registers the home
-demo's PrefabGridStreamer component so saved city scenes can be opened here.
+demo's DistrictRoute component so saved city scenes can be opened here.

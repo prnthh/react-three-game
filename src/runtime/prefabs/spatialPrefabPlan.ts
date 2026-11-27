@@ -2,7 +2,7 @@ import { yieldToFrame } from '../scene/frame.js';
 import { GEOMETRY_ARGS, primitiveBounds } from '../components/GeometryComponent.js';
 import { Box3, Matrix4, Vector3, type Object3D } from 'three';
 import { getMaterialDefinition, normalizePrefab, type PrefabState } from '../../core/prefab.js';
-import { getComponent, isBuiltInComponent } from '../../core/ComponentRegistry.js';
+import { getComponent, getComponentRegistryVersion, isBuiltInComponent } from '../../core/ComponentRegistry.js';
 import { findComponent, type GameObject, type Prefab, type PrefabMaterial } from '../../core/types.js';
 import { composeTransform } from '../../core/transforms.js';
 import { resolveInlinePrefab } from '../../core/inlinePrefabs.js';
@@ -37,6 +37,10 @@ export interface SpatialPlanRuntime {
     lookup?: typeof getComponent;
 }
 
+// Keep one completed layout per immutable source. Plans that read external
+// prefabs or models must observe the current assets on the next placement.
+const completedPlans = new WeakMap<PrefabState, { key: string; plan: SpatialPrefabPlan }>();
+
 const visualTypes = new Set(['Transform', 'Geometry', 'Material', 'Data', 'PrefabRef', 'Model']);
 const fixedResidentTypes = new Set(['Fog', 'AmbientLight', 'PointLight', 'SpotLight', 'HemisphereLight']);
 const residentTypes = new Set([...fixedResidentTypes, 'DiffuseLightProbe', 'DirectionalLight', 'Camera', 'Environment', 'Sky']);
@@ -65,6 +69,11 @@ export async function createSpatialPrefabPlan(document: PrefabState, runtime: Sp
     const lookup = runtime.lookup ?? getComponent;
     const cellSize = finitePositive(options.cellSize, STREAMING_DEFAULTS.cellSize);
     const limit = Math.max(8, Math.floor(finitePositive(options.maxNodesPerChunk, STREAMING_DEFAULTS.maxNodesPerChunk)));
+    signal?.throwIfAborted();
+    const key = JSON.stringify([cellSize, limit, !!runtime.batchPrimitives, getComponentRegistryVersion()]);
+    let reusable = lookup === getComponent;
+    const cached = reusable ? completedPlans.get(document) : undefined;
+    if (cached?.key === key) return cached.plan;
     const chunks: SpatialPrefabChunk[] = [];
     const buckets = new Map<string, Bucket>();
     // Mesh/material setup costs more than an empty transform group. Retain a
@@ -85,6 +94,7 @@ export async function createSpatialPrefabPlan(document: PrefabState, runtime: Sp
     };
     const reference = (state: PrefabState, properties: Record<string, any>) => {
         if (properties.prefabId) return resolveInlinePrefab(state, properties.prefabId);
+        reusable = false;
         const path = withBasePath(basePath, properties.url ?? '');
         const loaded = runtime.getPrefab(path);
         if (!loaded) throw new Error(`Prepared prefab reference is unavailable: ${path}`);
@@ -101,9 +111,9 @@ export async function createSpatialPrefabPlan(document: PrefabState, runtime: Sp
         checking.add(state);
         for (const node of Object.values(state.nodesById)) {
             await checkpoint();
-            const renderers = Object.values(node.components ?? {}).filter(c => c && ['Geometry', 'Model', 'PrefabRef'].includes(c.type));
-            if (renderers.length > 1) return false;
-            for (const c of Object.values(node.components ?? {})) {
+            const components = Object.values(node.components ?? {});
+            if (components.filter(c => c?.type === 'Geometry' || c?.type === 'Model' || c?.type === 'PrefabRef').length > 1) return false;
+            for (const c of components) {
                 if (!c) continue;
                 const definition = lookup(c.type);
                 if (!definition || !isBuiltInComponent(definition)) return false;
@@ -121,6 +131,7 @@ export async function createSpatialPrefabPlan(document: PrefabState, runtime: Sp
                     if (definition) materials.set(c.properties.name, definition);
                 }
                 if (c.type === 'Model' && c.properties.filename) {
+                    reusable = false;
                     const model = runtime.getModel?.(withBasePath(basePath, c.properties.filename));
                     // Animated/skinned models and repeat arrays need their original
                     // lifecycle; a single imported mesh is an indivisible mount unit.
@@ -156,7 +167,7 @@ export async function createSpatialPrefabPlan(document: PrefabState, runtime: Sp
         const node = state.nodesById[id];
         if (!node || node.disabled || node.hidden) return;
         const scopedId = `${prefix}${id}`;
-        const components = Object.fromEntries(Object.entries(node.components ?? {}).filter(([, c]) => c));
+        const components = node.components ?? {};
         const values = Object.values(components);
         const world = parentMatrix.clone().multiply(matrixOf(node));
         // Ancestors carry only transforms and metadata, never duplicate renderers or lights.
@@ -194,7 +205,8 @@ export async function createSpatialPrefabPlan(document: PrefabState, runtime: Sp
                 primitives: runtime.batchPrimitives ? new Map() : undefined,
             });
             const chain = [...ancestors, { id: scopedId, name: node.name, components: localComponents }];
-            const cost = chain.filter(part => !bucket.nodes.has(part.id)).length;
+            let cost = 0;
+            for (const part of chain) if (!bucket.nodes.has(part.id)) cost++;
             if (bucket.nodes.size + cost + 1 > limit || bucket.rendererBounds.length >= rendererLimit) flush(key, bucket);
             // Imported models can have custom bounds or per-mesh culling overrides.
             if (modelSource || geometry?.properties.frustumCulled === false) bucket.cullable = false;
@@ -232,5 +244,7 @@ export async function createSpatialPrefabPlan(document: PrefabState, runtime: Sp
     const residentRoot = await visit(document, document.rootId, [], new Matrix4(), '');
     for (const [key, bucket] of buckets) { await checkpoint(); flush(key, bucket); }
     if (residentRoot) root.children = [residentRoot];
-    return { chunks, tree: buildChunkTree(chunks), resident: normalizePrefab({ root }), residentStatic, materials };
+    const plan = { chunks, tree: buildChunkTree(chunks), resident: normalizePrefab({ root }), residentStatic, materials };
+    if (reusable && chunks.length) completedPlans.set(document, { key, plan });
+    return plan;
 }

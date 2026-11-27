@@ -6,7 +6,8 @@ import { resolvePrimitive, type GeometryProperties } from '../components/Geometr
 export interface StaticPrimitiveBatch {
     geometry: GeometryProperties;
     material: MaterialComponentProperties;
-    matrices: Float32Array;
+    matrices: Float32Array | Float64Array;
+    name?: string;
 }
 
 const primitiveComponents = new Set(['Transform', 'Geometry', 'Material']);
@@ -40,13 +41,14 @@ export function batchStaticPrimitives(root: GameObject, candidates: ReadonlyMap<
     const batches: StaticPrimitiveBatch[] = [];
     const removed = new Set<GameObject>();
     for (const { geometry, material, instances } of groups.values()) {
-        if (instances.length < 2) continue;
-        const matrices = new Float32Array(instances.length * 16);
+        // Ordinary meshes keep their CPU transform precision until Three makes
+        // it camera-relative. Only instanced draws upload a float32 matrix buffer.
+        const matrices = instances.length === 1 ? new Float64Array(16) : new Float32Array(instances.length * 16);
         instances.forEach(({ node, matrix }, index) => {
             matrices.set(matrix.elements, index * 16);
             removed.add(node);
         });
-        batches.push({ geometry, material, matrices });
+        batches.push({ geometry, material, matrices, name: instances.length === 1 ? instances[0].node.name?.trim() : undefined });
     }
     if (batches.length) {
         const prune = (node: GameObject): boolean => {

@@ -233,7 +233,7 @@ test('root chunk settings reconfigure the real mesh grid and restore its default
     assert.equal(batches().length, 0);
 });
 
-test('streamed lights keep a stable shader key and authored lighting overrides the shared runtime default', async t => {
+test('streamed local lights share a stable shader key across prefab roots', async t => {
     const { act, createElement: h } = await import('react');
     const { createRoot, extend } = await import('@react-three/fiber');
     const { Group } = await import('three');
@@ -242,7 +242,7 @@ test('streamed lights keep a stable shader key and authored lighting overrides t
     const { ClusteredLighting } = await import('three/examples/jsm/lighting/ClusteredLighting.js');
     extend({ Group }); globalThis.IS_REACT_ACT_ENVIRONMENT = true;
     const canvas = { width: 100, height: 100, style: {}, addEventListener() {}, removeEventListener() {} };
-    const { Lighting, Scene, SpotLight } = await import('three/webgpu');
+    const { Lighting, PointLight, Scene, SpotLight } = await import('three/webgpu');
     const fallback = new Lighting(), renderer = { lighting: fallback, render() {}, setSize() {}, setPixelRatio() {}, domElement: canvas };
     const root = createRoot(canvas);
     await root.configure({ gl: renderer, size: { width: 100, height: 100, top: 0, left: 0 }, frameloop: 'never' });
@@ -251,51 +251,37 @@ test('streamed lights keep a stable shader key and authored lighting overrides t
     const dispose = ClusteredLighting.prototype.dispose;
     ClusteredLighting.prototype.dispose = function () { disposals++; return dispose.call(this); };
     t.after(async () => { await act(async () => root.unmount()); ClusteredLighting.prototype.dispose = dispose; });
-    await act(async () => root.render(h(PrefabRoot, { store: document })));
+    await act(async () => root.render(h(PrefabRoot, { key: 'first', store: document })));
     const automatic = renderer.lighting;
     assert.ok(automatic instanceof ClusteredLighting);
-    const update = properties => act(async () => document.getState().updateNode('root', node => ({ ...node,
-        components: properties ? { lights: { type: 'ClusteredLighting', properties } } : {},
-    })));
-    await update({ maxLights: 32 });
-    assert.equal(renderer.lighting.maxLights, 32);
-    assert.equal(renderer.lighting.tileSize, 32);
-    await update({ maxLights: 128, tileSize: 16 });
-    assert.equal(renderer.lighting.maxLights, 128);
-    assert.equal(renderer.lighting.tileSize, 16);
-    assert.equal(disposals, 1);
-    await update(null);
-    assert.equal(renderer.lighting, automatic);
-    assert.equal(disposals, 2);
-    await act(async () => document.getState().updateNode('root', node => ({ ...node,
-        components: { chunks: { type: 'ChunkSettings', properties: {} } },
-    })));
-    assert.equal(renderer.lighting, automatic);
     const lights = renderer.lighting.getNode(new Scene());
-    const resident = new SpotLight(), arriving = new SpotLight();
-    lights.setLights([resident]);
+    const point = new PointLight(), spot = new SpotLight();
     const key = lights.customCacheKey();
-    for (const streamed of [[resident, arriving], [arriving], []]) {
+    for (const streamed of [[point], [point, spot], [spot], []]) {
         lights.setLights(streamed);
         assert.equal(lights.customCacheKey(), key);
         assert.deepEqual(lights.clusteredLights, streamed);
     }
-    await act(async () => document.getState().updateNode('root', node => ({ ...node,
-        components: { ...node.components, lights: { type: 'ClusteredLighting', properties: { maxLights: 48 } } },
-    })));
-    assert.equal(renderer.lighting.maxLights, 48);
-    await update(null);
-    assert.equal(renderer.lighting, automatic);
-    assert.equal(disposals, 3);
+    spot.castShadow = true;
+    lights.setLights([spot]);
+    assert.deepEqual(lights.getBuiltinLights(), [spot]);
     const second = createPrefabStore({ root: { id: 'other' } });
     const pair = first => [first && h(PrefabRoot, { key: 'first', store: document }),
         h(PrefabRoot, { key: 'second', store: second })];
     await act(async () => root.render(pair(true)));
-    const shared = renderer.lighting;
+    assert.equal(renderer.lighting, automatic);
     await act(async () => root.render(pair(false)));
-    assert.equal(renderer.lighting, shared);
+    assert.equal(renderer.lighting, automatic);
     await act(async () => root.render(null));
     assert.equal(renderer.lighting, fallback);
+    assert.equal(disposals, 1);
+    const custom = new ClusteredLighting(32);
+    renderer.lighting = custom;
+    await act(async () => root.render(pair(true)));
+    await act(async () => root.render(null));
+    assert.equal(renderer.lighting, custom);
+    assert.equal(disposals, 1);
+    custom.dispose();
 });
 
 test('declarative fog restores the host scene and probe edits preserve the light object', async t => {
@@ -356,8 +342,8 @@ test('capped and uncapped canvases share one pair of global effects per display 
         globalThis.requestAnimationFrame = originalRAF;
         globalThis.cancelAnimationFrame = originalCancel;
     });
-    function frame() {
-        now += 1000 / 120;
+    function frame(step = 1000 / 120) {
+        now += step;
         for (const [handle, callback] of [...callbacks]) if (callbacks.delete(handle)) callback(now);
     }
     for (const [i, fpsCap] of caps.entries()) {
@@ -376,4 +362,20 @@ test('capped and uncapped canvases share one pair of global effects per display 
     }
     assert.deepEqual(counts, [60, 30, 120]);
     assert.deepEqual([before, after], [120, 120]);
+
+    // With one capped canvas left, skip the intervening 120 Hz refresh.
+    // The due tick must draw immediately without an external invalidation.
+    stores[1].setState({ frameloop: 'never' });
+    stores[2].setState({ frameloop: 'never' });
+    const previous = counts[0];
+    for (let i = 0; i < 4 && counts[0] === previous; i++) {
+        frame();
+        await Promise.resolve();
+    }
+    assert.equal(counts[0], previous + 1);
+    for (let i = 1; i <= 4; i++) {
+        frame(1000 / 60);
+        await Promise.resolve();
+        assert.equal(counts[0], previous + 1 + i);
+    }
 });

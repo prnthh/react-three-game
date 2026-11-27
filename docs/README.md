@@ -37,35 +37,24 @@ Also available: [general editor](app/editor/page.tsx),
 [home city composition](app/components/DemoApp.tsx), and the [Scene API guide](public/editor-scene-for-agents.md).
 
 The home viewer loads [the authored Sector 09 prefab](public/prefabs/brutalist-city/game-level.json). Its demo-owned
-[`PrefabGridStreamer`](app/components/PrefabGridStreamerComponent.tsx) defines the
-repeating tile window. It starts at the camera, then prefetches the neighboring tiles the camera is moving toward and looking into. A spare slot retains an existing neighbor across turns. The library supplies authored lighting and
+[`DistrictRoute`](app/components/DistrictRouteComponent.tsx) defines the
+three-district route. Traveling down the boulevard takes you from Sector 09 through the East Bank Waterworks and Winter Garden Conservatory before the route repeats. Each new district loads from its own prefab URL. The camera district and its two neighbors stay resident. Crossing a boundary replaces one district. The library supplies authored lighting and
 [spatial culling](PREFABS.md#automatically-stream-static-scenery). Edit and
 save the home scene and its standalone kit prefabs directly.
 
 Open [the home demo in debug mode](http://localhost:3000/?debug) and filter the
 Chrome console for `[city-profile]`. Each active one-second interval emits a JSON
-record with ready cell counts by tile, the slowest cell’s elapsed time, shader
-submission time, renderer-wide node builds, and the longest browser-reported
-long animation frame. A zero long-frame value means none reached the browser’s
-50 ms threshold. A null value means the browser lacks that measurement.
-Warmup build counts are attributed to cells that finished during the interval.
-Benchmark mode also reports the peak sampled GPU frame and its pass breakdown.
+record with ready cell counts by tile, the slowest cell’s elapsed time and the
+longest browser-reported long animation frame. Zero means none reached the
+browser’s 50 ms threshold. Null means the browser lacks that measurement.
+`tileActivations` gives the tile coordinate and elapsed milliseconds from placement
+loading to activation, including dependency discovery, partitioning and the wait
+for its first ready cell. A prefab with no cells activates when its resident content is ready.
 The Perf button independently enables the live graph.
 
-The previous `?profileCity` URL also enables debug mode. For per-cell details,
+For per-cell details,
 see `City cell` entries in Chrome DevTools’ Performance **Timings** track.
-Each entry identifies its tile and cell. Shader warmup details include queue
-time, frame yields, time spent submitting compiler work, and time awaiting it.
-On supported renderers, `detail.nodeBuilds` counts shader-builder starts for the
-cell’s objects during warmup. A cell can submit draws with zero new builds when
-a visible chunk already uses compatible shaders. Buffer and binding setup can
-still take time on those draws.
-
-Add `&profileRender` to hold the starting camera and record WebGPU timestamps
-as `City GPU frame` marks. Each mark includes milliseconds by render pass in `detail.passes`.
-Cell timings span asset waits and frame yields, so use the Performance panel’s main-thread track for CPU spikes. Compare stock GTAO with `&ao=contact`, then add
-`&chunkOcclusion` to measure the depth pre-pass separately. Keep the viewport
-and `aoScale` the same across runs.
+Each entry identifies its tile and cell and shows the elapsed time for mounting and shader warmup.
 
 Author small scenes inline. Pack assemblies for repetition within a scene; export
 a separate prefab file when sharing across scenes. Saved demo documents live in

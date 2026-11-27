@@ -46,7 +46,7 @@ export class SceneMaterialPool {
         if (!active) return;
         const next = peers.entries().next().value;
         if (next && next[1].material === previous.material && next[1].basePath === previous.basePath) {
-            // Repeated placements share a plan. Preserve the subscribers' snapshot on ownership transfer.
+            // Both owners registered the same definition. Keep the subscribers' current snapshot.
             peers.set(next[0], previous);
             return;
         }

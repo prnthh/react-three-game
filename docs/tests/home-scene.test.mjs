@@ -1,5 +1,5 @@
 import test from 'node:test';
-import PrefabGridStreamerComponent from '../app/components/PrefabGridStreamerComponent.tsx';
+import DistrictRouteComponent from '../app/components/DistrictRouteComponent.tsx';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { normalizePrefab, denormalizePrefab } from '../../src/core/prefab.ts';
@@ -10,8 +10,8 @@ import { createSpatialPrefabPlan } from '../../src/runtime/prefabs/spatialPrefab
 
 test('home document carries reusable definitions and executable script source without another scene fetch', async () => {
   registerBuiltInComponents();
-  assert.equal(getComponent('PrefabGridStreamer'), undefined, 'the repeating-world policy requires host registration');
-  registerComponent(PrefabGridStreamerComponent);
+  assert.equal(getComponent('DistrictRoute'), undefined, 'the repeating-world policy requires host registration');
+  registerComponent(DistrictRouteComponent);
   const prefab = JSON.parse(readFileSync(new URL('../public/prefabs/brutalist-city/game-level.json', import.meta.url)));
   const document = normalizePrefab(prefab);
   assert.equal(document.nodesById.root.components.renderSettings.type, 'RenderSettings');
@@ -20,7 +20,6 @@ test('home document carries reusable definitions and executable script source wi
   assert.equal(document.nodesById['home-sky'].components.sky.type, 'Sky');
   assert.equal(document.nodesById['home-diffuse-probe'].components.probe.type, 'DiffuseLightProbe');
   const streamer = document.nodesById['prefab-grid-streamer'].components.prefabGridStreamer.properties;
-  assert.equal(streamer.url, undefined);
   assert.equal(streamer.prefabId, 'city-chunk-root');
   const runtime = { getComponent, loadDocument: async path => { throw Error(`Unexpected scene fetch: ${path}`); },
     loadModel: async () => {}, loadTexture: async () => {}, loadSound: async () => {}, getPrefab: () => null };
@@ -72,12 +71,43 @@ test('home document carries reusable definitions and executable script source wi
   assert.deepEqual(batched.chunks.map(cell => cell.bounds), plan.chunks.map(cell => cell.bounds));
 });
 
+test('both boulevard districts prepare from their own URL and partition into visible geometry', async () => {
+  registerBuiltInComponents();
+  const read = path => readFileSync(new URL('../public' + path, import.meta.url));
+  const home = normalizePrefab(JSON.parse(read('/prefabs/brutalist-city/game-level.json')));
+  const { nextTileUrls } = home.nodesById['prefab-grid-streamer'].components.prefabGridStreamer.properties;
+  const documents = new Map();
+  const runtime = { getComponent, batchPrimitives: true, getPrefab: path => documents.get(path),
+    loadDocument: async path => {
+      if (!documents.has(path)) documents.set(path, normalizePrefab(JSON.parse(read(path))));
+      return documents.get(path);
+    },
+    loadTexture: async path => { read(path); },
+  };
+  const layouts = [];
+  for (const url of nextTileUrls) {
+    const document = await preparePrefab(runtime, url);
+    const plan = await createSpatialPrefabPlan(document, runtime, { maxNodesPerChunk: 384 });
+    assert.ok(plan.chunks.some(cell => cell.batches?.length), document.rootId);
+    layouts.push(document.rootId);
+  }
+  assert.deepEqual(layouts, ['waterworks', 'conservatory']);
+});
+
 test('editor playback keeps the authored origin and resident neighbors across mode changes', async t => {
   const { act, createElement: h } = await import('react');
   const { createRoot, extend } = await import('@react-three/fiber');
   const { Group } = await import('three');
   const { PrefabRoot } = await import('../../src/runtime/prefabs/PrefabRoot.tsx');
-  registerComponent(PrefabGridStreamerComponent);
+  const { createPrefabStore } = await import('../../src/core/prefabStore.ts');
+  const { AssetCacheContext, createAssetCache } = await import('../../src/runtime/assets/assetCache.ts');
+  const loads = [];
+  const cache = createAssetCache({ prefab: async path => {
+    loads.push(path);
+    return normalizePrefab({ root: { id: path, name: path } });
+  } });
+  t.after(() => cache.dispose());
+  registerComponent(DistrictRouteComponent);
   extend({ Group });
   globalThis.IS_REACT_ACT_ENVIRONMENT = true;
   const canvas = { width: 100, height: 100, style: {}, addEventListener() {}, removeEventListener() {} };
@@ -85,10 +115,11 @@ test('editor playback keeps the authored origin and resident neighbors across mo
   await root.configure({ gl: { render() {}, setSize() {}, setPixelRatio() {}, domElement: canvas },
     size: { width: 100, height: 100, top: 0, left: 0 }, frameloop: 'never' });
   t.after(async () => { await act(async () => root.unmount()); });
-  const data = { root: { id: 'grid', components: { grid: { type: 'PrefabGridStreamer', properties: { prefabId: 'block', static: true } } },
+  const data = { root: { id: 'grid', components: { grid: { type: 'DistrictRoute', properties: { prefabId: 'block', nextTileUrls: ['/waterworks.json', '/conservatory.json'] } } },
     children: [{ id: 'block', packed: true, children: [{ id: 'street', name: 'Street' }] }] } };
+  const store = createPrefabStore(data);
   let state;
-  const show = editMode => act(async () => { state = root.render(h(PrefabRoot, { data, editMode })); });
+  const show = editMode => act(async () => { state = root.render(h(AssetCacheContext.Provider, { value: cache }, h(PrefabRoot, { store, editMode }))); });
   const street = () => state.getState().scene.getObjectByName('Street');
   await show(false);
   const original = street();
@@ -97,21 +128,39 @@ test('editor playback keeps the authored origin and resident neighbors across mo
   const findNeighbor = () => state.getState().scene.getObjectsByProperty('type', 'Group').find(o => o.position.z === -320);
   const streamed = findNeighbor();
   assert.ok(streamed);
+  assert.deepEqual(new Set(loads), new Set(['/waterworks.json', '/conservatory.json']), 'both adjacent districts load on spawn');
   for (const mode of [true, false]) {
     await show(mode);
     assert.equal(street(), original);
     assert.equal(findNeighbor(), streamed);
   }
-  // A turn and then a reversal inside the same cell must change streaming demand.
+  // Turns within a cell preserve its residency window.
   const camera = state.getState().camera;
   camera.rotation.y = Math.PI;
   await act(async () => state.getState().advance(2, false));
   const hasTile = z => state.getState().scene.getObjectsByProperty('type', 'Group').some(o => o.position.z === z);
-  assert.ok(hasTile(320), 'turning in place requests the tile in view');
-  assert.equal(findNeighbor(), streamed, 'a spare slot keeps the existing neighbor mounted');
+  assert.equal(loads.length, 2, 'turning causes no new fetches');
+  assert.ok(hasTile(320), 'the reverse neighbor is resident');
+  assert.equal(findNeighbor(), streamed, 'the forward neighbor stays mounted');
   camera.position.z -= 2;
   await act(async () => state.getState().advance(3, false));
-  assert.ok(hasTile(-320) && hasTile(320), 'backward travel and forward view both fit within three tiles');
+  assert.ok(hasTile(-320) && hasTile(320), 'motion inside the tile preserves both neighbors');
+  const waterworks = streamed.getObjectByName('/waterworks.json');
+  assert.ok(waterworks);
+  await act(async () => store.getState().updateNode('grid', node => {
+    const grid = node.components.grid;
+    return { ...node, components: { ...node.components, grid: { ...grid, properties: {
+      ...grid.properties, nextTileUrls: [' ', '/waterworks.json', '', '/replacement.json'],
+    } } } };
+  }));
+  assert.equal(findNeighbor(), streamed, 'editing a different district preserves the placement group');
+  assert.equal(streamed.getObjectByName('/waterworks.json'), waterworks, 'the prepared prefab survives the route edit');
+  assert.ok(loads.includes('/replacement.json'), 'the affected placement requests its new source');
+  camera.position.z = -161;
+  await act(async () => state.getState().advance(3.5, false));
+  assert.equal(findNeighbor(), streamed, 'crossing into a prefetched tile keeps its mounted group');
+  assert.ok(hasTile(-640));
+  assert.equal(hasTile(320), false, 'the trailing district leaves the window');
   camera.position.z = -3200;
   await act(async () => state.getState().advance(4, false));
   assert.equal(hasTile(320), false);

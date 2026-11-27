@@ -7697,12 +7697,6 @@
           "shadows": true,
           "shadowMapType": "pcf"
         }
-      },
-      "clusteredLighting": {
-        "type": "ClusteredLighting",
-        "properties": {
-          "maxLights": 32
-        }
       }
     }
   }

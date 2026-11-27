@@ -188,10 +188,10 @@ Ship the JSON, its referenced assets, and custom component code with your app.
 
 ### Stream static scenery at runtime
 
-`PrefabInstance` loads URL prefabs while the scene runs. Author `ChunkSettings`
+`PrefabInstance` accepts a URL or normalized prefab document through its `source` prop. Author `ChunkSettings`
 on the scene root and mark scenery placements `static` to prepare nearby cells
-first and cull spatial branches per render pass. Repeated placements share source
-assets and the partition plan. See [spatial culling](docs/PREFABS.md#automatically-stream-static-scenery)
+first and cull spatial branches per render pass. Placements share source assets and
+reuse completed partition plans for self-contained scenery. See [spatial culling](docs/PREFABS.md#automatically-stream-static-scenery)
 for cell sizing, mount limits, and lifecycle details.
 
 ## Tools and examples

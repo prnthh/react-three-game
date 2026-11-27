@@ -1,7 +1,7 @@
 import { loadAssetManifest } from '../runtime/assets/assetManifest.js';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { createEmptyPrefab, createPackedPrefabNode, scopePrefabMaterials } from '../core/prefab.js';
+import { createEmptyPrefab, createNode, scopePrefabMaterials } from '../core/prefab.js';
 import { menu } from './ui/styles.js';
 import { useEditorContext, useEditorRef } from './EditorContext.js';
 import { loadJsonFile, regenerateIds, saveJson } from './documentIO.js';
@@ -242,7 +242,7 @@ export function FileMenu({
                 entry.endsWith(`/${loaded.filename}`) || entry === `/${loaded.filename}`
             );
             if (matched) {
-                editor.add(createPackedPrefabNode(matched));
+                editor.add(createNode('Packed Prefab', { prefabref: { type: 'PrefabRef', properties: { url: matched } } }));
                 onClose();
                 return;
             }

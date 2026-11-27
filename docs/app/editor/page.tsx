@@ -1,5 +1,5 @@
 "use client";
-import PrefabGridStreamerComponent from '../components/PrefabGridStreamerComponent';
+import DistrictRouteComponent from '../components/DistrictRouteComponent';
 import { DemoSceneTools } from '../components/agent/DemoSceneTools';
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -11,7 +11,7 @@ import starterScene from "../../public/prefabs/starter-scene.json";
 import { useThree } from '@react-three/fiber';
 import type { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-registerComponent(PrefabGridStreamerComponent);
+registerComponent(DistrictRouteComponent);
 
 const createStarterScene = (): Prefab => structuredClone(starterScene) as Prefab;
 

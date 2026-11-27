@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 
-import { useAssetRuntime, useSoundAssetRevision } from '../assets/AssetRuntime.js';
+import { useAssetRuntime, useSoundAssets } from '../assets/AssetRuntime.js';
 
 import { useGameObject, useNode } from '../scene/SceneContext.js';
 
@@ -86,7 +86,7 @@ function resolveClipPaths({ clips, clipMode }: SoundProperties) {
     return { paths: [], mode: 'single' as const };
 }
 
-function pickClip(paths: string[], mode: ClipMode, sequenceIndexRef: React.MutableRefObject<number>) {
+function pickClip<T>(paths: T[], mode: ClipMode, sequenceIndexRef: React.MutableRefObject<number>) {
     if (paths.length <= 1 || mode === 'single') {
         return paths[0];
     }
@@ -152,7 +152,7 @@ function SoundWithListener({ properties, listener }: Pick<ComponentViewProps<Sou
     },
         [basePath, properties.clips, properties.clipMode],
     );
-    const soundAssetRevision = useSoundAssetRevision(paths);
+    const buffers = useSoundAssets(paths);
 
     useEffect(() => {
         const audio = positionalAudioRef.current;
@@ -190,20 +190,12 @@ function SoundWithListener({ properties, listener }: Pick<ComponentViewProps<Sou
     }, [gameEvents, editMode, eventName, getSound, mode, nodeId, paths, properties]);
 
     useEffect(() => {
-        // Re-run when assets load so autoplay can start once the buffer is ready
-        // (the asset runtime context is now stable and no longer re-renders on load).
-        void soundAssetRevision;
-        if (editMode || !autoplay || paths.length === 0) {
-            return;
-        }
-
-        const clip = pickClip(paths, mode, sequenceIndexRef);
-        if (!clip) {
+        if (editMode || !autoplay || buffers.length === 0) {
             return;
         }
 
         const audio = positionalAudioRef.current;
-        const buffer = getSound(clip);
+        const buffer = pickClip(buffers, mode, sequenceIndexRef);
         if (!audio || !buffer) {
             return;
         }
@@ -212,7 +204,7 @@ function SoundWithListener({ properties, listener }: Pick<ComponentViewProps<Sou
         return () => {
             if (audio.isPlaying) audio.stop();
         };
-    }, [autoplay, editMode, getSound, mode, paths, properties, soundAssetRevision]);
+    }, [autoplay, buffers, editMode, mode, properties]);
 
     return (
         <>

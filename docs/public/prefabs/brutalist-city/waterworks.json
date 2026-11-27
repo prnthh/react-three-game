@@ -1,0 +1,421 @@
+{
+  "id": "waterworks",
+  "name": "East Bank Waterworks",
+  "root": {
+    "id": "waterworks",
+    "name": "East Bank Waterworks",
+    "children": [
+      {
+        "id": "waterworks-palette",
+        "name": "District materials",
+        "children": [
+          {
+            "id": "waterworks-mat-road",
+            "components": {
+              "material": {"type": "Material", "properties": {"name": "home-city:road", "color": "#80786f", "roughness": 0.91, "diffuseRoughness": 0.55, "texture": "/textures/home-city/asphalt.webp", "normalMapTexture": "/textures/home-city/asphalt-normal-height.png", "normalScale": [0.55, 0.55], "parallaxScale": 0.004, "anisotropy": 8, "repeat": true, "repeatCount": [40, 67]}}
+            }
+          },
+          {
+            "id": "waterworks-mat-lane-paint",
+            "components": {
+              "material": {"type": "Material", "properties": {"name": "home-city:lane-paint", "color": "#c6bdab", "texture": "/textures/home-city/lane-dash.png", "alphaTest": 0.5, "roughness": 0.96, "repeat": true, "repeatCount": [1, 32]}}
+            }
+          },
+          {
+            "id": "waterworks-mat-rust",
+            "components": {
+              "material": {"type": "Material", "properties": {"name": "home-city:rust", "color": "#795746", "roughness": 0.75, "metalness": 0.4}}
+            }
+          },
+          {
+            "id": "waterworks-mat-metal",
+            "components": {
+              "material": {"type": "Material", "properties": {"name": "home-city:metal", "color": "#313d40", "roughness": 0.58, "metalness": 0.7}}
+            }
+          },
+          {
+            "id": "waterworks-mat-concrete",
+            "components": {
+              "material": {"type": "Material", "properties": {"name": "home-city:concrete", "color": "#ada99e", "roughness": 0.94, "diffuseRoughness": 0.8, "texture": "/textures/home-city/cast-concrete.webp", "normalMapTexture": "/textures/home-city/cast-concrete-normal-height.png", "normalScale": [0.48, 0.48], "parallaxScale": 0.012, "repeat": true, "repeatCount": [2, 2]}}
+            }
+          },
+          {
+            "id": "waterworks-mat-dark",
+            "components": {
+              "material": {"type": "Material", "properties": {"name": "home-city:dark", "color": "#5a5953", "roughness": 0.93, "diffuseRoughness": 0.75, "texture": "/textures/home-city/cast-concrete.webp", "repeat": true, "repeatCount": [2, 2]}}
+            }
+          },
+          {
+            "id": "waterworks-mat-water",
+            "components": {
+              "material": {"type": "Material", "properties": {"name": "waterworks:water", "color": "#497877", "roughness": 0.24, "metalness": 0.36}}
+            }
+          }
+        ]
+      },
+      {
+        "id": "boulevard",
+        "name": "Service boulevard",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [0, -0.7, -110]}},
+          "geometry": {"type": "Geometry", "properties": {"args": [190, 1.4, 320]}},
+          "material": {"type": "Material", "properties": {"name": "home-city:road"}}
+        }
+      },
+      {
+        "id": "lane-west",
+        "name": "Lane markings",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [-6, 0.007, -110], "rotation": [-1.5707963267948966, 0, 0]}},
+          "geometry": {"type": "Geometry", "properties": {"args": [0.12, 320], "geometryType": "plane", "castShadow": false}},
+          "material": {"type": "Material", "properties": {"name": "home-city:lane-paint"}}
+        }
+      },
+      {
+        "id": "lane-east",
+        "name": "Lane markings",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [6, 0.007, -110], "rotation": [-1.5707963267948966, 0, 0]}},
+          "geometry": {"type": "Geometry", "properties": {"args": [0.12, 320], "geometryType": "plane", "castShadow": false}},
+          "material": {"type": "Material", "properties": {"name": "home-city:lane-paint"}}
+        }
+      },
+      {
+        "id": "clarifier",
+        "name": "Circular settling tank",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [-32, 0, 22]}}
+        },
+        "children": [
+          {
+            "id": "tank-wall",
+            "name": "Cast concrete basin",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [0, 3, 0]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [15, 16, 6, 48], "geometryType": "cylinder"}},
+              "material": {"type": "Material", "properties": {"name": "home-city:concrete"}}
+            }
+          },
+          {
+            "id": "tank-water",
+            "name": "Water surface",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [0, 6.04, 0]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [14.2, 14.2, 0.1, 48], "geometryType": "cylinder"}},
+              "material": {"type": "Material", "properties": {"name": "waterworks:water"}}
+            }
+          },
+          {
+            "id": "scraper-pivot",
+            "name": "Scraper pivot",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [0, 7.1, 0]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [1, 1.5, 2.1, 12], "geometryType": "cylinder"}},
+              "material": {"type": "Material", "properties": {"name": "home-city:rust"}}
+            }
+          },
+          {
+            "id": "scraper",
+            "name": "Radial scraper bridge",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [0, 7.6, 0]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [29, 0.6, 1.7]}},
+              "material": {"type": "Material", "properties": {"name": "home-city:metal"}}
+            }
+          },
+          {
+            "id": "scraper-rail",
+            "name": "Bridge rail",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [0, 8.65, 0.76]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [29, 0.12, 0.12]}},
+              "material": {"type": "Material", "properties": {"name": "home-city:rust"}}
+            }
+          }
+        ],
+        "packed": true
+      },
+      {
+        "id": "pipe-rack",
+        "name": "Twin district heating mains",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [0, 0, -39]}}
+        },
+        "children": [
+          {
+            "id": "foot--17",
+            "name": "Concrete pier",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [-17, 12, 0]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [2.5, 24, 3]}},
+              "material": {"type": "Material", "properties": {"name": "home-city:concrete"}}
+            }
+          },
+          {
+            "id": "foot-17",
+            "name": "Concrete pier",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [17, 12, 0]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [2.5, 24, 3]}},
+              "material": {"type": "Material", "properties": {"name": "home-city:concrete"}}
+            }
+          },
+          {
+            "id": "crosshead",
+            "name": "Pipe rack crosshead",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [0, 23.2, 0]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [38, 1.4, 4]}},
+              "material": {"type": "Material", "properties": {"name": "home-city:metal"}}
+            }
+          },
+          {
+            "id": "pipe--1.5",
+            "name": "Insulated main",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [0, 25, -1.5], "rotation": [0, 0, 1.5707963267948966]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [1.3, 1.3, 52, 20], "geometryType": "cylinder"}},
+              "material": {"type": "Material", "properties": {"name": "home-city:rust"}}
+            }
+          },
+          {
+            "id": "pipe-1.5",
+            "name": "Insulated main",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [0, 25, 1.5], "rotation": [0, 0, 1.5707963267948966]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [1.3, 1.3, 52, 20], "geometryType": "cylinder"}},
+              "material": {"type": "Material", "properties": {"name": "home-city:rust"}}
+            }
+          }
+        ],
+        "packed": true
+      },
+      {
+        "id": "settler-0",
+        "name": "Settling tank",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [-32, 0, -27]}},
+          "prefab": {"type": "PrefabRef", "properties": {"prefabId": "clarifier"}}
+        }
+      },
+      {
+        "id": "settler-1",
+        "name": "Settling tank",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [-32, 0, -81]}},
+          "prefab": {"type": "PrefabRef", "properties": {"prefabId": "clarifier"}}
+        }
+      },
+      {
+        "id": "settler-2",
+        "name": "Settling tank",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [-63, 0, -53]}},
+          "prefab": {"type": "PrefabRef", "properties": {"prefabId": "clarifier"}}
+        }
+      },
+      {
+        "id": "settler-3",
+        "name": "Settling tank",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [36, 0, -185]}},
+          "prefab": {"type": "PrefabRef", "properties": {"prefabId": "clarifier"}}
+        }
+      },
+      {
+        "id": "settler-4",
+        "name": "Settling tank",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [36, 0, -229]}},
+          "prefab": {"type": "PrefabRef", "properties": {"prefabId": "clarifier"}}
+        }
+      },
+      {
+        "id": "north-rack",
+        "name": "Outfall pipe bridge",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [0, 0, -197]}},
+          "prefab": {"type": "PrefabRef", "properties": {"prefabId": "pipe-rack"}}
+        }
+      },
+      {
+        "id": "pump-house",
+        "name": "Pump house",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [49, 0, -68], "scale": [1.65, 1.5, 1.55]}},
+          "prefab": {"type": "PrefabRef", "properties": {"url": "/prefabs/brutalist-city/brutalist-enterable-cube.json"}}
+        }
+      },
+      {
+        "id": "control-tower",
+        "name": "Control tower",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [50, 0, 9], "scale": [1.4, 1.2, 1.4]}},
+          "prefab": {"type": "PrefabRef", "properties": {"url": "/prefabs/brutalist-city/brutalist-cylinder-tower.json"}}
+        }
+      },
+      {
+        "id": "service-gallery",
+        "name": "Filter gallery",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [-29, 0, -182]}}
+        },
+        "children": [
+          {
+            "id": "filter-deck",
+            "name": "Grated access deck",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [0, 12, 0]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [8, 1.4, 124]}},
+              "material": {"type": "Material", "properties": {"name": "home-city:metal"}}
+            }
+          },
+          {
+            "id": "filter-rail--3.9",
+            "name": "Guard rail",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [-3.9, 13.2, 0]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [0.25, 1, 124]}},
+              "material": {"type": "Material", "properties": {"name": "home-city:rust"}}
+            }
+          },
+          {
+            "id": "filter-rail-3.9",
+            "name": "Guard rail",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [3.9, 13.2, 0]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [0.25, 1, 124]}},
+              "material": {"type": "Material", "properties": {"name": "home-city:rust"}}
+            }
+          },
+          {
+            "id": "filter-bent-0",
+            "name": "Filter gallery pier",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [0, 6, -54]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [4, 12, 2.5]}},
+              "material": {"type": "Material", "properties": {"name": "home-city:concrete"}}
+            }
+          },
+          {
+            "id": "filter-bent-1",
+            "name": "Filter gallery pier",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [0, 6, -32]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [4, 12, 2.5]}},
+              "material": {"type": "Material", "properties": {"name": "home-city:concrete"}}
+            }
+          },
+          {
+            "id": "filter-bent-2",
+            "name": "Filter gallery pier",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [0, 6, -10]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [4, 12, 2.5]}},
+              "material": {"type": "Material", "properties": {"name": "home-city:concrete"}}
+            }
+          },
+          {
+            "id": "filter-bent-3",
+            "name": "Filter gallery pier",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [0, 6, 12]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [4, 12, 2.5]}},
+              "material": {"type": "Material", "properties": {"name": "home-city:concrete"}}
+            }
+          },
+          {
+            "id": "filter-bent-4",
+            "name": "Filter gallery pier",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [0, 6, 34]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [4, 12, 2.5]}},
+              "material": {"type": "Material", "properties": {"name": "home-city:concrete"}}
+            }
+          },
+          {
+            "id": "filter-bent-5",
+            "name": "Filter gallery pier",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [0, 6, 56]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [4, 12, 2.5]}},
+              "material": {"type": "Material", "properties": {"name": "home-city:concrete"}}
+            }
+          }
+        ]
+      },
+      {
+        "id": "boiler-hall",
+        "name": "Boiler hall",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [38, 8, -124]}},
+          "geometry": {"type": "Geometry", "properties": {"args": [44, 16, 51]}},
+          "material": {"type": "Material", "properties": {"name": "home-city:dark"}}
+        }
+      },
+      {
+        "id": "boiler-roof",
+        "name": "Overhanging boiler roof",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [38, 16.6, -124]}},
+          "geometry": {"type": "Geometry", "properties": {"args": [46, 1.2, 53]}},
+          "material": {"type": "Material", "properties": {"name": "home-city:concrete"}}
+        }
+      },
+      {
+        "id": "flue-0",
+        "name": "Tapered exhaust stack",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [33, 42.5, -111]}},
+          "geometry": {"type": "Geometry", "properties": {"args": [2, 3.2, 53, 20], "geometryType": "cylinder"}},
+          "material": {"type": "Material", "properties": {"name": "home-city:concrete"}}
+        }
+      },
+      {
+        "id": "stack-band-0",
+        "name": "Oxide stack band",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [33, 65, -111]}},
+          "geometry": {"type": "Geometry", "properties": {"args": [2.2, 2.35, 3, 20], "geometryType": "cylinder"}},
+          "material": {"type": "Material", "properties": {"name": "home-city:rust"}}
+        }
+      },
+      {
+        "id": "flue-1",
+        "name": "Tapered exhaust stack",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [45, 48.5, -121]}},
+          "geometry": {"type": "Geometry", "properties": {"args": [2, 3.2, 65, 20], "geometryType": "cylinder"}},
+          "material": {"type": "Material", "properties": {"name": "home-city:concrete"}}
+        }
+      },
+      {
+        "id": "stack-band-1",
+        "name": "Oxide stack band",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [45, 77, -121]}},
+          "geometry": {"type": "Geometry", "properties": {"args": [2.2, 2.35, 3, 20], "geometryType": "cylinder"}},
+          "material": {"type": "Material", "properties": {"name": "home-city:rust"}}
+        }
+      },
+      {
+        "id": "flue-2",
+        "name": "Tapered exhaust stack",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [51, 41.0, -136]}},
+          "geometry": {"type": "Geometry", "properties": {"args": [2, 3.2, 50, 20], "geometryType": "cylinder"}},
+          "material": {"type": "Material", "properties": {"name": "home-city:concrete"}}
+        }
+      },
+      {
+        "id": "stack-band-2",
+        "name": "Oxide stack band",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [51, 62, -136]}},
+          "geometry": {"type": "Geometry", "properties": {"args": [2.2, 2.35, 3, 20], "geometryType": "cylinder"}},
+          "material": {"type": "Material", "properties": {"name": "home-city:rust"}}
+        }
+      }
+    ]
+  }
+}

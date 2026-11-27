@@ -1,0 +1,416 @@
+{
+  "id": "conservatory",
+  "name": "Winter Garden Conservatory",
+  "root": {
+    "id": "conservatory",
+    "name": "Winter Garden Conservatory",
+    "children": [
+      {
+        "id": "conservatory-palette",
+        "name": "District materials",
+        "children": [
+          {
+            "id": "conservatory-mat-road",
+            "components": {
+              "material": {"type": "Material", "properties": {"name": "home-city:road", "color": "#80786f", "roughness": 0.91, "diffuseRoughness": 0.55, "texture": "/textures/home-city/asphalt.webp", "normalMapTexture": "/textures/home-city/asphalt-normal-height.png", "normalScale": [0.55, 0.55], "parallaxScale": 0.004, "anisotropy": 8, "repeat": true, "repeatCount": [40, 67]}}
+            }
+          },
+          {
+            "id": "conservatory-mat-lane-paint",
+            "components": {
+              "material": {"type": "Material", "properties": {"name": "home-city:lane-paint", "color": "#c6bdab", "texture": "/textures/home-city/lane-dash.png", "alphaTest": 0.5, "roughness": 0.96, "repeat": true, "repeatCount": [1, 32]}}
+            }
+          },
+          {
+            "id": "conservatory-mat-pale",
+            "components": {
+              "material": {"type": "Material", "properties": {"name": "home-city:pale", "color": "#cec4b2", "roughness": 0.92, "diffuseRoughness": 0.75, "texture": "/textures/home-city/cast-concrete.webp", "repeat": true, "repeatCount": [2, 1]}}
+            }
+          },
+          {
+            "id": "conservatory-mat-concrete",
+            "components": {
+              "material": {"type": "Material", "properties": {"name": "home-city:concrete", "color": "#ada99e", "roughness": 0.94, "diffuseRoughness": 0.8, "texture": "/textures/home-city/cast-concrete.webp", "normalMapTexture": "/textures/home-city/cast-concrete-normal-height.png", "normalScale": [0.48, 0.48], "parallaxScale": 0.012, "repeat": true, "repeatCount": [2, 2]}}
+            }
+          },
+          {
+            "id": "conservatory-mat-metal",
+            "components": {
+              "material": {"type": "Material", "properties": {"name": "home-city:metal", "color": "#313d40", "roughness": 0.58, "metalness": 0.7}}
+            }
+          },
+          {
+            "id": "conservatory-mat-glazing",
+            "components": {
+              "material": {"type": "Material", "properties": {"name": "conservatory:glazing", "color": "#578e7f", "metalness": 0.48, "roughness": 0.29}}
+            }
+          }
+        ]
+      },
+      {
+        "id": "boulevard",
+        "name": "Service boulevard",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [0, -0.7, -110]}},
+          "geometry": {"type": "Geometry", "properties": {"args": [190, 1.4, 320]}},
+          "material": {"type": "Material", "properties": {"name": "home-city:road"}}
+        }
+      },
+      {
+        "id": "lane-west",
+        "name": "Lane markings",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [-6, 0.007, -110], "rotation": [-1.5707963267948966, 0, 0]}},
+          "geometry": {"type": "Geometry", "properties": {"args": [0.12, 320], "geometryType": "plane", "castShadow": false}},
+          "material": {"type": "Material", "properties": {"name": "home-city:lane-paint"}}
+        }
+      },
+      {
+        "id": "lane-east",
+        "name": "Lane markings",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [6, 0.007, -110], "rotation": [-1.5707963267948966, 0, 0]}},
+          "geometry": {"type": "Geometry", "properties": {"args": [0.12, 320], "geometryType": "plane", "castShadow": false}},
+          "material": {"type": "Material", "properties": {"name": "home-city:lane-paint"}}
+        }
+      },
+      {
+        "id": "palm-house",
+        "name": "Palm house bay",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [-32, 0, 14]}}
+        },
+        "children": [
+          {
+            "id": "foundation",
+            "name": "Limestone plinth",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [0, 1.5, 0]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [26, 3, 32]}},
+              "material": {"type": "Material", "properties": {"name": "home-city:pale"}}
+            }
+          },
+          {
+            "id": "glazing",
+            "name": "Greenhouse glazing",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [0, 7.2, 0]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [24, 8.4, 30]}},
+              "material": {"type": "Material", "properties": {"name": "conservatory:glazing"}}
+            }
+          },
+          {
+            "id": "roof-west",
+            "name": "Sloping glass roof",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [-6, 14, 0], "rotation": [0, 0, 0.42]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [14, 0.55, 32]}},
+              "material": {"type": "Material", "properties": {"name": "conservatory:glazing"}}
+            }
+          },
+          {
+            "id": "roof-east",
+            "name": "Sloping glass roof",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [6, 14, 0], "rotation": [0, 0, -0.42]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [14, 0.55, 32]}},
+              "material": {"type": "Material", "properties": {"name": "conservatory:glazing"}}
+            }
+          },
+          {
+            "id": "clerestory--12",
+            "name": "Clerestory rail",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [-12, 11.5, 0]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [0.4, 0.6, 32]}},
+              "material": {"type": "Material", "properties": {"name": "home-city:metal"}}
+            }
+          },
+          {
+            "id": "clerestory-12",
+            "name": "Clerestory rail",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [12, 11.5, 0]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [0.4, 0.6, 32]}},
+              "material": {"type": "Material", "properties": {"name": "home-city:metal"}}
+            }
+          },
+          {
+            "id": "rib-0-0",
+            "name": "Steel glazing rib",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [-12, 7.2, -14]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [0.38, 8.4, 0.5]}},
+              "material": {"type": "Material", "properties": {"name": "home-city:metal"}}
+            }
+          },
+          {
+            "id": "rib-0-1",
+            "name": "Steel glazing rib",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [-12, 7.2, -7]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [0.38, 8.4, 0.5]}},
+              "material": {"type": "Material", "properties": {"name": "home-city:metal"}}
+            }
+          },
+          {
+            "id": "rib-0-2",
+            "name": "Steel glazing rib",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [-12, 7.2, 0]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [0.38, 8.4, 0.5]}},
+              "material": {"type": "Material", "properties": {"name": "home-city:metal"}}
+            }
+          },
+          {
+            "id": "rib-0-3",
+            "name": "Steel glazing rib",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [-12, 7.2, 7]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [0.38, 8.4, 0.5]}},
+              "material": {"type": "Material", "properties": {"name": "home-city:metal"}}
+            }
+          },
+          {
+            "id": "rib-0-4",
+            "name": "Steel glazing rib",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [-12, 7.2, 14]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [0.38, 8.4, 0.5]}},
+              "material": {"type": "Material", "properties": {"name": "home-city:metal"}}
+            }
+          },
+          {
+            "id": "rib-1-0",
+            "name": "Steel glazing rib",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [12, 7.2, -14]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [0.38, 8.4, 0.5]}},
+              "material": {"type": "Material", "properties": {"name": "home-city:metal"}}
+            }
+          },
+          {
+            "id": "rib-1-1",
+            "name": "Steel glazing rib",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [12, 7.2, -7]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [0.38, 8.4, 0.5]}},
+              "material": {"type": "Material", "properties": {"name": "home-city:metal"}}
+            }
+          },
+          {
+            "id": "rib-1-2",
+            "name": "Steel glazing rib",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [12, 7.2, 0]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [0.38, 8.4, 0.5]}},
+              "material": {"type": "Material", "properties": {"name": "home-city:metal"}}
+            }
+          },
+          {
+            "id": "rib-1-3",
+            "name": "Steel glazing rib",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [12, 7.2, 7]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [0.38, 8.4, 0.5]}},
+              "material": {"type": "Material", "properties": {"name": "home-city:metal"}}
+            }
+          },
+          {
+            "id": "rib-1-4",
+            "name": "Steel glazing rib",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [12, 7.2, 14]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [0.38, 8.4, 0.5]}},
+              "material": {"type": "Material", "properties": {"name": "home-city:metal"}}
+            }
+          },
+          {
+            "id": "ridge",
+            "name": "Ridge vent",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [0, 16.9, 0]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [1.1, 0.55, 32]}},
+              "material": {"type": "Material", "properties": {"name": "home-city:metal"}}
+            }
+          }
+        ],
+        "packed": true
+      },
+      {
+        "id": "grove",
+        "name": "Raised garden court",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [29, 0, 9]}}
+        },
+        "children": [
+          {
+            "id": "garden-stair",
+            "name": "Lower terrace",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [0, 0.65, 0]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [29, 1.3, 38]}},
+              "material": {"type": "Material", "properties": {"name": "home-city:pale"}}
+            }
+          },
+          {
+            "id": "garden-deck",
+            "name": "Garden deck",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [0, 1.8, 0]}},
+              "geometry": {"type": "Geometry", "properties": {"args": [25, 1, 34]}},
+              "material": {"type": "Material", "properties": {"name": "home-city:concrete"}}
+            }
+          },
+          {
+            "id": "tree-0",
+            "name": "Planted bed",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [-6, 2.3, -10], "scale": [1.3, 1.4, 1.3]}},
+              "prefab": {"type": "PrefabRef", "properties": {"url": "/prefabs/brutalist-city/city-planter.json"}}
+            }
+          },
+          {
+            "id": "tree-1",
+            "name": "Planted bed",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [6, 2.3, -8], "scale": [1.3, 1.1, 1.3]}},
+              "prefab": {"type": "PrefabRef", "properties": {"url": "/prefabs/brutalist-city/city-planter.json"}}
+            }
+          },
+          {
+            "id": "tree-2",
+            "name": "Planted bed",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [-5, 2.3, 6], "scale": [1.3, 1.15, 1.3]}},
+              "prefab": {"type": "PrefabRef", "properties": {"url": "/prefabs/brutalist-city/city-planter.json"}}
+            }
+          },
+          {
+            "id": "tree-3",
+            "name": "Planted bed",
+            "components": {
+              "transform": {"type": "Transform", "properties": {"position": [6, 2.3, 10], "scale": [1.3, 1.6, 1.3]}},
+              "prefab": {"type": "PrefabRef", "properties": {"url": "/prefabs/brutalist-city/city-planter.json"}}
+            }
+          }
+        ],
+        "packed": true
+      },
+      {
+        "id": "glasshouse-0",
+        "name": "Palm house",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [-32, 0, -20], "scale": [1, 1, 1]}},
+          "prefab": {"type": "PrefabRef", "properties": {"prefabId": "palm-house"}}
+        }
+      },
+      {
+        "id": "glasshouse-1",
+        "name": "Palm house",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [-32, 0, -54], "scale": [1, 1, 1]}},
+          "prefab": {"type": "PrefabRef", "properties": {"prefabId": "palm-house"}}
+        }
+      },
+      {
+        "id": "glasshouse-2",
+        "name": "Palm house",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [38, 0, -146], "scale": [1.4, 1.4, 1.6]}},
+          "prefab": {"type": "PrefabRef", "properties": {"prefabId": "palm-house"}}
+        }
+      },
+      {
+        "id": "glasshouse-3",
+        "name": "Palm house",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [38, 0, -199], "scale": [1.4, 1.4, 1.6]}},
+          "prefab": {"type": "PrefabRef", "properties": {"prefabId": "palm-house"}}
+        }
+      },
+      {
+        "id": "court-0",
+        "name": "Garden court",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [29, 0, -36]}},
+          "prefab": {"type": "PrefabRef", "properties": {"prefabId": "grove"}}
+        }
+      },
+      {
+        "id": "court-1",
+        "name": "Garden court",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [29, 0, -78]}},
+          "prefab": {"type": "PrefabRef", "properties": {"prefabId": "grove"}}
+        }
+      },
+      {
+        "id": "court-2",
+        "name": "Garden court",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [-29, 0, -135]}},
+          "prefab": {"type": "PrefabRef", "properties": {"prefabId": "grove"}}
+        }
+      },
+      {
+        "id": "court-3",
+        "name": "Garden court",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [-29, 0, -179]}},
+          "prefab": {"type": "PrefabRef", "properties": {"prefabId": "grove"}}
+        }
+      },
+      {
+        "id": "court-4",
+        "name": "Garden court",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [-29, 0, -224]}},
+          "prefab": {"type": "PrefabRef", "properties": {"prefabId": "grove"}}
+        }
+      },
+      {
+        "id": "herbarium",
+        "name": "Terraced herbarium",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [-48, 0, -97], "scale": [2.2, 1.7, 1.4]}},
+          "prefab": {"type": "PrefabRef", "properties": {"url": "/prefabs/brutalist-city/brutalist-cube-building.json"}}
+        }
+      },
+      {
+        "id": "lookout",
+        "name": "Garden belvedere",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [43, 0, -248], "scale": [1.05, 1.1, 1.05]}},
+          "prefab": {"type": "PrefabRef", "properties": {"url": "/prefabs/brutalist-city/brutalist-cylinder-tower.json"}}
+        }
+      },
+      {
+        "id": "garden-overlook",
+        "name": "Tree canopy walk",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [0, 22, -98], "scale": [1.6, 1, 1]}},
+          "prefab": {"type": "PrefabRef", "properties": {"url": "/prefabs/brutalist-city/brutalist-skywalk.json"}}
+        }
+      },
+      {
+        "id": "lift-west",
+        "name": "Canopy walk lift",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [-25, 10.7, -98]}},
+          "geometry": {"type": "Geometry", "properties": {"args": [5, 21.4, 6]}},
+          "material": {"type": "Material", "properties": {"name": "home-city:pale"}}
+        }
+      },
+      {
+        "id": "lift-east",
+        "name": "Canopy walk lift",
+        "components": {
+          "transform": {"type": "Transform", "properties": {"position": [25, 10.7, -98]}},
+          "geometry": {"type": "Geometry", "properties": {"args": [5, 21.4, 6]}},
+          "material": {"type": "Material", "properties": {"name": "home-city:pale"}}
+        }
+      }
+    ]
+  }
+}

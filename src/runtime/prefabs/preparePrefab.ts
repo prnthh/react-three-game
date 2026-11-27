@@ -5,11 +5,6 @@ import { resolveInlinePrefab } from '../../core/inlinePrefabs.js';
 import { withBasePath } from '../assets/assetPaths.js';
 import { materialTextureDependencies, type AssetDependency, type ComponentDependency } from '../../core/dependencies.js';
 
-export interface PreparedPrefab {
-    readonly document: PrefabState;
-    readonly documentCount: number;
-    readonly assetCount: number;
-}
 export interface PrefabPreparationOptions {
     basePath?: string;
     signal?: AbortSignal;
@@ -65,26 +60,22 @@ export async function preparePrefab(
     runtime: PrefabPreparationRuntime,
     path: string | PrefabState,
     { basePath = '', signal, deferMaterialTextures }: PrefabPreparationOptions = {},
-): Promise<PreparedPrefab> {
+): Promise<PrefabState> {
     type Source = string | Prefab | PrefabState;
-    const documents = new Map<Source, Promise<PrefabState>>();
     const assets = new Map<string, Promise<unknown>>();
     const edges = new Map<Source, Set<Source>>();
-    const queue: Source[] = [];
+    const queue: { source: Source; ready: Promise<PrefabState> }[] = [];
     const describe = (source: Source) => typeof source === 'string' ? source : 'rootId' in source ? source.prefabName ?? source.rootId : source.name ?? source.id ?? 'inline prefab';
-    const check = () => {
-        if (signal?.aborted) throw signal.reason ?? new Error('Prefab preparation cancelled');
-    };
     const enqueue = (source: Source, inline?: PrefabState) => {
-        check();
-        if (documents.has(source)) return;
+        signal?.throwIfAborted();
+        if (edges.has(source)) return;
+        edges.set(source, new Set());
         const ready = inline ? Promise.resolve(inline) : runtime.loadDocument(source as string);
-        documents.set(source, ready);
         void ready.catch(() => {});
-        queue.push(source);
+        queue.push({ source, ready });
     };
     const enqueueAsset = (dependency: AssetDependency) => {
-        check();
+        signal?.throwIfAborted();
         const path = withBasePath(basePath, dependency.path);
         const key = `${dependency.kind}:${path}`;
         if (assets.has(key)) return;
@@ -96,15 +87,15 @@ export async function preparePrefab(
     };
     const rootSource = typeof path === 'string' ? withBasePath(basePath, path) : path;
     const run = async () => {
-        enqueue(rootSource, typeof path === 'string' ? undefined : path);
-        const root = await documents.get(rootSource)!;
+        signal?.throwIfAborted();
+        const root = typeof rootSource === 'string' ? await runtime.loadDocument(rootSource) : rootSource;
+        enqueue(rootSource, root);
         const deferTextures = deferMaterialTextures?.(root);
         while (queue.length) {
-            await Promise.all(queue.splice(0).map(async source => {
-                const document = await documents.get(source)!;
-                check();
-                const references = new Set<Source>();
-                edges.set(source, references);
+            await Promise.all(queue.splice(0).map(async ({ source, ready }) => {
+                const document = await ready;
+                signal?.throwIfAborted();
+                const references = edges.get(source)!;
                 for (const dep of documentDependencies(document, runtime, !!deferTextures, describe(source))) {
                     if (dep.kind === 'inline') {
                         const inline = resolveInlinePrefab(document, dep.path);
@@ -131,8 +122,8 @@ export async function preparePrefab(
         };
         validate(rootSource);
         await Promise.all(assets.values());
-        check();
-        return { document: root, documentCount: documents.size, assetCount: assets.size };
+        signal?.throwIfAborted();
+        return root;
     };
     let onAbort = () => {};
     const cancelled = new Promise<never>((_, reject) => {

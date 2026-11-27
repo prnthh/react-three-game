@@ -6,21 +6,20 @@ import { SpatialStreamScheduler, type SpatialStreamPlacement } from './SpatialSt
 function createAdmission(store: RootStore) {
     const queue = new SpatialStreamScheduler();
     let unsubscribe: (() => void) | undefined;
-    function sync() {
-        if (queue.hasPending) {
-            unsubscribe ??= subscribeFrame(store, ({ camera }) => {
-                queue.update(camera);
-                if (!queue.hasPending) sync();
-            }, framePriority.streamingAdmission);
-        } else {
-            unsubscribe?.();
-            unsubscribe = undefined;
-        }
+    function stopIfIdle() {
+        if (queue.hasPending) return;
+        unsubscribe?.();
+        unsubscribe = undefined;
     }
     return (placement: SpatialStreamPlacement) => {
         const unregister = queue.register(placement);
-        sync();
-        return () => { unregister(); sync(); };
+        if (queue.hasPending) {
+            unsubscribe ??= subscribeFrame(store, ({ camera }) => {
+                queue.update(camera);
+                stopIfIdle();
+            }, framePriority.streamingAdmission);
+        }
+        return () => { unregister(); stopIfIdle(); };
     };
 }
 

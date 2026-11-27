@@ -203,13 +203,14 @@ const DEFAULT_MATERIAL: PrefabMaterial = Object.freeze({});
 
 function MaterialComponentView({ properties, children }: { properties: MaterialComponentProperties; children?: ReactNode; enabled: boolean }) {
     const { basePath } = usePrefab();
+    return <><PrefabMaterialView properties={properties} basePath={basePath} />{children}</>;
+}
+
+export function PrefabMaterialView({ properties, basePath }: { properties: MaterialComponentProperties; basePath: string }) {
     const material = useMemo(() => getMaterialDefinition(properties), [properties]);
-    return <>
-        {properties.name
-            ? <NamedMaterial name={properties.name} material={material} basePath={basePath} attach={properties.attach} />
-            : <ResolvedMaterial material={material ?? DEFAULT_MATERIAL} basePath={basePath} attach={properties.attach} />}
-        {children}
-    </>;
+    return properties.name
+        ? <NamedMaterial name={properties.name} material={material} basePath={basePath} attach={properties.attach} />
+        : <ResolvedMaterial material={material ?? DEFAULT_MATERIAL} basePath={basePath} attach={properties.attach} />;
 }
 
 // Only named references need a registry subscription and definition lifecycle.

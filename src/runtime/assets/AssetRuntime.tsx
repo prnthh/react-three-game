@@ -1,8 +1,9 @@
 import type { AssetDependency } from '../../core/dependencies.js';
-import { preparePrefab, type PreparedPrefab, type PrefabPreparationOptions } from "../prefabs/preparePrefab.js";
+import { preparePrefab, type PrefabPreparationOptions } from "../prefabs/preparePrefab.js";
 import { getComponent } from "../../core/ComponentRegistry.js";
 import { createContext, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useState, type ReactNode } from "react";
 import { useStore } from "zustand";
+import { useShallow } from "zustand/react/shallow";
 import { createStore, type StoreApi } from "zustand/vanilla";
 import type { Object3D, Texture } from "three";
 import { useAssetCache, useAsset } from "./assetCache.js";
@@ -20,7 +21,7 @@ export interface AssetRuntime {
     loadModel: (path: string) => Promise<Object3D>;
     loadTexture: (path: string) => Promise<Texture>;
     loadSound: (path: string) => Promise<AudioBuffer>;
-    preparePrefab: (path: string | PrefabState, options?: PrefabPreparationOptions) => Promise<PreparedPrefab>;
+    preparePrefab: (path: string | PrefabState, options?: PrefabPreparationOptions) => Promise<PrefabState>;
     getPrefab: (path: string) => PrefabState | null;
     registerModel: (path: string, model: Object3D) => void;
     registerTexture: (path: string, texture: Texture) => void;
@@ -42,13 +43,12 @@ interface AssetStoreState {
     models: Record<string, Object3D>;
     textures: Record<string, Texture>;
     sounds: Record<string, AudioBuffer>;
-    soundVersions: Record<string, number>;
 }
 
 type AssetStoreApi = StoreApi<AssetStoreState>;
 
 function createAssetStore(): AssetStoreApi {
-    return createStore<AssetStoreState>(() => ({ models: {}, textures: {}, sounds: {}, soundVersions: {} }));
+    return createStore<AssetStoreState>(() => ({ models: {}, textures: {}, sounds: {} }));
 }
 
 const AssetStoreContext = createContext<AssetStoreApi | null>(null);
@@ -74,15 +74,13 @@ export function useTextureAsset(path?: string | null): Texture | null {
 }
 
 /** Reacts only when one of the requested sound buffers is replaced or loaded. */
-export function useSoundAssetRevision(paths: string[]): string {
+export function useSoundAssets(paths: string[]) {
     const runtime = useAssetRuntime();
-    const revision = useStore(useAssetStore(), state => (
-        paths.map(path => state.soundVersions[path] ?? 0).join('|')
-    ));
+    const buffers = useStore(useAssetStore(), useShallow(state => paths.map(path => state.sounds[path])));
     useEffect(() => {
         paths.forEach(path => { void runtime.loadSound(path).catch(() => {}); });
     }, [paths, runtime]);
-    return revision;
+    return buffers;
 }
 
 export function useAssetRuntime(): AssetRuntime {
@@ -118,10 +116,7 @@ function AssetRuntimeOwner({ children, runtimeRef }: AssetRuntimeProviderProps) 
     const registerSound = useCallback((path: string, sound: AudioBuffer) => {
         if (assetStore.getState().sounds[path] === sound) return;
         audioAssets?.register(path, sound);
-        assetStore.setState(s => ({
-            sounds: { ...s.sounds, [path]: sound },
-            soundVersions: { ...s.soundVersions, [path]: (s.soundVersions[path] ?? 0) + 1 },
-        }));
+        assetStore.setState(s => ({ sounds: { ...s.sounds, [path]: sound } }));
     }, [assetStore, audioAssets]);
     const getModel = useCallback((path: string) => assetStore.getState().models[path] ?? getAsset('model', path), [assetStore, getAsset]);
     const getTexture = useCallback((path: string) => assetStore.getState().textures[path] ?? getAsset('texture', path), [assetStore, getAsset]);

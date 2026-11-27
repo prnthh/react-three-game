@@ -89,22 +89,16 @@ export type ComponentPropertyDefinitions<P extends object> = {
 
 export type ComponentCategory = 'mesh' | 'materials' | 'lighting' | 'camera' | 'audio' | 'transform' | 'physics' | 'misc';
 
-export interface ComponentRendering<P extends object> {
+export interface Component<P extends object = Record<string, any>> {
+    name: string;
     /** Render composition only. Coexistence is declared separately with exclusive. */
     slot?: 'leaf' | 'object' | 'geometry' | 'material';
     /** Keep visual resources mounted while disabled. Use useComponentActive(enabled) to gate behavior. */
     renderWhenDisabled?: boolean;
     /** Wrap node contents; return children to preserve subsequent components and child nodes. */
     View?: FC<ComponentViewProps<P>>;
-}
-
-export interface ComponentGeometryModifier<P extends object> {
     /** Pure node-local Geometry modifier. Return a new owned geometry; never mutate source. */
     modifyGeometry?: (source: BufferGeometry, properties: P, context?: { scale: readonly [number, number, number] }) => BufferGeometry;
-}
-
-export interface Component<P extends object = Record<string, any>> extends ComponentRendering<P>, ComponentGeometryModifier<P> {
-    name: string;
     /** Scene components configure only the outer document root, outside the node tree. */
     scope?: 'scene';
     /** Editor grouping only; defaults to Misc. */

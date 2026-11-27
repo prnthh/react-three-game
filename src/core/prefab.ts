@@ -111,7 +111,7 @@ export function getMaterialDefinition(properties: MaterialComponentProperties): 
 
 const materialDefinitionCache = new WeakMap<ComponentData, PrefabMaterial | null>();
 
-function cachedMaterialDefinition(component: ComponentData): PrefabMaterial | null {
+export function cachedMaterialDefinition(component: ComponentData): PrefabMaterial | null {
     // Document edits replace components; unchanged snapshots share definitions.
     if (!materialDefinitionCache.has(component)) {
         materialDefinitionCache.set(component, getMaterialDefinition(component.properties));
@@ -133,46 +133,6 @@ export function collectMaterialDefinitions(nodes: Record<string, PrefabNodeRecor
     return materials;
 }
 
-export interface SceneMaterialEntry {
-    /** Picker identity; unnamed entries become persistent named definitions when shared. */
-    id: string;
-    label: string;
-    nodeId: string;
-    componentKey: string;
-    material: PrefabMaterial;
-    named: boolean;
-}
-
-/** Unique authored materials, including inline definitions that have no reference ID yet.
- * Explicit IDs remain distinct assets even when their current settings happen to match.
- */
-export function collectSceneMaterials(nodes: Record<string, PrefabNodeRecord>): SceneMaterialEntry[] {
-    const entries: SceneMaterialEntry[] = [];
-    const ids = new Set<string>();
-    const signatures = new Set<string>();
-    const candidates = Object.values(nodes).flatMap(node => Object.entries(node.components ?? {})
-        .filter(([, component]) => component?.type === 'Material')
-        .map(([key, component]) => ({ node, key, component: component!, properties: component!.properties })));
-    const reservedIds = new Set(candidates.map(entry => entry.properties.name).filter(Boolean));
-    // Prefer explicit definitions when an identical inline material also exists.
-    candidates.sort((a, b) => Number(!!b.properties.name) - Number(!!a.properties.name));
-    for (const { node, key, component, properties } of candidates) {
-        const definition = cachedMaterialDefinition(component);
-        if (properties.name && !definition) continue; // Reference, not another material.
-        const material = definition ?? {};
-        const signature = JSON.stringify(compactPrefabMaterial(material));
-        const named = !!properties.name;
-        if (named ? ids.has(properties.name) : signatures.has(signature)) continue;
-        let id = properties.name || `inline:${encodeURIComponent(node.id)}:${encodeURIComponent(key)}`;
-        while (!named && (ids.has(id) || reservedIds.has(id))) id += '_';
-        ids.add(id); signatures.add(signature);
-        const generatedId = typeof properties.name === 'string' && /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(properties.name);
-        entries.push({ id, label: named && !generatedId ? properties.name : node.name || node.id,
-            nodeId: node.id, componentKey: key, material, named });
-    }
-    return entries;
-}
-
 function createComponentMap(
 	components: Record<
 		string,
@@ -191,10 +151,6 @@ function createComponentMap(
 	});
 
 	return componentMap;
-}
-
-function getNodeNameFromPath(path: string, name?: string) {
-	return name ?? path.replace(/^.*[\/]/, "").replace(/\.[^.]+$/, "");
 }
 
 export function denormalizeNode(
@@ -262,45 +218,6 @@ export function createEmptyPrefab(): Prefab {
 		name: "New Prefab",
 		root: createNode("Root", {}, { id: crypto.randomUUID(), children: [] }),
 	};
-}
-
-export function createModelNode(filename: string, name?: string): GameObject {
-	return createNode(getNodeNameFromPath(filename, name), {
-		model: {
-			type: "Model",
-			properties: {
-				filename,
-				repeat: false,
-				repeatAxes: [{ axis: "x", count: 1, offset: 1 }],
-			},
-		},
-	});
-}
-
-export function createImageNode(
-	texturePath: string,
-	materialName: string,
-	name?: string,
-): GameObject {
-	return createNode(getNodeNameFromPath(texturePath, name), {
-		geometry: {
-			type: "Geometry",
-			properties: { geometryType: "plane", args: [1, 1] },
-		},
-		material: {
-			type: "Material",
-			properties: { name: materialName } satisfies MaterialComponentProperties,
-		},
-	});
-}
-
-export function createPackedPrefabNode(url: string): GameObject {
-	return createNode("Packed Prefab", {
-		prefabref: {
-			type: "PrefabRef",
-			properties: { url },
-		},
-	});
 }
 
 /** Give a prefab's materials collision-safe names while keeping every reference in sync. */

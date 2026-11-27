@@ -14,13 +14,9 @@ import { emissive, mrt, normalView, output, pass, vec3, vec4 } from "three/tsl";
 import { ao } from "three/addons/tsl/display/GTAONode.js";
 import { fxaa } from "three/addons/tsl/display/FXAANode.js";
 import { bloom } from "three/addons/tsl/display/BloomNode.js";
-import { ContactAONode } from '../rendering/ContactAONode.js';
-import { installChunkOcclusion } from '../rendering/chunkOcclusion.js';
 
 export type PostProcessingProperties = {
     ambientOcclusion: boolean;
-    ambientOcclusionMode?: 'gtao' | 'contact';
-    chunkOcclusion?: boolean;
     sunShaftLight?: string;
     sunShaftDensity?: number;
     ambientOcclusionIntensity: number;
@@ -35,8 +31,6 @@ export type PostProcessingProperties = {
 
 function PostProcessing({
     ambientOcclusion,
-    ambientOcclusionMode,
-    chunkOcclusion,
     sunShaftLight,
     sunShaftDensity = 0.002,
     ambientOcclusionIntensity,
@@ -70,21 +64,13 @@ function PostProcessing({
             const resolution = Math.max(0.1, Math.min(1, ambientOcclusionResolutionScale));
             const radius = Math.max(0.001, ambientOcclusionRadius);
             const samples = Math.max(1, Math.round(ambientOcclusionSamples));
-            let aoTexture;
-            if (ambientOcclusionMode === 'contact' && !renderer.reversedDepthBuffer && !renderer.logarithmicDepthBuffer) {
-                const contact = new ContactAONode(depth, normal, camera, radius, resolution, samples);
-                owned.push(contact);
-                aoTexture = contact.texture;
-            } else {
-                const gtao = ao(depth, normal, camera);
-                gtao.resolutionScale = resolution;
-                gtao.radius.value = radius;
-                gtao.samples.value = samples;
-                owned.push(gtao);
-                aoTexture = gtao.getTextureNode();
-            }
+            const gtao = ao(depth, normal, camera);
+            gtao.resolutionScale = resolution;
+            gtao.radius.value = radius;
+            gtao.samples.value = samples;
+            owned.push(gtao);
             const intensity = Math.max(0, Math.min(1, ambientOcclusionIntensity));
-            const factor = aoTexture.r.mul(intensity).add(1 - intensity);
+            const factor = gtao.getTextureNode().r.mul(intensity).add(1 - intensity);
             outputNode = outputNode.mul(vec4(vec3(factor), 1));
         }
         if (bloomEnabled) {
@@ -143,12 +129,10 @@ function PostProcessing({
             for (let i = owned.length - 1; i >= 0; i--) owned[i].dispose();
         }
         return { render, scenePass, dispose };
-    }, [ambientOcclusion, ambientOcclusionMode, ambientOcclusionIntensity, ambientOcclusionRadius, ambientOcclusionResolutionScale, ambientOcclusionSamples, bloomEnabled, bloomRadius, bloomStrength, bloomThreshold, camera, renderer, scene, source, sunShaftLight, sunShaftDensity]);
+    }, [ambientOcclusion, ambientOcclusionIntensity, ambientOcclusionRadius, ambientOcclusionResolutionScale, ambientOcclusionSamples, bloomEnabled, bloomRadius, bloomStrength, bloomThreshold, camera, renderer, scene, source, sunShaftLight, sunShaftDensity]);
     useEffect(() => () => disposeAfterPrefabCompilation(renderer, dispose), [renderer, dispose]);
     const renderFinalFrame = useMemo(() => () => renderToScreen(renderer, render), [renderer, render]);
     useLayoutEffect(() => registerSceneCaptureRenderer(renderer, renderFinalFrame), [renderer, renderFinalFrame]);
-    useLayoutEffect(() => chunkOcclusion ? installChunkOcclusion(renderer, scene, camera, scenePass.renderTarget) : undefined,
-        [chunkOcclusion, renderer, scene, camera, scenePass]);
     useLayoutEffect(() => registerPrefabCompilationContext(renderer, () => {
         const target = renderer.getRenderTarget(), targets = renderer.getMRT();
         renderer.setRenderTarget(scenePass.renderTarget);
@@ -161,17 +145,15 @@ function PostProcessing({
 
 function PostProcessingView({ properties }: ComponentViewProps<PostProcessingProperties>) {
     if (useContext(SceneContext)?.mode === PrefabEditorMode.Edit) return null;
-    return properties.ambientOcclusion || properties.bloom || properties.chunkOcclusion || properties.sunShaftLight ? <PostProcessing {...properties} /> : null;
+    return properties.ambientOcclusion || properties.bloom || properties.sunShaftLight ? <PostProcessing {...properties} /> : null;
 }
 const PostProcessingComponent: Component<PostProcessingProperties> = {
     name: 'PostProcessing', slot: 'leaf', scope: 'scene', exclusive: 'postprocessing', category: 'lighting', View: PostProcessingView,
     description: 'Scene-root ambient occlusion, emissive bloom and directional sun shafts. Enabled effects run in the viewer and in editor Play mode.',
     properties: {
         ambientOcclusion: { type: 'boolean', default: false },
-        ambientOcclusionMode: { type: 'select', default: 'gtao', options: [{ value: 'gtao', label: 'GTAO' }, { value: 'contact', label: 'Contact AO' }] },
         sunShaftLight: { type: 'string', default: '', description: 'Node ID of the shadow-casting directional light. Empty disables sun shafts. Cascaded lights use their nearest shadow map.' },
         sunShaftDensity: { default: 0.002, min: 0, max: 0.1, step: 0.0001, description: 'Scattering per world unit at unit sun intensity.' },
-        chunkOcclusion: { type: 'boolean', default: false, description: 'Test streamed chunks against a conservative depth pre-pass of opaque boxes.' },
         ambientOcclusionIntensity: { default: 0.65, min: 0, max: 1, step: 0.05 },
         ambientOcclusionRadius: { default: 0.25, min: 0.001, step: 0.1 },
         ambientOcclusionResolutionScale: { default: 0.5, min: 0.1, max: 1, step: 0.1 },

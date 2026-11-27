@@ -63,22 +63,6 @@ recessed. The same UV offset drives color and normals, leaving the mesh silhouet
 and shadow geometry intact. Increase `anisotropy` to preserve texture detail viewed
 along roads and walls. It works with linear mipmap filtering.
 
-## Experimental contact AO and chunk visibility
-
-`PostProcessing.ambientOcclusionMode: "contact"` tests a four-tap screen-space
-AO pass against the default GTAO. It uses the existing scene depth and normals,
-limits occlusion by world-space distance and facing, and follows the authored AO
-radius, intensity and resolution. Both modes currently composite onto the scene
-color. [Fast SDF AO](https://github.com/wrong-nebula/Fast-SDF-AO) is the reference
-for capping the sample budget. [three-gtvbao](https://github.com/norio/three-gtvbao)
-shows how an opaque pre-pass can route an AO mask into indirect lighting.
-
-`PostProcessing.chunkOcclusion: true` enables a 32×20 software depth pre-pass
-from large opaque boxes already mounted by the streamer. A chunk is skipped
-in the camera pass only when every tile it touches is fully covered by nearer
-occluders. The software pass runs before Three builds the camera render list.
-Shadows still use the light's own visibility test.
-
 ## Authored sky, probes and render settings
 
 The built-in `DiffuseLightProbe` projects authored sky/ground colors into nine
@@ -104,9 +88,10 @@ Scene captures follow the active mode.
 The core scene runtime enables clustered lighting whenever the host uses
 Three’s default lighting system. Streaming ordinary unshadowed point and spot
 lights updates GPU light data without rebuilding shaders for visible meshes.
-Shadow casters, projected lights and lights with custom color nodes still use
-Three’s per-light shader path. Add `ClusteredLighting` to tune capacity and
-cluster sizes. Removing the override restores the runtime default or the host’s custom lighting system.
+Directional lights, shadow casters, projected spotlights and lights with custom
+color nodes use Three’s per-light shader path. Adding or removing one can trigger
+compilation. Keep a shared sun or shadow caster resident across chunk boundaries. Sibling prefab roots share the renderer’s lighting backend.
+Hosts can supply their own lighting system when creating a renderer.
 
 These settings are part of the scene document, so a viewer and editor can use
 the same authored appearance. For mesh batch cells and static-prefab residency, see [ChunkSettings](PREFABS.md#automatically-stream-static-scenery).
